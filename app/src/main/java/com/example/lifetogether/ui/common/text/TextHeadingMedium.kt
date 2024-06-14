@@ -10,7 +10,7 @@ fun TextHeadingMedium(
 ) {
     Text(
         text = text,
-        style = MaterialTheme.typography.titleMedium,
+        style = MaterialTheme.typography.headlineMedium,
         color = MaterialTheme.colorScheme.secondary,
     )
 }

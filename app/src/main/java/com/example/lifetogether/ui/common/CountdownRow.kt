@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.lifetogether.ui.common.text.TextHeadingMedium
+import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @Composable
@@ -19,8 +19,8 @@ fun CountdownRow(
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        TextHeadingMedium(text = event)
-        TextHeadingMedium(text = "$daysLeft days left")
+        TextSubHeadingMedium(text = event)
+        TextSubHeadingMedium(text = "$daysLeft days left")
     }
 }
 

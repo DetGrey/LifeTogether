@@ -1,12 +1,10 @@
 package com.example.lifetogether.ui.feature.home
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,15 +16,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
+import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.CountdownRow
 import com.example.lifetogether.ui.common.FeatureOverview
-import com.example.lifetogether.ui.common.text.TextDisplayLarge
+import com.example.lifetogether.ui.common.LoveButton
+import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
@@ -45,40 +42,26 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_profile_picture),
-                        contentDescription = "contentDescription", // TODO
-                    )
-
-                    TextDisplayLarge(text = "A Life Together")
-
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_settings),
-                        contentDescription = "contentDescription", // TODO
-                    )
-                }
-
-                Text(
-                    text = "x days together", // TODO
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.labelMedium,
+                TopBar(
+                    leftIcon = Icon(
+                        resId = R.drawable.ic_profile_picture,
+                        description = "", // TODO
+                    ),
+                    text = "A Life Together",
+                    rightIcon = Icon(
+                        resId = R.drawable.ic_settings,
+                        description = "", // TODO
+                    ),
+                    subText = "x days together", // TODO
                 )
             }
 
             item {
-                Box(
-                    modifier = Modifier
+                Box(modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp)
-                        .clip(shape = RoundedCornerShape(30.dp))
-                        .background(color = Color.Gray),
+                        .clip(shape = RoundedCornerShape(20))
+                        .background(color = MaterialTheme.colorScheme.onBackground),
                 ) {
                     // TODO add image
                 }
@@ -127,6 +110,8 @@ fun HomeScreen(
             }
         }
     }
+
+    LoveButton()
 }
 
 @Preview(showBackground = true)

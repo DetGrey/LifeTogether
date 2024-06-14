@@ -22,7 +22,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
-import com.example.lifetogether.ui.common.text.TextSubHeading
+import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @Composable
@@ -34,14 +34,14 @@ fun RowScope.FeatureOverview(
 ) {
     var customModifier = Modifier
         .weight(0.5f)
-        .clip(shape = RoundedCornerShape(20.dp))
+        .clip(shape = RoundedCornerShape(20))
         .background(MaterialTheme.colorScheme.onBackground)
         .padding(horizontal = 10.dp, vertical = 20.dp)
 
     if (fullWidth) {
         customModifier = Modifier
             .fillMaxWidth()
-            .clip(shape = RoundedCornerShape(20.dp))
+            .clip(shape = RoundedCornerShape(20))
             .background(MaterialTheme.colorScheme.onBackground)
             .padding(horizontal = 10.dp, vertical = 20.dp)
     }
@@ -61,7 +61,7 @@ fun RowScope.FeatureOverview(
             modifier = Modifier.height(60.dp),
         )
 
-        TextSubHeading(text = title)
+        TextHeadingMedium(text = title)
 
         Text(
             text = "$itemCount $itemTypeText",
