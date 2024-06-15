@@ -10,7 +10,13 @@ import com.example.lifetogether.domain.usecase.LogoutUseCase
 import kotlinx.coroutines.launch
 
 class ProfileViewModel : ViewModel() {
+    enum class ConfirmationType {
+        LOGOUT, NAME, PASSWORD
+    }
+    var confirmationDialogType: ConfirmationType? by mutableStateOf(null)
+
     var showConfirmationDialog: Boolean by mutableStateOf(false)
+
     fun logout(
         onSuccess: () -> Unit,
     ) {
