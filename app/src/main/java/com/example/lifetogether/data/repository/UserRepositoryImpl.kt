@@ -1,11 +1,13 @@
 package com.example.lifetogether.data.repository
 
 import com.example.lifetogether.domain.callback.AuthResultListener
+import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.repository.UserRepository
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
+import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.tasks.await
 
 class UserRepositoryImpl : UserRepository {
@@ -50,13 +52,41 @@ class UserRepositoryImpl : UserRepository {
         return try {
             val firebaseUser = Firebase.auth.currentUser
             if (firebaseUser != null) {
-                AuthResultListener.Success(
-                    UserInformation(uid = firebaseUser.uid),
-                )
+                return getUserInformation(firebaseUser.uid)
             } else {
                 AuthResultListener.Failure("Authentication failed")
             }
         } catch (e: Exception) {
+            AuthResultListener.Failure("Error: ${e.message}")
+        }
+    }
+    override suspend fun logout(): ResultListener {
+        return try {
+            Firebase.auth.signOut()
+            ResultListener.Success
+        } catch (e: Exception) {
+            ResultListener.Failure("Error: ${e.message}")
+        }
+    }
+
+    override suspend fun getUserInformation(uid: String): AuthResultListener {
+        val db = Firebase.firestore
+        return try {
+            val documentSnapshot = db.collection("users").document(uid).get().await()
+            println("documentSnapshot: $documentSnapshot")
+            val userInformation = documentSnapshot.toObject(UserInformation::class.java)
+            println("userInformation: $userInformation")
+
+            if (userInformation != null) {
+                AuthResultListener.Success(
+                    userInformation
+                )
+            } else {
+                AuthResultListener.Failure("Could not fetch document")
+            }
+
+        } catch (e: Exception) {
+            println("Error: ${e.message}")
             AuthResultListener.Failure("Error: ${e.message}")
         }
     }

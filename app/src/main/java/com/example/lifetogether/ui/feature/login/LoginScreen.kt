@@ -69,7 +69,7 @@ fun LoginScreen(
                         value = loginViewModel.email,
                         onValueChange = { value -> loginViewModel.email = value },
                         label = "Email",
-                        keyboardType = KeyboardType.Text,
+                        keyboardType = KeyboardType.Email,
                         imeAction = ImeAction.Next,
                     )
                     CustomTextField(
@@ -99,7 +99,15 @@ fun LoginScreen(
                         text = "Do you not have an account?\nSign up here",
                         textAlign = TextAlign.Center,
                     )
+                    Text(
+                        modifier = Modifier
+                            .padding(top = 10.dp)
+                            .fillMaxWidth(),
+                        text = loginViewModel.error,
+                        textAlign = TextAlign.Center,
+                    )
                 }
+
             }
         }
     }

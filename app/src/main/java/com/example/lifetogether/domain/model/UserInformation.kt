@@ -1,11 +1,15 @@
 package com.example.lifetogether.domain.model
 
-import com.google.type.DateTime
+import com.google.firebase.dataconnect.serializers.DateSerializer
+import com.google.firebase.firestore.DocumentId
+import kotlinx.serialization.Serializable
+import java.util.Date
 
+@Serializable
 data class UserInformation(
-    val uid: String,
+    @DocumentId val uid: String? = null,
     val email: String? = null, // TODO remove null and only add this data class after fetching from db
     val name: String? = null,
-    val birthday: DateTime? = null,
+    @Serializable(with = DateSerializer::class) val birthday: Date? = null,
     val familyId: String? = null,
 )

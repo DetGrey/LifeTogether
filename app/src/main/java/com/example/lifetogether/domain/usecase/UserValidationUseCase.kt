@@ -1,5 +1,7 @@
 package com.example.lifetogether.domain.usecase
 
+import com.example.lifetogether.util.ValidationResult
+
 class UserValidationUseCase {
 
     fun emailValidation(email: String): Boolean {
@@ -22,7 +24,7 @@ class UserValidationUseCase {
 //        return true
 
         // ANOTHER WAY
-        val emailRegex = "^A-Za-z*@[A-Za-z0-9-]+\\.[A-Za-z]{2,}$"
+        val emailRegex = "^([A-Za-z0-9._%+-])+@[a-zA-Z0-9-]+\\.[a-zA-Z.]{2,}\$"
         return email.matches(emailRegex.toRegex())
     }
 

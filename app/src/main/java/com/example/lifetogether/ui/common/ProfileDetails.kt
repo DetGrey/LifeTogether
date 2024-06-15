@@ -1,6 +1,7 @@
 package com.example.lifetogether.ui.common
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -39,8 +40,14 @@ fun ProfileDetails(
             .fillMaxWidth()
             .height(50.dp)
             .clip(shape = RoundedCornerShape(20))
-            .background(color = Color.White),
-//        .clickable {  } TODO
+            .background(color = Color.White)
+            .then(
+                if (onClick != null) {
+                    Modifier.clickable { onClick() }
+                } else {
+                    Modifier
+                }
+            )
     ) {
         Row {
             Box(
@@ -57,7 +64,7 @@ fun ProfileDetails(
             }
             Box(
                 modifier = Modifier
-                    .fillMaxWidth(0.5f)
+                    .fillMaxWidth(0.4f)
                     .fillMaxHeight()
                     .padding(start = 20.dp),
                 contentAlignment = Alignment.CenterStart,
@@ -79,13 +86,15 @@ fun ProfileDetails(
                         textAlign = TextAlign.Center,
                     )
 
-                    Spacer(modifier = Modifier.width(5.dp))
+                    if (onClick != null) {
+                        Spacer(modifier = Modifier.width(5.dp))
 
-                    Text(
-                        text = ">",
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.secondary,
-                    )
+                        Text(
+                            text = ">",
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.secondary,
+                        )
+                    }
                 }
             }
         }

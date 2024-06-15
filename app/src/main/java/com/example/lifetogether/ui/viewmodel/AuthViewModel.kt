@@ -16,7 +16,7 @@ class AuthViewModel : ViewModel() {
     init {
         fetchUserInformation()
     }
-    fun updateUserInformation(newUserInformation: UserInformation) {
+    fun updateUserInformation(newUserInformation: UserInformation?) {
         println("New user information: $newUserInformation")
         this.userInformation = newUserInformation
     }

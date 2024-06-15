@@ -65,7 +65,7 @@ fun HomeScreen(
                         description = "settings icon",
                     ),
                     onRightClick = {
-//                        appNavigator?.navigateToSettings() // TODO
+                        appNavigator?.navigateToSettings()
                     },
                     subText = "x days together", // TODO
                 )

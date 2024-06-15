@@ -11,12 +11,11 @@ class LoginUseCase {
         val userValidationUseCase = UserValidationUseCase()
 
         val passwordResult = userValidationUseCase.passwordValidation(user.password)
-        val emailResult = userValidationUseCase.emailValidation(user.email)
-
         if (!passwordResult) {
             return AuthResultListener.Failure("Invalid password.")
         }
 
+        val emailResult = userValidationUseCase.emailValidation(user.email)
         if (!emailResult) {
             return AuthResultListener.Failure("Invalid email.")
         }
