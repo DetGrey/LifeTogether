@@ -1,8 +1,10 @@
 package com.example.lifetogether.domain.repository
 
+import com.example.lifetogether.domain.callback.AuthResultListener
 import com.example.lifetogether.domain.model.User
 
 interface UserRepository {
-    fun login(user: User)
-    fun signUp(user: User)
+    suspend fun login(user: User): AuthResultListener
+    suspend fun signUp(user: User): AuthResultListener
+    suspend fun getCurrentUser(): AuthResultListener
 }

@@ -29,10 +29,15 @@ import com.example.lifetogether.ui.common.ProfileDetails
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.text.TextHeadingLarge
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
+import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.viewmodel.AuthViewModel
 
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(
+    appNavigator: AppNavigator? = null,
+    authViewModel: AuthViewModel? = null,
+) {
     Box(
         modifier = Modifier
             .fillMaxSize(),
@@ -40,6 +45,7 @@ fun ProfileScreen() {
         LazyColumn(
             modifier = Modifier
                 .padding(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(30.dp),
         ) {
             item {
@@ -48,11 +54,17 @@ fun ProfileScreen() {
                         resId = R.drawable.ic_back_arrow,
                         description = "back arrow icon",
                     ),
+                    onLeftClick = {
+                        appNavigator?.navigateBack()
+                    },
                     text = "Profile",
                     rightIcon = Icon(
                         resId = R.drawable.ic_settings,
                         description = "settings icon",
                     ),
+                    onRightClick = {
+//                        appNavigator?.navigateToSettings() // TODO
+                    },
                 )
             }
 

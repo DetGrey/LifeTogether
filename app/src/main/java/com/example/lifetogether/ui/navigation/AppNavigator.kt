@@ -7,6 +7,14 @@ class AppNavigator(private val navController: NavController) : Navigator {
         navController.navigate(AppRoutes.HOME_SCREEN)
     }
 
+    override fun navigateToProfile() {
+        navController.navigate(AppRoutes.PROFILE_SCREEN)
+    }
+
+    override fun navigateToSettings() {
+        navController.navigate(AppRoutes.SETTINGS_SCREEN)
+    }
+
     override fun navigateToLogin() {
         navController.navigate(AppRoutes.LOGIN_SCREEN)
     }

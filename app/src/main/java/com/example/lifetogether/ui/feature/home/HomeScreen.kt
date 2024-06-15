@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.tooling.preview.Preview
@@ -26,11 +28,13 @@ import com.example.lifetogether.ui.common.LoveButton
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HomeScreen(
     appNavigator: AppNavigator? = null,
+    authViewModel: AuthViewModel? = null,
 ) {
     Box(
         modifier = Modifier
@@ -39,25 +43,37 @@ fun HomeScreen(
         LazyColumn(
             modifier = Modifier
                 .padding(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             item {
                 TopBar(
                     leftIcon = Icon(
                         resId = R.drawable.ic_profile_picture,
-                        description = "", // TODO
+                        description = "profile picture icon",
                     ),
+                    onLeftClick = {
+                        if (authViewModel?.userInformation != null) {
+                            appNavigator?.navigateToProfile()
+                        } else {
+                            appNavigator?.navigateToLogin()
+                        }
+                    },
                     text = "A Life Together",
                     rightIcon = Icon(
                         resId = R.drawable.ic_settings,
-                        description = "", // TODO
+                        description = "settings icon",
                     ),
+                    onRightClick = {
+//                        appNavigator?.navigateToSettings() // TODO
+                    },
                     subText = "x days together", // TODO
                 )
             }
 
             item {
-                Box(modifier = Modifier
+                Box(
+                    modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp)
                         .clip(shape = RoundedCornerShape(20))
@@ -107,6 +123,10 @@ fun HomeScreen(
                         "Recipe",
                     )
                 }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(20.dp))
             }
         }
     }
