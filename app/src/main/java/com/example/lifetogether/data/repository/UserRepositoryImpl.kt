@@ -32,14 +32,17 @@ class UserRepositoryImpl : UserRepository {
 
     override suspend fun signUp(
         user: User,
+        userInformation: UserInformation,
     ): AuthResultListener {
         return try {
             val loginResult = Firebase.auth.createUserWithEmailAndPassword(user.email, user.password).await()
             val firebaseUser = loginResult.user
             if (firebaseUser != null) {
-                AuthResultListener.Success(
-                    UserInformation(uid = firebaseUser.uid),
-                )
+                val updatedUserInformation = userInformation.copy(uid = firebaseUser.uid)
+                when (val uploadResult = uploadUserInformation(updatedUserInformation)) {
+                    is ResultListener.Success -> AuthResultListener.Success(updatedUserInformation)
+                    is ResultListener.Failure -> AuthResultListener.Failure(uploadResult.message)
+                }
             } else {
                 AuthResultListener.Failure("Authentication failed")
             }
@@ -79,15 +82,30 @@ class UserRepositoryImpl : UserRepository {
 
             if (userInformation != null) {
                 AuthResultListener.Success(
-                    userInformation
+                    userInformation,
                 )
             } else {
                 AuthResultListener.Failure("Could not fetch document")
             }
-
         } catch (e: Exception) {
             println("Error: ${e.message}")
             AuthResultListener.Failure("Error: ${e.message}")
+        }
+    }
+
+    override suspend fun uploadUserInformation(userInformation: UserInformation): ResultListener {
+        val db = Firebase.firestore
+        return try {
+            if (userInformation.uid != null) {
+                db.collection("users").document(userInformation.uid).set(userInformation)
+
+                return ResultListener.Success
+            } else {
+                return ResultListener.Failure("Cannot upload without being logged in")
+            }
+        } catch (e: Exception) {
+            println("Error: ${e.message}")
+            ResultListener.Failure("Error: ${e.message}")
         }
     }
 }

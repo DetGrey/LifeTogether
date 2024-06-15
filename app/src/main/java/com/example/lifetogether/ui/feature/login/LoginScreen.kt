@@ -107,7 +107,6 @@ fun LoginScreen(
                         textAlign = TextAlign.Center,
                     )
                 }
-
             }
         }
     }

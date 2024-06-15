@@ -114,7 +114,7 @@ fun ProfileScreen(
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
-                TextHeadingLarge(text = "username") // TODO add real username
+                TextHeadingLarge(text = authViewModel?.userInformation?.name ?: "")
             }
 
             item {
@@ -129,7 +129,7 @@ fun ProfileScreen(
                             description = "", // TODO
                         ),
                         title = "Name",
-                        value = authViewModel?.userInformation?.name ?: "", // TODO
+                        value = authViewModel?.userInformation?.name ?: "",
                         onClick = {}, // TODO
                     )
                     ProfileDetails(
@@ -138,7 +138,7 @@ fun ProfileScreen(
                             description = "", // TODO
                         ),
                         title = "Email",
-                        value = authViewModel?.userInformation?.email ?: "", // TODO
+                        value = authViewModel?.userInformation?.email ?: "",
                     )
                     ProfileDetails(
                         icon = Icon(
@@ -147,8 +147,8 @@ fun ProfileScreen(
                         ),
                         title = "Birthday",
                         value = authViewModel?.userInformation?.birthday?.let { date ->
-                                    formatDateToString(date)
-                                } ?: "", // TODO
+                            formatDateToString(date)
+                        } ?: "",
                     )
                     ProfileDetails(
                         icon = Icon(

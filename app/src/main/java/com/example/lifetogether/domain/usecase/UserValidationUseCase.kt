@@ -1,7 +1,5 @@
 package com.example.lifetogether.domain.usecase
 
-import com.example.lifetogether.util.ValidationResult
-
 class UserValidationUseCase {
 
     fun emailValidation(email: String): Boolean {

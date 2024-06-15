@@ -46,8 +46,8 @@ fun ProfileDetails(
                     Modifier.clickable { onClick() }
                 } else {
                     Modifier
-                }
-            )
+                },
+            ),
     ) {
         Row {
             Box(

@@ -3,10 +3,14 @@ package com.example.lifetogether.domain.usecase
 import com.example.lifetogether.data.repository.UserRepositoryImpl
 import com.example.lifetogether.domain.callback.AuthResultListener
 import com.example.lifetogether.domain.model.User
+import com.example.lifetogether.domain.model.UserInformation
 
 class SignUpUseCase {
     private val userRepository = UserRepositoryImpl()
-    suspend operator fun invoke(user: User): AuthResultListener {
+    suspend operator fun invoke(
+        user: User,
+        userInformation: UserInformation,
+    ): AuthResultListener {
 //        if (user.password != confirmPassword) {
 //            error = "Confirmed password does not match"
 //            return
@@ -28,6 +32,6 @@ class SignUpUseCase {
 //            return
 //        }
 
-        return userRepository.signUp(user)
+        return userRepository.signUp(user, userInformation)
     }
 }

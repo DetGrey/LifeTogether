@@ -28,9 +28,15 @@ class SignUpViewModel : ViewModel() {
     ) {
         error = ""
 
+        val userInformation = UserInformation(
+            name = name,
+            email = email,
+            birthday = birthday,
+        )
+
         viewModelScope.launch {
             val signUpUseCase = SignUpUseCase()
-            val loginResult: AuthResultListener = signUpUseCase.invoke(User(email, password))
+            val loginResult: AuthResultListener = signUpUseCase.invoke(User(email, password), userInformation)
             if (loginResult is AuthResultListener.Success) {
                 onSuccess(loginResult.userInformation)
             } else if (loginResult is AuthResultListener.Failure) {
