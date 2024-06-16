@@ -1,5 +1,6 @@
 package com.example.lifetogether.ui.feature.groceryList
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -14,8 +15,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.GroceryItem
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -38,7 +41,8 @@ fun ItemCategoryList(
         ) {
             Row(
                 modifier = Modifier
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .height(25.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Row {
@@ -53,10 +57,14 @@ fun ItemCategoryList(
                         style = MaterialTheme.typography.labelLarge,
                     )
                 }
-                Text(text = "V", style = MaterialTheme.typography.labelLarge, fontFamily = bodyFontFamily) // TODO
+                Image(
+                    painter = painterResource(id = if (expanded) R.drawable.ic_expanded else R.drawable.ic_expand),
+                    contentDescription = "expand or expanded icon",
+                )
             }
             Divider(thickness = 2.dp, color = MaterialTheme.colorScheme.primary)
         }
+        println("value: $expanded")
         if (expanded) {
             Spacer(modifier = Modifier.height(10.dp))
             Column {
@@ -65,6 +73,7 @@ fun ItemCategoryList(
                 }
             }
         }
+        Spacer(modifier = Modifier.height(30.dp))
     }
 }
 
@@ -94,7 +103,7 @@ val groceryList = listOf(
         ),
         itemName = "Bananas",
         lastUpdated = Date(System.currentTimeMillis()),
-        checked = false,
+        completed = false,
     ),
     GroceryItem(
         uid = "dsuaihfao",
@@ -105,6 +114,6 @@ val groceryList = listOf(
         ),
         itemName = "Potatoes",
         lastUpdated = Date(System.currentTimeMillis()),
-        checked = true,
+        completed = true,
     ),
 )

@@ -7,5 +7,5 @@ interface Item {
     val username: String
     val itemName: String
     var lastUpdated: Date
-    var checked: Boolean
+    var completed: Boolean
 }

@@ -6,13 +6,16 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
@@ -33,33 +36,37 @@ fun ListItem(
     Row(
         modifier = Modifier
             .padding(horizontal = 10.dp, vertical = 5.dp)
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .height(30.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Box(
             modifier = Modifier
-                .size(20.dp)
+                .fillMaxHeight()
+                .aspectRatio(1f)
                 .clip(shape = CircleShape)
                 .border(width = 2.dp, color = MaterialTheme.colorScheme.secondary, shape = CircleShape)
                 .then(
-                    if (item.checked) {
+                    if (item.completed) {
                         Modifier.background(color = MaterialTheme.colorScheme.secondary)
                     } else {
                         Modifier
                     },
                 ),
+            contentAlignment = Alignment.Center,
         ) {
-            if (item.checked) {
+            if (item.completed) {
                 Image(
-                    painter = painterResource(id = R.drawable.ic_back_arrow),
-                    contentDescription = "",
-                ) // TODO
+                    painter = painterResource(id = R.drawable.ic_checkmark),
+                    contentDescription = "checkmark icon",
+                )
             }
         }
 
         Text(
             text = item.itemName,
-            textDecoration = if (item.checked) TextDecoration.LineThrough else TextDecoration.None,
+            style = MaterialTheme.typography.bodyLarge,
+            textDecoration = if (item.completed) TextDecoration.LineThrough else TextDecoration.None,
         )
     }
 }
@@ -78,7 +85,7 @@ fun ListItemPreview() {
                 ),
                 itemName = "Potatoes",
                 lastUpdated = Date(System.currentTimeMillis()),
-                checked = true,
+                completed = true,
             ),
         )
     }

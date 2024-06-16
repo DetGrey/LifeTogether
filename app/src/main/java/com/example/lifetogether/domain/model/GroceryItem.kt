@@ -7,6 +7,6 @@ data class GroceryItem(
     override val username: String,
     override val itemName: String,
     override var lastUpdated: Date,
-    override var checked: Boolean,
+    override var completed: Boolean,
     var category: Category?,
 ) : Item

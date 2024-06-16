@@ -60,15 +60,15 @@ val AppTypography = Typography(
     ),
     bodyLarge = baseline.bodyLarge.copy(
         fontFamily = bodyFontFamily,
-        fontSize = 16.sp,
+        fontSize = 20.sp,
     ),
     bodyMedium = baseline.bodyMedium.copy(
         fontFamily = bodyFontFamily,
-        fontSize = 14.sp,
+        fontSize = 16.sp,
     ),
     bodySmall = baseline.bodySmall.copy(
         fontFamily = bodyFontFamily,
-        fontSize = 12.sp,
+        fontSize = 14.sp,
     ),
     labelLarge = baseline.labelLarge.copy(
         fontFamily = bodyFontFamilyItalic,

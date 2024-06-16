@@ -12,6 +12,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.lifetogether.R
+import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.navigation.AppNavigator
@@ -25,6 +26,9 @@ fun GroceryListScreen(
     authViewModel: AuthViewModel? = null,
 ) {
     val groceryListViewModel: GroceryListViewModel = viewModel()
+
+    // TODO remove this later
+    groceryListViewModel.updateExpandedStates()
 
     Box(
         modifier = Modifier
@@ -50,13 +54,34 @@ fun GroceryListScreen(
             }
 
             item {
-                groceryListViewModel.groceryCategories?.forEach { category ->
+                groceryListViewModel.groceryCategories.forEach { category ->
+                    val categoryItems = groceryListViewModel.getCategoryItems(category)
+                    if (categoryItems.isNotEmpty()) {
+                        groceryListViewModel.categoryExpandedStates[category.name]?.let { expanded ->
+                            ItemCategoryList(
+                                category = category,
+                                itemList = categoryItems,
+                                expanded = expanded.value,
+                                onClick = {
+                                    println("before: ${expanded.value}")
+                                    groceryListViewModel.toggleCategoryExpanded(category.name)
+                                    println("after: ${expanded.value}")
+                                },
+                            )
+                        }
+                    }
+                }
+                val completedItems = groceryListViewModel.getCompletedItems()
+                if (completedItems.isNotEmpty()) {
                     ItemCategoryList(
-                        category = category,
-                        itemList = groceryListViewModel.getCategoryItems(category),
-                        expanded = category.expanded,
+                        category = Category(
+                            emoji = "✔️",
+                            name = "Completed",
+                        ),
+                        itemList = completedItems,
+                        expanded = groceryListViewModel.completedSectionExpanded,
                         onClick = {
-                            category.expanded = !category.expanded
+                            groceryListViewModel.completedSectionExpanded = !groceryListViewModel.completedSectionExpanded
                         },
                     )
                 }
@@ -65,7 +90,7 @@ fun GroceryListScreen(
 
         Box(
             modifier = Modifier
-                .padding(vertical = 10.dp, horizontal = 20.dp)
+                .padding(10.dp)
                 .fillMaxSize(),
             contentAlignment = Alignment.BottomCenter,
         ) {
