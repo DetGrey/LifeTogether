@@ -108,4 +108,15 @@ class UserRepositoryImpl : UserRepository {
             ResultListener.Failure("Error: ${e.message}")
         }
     }
+
+    override suspend fun changeName(uid: String, newName: String): ResultListener {
+        val db = Firebase.firestore
+        return try {
+            db.collection("users").document(uid).update("name", newName)
+            return ResultListener.Success
+        } catch (e: Exception) {
+            println("Error: ${e.message}")
+            ResultListener.Failure("Error: ${e.message}")
+        }
+    }
 }

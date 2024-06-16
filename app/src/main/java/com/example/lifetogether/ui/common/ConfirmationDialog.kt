@@ -29,7 +29,10 @@ fun ConfirmationDialog(
                     contentColor = Color.White,
                 ),
             ) {
-                Text(text = dismissButtonMessage)
+                Text(
+                    text = dismissButtonMessage,
+                    style = MaterialTheme.typography.labelMedium,
+                )
             }
         },
         confirmButton = {
@@ -40,7 +43,10 @@ fun ConfirmationDialog(
                     contentColor = Color.White,
                 ),
             ) {
-                Text(text = confirmButtonMessage)
+                Text(
+                    text = confirmButtonMessage,
+                    style = MaterialTheme.typography.labelMedium,
+                )
             }
         },
     )

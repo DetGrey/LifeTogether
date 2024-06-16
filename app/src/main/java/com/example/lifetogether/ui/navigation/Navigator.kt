@@ -4,6 +4,7 @@ interface Navigator {
     fun navigateToHome()
     fun navigateToProfile()
     fun navigateToSettings()
+    fun navigateToGroceryList()
     fun navigateToLogin()
     fun navigateToSignUp()
     fun navigateBack()

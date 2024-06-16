@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import com.example.lifetogether.ui.feature.groceryList.GroceryListScreen
 import com.example.lifetogether.ui.feature.home.HomeScreen
 import com.example.lifetogether.ui.feature.login.LoginScreen
 import com.example.lifetogether.ui.feature.profile.ProfileScreen
@@ -32,6 +33,10 @@ fun NavHost(
 
         composable("settings") {
             SettingsScreen(appNavigator, authViewModel)
+        }
+
+        composable("grocery") {
+            GroceryListScreen(appNavigator, authViewModel)
         }
 
         composable("login") {

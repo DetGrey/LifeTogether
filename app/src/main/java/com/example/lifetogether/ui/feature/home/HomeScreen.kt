@@ -23,8 +23,6 @@ import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.CountdownRow
-import com.example.lifetogether.ui.common.FeatureOverview
-import com.example.lifetogether.ui.common.LoveButton
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -100,27 +98,34 @@ fun HomeScreen(
                         "Grocery list",
                         10,
                         "Recipe",
+                        onClick = {
+                            appNavigator?.navigateToGroceryList()
+                        }, // TODO
                     )
                     FeatureOverview(
                         "Recipes",
                         1,
                         "Recipe",
+                        onClick = {}, // TODO
                     )
                     FeatureOverview(
                         "Memory lane",
                         4,
                         "Recipe",
-                        true,
+                        fullWidth = true,
+                        onClick = {}, // TODO
                     )
                     FeatureOverview(
                         "Gallery",
                         10,
                         "Recipe",
+                        onClick = {}, // TODO
                     )
                     FeatureOverview(
                         "Note Corner",
                         43,
                         "Recipe",
+                        onClick = {}, // TODO
                     )
                 }
             }

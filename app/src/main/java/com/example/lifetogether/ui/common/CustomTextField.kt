@@ -40,7 +40,10 @@ fun CustomTextField(
             .height(60.dp)
             .clip(shape = RoundedCornerShape(20)),
         value = value,
-        onValueChange = { onValueChange(it) },
+        onValueChange = {
+            onValueChange(it)
+            print("new text: $it")
+        },
         label = if (label != null) {
             { Text(label) }
         } else {
@@ -62,6 +65,7 @@ fun CustomTextField(
             focusedIndicatorColor = MaterialTheme.colorScheme.secondary,
             cursorColor = MaterialTheme.colorScheme.secondary,
         ),
+        isError = false, // TODO https://medium.com/@rzmeneghelo/how-to-validate-fields-using-jetpack-compose-in-android-43be70597e82
     )
 }
 

@@ -7,6 +7,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @Composable
 fun ConfirmationDialogWithTextField(
@@ -16,20 +20,22 @@ fun ConfirmationDialogWithTextField(
     dialogMessage: String,
     dismissButtonMessage: String,
     confirmButtonMessage: String,
+    textValue: String,
+    onTextValueChange: (String) -> Unit,
+    keyboardType: KeyboardType = KeyboardType.Text,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = dialogTitle) },
         text = {
             Text(text = dialogMessage)
-            // TODO
-//            CustomTextField(
-//                value = ,
-//                onValueChange = ,
-//                label = ,
-//                keyboardType = ,
-//                imeAction =
-//            )
+            CustomTextField(
+                value = textValue,
+                onValueChange = onTextValueChange,
+                label = null,
+                keyboardType = keyboardType,
+                imeAction = ImeAction.Done,
+            )
         },
         dismissButton = {
             Button(
@@ -39,7 +45,10 @@ fun ConfirmationDialogWithTextField(
                     contentColor = Color.White,
                 ),
             ) {
-                Text(text = dismissButtonMessage)
+                Text(
+                    text = dismissButtonMessage,
+                    style = MaterialTheme.typography.labelMedium,
+                )
             }
         },
         confirmButton = {
@@ -50,8 +59,28 @@ fun ConfirmationDialogWithTextField(
                     contentColor = Color.White,
                 ),
             ) {
-                Text(text = confirmButtonMessage)
+                Text(
+                    text = confirmButtonMessage,
+                    style = MaterialTheme.typography.labelMedium,
+                )
             }
         },
     )
+}
+
+@Preview
+@Composable
+fun ConfirmationDialogWithTextFieldPreview() {
+    LifeTogetherTheme {
+        ConfirmationDialogWithTextField(
+            onDismiss = { },
+            onConfirm = { },
+            dialogTitle = "Change name",
+            dialogMessage = "Please enter your new name",
+            dismissButtonMessage = "Cancel",
+            confirmButtonMessage = "Change name",
+            textValue = "",
+            onTextValueChange = { },
+        )
+    }
 }

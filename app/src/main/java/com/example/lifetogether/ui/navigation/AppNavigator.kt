@@ -15,6 +15,10 @@ class AppNavigator(private val navController: NavController) : Navigator {
         navController.navigate(AppRoutes.SETTINGS_SCREEN)
     }
 
+    override fun navigateToGroceryList() {
+        navController.navigate(AppRoutes.GROCERY_LIST_SCREEN)
+    }
+
     override fun navigateToLogin() {
         navController.navigate(AppRoutes.LOGIN_SCREEN)
     }

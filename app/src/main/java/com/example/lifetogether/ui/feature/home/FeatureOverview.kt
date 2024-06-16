@@ -1,7 +1,8 @@
-package com.example.lifetogether.ui.common
+package com.example.lifetogether.ui.feature.home
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -31,28 +32,26 @@ fun RowScope.FeatureOverview(
     itemCount: Int,
     itemType: String,
     fullWidth: Boolean = false,
+    onClick: () -> Unit,
 ) {
-    var customModifier = Modifier
-        .weight(0.5f)
-        .clip(shape = RoundedCornerShape(20))
-        .background(MaterialTheme.colorScheme.onBackground)
-        .padding(horizontal = 10.dp, vertical = 20.dp)
-
-    if (fullWidth) {
-        customModifier = Modifier
-            .fillMaxWidth()
-            .clip(shape = RoundedCornerShape(20))
-            .background(MaterialTheme.colorScheme.onBackground)
-            .padding(horizontal = 10.dp, vertical = 20.dp)
-    }
-
     var itemTypeText = itemType
     if (itemCount > 1) {
         itemTypeText = "${itemType}s"
     }
 
     Column(
-        modifier = customModifier,
+        modifier = Modifier
+            .clip(shape = RoundedCornerShape(20))
+            .background(MaterialTheme.colorScheme.onBackground)
+            .padding(horizontal = 10.dp, vertical = 20.dp)
+            .clickable { onClick() }
+            .then(
+                if (fullWidth) {
+                    Modifier.fillMaxWidth()
+                } else {
+                    Modifier.weight(0.5f)
+                },
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Image( // TODO add icon and description
@@ -86,27 +85,32 @@ fun FeatureOverviewPreview() {
                 "Grocery list",
                 10,
                 "Recipe",
+                onClick = {},
             )
             FeatureOverview(
                 "Recipes",
                 1,
                 "Recipe",
+                onClick = {},
             )
             FeatureOverview(
                 "Memory lane",
                 4,
                 "Recipe",
                 true,
+                onClick = {},
             )
             FeatureOverview(
                 "Gallery",
                 10,
                 "Recipe",
+                onClick = {},
             )
             FeatureOverview(
                 "Note Corner",
                 43,
                 "Recipe",
+                onClick = {},
             )
         }
     }

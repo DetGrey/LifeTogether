@@ -28,7 +28,7 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.ConfirmationDialogDetails
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.ConfirmationDialog
-import com.example.lifetogether.ui.common.ProfileDetails
+import com.example.lifetogether.ui.common.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.convert.formatDateToString
 import com.example.lifetogether.ui.common.text.TextHeadingLarge
@@ -187,27 +187,45 @@ fun ProfileScreen(
         }
 
         if (profileViewModel.showConfirmationDialog) {
-            val confirmationDialogDetails = when (profileViewModel.confirmationDialogType) {
-                ProfileViewModel.ConfirmationType.LOGOUT -> ConfirmationDialogDetails(
-                    dialogTitle = "Logout",
-                    dialogMessage = "Are you sure you want to logout?",
-                    confirmButtonMessage = "Logout",
+            when (profileViewModel.confirmationDialogType) {
+                ProfileViewModel.ConfirmationType.LOGOUT -> ConfirmationDialog(
+                    onDismiss = { profileViewModel.closeConfirmationDialog() },
                     onConfirm = {
                         profileViewModel.logout(
                             onSuccess = {
                                 authViewModel?.updateUserInformation(null)
-                                profileViewModel.showConfirmationDialog = false
+                                profileViewModel.closeConfirmationDialog()
                                 appNavigator?.navigateToHome()
                             },
                         )
                     },
+                    dialogTitle = "Logout",
+                    dialogMessage = "Are you sure you want to logout?",
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Logout",
                 )
 
-                ProfileViewModel.ConfirmationType.NAME -> ConfirmationDialogDetails(
+                ProfileViewModel.ConfirmationType.NAME -> ConfirmationDialogWithTextField(
+                    onDismiss = { profileViewModel.closeConfirmationDialog() },
+                    onConfirm = {
+                        authViewModel?.userInformation?.uid?.let { uid ->
+                            profileViewModel.changeName(
+                                uid,
+                                onSuccess = { newName ->
+                                    authViewModel.updateUserInformation(
+                                        authViewModel.userInformation!!.copy(name = newName),
+                                    )
+                                    profileViewModel.closeConfirmationDialog()
+                                },
+                            )
+                        }
+                    },
                     dialogTitle = "Change name",
-                    dialogMessage = "Are you sure you want to change name?", // TODO
+                    dialogMessage = "Please enter your new name",
+                    dismissButtonMessage = "Cancel",
                     confirmButtonMessage = "Change name",
-                    onConfirm = {}, // TODO
+                    textValue = profileViewModel.newName,
+                    onTextValueChange = { profileViewModel.newName = it },
                 )
 
                 ProfileViewModel.ConfirmationType.PASSWORD -> ConfirmationDialogDetails(
@@ -218,21 +236,6 @@ fun ProfileScreen(
                 )
 
                 null -> null
-            }
-
-            if (confirmationDialogDetails != null) {
-                ConfirmationDialog(
-                    onDismiss = { profileViewModel.showConfirmationDialog = false },
-                    onConfirm = {
-                        confirmationDialogDetails.onConfirm
-                    },
-                    dialogTitle = confirmationDialogDetails.dialogTitle,
-                    dialogMessage = confirmationDialogDetails.dialogMessage,
-                    dismissButtonMessage = confirmationDialogDetails.dismissButtonMessage,
-                    confirmButtonMessage = confirmationDialogDetails.confirmButtonMessage,
-                )
-            } else {
-                profileViewModel.showConfirmationDialog = false
             }
         }
     }

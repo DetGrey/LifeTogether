@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.common
+package com.example.lifetogether.ui.feature.profile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
