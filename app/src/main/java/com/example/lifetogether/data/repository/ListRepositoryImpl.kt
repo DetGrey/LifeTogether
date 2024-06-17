@@ -41,7 +41,7 @@ class ListRepositoryImpl : ListRepository {
             // Update the 'completed' field and 'lastUpdated' field of the document
             documentReference.update(
                 mapOf(
-                    "completed" to !item.completed,
+                    "completed" to item.completed,
                     "lastUpdated" to Date(System.currentTimeMillis()), // Set to current time
                 ),
             ).await()

@@ -35,7 +35,7 @@ fun ConfirmationDialogWithDropdown(
                 expanded = expanded,
                 onExpandedChange = onExpandedChange,
                 options = options,
-                label = "",
+                label = null,
                 onValueChangedEvent = onValueChange,
             )
         },
@@ -83,7 +83,7 @@ fun ConfirmationDialogWithDropdownPreview() {
             confirmButtonMessage = "Confirm",
             selectedValue = "Select category",
             expanded = true,
-            onExpandedChange = {},
+            onExpandedChange = { },
             options = listOf("Select category", "Cat1", "cat2"),
             onValueChange = {},
         )

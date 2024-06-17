@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -28,104 +29,109 @@ fun GroceryListScreen(
 ) {
     val groceryListViewModel: GroceryListViewModel = viewModel()
 
-    if (authViewModel?.userInformation?.uid != null) {
-        groceryListViewModel.fetchData(authViewModel.userInformation?.uid!!)
-    } else {
-        groceryListViewModel.isLoading = false
+    LaunchedEffect(key1 = "init") {
+        if (authViewModel?.userInformation?.uid != null) {
+            groceryListViewModel.fetchData(authViewModel.userInformation?.uid!!)
+        } else {
+            groceryListViewModel.isLoading = false
+        }
     }
-    // TODO remove this later
-//    groceryListViewModel.updateExpandedStates()
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize(),
-    ) {
-        LazyColumn(
+    if (groceryListViewModel.isLoading) {
+        // Show a loading indicator
+        Text(text = "Loading") // TODO
+    } else {
+        Box(
             modifier = Modifier
-                .padding(10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(30.dp),
+                .fillMaxSize(),
         ) {
-            item {
-                TopBar(
-                    leftIcon = Icon(
-                        resId = R.drawable.ic_back_arrow,
-                        description = "back arrow icon",
-                    ),
-                    onLeftClick = {
-                        appNavigator?.navigateBack()
-                    },
-                    text = "Grocery list",
-                )
-            }
+            LazyColumn(
+                modifier = Modifier
+                    .padding(10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(30.dp),
+            ) {
+                item {
+                    TopBar(
+                        leftIcon = Icon(
+                            resId = R.drawable.ic_back_arrow,
+                            description = "back arrow icon",
+                        ),
+                        onLeftClick = {
+                            appNavigator?.navigateBack()
+                        },
+                        text = "Grocery list",
+                    )
+                }
 
-            item {
-                if (groceryListViewModel.isLoading) {
-                    // Show a loading indicator
-                    Text(text = "Loading") // TODO
-                } else if (groceryListViewModel.groceryList.isEmpty()) {
-                    Text(text = "No items on the list yet")
-                } else {
-                    groceryListViewModel.groceryCategories.forEach { category ->
-                        val categoryItems = groceryListViewModel.getCategoryItems(category)
-                        if (categoryItems.isNotEmpty()) {
-                            groceryListViewModel.categoryExpandedStates[category.name]?.let { expanded ->
-                                ItemCategoryList(
-                                    category = category,
-                                    itemList = categoryItems,
-                                    expanded = expanded.value,
-                                    onClick = {
-                                        println("before: ${expanded.value}")
-                                        groceryListViewModel.toggleCategoryExpanded(category.name)
-                                        println("after: ${expanded.value}")
-                                    },
-                                    onCompleteToggle = { item ->
-                                        groceryListViewModel.toggleItemCompleted(item)
-                                    },
-                                )
+                item {
+                    if (groceryListViewModel.groceryList.isEmpty()) {
+                        Text(text = "No items on the list yet")
+                    } else {
+                        groceryListViewModel.groceryCategories.forEach { category ->
+                            val categoryItems = groceryListViewModel.getCategoryItems(category)
+                            if (categoryItems.isNotEmpty()) {
+                                groceryListViewModel.categoryExpandedStates[category.name]?.let { expanded ->
+                                    ItemCategoryList(
+                                        category = category,
+                                        itemList = categoryItems,
+                                        expanded = expanded.value,
+                                        onClick = {
+                                            println("before: ${expanded.value}")
+                                            groceryListViewModel.toggleCategoryExpanded(category.name)
+                                            println("after: ${expanded.value}")
+                                        },
+                                        onCompleteToggle = { item ->
+                                            groceryListViewModel.toggleItemCompleted(item)
+                                        },
+                                    )
+                                }
                             }
                         }
-                    }
-                    val completedItems = groceryListViewModel.getCompletedItems()
-                    if (completedItems.isNotEmpty()) {
-                        ItemCategoryList(
-                            category = Category(
-                                emoji = "✔️",
-                                name = "Completed",
-                            ),
-                            itemList = completedItems,
-                            expanded = groceryListViewModel.completedSectionExpanded,
-                            onClick = {
-                                groceryListViewModel.completedSectionExpanded =
-                                    !groceryListViewModel.completedSectionExpanded
-                            },
-                            onCompleteToggle = { item ->
-                                groceryListViewModel.toggleItemCompleted(item)
-                            },
-                        )
+                        val completedItems = groceryListViewModel.getCompletedItems()
+                        if (completedItems.isNotEmpty()) {
+                            ItemCategoryList(
+                                category = Category(
+                                    emoji = "✔️",
+                                    name = "Completed",
+                                ),
+                                itemList = completedItems,
+                                expanded = groceryListViewModel.completedSectionExpanded,
+                                onClick = {
+                                    groceryListViewModel.completedSectionExpanded =
+                                        !groceryListViewModel.completedSectionExpanded
+                                },
+                                onCompleteToggle = { item ->
+                                    groceryListViewModel.toggleItemCompleted(item)
+                                },
+                            )
+                        }
                     }
                 }
             }
         }
-    }
 
-    Box(
-        modifier = Modifier
-            .padding(10.dp)
-            .fillMaxSize(),
-        contentAlignment = Alignment.BottomCenter,
-    ) {
-        AddNewListItem(
-            textValue = groceryListViewModel.newItemText,
-            onTextChange = { groceryListViewModel.newItemText = it },
-            onAddClick = {
-                authViewModel?.userInformation?.uid?.let { uid ->
-                    authViewModel.userInformation?.name?.let { name ->
+        Box(
+            modifier = Modifier
+                .padding(10.dp)
+                .fillMaxSize(),
+            contentAlignment = Alignment.BottomCenter,
+        ) {
+            AddNewListItem(
+                textValue = groceryListViewModel.newItemText,
+                onTextChange = { groceryListViewModel.newItemText = it },
+                onAddClick = {
+                    authViewModel?.userInformation?.uid?.let { uid ->
                         groceryListViewModel.addItemToList(uid)
                     }
-                }
-            },
-        )
+                },
+                categoryList = groceryListViewModel.groceryCategories,
+                selectedCategory = groceryListViewModel.newItemCategory,
+                onCategoryChange = { newCategory ->
+                    groceryListViewModel.updateNewItemCategory(newCategory)
+                },
+            )
+        }
     }
 }
 

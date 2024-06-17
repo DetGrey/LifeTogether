@@ -1,6 +1,6 @@
 package com.example.lifetogether.domain.model
 
 data class Category(
-    val emoji: String,
-    val name: String,
+    val emoji: String = "",
+    val name: String = "",
 )

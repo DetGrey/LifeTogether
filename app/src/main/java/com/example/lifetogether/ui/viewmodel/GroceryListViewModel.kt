@@ -43,7 +43,21 @@ class GroceryListViewModel : ViewModel() {
     )
 
     var newItemText: String by mutableStateOf("")
-    var newItemCategory: Category? by mutableStateOf(null)
+    var newItemCategory: Category by mutableStateOf(
+        Category(
+            emoji = "❓️",
+            name = "Uncategorized",
+        ),
+    )
+
+    fun updateNewItemCategory(category: Category?) {
+        newItemCategory = category
+            ?: Category(
+                emoji = "❓️",
+                name = "Uncategorized",
+            )
+        println("New category: $newItemCategory")
+    }
 
     fun getCategoryItems(
         category: Category,
@@ -56,6 +70,7 @@ class GroceryListViewModel : ViewModel() {
             }
         }
     }
+
     fun getCompletedItems(): List<GroceryItem> {
         return groceryList.filter { item -> item.completed }
     }
@@ -120,8 +135,8 @@ class GroceryListViewModel : ViewModel() {
             val result: ResultListener = saveItemUseCase.invoke(groceryItem)
             if (result is ResultListener.Success) {
                 groceryList = groceryList.plus(groceryItem)
-                newItemCategory?.let { updateCategories(it) }
-                newItemCategory = null
+                updateCategories(newItemCategory)
+                updateNewItemCategory(null)
                 newItemText = ""
             } else if (result is ResultListener.Failure) {
                 // TODO popup saying the error for 5 sec
@@ -152,7 +167,8 @@ class GroceryListViewModel : ViewModel() {
         newCategory: Category,
     ) {
         if (!groceryCategories.contains(newCategory)) {
-            groceryCategories = groceryCategories.plus(newCategory).sortedBy { if (it.name == "Uncategorized") 1 else 0 }
+            println("adding new category: $newCategory")
+            groceryCategories = groceryCategories.plus(newCategory)
             updateExpandedStates()
         }
     }

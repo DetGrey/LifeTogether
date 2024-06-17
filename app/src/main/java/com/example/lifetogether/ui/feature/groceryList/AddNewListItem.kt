@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,15 +28,30 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.ui.common.CustomTextField
+import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithDropdown
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.viewmodel.AddNewListItemViewModel
 
 @Composable
 fun AddNewListItem(
     textValue: String,
     onTextChange: (String) -> Unit,
     onAddClick: () -> Unit,
+    categoryList: List<Category>,
+    selectedCategory: Category,
+    onCategoryChange: (Category) -> Unit,
 ) {
+    val addNewListItemViewModel: AddNewListItemViewModel = viewModel()
+    // Use LaunchedEffect to set the initial value once
+    LaunchedEffect(key1 = "init") {
+        addNewListItemViewModel.selectedCategory = "${selectedCategory.emoji} ${selectedCategory.name}"
+        addNewListItemViewModel.categoryOptions = categoryList.map { "${it.emoji} ${it.name}" }
+        println(addNewListItemViewModel.categoryOptions)
+    }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -54,8 +70,8 @@ fun AddNewListItem(
                     .fillMaxWidth(0.8f),
             ) {
                 Box(
-                    modifier = Modifier // TODO make clickable category icon to choose category instead of circle
-                        .padding(15.dp)
+                    modifier = Modifier
+                        .padding(10.dp)
                         .fillMaxHeight()
                         .aspectRatio(1f, true)
                         .clip(shape = CircleShape)
@@ -63,8 +79,14 @@ fun AddNewListItem(
                             width = 2.dp,
                             color = MaterialTheme.colorScheme.secondary,
                             shape = CircleShape,
-                        ),
-                )
+                        )
+                        .clickable {
+                            addNewListItemViewModel.showDialog = true
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(text = selectedCategory.emoji)
+                }
 
                 CustomTextField(
                     value = textValue,
@@ -96,6 +118,39 @@ fun AddNewListItem(
             }
         }
     }
+
+    if (addNewListItemViewModel.showDialog) {
+        ConfirmationDialogWithDropdown(
+            onDismiss = { addNewListItemViewModel.showDialog = false },
+            onConfirm = {
+                val string = addNewListItemViewModel.selectedCategory
+                val emojiEndIndex = string.offsetByCodePoints(0, 1)
+                val list = listOf(string.substring(0, emojiEndIndex), string.substring(emojiEndIndex).trim())
+                println("category list: $list")
+                onCategoryChange(
+                    Category(
+                        emoji = list[0],
+                        name = list[1],
+                    ),
+                )
+                addNewListItemViewModel.showDialog = false
+            },
+            dialogTitle = "Change category",
+            dialogMessage = "",
+            dismissButtonMessage = "Cancel",
+            confirmButtonMessage = "Change",
+            selectedValue = addNewListItemViewModel.selectedCategory,
+            expanded = addNewListItemViewModel.changeCategoryExpanded,
+            onExpandedChange = {
+                addNewListItemViewModel.changeCategoryExpanded =
+                    !addNewListItemViewModel.changeCategoryExpanded
+            },
+            options = addNewListItemViewModel.categoryOptions,
+            onValueChange = { string ->
+                addNewListItemViewModel.selectedCategory = string
+            },
+        )
+    }
 }
 
 @Preview(showBackground = true)
@@ -106,6 +161,9 @@ fun AddNewListItemPreview() {
             textValue = "hello",
             onTextChange = {},
             onAddClick = {},
+            categoryList = listOf(),
+            selectedCategory = Category("❓", "Uncategorized"),
+            onCategoryChange = {},
         )
     }
 }
