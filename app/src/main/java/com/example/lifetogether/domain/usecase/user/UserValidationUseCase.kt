@@ -1,4 +1,4 @@
-package com.example.lifetogether.domain.usecase
+package com.example.lifetogether.domain.usecase.user
 
 class UserValidationUseCase {
 

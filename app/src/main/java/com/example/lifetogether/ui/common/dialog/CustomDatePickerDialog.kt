@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.common
+package com.example.lifetogether.ui.common.dialog
 
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog

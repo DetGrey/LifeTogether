@@ -3,7 +3,6 @@ package com.example.lifetogether.ui.common
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -15,7 +14,6 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -73,16 +71,14 @@ fun Dropdown(
 fun DropdownPreview() {
     LifeTogetherTheme {
         Box(Modifier.fillMaxSize()) {
-            Box(modifier = Modifier.width(100.dp)) {
-                Dropdown(
-                    selectedValue = "",
-                    expanded = false,
-                    onExpandedChange = {},
-                    options = (1..31).map { it.toString() },
-                    label = "Day",
-                    onValueChangedEvent = {},
-                )
-            }
+            Dropdown(
+                selectedValue = "",
+                expanded = false,
+                onExpandedChange = {},
+                options = (1..31).map { it.toString() },
+                label = "Day",
+                onValueChangedEvent = {},
+            )
         }
     }
 }

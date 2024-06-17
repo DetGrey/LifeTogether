@@ -72,6 +72,7 @@ fun AddNewListItem(
                     label = "Add an item...",
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Done,
+                    capitalization = true,
                 )
             }
 

@@ -1,4 +1,4 @@
-package com.example.lifetogether.domain.usecase
+package com.example.lifetogether.domain.usecase.item
 
 import com.example.lifetogether.data.repository.ListRepositoryImpl
 import com.example.lifetogether.domain.callback.ResultListener

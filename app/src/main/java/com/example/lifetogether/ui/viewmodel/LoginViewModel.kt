@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.callback.AuthResultListener
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
-import com.example.lifetogether.domain.usecase.LoginUseCase
+import com.example.lifetogether.domain.usecase.user.LoginUseCase
 import kotlinx.coroutines.launch
 
 class LoginViewModel : ViewModel() {

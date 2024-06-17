@@ -6,8 +6,8 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.callback.ResultListener
-import com.example.lifetogether.domain.usecase.ChangeNameUseCase
-import com.example.lifetogether.domain.usecase.LogoutUseCase
+import com.example.lifetogether.domain.usecase.user.ChangeNameUseCase
+import com.example.lifetogether.domain.usecase.user.LogoutUseCase
 import kotlinx.coroutines.launch
 
 class ProfileViewModel : ViewModel() {

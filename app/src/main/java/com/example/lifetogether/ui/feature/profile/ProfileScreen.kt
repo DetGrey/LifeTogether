@@ -27,10 +27,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.ConfirmationDialogDetails
 import com.example.lifetogether.domain.model.Icon
-import com.example.lifetogether.ui.common.ConfirmationDialog
-import com.example.lifetogether.ui.common.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.convert.formatDateToString
+import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
+import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.common.text.TextHeadingLarge
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.navigation.AppNavigator

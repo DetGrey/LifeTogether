@@ -64,7 +64,6 @@ fun ItemCategoryList(
             }
             Divider(thickness = 2.dp, color = MaterialTheme.colorScheme.primary)
         }
-        println("value: $expanded")
         if (expanded) {
             Spacer(modifier = Modifier.height(10.dp))
             Column {
@@ -96,7 +95,6 @@ fun ItemCategoryListPreview() {
 val groceryList = listOf(
     GroceryItem(
         uid = "dsuaihfao",
-        username = "Ane",
         category = Category(
             "🍎",
             "Fruits and vegetables",
@@ -107,7 +105,6 @@ val groceryList = listOf(
     ),
     GroceryItem(
         uid = "dsuaihfao",
-        username = "Ane",
         category = Category(
             "🍎",
             "Fruits and vegetables",

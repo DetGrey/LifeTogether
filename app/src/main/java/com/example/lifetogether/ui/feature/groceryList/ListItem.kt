@@ -78,7 +78,6 @@ fun ListItemPreview() {
         ListItem(
             GroceryItem(
                 uid = "dsuaihfao",
-                username = "Ane",
                 category = Category(
                     "🍎",
                     "Fruits and vegetables",
