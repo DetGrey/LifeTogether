@@ -31,6 +31,7 @@ fun ItemCategoryList(
     itemList: List<GroceryItem>,
     expanded: Boolean,
     onClick: () -> Unit,
+    onCompleteToggle: (GroceryItem) -> Unit,
 ) {
     Column {
         Column(
@@ -68,7 +69,10 @@ fun ItemCategoryList(
             Spacer(modifier = Modifier.height(10.dp))
             Column {
                 itemList.forEach { item ->
-                    ListItem(item = item)
+                    ListItem(
+                        item = item,
+                        onCompleteToggle = { onCompleteToggle(item) },
+                    )
                 }
             }
         }
@@ -88,6 +92,7 @@ fun ItemCategoryListPreview() {
             itemList = groceryList,
             true,
             onClick = {},
+            onCompleteToggle = {},
         )
     }
 }

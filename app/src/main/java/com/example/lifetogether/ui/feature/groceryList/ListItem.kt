@@ -3,6 +3,7 @@ package com.example.lifetogether.ui.feature.groceryList
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -32,6 +33,7 @@ import java.util.Date
 @Composable
 fun ListItem(
     item: Item,
+    onCompleteToggle: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -46,6 +48,7 @@ fun ListItem(
                 .aspectRatio(1f)
                 .clip(shape = CircleShape)
                 .border(width = 2.dp, color = MaterialTheme.colorScheme.secondary, shape = CircleShape)
+                .clickable { onCompleteToggle() }
                 .then(
                     if (item.completed) {
                         Modifier.background(color = MaterialTheme.colorScheme.secondary)
@@ -86,6 +89,7 @@ fun ListItemPreview() {
                 lastUpdated = Date(System.currentTimeMillis()),
                 completed = true,
             ),
+            onCompleteToggle = {},
         )
     }
 }

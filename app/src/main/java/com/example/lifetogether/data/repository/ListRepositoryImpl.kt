@@ -3,12 +3,14 @@ package com.example.lifetogether.data.repository
 import com.example.lifetogether.domain.callback.DefaultsResultListener
 import com.example.lifetogether.domain.callback.ListItemsResultListener
 import com.example.lifetogether.domain.callback.ResultListener
+import com.example.lifetogether.domain.model.GroceryItem
 import com.example.lifetogether.domain.model.Item
 import com.example.lifetogether.domain.repository.ListRepository
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.tasks.await
+import java.util.Date
 import kotlin.reflect.KClass
 
 class ListRepositoryImpl : ListRepository {
@@ -20,6 +22,32 @@ class ListRepositoryImpl : ListRepository {
         } catch (e: Exception) {
             println("Error: ${e.message}")
             ResultListener.Failure("Error: ${e.message}")
+        }
+    }
+
+    override suspend fun toggleItemCompletionInGroceryList(item: GroceryItem): ResultListener {
+        val db = Firebase.firestore
+        val querySnapshot = db.collection("grocery-list")
+            .whereEqualTo("uid", item.uid)
+            .whereEqualTo("itemName", item.itemName)
+            .whereEqualTo("category", item.category)
+            .get()
+            .await()
+
+        // Assuming there's only one matching document, get its reference
+        val documentReference = querySnapshot.documents.firstOrNull()?.reference
+
+        if (documentReference != null) {
+            // Update the 'completed' field and 'lastUpdated' field of the document
+            documentReference.update(
+                mapOf(
+                    "completed" to !item.completed,
+                    "lastUpdated" to Date(System.currentTimeMillis()), // Set to current time
+                ),
+            ).await()
+            return ResultListener.Success
+        } else {
+            return ResultListener.Failure("Document not found")
         }
     }
 

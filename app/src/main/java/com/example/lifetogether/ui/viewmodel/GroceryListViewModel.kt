@@ -14,6 +14,7 @@ import com.example.lifetogether.domain.model.GroceryItem
 import com.example.lifetogether.domain.usecase.item.FetchListDefaultsUseCase
 import com.example.lifetogether.domain.usecase.item.FetchListItemsUseCase
 import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
+import com.example.lifetogether.domain.usecase.item.ToggleItemCompletionUseCase
 import com.google.firebase.firestore.DocumentSnapshot
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
@@ -21,14 +22,15 @@ import java.util.Date
 
 class GroceryListViewModel : ViewModel() {
     var isLoading = true
+
     // TODO
     var groceryCategories: List<Category> by mutableStateOf(
         listOf(
             Category(
                 emoji = "❓️",
                 name = "Uncategorized",
-            )
-        )
+            ),
+        ),
     )
 
     // Must be "=" and not "by" else the app with crash
@@ -37,7 +39,7 @@ class GroceryListViewModel : ViewModel() {
 
     // TODO
     var groceryList: List<GroceryItem> by mutableStateOf(
-        listOf()
+        listOf(),
     )
 
     var newItemText: String by mutableStateOf("")
@@ -79,12 +81,12 @@ class GroceryListViewModel : ViewModel() {
     fun fetchData(uid: String) {
         viewModelScope.launch {
             val defaultsDeferred = async {
-                fetchDefaults(onSuccess =  {
+                fetchDefaults(onSuccess = {
 //                    updateExpandedStates()
                 })
             }
             val itemsDeferred = async {
-                fetchListItems(uid, onSuccess =  {
+                fetchListItems(uid, onSuccess = {
                     groceryList.forEach { item ->
                         item.category?.let { updateCategories(it) }
                     }
@@ -102,7 +104,7 @@ class GroceryListViewModel : ViewModel() {
     fun addItemToList(
         uid: String,
     ) {
-        if (groceryList.any { it.itemName == newItemText && !it.completed }) {
+        if (groceryList.any { it.itemName.lowercase() == newItemText.lowercase() && !it.completed }) {
             // TODO add error popup
             return
         }
@@ -126,10 +128,28 @@ class GroceryListViewModel : ViewModel() {
             }
         }
     }
+    fun toggleItemCompleted(
+        oldItem: GroceryItem,
+    ) {
+        isLoading = true
+        val newItem = oldItem.copy(completed = !oldItem.completed, lastUpdated = Date(System.currentTimeMillis()))
+
+        viewModelScope.launch {
+            val toggleItemCompletionUseCase = ToggleItemCompletionUseCase()
+            val result: ResultListener = toggleItemCompletionUseCase.invoke(newItem)
+            if (result is ResultListener.Success) {
+                groceryList = groceryList.minus(oldItem).plus(newItem)
+                isLoading = false
+            } else if (result is ResultListener.Failure) {
+                // TODO popup saying the error for 5 sec
+                isLoading = false
+            }
+        }
+    }
 
     // PRIVATE FUNCTIONS
     private fun updateCategories(
-        newCategory: Category
+        newCategory: Category,
     ) {
         if (!groceryCategories.contains(newCategory)) {
             groceryCategories = groceryCategories.plus(newCategory).sortedBy { if (it.name == "Uncategorized") 1 else 0 }
@@ -140,18 +160,18 @@ class GroceryListViewModel : ViewModel() {
     private suspend fun fetchDefaults(
         onSuccess: () -> Unit,
     ) {
-            val fetchListDefaultsUseCase = FetchListDefaultsUseCase()
-            val result: DefaultsResultListener = fetchListDefaultsUseCase.invoke("grocery-list")
-            if (result is DefaultsResultListener.Success) {
-                groceryCategories = hashmapListToCategoryList(result.documentSnapshot)
-                onSuccess()
-            } else if (result is DefaultsResultListener.Failure) {
-                // TODO popup saying the error for 5 sec
-            }
+        val fetchListDefaultsUseCase = FetchListDefaultsUseCase()
+        val result: DefaultsResultListener = fetchListDefaultsUseCase.invoke("grocery-list")
+        if (result is DefaultsResultListener.Success) {
+            groceryCategories = hashmapListToCategoryList(result.documentSnapshot)
+            onSuccess()
+        } else if (result is DefaultsResultListener.Failure) {
+            // TODO popup saying the error for 5 sec
+        }
     }
 
     private fun hashmapListToCategoryList(
-        documentSnapshot: DocumentSnapshot
+        documentSnapshot: DocumentSnapshot,
     ): List<Category> {
         val categoriesMapList = documentSnapshot.data?.get("categories") as? List<*>
         return categoriesMapList?.mapNotNull { item ->
@@ -160,8 +180,12 @@ class GroceryListViewModel : ViewModel() {
                 val name = item["name"]
                 if (emoji is String && name is String) {
                     Category(emoji, name)
-                } else null
-            } else null
+                } else {
+                    null
+                }
+            } else {
+                null
+            }
         } ?: listOf()
     }
 

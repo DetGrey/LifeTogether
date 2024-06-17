@@ -79,6 +79,9 @@ fun GroceryListScreen(
                                         groceryListViewModel.toggleCategoryExpanded(category.name)
                                         println("after: ${expanded.value}")
                                     },
+                                    onCompleteToggle = { item ->
+                                        groceryListViewModel.toggleItemCompleted(item)
+                                    },
                                 )
                             }
                         }
@@ -95,6 +98,9 @@ fun GroceryListScreen(
                             onClick = {
                                 groceryListViewModel.completedSectionExpanded =
                                     !groceryListViewModel.completedSectionExpanded
+                            },
+                            onCompleteToggle = { item ->
+                                groceryListViewModel.toggleItemCompleted(item)
                             },
                         )
                     }
