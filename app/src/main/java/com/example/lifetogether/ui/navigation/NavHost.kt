@@ -1,7 +1,7 @@
 package com.example.lifetogether.ui.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import com.example.lifetogether.ui.feature.groceryList.GroceryListScreen
@@ -17,7 +17,7 @@ fun NavHost(
     navController: NavHostController,
 ) {
     val appNavigator = AppNavigator(navController)
-    val authViewModel: AuthViewModel = viewModel()
+    val authViewModel: AuthViewModel = hiltViewModel()
 
     androidx.navigation.compose.NavHost(
         navController = navController,

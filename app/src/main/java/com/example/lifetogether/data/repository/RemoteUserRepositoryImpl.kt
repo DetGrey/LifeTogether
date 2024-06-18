@@ -7,11 +7,12 @@ import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.repository.UserRepository
+import javax.inject.Inject
 
-class UserRepositoryImpl : UserRepository {
-    private val firebaseAuthDataSource = FirebaseAuthDataSource()
-    private val firestoreDataSource = FirestoreDataSource()
-
+class RemoteUserRepositoryImpl @Inject constructor(
+    private val firebaseAuthDataSource: FirebaseAuthDataSource,
+    private val firestoreDataSource: FirestoreDataSource,
+) : UserRepository {
     override suspend fun login(
         user: User,
     ): AuthResultListener {

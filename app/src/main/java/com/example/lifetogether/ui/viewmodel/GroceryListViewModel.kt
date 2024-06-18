@@ -16,11 +16,19 @@ import com.example.lifetogether.domain.usecase.item.FetchListItemsUseCase
 import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
 import com.example.lifetogether.domain.usecase.item.ToggleItemCompletionUseCase
 import com.google.firebase.firestore.DocumentSnapshot
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.util.Date
+import javax.inject.Inject
 
-class GroceryListViewModel : ViewModel() {
+@HiltViewModel
+class GroceryListViewModel @Inject constructor(
+    private val saveItemUseCase: SaveItemUseCase,
+    private val toggleItemCompletionUseCase: ToggleItemCompletionUseCase,
+    private val fetchListDefaultsUseCase: FetchListDefaultsUseCase,
+    private val fetchListItemsUseCase: FetchListItemsUseCase,
+) : ViewModel() {
     var isLoading = true
 
     // TODO
@@ -132,7 +140,6 @@ class GroceryListViewModel : ViewModel() {
                 lastUpdated = Date(System.currentTimeMillis()),
                 completed = false,
             )
-            val saveItemUseCase = SaveItemUseCase()
             val result: ResultListener = saveItemUseCase.invoke(groceryItem, "grocery-list")
             if (result is ResultListener.Success) {
                 groceryList = groceryList.plus(groceryItem)
@@ -153,7 +160,6 @@ class GroceryListViewModel : ViewModel() {
         val newItem = oldItem.copy(completed = !oldItem.completed, lastUpdated = Date(System.currentTimeMillis()))
 
         viewModelScope.launch {
-            val toggleItemCompletionUseCase = ToggleItemCompletionUseCase()
             val result: ResultListener = toggleItemCompletionUseCase.invoke(newItem, "grocery-list")
             if (result is ResultListener.Success) {
                 groceryList = groceryList.minus(oldItem).plus(newItem)
@@ -179,7 +185,6 @@ class GroceryListViewModel : ViewModel() {
     private suspend fun fetchDefaults(
         onSuccess: () -> Unit,
     ) {
-        val fetchListDefaultsUseCase = FetchListDefaultsUseCase()
         val result: DefaultsResultListener = fetchListDefaultsUseCase.invoke("grocery-list")
         if (result is DefaultsResultListener.Success) {
             groceryCategories = hashmapListToCategoryList(result.documentSnapshot)
@@ -212,7 +217,6 @@ class GroceryListViewModel : ViewModel() {
         uid: String,
         onSuccess: () -> Unit,
     ) {
-        val fetchListItemsUseCase = FetchListItemsUseCase()
         val result: ListItemsResultListener<GroceryItem> = fetchListItemsUseCase.invoke(uid, "grocery-list", GroceryItem::class)
         if (result is ListItemsResultListener.Success) {
             groceryList = result.listItems

@@ -12,7 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Icon
@@ -28,7 +28,7 @@ fun GroceryListScreen(
     appNavigator: AppNavigator? = null,
     authViewModel: AuthViewModel? = null,
 ) {
-    val groceryListViewModel: GroceryListViewModel = viewModel()
+    val groceryListViewModel: GroceryListViewModel = hiltViewModel()
 
     LaunchedEffect(key1 = "init") {
         if (authViewModel?.userInformation?.uid != null) {

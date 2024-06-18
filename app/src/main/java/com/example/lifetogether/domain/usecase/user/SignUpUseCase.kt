@@ -1,12 +1,14 @@
 package com.example.lifetogether.domain.usecase.user
 
-import com.example.lifetogether.data.repository.UserRepositoryImpl
+import com.example.lifetogether.data.repository.RemoteUserRepositoryImpl
 import com.example.lifetogether.domain.callback.AuthResultListener
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
+import javax.inject.Inject
 
-class SignUpUseCase {
-    private val userRepository = UserRepositoryImpl()
+class SignUpUseCase @Inject constructor(
+    private val userRepository: RemoteUserRepositoryImpl,
+) {
     suspend operator fun invoke(
         user: User,
         userInformation: UserInformation,

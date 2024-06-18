@@ -6,10 +6,17 @@ import com.example.lifetogether.domain.callback.ListItemsResultListener
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.model.Item
 import com.example.lifetogether.domain.repository.ListRepository
+import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
 import kotlin.reflect.KClass
 
-class ListRepositoryImpl : ListRepository {
-    private val firestoreDataSource = FirestoreDataSource()
+class RemoteListRepositoryImpl @Inject constructor(
+    private val firestoreDataSource: FirestoreDataSource,
+) : ListRepository {
+
+    override suspend fun fetchAllData(uid: String): Flow<List<Any>> {
+        TODO("Not yet implemented")
+    }
 
     override suspend fun saveItem(
         item: Item,

@@ -13,7 +13,9 @@ import androidx.navigation.compose.rememberNavController
 import com.example.lifetogether.ui.navigation.NavHost
 import com.example.lifetogether.ui.theme.AppTypography
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private lateinit var navController: NavHostController
 

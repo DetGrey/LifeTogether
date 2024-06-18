@@ -10,8 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.setValue
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -21,7 +21,7 @@ fun CustomDatePickerDialog(
     onDismiss: () -> Unit,
     onDateSelected: (Date) -> Unit,
 ) {
-    val datePickerDialogViewModel: DatePickerDialogViewModel = viewModel()
+    val datePickerDialogViewModel: DatePickerDialogViewModel = hiltViewModel()
 
     val datePickerState =
         rememberDatePickerState(

@@ -23,3 +23,10 @@ class SendMessageUseCase {
     }
 }
 ```
+
+# Separate Repositories for online and offline 
+Create separate repository implementations for each data source, like _LocalItemsRepository_ for Room 
+and _RemoteItemsRepository_ for Firestore. This keeps the implementations clean and focused on a single data source.
+
+For maintainability and separation of concerns, it’s often better to keep them separate and have 
+another layer (like a service or use case) coordinate between them.

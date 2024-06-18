@@ -18,7 +18,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.CustomTextField
@@ -35,7 +35,7 @@ fun SignupScreen(
     appNavigator: AppNavigator? = null,
     authViewModel: AuthViewModel? = null,
 ) {
-    val signupViewModel: SignUpViewModel = viewModel()
+    val signupViewModel: SignUpViewModel = hiltViewModel()
 
     Box(
         modifier = Modifier

@@ -7,6 +7,8 @@ plugins {
     id("org.jlleitschuh.gradle.ktlint") version "11.5.0"
     kotlin("plugin.serialization") version "1.9.24"
     id("com.google.devtools.ksp")
+    id("kotlin-kapt")
+    id("dagger.hilt.android.plugin")
 }
 
 android {
@@ -106,4 +108,10 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
+    implementation(kotlin("reflect"))
+
+    // Hilt
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
 }

@@ -8,9 +8,15 @@ import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.usecase.user.ChangeNameUseCase
 import com.example.lifetogether.domain.usecase.user.LogoutUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class ProfileViewModel : ViewModel() {
+@HiltViewModel
+class ProfileViewModel @Inject constructor(
+    private val logoutUseCase: LogoutUseCase,
+    private val changeNameUseCase: ChangeNameUseCase,
+) : ViewModel() {
     enum class ConfirmationType {
         LOGOUT, NAME, PASSWORD
     }
@@ -30,7 +36,6 @@ class ProfileViewModel : ViewModel() {
         onSuccess: () -> Unit,
     ) {
         viewModelScope.launch {
-            val logoutUseCase = LogoutUseCase()
             val result = logoutUseCase.invoke()
             if (result is ResultListener.Success) {
                 onSuccess()
@@ -46,7 +51,6 @@ class ProfileViewModel : ViewModel() {
         val name = newName
 
         viewModelScope.launch {
-            val changeNameUseCase = ChangeNameUseCase()
             val result = changeNameUseCase.invoke(uid, name)
             if (result is ResultListener.Success) {
                 onSuccess(name)

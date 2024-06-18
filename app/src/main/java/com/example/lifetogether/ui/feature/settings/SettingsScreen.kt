@@ -10,21 +10,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.viewmodel.AuthViewModel
-import com.example.lifetogether.ui.viewmodel.LoginViewModel
 
 @Composable
 fun SettingsScreen(
     appNavigator: AppNavigator? = null,
     authViewModel: AuthViewModel? = null,
 ) {
-    val loginViewModel: LoginViewModel = viewModel()
+//    val loginViewModel: LoginViewModel = hiltViewModel()
 
     Box(
         modifier = Modifier

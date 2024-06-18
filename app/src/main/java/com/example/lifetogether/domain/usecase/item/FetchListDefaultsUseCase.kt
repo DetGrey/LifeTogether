@@ -1,10 +1,12 @@
 package com.example.lifetogether.domain.usecase.item
 
-import com.example.lifetogether.data.repository.ListRepositoryImpl
+import com.example.lifetogether.data.repository.RemoteListRepositoryImpl
 import com.example.lifetogether.domain.callback.DefaultsResultListener
+import javax.inject.Inject
 
-class FetchListDefaultsUseCase {
-    private val listRepository = ListRepositoryImpl()
+class FetchListDefaultsUseCase @Inject constructor(
+    private val listRepository: RemoteListRepositoryImpl,
+) {
     suspend operator fun invoke(
         listName: String,
     ): DefaultsResultListener {

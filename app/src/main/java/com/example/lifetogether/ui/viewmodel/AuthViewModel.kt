@@ -9,9 +9,14 @@ import com.example.lifetogether.domain.callback.AuthResultListener
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.enums.UpdateType
 import com.example.lifetogether.domain.usecase.user.FetchUserInformationUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class AuthViewModel : ViewModel() {
+@HiltViewModel
+class AuthViewModel @Inject constructor(
+    private val fetchUserInformationUseCase: FetchUserInformationUseCase,
+) : ViewModel() {
     // ---------------------------------------------- USER
     var userInformation: UserInformation? by mutableStateOf(null)
 
@@ -25,7 +30,6 @@ class AuthViewModel : ViewModel() {
 
     private fun fetchUserInformation() {
         viewModelScope.launch {
-            val fetchUserInformationUseCase = FetchUserInformationUseCase()
             val result = fetchUserInformationUseCase.invoke()
             if (result is AuthResultListener.Success) {
                 updateUserInformation(result.userInformation)

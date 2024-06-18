@@ -9,10 +9,15 @@ import com.example.lifetogether.domain.callback.AuthResultListener
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.usecase.user.SignUpUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import java.util.Date
+import javax.inject.Inject
 
-class SignUpViewModel : ViewModel() {
+@HiltViewModel
+class SignUpViewModel @Inject constructor(
+    private val signUpUseCase: SignUpUseCase,
+) : ViewModel() {
     var error: String by mutableStateOf("")
 
     // TEXT FIELDS
@@ -35,7 +40,6 @@ class SignUpViewModel : ViewModel() {
         )
 
         viewModelScope.launch {
-            val signUpUseCase = SignUpUseCase()
             val loginResult: AuthResultListener = signUpUseCase.invoke(User(email, password), userInformation)
             if (loginResult is AuthResultListener.Success) {
                 onSuccess(loginResult.userInformation)

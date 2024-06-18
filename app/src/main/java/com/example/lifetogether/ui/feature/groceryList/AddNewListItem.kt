@@ -28,7 +28,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.ui.common.CustomTextField
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithDropdown
@@ -44,7 +44,7 @@ fun AddNewListItem(
     selectedCategory: Category,
     onCategoryChange: (Category) -> Unit,
 ) {
-    val addNewListItemViewModel: AddNewListItemViewModel = viewModel()
+    val addNewListItemViewModel: AddNewListItemViewModel = hiltViewModel()
     // Use LaunchedEffect to set the initial value once
     LaunchedEffect(key1 = "init") {
         addNewListItemViewModel.selectedCategory = "${selectedCategory.emoji} ${selectedCategory.name}"
