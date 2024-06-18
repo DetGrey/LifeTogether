@@ -16,6 +16,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.UpdateType
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -103,6 +104,11 @@ fun GroceryListScreen(
                                 },
                                 onCompleteToggle = { item ->
                                     groceryListViewModel.toggleItemCompleted(item)
+                                    if (!item.completed) { // if it was not completed, but now will be
+                                        authViewModel?.updateItemCount("grocery-list", UpdateType.SUBTRACT)
+                                    } else {
+                                        authViewModel?.updateItemCount("grocery-list", UpdateType.ADD)
+                                    }
                                 },
                             )
                         }
@@ -122,7 +128,9 @@ fun GroceryListScreen(
                 onTextChange = { groceryListViewModel.newItemText = it },
                 onAddClick = {
                     authViewModel?.userInformation?.uid?.let { uid ->
-                        groceryListViewModel.addItemToList(uid)
+                        groceryListViewModel.addItemToList(uid, onSuccess = {
+                            authViewModel.updateItemCount("grocery-list", UpdateType.ADD)
+                        })
                     }
                 },
                 categoryList = groceryListViewModel.groceryCategories,

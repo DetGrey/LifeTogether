@@ -26,15 +26,15 @@ class GroceryListViewModel : ViewModel() {
     // TODO
     var groceryCategories: List<Category> by mutableStateOf(
         listOf(
-            Category(
-                emoji = "❓️",
-                name = "Uncategorized",
-            ),
+//            Category(
+//                emoji = "❓️",
+//                name = "Uncategorized",
+//            ),
         ),
     )
 
     // Must be "=" and not "by" else the app with crash
-    var categoryExpandedStates: MutableMap<String, MutableState<Boolean>> = mutableMapOf("Uncategorized" to mutableStateOf(true))
+    var categoryExpandedStates: MutableMap<String, MutableState<Boolean>> = mutableMapOf()
     var completedSectionExpanded: Boolean by mutableStateOf(false)
 
     // TODO
@@ -97,7 +97,7 @@ class GroceryListViewModel : ViewModel() {
         viewModelScope.launch {
             val defaultsDeferred = async {
                 fetchDefaults(onSuccess = {
-//                    updateExpandedStates()
+                    updateExpandedStates()
                 })
             }
             val itemsDeferred = async {
@@ -118,6 +118,7 @@ class GroceryListViewModel : ViewModel() {
 
     fun addItemToList(
         uid: String,
+        onSuccess: () -> Unit,
     ) {
         if (groceryList.any { it.itemName.lowercase() == newItemText.lowercase() && !it.completed }) {
             // TODO add error popup
@@ -138,11 +139,13 @@ class GroceryListViewModel : ViewModel() {
                 updateCategories(newItemCategory)
                 updateNewItemCategory(null)
                 newItemText = ""
+                onSuccess()
             } else if (result is ResultListener.Failure) {
                 // TODO popup saying the error for 5 sec
             }
         }
     }
+
     fun toggleItemCompleted(
         oldItem: GroceryItem,
     ) {
