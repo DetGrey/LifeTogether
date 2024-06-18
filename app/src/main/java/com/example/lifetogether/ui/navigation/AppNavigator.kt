@@ -28,7 +28,9 @@ class AppNavigator(private val navController: NavController) : Navigator {
     }
 
     override fun navigateBack() {
-        navController.popBackStack()
+        if (!navController.popBackStack()) {
+            navController.navigate(AppRoutes.HOME_SCREEN)
+        }
     }
 }
 
