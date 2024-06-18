@@ -10,7 +10,5 @@ interface UserRepository {
     suspend fun signUp(user: User, userInformation: UserInformation): AuthResultListener
     suspend fun getCurrentUser(): AuthResultListener
     suspend fun logout(): ResultListener
-    suspend fun getUserInformation(uid: String): AuthResultListener
-    suspend fun uploadUserInformation(userInformation: UserInformation): ResultListener
     suspend fun changeName(uid: String, newName: String): ResultListener
 }

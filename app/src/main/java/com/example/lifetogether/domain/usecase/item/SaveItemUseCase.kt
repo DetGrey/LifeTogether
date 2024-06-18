@@ -8,7 +8,8 @@ class SaveItemUseCase {
     private val listRepository = ListRepositoryImpl()
     suspend operator fun invoke(
         item: Item,
+        listName: String,
     ): ResultListener {
-        return listRepository.saveItemToGroceryList(item)
+        return listRepository.saveItem(item, listName)
     }
 }

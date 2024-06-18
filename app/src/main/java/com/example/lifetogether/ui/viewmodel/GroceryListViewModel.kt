@@ -133,7 +133,7 @@ class GroceryListViewModel : ViewModel() {
                 completed = false,
             )
             val saveItemUseCase = SaveItemUseCase()
-            val result: ResultListener = saveItemUseCase.invoke(groceryItem)
+            val result: ResultListener = saveItemUseCase.invoke(groceryItem, "grocery-list")
             if (result is ResultListener.Success) {
                 groceryList = groceryList.plus(groceryItem)
                 updateCategories(newItemCategory)
@@ -154,7 +154,7 @@ class GroceryListViewModel : ViewModel() {
 
         viewModelScope.launch {
             val toggleItemCompletionUseCase = ToggleItemCompletionUseCase()
-            val result: ResultListener = toggleItemCompletionUseCase.invoke(newItem)
+            val result: ResultListener = toggleItemCompletionUseCase.invoke(newItem, "grocery-list")
             if (result is ResultListener.Success) {
                 groceryList = groceryList.minus(oldItem).plus(newItem)
                 isLoading = false
