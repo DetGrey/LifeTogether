@@ -45,7 +45,7 @@ class FirebaseAuthDataSource {
         }
     }
 
-    fun getCurrentUser(): String? {
+    fun getCurrentUserUid(): String? {
         return try {
             Firebase.auth.currentUser?.uid
         } catch (e: Exception) {

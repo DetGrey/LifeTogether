@@ -7,7 +7,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -30,13 +31,12 @@ fun GroceryListScreen(
 ) {
     val groceryListViewModel: GroceryListViewModel = hiltViewModel()
 
-    LaunchedEffect(key1 = "init") {
-        if (authViewModel?.userInformation?.uid != null) {
-            groceryListViewModel.fetchData(authViewModel.userInformation?.uid!!)
-        } else {
-            groceryListViewModel.isLoading = false
-        }
-    }
+    // Collecting the StateFlows as state
+    val groceryCategories by groceryListViewModel.groceryCategories.collectAsState()
+    val categoryExpandedStates by groceryListViewModel.categoryExpandedStates.collectAsState()
+    val groceryList by groceryListViewModel.groceryList.collectAsState()
+    val categorizedItems by groceryListViewModel.categorizedItems.collectAsState()
+    val completedItems by groceryListViewModel.completedItems.collectAsState()
 
     if (groceryListViewModel.isLoading) {
         // Show a loading indicator
@@ -66,21 +66,20 @@ fun GroceryListScreen(
                 }
 
                 item {
-                    if (groceryListViewModel.groceryList.isEmpty()) {
+                    if (groceryList.isEmpty()) {
                         Text(text = "No items on the list yet")
                     } else {
-                        groceryListViewModel.groceryCategories.forEach { category ->
-                            val categoryItems = groceryListViewModel.getCategoryItems(category)
-                            if (categoryItems.isNotEmpty()) {
-                                groceryListViewModel.categoryExpandedStates[category.name]?.let { expanded ->
+                        categorizedItems.forEach { (category, groceryItems) ->
+                            if (groceryItems.isNotEmpty()) {
+                                categoryExpandedStates[category.name]?.let { expanded ->
                                     ItemCategoryList(
                                         category = category,
-                                        itemList = categoryItems,
-                                        expanded = expanded.value,
+                                        itemList = groceryItems,
+                                        expanded = expanded,
                                         onClick = {
-                                            println("before: ${expanded.value}")
+                                            println("before: $expanded")
                                             groceryListViewModel.toggleCategoryExpanded(category.name)
-                                            println("after: ${expanded.value}")
+                                            println("after: $expanded")
                                         },
                                         onCompleteToggle = { item ->
                                             groceryListViewModel.toggleItemCompleted(item)
@@ -89,7 +88,7 @@ fun GroceryListScreen(
                                 }
                             }
                         }
-                        val completedItems = groceryListViewModel.getCompletedItems()
+
                         if (completedItems.isNotEmpty()) {
                             ItemCategoryList(
                                 category = Category(
@@ -127,13 +126,11 @@ fun GroceryListScreen(
                 textValue = groceryListViewModel.newItemText,
                 onTextChange = { groceryListViewModel.newItemText = it },
                 onAddClick = {
-                    authViewModel?.userInformation?.uid?.let { uid ->
-                        groceryListViewModel.addItemToList(uid, onSuccess = {
-                            authViewModel.updateItemCount("grocery-list", UpdateType.ADD)
-                        })
-                    }
+                    groceryListViewModel.addItemToList(onSuccess = {
+                        authViewModel?.updateItemCount("grocery-list", UpdateType.ADD)
+                    })
                 },
-                categoryList = groceryListViewModel.groceryCategories,
+                categoryList = groceryCategories,
                 selectedCategory = groceryListViewModel.newItemCategory,
                 onCategoryChange = { newCategory ->
                     groceryListViewModel.updateNewItemCategory(newCategory)

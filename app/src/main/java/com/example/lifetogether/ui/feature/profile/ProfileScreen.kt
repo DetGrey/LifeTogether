@@ -16,6 +16,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,6 +46,7 @@ fun ProfileScreen(
     authViewModel: AuthViewModel? = null,
 ) {
     val profileViewModel: ProfileViewModel = hiltViewModel()
+    val userInformation = authViewModel?.userInformation?.collectAsState(initial = null)
 
     Box(
         modifier = Modifier
@@ -115,7 +118,7 @@ fun ProfileScreen(
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
-                TextHeadingLarge(text = authViewModel?.userInformation?.name ?: "")
+                TextHeadingLarge(text = userInformation?.value?.name ?: "")
             }
 
             item {
@@ -130,7 +133,7 @@ fun ProfileScreen(
                             description = "", // TODO
                         ),
                         title = "Name",
-                        value = authViewModel?.userInformation?.name ?: "",
+                        value = userInformation?.value?.name ?: "",
                         onClick = {
                             profileViewModel.confirmationDialogType = ProfileViewModel.ConfirmationType.NAME
                             profileViewModel.showConfirmationDialog = true
@@ -142,7 +145,7 @@ fun ProfileScreen(
                             description = "", // TODO
                         ),
                         title = "Email",
-                        value = authViewModel?.userInformation?.email ?: "",
+                        value = userInformation?.value?.email ?: "",
                     )
                     ProfileDetails(
                         icon = Icon(
@@ -150,7 +153,7 @@ fun ProfileScreen(
                             description = "", // TODO
                         ),
                         title = "Birthday",
-                        value = authViewModel?.userInformation?.birthday?.let { date ->
+                        value = userInformation?.value?.birthday?.let { date ->
                             formatDateToString(date)
                         } ?: "",
                     )
@@ -193,7 +196,7 @@ fun ProfileScreen(
                     onConfirm = {
                         profileViewModel.logout(
                             onSuccess = {
-                                authViewModel?.updateUserInformation(null)
+//                                authViewModel?.updateUserInformation(null)
                                 profileViewModel.closeConfirmationDialog()
                                 appNavigator?.navigateToHome()
                             },
@@ -208,17 +211,7 @@ fun ProfileScreen(
                 ProfileViewModel.ConfirmationType.NAME -> ConfirmationDialogWithTextField(
                     onDismiss = { profileViewModel.closeConfirmationDialog() },
                     onConfirm = {
-                        authViewModel?.userInformation?.uid?.let { uid ->
-                            profileViewModel.changeName(
-                                uid,
-                                onSuccess = { newName ->
-                                    authViewModel.updateUserInformation(
-                                        authViewModel.userInformation!!.copy(name = newName),
-                                    )
-                                    profileViewModel.closeConfirmationDialog()
-                                },
-                            )
-                        }
+                        profileViewModel.changeName()
                     },
                     dialogTitle = "Change name",
                     dialogMessage = "Please enter your new name",

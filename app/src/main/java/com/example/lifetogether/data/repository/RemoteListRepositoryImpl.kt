@@ -40,7 +40,7 @@ class RemoteListRepositoryImpl @Inject constructor(
         listName: String,
         uid: String,
         itemType: KClass<T>,
-    ): ListItemsResultListener<T> {
+    ): Flow<ListItemsResultListener<T>> {
         return firestoreDataSource.fetchListItems(listName, uid, itemType)
     }
 }

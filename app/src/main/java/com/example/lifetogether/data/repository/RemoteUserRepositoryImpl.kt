@@ -7,6 +7,8 @@ import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.repository.UserRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 class RemoteUserRepositoryImpl @Inject constructor(
@@ -38,16 +40,18 @@ class RemoteUserRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getCurrentUser(): AuthResultListener {
-        try {
-            val currentUserUid = firebaseAuthDataSource.getCurrentUser()
-            return if (currentUserUid != null) {
-                firestoreDataSource.getUserInformation(currentUserUid)
-            } else {
-                AuthResultListener.Failure("Authentication failed")
+    suspend fun getCurrentUser(): Flow<AuthResultListener> {
+        return flow {
+            try {
+                val currentUserUid = firebaseAuthDataSource.getCurrentUserUid()
+                if (currentUserUid != null) {
+                    emit(firestoreDataSource.getUserInformation(currentUserUid))
+                } else {
+                    emit(AuthResultListener.Failure("Authentication failed"))
+                }
+            } catch (e: Exception) {
+                emit(AuthResultListener.Failure(e.message ?: "Unknown error"))
             }
-        } catch (e: Exception) {
-            return AuthResultListener.Failure("Error: ${e.message}")
         }
     }
 

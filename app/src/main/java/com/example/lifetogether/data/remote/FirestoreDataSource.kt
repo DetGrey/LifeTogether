@@ -1,5 +1,6 @@
 package com.example.lifetogether.data.remote
 
+import com.example.lifetogether.data.local.LocalDataSource
 import com.example.lifetogether.domain.callback.AuthResultListener
 import com.example.lifetogether.domain.callback.DefaultsResultListener
 import com.example.lifetogether.domain.callback.ListItemsResultListener
@@ -9,12 +10,20 @@ import com.example.lifetogether.domain.model.Item
 import com.example.lifetogether.domain.model.UserInformation
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.tasks.await
 import java.util.Date
+import javax.inject.Inject
 import kotlin.reflect.KClass
 
-class FirestoreDataSource() {
+class FirestoreDataSource@Inject constructor(
+    private val localDataSource: LocalDataSource,
+) {
     private val db = Firebase.firestore
+    // TODO Firebase.firestore.setPersistenceEnabled(true)
 
     // -------------------------------------- USERS
     suspend fun getUserInformation(uid: String): AuthResultListener {
@@ -125,17 +134,69 @@ class FirestoreDataSource() {
         listName: String,
         uid: String,
         itemType: KClass<T>,
-    ): ListItemsResultListener<T> {
+    ): Flow<ListItemsResultListener<T>> {
         try {
             val fetchResult = db.collection(listName).whereEqualTo("uid", uid).get().await()
             val itemsList = fetchResult.documents.mapNotNull { document ->
                 document.toObject(itemType.java)
             }
             println("itemList: $itemsList")
-            return ListItemsResultListener.Success(itemsList)
+            return flowOf(ListItemsResultListener.Success(itemsList))
         } catch (e: Exception) {
             println("Error: ${e.message}")
-            return ListItemsResultListener.Failure("Error fetching list items: ${e.message}")
+            return flowOf(ListItemsResultListener.Failure("Error fetching list items: ${e.message}"))
         }
+    }
+
+    // -------------------------------------- COLLECTION SNAPSHOT LISTENERS
+    suspend fun collectionSnapshotListeners(): ResultListener {
+        try {
+            val groceryCollectionListener = grocerySnapshotListener()
+
+            return ResultListener.Success
+        } catch (e: Exception) {
+            println("Error: ${e.message}")
+            return ResultListener.Failure("Error: ${e.message}")
+        }
+    }
+
+//    private suspend fun grocerySnapshotListener(): ResultListener {
+//        try {
+//            val groceryItemsRef = Firebase.firestore.collection("groceryItems")
+//            groceryItemsRef.addSnapshotListener { snapshot, e ->
+//                if (e != null) {
+//                    // Handle error
+//                    return@addSnapshotListener
+//                }
+//
+//                if (snapshot != null) {
+//                    // Process the changes and update Room database
+//                    val items = snapshot.toObjects(GroceryItem::class.java)
+//                    localDataSource.updateRoomDatabase(items)
+//                }
+//            }
+//            return ResultListener.Success
+//        } catch (e: Exception) {
+//            println("Error: ${e.message}")
+//            return ResultListener.Failure("Error: ${e.message}")
+//        }
+//    }
+    suspend fun grocerySnapshotListener() = callbackFlow {
+        val groceryItemsRef = Firebase.firestore.collection("groceryItems")
+        val listenerRegistration = groceryItemsRef.addSnapshotListener { snapshot, e ->
+            if (e != null) {
+                // Handle error
+                trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess
+                return@addSnapshotListener
+            }
+
+            if (snapshot != null) {
+                // Process the changes and update Room database
+                val items = snapshot.toObjects(GroceryItem::class.java)
+                trySend(ListItemsResultListener.Success(items)).isSuccess
+            }
+        }
+        // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.
+        awaitClose { listenerRegistration.remove() }
     }
 }

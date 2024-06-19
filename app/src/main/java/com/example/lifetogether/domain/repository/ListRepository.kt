@@ -12,5 +12,5 @@ interface ListRepository {
     suspend fun saveItem(item: Item, listName: String): ResultListener
     suspend fun toggleItemCompletion(item: Item, listName: String): ResultListener
     suspend fun fetchListDefaults(listName: String): DefaultsResultListener
-    suspend fun <T : Item> fetchListItems(listName: String, uid: String, itemType: KClass<T>): ListItemsResultListener<T>
+    suspend fun <T : Item> fetchListItems(listName: String, uid: String, itemType: KClass<T>): Flow<ListItemsResultListener<T>>
 }

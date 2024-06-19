@@ -106,7 +106,7 @@ fun SignupScreen(
                     Button(onClick = {
                         signupViewModel.onSignUpClicked(
                             onSuccess = { userInformation ->
-                                authViewModel?.updateUserInformation(userInformation)
+//                                authViewModel?.updateUserInformation(userInformation)
                                 appNavigator?.navigateToProfile()
                             },
                         )

@@ -1,6 +1,7 @@
 package com.example.lifetogether.data.local
 
 import com.example.lifetogether.data.model.GroceryListEntity
+import com.example.lifetogether.domain.model.GroceryItem
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -10,6 +11,19 @@ class LocalDataSource @Inject constructor(
 
     fun getListItems(uid: String): Flow<List<GroceryListEntity>> {
         return groceryListDao.getItems(uid)
+    }
+
+    suspend fun updateRoomDatabase(items: List<GroceryItem>) {
+        val groceryListEntityList = items.map { item ->
+            GroceryListEntity(
+                uid = item.uid,
+                name = item.itemName,
+                lastUpdated = item.lastUpdated,
+                completed = item.completed,
+                category = item.category,
+            )
+        }
+        groceryListDao.updateItems(groceryListEntityList)
     }
 
 //    // Function to get all list counts

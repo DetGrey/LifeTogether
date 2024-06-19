@@ -1,5 +1,6 @@
 package com.example.lifetogether.di
 
+import com.example.lifetogether.data.local.LocalDataSource
 import com.example.lifetogether.data.remote.FirebaseAuthDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
 import dagger.Module
@@ -18,5 +19,7 @@ object DataSourceModule {
 
     @Provides
     @Singleton
-    fun provideFirestoreDataSource(): FirestoreDataSource = FirestoreDataSource()
+    fun provideFirestoreDataSource(
+        localDataSource: LocalDataSource,
+    ): FirestoreDataSource = FirestoreDataSource(localDataSource)
 }

@@ -9,7 +9,7 @@ import com.example.lifetogether.domain.model.GroceryItem
 import com.example.lifetogether.domain.model.Item
 import com.example.lifetogether.domain.repository.ListRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import kotlin.reflect.KClass
 
@@ -43,19 +43,36 @@ class LocalListRepositoryImpl @Inject constructor(
         listName: String,
         uid: String,
         itemType: KClass<T>,
-    ): ListItemsResultListener<T> {
-        return try {
-            // Fetch items from the database
-            val itemsFlow = localDataSource.getListItems(uid)
-            // Collect the flow and convert it to a list
-            val itemsList = itemsFlow.first().map { it.toItem(itemType) }
-            // Return success with the list of items
-            ListItemsResultListener.Success(itemsList)
-        } catch (e: Exception) {
-            // Return failure if there's an error
-            ListItemsResultListener.Failure(e.message ?: "Unknown error")
-        }
+    ): Flow<ListItemsResultListener<T>> {
+        return localDataSource.getListItems(uid)
+            .map { entities ->
+                try {
+                    // Convert entities to items
+                    val itemsList = entities.map { it.toItem(itemType) }
+                    ListItemsResultListener.Success(itemsList) as ListItemsResultListener<T>
+                } catch (e: Exception) {
+                    ListItemsResultListener.Failure(e.message ?: "Unknown error")
+                }
+            }
     }
+
+//    override suspend fun <T : Item> fetchListItems(
+//        listName: String,
+//        uid: String,
+//        itemType: KClass<T>,
+//    ): ListItemsResultListener<T> {
+//        return try {
+//            // Fetch items from the database
+//            val itemsFlow = localDataSource.getListItems(uid)
+//            // Collect the flow and convert it to a list
+//            val itemsList = itemsFlow.first().map { it.toItem(itemType) }
+//            // Return success with the list of items
+//            ListItemsResultListener.Success(itemsList)
+//        } catch (e: Exception) {
+//            // Return failure if there's an error
+//            ListItemsResultListener.Failure(e.message ?: "Unknown error")
+//        }
+//    }
 
     // Assuming GroceryItem is a subclass of Item and has a matching constructor
     // TODO ADD MORE ITEM CLASSES
