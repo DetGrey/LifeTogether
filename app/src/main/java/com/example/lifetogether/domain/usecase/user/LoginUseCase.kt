@@ -9,6 +9,7 @@ class LoginUseCase @Inject constructor(
     private val userRepository: RemoteUserRepositoryImpl,
 ) {
     suspend operator fun invoke(user: User): AuthResultListener {
+        println("LoginUseCase invoked")
         // Handle the login logic and validation here
         val userValidationUseCase = UserValidationUseCase()
 

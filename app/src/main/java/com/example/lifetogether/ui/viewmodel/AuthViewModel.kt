@@ -30,6 +30,7 @@ class AuthViewModel @Inject constructor(
     init {
         // Observe changes to user information
         viewModelScope.launch {
+            println("AuthViewModel before calling fetchUserInformationUseCase")
             fetchUserInformationUseCase()
         }
     }

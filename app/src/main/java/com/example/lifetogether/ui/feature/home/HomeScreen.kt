@@ -51,7 +51,7 @@ fun HomeScreen(
                         description = "profile picture icon",
                     ),
                     onLeftClick = {
-                        if (authViewModel?.userInformation != null) {
+                        if (authViewModel?.userInformation?.value != null) {
                             appNavigator?.navigateToProfile()
                         } else {
                             appNavigator?.navigateToLogin()

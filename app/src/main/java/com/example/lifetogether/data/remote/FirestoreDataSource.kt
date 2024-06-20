@@ -45,6 +45,7 @@ class FirestoreDataSource@Inject constructor(
     }
 
     suspend fun uploadUserInformation(userInformation: UserInformation): ResultListener {
+        println("FirestoreDataSource uploadUserInformation getting uploaded")
         try {
             if (userInformation.uid != null) {
                 db.collection("users").document(userInformation.uid).set(userInformation).await()
@@ -182,7 +183,8 @@ class FirestoreDataSource@Inject constructor(
 //        }
 //    }
     suspend fun grocerySnapshotListener() = callbackFlow {
-        val groceryItemsRef = Firebase.firestore.collection("groceryItems")
+        println("Firestore grocerySnapshotListener init")
+        val groceryItemsRef = Firebase.firestore.collection("grocery-list")
         val listenerRegistration = groceryItemsRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 // Handle error
@@ -193,6 +195,7 @@ class FirestoreDataSource@Inject constructor(
             if (snapshot != null) {
                 // Process the changes and update Room database
                 val items = snapshot.toObjects(GroceryItem::class.java)
+                println("Snapshot items to GroceryItem: $items")
                 trySend(ListItemsResultListener.Success(items)).isSuccess
             }
         }

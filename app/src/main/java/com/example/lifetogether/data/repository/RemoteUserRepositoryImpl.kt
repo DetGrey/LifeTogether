@@ -18,6 +18,7 @@ class RemoteUserRepositoryImpl @Inject constructor(
     override suspend fun login(
         user: User,
     ): AuthResultListener {
+        println("RemoteUserRepositoryImpl login() init")
         return firebaseAuthDataSource.login(user)
     }
 
@@ -25,12 +26,20 @@ class RemoteUserRepositoryImpl @Inject constructor(
         user: User,
         userInformation: UserInformation,
     ): AuthResultListener {
+        println("RemoteUserRepositoryImpl signUp()")
         try {
             val signupResult = firebaseAuthDataSource.signUp(user, userInformation)
+            println("RemoteUserRepositoryImpl signupResult: $signupResult")
             return if (signupResult is AuthResultListener.Success) {
                 when (val uploadResult = firestoreDataSource.uploadUserInformation(signupResult.userInformation)) {
-                    is ResultListener.Success -> signupResult
-                    is ResultListener.Failure -> AuthResultListener.Failure(uploadResult.message)
+                    is ResultListener.Success -> {
+                        println("RemoteUserRepositoryImpl: uploadResult $uploadResult")
+                        signupResult
+                    }
+                    is ResultListener.Failure -> {
+                        println("RemoteUserRepositoryImpl: uploadResult $uploadResult")
+                        AuthResultListener.Failure(uploadResult.message)
+                    }
                 }
             } else {
                 signupResult
@@ -41,9 +50,11 @@ class RemoteUserRepositoryImpl @Inject constructor(
     }
 
     suspend fun getCurrentUser(): Flow<AuthResultListener> {
+        println("RemoteUserRepositoryImpl getCurrentUser()")
         return flow {
             try {
                 val currentUserUid = firebaseAuthDataSource.getCurrentUserUid()
+                println("RemoteUserRepositoryImpl currentUserUid: $currentUserUid")
                 if (currentUserUid != null) {
                     emit(firestoreDataSource.getUserInformation(currentUserUid))
                 } else {

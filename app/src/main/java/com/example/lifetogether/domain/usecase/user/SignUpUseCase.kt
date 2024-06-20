@@ -33,7 +33,7 @@ class SignUpUseCase @Inject constructor(
 //            error = "Invalid email."
 //            return
 //        }
-
+        println("SignUpUseCase invoked")
         return userRepository.signUp(user, userInformation)
     }
 }

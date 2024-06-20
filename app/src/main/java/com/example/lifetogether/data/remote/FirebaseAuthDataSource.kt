@@ -12,9 +12,12 @@ class FirebaseAuthDataSource {
     suspend fun login(
         user: User,
     ): AuthResultListener {
+        println("FirebaseAuthDataSource login()")
         try {
             val loginResult = Firebase.auth.signInWithEmailAndPassword(user.email, user.password).await()
             val firebaseUser = loginResult.user
+            println("loginResult: $loginResult")
+            println("firebaseUser: $firebaseUser")
             return if (firebaseUser != null) {
                 AuthResultListener.Success(
                     UserInformation(uid = firebaseUser.uid),
@@ -23,6 +26,7 @@ class FirebaseAuthDataSource {
                 AuthResultListener.Failure("Authentication failed")
             }
         } catch (e: Exception) {
+            println("FirebaseAuthDataSource login() error: ${e.message}")
             return AuthResultListener.Failure("Error: ${e.message}")
         }
     }
@@ -31,9 +35,12 @@ class FirebaseAuthDataSource {
         user: User,
         userInformation: UserInformation,
     ): AuthResultListener {
+        println("FirebaseAuthDataSource signUp()")
         try {
-            val loginResult = Firebase.auth.createUserWithEmailAndPassword(user.email, user.password).await()
-            val firebaseUser = loginResult.user
+            val signupResult = Firebase.auth.createUserWithEmailAndPassword(user.email, user.password).await()
+            val firebaseUser = signupResult.user
+            println("signupResult: $signupResult")
+            println("firebaseUser: $firebaseUser")
             if (firebaseUser != null) {
                 val updatedUserInformation = userInformation.copy(uid = firebaseUser.uid)
                 return AuthResultListener.Success(updatedUserInformation)
@@ -46,10 +53,12 @@ class FirebaseAuthDataSource {
     }
 
     fun getCurrentUserUid(): String? {
-        return try {
-            Firebase.auth.currentUser?.uid
+         try {
+            val uid = Firebase.auth.currentUser?.uid
+             println("FirebaseAuthDataSource getCurrentUserUid: $uid")
+             return uid
         } catch (e: Exception) {
-            null
+            return null
         }
     }
 

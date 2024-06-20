@@ -7,6 +7,7 @@ class FetchUserInformationUseCase @Inject constructor(
     private val userRepository: LocalUserRepositoryImpl,
 ) {
     suspend operator fun invoke() {
+        println("FetchUserInformationUseCase invoked")
         userRepository.getCurrentUser()
     }
 }

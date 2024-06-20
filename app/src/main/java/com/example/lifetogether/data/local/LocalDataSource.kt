@@ -10,10 +10,14 @@ class LocalDataSource @Inject constructor(
 ) {
 
     fun getListItems(uid: String): Flow<List<GroceryListEntity>> {
-        return groceryListDao.getItems(uid)
+        val items = groceryListDao.getItems(uid)
+        println("LocalDataSource getListItems: $items")
+        return items
     }
 
     suspend fun updateRoomDatabase(items: List<GroceryItem>) {
+        println("LocalDataSource updateRoomDatabase(): Trying to add firestore data to Room")
+        println("GroceryItem list: $items")
         val groceryListEntityList = items.map { item ->
             GroceryListEntity(
                 uid = item.uid,
@@ -23,6 +27,7 @@ class LocalDataSource @Inject constructor(
                 category = item.category,
             )
         }
+        println("groceryListEntity list: $groceryListEntityList")
         groceryListDao.updateItems(groceryListEntityList)
     }
 

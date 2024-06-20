@@ -13,6 +13,7 @@ class ObserverViewModel @Inject constructor(
 ) : ViewModel() {
     // ---------------------------------------------- ??
     init {
+        println("ObserverViewModel init")
         viewModelScope.launch {
             observeGroceryListUseCase()
         }

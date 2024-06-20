@@ -31,6 +31,7 @@ class SignUpViewModel @Inject constructor(
     fun onSignUpClicked(
         onSuccess: (UserInformation) -> Unit,
     ) {
+        println("SignUpViewModel onSignUpClicked")
         error = ""
 
         val userInformation = UserInformation(
@@ -38,6 +39,7 @@ class SignUpViewModel @Inject constructor(
             email = email,
             birthday = birthday,
         )
+        println("SignUpViewModel userInformation: $userInformation")
 
         viewModelScope.launch {
             val loginResult: AuthResultListener = signUpUseCase.invoke(User(email, password), userInformation)

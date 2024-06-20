@@ -44,11 +44,14 @@ class LocalListRepositoryImpl @Inject constructor(
         uid: String,
         itemType: KClass<T>,
     ): Flow<ListItemsResultListener<T>> {
+        println("LocalListRepoImpl fetchListItems init")
         return localDataSource.getListItems(uid)
             .map { entities ->
                 try {
                     // Convert entities to items
                     val itemsList = entities.map { it.toItem(itemType) }
+                    println("LocalListRepoImpl after getting items from local data source")
+                    println("itemList of specified itemType: $itemsList")
                     ListItemsResultListener.Success(itemsList) as ListItemsResultListener<T>
                 } catch (e: Exception) {
                     ListItemsResultListener.Failure(e.message ?: "Unknown error")

@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Date
@@ -80,32 +81,42 @@ class GroceryListViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            groceryList.collect { list ->
-                updateCategorizedItems(list)
-            }
-        }
-        viewModelScope.launch {
             localUserRepositoryImpl.userInformation
+                .onEach { userInformation ->
+                    // Log the emission
+                    println("GroceryListViewModel userInformation emitted: $userInformation")
+                }
                 .map { it?.uid }
                 .distinctUntilChanged()
                 .collect { newUid ->
+                    println("GroceryListViewModel uid. Old value: ${uid.value} - and new value: $newUid")
                     _uid.value = newUid
                 }
         }
         viewModelScope.launch {
             // Observe changes to userInformation.uid and fetch data accordingly
+            println("GroceryListViewModel calling fetchListItemsUseCase if uid exists")
             uid.value?.let { uid ->
                 fetchListItemsUseCase(uid, "grocery-list", GroceryItem::class).collect { result ->
+                    println("fetchListItemsUseCase result: $result")
                     when (result) {
-                        is ListItemsResultListener.Success ->
-                            _groceryList.value =
-                                result.listItems
+                        is ListItemsResultListener.Success -> {
+                            println("_groceryList old value: ${_groceryList.value}")
+                            _groceryList.value = result.listItems
+                            println("_groceryList new value: ${_groceryList.value}")
+                            println("groceryList new value: ${groceryList.value}")
+                        }
 
                         is ListItemsResultListener.Failure -> {
                             // Handle failure, e.g., show an error message
                         }
                     }
                 }
+            }
+        }
+        viewModelScope.launch {
+            groceryList.collect { list ->
+                updateCategorizedItems(list)
             }
         }
     }

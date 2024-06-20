@@ -42,7 +42,6 @@ fun CustomTextField(
         value = value,
         onValueChange = {
             onValueChange(it)
-            print("new text: $it")
         },
         label = if (label != null) {
             { Text(label) }

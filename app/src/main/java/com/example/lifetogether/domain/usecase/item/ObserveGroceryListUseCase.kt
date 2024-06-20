@@ -10,7 +10,9 @@ class ObserveGroceryListUseCase @Inject constructor(
     private val localDataSource: LocalDataSource,
 ) {
     suspend operator fun invoke() {
+        println("ObserveGroceryListUseCase invoked")
         firestoreDataSource.grocerySnapshotListener().collect { result ->
+            println("grocerySnapshotListener().collect result: $result")
             when (result) {
                 is ListItemsResultListener.Success -> {
                     localDataSource.updateRoomDatabase(result.listItems)

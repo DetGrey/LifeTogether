@@ -26,11 +26,13 @@ class LoginViewModel @Inject constructor(
     fun onLoginClicked(
         onSuccess: (UserInformation) -> Unit,
     ) {
+        println("Login clicked")
         error = ""
 
         viewModelScope.launch {
             val loginResult: AuthResultListener = loginUseCase.invoke(User(email, password))
             if (loginResult is AuthResultListener.Success) {
+                println("LoginViewModel: Login successful")
                 onSuccess(loginResult.userInformation)
             } else if (loginResult is AuthResultListener.Failure) {
                 error = loginResult.message

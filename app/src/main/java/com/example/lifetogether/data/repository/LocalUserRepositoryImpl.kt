@@ -17,12 +17,17 @@ class LocalUserRepositoryImpl @Inject constructor(
     val userInformation: StateFlow<UserInformation?> = _userInformation.asStateFlow()
 
     suspend fun getCurrentUser() {
+        println("LocalUserRepositoryImpl getCurrentUser()")
         // Fetch user information and update the state flow
         return remoteUserRepositoryImpl.getCurrentUser().collect { authResult ->
+            println("LocalUserRepositoryImpl authResult: $authResult")
             when (authResult) {
                 is AuthResultListener.Success -> {
                     // Update the state flow with the user information
+                    println("_userInformation old value: ${_userInformation.value}")
                     _userInformation.value = authResult.userInformation
+                    println("_userInformation new value: ${_userInformation.value}")
+                    println("userInformation new value: ${userInformation.value}")
                 }
                 is AuthResultListener.Failure -> {
                     // Handle failure, e.g., log the error message
