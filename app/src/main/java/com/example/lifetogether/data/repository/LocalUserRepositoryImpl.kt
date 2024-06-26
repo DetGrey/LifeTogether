@@ -16,26 +16,32 @@ class LocalUserRepositoryImpl @Inject constructor(
     private val _userInformation = MutableStateFlow<UserInformation?>(null)
     val userInformation: StateFlow<UserInformation?> = _userInformation.asStateFlow()
 
-    suspend fun getCurrentUser() {
+    suspend fun getCurrentUser(): AuthResultListener {
         println("LocalUserRepositoryImpl getCurrentUser()")
+        var authResultListener: AuthResultListener = AuthResultListener.Failure("AuthResultListener not updated")
         // Fetch user information and update the state flow
-        return remoteUserRepositoryImpl.getCurrentUser().collect { authResult ->
+        remoteUserRepositoryImpl.getCurrentUser().collect { authResult ->
             println("LocalUserRepositoryImpl authResult: $authResult")
             when (authResult) {
                 is AuthResultListener.Success -> {
                     // Update the state flow with the user information
-                    println("_userInformation old value: ${_userInformation.value}")
+                    println("LocalUserRepositoryImpl _userInformation old value: ${_userInformation.value}")
                     _userInformation.value = authResult.userInformation
-                    println("_userInformation new value: ${_userInformation.value}")
-                    println("userInformation new value: ${userInformation.value}")
+                    println("LocalUserRepositoryImpl _userInformation new value: ${_userInformation.value}")
+                    println("LocalUserRepositoryImpl userInformation new value: ${userInformation.value}")
+                    authResultListener = authResult
                 }
                 is AuthResultListener.Failure -> {
                     // Handle failure, e.g., log the error message
                     // Optionally, you can set _userInformation.value to null or keep the last known value
                     _userInformation.value = null
+                    println("LocalUserRepositoryImpl userInformation failed to fetch: ${userInformation.value}")
+                    authResultListener = authResult
                 }
             }
         }
+        println("LocalUserRepositoryImpl AuthResultListener updated: $authResultListener")
+        return authResultListener
     }
 
     override suspend fun login(

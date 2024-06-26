@@ -53,10 +53,10 @@ class FirebaseAuthDataSource {
     }
 
     fun getCurrentUserUid(): String? {
-         try {
+        try {
             val uid = Firebase.auth.currentUser?.uid
-             println("FirebaseAuthDataSource getCurrentUserUid: $uid")
-             return uid
+            println("FirebaseAuthDataSource getCurrentUserUid: $uid")
+            return uid
         } catch (e: Exception) {
             return null
         }

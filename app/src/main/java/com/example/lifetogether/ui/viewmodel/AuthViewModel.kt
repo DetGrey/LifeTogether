@@ -6,32 +6,56 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.data.repository.LocalUserRepositoryImpl
+import com.example.lifetogether.domain.callback.AuthResultListener
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.enums.UpdateType
 import com.example.lifetogether.domain.usecase.user.FetchUserInformationUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val fetchUserInformationUseCase: FetchUserInformationUseCase,
-    localUserRepositoryImpl: LocalUserRepositoryImpl,
+    private val localUserRepositoryImpl: LocalUserRepositoryImpl,
 ) : ViewModel() {
     // ---------------------------------------------- USER
     // Create a StateFlow to hold user information
-//    private val _userInformation = MutableStateFlow<UserInformation?>(null)
-//    val userInformation: StateFlow<UserInformation?> = _userInformation.asStateFlow()
+    private val _userInformation = MutableStateFlow<UserInformation?>(null)
+    val userInformation: StateFlow<UserInformation?> = _userInformation.asStateFlow()
 
     // Use the StateFlow from the LocalUserRepositoryImpl as the single source of truth
-    val userInformation: StateFlow<UserInformation?> = localUserRepositoryImpl.userInformation
+//    val userInformation: StateFlow<UserInformation?> = localUserRepositoryImpl.userInformation
 
     init {
         // Observe changes to user information
         viewModelScope.launch {
             println("AuthViewModel before calling fetchUserInformationUseCase")
-            fetchUserInformationUseCase()
+            when (val authResult = fetchUserInformationUseCase()) {
+                is AuthResultListener.Success -> {
+                    // Update the state flow with the user information
+                    println("AuthViewModel _userInformation old value: ${_userInformation.value}")
+                    _userInformation.value = authResult.userInformation
+                    println("AuthViewModel _userInformation new value: ${_userInformation.value}")
+                    println("AuthViewModel userInformation new value: ${userInformation.value}")
+                }
+                is AuthResultListener.Failure -> {
+                    // Handle failure, e.g., log the error message
+                    // Optionally, you can set _userInformation.value to null or keep the last known value
+                    _userInformation.value = null
+                    println("AuthViewModel userInformation failed to fetch: ${userInformation.value}")
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            localUserRepositoryImpl.userInformation.collect { value ->
+                println("AuthViewModel User information changed: $value")
+                // Handle the updated value here (e.g., update UI)
+            }
         }
     }
 

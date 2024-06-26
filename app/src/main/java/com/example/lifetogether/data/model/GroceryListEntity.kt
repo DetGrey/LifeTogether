@@ -10,8 +10,8 @@ import java.util.Date
 // Assuming you have an Entity for your lists that includes a count
 @Entity(tableName = "grocery_list")
 data class GroceryListEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
+    @PrimaryKey
+    val id: String = "",
     val uid: String = "",
     val name: String = "",
     @ColumnInfo(name = "last_updated")

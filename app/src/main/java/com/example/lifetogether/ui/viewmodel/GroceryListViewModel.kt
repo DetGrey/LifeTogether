@@ -21,9 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Date
@@ -37,12 +35,44 @@ class GroceryListViewModel @Inject constructor(
     private val fetchListDefaultsUseCase: FetchListDefaultsUseCase,
     private val fetchListItemsUseCase: FetchListItemsUseCase,
 ) : ViewModel() {
-    var isLoading = true // TODO might need to change to false!!!
+    var isLoading = true // TODO might need to change to false!!! or mutablestate
 
     // TODO
     // ---------------------------------------------------------------- TRYING TO USE STATEFLOW
-    private val _uid = MutableStateFlow<String?>(null)
-    val uid: StateFlow<String?> = _uid.asStateFlow()
+    private var uidIsSet = false
+
+    fun setUpGroceryList(newUid: String) {
+        if (!uidIsSet) {
+            println("GroceryListViewModel setting UID")
+            uid = newUid
+            // Use the UID here (e.g., fetch grocery list items)
+            viewModelScope.launch {
+                fetchListItemsUseCase(uid!!, "grocery-list", GroceryItem::class).collect { result ->
+                    println("fetchListItemsUseCase result: $result")
+                    when (result) {
+                        is ListItemsResultListener.Success -> {
+                            println("_groceryList old value: ${_groceryList.value}")
+                            _groceryList.value = result.listItems
+                            println("groceryList new value: ${groceryList.value}")
+
+                            updateCategorizedItems(result.listItems)
+                            result.listItems.forEach { item ->
+                                updateCategories(item.category ?: uncategorizedCategory)
+                            }
+                            updateExpandedStates()
+                        }
+
+                        is ListItemsResultListener.Failure -> {
+                            // Handle failure, e.g., show an error message
+                        }
+                    }
+                }
+            }
+            uidIsSet = true
+        }
+    }
+
+    var uid: String? = null
 
     private val uncategorizedCategory: Category = Category(
         emoji = "❓️",
@@ -65,9 +95,16 @@ class GroceryListViewModel @Inject constructor(
     private val _groceryList = MutableStateFlow<List<GroceryItem>>(emptyList())
     val groceryList: StateFlow<List<GroceryItem>> = _groceryList.asStateFlow()
 
-    // StateFlow for categorized items
-    private val _categorizedItems = MutableStateFlow<Map<Category, List<GroceryItem>>>(emptyMap())
-    val categorizedItems: StateFlow<Map<Category, List<GroceryItem>>> = _categorizedItems.asStateFlow()
+    // StateFlow for categorized items'
+//    private val _categorizedItems = MutableStateFlow<Map<Category, List<GroceryItem>>>(emptyMap())
+//    val categorizedItems: StateFlow<Map<Category, List<GroceryItem>>> = _categorizedItems.asStateFlow()
+    // Categorized items (excluding completed items)
+    val categorizedItems: StateFlow<Map<Category, List<GroceryItem>>>
+        get() = groceryList
+            .map { list ->
+                updateCategorizedItems(list) // Call your existing function
+            }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     // StateFlow for uncategorized items TODO already in categorizedItems?
 //    val uncategorizedItems: StateFlow<List<GroceryItem>> = groceryList.map { list ->
@@ -79,54 +116,18 @@ class GroceryListViewModel @Inject constructor(
         list.filter { it.completed }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    init {
-        viewModelScope.launch {
-            localUserRepositoryImpl.userInformation
-                .onEach { userInformation ->
-                    // Log the emission
-                    println("GroceryListViewModel userInformation emitted: $userInformation")
-                }
-                .map { it?.uid }
-                .distinctUntilChanged()
-                .collect { newUid ->
-                    println("GroceryListViewModel uid. Old value: ${uid.value} - and new value: $newUid")
-                    _uid.value = newUid
-                }
-        }
-        viewModelScope.launch {
-            // Observe changes to userInformation.uid and fetch data accordingly
-            println("GroceryListViewModel calling fetchListItemsUseCase if uid exists")
-            uid.value?.let { uid ->
-                fetchListItemsUseCase(uid, "grocery-list", GroceryItem::class).collect { result ->
-                    println("fetchListItemsUseCase result: $result")
-                    when (result) {
-                        is ListItemsResultListener.Success -> {
-                            println("_groceryList old value: ${_groceryList.value}")
-                            _groceryList.value = result.listItems
-                            println("_groceryList new value: ${_groceryList.value}")
-                            println("groceryList new value: ${groceryList.value}")
-                        }
+    private fun updateCategorizedItems(list: List<GroceryItem>): Map<Category, List<GroceryItem>> {
+        println("GroceryListViewModel updateCategorizedItems() initial list: $list")
 
-                        is ListItemsResultListener.Failure -> {
-                            // Handle failure, e.g., show an error message
-                        }
-                    }
-                }
-            }
-        }
-        viewModelScope.launch {
-            groceryList.collect { list ->
-                updateCategorizedItems(list)
-            }
-        }
-    }
-
-    private fun updateCategorizedItems(list: List<GroceryItem>) {
         // Logic to categorize items and post value to _categorizedItems
-        val categorizedMap = list.groupBy { item ->
-            item.category?.takeIf { it.name != "Uncategorized" } ?: uncategorizedCategory
-        }
-        _categorizedItems.value = categorizedMap
+        val categorizedMap = list
+            .filter { !it.completed }
+            .groupBy { item ->
+                item.category?.takeIf { it.name != "Uncategorized" } ?: uncategorizedCategory
+            }
+        println("GroceryListViewModel updateCategorizedItems() categorizedMap: $categorizedMap")
+        return categorizedMap
+//        _categorizedItems.value = categorizedMap
     }
 
     private fun updateExpandedStates() {
@@ -136,6 +137,7 @@ class GroceryListViewModel @Inject constructor(
             currentStates.putIfAbsent(category.name, true)
         }
         _categoryExpandedStates.value = currentStates
+        println("GroceryListViewModel updateExpandedStates() categoryExpandedStates: $currentStates")
     }
 
     fun toggleCategoryExpanded(categoryName: String) {
@@ -196,7 +198,7 @@ class GroceryListViewModel @Inject constructor(
 //            return
 //        }
 
-        val groceryItem = uid.value?.let {
+        val groceryItem = uid?.let {
             GroceryItem(
                 uid = it,
                 category = newItemCategory,
@@ -302,234 +304,3 @@ class GroceryListViewModel @Inject constructor(
 //        }
 //    }
 }
-
-/*
-package com.example.lifetogether.ui.viewmodel
-
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.callback.DefaultsResultListener
-import com.example.lifetogether.domain.callback.ListItemsResultListener
-import com.example.lifetogether.domain.callback.ResultListener
-import com.example.lifetogether.domain.model.Category
-import com.example.lifetogether.domain.model.GroceryItem
-import com.example.lifetogether.domain.usecase.item.FetchListDefaultsUseCase
-import com.example.lifetogether.domain.usecase.item.FetchListItemsUseCase
-import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
-import com.example.lifetogether.domain.usecase.item.ToggleItemCompletionUseCase
-import com.google.firebase.firestore.DocumentSnapshot
-import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
-import java.util.Date
-import javax.inject.Inject
-
-@HiltViewModel
-class GroceryListViewModel @Inject constructor(
-    private val saveItemUseCase: SaveItemUseCase,
-    private val toggleItemCompletionUseCase: ToggleItemCompletionUseCase,
-    private val fetchListDefaultsUseCase: FetchListDefaultsUseCase,
-    private val fetchListItemsUseCase: FetchListItemsUseCase,
-) : ViewModel() {
-    var isLoading = true
-
-    // TODO
-    var groceryCategories: List<Category> by mutableStateOf(
-        listOf(
-//            Category(
-//                emoji = "❓️",
-//                name = "Uncategorized",
-//            ),
-        ),
-    )
-
-    // Must be "=" and not "by" else the app with crash
-    var categoryExpandedStates: MutableMap<String, MutableState<Boolean>> = mutableMapOf()
-    var completedSectionExpanded: Boolean by mutableStateOf(false)
-
-    // TODO
-    var groceryList: List<GroceryItem> by mutableStateOf(
-        listOf(),
-    )
-
-    var newItemText: String by mutableStateOf("")
-    var newItemCategory: Category by mutableStateOf(
-        Category(
-            emoji = "❓️",
-            name = "Uncategorized",
-        ),
-    )
-
-    fun updateNewItemCategory(category: Category?) {
-        newItemCategory = category
-            ?: Category(
-                emoji = "❓️",
-                name = "Uncategorized",
-            )
-        println("New category: $newItemCategory")
-    }
-
-    fun getCategoryItems(
-        category: Category,
-    ): List<GroceryItem> {
-        return groceryList.filter { item ->
-            if (category.name == "Uncategorized") {
-                !item.completed && item.category == null
-            } else {
-                !item.completed && item.category == category
-            }
-        }
-    }
-
-    fun getCompletedItems(): List<GroceryItem> {
-        return groceryList.filter { item -> item.completed }
-    }
-
-    private fun updateExpandedStates() {
-        // Ensure each category has an expanded state entry
-        groceryCategories.forEach { category ->
-            if (!categoryExpandedStates.containsKey(category.name)) {
-                categoryExpandedStates[category.name] = mutableStateOf(true)
-            }
-        }
-
-        println("categoryExpandedStates: $categoryExpandedStates")
-    }
-
-    fun toggleCategoryExpanded(categoryName: String) {
-        categoryExpandedStates[categoryName]?.let { expanded ->
-            expanded.value = !expanded.value
-        }
-    }
-
-    // USE CASES
-    fun fetchData(uid: String) {
-        viewModelScope.launch {
-            val defaultsDeferred = async {
-                fetchDefaults(onSuccess = {
-                    updateExpandedStates()
-                })
-            }
-            val itemsDeferred = async {
-                fetchListItems(uid, onSuccess = {
-                    groceryList.forEach { item ->
-                        item.category?.let { updateCategories(it) }
-                    }
-                })
-            }
-            // Wait for both coroutines to complete
-            defaultsDeferred.await()
-            itemsDeferred.await()
-
-            // Now that both coroutines are done, set isLoading to false
-            isLoading = false
-        }
-    }
-
-    fun addItemToList(
-        uid: String,
-        onSuccess: () -> Unit,
-    ) {
-        if (groceryList.any { it.itemName.lowercase() == newItemText.lowercase() && !it.completed }) {
-            // TODO add error popup
-            return
-        }
-        viewModelScope.launch {
-            val groceryItem = GroceryItem(
-                uid = uid,
-                category = newItemCategory,
-                itemName = newItemText,
-                lastUpdated = Date(System.currentTimeMillis()),
-                completed = false,
-            )
-            val result: ResultListener = saveItemUseCase.invoke(groceryItem, "grocery-list")
-            if (result is ResultListener.Success) {
-                groceryList = groceryList.plus(groceryItem)
-                updateCategories(newItemCategory)
-                updateNewItemCategory(null)
-                newItemText = ""
-                onSuccess()
-            } else if (result is ResultListener.Failure) {
-                // TODO popup saying the error for 5 sec
-            }
-        }
-    }
-
-    fun toggleItemCompleted(
-        oldItem: GroceryItem,
-    ) {
-        isLoading = true
-        val newItem = oldItem.copy(completed = !oldItem.completed, lastUpdated = Date(System.currentTimeMillis()))
-
-        viewModelScope.launch {
-            val result: ResultListener = toggleItemCompletionUseCase.invoke(newItem, "grocery-list")
-            if (result is ResultListener.Success) {
-                groceryList = groceryList.minus(oldItem).plus(newItem)
-                isLoading = false
-            } else if (result is ResultListener.Failure) {
-                // TODO popup saying the error for 5 sec
-                isLoading = false
-            }
-        }
-    }
-
-    // PRIVATE FUNCTIONS
-    private fun updateCategories(
-        newCategory: Category,
-    ) {
-        if (!groceryCategories.contains(newCategory)) {
-            println("adding new category: $newCategory")
-            groceryCategories = groceryCategories.plus(newCategory)
-            updateExpandedStates()
-        }
-    }
-
-    private suspend fun fetchDefaults(
-        onSuccess: () -> Unit,
-    ) {
-        val result: DefaultsResultListener = fetchListDefaultsUseCase.invoke("grocery-list")
-        if (result is DefaultsResultListener.Success) {
-            groceryCategories = hashmapListToCategoryList(result.documentSnapshot)
-            onSuccess()
-        } else if (result is DefaultsResultListener.Failure) {
-            // TODO popup saying the error for 5 sec
-        }
-    }
-
-    private fun hashmapListToCategoryList(
-        documentSnapshot: DocumentSnapshot,
-    ): List<Category> {
-        val categoriesMapList = documentSnapshot.data?.get("categories") as? List<*>
-        return categoriesMapList?.mapNotNull { item ->
-            if (item is Map<*, *>) {
-                val emoji = item["emoji"]
-                val name = item["name"]
-                if (emoji is String && name is String) {
-                    Category(emoji, name)
-                } else {
-                    null
-                }
-            } else {
-                null
-            }
-        } ?: listOf()
-    }
-
-    private suspend fun fetchListItems(
-        uid: String,
-        onSuccess: () -> Unit,
-    ) {
-        val result: ListItemsResultListener<GroceryItem> = fetchListItemsUseCase.invoke(uid, "grocery-list", GroceryItem::class)
-        if (result is ListItemsResultListener.Success) {
-            groceryList = result.listItems
-            onSuccess()
-        } else if (result is ListItemsResultListener.Failure) {
-            // TODO popup saying the error for 5 sec
-        }
-    }
-}
- */

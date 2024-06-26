@@ -20,6 +20,7 @@ class LocalDataSource @Inject constructor(
         println("GroceryItem list: $items")
         val groceryListEntityList = items.map { item ->
             GroceryListEntity(
+                id = item.id ?: "",
                 uid = item.uid,
                 name = item.itemName,
                 lastUpdated = item.lastUpdated,

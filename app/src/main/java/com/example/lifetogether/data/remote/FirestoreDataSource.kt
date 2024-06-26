@@ -184,7 +184,7 @@ class FirestoreDataSource@Inject constructor(
 //    }
     suspend fun grocerySnapshotListener() = callbackFlow {
         println("Firestore grocerySnapshotListener init")
-        val groceryItemsRef = Firebase.firestore.collection("grocery-list")
+        val groceryItemsRef = Firebase.firestore.collection("grocery-list") // TODO only check user's data, not the whole collection
         val listenerRegistration = groceryItemsRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 // Handle error
