@@ -12,10 +12,10 @@ import kotlinx.coroutines.flow.Flow
 interface UserInformationDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE) // TODO
-    suspend fun updateItems(items: List<UserEntity>)
+    suspend fun updateItems(item: UserEntity)
 
-    @Query("SELECT * FROM $USER_TABLE WHERE uid = :uid")
-    fun getItems(uid: String): Flow<List<UserEntity>>
+    @Query("SELECT * FROM $USER_TABLE WHERE uid = :uid LIMIT 1")
+    fun getItems(uid: String): Flow<UserEntity>
 
 //    @Query("SELECT * FROM grocery_list")
 //    fun getAllListCounts(): LiveData<List<ListCountEntity>>

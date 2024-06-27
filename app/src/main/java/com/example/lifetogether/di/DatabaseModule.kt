@@ -47,11 +47,4 @@ object DatabaseModule {
     fun provideCategoriesDao(db: AppDatabase): CategoriesDao {
         return db.categoriesDao()
     }
-
-    // Example of providing another DAO
-//    @Provides
-//    @Singleton
-//    fun provideAnotherDao(db: AppDatabase): AnotherDao {
-//        return db.anotherDao()
-//    }
 }

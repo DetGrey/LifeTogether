@@ -2,24 +2,26 @@ package com.example.lifetogether.domain.usecase.observers
 
 import com.example.lifetogether.data.local.LocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.callback.UserListListener
+import com.example.lifetogether.domain.callback.AuthResultListener
 import javax.inject.Inject
 
 class ObserveUserInformationUseCase @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
     private val localDataSource: LocalDataSource,
 ) {
-    suspend operator fun invoke() {
+    suspend operator fun invoke(
+        uid: String,
+    ) {
         println("ObserveUserInformationUseCase invoked")
-        firestoreDataSource.userInformationSnapshotListener().collect { result ->
-            println("categoriesSnapshotListener().collect result: $result")
+        firestoreDataSource.userInformationSnapshotListener(uid).collect { result ->
+            println("userInformationSnapshotListener().collect result: $result")
             when (result) {
-                is UserListListener.Success -> {
-                    localDataSource.updateUserInformation(result.userInformationList)
+                is AuthResultListener.Success -> {
+                    localDataSource.updateUserInformation(result.userInformation)
                 }
-                is UserListListener.Failure -> {
+                is AuthResultListener.Failure -> {
                     // Handle failure
-                    println("categoriesSnapshotListener failure: ${result.message}")
+                    println("userInformationSnapshotListener failure: ${result.message}")
                 }
             }
         }

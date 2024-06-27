@@ -49,21 +49,45 @@ class RemoteUserRepositoryImpl @Inject constructor(
         }
     }
 
-    suspend fun getCurrentUser(): Flow<AuthResultListener> {
+    suspend fun authResultListenerFlow(): Flow<AuthResultListener> {
         println("RemoteUserRepositoryImpl getCurrentUser()")
-        return flow {
-            try {
-                val currentUserUid = firebaseAuthDataSource.getCurrentUserUid()
-                println("RemoteUserRepositoryImpl currentUserUid: $currentUserUid")
-                if (currentUserUid != null) {
-                    emit(firestoreDataSource.getUserInformation(currentUserUid))
-                } else {
-                    emit(AuthResultListener.Failure("Authentication failed"))
+        var authResultListener: AuthResultListener = AuthResultListener.Failure("AuthResultListener not updated")
+        firebaseAuthDataSource.authStateListener().collect { result ->
+            println("userInformationSnapshotListener().collect result: $result")
+            when (result) {
+                is AuthResultListener.Success -> {
+                    authResultListener = result
+//                    if (result.userInformation.uid != null) {
+//                        firestoreDataSource.getUserInformation(result.userInformation.uid)
+//                    } else {
+//                        println("authStateListener failure")
+//                    }
                 }
-            } catch (e: Exception) {
-                emit(AuthResultListener.Failure(e.message ?: "Unknown error"))
+                is AuthResultListener.Failure -> {
+                    // Handle failure
+                    authResultListener = result
+                    println("authStateListener failure: ${result.message}")
+                }
             }
         }
+        return flow { emit(authResultListener) }
+//        return flow {
+//            try {
+//                val currentUserUid = firebaseAuthDataSource.getCurrentUserUid()
+//                println("RemoteUserRepositoryImpl currentUserUid: $currentUserUid")
+//                if (currentUserUid != null) {
+//                    emit(firestoreDataSource.getUserInformation(currentUserUid))
+//                } else {
+//                    emit(AuthResultListener.Failure("Authentication failed"))
+//                }
+//            } catch (e: Exception) {
+//                emit(AuthResultListener.Failure(e.message ?: "Unknown error"))
+//            }
+//        }
+    }
+
+    suspend fun getUserInformation(uid: String): AuthResultListener {
+        return firestoreDataSource.getUserInformation(uid)
     }
 
     override suspend fun logout(): ResultListener {

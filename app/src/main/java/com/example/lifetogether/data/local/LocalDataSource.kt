@@ -50,17 +50,21 @@ class LocalDataSource @Inject constructor(
         categoriesDao.updateItems(categoryEntities)
     }
 
-    suspend fun updateUserInformation(items: List<UserInformation>) {
-        val userEntities = items.map { user ->
-            UserEntity(
-                uid = user.uid ?: "",
-                email = user.email,
-                name = user.name,
-                birthday = user.birthday,
-                familyId = user.familyId,
-            )
-        }
-        userInformationDao.updateItems(userEntities)
+    // -------------------------------------------------------------- USER INFORMATION
+    fun getUserInformation(uid: String): Flow<UserEntity> {
+        return userInformationDao.getItems(uid)
+    }
+
+    suspend fun updateUserInformation(userInformation: UserInformation) {
+        val userEntity = UserEntity(
+            uid = userInformation.uid ?: "",
+            email = userInformation.email,
+            name = userInformation.name,
+            birthday = userInformation.birthday,
+            familyId = userInformation.familyId,
+        )
+
+        userInformationDao.updateItems(userEntity)
     }
 
 //    // Function to get all list counts

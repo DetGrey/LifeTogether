@@ -6,7 +6,6 @@ import com.example.lifetogether.domain.callback.CategoriesListener
 import com.example.lifetogether.domain.callback.DefaultsResultListener
 import com.example.lifetogether.domain.callback.ListItemsResultListener
 import com.example.lifetogether.domain.callback.ResultListener
-import com.example.lifetogether.domain.callback.UserListListener
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.GroceryItem
 import com.example.lifetogether.domain.model.Item
@@ -153,9 +152,9 @@ class FirestoreDataSource@Inject constructor(
     }
 
     // -------------------------------------- COLLECTION SNAPSHOT LISTENERS
-    suspend fun grocerySnapshotListener() = callbackFlow {
+    suspend fun grocerySnapshotListener(uid: String) = callbackFlow {
         println("Firestore grocerySnapshotListener init")
-        val groceryItemsRef = Firebase.firestore.collection("grocery-list") // TODO only check user's data, not the whole collection
+        val groceryItemsRef = Firebase.firestore.collection("grocery-list").whereEqualTo("uid", uid) // TODO only check user's data, not the whole collection
         val listenerRegistration = groceryItemsRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 // Handle error
@@ -189,16 +188,16 @@ class FirestoreDataSource@Inject constructor(
                 @Suppress("UNCHECKED_CAST")
                 val categories = snapshot.get("categories") as? List<Map<String, String>>
 
-                val categoryEntities = categories?.map { category ->
+                val categoryItems = categories?.map { category ->
                     Category(
                         emoji = category["emoji"] ?: "",
                         name = category["name"] ?: "",
                     )
                 } ?: emptyList()
 
-                println("Snapshot items to CategoryEntity: $categoryEntities")
-                if (categoryEntities.isNotEmpty()) {
-                    trySend(CategoriesListener.Success(categoryEntities)).isSuccess
+                println("Snapshot items to CategoryItems: $categoryItems")
+                if (categoryItems.isNotEmpty()) {
+                    trySend(CategoriesListener.Success(categoryItems)).isSuccess
                 }
             }
         }
@@ -206,21 +205,23 @@ class FirestoreDataSource@Inject constructor(
         awaitClose { listenerRegistration.remove() }
     }
 
-    suspend fun userInformationSnapshotListener() = callbackFlow {
+    suspend fun userInformationSnapshotListener(uid: String) = callbackFlow {
         println("Firestore userInformationSnapshotListener init")
-        val groceryItemsRef = Firebase.firestore.collection("users") // TODO only check user's data, not the whole collection
+        val groceryItemsRef = Firebase.firestore.collection("users").document(uid) // TODO only check user's data, not the whole collection
         val listenerRegistration = groceryItemsRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 // Handle error
-                trySend(UserListListener.Failure("Error: ${e.message}")).isSuccess
+                trySend(AuthResultListener.Failure("Error: ${e.message}")).isSuccess
                 return@addSnapshotListener
             }
 
             if (snapshot != null) {
                 // Process the changes and update Room database
-                val items = snapshot.toObjects(UserInformation::class.java)
-                println("Snapshot items to GroceryItem: $items")
-                trySend(UserListListener.Success(items)).isSuccess
+                val userInformation = snapshot.toObject(UserInformation::class.java)
+                println("Snapshot of userInformation: $userInformation")
+                if (userInformation != null) {
+                    trySend(AuthResultListener.Success(userInformation)).isSuccess
+                }
             }
         }
         // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.

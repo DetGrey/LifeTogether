@@ -5,7 +5,11 @@ import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
 import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
 class FirebaseAuthDataSource {
@@ -16,8 +20,6 @@ class FirebaseAuthDataSource {
         try {
             val loginResult = Firebase.auth.signInWithEmailAndPassword(user.email, user.password).await()
             val firebaseUser = loginResult.user
-            println("loginResult: $loginResult")
-            println("firebaseUser: $firebaseUser")
             return if (firebaseUser != null) {
                 AuthResultListener.Success(
                     UserInformation(uid = firebaseUser.uid),
@@ -59,6 +61,23 @@ class FirebaseAuthDataSource {
             return uid
         } catch (e: Exception) {
             return null
+        }
+    }
+
+    suspend fun authStateListener(): Flow<AuthResultListener> = callbackFlow {
+        val authStateListener = FirebaseAuth.AuthStateListener { auth ->
+            val currentUser = auth.currentUser
+            if (currentUser != null) {
+                trySend(AuthResultListener.Success(UserInformation(uid = currentUser.uid)))
+            } else {
+                trySend(AuthResultListener.Failure("Authentication failed"))
+            }
+        }
+
+        FirebaseAuth.getInstance().addAuthStateListener(authStateListener)
+
+        awaitClose {
+            FirebaseAuth.getInstance().removeAuthStateListener(authStateListener)
         }
     }
 

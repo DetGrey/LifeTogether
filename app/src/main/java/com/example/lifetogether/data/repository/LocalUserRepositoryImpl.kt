@@ -1,53 +1,52 @@
 package com.example.lifetogether.data.repository
 
+import com.example.lifetogether.data.local.LocalDataSource
 import com.example.lifetogether.domain.callback.AuthResultListener
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.repository.UserRepository
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class LocalUserRepositoryImpl @Inject constructor(
     private val remoteUserRepositoryImpl: RemoteUserRepositoryImpl,
+    private val localDataSource: LocalDataSource,
 ) : UserRepository {
-    private val _userInformation = MutableStateFlow<UserInformation?>(null)
-    val userInformation: StateFlow<UserInformation?> = _userInformation.asStateFlow()
 
-    suspend fun getCurrentUser(): AuthResultListener {
-        println("LocalUserRepositoryImpl getCurrentUser()")
-        var authResultListener: AuthResultListener = AuthResultListener.Failure("AuthResultListener not updated")
-        // Fetch user information and update the state flow
-        remoteUserRepositoryImpl.getCurrentUser().collect { authResult ->
-            println("LocalUserRepositoryImpl authResult: $authResult")
-            when (authResult) {
-                is AuthResultListener.Success -> {
-                    // Update the state flow with the user information
-                    println("LocalUserRepositoryImpl _userInformation old value: ${_userInformation.value}")
-                    _userInformation.value = authResult.userInformation
-                    println("LocalUserRepositoryImpl _userInformation new value: ${_userInformation.value}")
-                    println("LocalUserRepositoryImpl userInformation new value: ${userInformation.value}")
-                    authResultListener = authResult
-                }
-                is AuthResultListener.Failure -> {
-                    // Handle failure, e.g., log the error message
-                    // Optionally, you can set _userInformation.value to null or keep the last known value
-                    _userInformation.value = null
-                    println("LocalUserRepositoryImpl userInformation failed to fetch: ${userInformation.value}")
-                    authResultListener = authResult
-                }
+    fun getUserInformation(uid: String): Flow<AuthResultListener> {
+        return localDataSource.getUserInformation(uid).map { user ->
+            try {
+                AuthResultListener.Success(
+                    UserInformation(
+                        uid = user.uid,
+                        email = user.email,
+                        name = user.name,
+                        birthday = user.birthday,
+                        familyId = user.familyId,
+                    ),
+                )
+            } catch (e: Exception) {
+                AuthResultListener.Failure(e.message ?: "Unknown error")
             }
         }
-        println("LocalUserRepositoryImpl AuthResultListener updated: $authResultListener")
-        return authResultListener
     }
 
     override suspend fun login(
         user: User,
     ): AuthResultListener {
-        TODO("Not yet implemented")
+        val loginResult = remoteUserRepositoryImpl.login(user)
+        return loginResult
+//        when (loginResult) {
+//            is AuthResultListener.Success -> {
+//                firestoreDataSource.getUserInformation(currentUserUid)
+//            }
+//            is AuthResultListener.Failure -> {
+//
+//            }
+//        }
+//        TODO("Not yet implemented")
     }
 
     override suspend fun signUp(
