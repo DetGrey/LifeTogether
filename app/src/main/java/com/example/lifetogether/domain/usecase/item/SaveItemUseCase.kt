@@ -14,16 +14,6 @@ class SaveItemUseCase @Inject constructor(
         item: Item,
         listName: String,
     ): ResultListener {
-        // Save to local storage first
-        val localResult = localListRepository.saveItem(item, listName)
-        if (localResult is ResultListener.Success) {
-            // If successful, try saving to remote storage
-            val remoteResult = remoteListRepository.saveItem(item, listName)
-            if (remoteResult is ResultListener.Failure) {
-                // TODO If remote save fails, mark item as needing sync
-//                localListRepository.markItemAsNeedingSync(item)
-            }
-        }
-        return localResult
+        return remoteListRepository.saveItem(item, listName)
     }
 }

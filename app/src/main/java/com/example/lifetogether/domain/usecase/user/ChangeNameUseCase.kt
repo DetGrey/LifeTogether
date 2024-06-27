@@ -5,12 +5,12 @@ import com.example.lifetogether.domain.callback.ResultListener
 import javax.inject.Inject
 
 class ChangeNameUseCase @Inject constructor(
-    private val userRepository: RemoteUserRepositoryImpl,
+    private val remoteUserRepositoryImpl: RemoteUserRepositoryImpl,
 ) {
     suspend operator fun invoke(
         uid: String,
         newName: String,
     ): ResultListener {
-        return userRepository.changeName(uid, newName)
+        return remoteUserRepositoryImpl.changeName(uid, newName)
     }
 }

@@ -2,9 +2,12 @@ package com.example.lifetogether.data.remote
 
 import com.example.lifetogether.data.local.LocalDataSource
 import com.example.lifetogether.domain.callback.AuthResultListener
+import com.example.lifetogether.domain.callback.CategoriesListener
 import com.example.lifetogether.domain.callback.DefaultsResultListener
 import com.example.lifetogether.domain.callback.ListItemsResultListener
 import com.example.lifetogether.domain.callback.ResultListener
+import com.example.lifetogether.domain.callback.UserListListener
+import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.GroceryItem
 import com.example.lifetogether.domain.model.Item
 import com.example.lifetogether.domain.model.UserInformation
@@ -150,38 +153,6 @@ class FirestoreDataSource@Inject constructor(
     }
 
     // -------------------------------------- COLLECTION SNAPSHOT LISTENERS
-    suspend fun collectionSnapshotListeners(): ResultListener {
-        try {
-            val groceryCollectionListener = grocerySnapshotListener()
-
-            return ResultListener.Success
-        } catch (e: Exception) {
-            println("Error: ${e.message}")
-            return ResultListener.Failure("Error: ${e.message}")
-        }
-    }
-
-//    private suspend fun grocerySnapshotListener(): ResultListener {
-//        try {
-//            val groceryItemsRef = Firebase.firestore.collection("groceryItems")
-//            groceryItemsRef.addSnapshotListener { snapshot, e ->
-//                if (e != null) {
-//                    // Handle error
-//                    return@addSnapshotListener
-//                }
-//
-//                if (snapshot != null) {
-//                    // Process the changes and update Room database
-//                    val items = snapshot.toObjects(GroceryItem::class.java)
-//                    localDataSource.updateRoomDatabase(items)
-//                }
-//            }
-//            return ResultListener.Success
-//        } catch (e: Exception) {
-//            println("Error: ${e.message}")
-//            return ResultListener.Failure("Error: ${e.message}")
-//        }
-//    }
     suspend fun grocerySnapshotListener() = callbackFlow {
         println("Firestore grocerySnapshotListener init")
         val groceryItemsRef = Firebase.firestore.collection("grocery-list") // TODO only check user's data, not the whole collection
@@ -197,6 +168,59 @@ class FirestoreDataSource@Inject constructor(
                 val items = snapshot.toObjects(GroceryItem::class.java)
                 println("Snapshot items to GroceryItem: $items")
                 trySend(ListItemsResultListener.Success(items)).isSuccess
+            }
+        }
+        // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.
+        awaitClose { listenerRegistration.remove() }
+    }
+
+    suspend fun categoriesSnapshotListener() = callbackFlow {
+        println("Firestore categoriesSnapshotListener init")
+        val categoryItemsRef = Firebase.firestore.collection("grocery-list").document("default")
+        val listenerRegistration = categoryItemsRef.addSnapshotListener { snapshot, e ->
+            if (e != null) {
+                // Handle error
+                trySend(CategoriesListener.Failure("Error: ${e.message}")).isSuccess
+                return@addSnapshotListener
+            }
+
+            if (snapshot != null && snapshot.exists()) {
+                // Process the changes and update Room database
+                @Suppress("UNCHECKED_CAST")
+                val categories = snapshot.get("categories") as? List<Map<String, String>>
+
+                val categoryEntities = categories?.map { category ->
+                    Category(
+                        emoji = category["emoji"] ?: "",
+                        name = category["name"] ?: "",
+                    )
+                } ?: emptyList()
+
+                println("Snapshot items to CategoryEntity: $categoryEntities")
+                if (categoryEntities.isNotEmpty()) {
+                    trySend(CategoriesListener.Success(categoryEntities)).isSuccess
+                }
+            }
+        }
+        // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.
+        awaitClose { listenerRegistration.remove() }
+    }
+
+    suspend fun userInformationSnapshotListener() = callbackFlow {
+        println("Firestore userInformationSnapshotListener init")
+        val groceryItemsRef = Firebase.firestore.collection("users") // TODO only check user's data, not the whole collection
+        val listenerRegistration = groceryItemsRef.addSnapshotListener { snapshot, e ->
+            if (e != null) {
+                // Handle error
+                trySend(UserListListener.Failure("Error: ${e.message}")).isSuccess
+                return@addSnapshotListener
+            }
+
+            if (snapshot != null) {
+                // Process the changes and update Room database
+                val items = snapshot.toObjects(UserInformation::class.java)
+                println("Snapshot items to GroceryItem: $items")
+                trySend(UserListListener.Success(items)).isSuccess
             }
         }
         // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.

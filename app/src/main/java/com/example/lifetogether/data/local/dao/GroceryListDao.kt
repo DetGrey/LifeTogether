@@ -1,4 +1,4 @@
-package com.example.lifetogether.data.local
+package com.example.lifetogether.data.local.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
@@ -8,7 +8,7 @@ import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.util.Constants.GROCERY_TABLE
 import kotlinx.coroutines.flow.Flow
 
-// Data Access Object (DAO) for the ListCountEntity
+// Data Access Object (DAO)
 @Dao
 interface GroceryListDao {
 

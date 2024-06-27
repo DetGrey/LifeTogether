@@ -1,21 +1,29 @@
 package com.example.lifetogether.data.local
 
+import com.example.lifetogether.data.local.dao.CategoriesDao
+import com.example.lifetogether.data.local.dao.GroceryListDao
+import com.example.lifetogether.data.local.dao.UserInformationDao
+import com.example.lifetogether.data.model.CategoryEntity
 import com.example.lifetogether.data.model.GroceryListEntity
+import com.example.lifetogether.data.model.UserEntity
+import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.GroceryItem
+import com.example.lifetogether.domain.model.UserInformation
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class LocalDataSource @Inject constructor(
     private val groceryListDao: GroceryListDao,
+    private val categoriesDao: CategoriesDao,
+    private val userInformationDao: UserInformationDao,
 ) {
-
     fun getListItems(uid: String): Flow<List<GroceryListEntity>> {
         val items = groceryListDao.getItems(uid)
         println("LocalDataSource getListItems: $items")
         return items
     }
 
-    suspend fun updateRoomDatabase(items: List<GroceryItem>) {
+    suspend fun updateGroceryList(items: List<GroceryItem>) {
         println("LocalDataSource updateRoomDatabase(): Trying to add firestore data to Room")
         println("GroceryItem list: $items")
         val groceryListEntityList = items.map { item ->
@@ -30,6 +38,29 @@ class LocalDataSource @Inject constructor(
         }
         println("groceryListEntity list: $groceryListEntityList")
         groceryListDao.updateItems(groceryListEntityList)
+    }
+
+    suspend fun updateCategories(items: List<Category>) {
+        val categoryEntities = items.map { category ->
+            CategoryEntity(
+                emoji = category.emoji,
+                name = category.name,
+            )
+        }
+        categoriesDao.updateItems(categoryEntities)
+    }
+
+    suspend fun updateUserInformation(items: List<UserInformation>) {
+        val userEntities = items.map { user ->
+            UserEntity(
+                uid = user.uid ?: "",
+                email = user.email,
+                name = user.name,
+                birthday = user.birthday,
+                familyId = user.familyId,
+            )
+        }
+        userInformationDao.updateItems(userEntities)
     }
 
 //    // Function to get all list counts

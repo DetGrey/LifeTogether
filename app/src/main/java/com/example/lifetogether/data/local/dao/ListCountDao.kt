@@ -1,4 +1,4 @@
-package com.example.lifetogether.data.local
+package com.example.lifetogether.data.local.dao
 
 import androidx.lifecycle.LiveData
 import androidx.room.Dao

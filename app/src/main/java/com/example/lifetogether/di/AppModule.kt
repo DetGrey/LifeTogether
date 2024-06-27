@@ -1,6 +1,8 @@
 package com.example.lifetogether.di
 
-import com.example.lifetogether.domain.usecase.item.ObserveGroceryListUseCase
+import com.example.lifetogether.domain.usecase.observers.ObserveCategoriesUseCase
+import com.example.lifetogether.domain.usecase.observers.ObserveGroceryListUseCase
+import com.example.lifetogether.domain.usecase.observers.ObserveUserInformationUseCase
 import com.example.lifetogether.ui.viewmodel.ObserverViewModel
 import dagger.Module
 import dagger.Provides
@@ -14,11 +16,15 @@ object AppModule {
 
     @Singleton
     @Provides
-    fun provideGroceryListViewModel(
-        // Replace with actual dependencies
+    fun provideObserverViewModel(
         observeGroceryListUseCase: ObserveGroceryListUseCase,
+        observeCategoriesUseCase: ObserveCategoriesUseCase,
+        observeUserInformationUseCase: ObserveUserInformationUseCase,
     ): ObserverViewModel {
-//        return ObserverViewModel(someDependency) // ViewModel constructor with dependencies
-        return ObserverViewModel(observeGroceryListUseCase) // ViewModel constructor with dependencies
+        return ObserverViewModel(
+            observeGroceryListUseCase,
+            observeCategoriesUseCase,
+            observeUserInformationUseCase,
+        ) // ViewModel constructor with dependencies
     }
 }

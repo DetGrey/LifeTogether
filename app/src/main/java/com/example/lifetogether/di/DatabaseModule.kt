@@ -3,7 +3,9 @@ package com.example.lifetogether.di
 import android.content.Context
 import androidx.room.Room
 import com.example.lifetogether.data.local.AppDatabase
-import com.example.lifetogether.data.local.GroceryListDao
+import com.example.lifetogether.data.local.dao.CategoriesDao
+import com.example.lifetogether.data.local.dao.GroceryListDao
+import com.example.lifetogether.data.local.dao.UserInformationDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -21,7 +23,7 @@ object DatabaseModule {
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
-            "database_name",
+            "life_together_database",
         )
             .allowMainThreadQueries()
             .fallbackToDestructiveMigration()
@@ -32,6 +34,18 @@ object DatabaseModule {
     @Singleton
     fun provideGroceryListDao(db: AppDatabase): GroceryListDao {
         return db.groceryListDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserInformationDao(db: AppDatabase): UserInformationDao {
+        return db.userInformationDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideCategoriesDao(db: AppDatabase): CategoriesDao {
+        return db.categoriesDao()
     }
 
     // Example of providing another DAO

@@ -1,4 +1,4 @@
-package com.example.lifetogether.domain.usecase.item
+package com.example.lifetogether.domain.usecase.observers
 
 import com.example.lifetogether.data.local.LocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
@@ -15,11 +15,11 @@ class ObserveGroceryListUseCase @Inject constructor(
             println("grocerySnapshotListener().collect result: $result")
             when (result) {
                 is ListItemsResultListener.Success -> {
-                    localDataSource.updateRoomDatabase(result.listItems)
+                    localDataSource.updateGroceryList(result.listItems)
                 }
                 is ListItemsResultListener.Failure -> {
                     // Handle failure
-                    println("ObserveGroceryItemsUseCase failure: ${result.message}")
+                    println("ObserveFirestoreUseCase failure: ${result.message}")
                 }
             }
         }
