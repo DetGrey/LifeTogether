@@ -54,16 +54,6 @@ class FirebaseAuthDataSource {
         }
     }
 
-    fun getCurrentUserUid(): String? {
-        try {
-            val uid = Firebase.auth.currentUser?.uid
-            println("FirebaseAuthDataSource getCurrentUserUid: $uid")
-            return uid
-        } catch (e: Exception) {
-            return null
-        }
-    }
-
     suspend fun authStateListener(): Flow<AuthResultListener> = callbackFlow {
         val authStateListener = FirebaseAuth.AuthStateListener { auth ->
             val currentUser = auth.currentUser
@@ -83,7 +73,8 @@ class FirebaseAuthDataSource {
 
     fun logout(): ResultListener {
         try {
-            Firebase.auth.signOut()
+            FirebaseAuth.getInstance().signOut()
+            println("datasource logout result: ${FirebaseAuth.getInstance().currentUser}")
             return ResultListener.Success
         } catch (e: Exception) {
             return ResultListener.Failure("Error: ${e.message}")

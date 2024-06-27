@@ -196,7 +196,7 @@ fun ProfileScreen(
                     onConfirm = {
                         profileViewModel.logout(
                             onSuccess = {
-                                authViewModel?.loggedOut()
+//                                authViewModel?.loggedOut()
                                 profileViewModel.closeConfirmationDialog()
                                 appNavigator?.navigateToHome()
                             },

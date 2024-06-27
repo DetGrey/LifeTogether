@@ -54,6 +54,7 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             val result = logoutUseCase.invoke()
             if (result is ResultListener.Success) {
+                println("ProfileViewModel: Logout successful")
                 onSuccess()
             } else if (result is ResultListener.Failure) {
                 // TODO

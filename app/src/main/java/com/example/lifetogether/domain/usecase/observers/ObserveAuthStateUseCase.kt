@@ -8,7 +8,6 @@ import javax.inject.Inject
 
 class ObserveAuthStateUseCase @Inject constructor(
     private val firebaseAuthDataSource: FirebaseAuthDataSource,
-    private val localDataSource: LocalDataSource,
 ) {
     suspend operator fun invoke(): Flow<AuthResultListener> {
         println("ObserveAuthStateUseCase invoked")

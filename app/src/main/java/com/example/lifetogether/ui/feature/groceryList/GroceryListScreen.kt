@@ -36,7 +36,6 @@ fun GroceryListScreen(
 
     LaunchedEffect(key1 = true) {
         // Perform any one-time initialization or side effect here
-        println("Screen launched!")
         println("GroceryList uid: ${userInformationState?.uid}")
         userInformationState?.uid?.let { groceryListViewModel.setUpGroceryList(it) }
     }
