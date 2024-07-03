@@ -1,6 +1,5 @@
 package com.example.lifetogether.data.remote
 
-import com.example.lifetogether.data.local.LocalDataSource
 import com.example.lifetogether.domain.callback.AuthResultListener
 import com.example.lifetogether.domain.callback.CategoriesListener
 import com.example.lifetogether.domain.callback.DefaultsResultListener
@@ -23,10 +22,9 @@ import javax.inject.Inject
 import kotlin.reflect.KClass
 
 class FirestoreDataSource@Inject constructor(
-    private val localDataSource: LocalDataSource,
+
 ) {
     private val db = Firebase.firestore
-    // TODO Firebase.firestore.setPersistenceEnabled(true)
 
     // -------------------------------------- USERS
     suspend fun getUserInformation(uid: String): AuthResultListener {
@@ -199,7 +197,7 @@ class FirestoreDataSource@Inject constructor(
 
     suspend fun categoriesSnapshotListener() = callbackFlow {
         println("Firestore categoriesSnapshotListener init")
-        val categoryItemsRef = Firebase.firestore.collection("grocery-list").document("default")
+        val categoryItemsRef = Firebase.firestore.collection("default").document("categories")
         val listenerRegistration = categoryItemsRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 // Handle error
@@ -210,7 +208,7 @@ class FirestoreDataSource@Inject constructor(
             if (snapshot != null && snapshot.exists()) {
                 // Process the changes and update Room database
                 @Suppress("UNCHECKED_CAST")
-                val categories = snapshot.get("categories") as? List<Map<String, String>>
+                val categories = snapshot.get("list") as? List<Map<String, String>>
 
                 val categoryItems = categories?.map { category ->
                     Category(
