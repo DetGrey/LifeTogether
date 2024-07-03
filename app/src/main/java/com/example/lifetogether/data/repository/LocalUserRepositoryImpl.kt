@@ -33,6 +33,10 @@ class LocalUserRepositoryImpl @Inject constructor(
         }
     }
 
+    fun removeSavedUserInformation(): ResultListener {
+        return localDataSource.clearUserInformationTable()
+    }
+
     override suspend fun login(
         user: User,
     ): AuthResultListener {
@@ -62,5 +66,9 @@ class LocalUserRepositoryImpl @Inject constructor(
 
     override suspend fun changeName(uid: String, newName: String): ResultListener {
         TODO("Not yet implemented")
+    }
+
+    suspend fun createNewFamily(uid: String): ResultListener {
+        return remoteUserRepositoryImpl.createNewFamily(uid)
     }
 }

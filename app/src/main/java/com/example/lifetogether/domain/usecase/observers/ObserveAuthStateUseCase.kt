@@ -1,6 +1,5 @@
 package com.example.lifetogether.domain.usecase.observers
 
-import com.example.lifetogether.data.local.LocalDataSource
 import com.example.lifetogether.data.remote.FirebaseAuthDataSource
 import com.example.lifetogether.domain.callback.AuthResultListener
 import kotlinx.coroutines.flow.Flow

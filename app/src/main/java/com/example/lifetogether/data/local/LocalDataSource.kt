@@ -6,6 +6,7 @@ import com.example.lifetogether.data.local.dao.UserInformationDao
 import com.example.lifetogether.data.model.CategoryEntity
 import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.model.UserEntity
+import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.GroceryItem
 import com.example.lifetogether.domain.model.UserInformation
@@ -65,6 +66,15 @@ class LocalDataSource @Inject constructor(
         )
 
         userInformationDao.updateItems(userEntity)
+    }
+    fun clearUserInformationTable(): ResultListener {
+        try {
+            groceryListDao.deleteTable()
+            userInformationDao.deleteTable()
+            return ResultListener.Success
+        } catch (e: Exception) {
+            return ResultListener.Failure("Error: $e")
+        }
     }
 
 //    // Function to get all list counts

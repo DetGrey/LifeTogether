@@ -1,6 +1,7 @@
 package com.example.lifetogether.ui.feature.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -15,13 +16,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.ui.common.CountdownRow
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.navigation.AppNavigator
@@ -34,6 +38,8 @@ fun HomeScreen(
     appNavigator: AppNavigator? = null,
     authViewModel: AuthViewModel? = null,
 ) {
+    val userInformation = authViewModel?.userInformation?.collectAsState(initial = null)
+
     Box(
         modifier = Modifier
             .fillMaxSize(),
@@ -82,10 +88,51 @@ fun HomeScreen(
             }
 
             item {
-                Text(text = "Important dates:")
-                // TODO update events and make clickable
-                CountdownRow(event = "Wedding anniversary", daysLeft = "20")
-                CountdownRow(event = "Andrés' birthday", daysLeft = "35")
+                when (userInformation?.value) {
+                    is UserInformation -> {
+                        if (userInformation.value!!.familyId == null) {
+                            Box(
+                                modifier = Modifier
+                                    .padding(bottom = 15.dp)
+                                    .fillMaxWidth()
+                                    .height(75.dp)
+                                    .clip(shape = RoundedCornerShape(20))
+                                    .background(MaterialTheme.colorScheme.tertiary)
+                                    .padding(horizontal = 20.dp)
+                                    .clickable {
+                                        appNavigator?.navigateToSettings()
+                                    },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text =
+                                    "Please create or connect to a family to save your data",
+                                    textAlign = TextAlign.Center,
+                                )
+                            }
+                        }
+
+                        Text(text = "Important dates:")
+                        // TODO update events and make clickable
+                        CountdownRow(event = "Wedding anniversary", daysLeft = "20")
+                        CountdownRow(event = "Andrés' birthday", daysLeft = "35")
+                    }
+                    else -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(75.dp)
+                                .clip(shape = RoundedCornerShape(20))
+                                .background(MaterialTheme.colorScheme.tertiary)
+                                .clickable {
+                                    appNavigator?.navigateToLogin()
+                                },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(text = "Please login to use the app")
+                        }
+                    }
+                }
             }
 
             item {
@@ -99,33 +146,61 @@ fun HomeScreen(
                         10,
                         "Recipe",
                         onClick = {
-                            appNavigator?.navigateToGroceryList()
-                        }, // TODO
+                            if (userInformation?.value?.familyId == null) {
+                                // TODO add popup asking to join a family
+                            } else {
+                                appNavigator?.navigateToGroceryList()
+                            }
+                        },
                     )
                     FeatureOverview(
                         "Recipes",
                         1,
                         "Recipe",
-                        onClick = {}, // TODO
+                        onClick = {
+                            if (userInformation?.value?.familyId == null) {
+                                // TODO add popup asking to join a family
+                            } else {
+                                // TODO
+                            }
+                        },
                     )
                     FeatureOverview(
                         "Memory lane",
                         4,
                         "Recipe",
                         fullWidth = true,
-                        onClick = {}, // TODO
+                        onClick = {
+                            if (userInformation?.value?.familyId == null) {
+                                // TODO add popup asking to join a family
+                            } else {
+                                // TODO
+                            }
+                        },
                     )
                     FeatureOverview(
                         "Gallery",
                         10,
                         "Recipe",
-                        onClick = {}, // TODO
+                        onClick = {
+                            if (userInformation?.value?.familyId == null) {
+                                // TODO add popup asking to join a family
+                            } else {
+                                // TODO
+                            }
+                        },
                     )
                     FeatureOverview(
                         "Note Corner",
                         43,
                         "Recipe",
-                        onClick = {}, // TODO
+                        onClick = {
+                            if (userInformation?.value?.familyId == null) {
+                                // TODO add popup asking to join a family
+                            } else {
+                                // TODO
+                            }
+                        },
                     )
                 }
             }

@@ -13,6 +13,7 @@ class SignUpUseCase @Inject constructor(
         user: User,
         userInformation: UserInformation,
     ): AuthResultListener {
+        // TODO sign up validation is needed to fit with the validation when logging in
 //        if (user.password != confirmPassword) {
 //            error = "Confirmed password does not match"
 //            return

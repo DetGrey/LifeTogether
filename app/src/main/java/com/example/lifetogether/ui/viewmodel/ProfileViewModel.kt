@@ -19,20 +19,6 @@ class ProfileViewModel @Inject constructor(
     private val logoutUseCase: LogoutUseCase,
     private val changeNameUseCase: ChangeNameUseCase,
 ) : ViewModel() {
-//    private val _uid = MutableStateFlow<String?>(null)
-//    val uid: StateFlow<String?> = _uid.asStateFlow()
-
-//    init {
-//        viewModelScope.launch {
-//            localUserRepositoryImpl.userInformation
-//                .map { it?.uid }
-//                .distinctUntilChanged()
-//                .collect { newUid ->
-//                    _uid.value = newUid
-//                }
-//        }
-//    }
-
     enum class ConfirmationType {
         LOGOUT, NAME, PASSWORD
     }

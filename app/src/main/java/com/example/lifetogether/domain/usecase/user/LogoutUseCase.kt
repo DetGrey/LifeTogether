@@ -5,9 +5,9 @@ import com.example.lifetogether.domain.callback.ResultListener
 import javax.inject.Inject
 
 class LogoutUseCase @Inject constructor(
-    private val userRepository: RemoteUserRepositoryImpl,
+    private val remoteUserRepositoryImpl: RemoteUserRepositoryImpl,
 ) {
     suspend operator fun invoke(): ResultListener {
-        return userRepository.logout()
+        return remoteUserRepositoryImpl.logout()
     }
 }

@@ -17,8 +17,8 @@ interface UserInformationDao {
     @Query("SELECT * FROM $USER_TABLE WHERE uid = :uid LIMIT 1")
     fun getItems(uid: String): Flow<UserEntity>
 
-//    @Query("SELECT * FROM grocery_list")
-//    fun getAllListCounts(): LiveData<List<ListCountEntity>>
+    @Query("DELETE FROM $USER_TABLE")
+    fun deleteTable()
 //
 //    @Insert(onConflict = OnConflictStrategy.REPLACE)
 //    suspend fun insertListCount(listCount: ListCountEntity)

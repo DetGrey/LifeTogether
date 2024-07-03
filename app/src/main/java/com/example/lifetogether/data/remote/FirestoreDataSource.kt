@@ -6,6 +6,7 @@ import com.example.lifetogether.domain.callback.CategoriesListener
 import com.example.lifetogether.domain.callback.DefaultsResultListener
 import com.example.lifetogether.domain.callback.ListItemsResultListener
 import com.example.lifetogether.domain.callback.ResultListener
+import com.example.lifetogether.domain.callback.StringResultListener
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.GroceryItem
 import com.example.lifetogether.domain.model.Item
@@ -64,6 +65,29 @@ class FirestoreDataSource@Inject constructor(
     suspend fun changeName(uid: String, newName: String): ResultListener {
         try {
             db.collection("users").document(uid).update("name", newName).await()
+            return ResultListener.Success
+        } catch (e: Exception) {
+            println("Error: ${e.message}")
+            return ResultListener.Failure("Error: ${e.message}")
+        }
+    }
+
+    // -------------------------------------- FAMILY
+    suspend fun createNewFamily(uid: String): StringResultListener {
+        println("FirestoreDataSource createNewFamily getting uploaded")
+        val map = mapOf("owner" to uid)
+
+        try {
+            val documentReference = db.collection("families").add(map).await()
+            return StringResultListener.Success(documentReference.id)
+        } catch (e: Exception) {
+            println("Error: ${e.message}")
+            return StringResultListener.Failure("Error: ${e.message}")
+        }
+    }
+    suspend fun updateFamilyId(uid: String, familyId: String): ResultListener {
+        try {
+            db.collection("users").document(uid).update("familyId", familyId).await()
             return ResultListener.Success
         } catch (e: Exception) {
             println("Error: ${e.message}")
@@ -207,8 +231,8 @@ class FirestoreDataSource@Inject constructor(
 
     suspend fun userInformationSnapshotListener(uid: String) = callbackFlow {
         println("Firestore userInformationSnapshotListener init")
-        val groceryItemsRef = Firebase.firestore.collection("users").document(uid) // TODO only check user's data, not the whole collection
-        val listenerRegistration = groceryItemsRef.addSnapshotListener { snapshot, e ->
+        val userInformationRef = Firebase.firestore.collection("users").document(uid) // TODO only check user's data, not the whole collection
+        val listenerRegistration = userInformationRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 // Handle error
                 trySend(AuthResultListener.Failure("Error: ${e.message}")).isSuccess

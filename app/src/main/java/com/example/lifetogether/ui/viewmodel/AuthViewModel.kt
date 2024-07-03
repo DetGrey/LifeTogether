@@ -13,6 +13,7 @@ import com.example.lifetogether.domain.usecase.observers.ObserveCategoriesUseCas
 import com.example.lifetogether.domain.usecase.observers.ObserveGroceryListUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveUserInformationUseCase
 import com.example.lifetogether.domain.usecase.user.FetchUserInformationUseCase
+import com.example.lifetogether.domain.usecase.user.RemoveSavedUserInformationUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,6 +28,7 @@ class AuthViewModel @Inject constructor(
     private val observeGroceryListUseCase: ObserveGroceryListUseCase,
     private val observeCategoriesUseCase: ObserveCategoriesUseCase,
     private val observeUserInformationUseCase: ObserveUserInformationUseCase,
+    private val removeSavedUserInformationUseCase: RemoveSavedUserInformationUseCase,
 ) : ViewModel() {
     // ---------------------------------------------- USER
     // Create a StateFlow to hold user information
@@ -41,8 +43,8 @@ class AuthViewModel @Inject constructor(
                 when (result) {
                     is AuthResultListener.Success -> {
                         result.userInformation.uid?.let { uid ->
-                            observeFirestore()
                             fetchUserInformation(uid)
+                            observeFirestore(uid)
                         }
                     }
                     is AuthResultListener.Failure -> {
@@ -57,37 +59,52 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    private suspend fun observeFirestore() {
-        userInformation.value?.uid?.let { uid ->
-            viewModelScope.launch {
-                observeUserInformationUseCase.invoke(uid)
-            }
+    private fun observeFirestore(uid: String) {
+        println("AuthViewModel observeFirestore()")
+        viewModelScope.launch {
+            observeUserInformationUseCase.invoke(uid)
+        }
 
-            viewModelScope.launch {
-                observeGroceryListUseCase.invoke(uid)
-            }
+        viewModelScope.launch {
+            observeGroceryListUseCase.invoke(uid)
         }
     }
 
-    private suspend fun fetchUserInformation(uid: String) {
+    private fun fetchUserInformation(uid: String) {
         println("AuthViewModel before calling fetchUserInformationUseCase")
-        fetchUserInformationUseCase(uid = uid).collect { result ->
-            println("AuthViewModel fetchUserInformationUseCase result: $result")
-            when (result) {
-                is AuthResultListener.Success -> {
-                    _userInformation.value = result.userInformation
-                }
+        viewModelScope.launch {
+            fetchUserInformationUseCase(uid = uid).collect { result ->
+                println("AuthViewModel fetchUserInformationUseCase result: $result")
+                when (result) {
+                    is AuthResultListener.Success -> {
+                        _userInformation.value = result.userInformation
+                    }
 
-                is AuthResultListener.Failure -> {
-                    _userInformation.value = null
-                    // Handle failure, e.g., show an error message
+                    is AuthResultListener.Failure -> {
+                        _userInformation.value = null
+                        // Handle failure, e.g., show an error message
+                    }
                 }
             }
         }
     }
 
-    fun loggedOut() {
+    fun onSignOut() {
+        viewModelScope.launch {
+            removeSavedUserInformationUseCase.invoke()
+        }
         _userInformation.value = null
+        // TODO clear all user data from Room db
+        // TODO stop observing firestore
+    }
+
+    fun onLogin() {
+//        println("AuthViewModel onLogin() uid: ${userInformation.value?.uid}")
+//        // TODO separate way to observe firestore and make sure uid gets fetched
+//        userInformation.value?.uid?.let { uid ->
+//            fetchUserInformation(uid)
+//            observeFirestore(uid)
+//        }
     }
 
     // ---------------------------------------------- ITEM COUNT

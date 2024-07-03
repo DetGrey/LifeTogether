@@ -18,6 +18,9 @@ interface GroceryListDao {
     @Query("SELECT * FROM $GROCERY_TABLE WHERE uid = :uid")
     fun getItems(uid: String): Flow<List<GroceryListEntity>>
 
+    @Query("DELETE FROM $GROCERY_TABLE")
+    fun deleteTable()
+
 //    @Query("SELECT * FROM grocery_list")
 //    fun getAllListCounts(): LiveData<List<ListCountEntity>>
 //

@@ -39,9 +39,9 @@ class UserValidationUseCase {
             return false
         }
 
-        if (password.count { it.isUpperCase() } < 1) {
-            return false
-        }
+//        if (password.count { it.isUpperCase() } < 1) {
+//            return false
+//        }
 
         if (password.count { it.isLowerCase() } < 1) {
             return false

@@ -83,7 +83,7 @@ fun LoginScreen(
                     Button(onClick = {
                         loginViewModel.onLoginClicked(
                             onSuccess = { userInformation ->
-//                                authViewModel?.updateUserInformation(userInformation)
+//                                authViewModel?.onLogin()
                                 appNavigator?.navigateToProfile()
                             },
                         )

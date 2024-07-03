@@ -4,6 +4,7 @@ import com.example.lifetogether.data.remote.FirebaseAuthDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.callback.AuthResultListener
 import com.example.lifetogether.domain.callback.ResultListener
+import com.example.lifetogether.domain.callback.StringResultListener
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.repository.UserRepository
@@ -96,5 +97,18 @@ class RemoteUserRepositoryImpl @Inject constructor(
 
     override suspend fun changeName(uid: String, newName: String): ResultListener {
         return firestoreDataSource.changeName(uid, newName)
+    }
+
+    suspend fun createNewFamily(uid: String): ResultListener {
+        println("RemoteUserRepositoryImpl createNewFamily()")
+        when (val result = firestoreDataSource.createNewFamily(uid)) {
+            is StringResultListener.Success -> {
+                val updateResult = firestoreDataSource.updateFamilyId(uid, result.string)
+                return updateResult
+            }
+            is StringResultListener.Failure -> {
+                return ResultListener.Failure(result.message)
+            }
+        }
     }
 }
