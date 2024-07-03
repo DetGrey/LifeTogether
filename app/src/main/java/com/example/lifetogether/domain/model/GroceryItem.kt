@@ -6,7 +6,7 @@ import java.util.Date
 data class GroceryItem(
     @DocumentId @Transient
     override val id: String? = null,
-    override val uid: String = "",
+    override val familyId: String = "",
     override val itemName: String = "",
     override var lastUpdated: Date = Date(),
     override var completed: Boolean = false,

@@ -12,7 +12,8 @@ import java.util.Date
 data class GroceryListEntity(
     @PrimaryKey
     val id: String = "",
-    val uid: String = "",
+    @ColumnInfo(name = "family_id")
+    val familyId: String = "",
     val name: String = "",
     @ColumnInfo(name = "last_updated")
     var lastUpdated: Date = Date(),

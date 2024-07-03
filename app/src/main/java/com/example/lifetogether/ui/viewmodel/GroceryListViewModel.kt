@@ -32,20 +32,20 @@ class GroceryListViewModel @Inject constructor(
     var isLoading = true // TODO might need to change to false!!! or mutablestate
 
     // ---------------------------------------------------------------- UID
-    private var uidIsSet = false
-    var uid: String? = null
+    private var familyIdIsSet = false
+    var familyId: String? = null
 
     // ---------------------------------------------------------------- SETUP/FETCH LIST
     private val _groceryList = MutableStateFlow<List<GroceryItem>>(emptyList())
     val groceryList: StateFlow<List<GroceryItem>> = _groceryList.asStateFlow()
 
-    fun setUpGroceryList(addedUid: String) {
-        if (!uidIsSet) {
+    fun setUpGroceryList(addedFamilyId: String) {
+        if (!familyIdIsSet) {
             println("GroceryListViewModel setting UID")
-            uid = addedUid
+            familyId = addedFamilyId
             // Use the UID here (e.g., fetch grocery list items)
             viewModelScope.launch {
-                fetchListItemsUseCase(uid!!, "grocery-list", GroceryItem::class).collect { result ->
+                fetchListItemsUseCase(familyId!!, "grocery-list", GroceryItem::class).collect { result ->
                     println("fetchListItemsUseCase result: $result")
                     when (result) {
                         is ListItemsResultListener.Success -> {
@@ -65,7 +65,7 @@ class GroceryListViewModel @Inject constructor(
                     }
                 }
             }
-            uidIsSet = true
+            familyIdIsSet = true
         }
     }
 
@@ -158,9 +158,9 @@ class GroceryListViewModel @Inject constructor(
 //            return
 //        }
 
-        val groceryItem = uid?.let {
+        val groceryItem = familyId?.let {
             GroceryItem(
-                uid = it,
+                familyId = it,
                 category = newItemCategory,
                 itemName = newItemText,
                 lastUpdated = Date(System.currentTimeMillis()),

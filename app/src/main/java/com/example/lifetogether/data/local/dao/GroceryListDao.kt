@@ -15,8 +15,8 @@ interface GroceryListDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE) // TODO
     suspend fun updateItems(items: List<GroceryListEntity>)
 
-    @Query("SELECT * FROM $GROCERY_TABLE WHERE uid = :uid")
-    fun getItems(uid: String): Flow<List<GroceryListEntity>>
+    @Query("SELECT * FROM $GROCERY_TABLE WHERE family_id = :familyId")
+    fun getItems(familyId: String): Flow<List<GroceryListEntity>>
 
     @Query("DELETE FROM $GROCERY_TABLE")
     fun deleteTable()

@@ -80,7 +80,7 @@ fun ListItemPreview() {
     LifeTogetherTheme {
         ListItem(
             GroceryItem(
-                uid = "dsuaihfao",
+                familyId = "dsuaihfao",
                 category = Category(
                     "🍎",
                     "Fruits and vegetables",

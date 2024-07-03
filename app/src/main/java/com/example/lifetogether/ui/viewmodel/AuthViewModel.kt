@@ -59,14 +59,21 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    private fun observeFirestore(uid: String) {
+    private fun observeFirestore(
+        uid: String,
+    ) {
         println("AuthViewModel observeFirestore()")
         viewModelScope.launch {
             observeUserInformationUseCase.invoke(uid)
         }
+    }
 
+    fun observeFirestoreFamilyData(
+        familyId: String,
+    ) {
+        println("AuthViewModel observeFirestoreFamilyData() familyId: $familyId")
         viewModelScope.launch {
-            observeGroceryListUseCase.invoke(uid)
+            observeGroceryListUseCase.invoke(familyId)
         }
     }
 

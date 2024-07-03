@@ -8,9 +8,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlin.reflect.KClass
 
 interface ListRepository {
-    suspend fun fetchAllData(uid: String): Flow<List<Any>>
+    suspend fun fetchAllData(familyId: String): Flow<List<Any>>
     suspend fun saveItem(item: Item, listName: String): ResultListener
     suspend fun toggleItemCompletion(item: Item, listName: String): ResultListener
     suspend fun fetchListDefaults(listName: String): DefaultsResultListener
-    suspend fun <T : Item> fetchListItems(listName: String, uid: String, itemType: KClass<T>): Flow<ListItemsResultListener<T>>
+    suspend fun <T : Item> fetchListItems(listName: String, familyId: String, itemType: KClass<T>): Flow<ListItemsResultListener<T>>
 }

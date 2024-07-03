@@ -1,6 +1,7 @@
 package com.example.lifetogether.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
@@ -18,6 +19,13 @@ fun NavHost(
 ) {
     val appNavigator = AppNavigator(navController)
     val authViewModel: AuthViewModel = hiltViewModel()
+
+    val userInformation = authViewModel.userInformation.collectAsState(initial = null)
+    when (val familyId = userInformation.value?.familyId) {
+        is String -> {
+            authViewModel.observeFirestoreFamilyData(familyId)
+        }
+    }
 
     androidx.navigation.compose.NavHost(
         navController = navController,

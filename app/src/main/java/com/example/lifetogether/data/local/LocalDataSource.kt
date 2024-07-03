@@ -18,8 +18,8 @@ class LocalDataSource @Inject constructor(
     private val categoriesDao: CategoriesDao,
     private val userInformationDao: UserInformationDao,
 ) {
-    fun getListItems(uid: String): Flow<List<GroceryListEntity>> {
-        val items = groceryListDao.getItems(uid)
+    fun getListItems(familyId: String): Flow<List<GroceryListEntity>> {
+        val items = groceryListDao.getItems(familyId)
         println("LocalDataSource getListItems: $items")
         return items
     }
@@ -30,7 +30,7 @@ class LocalDataSource @Inject constructor(
         val groceryListEntityList = items.map { item ->
             GroceryListEntity(
                 id = item.id ?: "",
-                uid = item.uid,
+                familyId = item.familyId,
                 name = item.itemName,
                 lastUpdated = item.lastUpdated,
                 completed = item.completed,

@@ -10,10 +10,10 @@ class ObserveGroceryListUseCase @Inject constructor(
     private val localDataSource: LocalDataSource,
 ) {
     suspend operator fun invoke(
-        uid: String,
+        familyId: String,
     ) {
         println("ObserveGroceryListUseCase invoked")
-        firestoreDataSource.grocerySnapshotListener(uid).collect { result ->
+        firestoreDataSource.grocerySnapshotListener(familyId).collect { result ->
             println("grocerySnapshotListener().collect result: $result")
             when (result) {
                 is ListItemsResultListener.Success -> {

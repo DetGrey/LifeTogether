@@ -14,7 +14,7 @@ class RemoteListRepositoryImpl @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
 ) : ListRepository {
 
-    override suspend fun fetchAllData(uid: String): Flow<List<Any>> {
+    override suspend fun fetchAllData(familyId: String): Flow<List<Any>> {
         TODO("Not yet implemented")
     }
 
@@ -38,9 +38,9 @@ class RemoteListRepositoryImpl @Inject constructor(
 
     override suspend fun <T : Item> fetchListItems(
         listName: String,
-        uid: String,
+        familyId: String,
         itemType: KClass<T>,
     ): Flow<ListItemsResultListener<T>> {
-        return firestoreDataSource.fetchListItems(listName, uid, itemType)
+        return firestoreDataSource.fetchListItems(listName, familyId, itemType)
     }
 }

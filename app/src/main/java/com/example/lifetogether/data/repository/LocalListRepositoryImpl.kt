@@ -17,7 +17,7 @@ class LocalListRepositoryImpl @Inject constructor(
     private val localDataSource: LocalDataSource,
 ) : ListRepository {
 
-    override suspend fun fetchAllData(uid: String): Flow<List<Any>> {
+    override suspend fun fetchAllData(familyId: String): Flow<List<Any>> {
         TODO("Not yet implemented")
     }
 
@@ -41,11 +41,11 @@ class LocalListRepositoryImpl @Inject constructor(
 
     override suspend fun <T : Item> fetchListItems(
         listName: String,
-        uid: String,
+        familyId: String,
         itemType: KClass<T>,
     ): Flow<ListItemsResultListener<T>> {
         println("LocalListRepoImpl fetchListItems init")
-        return localDataSource.getListItems(uid)
+        return localDataSource.getListItems(familyId)
             .map { entities ->
                 try {
                     // Convert entities to items
@@ -83,7 +83,7 @@ class LocalListRepositoryImpl @Inject constructor(
         @Suppress("UNCHECKED_CAST")
         return when (itemType) {
             GroceryItem::class -> GroceryItem(
-                uid = this.uid,
+                familyId = this.familyId,
                 itemName = this.name,
                 lastUpdated = this.lastUpdated,
                 completed = this.completed,

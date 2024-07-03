@@ -4,7 +4,7 @@ import java.util.Date
 
 interface Item {
     val id: String?
-    val uid: String
+    val familyId: String
     val itemName: String
     var lastUpdated: Date
     var completed: Boolean

@@ -115,7 +115,7 @@ class FirestoreDataSource@Inject constructor(
     ): ResultListener {
         try {
             val query = db.collection(listName)
-                .whereEqualTo("uid", item.uid)
+                .whereEqualTo("familyId", item.familyId)
                 .whereEqualTo("itemName", item.itemName)
 
             if (item is GroceryItem) { // Check if item is of type GroceryItem
@@ -159,11 +159,11 @@ class FirestoreDataSource@Inject constructor(
 
     suspend fun <T : Item> fetchListItems(
         listName: String,
-        uid: String,
+        familyId: String,
         itemType: KClass<T>,
     ): Flow<ListItemsResultListener<T>> {
         try {
-            val fetchResult = db.collection(listName).whereEqualTo("uid", uid).get().await()
+            val fetchResult = db.collection(listName).whereEqualTo("familyId", familyId).get().await()
             val itemsList = fetchResult.documents.mapNotNull { document ->
                 document.toObject(itemType.java)
             }
@@ -176,9 +176,9 @@ class FirestoreDataSource@Inject constructor(
     }
 
     // -------------------------------------- COLLECTION SNAPSHOT LISTENERS
-    suspend fun grocerySnapshotListener(uid: String) = callbackFlow {
+    suspend fun grocerySnapshotListener(familyId: String) = callbackFlow {
         println("Firestore grocerySnapshotListener init")
-        val groceryItemsRef = Firebase.firestore.collection("grocery-list").whereEqualTo("uid", uid) // TODO only check user's data, not the whole collection
+        val groceryItemsRef = Firebase.firestore.collection("grocery-list").whereEqualTo("familyId", familyId) // TODO only check user's data, not the whole collection
         val listenerRegistration = groceryItemsRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 // Handle error

@@ -36,8 +36,8 @@ fun GroceryListScreen(
 
     LaunchedEffect(key1 = true) {
         // Perform any one-time initialization or side effect here
-        println("GroceryList uid: ${userInformationState?.uid}")
-        userInformationState?.uid?.let { groceryListViewModel.setUpGroceryList(it) }
+        println("GroceryList familyId: ${userInformationState?.familyId}")
+        userInformationState?.familyId?.let { groceryListViewModel.setUpGroceryList(it) }
     }
 
     // Collecting the StateFlows as state
