@@ -15,8 +15,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.enums.SettingsConfirmationTypes
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
+import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.viewmodel.AuthViewModel
@@ -29,7 +31,6 @@ fun SettingsScreen(
 ) {
     val settingsViewModel: SettingsViewModel = hiltViewModel()
     val userInformation = authViewModel?.userInformation?.collectAsState(initial = null)
-//    val userInformation = UserInformation()
 
     Box(
         modifier = Modifier
@@ -73,18 +74,21 @@ fun SettingsScreen(
                             title = "My family",
                             link = "Edit family",
                             linkClickable = {
-                                // TODO
+                                settingsViewModel.confirmationDialogType = SettingsConfirmationTypes.EDIT_FAMILY
+                                settingsViewModel.showConfirmationDialog = true
                             },
                         )
                     } else {
                         SettingsItem(
                             icon = Icon(R.drawable.ic_profile_picture, "profile pic"),
-                            title = "Connect to family",
+                            title = "Join a family",
                             titleClickable = {
-                                // TODO
+                                settingsViewModel.confirmationDialogType = SettingsConfirmationTypes.JOIN_FAMILY
+                                settingsViewModel.showConfirmationDialog = true
                             },
                             link = "Create new family",
                             linkClickable = {
+                                settingsViewModel.confirmationDialogType = SettingsConfirmationTypes.NEW_FAMILY
                                 settingsViewModel.showConfirmationDialog = true
                             },
                         )
@@ -103,21 +107,59 @@ fun SettingsScreen(
         }
 
         if (settingsViewModel.showConfirmationDialog) {
-            ConfirmationDialog(
-                onDismiss = { settingsViewModel.closeConfirmationDialog() },
-                onConfirm = {
-                    userInformation?.value?.uid.let { uid ->
-                        println("uid: $uid")
-                        if (uid != null) {
-                            settingsViewModel.createNewFamily(uid)
+            when (settingsViewModel.confirmationDialogType) {
+                SettingsConfirmationTypes.EDIT_FAMILY -> ConfirmationDialog(
+                    onDismiss = { settingsViewModel.closeConfirmationDialog() },
+                    onConfirm = {
+                        userInformation?.value?.uid.let { uid ->
+                            userInformation?.value?.familyId.let { familyId ->
+                                if (uid != null && familyId != null) {
+                                    settingsViewModel.leaveFamily(familyId, uid)
+                                }
+                            }
                         }
-                    }
-                },
-                dialogTitle = "Create new family",
-                dialogMessage = "Are you sure you want to create a new family?",
-                dismissButtonMessage = "Cancel",
-                confirmButtonMessage = "Create",
-            )
+                    },
+                    dialogTitle = "Leave family",
+                    dialogMessage = "Are you sure you want to leave the family?",
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Leave",
+                )
+
+                SettingsConfirmationTypes.JOIN_FAMILY -> ConfirmationDialogWithTextField(
+                    onDismiss = { settingsViewModel.closeConfirmationDialog() },
+                    onConfirm = {
+                        userInformation?.value?.uid.let { uid ->
+                            if (uid != null) {
+                                settingsViewModel.joinFamily(uid)
+                            }
+                        }
+                    },
+                    dialogTitle = "Join a family",
+                    dialogMessage = "Please add the family id to join",
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Join",
+                    textValue = settingsViewModel.addedFamilyId,
+                    onTextValueChange = { settingsViewModel.addedFamilyId = it },
+                )
+
+                SettingsConfirmationTypes.NEW_FAMILY -> ConfirmationDialog(
+                    onDismiss = { settingsViewModel.closeConfirmationDialog() },
+                    onConfirm = {
+                        userInformation?.value?.uid.let { uid ->
+                            println("uid: $uid")
+                            if (uid != null) {
+                                settingsViewModel.createNewFamily(uid)
+                            }
+                        }
+                    },
+                    dialogTitle = "Create new family",
+                    dialogMessage = "Are you sure you want to create a new family?",
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Create",
+                )
+
+                null -> {}
+            }
         }
     }
 }

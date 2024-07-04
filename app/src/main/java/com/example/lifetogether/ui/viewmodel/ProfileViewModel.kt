@@ -19,13 +19,13 @@ class ProfileViewModel @Inject constructor(
     private val logoutUseCase: LogoutUseCase,
     private val changeNameUseCase: ChangeNameUseCase,
 ) : ViewModel() {
-    enum class ConfirmationType {
+    enum class ProfileConfirmationType {
         LOGOUT, NAME, PASSWORD
     }
 
     var newName: String by mutableStateOf("")
 
-    var confirmationDialogType: ConfirmationType? by mutableStateOf(null)
+    var confirmationDialogType: ProfileConfirmationType? by mutableStateOf(null)
 
     var showConfirmationDialog: Boolean by mutableStateOf(false)
 
@@ -47,18 +47,19 @@ class ProfileViewModel @Inject constructor(
             }
         }
     }
-    fun changeName() {
+    fun changeName(uid: String) {
         val name = newName
+        if (name.isEmpty()) {
+            return
+        }
 
-//        uid.value?.let { uid -> TODO
-//            viewModelScope.launch {
-//                val result = changeNameUseCase.invoke(uid, name)
-//                if (result is ResultListener.Success) {
-//                    closeConfirmationDialog()
-//                } else if (result is ResultListener.Failure) {
-//                    // TODO
-//                }
-//            }
-//        }
+        viewModelScope.launch {
+            val result = changeNameUseCase.invoke(uid, name)
+            if (result is ResultListener.Success) {
+                closeConfirmationDialog()
+            } else if (result is ResultListener.Failure) {
+                // TODO
+            }
+        }
     }
 }

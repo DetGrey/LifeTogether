@@ -8,22 +8,20 @@ import com.example.lifetogether.domain.callback.StringResultListener
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.repository.UserRepository
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 class RemoteUserRepositoryImpl @Inject constructor(
     private val firebaseAuthDataSource: FirebaseAuthDataSource,
     private val firestoreDataSource: FirestoreDataSource,
 ) : UserRepository {
-    override suspend fun login(
+    suspend fun login(
         user: User,
     ): AuthResultListener {
-        println("RemoteUserRepositoryImpl login() init")
+        println("RemoteUserRepositoryImpl login()")
         return firebaseAuthDataSource.login(user)
     }
 
-    override suspend fun signUp(
+    suspend fun signUp(
         user: User,
         userInformation: UserInformation,
     ): AuthResultListener {
@@ -50,53 +48,28 @@ class RemoteUserRepositoryImpl @Inject constructor(
         }
     }
 
-    suspend fun authResultListenerFlow(): Flow<AuthResultListener> {
-        println("RemoteUserRepositoryImpl getCurrentUser()")
-        var authResultListener: AuthResultListener = AuthResultListener.Failure("AuthResultListener not updated")
-        firebaseAuthDataSource.authStateListener().collect { result ->
-            println("userInformationSnapshotListener().collect result: $result")
-            when (result) {
-                is AuthResultListener.Success -> {
-                    authResultListener = result
-//                    if (result.userInformation.uid != null) {
-//                        firestoreDataSource.getUserInformation(result.userInformation.uid)
-//                    } else {
-//                        println("authStateListener failure")
-//                    }
-                }
-                is AuthResultListener.Failure -> {
-                    // Handle failure
-                    authResultListener = result
-                    println("authStateListener failure: ${result.message}")
-                }
-            }
-        }
-        return flow { emit(authResultListener) }
-//        return flow {
-//            try {
-//                val currentUserUid = firebaseAuthDataSource.getCurrentUserUid()
-//                println("RemoteUserRepositoryImpl currentUserUid: $currentUserUid")
-//                if (currentUserUid != null) {
-//                    emit(firestoreDataSource.getUserInformation(currentUserUid))
-//                } else {
-//                    emit(AuthResultListener.Failure("Authentication failed"))
-//                }
-//            } catch (e: Exception) {
-//                emit(AuthResultListener.Failure(e.message ?: "Unknown error"))
-//            }
-//        }
-    }
-
-    suspend fun getUserInformation(uid: String): AuthResultListener {
-        return firestoreDataSource.getUserInformation(uid)
-    }
-
-    override suspend fun logout(): ResultListener {
+    override fun logout(): ResultListener {
         return firebaseAuthDataSource.logout()
     }
 
-    override suspend fun changeName(uid: String, newName: String): ResultListener {
+    suspend fun changeName(uid: String, newName: String): ResultListener {
         return firestoreDataSource.changeName(uid, newName)
+    }
+
+    suspend fun joinFamily(
+        familyId: String,
+        uid: String,
+    ): ResultListener {
+        println("RemoteUserRepositoryImpl joinFamily()")
+        when (val result = firestoreDataSource.joinFamily(familyId, uid)) {
+            is ResultListener.Success -> {
+                val updateResult = firestoreDataSource.updateFamilyId(uid, familyId)
+                return updateResult
+            }
+            is ResultListener.Failure -> {
+                return ResultListener.Failure(result.message)
+            }
+        }
     }
 
     suspend fun createNewFamily(uid: String): ResultListener {
@@ -107,6 +80,22 @@ class RemoteUserRepositoryImpl @Inject constructor(
                 return updateResult
             }
             is StringResultListener.Failure -> {
+                return ResultListener.Failure(result.message)
+            }
+        }
+    }
+
+    suspend fun leaveFamily(
+        familyId: String,
+        uid: String,
+    ): ResultListener {
+        println("RemoteUserRepositoryImpl leaveFamily()")
+        when (val result = firestoreDataSource.leaveFamily(familyId, uid)) {
+            is ResultListener.Success -> {
+                val updateResult = firestoreDataSource.updateFamilyId(uid, null)
+                return updateResult
+            }
+            is ResultListener.Failure -> {
                 return ResultListener.Failure(result.message)
             }
         }

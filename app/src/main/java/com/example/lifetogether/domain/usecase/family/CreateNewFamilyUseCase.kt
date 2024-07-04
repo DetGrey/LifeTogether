@@ -1,16 +1,16 @@
-package com.example.lifetogether.domain.usecase
+package com.example.lifetogether.domain.usecase.family
 
-import com.example.lifetogether.data.repository.LocalUserRepositoryImpl
+import com.example.lifetogether.data.repository.RemoteUserRepositoryImpl
 import com.example.lifetogether.domain.callback.ResultListener
 import javax.inject.Inject
 
 data class CreateNewFamilyUseCase @Inject constructor(
-    private val localUserRepositoryImpl: LocalUserRepositoryImpl,
+    private val remoteUserRepositoryImpl: RemoteUserRepositoryImpl,
 ) {
     suspend operator fun invoke(
         uid: String,
     ): ResultListener {
         println("CreateNewFamilyUseCase invoked")
-        return localUserRepositoryImpl.createNewFamily(uid)
+        return remoteUserRepositoryImpl.createNewFamily(uid)
     }
 }

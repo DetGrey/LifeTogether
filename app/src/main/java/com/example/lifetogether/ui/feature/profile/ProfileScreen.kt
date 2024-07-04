@@ -2,6 +2,7 @@ package com.example.lifetogether.ui.feature.profile
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -108,7 +109,8 @@ fun ProfileScreen(
                                 .padding(end = 10.dp)
                                 .size(60.dp)
                                 .clip(shape = RoundedCornerShape(100))
-                                .background(color = MaterialTheme.colorScheme.tertiary),
+                                .background(color = MaterialTheme.colorScheme.tertiary)
+                                .clickable { }, // TODO add picture
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(text = "+", fontSize = 30.sp)
@@ -134,7 +136,7 @@ fun ProfileScreen(
                         title = "Name",
                         value = userInformation?.value?.name ?: "",
                         onClick = {
-                            profileViewModel.confirmationDialogType = ProfileViewModel.ConfirmationType.NAME
+                            profileViewModel.confirmationDialogType = ProfileViewModel.ProfileConfirmationType.NAME
                             profileViewModel.showConfirmationDialog = true
                         },
                     )
@@ -164,7 +166,7 @@ fun ProfileScreen(
                         title = "Password",
                         value = "Change password",
                         onClick = {
-                            profileViewModel.confirmationDialogType = ProfileViewModel.ConfirmationType.PASSWORD
+                            profileViewModel.confirmationDialogType = ProfileViewModel.ProfileConfirmationType.PASSWORD
                             profileViewModel.showConfirmationDialog = true
                         },
                     )
@@ -176,7 +178,7 @@ fun ProfileScreen(
                         title = "Logout",
                         value = "Logout",
                         onClick = {
-                            profileViewModel.confirmationDialogType = ProfileViewModel.ConfirmationType.LOGOUT
+                            profileViewModel.confirmationDialogType = ProfileViewModel.ProfileConfirmationType.LOGOUT
                             profileViewModel.showConfirmationDialog = true
                         },
                     )
@@ -188,9 +190,10 @@ fun ProfileScreen(
             }
         }
 
+        // ------------------------------------------------------ DIALOGS
         if (profileViewModel.showConfirmationDialog) {
             when (profileViewModel.confirmationDialogType) {
-                ProfileViewModel.ConfirmationType.LOGOUT -> ConfirmationDialog(
+                ProfileViewModel.ProfileConfirmationType.LOGOUT -> ConfirmationDialog(
                     onDismiss = { profileViewModel.closeConfirmationDialog() },
                     onConfirm = {
                         profileViewModel.logout(
@@ -207,10 +210,10 @@ fun ProfileScreen(
                     confirmButtonMessage = "Logout",
                 )
 
-                ProfileViewModel.ConfirmationType.NAME -> ConfirmationDialogWithTextField(
+                ProfileViewModel.ProfileConfirmationType.NAME -> ConfirmationDialogWithTextField(
                     onDismiss = { profileViewModel.closeConfirmationDialog() },
                     onConfirm = {
-                        profileViewModel.changeName()
+                        userInformation?.value?.uid?.let { profileViewModel.changeName(it) }
                     },
                     dialogTitle = "Change name",
                     dialogMessage = "Please enter your new name",
@@ -218,16 +221,17 @@ fun ProfileScreen(
                     confirmButtonMessage = "Change name",
                     textValue = profileViewModel.newName,
                     onTextValueChange = { profileViewModel.newName = it },
+                    capitalization = true,
                 )
 
-                ProfileViewModel.ConfirmationType.PASSWORD -> ConfirmationDialogDetails(
+                ProfileViewModel.ProfileConfirmationType.PASSWORD -> ConfirmationDialogDetails(
                     dialogTitle = "Change password",
                     dialogMessage = "Are you sure you want change password?", // TODO
                     confirmButtonMessage = "Change password",
                     onConfirm = {}, // TODO
                 )
 
-                null -> null
+                null -> {}
             }
         }
     }

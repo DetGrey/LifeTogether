@@ -1,12 +1,12 @@
 package com.example.lifetogether.domain.usecase.user
 
-import com.example.lifetogether.data.repository.LocalUserRepositoryImpl
+import com.example.lifetogether.data.repository.RemoteUserRepositoryImpl
 import com.example.lifetogether.domain.callback.AuthResultListener
 import com.example.lifetogether.domain.model.User
 import javax.inject.Inject
 
 class LoginUseCase @Inject constructor(
-    private val localUserRepositoryImpl: LocalUserRepositoryImpl,
+    private val remoteUserRepositoryImpl: RemoteUserRepositoryImpl,
 ) {
     suspend operator fun invoke(user: User): AuthResultListener {
         println("LoginUseCase invoked")
@@ -23,6 +23,6 @@ class LoginUseCase @Inject constructor(
             return AuthResultListener.Failure("Invalid email.")
         }
 
-        return localUserRepositoryImpl.login(user)
+        return remoteUserRepositoryImpl.login(user)
     }
 }

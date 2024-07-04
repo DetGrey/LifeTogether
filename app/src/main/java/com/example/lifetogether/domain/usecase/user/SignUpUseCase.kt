@@ -7,7 +7,7 @@ import com.example.lifetogether.domain.model.UserInformation
 import javax.inject.Inject
 
 class SignUpUseCase @Inject constructor(
-    private val userRepository: RemoteUserRepositoryImpl,
+    private val remoteUserRepositoryImpl: RemoteUserRepositoryImpl,
 ) {
     suspend operator fun invoke(
         user: User,
@@ -35,6 +35,6 @@ class SignUpUseCase @Inject constructor(
 //            return
 //        }
         println("SignUpUseCase invoked")
-        return userRepository.signUp(user, userInformation)
+        return remoteUserRepositoryImpl.signUp(user, userInformation)
     }
 }

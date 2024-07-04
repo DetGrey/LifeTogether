@@ -24,6 +24,7 @@ fun ConfirmationDialogWithTextField(
     textValue: String,
     onTextValueChange: (String) -> Unit,
     keyboardType: KeyboardType = KeyboardType.Text,
+    capitalization: Boolean = false,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -36,6 +37,7 @@ fun ConfirmationDialogWithTextField(
                 label = null,
                 keyboardType = keyboardType,
                 imeAction = ImeAction.Done,
+                capitalization = capitalization,
             )
         },
         dismissButton = {

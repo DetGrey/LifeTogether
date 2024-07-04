@@ -21,9 +21,7 @@ import java.util.Date
 import javax.inject.Inject
 import kotlin.reflect.KClass
 
-class FirestoreDataSource@Inject constructor(
-
-) {
+class FirestoreDataSource@Inject constructor() {
     private val db = Firebase.firestore
 
     // -------------------------------------- USERS
@@ -71,6 +69,29 @@ class FirestoreDataSource@Inject constructor(
     }
 
     // -------------------------------------- FAMILY
+    suspend fun joinFamily(
+        familyId: String,
+        uid: String,
+    ): ResultListener {
+        println("FirestoreDataSource joinFamily()")
+        try {
+            val documentReference = db.collection("families").document(familyId).get().await()
+
+            @Suppress("UNCHECKED_CAST")
+            val members = documentReference.data?.get("members") as? List<String>
+
+            val updatedMembers = members?.toMutableList() ?: mutableListOf()
+            updatedMembers.add(uid)
+
+            db.collection("families").document(familyId).update("members", updatedMembers).await()
+
+            return ResultListener.Success
+        } catch (e: Exception) {
+            println("Error: ${e.message}")
+            return ResultListener.Failure("Error: ${e.message}")
+        }
+    }
+
     suspend fun createNewFamily(uid: String): StringResultListener {
         println("FirestoreDataSource createNewFamily getting uploaded")
         val map = mapOf("owner" to uid)
@@ -83,7 +104,31 @@ class FirestoreDataSource@Inject constructor(
             return StringResultListener.Failure("Error: ${e.message}")
         }
     }
-    suspend fun updateFamilyId(uid: String, familyId: String): ResultListener {
+
+    suspend fun leaveFamily(
+        familyId: String,
+        uid: String,
+    ): ResultListener {
+        println("FirestoreDataSource leaveFamily()")
+        try {
+            val documentReference = db.collection("families").document(familyId).get().await()
+
+            @Suppress("UNCHECKED_CAST")
+            val members = documentReference.data?.get("members") as? List<String>
+
+            val updatedMembers = members?.toMutableList() ?: mutableListOf()
+            updatedMembers.remove(uid)
+
+            db.collection("families").document(familyId).update("members", updatedMembers).await()
+
+            return ResultListener.Success
+        } catch (e: Exception) {
+            println("Error: ${e.message}")
+            return ResultListener.Failure("Error: ${e.message}")
+        }
+    }
+
+    suspend fun updateFamilyId(uid: String, familyId: String?): ResultListener {
         try {
             db.collection("users").document(uid).update("familyId", familyId).await()
             return ResultListener.Success

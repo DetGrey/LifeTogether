@@ -2,7 +2,6 @@ package com.example.lifetogether.data.repository
 
 import com.example.lifetogether.data.local.LocalDataSource
 import com.example.lifetogether.data.model.GroceryListEntity
-import com.example.lifetogether.domain.callback.DefaultsResultListener
 import com.example.lifetogether.domain.callback.ListItemsResultListener
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.model.GroceryItem
@@ -17,10 +16,6 @@ class LocalListRepositoryImpl @Inject constructor(
     private val localDataSource: LocalDataSource,
 ) : ListRepository {
 
-    override suspend fun fetchAllData(familyId: String): Flow<List<Any>> {
-        TODO("Not yet implemented")
-    }
-
     override suspend fun saveItem(
         item: Item,
         listName: String,
@@ -28,18 +23,14 @@ class LocalListRepositoryImpl @Inject constructor(
         TODO("Not yet implemented")
     }
 
-    override suspend fun toggleItemCompletion(
+    suspend fun toggleItemCompletion(
         item: Item,
         listName: String,
     ): ResultListener {
         TODO("Not yet implemented")
     }
 
-    override suspend fun fetchListDefaults(listName: String): DefaultsResultListener {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun <T : Item> fetchListItems(
+    fun <T : Item> fetchListItems(
         listName: String,
         familyId: String,
         itemType: KClass<T>,
@@ -52,30 +43,12 @@ class LocalListRepositoryImpl @Inject constructor(
                     val itemsList = entities.map { it.toItem(itemType) }
                     println("LocalListRepoImpl after getting items from local data source")
                     println("itemList of specified itemType: $itemsList")
-                    ListItemsResultListener.Success(itemsList) as ListItemsResultListener<T>
+                    ListItemsResultListener.Success(itemsList)
                 } catch (e: Exception) {
                     ListItemsResultListener.Failure(e.message ?: "Unknown error")
                 }
             }
     }
-
-//    override suspend fun <T : Item> fetchListItems(
-//        listName: String,
-//        uid: String,
-//        itemType: KClass<T>,
-//    ): ListItemsResultListener<T> {
-//        return try {
-//            // Fetch items from the database
-//            val itemsFlow = localDataSource.getListItems(uid)
-//            // Collect the flow and convert it to a list
-//            val itemsList = itemsFlow.first().map { it.toItem(itemType) }
-//            // Return success with the list of items
-//            ListItemsResultListener.Success(itemsList)
-//        } catch (e: Exception) {
-//            // Return failure if there's an error
-//            ListItemsResultListener.Failure(e.message ?: "Unknown error")
-//        }
-//    }
 
     // Assuming GroceryItem is a subclass of Item and has a matching constructor
     // TODO ADD MORE ITEM CLASSES

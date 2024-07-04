@@ -203,36 +203,4 @@ class GroceryListViewModel @Inject constructor(
             }
         }
     }
-
-    // PRIVATE FUNCTIONS
-//    private suspend fun fetchDefaults(
-//        onSuccess: () -> Unit,
-//    ) {
-//        val result: DefaultsResultListener = fetchListDefaultsUseCase.invoke("grocery-list")
-//        if (result is DefaultsResultListener.Success) {
-// //            groceryCategories = hashmapListToCategoryList(result.documentSnapshot)
-//            onSuccess()
-//        } else if (result is DefaultsResultListener.Failure) {
-//            // TODO popup saying the error for 5 sec
-//        }
-//    }
-
-//    private fun hashmapListToCategoryList(
-//        documentSnapshot: DocumentSnapshot,
-//    ): List<Category> {
-//        val categoriesMapList = documentSnapshot.data?.get("categories") as? List<*>
-//        return categoriesMapList?.mapNotNull { item ->
-//            if (item is Map<*, *>) {
-//                val emoji = item["emoji"]
-//                val name = item["name"]
-//                if (emoji is String && name is String) {
-//                    Category(emoji, name)
-//                } else {
-//                    null
-//                }
-//            } else {
-//                null
-//            }
-//        } ?: listOf()
-//    }
 }

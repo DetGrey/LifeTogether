@@ -106,7 +106,7 @@ fun HomeScreen(
                             ) {
                                 Text(
                                     text =
-                                    "Please create or connect to a family to save your data",
+                                    "Please create or join a family to save your data",
                                     textAlign = TextAlign.Center,
                                 )
                             }
