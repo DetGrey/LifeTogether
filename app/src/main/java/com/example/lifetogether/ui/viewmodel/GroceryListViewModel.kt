@@ -5,10 +5,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.lifetogether.domain.callback.CategoriesListener
 import com.example.lifetogether.domain.callback.ListItemsResultListener
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.GroceryItem
+import com.example.lifetogether.domain.usecase.item.FetchCategoriesUseCase
 import com.example.lifetogether.domain.usecase.item.FetchListItemsUseCase
 import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
 import com.example.lifetogether.domain.usecase.item.ToggleItemCompletionUseCase
@@ -28,6 +30,7 @@ class GroceryListViewModel @Inject constructor(
     private val saveItemUseCase: SaveItemUseCase,
     private val toggleItemCompletionUseCase: ToggleItemCompletionUseCase,
     private val fetchListItemsUseCase: FetchListItemsUseCase,
+    private val fetchCategoriesUseCase: FetchCategoriesUseCase,
 ) : ViewModel() {
     var isLoading = true // TODO might need to change to false!!! or mutablestate
 
@@ -40,6 +43,8 @@ class GroceryListViewModel @Inject constructor(
     val groceryList: StateFlow<List<GroceryItem>> = _groceryList.asStateFlow()
 
     fun setUpGroceryList(addedFamilyId: String) {
+        fetchCategories()
+
         if (!familyIdIsSet) {
             println("GroceryListViewModel setting UID")
             familyId = addedFamilyId
@@ -53,9 +58,9 @@ class GroceryListViewModel @Inject constructor(
                             _groceryList.value = result.listItems
                             println("groceryList new value: ${groceryList.value}")
 
-                            result.listItems.forEach { item ->
-                                updateCategories(item.category ?: uncategorizedCategory)
-                            }
+//                            result.listItems.forEach { item ->
+//                                updateCategories(item.category ?: uncategorizedCategory)
+//                            }
                             updateExpandedStates()
                         }
 
@@ -69,7 +74,7 @@ class GroceryListViewModel @Inject constructor(
         }
     }
 
-    // ---------------------------------------------------------------- CATEGORY LISTS
+    // ---------------------------------------------------------------- CATEGORIZED LISTS
     val completedItems: StateFlow<List<GroceryItem>>
         get() = groceryList
             .map { list ->
@@ -105,6 +110,27 @@ class GroceryListViewModel @Inject constructor(
 
     private val _groceryCategories = MutableStateFlow<List<Category>>(emptyList())
     val groceryCategories: StateFlow<List<Category>> = _groceryCategories.asStateFlow()
+
+    private fun fetchCategories() {
+        println("GroceryListViewModel before calling fetchCategoriesUseCase")
+        viewModelScope.launch {
+            fetchCategoriesUseCase().collect { result ->
+                println("GroceryListViewModel fetchCategoriesUseCase result: $result")
+                when (result) {
+                    is CategoriesListener.Success -> {
+                        println("GroceryListViewModel categories updated: ${result.listItems}")
+                        _groceryCategories.value = result.listItems
+                        updateExpandedStates()
+                    }
+
+                    is CategoriesListener.Failure -> {
+                        _groceryCategories.value = emptyList()
+                        // Handle failure, e.g., show an error message
+                    }
+                }
+            }
+        }
+    }
 
     private fun updateCategories(newCategory: Category) {
         if (!groceryCategories.value.contains(newCategory)) {
@@ -153,10 +179,10 @@ class GroceryListViewModel @Inject constructor(
     fun addItemToList(
         onSuccess: () -> Unit,
     ) {
-//        if (groceryList.any { it.itemName.lowercase() == newItemText.lowercase() && !it.completed }) {
-//            // TODO add error popup
-//            return
-//        }
+        if (groceryList.value.any { it.itemName.lowercase() == newItemText.lowercase() && !it.completed }) {
+            // TODO add error popup
+            return
+        }
 
         val groceryItem = familyId?.let {
             GroceryItem(
@@ -174,8 +200,7 @@ class GroceryListViewModel @Inject constructor(
         viewModelScope.launch {
             val result: ResultListener = saveItemUseCase.invoke(groceryItem, "grocery-list")
             if (result is ResultListener.Success) {
-//                groceryList = groceryList.plus(groceryItem)
-                updateCategories(newItemCategory)
+//                updateCategories(newItemCategory)
                 updateNewItemCategory(null)
                 newItemText = ""
                 onSuccess()

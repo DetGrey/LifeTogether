@@ -2,8 +2,10 @@ package com.example.lifetogether.data.repository
 
 import com.example.lifetogether.data.local.LocalDataSource
 import com.example.lifetogether.data.model.GroceryListEntity
+import com.example.lifetogether.domain.callback.CategoriesListener
 import com.example.lifetogether.domain.callback.ListItemsResultListener
 import com.example.lifetogether.domain.callback.ResultListener
+import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.GroceryItem
 import com.example.lifetogether.domain.model.Item
 import com.example.lifetogether.domain.repository.ListRepository
@@ -23,11 +25,22 @@ class LocalListRepositoryImpl @Inject constructor(
         TODO("Not yet implemented")
     }
 
-    suspend fun toggleItemCompletion(
-        item: Item,
-        listName: String,
-    ): ResultListener {
-        TODO("Not yet implemented")
+    fun getCategories(): Flow<CategoriesListener> {
+        println("LocalListRepositoryImpl getCategories()")
+        return localDataSource.getCategories().map { list ->
+            try {
+                CategoriesListener.Success(
+                    list.map { category ->
+                        Category(
+                            emoji = category.emoji,
+                            name = category.name,
+                        )
+                    },
+                )
+            } catch (e: Exception) {
+                CategoriesListener.Failure(e.message ?: "Unknown error")
+            }
+        }
     }
 
     fun <T : Item> fetchListItems(

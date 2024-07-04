@@ -6,10 +6,10 @@ import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class FetchUserInformationUseCase @Inject constructor(
-    private val localLocalUserRepositoryImpl: LocalUserRepositoryImpl,
+    private val localUserRepositoryImpl: LocalUserRepositoryImpl,
 ) {
-    suspend operator fun invoke(uid: String): Flow<AuthResultListener> {
+    operator fun invoke(uid: String): Flow<AuthResultListener> {
         println("FetchUserInformationUseCase invoked")
-        return localLocalUserRepositoryImpl.getUserInformation(uid)
+        return localUserRepositoryImpl.getUserInformation(uid)
     }
 }
