@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -28,8 +28,8 @@ fun LoveButton() {
     ) {
         Box(
             modifier = Modifier
-                .size(75.dp)
-                .clip(shape = RoundedCornerShape(100))
+                .size(70.dp)
+                .clip(shape = CircleShape)
                 .background(color = MaterialTheme.colorScheme.tertiary),
 //            .clickable {  } TODO
         ) {

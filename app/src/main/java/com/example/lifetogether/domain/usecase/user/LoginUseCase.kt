@@ -10,18 +10,18 @@ class LoginUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(user: User): AuthResultListener {
         println("LoginUseCase invoked")
-        // Handle the login logic and validation here
-        val userValidationUseCase = UserValidationUseCase()
-
-        val passwordResult = userValidationUseCase.passwordValidation(user.password)
-        if (!passwordResult) {
-            return AuthResultListener.Failure("Invalid password.")
-        }
-
-        val emailResult = userValidationUseCase.emailValidation(user.email)
-        if (!emailResult) {
-            return AuthResultListener.Failure("Invalid email.")
-        }
+        // TODO Handle the login logic and validation here
+//        val userValidationUseCase = UserValidationUseCase()
+//
+//        val passwordResult = userValidationUseCase.passwordValidation(user.password)
+//        if (!passwordResult) {
+//            return AuthResultListener.Failure("Invalid password.")
+//        }
+//
+//        val emailResult = userValidationUseCase.emailValidation(user.email)
+//        if (!emailResult) {
+//            return AuthResultListener.Failure("Invalid email.")
+//        }
 
         return remoteUserRepositoryImpl.login(user)
     }

@@ -22,4 +22,11 @@ class RemoteListRepositoryImpl @Inject constructor(
     ): ResultListener {
         return firestoreDataSource.toggleItemCompletion(item, listName)
     }
+
+    suspend fun deleteItems(
+        listName: String,
+        items: List<Item>,
+    ): ResultListener {
+        return firestoreDataSource.deleteItems(listName, items)
+    }
 }

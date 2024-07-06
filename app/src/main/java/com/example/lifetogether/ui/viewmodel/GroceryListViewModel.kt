@@ -10,6 +10,7 @@ import com.example.lifetogether.domain.callback.ListItemsResultListener
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.GroceryItem
+import com.example.lifetogether.domain.usecase.item.DeleteCompletedItemsUseCase
 import com.example.lifetogether.domain.usecase.item.FetchCategoriesUseCase
 import com.example.lifetogether.domain.usecase.item.FetchListItemsUseCase
 import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
@@ -31,7 +32,9 @@ class GroceryListViewModel @Inject constructor(
     private val toggleItemCompletionUseCase: ToggleItemCompletionUseCase,
     private val fetchListItemsUseCase: FetchListItemsUseCase,
     private val fetchCategoriesUseCase: FetchCategoriesUseCase,
+    private val deleteCompletedItemsUseCase: DeleteCompletedItemsUseCase,
 ) : ViewModel() {
+    var showConfirmationDialog: Boolean by mutableStateOf(false)
     var isLoading = true // TODO might need to change to false!!! or mutablestate
 
     // ---------------------------------------------------------------- UID
@@ -79,7 +82,7 @@ class GroceryListViewModel @Inject constructor(
         get() = groceryList
             .map { list ->
                 list.filter { it.completed }
-            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+            }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     // StateFlow for categorized items (excluding completed items)
     val categorizedItems: StateFlow<Map<Category, List<GroceryItem>>>
@@ -87,7 +90,7 @@ class GroceryListViewModel @Inject constructor(
             .map { list ->
                 updateCategorizedItems(list)
             }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
     private fun updateCategorizedItems(list: List<GroceryItem>): Map<Category, List<GroceryItem>> {
 //        println("GroceryListViewModel updateCategorizedItems() initial list: $list")
@@ -120,6 +123,9 @@ class GroceryListViewModel @Inject constructor(
                     is CategoriesListener.Success -> {
                         println("GroceryListViewModel categories updated: ${result.listItems}")
                         _groceryCategories.value = result.listItems
+                            .filterNot { it.name == "Uncategorized" }
+                            .sortedBy { it.name }
+                            .let { listOf(Category("❓️", "Uncategorized")) + it }
                         updateExpandedStates()
                     }
 
@@ -135,7 +141,11 @@ class GroceryListViewModel @Inject constructor(
     private fun updateCategories(newCategory: Category) {
         if (!groceryCategories.value.contains(newCategory)) {
             println("adding new category: $newCategory")
-            _groceryCategories.value += newCategory
+            _groceryCategories.value = _groceryCategories.value
+                .filterNot { it.name == "Uncategorized" }
+                .plus(newCategory)
+                .sortedBy { it.name }
+                .let { listOf(Category("❓️", "Uncategorized")) + it }
             updateExpandedStates()
         }
     }
@@ -225,6 +235,25 @@ class GroceryListViewModel @Inject constructor(
             } else if (result is ResultListener.Failure) {
                 // TODO popup saying the error for 5 sec
                 isLoading = false
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------- DELETE COMPLETED ITEMS
+    fun deleteCompletedItems() {
+        if (completedItems.value.isEmpty()) {
+            return
+        }
+        val items = completedItems.value.filter { it.id != null }
+
+        viewModelScope.launch {
+            val result = deleteCompletedItemsUseCase.invoke(
+                "grocery-list",
+                items = items,
+            )
+            when (result) {
+                is ResultListener.Success -> showConfirmationDialog = false
+                is ResultListener.Failure -> showConfirmationDialog = false
             }
         }
     }

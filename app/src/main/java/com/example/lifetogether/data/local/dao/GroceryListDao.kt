@@ -21,6 +21,9 @@ interface GroceryListDao {
     @Query("DELETE FROM $GROCERY_TABLE")
     fun deleteTable()
 
+    @Query("DELETE FROM $GROCERY_TABLE WHERE id IN (:itemIds)")
+    fun deleteItems(itemIds: List<String>)
+
 //    @Query("SELECT * FROM grocery_list")
 //    fun getAllListCounts(): LiveData<List<ListCountEntity>>
 //

@@ -25,6 +25,14 @@ class LocalListRepositoryImpl @Inject constructor(
         TODO("Not yet implemented")
     }
 
+    fun deleteItems(
+        listName: String,
+        itemIds: List<String>,
+    ): ResultListener {
+        println("LocalListRepositoryImpl deleteItems()")
+        return localDataSource.deleteItems(listName, itemIds)
+    }
+
     fun getCategories(): Flow<CategoriesListener> {
         println("LocalListRepositoryImpl getCategories()")
         return localDataSource.getCategories().map { list ->
@@ -69,6 +77,7 @@ class LocalListRepositoryImpl @Inject constructor(
         @Suppress("UNCHECKED_CAST")
         return when (itemType) {
             GroceryItem::class -> GroceryItem(
+                id = this.id,
                 familyId = this.familyId,
                 itemName = this.name,
                 lastUpdated = this.lastUpdated,

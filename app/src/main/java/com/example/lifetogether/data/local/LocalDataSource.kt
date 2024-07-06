@@ -23,6 +23,16 @@ class LocalDataSource @Inject constructor(
         return categoriesDao.getItems()
     }
 
+    suspend fun updateCategories(items: List<Category>) {
+        val categoryEntities = items.map { category ->
+            CategoryEntity(
+                emoji = category.emoji,
+                name = category.name,
+            )
+        }
+        categoriesDao.updateItems(categoryEntities)
+    }
+
     // -------------------------------------------------------------- ITEMS
     fun getListItems(familyId: String): Flow<List<GroceryListEntity>> {
         val items = groceryListDao.getItems(familyId)
@@ -47,14 +57,20 @@ class LocalDataSource @Inject constructor(
         groceryListDao.updateItems(groceryListEntityList)
     }
 
-    suspend fun updateCategories(items: List<Category>) {
-        val categoryEntities = items.map { category ->
-            CategoryEntity(
-                emoji = category.emoji,
-                name = category.name,
-            )
+    fun deleteItems(
+        listName: String,
+        itemIds: List<String>,
+    ): ResultListener {
+        println("LocalDataSource deleteItems()")
+        try {
+            when (listName) {
+                "grocery-list" -> groceryListDao.deleteItems(itemIds)
+                else -> {}
+            }
+            return ResultListener.Success
+        } catch (e: Exception) {
+            return ResultListener.Failure("Error: ${e.message}")
         }
-        categoriesDao.updateItems(categoryEntities)
     }
 
     // -------------------------------------------------------------- USER INFORMATION

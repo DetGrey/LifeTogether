@@ -13,16 +13,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
+import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
@@ -33,6 +32,7 @@ fun RowScope.FeatureOverview(
     itemType: String,
     fullWidth: Boolean = false,
     onClick: () -> Unit,
+    icon: Icon = Icon(R.drawable.ic_reload, "icon not found"),
 ) {
     var itemTypeText = itemType
     if (itemCount > 1) {
@@ -54,19 +54,19 @@ fun RowScope.FeatureOverview(
             ),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Image( // TODO add icon and description
-            painter = painterResource(id = R.drawable.ic_gallery),
-            contentDescription = "",
+        Image(
+            painter = painterResource(id = icon.resId),
+            contentDescription = icon.description,
             modifier = Modifier.height(60.dp),
         )
 
         TextHeadingMedium(text = title)
 
-        Text(
-            text = "$itemCount $itemTypeText",
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color.White,
-        )
+//        Text(
+//            text = "$itemCount $itemTypeText",
+//            style = MaterialTheme.typography.bodyMedium,
+//            color = Color.White,
+//        )
     }
 }
 

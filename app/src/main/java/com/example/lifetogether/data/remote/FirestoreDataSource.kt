@@ -2,7 +2,6 @@ package com.example.lifetogether.data.remote
 
 import com.example.lifetogether.domain.callback.AuthResultListener
 import com.example.lifetogether.domain.callback.CategoriesListener
-import com.example.lifetogether.domain.callback.DefaultsResultListener
 import com.example.lifetogether.domain.callback.ListItemsResultListener
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.callback.StringResultListener
@@ -13,13 +12,10 @@ import com.example.lifetogether.domain.model.UserInformation
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.tasks.await
 import java.util.Date
 import javax.inject.Inject
-import kotlin.reflect.KClass
 
 class FirestoreDataSource@Inject constructor() {
     private val db = Firebase.firestore
@@ -188,35 +184,59 @@ class FirestoreDataSource@Inject constructor() {
         }
     }
 
-    suspend fun fetchListDefaults(
+    suspend fun deleteItems(
         listName: String,
-    ): DefaultsResultListener {
-        return try {
-            val documentSnapshot = db.collection(listName).document("default").get().await()
-            DefaultsResultListener.Success(documentSnapshot)
+        items: List<Item>,
+    ): ResultListener {
+        println("FirestoreDataSource deleteItems()")
+        try {
+            val batch = db.batch()
+
+            items.forEach { item ->
+                println("item id: ${item.id}")
+                if (item.id != null) {
+                    val documentRef = db.collection(listName).document(item.id!!)
+                    batch.delete(documentRef)
+                }
+            }
+
+            batch.commit().await()
+            return ResultListener.Success
         } catch (e: Exception) {
             println("Error: ${e.message}")
-            DefaultsResultListener.Failure("Error: ${e.message}")
+            return ResultListener.Failure("Error: ${e.message}")
         }
     }
 
-    suspend fun <T : Item> fetchListItems(
-        listName: String,
-        familyId: String,
-        itemType: KClass<T>,
-    ): Flow<ListItemsResultListener<T>> {
-        try {
-            val fetchResult = db.collection(listName).whereEqualTo("familyId", familyId).get().await()
-            val itemsList = fetchResult.documents.mapNotNull { document ->
-                document.toObject(itemType.java)
-            }
-            println("itemList: $itemsList")
-            return flowOf(ListItemsResultListener.Success(itemsList))
-        } catch (e: Exception) {
-            println("Error: ${e.message}")
-            return flowOf(ListItemsResultListener.Failure("Error fetching list items: ${e.message}"))
-        }
-    }
+//    suspend fun fetchListDefaults(
+//        listName: String,
+//    ): DefaultsResultListener {
+//        return try {
+//            val documentSnapshot = db.collection(listName).document("default").get().await()
+//            DefaultsResultListener.Success(documentSnapshot)
+//        } catch (e: Exception) {
+//            println("Error: ${e.message}")
+//            DefaultsResultListener.Failure("Error: ${e.message}")
+//        }
+//    }
+//
+//    suspend fun <T : Item> fetchListItems(
+//        listName: String,
+//        familyId: String,
+//        itemType: KClass<T>,
+//    ): Flow<ListItemsResultListener<T>> {
+//        try {
+//            val fetchResult = db.collection(listName).whereEqualTo("familyId", familyId).get().await()
+//            val itemsList = fetchResult.documents.mapNotNull { document ->
+//                document.toObject(itemType.java)
+//            }
+//            println("itemList: $itemsList")
+//            return flowOf(ListItemsResultListener.Success(itemsList))
+//        } catch (e: Exception) {
+//            println("Error: ${e.message}")
+//            return flowOf(ListItemsResultListener.Failure("Error fetching list items: ${e.message}"))
+//        }
+//    }
 
     // -------------------------------------- COLLECTION SNAPSHOT LISTENERS
     suspend fun grocerySnapshotListener(familyId: String) = callbackFlow {

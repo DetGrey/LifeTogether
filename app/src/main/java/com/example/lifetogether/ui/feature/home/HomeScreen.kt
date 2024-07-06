@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.UserInformation
-import com.example.lifetogether.ui.common.CountdownRow
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -112,10 +111,10 @@ fun HomeScreen(
                             }
                         }
 
-                        Text(text = "Important dates:")
-                        // TODO update events and make clickable
-                        CountdownRow(event = "Wedding anniversary", daysLeft = "20")
-                        CountdownRow(event = "Andrés' birthday", daysLeft = "35")
+//                        Text(text = "Important dates:")
+//                        // TODO update events and make clickable
+//                        CountdownRow(event = "Wedding anniversary", daysLeft = "20")
+//                        CountdownRow(event = "Andrés' birthday", daysLeft = "35")
                     }
                     else -> {
                         Box(
@@ -152,6 +151,7 @@ fun HomeScreen(
                                 appNavigator?.navigateToGroceryList()
                             }
                         },
+                        icon = Icon(R.drawable.ic_groceries, "groceries basket icon"),
                     )
                     FeatureOverview(
                         "Recipes",
@@ -164,44 +164,45 @@ fun HomeScreen(
                                 // TODO
                             }
                         },
+                        icon = Icon(R.drawable.ic_recipes, "recipes chef hat icon"),
                     )
-                    FeatureOverview(
-                        "Memory lane",
-                        4,
-                        "Recipe",
-                        fullWidth = true,
-                        onClick = {
-                            if (userInformation?.value?.familyId == null) {
-                                // TODO add popup asking to join a family
-                            } else {
-                                // TODO
-                            }
-                        },
-                    )
-                    FeatureOverview(
-                        "Gallery",
-                        10,
-                        "Recipe",
-                        onClick = {
-                            if (userInformation?.value?.familyId == null) {
-                                // TODO add popup asking to join a family
-                            } else {
-                                // TODO
-                            }
-                        },
-                    )
-                    FeatureOverview(
-                        "Note Corner",
-                        43,
-                        "Recipe",
-                        onClick = {
-                            if (userInformation?.value?.familyId == null) {
-                                // TODO add popup asking to join a family
-                            } else {
-                                // TODO
-                            }
-                        },
-                    )
+//                    FeatureOverview(
+//                        "Memory lane",
+//                        4,
+//                        "Recipe",
+//                        fullWidth = true,
+//                        onClick = {
+//                            if (userInformation?.value?.familyId == null) {
+//                                // TODO add popup asking to join a family
+//                            } else {
+//                                // TODO
+//                            }
+//                        },
+//                    )
+//                    FeatureOverview(
+//                        "Gallery",
+//                        10,
+//                        "Recipe",
+//                        onClick = {
+//                            if (userInformation?.value?.familyId == null) {
+//                                // TODO add popup asking to join a family
+//                            } else {
+//                                // TODO
+//                            }
+//                        },
+//                    )
+//                    FeatureOverview(
+//                        "Note Corner",
+//                        43,
+//                        "Recipe",
+//                        onClick = {
+//                            if (userInformation?.value?.familyId == null) {
+//                                // TODO add popup asking to join a family
+//                            } else {
+//                                // TODO
+//                            }
+//                        },
+//                    )
                 }
             }
 

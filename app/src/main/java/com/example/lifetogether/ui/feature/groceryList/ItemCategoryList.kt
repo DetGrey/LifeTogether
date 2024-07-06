@@ -32,6 +32,7 @@ fun ItemCategoryList(
     expanded: Boolean,
     onClick: () -> Unit,
     onCompleteToggle: (GroceryItem) -> Unit,
+    onDelete: (() -> Unit)? = null,
 ) {
     Column {
         Column(
@@ -58,10 +59,19 @@ fun ItemCategoryList(
                         style = MaterialTheme.typography.labelLarge,
                     )
                 }
-                Image(
-                    painter = painterResource(id = if (expanded) R.drawable.ic_expanded else R.drawable.ic_expand),
-                    contentDescription = "expand or expanded icon",
-                )
+                Row {
+                    if (onDelete != null) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_trashcan_black),
+                            contentDescription = "trashcan icon",
+                            modifier = Modifier.clickable { onDelete() },
+                        )
+                    }
+                    Image(
+                        painter = painterResource(id = if (expanded) R.drawable.ic_expanded else R.drawable.ic_expand),
+                        contentDescription = "expand or expanded icon",
+                    )
+                }
             }
             HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.primary)
         }

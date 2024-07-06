@@ -20,6 +20,7 @@ import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.enums.UpdateType
 import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.viewmodel.AuthViewModel
@@ -120,6 +121,9 @@ fun GroceryListScreen(
                                     authViewModel?.updateItemCount("grocery-list", UpdateType.ADD)
                                 }
                             },
+                            onDelete = {
+                                groceryListViewModel.showConfirmationDialog = true
+                            },
                         )
                     }
                 }
@@ -149,6 +153,19 @@ fun GroceryListScreen(
         )
     }
 //    }
+
+    if (groceryListViewModel.showConfirmationDialog) {
+        ConfirmationDialog(
+            onDismiss = { groceryListViewModel.showConfirmationDialog = false },
+            onConfirm = {
+                groceryListViewModel.deleteCompletedItems()
+            },
+            dialogTitle = "Delete completed items",
+            dialogMessage = "Are you sure you want to delete all completed grocery items?",
+            dismissButtonMessage = "Cancel",
+            confirmButtonMessage = "Delete",
+        )
+    }
 }
 
 @Preview(showBackground = true)
