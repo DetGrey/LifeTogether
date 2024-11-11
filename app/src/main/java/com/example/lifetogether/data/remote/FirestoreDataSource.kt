@@ -164,7 +164,9 @@ class FirestoreDataSource@Inject constructor() {
             val querySnapshot = query.get().await()
 
             // Assuming there's only one matching document, get its reference
-            val documentReference = querySnapshot.documents.firstOrNull()?.reference
+            // Find the document with the exact ID
+            val documentReference = querySnapshot.documents
+                .firstOrNull { it.id == item.id }?.reference
 
             if (documentReference != null) {
                 // Update the 'completed' field and 'lastUpdated' field of the document

@@ -20,6 +20,7 @@ import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.enums.UpdateType
 import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -58,7 +59,8 @@ fun GroceryListScreen(
     ) {
         LazyColumn(
             modifier = Modifier
-                .padding(10.dp),
+                .padding(10.dp)
+                .padding(bottom = 60.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(30.dp),
         ) {
@@ -153,6 +155,11 @@ fun GroceryListScreen(
         )
     }
 //    }
+
+    if (groceryListViewModel.showAlertDialog) {
+        ErrorAlertDialog(groceryListViewModel.error)
+        groceryListViewModel.toggleAlertDialog()
+    }
 
     if (groceryListViewModel.showConfirmationDialog) {
         ConfirmationDialog(

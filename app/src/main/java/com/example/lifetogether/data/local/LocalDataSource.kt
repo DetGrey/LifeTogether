@@ -55,6 +55,14 @@ class LocalDataSource @Inject constructor(
         }
         println("groceryListEntity list: $groceryListEntityList")
         groceryListDao.updateItems(groceryListEntityList)
+
+        // Delete items not in the cloud database
+        val localItemIds = groceryListEntityList.map { it.id }
+        val allLocalItems = groceryListDao.getAllItems() // Fetch all items from the local database
+        val itemsToDelete = allLocalItems.filterNot { localItemIds.contains(it.id) }.map { it.id }
+
+        // Delete the items not found in the cloud
+        groceryListDao.deleteItems(itemsToDelete)
     }
 
     fun deleteItems(

@@ -16,6 +16,7 @@ import com.example.lifetogether.domain.usecase.item.FetchListItemsUseCase
 import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
 import com.example.lifetogether.domain.usecase.item.ToggleItemCompletionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -35,6 +36,17 @@ class GroceryListViewModel @Inject constructor(
     private val deleteCompletedItemsUseCase: DeleteCompletedItemsUseCase,
 ) : ViewModel() {
     var showConfirmationDialog: Boolean by mutableStateOf(false)
+
+    var showAlertDialog: Boolean by mutableStateOf(false)
+    var error: String by mutableStateOf("")
+    fun toggleAlertDialog() {
+        viewModelScope.launch {
+            delay(5000)
+            showAlertDialog = false
+            error = ""
+        }
+    }
+
     var isLoading = true // TODO might need to change to false!!! or mutablestate
 
     // ---------------------------------------------------------------- UID
@@ -69,6 +81,8 @@ class GroceryListViewModel @Inject constructor(
 
                         is ListItemsResultListener.Failure -> {
                             // Handle failure, e.g., show an error message
+                            error = result.message
+                            showAlertDialog = true
                         }
                     }
                 }
@@ -132,6 +146,8 @@ class GroceryListViewModel @Inject constructor(
                     is CategoriesListener.Failure -> {
                         _groceryCategories.value = emptyList()
                         // Handle failure, e.g., show an error message
+                        error = result.message
+                        showAlertDialog = true
                     }
                 }
             }
@@ -189,8 +205,11 @@ class GroceryListViewModel @Inject constructor(
     fun addItemToList(
         onSuccess: () -> Unit,
     ) {
-        if (groceryList.value.any { it.itemName.lowercase() == newItemText.lowercase() && !it.completed }) {
-            // TODO add error popup
+        println("GroceryListViewModel addItemToList()")
+
+        if (newItemText.isEmpty()) {
+            error = "Please write some text first"
+            showAlertDialog = true
             return
         }
 
@@ -204,6 +223,8 @@ class GroceryListViewModel @Inject constructor(
             )
         }
         if (groceryItem == null) {
+            error = "Please connect to a family first"
+            showAlertDialog = true
             return
         }
 
@@ -215,7 +236,10 @@ class GroceryListViewModel @Inject constructor(
                 newItemText = ""
                 onSuccess()
             } else if (result is ResultListener.Failure) {
+                println("Error: ${result.message}")
                 // TODO popup saying the error for 5 sec
+                error = result.message
+                showAlertDialog = true
             }
         }
     }
@@ -234,6 +258,9 @@ class GroceryListViewModel @Inject constructor(
                 isLoading = false
             } else if (result is ResultListener.Failure) {
                 // TODO popup saying the error for 5 sec
+                println("Error: ${result.message}")
+                error = result.message
+                showAlertDialog = true
                 isLoading = false
             }
         }
