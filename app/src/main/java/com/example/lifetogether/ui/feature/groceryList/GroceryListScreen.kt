@@ -156,10 +156,6 @@ fun GroceryListScreen(
     }
 //    }
 
-    if (groceryListViewModel.showAlertDialog) {
-        ErrorAlertDialog(groceryListViewModel.error)
-        groceryListViewModel.toggleAlertDialog()
-    }
 
     if (groceryListViewModel.showConfirmationDialog) {
         ConfirmationDialog(
@@ -172,6 +168,11 @@ fun GroceryListScreen(
             dismissButtonMessage = "Cancel",
             confirmButtonMessage = "Delete",
         )
+    }
+
+    if (groceryListViewModel.showAlertDialog) {
+        ErrorAlertDialog(groceryListViewModel.error)
+        groceryListViewModel.toggleAlertDialog()
     }
 }
 

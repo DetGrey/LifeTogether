@@ -66,6 +66,7 @@ class LocalListRepositoryImpl @Inject constructor(
                     println("itemList of specified itemType: $itemsList")
                     ListItemsResultListener.Success(itemsList)
                 } catch (e: Exception) {
+                    println("Error: ${e.message}")
                     ListItemsResultListener.Failure(e.message ?: "Unknown error")
                 }
             }

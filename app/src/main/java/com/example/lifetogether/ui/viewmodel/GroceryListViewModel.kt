@@ -41,7 +41,7 @@ class GroceryListViewModel @Inject constructor(
     var error: String by mutableStateOf("")
     fun toggleAlertDialog() {
         viewModelScope.launch {
-            delay(5000)
+            delay(3000)
             showAlertDialog = false
             error = ""
         }
@@ -81,6 +81,7 @@ class GroceryListViewModel @Inject constructor(
 
                         is ListItemsResultListener.Failure -> {
                             // Handle failure, e.g., show an error message
+                            println("Error: ${result.message}")
                             error = result.message
                             showAlertDialog = true
                         }
