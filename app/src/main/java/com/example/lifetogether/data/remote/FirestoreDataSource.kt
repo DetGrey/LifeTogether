@@ -210,6 +210,43 @@ class FirestoreDataSource@Inject constructor() {
         }
     }
 
+    // -------------------------------------- CATEGORIES
+    suspend fun deleteCategory(
+        category: Category,
+    ): ResultListener {
+        println("FirestoreDataSource deleteCategory()")
+        try {
+            // Query the collection to find the document with the matching 'name' field
+            val querySnapshot = db.collection("categories")
+                .whereEqualTo("name", category.name)
+                .get()
+                .await()
+            // Check if any documents were found
+            if (querySnapshot.documents.isNotEmpty()) {
+                // Assuming 'name' is unique, delete the first matching document
+                val documentRef = querySnapshot.documents[0].reference
+                documentRef.delete().await()
+            }
+            return ResultListener.Success
+
+        } catch (e: Exception) {
+            println("Error: ${e.message}")
+            return ResultListener.Failure("Error: ${e.message}")
+        }
+    }
+
+    suspend fun addCategory(
+        category: Category,
+    ): ResultListener {
+        try {
+            db.collection("categories").add(category).await()
+            return ResultListener.Success
+        } catch (e: Exception) {
+            println("Error: ${e.message}")
+            return ResultListener.Failure("Error: ${e.message}")
+        }
+    }
+
 //    suspend fun fetchListDefaults(
 //        listName: String,
 //    ): DefaultsResultListener {
@@ -262,9 +299,9 @@ class FirestoreDataSource@Inject constructor() {
         awaitClose { listenerRegistration.remove() }
     }
 
-    suspend fun categoriesSnapshotListener() = callbackFlow {
+    fun categoriesSnapshotListener() = callbackFlow {
         println("Firestore categoriesSnapshotListener init")
-        val categoryItemsRef = Firebase.firestore.collection("default").document("categories")
+        val categoryItemsRef = Firebase.firestore.collection("categories")
         val listenerRegistration = categoryItemsRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 // Handle error
@@ -272,27 +309,26 @@ class FirestoreDataSource@Inject constructor() {
                 return@addSnapshotListener
             }
 
-            if (snapshot != null && snapshot.exists()) {
+            if (snapshot != null) {
                 // Process the changes and update Room database
-                @Suppress("UNCHECKED_CAST")
-                val categories = snapshot.get("list") as? List<Map<String, String>>
-
-                val categoryItems = categories?.map { category ->
-                    Category(
-                        emoji = category["emoji"] ?: "",
-                        name = category["name"] ?: "",
-                    )
-                } ?: emptyList()
+                val categoryItems = snapshot.documents.mapNotNull { document ->
+                    val emoji = document.getString("emoji")
+                    val name = document.getString("name")
+                    if (!emoji.isNullOrEmpty() && !name.isNullOrEmpty()) {
+                        Category(emoji = emoji, name = name)
+                    } else {
+                        null
+                    }
+                }
 
                 println("Snapshot items to CategoryItems: $categoryItems")
-                if (categoryItems.isNotEmpty()) {
-                    trySend(CategoriesListener.Success(categoryItems)).isSuccess
-                }
+                trySend(CategoriesListener.Success(categoryItems)).isSuccess
             }
         }
         // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.
         awaitClose { listenerRegistration.remove() }
     }
+
 
     suspend fun userInformationSnapshotListener(uid: String) = callbackFlow {
         println("Firestore userInformationSnapshotListener init")

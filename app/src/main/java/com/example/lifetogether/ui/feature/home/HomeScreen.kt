@@ -17,12 +17,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.lifetogether.BuildConfig
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.UserInformation
@@ -37,7 +39,11 @@ fun HomeScreen(
     appNavigator: AppNavigator? = null,
     authViewModel: AuthViewModel? = null,
 ) {
-    val userInformation = authViewModel?.userInformation?.collectAsState(initial = null)
+    val userInformationState by authViewModel?.userInformation!!.collectAsState()
+
+    if (userInformationState?.familyId == BuildConfig.ADMIN) {
+        appNavigator?.navigateToAdmin()
+    }
 
     Box(
         modifier = Modifier
@@ -87,9 +93,9 @@ fun HomeScreen(
             }
 
             item {
-                when (userInformation?.value) {
+                when (userInformationState) {
                     is UserInformation -> {
-                        if (userInformation.value!!.familyId == null) {
+                        if (userInformationState?.familyId == null) {
                             Box(
                                 modifier = Modifier
                                     .padding(bottom = 15.dp)
@@ -145,7 +151,7 @@ fun HomeScreen(
                         10,
                         "Recipe",
                         onClick = {
-                            if (userInformation?.value?.familyId == null) {
+                            if (userInformationState?.familyId == null) {
                                 // TODO add popup asking to join a family
                             } else {
                                 appNavigator?.navigateToGroceryList()
@@ -158,7 +164,7 @@ fun HomeScreen(
                         1,
                         "Recipe",
                         onClick = {
-                            if (userInformation?.value?.familyId == null) {
+                            if (userInformationState?.familyId == null) {
                                 // TODO add popup asking to join a family
                             } else {
                                 // TODO

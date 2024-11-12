@@ -11,6 +11,7 @@ import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.GroceryItem
 import com.example.lifetogether.domain.model.UserInformation
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 class LocalDataSource @Inject constructor(
@@ -31,6 +32,26 @@ class LocalDataSource @Inject constructor(
             )
         }
         categoriesDao.updateItems(categoryEntities)
+
+        // Fetch the current items from the Room database
+        //   getItems() returns a Flow, so you need to use first() to get the current value
+        val currentItems = categoriesDao.getItems().first()
+
+        // Determine the items to be inserted or updated
+        val itemsToUpdate = categoryEntities.filter { newItem ->
+            currentItems.none { currentItem -> newItem.name == currentItem.name && newItem.emoji == currentItem.emoji }
+        }
+
+        // Determine the items to be deleted
+        val itemsToDelete = currentItems.filter { currentItem ->
+            categoryEntities.none { newItem -> newItem.name == currentItem.name }
+        }
+
+        // Update the Room database with the new or changed items
+        categoriesDao.updateItems(itemsToUpdate)
+
+        // Delete the items that no longer exist in Firestore
+        categoriesDao.deleteItems(itemsToDelete)
     }
 
     // -------------------------------------------------------------- ITEMS

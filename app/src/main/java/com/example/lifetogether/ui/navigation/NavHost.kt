@@ -5,6 +5,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import com.example.lifetogether.ui.feature.admin.AdminScreen
+import com.example.lifetogether.ui.feature.admin.groceryList.AdminGroceryCategoriesScreen
 import com.example.lifetogether.ui.feature.groceryList.GroceryListScreen
 import com.example.lifetogether.ui.feature.home.HomeScreen
 import com.example.lifetogether.ui.feature.login.LoginScreen
@@ -31,6 +33,12 @@ fun NavHost(
         navController = navController,
         startDestination = "home",
     ) {
+        composable("admin") {
+            AdminScreen(appNavigator, authViewModel)
+        }
+        composable("admin_grocery_list") {
+            AdminGroceryCategoriesScreen(appNavigator, authViewModel)
+        }
         composable("home") {
             HomeScreen(appNavigator, authViewModel)
         }
