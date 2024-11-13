@@ -49,6 +49,7 @@ fun AddNewListItem(
     LaunchedEffect(key1 = "init") {
         addNewListItemViewModel.selectedCategory = "${selectedCategory.emoji} ${selectedCategory.name}"
     }
+
     if (categoryList != addNewListItemViewModel.oldCategoryList) {
         addNewListItemViewModel.oldCategoryList = categoryList
         addNewListItemViewModel.categoryOptions = categoryList.map { "${it.emoji} ${it.name}" }

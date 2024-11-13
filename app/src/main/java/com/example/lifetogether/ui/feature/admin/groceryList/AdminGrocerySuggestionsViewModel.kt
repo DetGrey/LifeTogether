@@ -110,7 +110,7 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
                     is GrocerySuggestionsListener.Success -> {
                         println("GroceryListViewModel categories updated: ${result.listItems}")
                         _grocerySuggestions.value = result.listItems
-                            .sortedBy { it.suggestionName }
+                            .sortedBy { it.category?.name }
                     }
 
                     is GrocerySuggestionsListener.Failure -> {

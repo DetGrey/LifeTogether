@@ -1,17 +1,21 @@
 package com.example.lifetogether.ui.viewmodel
 
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.callback.CategoriesListener
+import com.example.lifetogether.domain.callback.GrocerySuggestionsListener
 import com.example.lifetogether.domain.callback.ListItemsResultListener
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.GroceryItem
+import com.example.lifetogether.domain.model.GrocerySuggestion
 import com.example.lifetogether.domain.usecase.item.DeleteCompletedItemsUseCase
 import com.example.lifetogether.domain.usecase.item.FetchCategoriesUseCase
+import com.example.lifetogether.domain.usecase.item.FetchGrocerySuggestionsUseCase
 import com.example.lifetogether.domain.usecase.item.FetchListItemsUseCase
 import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
 import com.example.lifetogether.domain.usecase.item.ToggleItemCompletionUseCase
@@ -34,6 +38,7 @@ class GroceryListViewModel @Inject constructor(
     private val fetchListItemsUseCase: FetchListItemsUseCase,
     private val fetchCategoriesUseCase: FetchCategoriesUseCase,
     private val deleteCompletedItemsUseCase: DeleteCompletedItemsUseCase,
+    private val fetchGrocerySuggestionsUseCase: FetchGrocerySuggestionsUseCase,
 ) : ViewModel() {
     var showConfirmationDialog: Boolean by mutableStateOf(false)
 
@@ -59,6 +64,7 @@ class GroceryListViewModel @Inject constructor(
 
     fun setUpGroceryList(addedFamilyId: String) {
         fetchCategories()
+        fetchGrocerySuggestions()
 
         if (!familyIdIsSet) {
             println("GroceryListViewModel setting UID")
@@ -164,6 +170,43 @@ class GroceryListViewModel @Inject constructor(
                 .sortedBy { it.name }
                 .let { listOf(Category("❓️", "Uncategorized")) + it }
             updateExpandedStates()
+        }
+    }
+
+    // ---------------------------------------------------------------- GROCERY SUGGESTIONS
+    private val _grocerySuggestions = MutableStateFlow<List<GrocerySuggestion>>(emptyList())
+    val grocerySuggestions: StateFlow<List<GrocerySuggestion>> = _grocerySuggestions.asStateFlow()
+
+    private fun fetchGrocerySuggestions() {
+        println("GroceryListViewModel before calling fetchGrocerySuggestionsUseCase")
+        viewModelScope.launch {
+            fetchGrocerySuggestionsUseCase().collect { result ->
+                println("GroceryListViewModel fetchGrocerySuggestionsUseCase result: $result")
+                when (result) {
+                    is GrocerySuggestionsListener.Success -> {
+                        println("GroceryListViewModel categories updated: ${result.listItems}")
+                        _grocerySuggestions.value = result.listItems
+                            .sortedBy { it.suggestionName }
+                    }
+
+                    is GrocerySuggestionsListener.Failure -> {
+                        _grocerySuggestions.value = emptyList()
+                        // Handle failure, e.g., show an error message
+                        error = result.message
+                        showAlertDialog = true
+                    }
+                }
+            }
+        }
+    }
+
+    val currentGrocerySuggestions = derivedStateOf {
+        if (newItemText.isNotEmpty()) {
+            grocerySuggestions.value.filter { suggestion ->
+                suggestion.suggestionName.startsWith(newItemText, ignoreCase = true)
+            }.take(5)
+        } else {
+            emptyList()
         }
     }
 

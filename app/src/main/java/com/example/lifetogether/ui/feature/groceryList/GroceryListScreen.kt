@@ -49,10 +49,6 @@ fun GroceryListScreen(
     val categorizedItems by groceryListViewModel.categorizedItems.collectAsState()
     val completedItems by groceryListViewModel.completedItems.collectAsState()
 
-//    if (groceryListViewModel.isLoading) {
-//        // Show a loading indicator
-//        Text(text = "Loading") // TODO
-//    } else {
     Box(
         modifier = Modifier
             .fillMaxSize(),
@@ -82,8 +78,6 @@ fun GroceryListScreen(
                     Text(text = "No items on the list yet")
                 } else {
                     categorizedItems.forEach { (category, groceryItems) ->
-//                            println("Screen: categorizedItems category: $category")
-//                            println("Screen: categorizedItems items: $groceryItems")
                         if (groceryItems.isNotEmpty()) {
                             categoryExpandedStates[category.name]?.let { expanded ->
                                 ItemCategoryList(
@@ -133,6 +127,29 @@ fun GroceryListScreen(
         }
     }
 
+    // ---------------------------------------------------------------- GROCERY SUGGESTIONS POPUP
+    if (groceryListViewModel.currentGrocerySuggestions.value.isNotEmpty()) {
+        Box(
+            modifier = Modifier
+                .padding(10.dp)
+                .padding(bottom = 30.dp)
+                .fillMaxSize(),
+            contentAlignment = Alignment.BottomCenter,
+        ) {
+            GrocerySuggestionPopup(
+                suggestions = groceryListViewModel.currentGrocerySuggestions.value,
+                onClick = {
+                    groceryListViewModel.newItemText = it.suggestionName
+                    groceryListViewModel.newItemCategory = it.category!!
+                    groceryListViewModel.addItemToList(onSuccess = {
+                        authViewModel?.updateItemCount("grocery-list", UpdateType.ADD)
+                    })
+                },
+            )
+        }
+    }
+
+    // ---------------------------------------------------------------- ADD NEW GROCERY ITEM
     Box(
         modifier = Modifier
             .padding(10.dp)
@@ -154,8 +171,8 @@ fun GroceryListScreen(
             },
         )
     }
-//    }
 
+    // ---------------------------------------------------------------- CONFIRM DELETION OF COMPLETED ITEMS
     if (groceryListViewModel.showConfirmationDialog) {
         ConfirmationDialog(
             onDismiss = { groceryListViewModel.showConfirmationDialog = false },
@@ -169,6 +186,7 @@ fun GroceryListScreen(
         )
     }
 
+    // ---------------------------------------------------------------- SHOW ERROR ALERT
     if (groceryListViewModel.showAlertDialog) {
         ErrorAlertDialog(groceryListViewModel.error)
         groceryListViewModel.toggleAlertDialog()
