@@ -17,7 +17,12 @@ class ObserveGroceryListUseCase @Inject constructor(
             println("grocerySnapshotListener().collect result: $result")
             when (result) {
                 is ListItemsResultListener.Success -> {
-                    localDataSource.updateGroceryList(result.listItems)
+                    if (result.listItems.isEmpty()) {
+                        println("grocerySnapshotListener().collect result: is empty")
+                    }
+                    else {
+                        localDataSource.updateGroceryList(result.listItems)
+                    }
                 }
                 is ListItemsResultListener.Failure -> {
                     // Handle failure

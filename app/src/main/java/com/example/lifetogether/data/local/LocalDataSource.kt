@@ -68,8 +68,8 @@ class LocalDataSource @Inject constructor(
 
     suspend fun updateGroceryList(items: List<GroceryItem>) {
         println("LocalDataSource updateRoomDatabase(): Trying to add firestore data to Room")
+
         println("GroceryItem list: $items")
-        println("1.1 WHITESPACE: items from firestore: $items")
         val groceryListEntityList = items.map { item ->
             GroceryListEntity(
                 id = item.id ?: "",
@@ -81,24 +81,19 @@ class LocalDataSource @Inject constructor(
             )
         }
         println("groceryListEntity list: $groceryListEntityList")
-        println("1.2 WHITESPACE: items as entity: $groceryListEntityList")
-        groceryListDao.updateItems(groceryListEntityList)
 
         // Fetch the current items from the Room database
         val currentItems = groceryListDao.getItems(items[0].familyId).first()
-        println("1.3 WHITESPACE: items in db: $currentItems")
 
         // Determine the items to be inserted or updated
         val itemsToUpdate = groceryListEntityList.filter { newItem ->
             currentItems.none { currentItem -> newItem.id == currentItem.id && newItem == currentItem }
         }
-        println("1.4 WHITESPACE: items to update: $itemsToUpdate")
 
         // Determine the items to be deleted
         val itemsToDelete = currentItems.filter { currentItem ->
             groceryListEntityList.none { newItem -> newItem.id == currentItem.id }
         }
-        println("1.4 WHITESPACE: items to delete: $itemsToDelete")
 
         // Update the Room database with the new or changed items
         groceryListDao.updateItems(itemsToUpdate)
