@@ -114,7 +114,7 @@ class GroceryListViewModel @Inject constructor(
             .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
     private fun updateCategorizedItems(list: List<GroceryItem>): Map<Category, List<GroceryItem>> {
-//        println("GroceryListViewModel updateCategorizedItems() initial list: $list")
+        println("GroceryListViewModel updateCategorizedItems() initial list: $list")
 
         // Logic to categorize items and post value to _categorizedItems
         val categorizedMap = list
@@ -122,7 +122,11 @@ class GroceryListViewModel @Inject constructor(
             .groupBy { item ->
                 item.category?.takeIf { it.name != "Uncategorized" } ?: uncategorizedCategory
             }
-//        println("GroceryListViewModel updateCategorizedItems() categorizedMap: $categorizedMap")
+            .mapValues { entry ->
+                entry.value.sortedBy { it.itemName } // Sorting items by name
+            }
+            .toSortedMap(compareBy { it.name }) // Sorting categories by name
+        println("GroceryListViewModel updateCategorizedItems() categorizedMap: $categorizedMap")
         return categorizedMap
     }
 
@@ -175,7 +179,7 @@ class GroceryListViewModel @Inject constructor(
 
     // ---------------------------------------------------------------- GROCERY SUGGESTIONS
     private val _grocerySuggestions = MutableStateFlow<List<GrocerySuggestion>>(emptyList())
-    val grocerySuggestions: StateFlow<List<GrocerySuggestion>> = _grocerySuggestions.asStateFlow()
+    private val grocerySuggestions: StateFlow<List<GrocerySuggestion>> = _grocerySuggestions.asStateFlow()
 
     private fun fetchGrocerySuggestions() {
         println("GroceryListViewModel before calling fetchGrocerySuggestionsUseCase")
@@ -220,10 +224,10 @@ class GroceryListViewModel @Inject constructor(
         // Ensure each category has an expanded state entry
         val currentStates = _categoryExpandedStates.value.toMutableMap()
         groceryCategories.value.forEach { category ->
-            currentStates.putIfAbsent(category.name, true)
+            currentStates.putIfAbsent(category.name.trim(), true)
         }
         _categoryExpandedStates.value = currentStates
-//        println("GroceryListViewModel updateExpandedStates() categories: ${groceryCategories.value}")
+//        println("GroceryListViewModel updateExpandedStates()  categories: ${groceryCategories.value}")
 //        println("GroceryListViewModel updateExpandedStates() categoryExpandedStates: $currentStates")
     }
 
@@ -239,8 +243,7 @@ class GroceryListViewModel @Inject constructor(
     var newItemCategory: Category by mutableStateOf(uncategorizedCategory)
 
     fun updateNewItemCategory(category: Category?) {
-        newItemCategory = category
-            ?: uncategorizedCategory
+        newItemCategory = category ?: uncategorizedCategory
         println("New category: $newItemCategory")
     }
 

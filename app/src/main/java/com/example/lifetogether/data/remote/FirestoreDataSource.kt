@@ -313,7 +313,7 @@ class FirestoreDataSource@Inject constructor() {
                 // Process the changes and update Room database
                 val grocerySuggestions = snapshot.toObjects(GrocerySuggestion::class.java)
 
-                println("Snapshot items to CategoryItems: $grocerySuggestions")
+                println("Snapshot items to GrocerySuggestions: $grocerySuggestions")
                 trySend(GrocerySuggestionsListener.Success(grocerySuggestions)).isSuccess
             }
         }

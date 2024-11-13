@@ -45,7 +45,7 @@ class LocalListRepositoryImpl @Inject constructor(
                             emoji = category.emoji,
                             name = category.name,
                         )
-                    },
+                    }
                 )
             } catch (e: Exception) {
                 CategoriesListener.Failure(e.message ?: "Unknown error")
@@ -82,10 +82,11 @@ class LocalListRepositoryImpl @Inject constructor(
         return localDataSource.getListItems(familyId)
             .map { entities ->
                 try {
+                    println("LocalListRepoImpl fetchListItems entities: $entities")
                     // Convert entities to items
                     val itemsList = entities.map { it.toItem(itemType) }
                     println("LocalListRepoImpl after getting items from local data source")
-                    println("itemList of specified itemType: $itemsList")
+                    println("fetchListItems of specified itemType: $itemsList")
                     ListItemsResultListener.Success(itemsList)
                 } catch (e: Exception) {
                     println("Error: ${e.message}")

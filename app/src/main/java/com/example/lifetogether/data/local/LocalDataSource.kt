@@ -29,6 +29,7 @@ class LocalDataSource @Inject constructor(
     }
 
     suspend fun updateCategories(items: List<Category>) {
+
         val categoryEntities = items.map { category ->
             CategoryEntity(
                 emoji = category.emoji,
@@ -68,6 +69,7 @@ class LocalDataSource @Inject constructor(
     suspend fun updateGroceryList(items: List<GroceryItem>) {
         println("LocalDataSource updateRoomDatabase(): Trying to add firestore data to Room")
         println("GroceryItem list: $items")
+        println("1.1 WHITESPACE: items from firestore: $items")
         val groceryListEntityList = items.map { item ->
             GroceryListEntity(
                 id = item.id ?: "",
@@ -79,15 +81,30 @@ class LocalDataSource @Inject constructor(
             )
         }
         println("groceryListEntity list: $groceryListEntityList")
+        println("1.2 WHITESPACE: items as entity: $groceryListEntityList")
         groceryListDao.updateItems(groceryListEntityList)
 
-        // Delete items not in the cloud database
-        val localItemIds = groceryListEntityList.map { it.id }
-        val allLocalItems = groceryListDao.getAllItems() // Fetch all items from the local database
-        val itemsToDelete = allLocalItems.filterNot { localItemIds.contains(it.id) }.map { it.id }
+        // Fetch the current items from the Room database
+        val currentItems = groceryListDao.getItems(items[0].familyId).first()
+        println("1.3 WHITESPACE: items in db: $currentItems")
 
-        // Delete the items not found in the cloud
-        groceryListDao.deleteItems(itemsToDelete)
+        // Determine the items to be inserted or updated
+        val itemsToUpdate = groceryListEntityList.filter { newItem ->
+            currentItems.none { currentItem -> newItem.id == currentItem.id && newItem == currentItem }
+        }
+        println("1.4 WHITESPACE: items to update: $itemsToUpdate")
+
+        // Determine the items to be deleted
+        val itemsToDelete = currentItems.filter { currentItem ->
+            groceryListEntityList.none { newItem -> newItem.id == currentItem.id }
+        }
+        println("1.4 WHITESPACE: items to delete: $itemsToDelete")
+
+        // Update the Room database with the new or changed items
+        groceryListDao.updateItems(itemsToUpdate)
+
+        // Delete the items that no longer exist in Firestore
+        groceryListDao.deleteItems(itemsToDelete.map { it.id })
     }
 
     fun deleteItems(

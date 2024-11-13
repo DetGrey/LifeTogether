@@ -128,15 +128,23 @@ fun AddNewListItem(
             onDismiss = { addNewListItemViewModel.showDialog = false },
             onConfirm = {
                 val string = addNewListItemViewModel.selectedCategory
-                val emojiEndIndex = string.offsetByCodePoints(0, 1)
-                val list = listOf(string.substring(0, emojiEndIndex), string.substring(emojiEndIndex).trim())
-                println("category list: $list")
-                onCategoryChange(
-                    Category(
-                        emoji = list[0],
-                        name = list[1],
-                    ),
-                )
+                var emojiEndIndex = string.offsetByCodePoints(0, 1)
+                var emoji = string.substring(0, emojiEndIndex)
+
+                var category = categoryList.find { it.emoji == emoji }
+
+                if (category == null) {
+                    emojiEndIndex = string.offsetByCodePoints(0, string.codePointCount(0, string.length).coerceAtMost(2))
+                    emoji = string.substring(0, emojiEndIndex)
+                    category = categoryList.find { it.emoji == emoji }
+                }
+
+                val name = string.substring(emojiEndIndex)
+                println("category list: [$emoji, $name]")
+
+                if (category != null) {
+                    onCategoryChange(category)
+                }
                 addNewListItemViewModel.showDialog = false
             },
             dialogTitle = "Change category",

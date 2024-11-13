@@ -26,19 +26,4 @@ interface GroceryListDao {
 
     @Query("DELETE FROM $GROCERY_TABLE WHERE id IN (:itemIds)")
     fun deleteItems(itemIds: List<String>)
-
-//    @Query("SELECT * FROM grocery_list")
-//    fun getAllListCounts(): LiveData<List<ListCountEntity>>
-//
-//    @Insert(onConflict = OnConflictStrategy.REPLACE)
-//    suspend fun insertListCount(listCount: ListCountEntity)
-//
-//    @Query("UPDATE list_counts SET itemCount = itemCount + 1 WHERE listName = :listName")
-//    suspend fun incrementItemCount(listName: String)
-//
-//    @Query("UPDATE list_counts SET itemCount = itemCount - 1 WHERE listName = :listName")
-//    suspend fun decrementItemCount(listName: String)
-//
-//    @Query("SELECT * from items ORDER BY name ASC")
-//    fun getAllItems(): Flow<List<Item>>
 }
