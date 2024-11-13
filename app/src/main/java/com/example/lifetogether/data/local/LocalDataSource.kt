@@ -2,13 +2,16 @@ package com.example.lifetogether.data.local
 
 import com.example.lifetogether.data.local.dao.CategoriesDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
+import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
 import com.example.lifetogether.data.local.dao.UserInformationDao
 import com.example.lifetogether.data.model.CategoryEntity
 import com.example.lifetogether.data.model.GroceryListEntity
+import com.example.lifetogether.data.model.GrocerySuggestionEntity
 import com.example.lifetogether.data.model.UserEntity
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.GroceryItem
+import com.example.lifetogether.domain.model.GrocerySuggestion
 import com.example.lifetogether.domain.model.UserInformation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -16,6 +19,7 @@ import javax.inject.Inject
 
 class LocalDataSource @Inject constructor(
     private val groceryListDao: GroceryListDao,
+    private val grocerySuggestionsDao: GrocerySuggestionsDao,
     private val categoriesDao: CategoriesDao,
     private val userInformationDao: UserInformationDao,
 ) {
@@ -100,6 +104,45 @@ class LocalDataSource @Inject constructor(
         } catch (e: Exception) {
             return ResultListener.Failure("Error: ${e.message}")
         }
+    }
+
+    // -------------------------------------------------------------- GROCERY SUGGESTIONS
+    fun getGrocerySuggestions(): Flow<List<GrocerySuggestionEntity>> {
+        return grocerySuggestionsDao.getItems()
+    }
+
+    suspend fun updateGrocerySuggestions(items: List<GrocerySuggestion>) {
+        println("LocalDataSource updateGrocerySuggestions(): Trying to add firestore data to Room")
+        val grocerySuggestionEntities = items.mapNotNull { grocerySuggestion ->
+            grocerySuggestion.id?.let { id ->
+                GrocerySuggestionEntity(
+                    id = id,
+                    suggestionName = grocerySuggestion.suggestionName,
+                    category = grocerySuggestion.category,
+                )
+            }
+        }
+        grocerySuggestionsDao.updateItems(grocerySuggestionEntities)
+
+        // Fetch the current items from the Room database
+        //   getItems() returns a Flow, so you need to use first() to get the current value
+        val currentItems = grocerySuggestionsDao.getItems().first()
+
+        // Determine the items to be inserted or updated
+        val itemsToUpdate = grocerySuggestionEntities.filter { newItem ->
+            currentItems.none { currentItem -> newItem.id == currentItem.id }
+        }
+
+        // Determine the items to be deleted
+        val itemsToDelete = currentItems.filter { currentItem ->
+            grocerySuggestionEntities.none { newItem -> newItem.id == currentItem.id }
+        }
+
+        // Update the Room database with the new or changed items
+        grocerySuggestionsDao.updateItems(itemsToUpdate)
+
+        // Delete the items that no longer exist in Firestore
+        grocerySuggestionsDao.deleteItems(itemsToDelete)
     }
 
     // -------------------------------------------------------------- USER INFORMATION

@@ -6,8 +6,12 @@ class AppNavigator(private val navController: NavController) : Navigator {
     override fun navigateToAdmin() {
         navController.navigate(AppRoutes.ADMIN_SCREEN)
     }
-    override fun navigateToAdminGroceryList() {
-        navController.navigate(AppRoutes.ADMIN_GROCERY_LIST_SCREEN)
+    override fun navigateToAdminGroceryCategories() {
+        navController.navigate(AppRoutes.ADMIN_GROCERY_CATEGORIES_SCREEN)
+    }
+
+    override fun navigateToAdminGrocerySuggestions() {
+        navController.navigate(AppRoutes.ADMIN_GROCERY_SUGGESTIONS_SCREEN)
     }
     override fun navigateToHome() {
         navController.navigate(AppRoutes.HOME_SCREEN)

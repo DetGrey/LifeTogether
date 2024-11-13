@@ -20,8 +20,8 @@ import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.enums.UpdateType
 import com.example.lifetogether.ui.common.TopBar
-import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
+import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.viewmodel.AuthViewModel
@@ -155,7 +155,6 @@ fun GroceryListScreen(
         )
     }
 //    }
-
 
     if (groceryListViewModel.showConfirmationDialog) {
         ConfirmationDialog(

@@ -23,7 +23,7 @@ fun ErrorAlertDialog(error: String) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(16.dp),
     ) {
         Box(
             modifier = Modifier
@@ -31,22 +31,21 @@ fun ErrorAlertDialog(error: String) {
                 .align(Alignment.TopCenter) // Align the inner box to the top center
                 .clip(RoundedCornerShape(16.dp)) // Rounded corners
                 .background(MaterialTheme.colorScheme.error) // Orange background color
-                .padding(16.dp)
+                .padding(16.dp),
         ) {
             Column {
                 Text(
                     text = "An error occurred",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = Color.White
+                    color = Color.White,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = error,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White
+                    color = Color.White,
                 )
             }
         }
     }
 }
-

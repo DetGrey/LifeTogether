@@ -7,6 +7,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import com.example.lifetogether.ui.feature.admin.AdminScreen
 import com.example.lifetogether.ui.feature.admin.groceryList.AdminGroceryCategoriesScreen
+import com.example.lifetogether.ui.feature.admin.groceryList.AdminGrocerySuggestionsScreen
 import com.example.lifetogether.ui.feature.groceryList.GroceryListScreen
 import com.example.lifetogether.ui.feature.home.HomeScreen
 import com.example.lifetogether.ui.feature.login.LoginScreen
@@ -31,34 +32,37 @@ fun NavHost(
 
     androidx.navigation.compose.NavHost(
         navController = navController,
-        startDestination = "home",
+        startDestination = AppRoutes.HOME_SCREEN,
     ) {
-        composable("admin") {
+        composable(AppRoutes.ADMIN_SCREEN) {
             AdminScreen(appNavigator, authViewModel)
         }
-        composable("admin_grocery_list") {
+        composable(AppRoutes.ADMIN_GROCERY_CATEGORIES_SCREEN) {
             AdminGroceryCategoriesScreen(appNavigator, authViewModel)
         }
-        composable("home") {
+        composable(AppRoutes.ADMIN_GROCERY_SUGGESTIONS_SCREEN) {
+            AdminGrocerySuggestionsScreen(appNavigator, authViewModel)
+        }
+        composable(AppRoutes.HOME_SCREEN) {
             HomeScreen(appNavigator, authViewModel)
         }
 
-        composable("profile") {
+        composable(AppRoutes.PROFILE_SCREEN) {
             ProfileScreen(appNavigator, authViewModel)
         }
 
-        composable("settings") {
+        composable(AppRoutes.SETTINGS_SCREEN) {
             SettingsScreen(appNavigator, authViewModel)
         }
 
-        composable("grocery") {
+        composable(AppRoutes.GROCERY_LIST_SCREEN) {
             GroceryListScreen(appNavigator, authViewModel)
         }
 
-        composable("login") {
+        composable(AppRoutes.LOGIN_SCREEN) {
             LoginScreen(appNavigator, authViewModel)
         }
-        composable("signup") {
+        composable(AppRoutes.SIGNUP_SCREEN) {
             SignupScreen(appNavigator, authViewModel)
         }
     }

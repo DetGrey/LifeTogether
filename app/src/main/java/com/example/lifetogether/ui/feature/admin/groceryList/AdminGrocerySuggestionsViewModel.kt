@@ -6,11 +6,15 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.callback.CategoriesListener
+import com.example.lifetogether.domain.callback.GrocerySuggestionsListener
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.model.Category
+import com.example.lifetogether.domain.model.GrocerySuggestion
 import com.example.lifetogether.domain.usecase.item.AddCategoryUseCase
-import com.example.lifetogether.domain.usecase.item.DeleteCategoryUseCase
+import com.example.lifetogether.domain.usecase.item.DeleteGrocerySuggestionUseCase
 import com.example.lifetogether.domain.usecase.item.FetchCategoriesUseCase
+import com.example.lifetogether.domain.usecase.item.FetchGrocerySuggestionsUseCase
+import com.example.lifetogether.domain.usecase.item.SaveGrocerySuggestionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,13 +24,15 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class AdminGroceryCategoriesViewModel @Inject constructor(
+class AdminGrocerySuggestionsViewModel @Inject constructor(
     private val fetchCategoriesUseCase: FetchCategoriesUseCase,
-    private val deleteCategoryUseCase: DeleteCategoryUseCase,
+    private val fetchGrocerySuggestionsUseCase: FetchGrocerySuggestionsUseCase,
+    private val deleteGrocerySuggestionUseCase: DeleteGrocerySuggestionUseCase,
     private val addCategoryUseCase: AddCategoryUseCase,
+    private val saveGrocerySuggestionUseCase: SaveGrocerySuggestionUseCase,
 ) : ViewModel() {
     var showDeleteCategoryConfirmationDialog: Boolean by mutableStateOf(false)
-    var selectedCategory: Category? by mutableStateOf(null)
+    var selectedSuggestion: GrocerySuggestion? by mutableStateOf(null)
 
     var showAlertDialog: Boolean by mutableStateOf(false)
     var error: String by mutableStateOf("")
@@ -39,11 +45,19 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
     }
 
     // ---------------------------------------------------------------- SETUP/FETCH LIST
-    fun setUpCategories() {
-        fetchCategories()
+    fun setUpGrocerySuggestions() {
+        viewModelScope.launch {
+            fetchCategories()
+            fetchGrocerySuggestions()
+        }
     }
 
     // ---------------------------------------------------------------- CATEGORIES
+    private val uncategorizedCategory: Category = Category(
+        emoji = "❓️",
+        name = "Uncategorized",
+    )
+
     private val _groceryCategories = MutableStateFlow<List<Category>>(emptyList())
     val groceryCategories: StateFlow<List<Category>> = _groceryCategories.asStateFlow()
 
@@ -72,24 +86,73 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
         }
     }
 
+    private fun updateCategories(newCategory: Category) {
+        if (!groceryCategories.value.contains(newCategory)) {
+            println("adding new category: $newCategory")
+            _groceryCategories.value = _groceryCategories.value
+                .filterNot { it.name == "Uncategorized" }
+                .plus(newCategory)
+                .sortedBy { it.name }
+                .let { listOf(Category("❓️", "Uncategorized")) + it }
+        }
+    }
+
+    // ---------------------------------------------------------------- GROCERY SUGGESTIONS
+    private val _grocerySuggestions = MutableStateFlow<List<GrocerySuggestion>>(emptyList())
+    val grocerySuggestions: StateFlow<List<GrocerySuggestion>> = _grocerySuggestions.asStateFlow()
+
+    private fun fetchGrocerySuggestions() {
+        println("GroceryListViewModel before calling fetchGrocerySuggestionsUseCase")
+        viewModelScope.launch {
+            fetchGrocerySuggestionsUseCase().collect { result ->
+                println("GroceryListViewModel fetchGrocerySuggestionsUseCase result: $result")
+                when (result) {
+                    is GrocerySuggestionsListener.Success -> {
+                        println("GroceryListViewModel categories updated: ${result.listItems}")
+                        _grocerySuggestions.value = result.listItems
+                            .sortedBy { it.suggestionName }
+                    }
+
+                    is GrocerySuggestionsListener.Failure -> {
+                        _grocerySuggestions.value = emptyList()
+                        // Handle failure, e.g., show an error message
+                        error = result.message
+                        showAlertDialog = true
+                    }
+                }
+            }
+        }
+    }
+
     // ---------------------------------------------------------------- NEW ITEM
-    var newCategory: String by mutableStateOf("")
+    var newSuggestionText: String by mutableStateOf("")
+    var newSuggestionCategory: Category by mutableStateOf(uncategorizedCategory)
+
+    fun updateNewSuggestionCategory(category: Category?) {
+        newSuggestionCategory = category
+            ?: uncategorizedCategory
+        println("New category: $newSuggestionCategory")
+    }
 
     // ---------------------------------------------------------------- ADD CATEGORY
-    fun addCategory() {
-        if (newCategory.isEmpty() && !newCategory.contains(" ")) {
+    fun addNewGrocerySuggestion() {
+        if (newSuggestionText.isEmpty()) {
+            error = "Please enter a suggestion first"
+            showAlertDialog = true
             return
         }
 
-        val categoryAsList = newCategory.split(" ", limit = 2)
-        val category = Category(emoji = categoryAsList[0], name = categoryAsList[1].trim())
+        val grocerySuggestion = GrocerySuggestion(
+            category = newSuggestionCategory,
+            suggestionName = newSuggestionText,
+        )
 
         viewModelScope.launch {
-            val result: ResultListener = addCategoryUseCase.invoke(category)
+            val result: ResultListener = saveGrocerySuggestionUseCase.invoke(grocerySuggestion)
             if (result is ResultListener.Success) {
-                newCategory = ""
+                updateNewSuggestionCategory(null)
+                newSuggestionText = ""
             } else if (result is ResultListener.Failure) {
-                // TODO popup saying the error for 5 sec
                 println("Error: ${result.message}")
                 error = result.message
                 showAlertDialog = true
@@ -99,23 +162,19 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
 
     // ---------------------------------------------------------------- DELETE CATEGORY
     fun deleteCategory() {
-//        isLoading = true
-
-        if (selectedCategory == null) {
+        if (selectedSuggestion == null) {
             return
         }
         viewModelScope.launch {
-            val result: ResultListener = deleteCategoryUseCase.invoke(selectedCategory!!)
+            val result: ResultListener = deleteGrocerySuggestionUseCase.invoke(selectedSuggestion!!)
 
             if (result is ResultListener.Failure) {
-                // TODO popup saying the error for 5 sec
                 println("Error: ${result.message}")
                 error = result.message
                 showAlertDialog = true
             }
 
             showDeleteCategoryConfirmationDialog = false
-            // isLoading = false
         }
     }
 }

@@ -3,10 +3,12 @@ package com.example.lifetogether.data.repository
 import com.example.lifetogether.data.local.LocalDataSource
 import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.domain.callback.CategoriesListener
+import com.example.lifetogether.domain.callback.GrocerySuggestionsListener
 import com.example.lifetogether.domain.callback.ListItemsResultListener
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.GroceryItem
+import com.example.lifetogether.domain.model.GrocerySuggestion
 import com.example.lifetogether.domain.model.Item
 import com.example.lifetogether.domain.repository.ListRepository
 import kotlinx.coroutines.flow.Flow
@@ -47,6 +49,26 @@ class LocalListRepositoryImpl @Inject constructor(
                 )
             } catch (e: Exception) {
                 CategoriesListener.Failure(e.message ?: "Unknown error")
+            }
+        }
+    }
+
+    fun getGrocerySuggestions(): Flow<GrocerySuggestionsListener> {
+        println("LocalListRepositoryImpl getGrocerySuggestions()")
+        return localDataSource.getGrocerySuggestions().map { list ->
+            println("Grocery suggestions: $list")
+            try {
+                GrocerySuggestionsListener.Success(
+                    list.map { grocerySuggestion ->
+                        GrocerySuggestion(
+                            id = grocerySuggestion.id,
+                            suggestionName = grocerySuggestion.suggestionName,
+                            category = grocerySuggestion.category,
+                        )
+                    },
+                )
+            } catch (e: Exception) {
+                GrocerySuggestionsListener.Failure(e.message ?: "Unknown error")
             }
         }
     }

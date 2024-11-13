@@ -2,7 +2,8 @@ package com.example.lifetogether.ui.navigation
 
 interface Navigator {
     fun navigateToAdmin()
-    fun navigateToAdminGroceryList()
+    fun navigateToAdminGroceryCategories()
+    fun navigateToAdminGrocerySuggestions()
     fun navigateToHome()
     fun navigateToProfile()
     fun navigateToSettings()

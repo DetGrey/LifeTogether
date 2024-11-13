@@ -71,7 +71,7 @@ fun AdminScreen(
                     },
                     subText = userInformationState?.birthday?.let {
                         "${daysSinceDate(it)} days together"
-                    } ?: "x days together"
+                    },
                 )
             }
 
@@ -81,6 +81,9 @@ fun AdminScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
+                    // TODO use a when statement with enum class to show main features
+                    // TODO E.g. when clicking grocery list, it shows the features grocery categories and suggestions
+
                     FeatureOverview(
                         "Grocery categories",
                         0,
@@ -89,7 +92,7 @@ fun AdminScreen(
                             if (userInformationState?.familyId == null) {
                                 // TODO add popup asking to join a family
                             } else {
-                                appNavigator?.navigateToAdminGroceryList()
+                                appNavigator?.navigateToAdminGroceryCategories()
                             }
                         },
                         icon = Icon(R.drawable.ic_groceries, "groceries basket icon"),
@@ -103,13 +106,12 @@ fun AdminScreen(
                             if (userInformationState?.familyId == null) {
                                 // TODO add popup asking to join a family
                             } else {
-                                appNavigator?.navigateToAdminGroceryList()
+                                appNavigator?.navigateToAdminGrocerySuggestions()
                             }
                         },
                         icon = Icon(R.drawable.ic_groceries, "groceries basket icon"),
                         fullWidth = true,
                     )
-
                 }
             }
 
@@ -118,7 +120,6 @@ fun AdminScreen(
             }
         }
     }
-
 }
 
 @Preview(showBackground = true)

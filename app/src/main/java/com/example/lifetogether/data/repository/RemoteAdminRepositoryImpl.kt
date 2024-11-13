@@ -3,14 +3,13 @@ package com.example.lifetogether.data.repository
 import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.model.Category
-import com.example.lifetogether.domain.model.Item
+import com.example.lifetogether.domain.model.GrocerySuggestion
 import com.example.lifetogether.domain.repository.AdminRepository
-import com.example.lifetogether.domain.repository.ListRepository
 import javax.inject.Inject
 
 class RemoteAdminRepositoryImpl @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
-): AdminRepository {
+) : AdminRepository {
     override suspend fun deleteCategory(
         category: Category,
     ): ResultListener {
@@ -20,5 +19,15 @@ class RemoteAdminRepositoryImpl @Inject constructor(
         category: Category,
     ): ResultListener {
         return firestoreDataSource.addCategory(category)
+    }
+    suspend fun saveGrocerySuggestion(
+        grocerySuggestion: GrocerySuggestion,
+    ): ResultListener {
+        return firestoreDataSource.addGrocerySuggestion(grocerySuggestion)
+    }
+    suspend fun deleteGrocerySuggestion(
+        grocerySuggestion: GrocerySuggestion,
+    ): ResultListener {
+        return firestoreDataSource.deleteGrocerySuggestion(grocerySuggestion)
     }
 }

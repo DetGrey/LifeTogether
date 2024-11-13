@@ -19,7 +19,7 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindRemoteAdminRepository(
-        remoteAdminRepositoryImpl: RemoteAdminRepositoryImpl
+        remoteAdminRepositoryImpl: RemoteAdminRepositoryImpl,
     ): AdminRepository
 
     @Binds

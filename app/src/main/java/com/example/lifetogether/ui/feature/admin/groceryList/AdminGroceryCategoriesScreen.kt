@@ -34,8 +34,8 @@ import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.CustomTextField
 import com.example.lifetogether.ui.common.TopBar
-import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
+import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -53,7 +53,7 @@ fun AdminGroceryCategoriesScreen(
 
     LaunchedEffect(key1 = true) {
         // Perform any one-time initialization or side effect here
-        groceryCategoriesViewModel.setUpGroceryList()
+        groceryCategoriesViewModel.setUpCategories()
     }
 
     Box(
@@ -81,15 +81,15 @@ fun AdminGroceryCategoriesScreen(
             }
 
             item {
+                TextHeadingMedium("Grocery categories")
                 if (groceryCategories.isNotEmpty()) {
-                    TextHeadingMedium("Grocery categories")
                     ListEditorContainer(
                         groceryCategories.map { category -> "${category.emoji} ${category.name}" },
                         onDelete = { categoryString ->
                             val categoryList = categoryString.split(" ", limit = 2)
                             groceryCategoriesViewModel.selectedCategory = Category(categoryList[0], categoryList[1])
                             groceryCategoriesViewModel.showDeleteCategoryConfirmationDialog = true
-                        }
+                        },
                     )
                     Spacer(modifier = Modifier.height(20.dp))
 
@@ -98,76 +98,60 @@ fun AdminGroceryCategoriesScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Black,
                     )
-                    Spacer(modifier = Modifier.height(20.dp))
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(60.dp)
-                            .clip(shape = RoundedCornerShape(20))
-                            .background(color = MaterialTheme.colorScheme.onBackground),
-                        contentAlignment = Alignment.CenterStart,
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxSize(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth(0.8f),
-                            ) {
-                                CustomTextField(
-                                    value = groceryCategoriesViewModel.newCategory,
-                                    onValueChange = {
-                                        groceryCategoriesViewModel.newCategory = it
-                                    },
-                                    label = "Add category",
-                                    keyboardType = KeyboardType.Text,
-                                    imeAction = ImeAction.Done
-                                )
-
-                            }
-                            Row(
-                                modifier = Modifier
-                                    .padding(10.dp)
-                                    .fillMaxHeight()
-                                    .clickable {
-                                        groceryCategoriesViewModel.addCategory()
-                                    },
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(text = "Add", color = Color.White)
-
-                                Spacer(modifier = Modifier.width(5.dp))
-
-                                Text(
-                                    text = ">",
-                                    color = MaterialTheme.colorScheme.secondary,
-                                )
-                            }
-                        }
-                    }
-
-//                    AddNewListItem(
-//                        textValue = "",
-//                        onTextChange = {  },
-//                        onAddClick = {
-//
-//                        },
-//                        categoryList = groceryCategories,
-//                        selectedCategory = Category("❓️", "Uncategorized"),
-//                        onCategoryChange = {
-//                        },
-//                    )
                 }
             }
 
             item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp)
+                        .clip(shape = RoundedCornerShape(20))
+                        .background(color = MaterialTheme.colorScheme.onBackground),
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth(0.8f),
+                        ) {
+                            CustomTextField(
+                                value = groceryCategoriesViewModel.newCategory,
+                                onValueChange = {
+                                    groceryCategoriesViewModel.newCategory = it
+                                },
+                                label = "Add category",
+                                keyboardType = KeyboardType.Text,
+                                imeAction = ImeAction.Done,
+                            )
+                        }
+                        Row(
+                            modifier = Modifier
+                                .padding(10.dp)
+                                .fillMaxHeight()
+                                .clickable {
+                                    groceryCategoriesViewModel.addCategory()
+                                },
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(text = "Add", color = Color.White)
 
+                            Spacer(modifier = Modifier.width(5.dp))
+
+                            Text(
+                                text = ">",
+                                color = MaterialTheme.colorScheme.secondary,
+                            )
+                        }
+                    }
+                }
             }
         }
     }
-
 
     if (groceryCategoriesViewModel.showDeleteCategoryConfirmationDialog && groceryCategoriesViewModel.selectedCategory != null) {
         ConfirmationDialog(

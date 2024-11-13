@@ -11,6 +11,7 @@ import com.example.lifetogether.domain.model.enums.UpdateType
 import com.example.lifetogether.domain.usecase.observers.ObserveAuthStateUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveCategoriesUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveGroceryListUseCase
+import com.example.lifetogether.domain.usecase.observers.ObserveGrocerySuggestionsUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveUserInformationUseCase
 import com.example.lifetogether.domain.usecase.user.FetchUserInformationUseCase
 import com.example.lifetogether.domain.usecase.user.RemoveSavedUserInformationUseCase
@@ -27,6 +28,7 @@ class AuthViewModel @Inject constructor(
     private val observeAuthStateUseCase: ObserveAuthStateUseCase,
     private val observeGroceryListUseCase: ObserveGroceryListUseCase,
     private val observeCategoriesUseCase: ObserveCategoriesUseCase,
+    private val observeGrocerySuggestionsUseCase: ObserveGrocerySuggestionsUseCase,
     private val observeUserInformationUseCase: ObserveUserInformationUseCase,
     private val removeSavedUserInformationUseCase: RemoveSavedUserInformationUseCase,
 ) : ViewModel() {
@@ -56,6 +58,10 @@ class AuthViewModel @Inject constructor(
 
         viewModelScope.launch {
             observeCategoriesUseCase()
+        }
+
+        viewModelScope.launch {
+            observeGrocerySuggestionsUseCase()
         }
     }
 
@@ -103,15 +109,6 @@ class AuthViewModel @Inject constructor(
         _userInformation.value = null
         // TODO clear all user data from Room db
         // TODO stop observing firestore
-    }
-
-    fun onLogin() {
-//        println("AuthViewModel onLogin() uid: ${userInformation.value?.uid}")
-//        // TODO separate way to observe firestore and make sure uid gets fetched
-//        userInformation.value?.uid?.let { uid ->
-//            fetchUserInformation(uid)
-//            observeFirestore(uid)
-//        }
     }
 
     // ---------------------------------------------- ITEM COUNT

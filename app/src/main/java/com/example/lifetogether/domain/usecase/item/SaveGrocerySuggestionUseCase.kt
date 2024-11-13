@@ -2,17 +2,15 @@ package com.example.lifetogether.domain.usecase.item
 
 import com.example.lifetogether.data.repository.RemoteAdminRepositoryImpl
 import com.example.lifetogether.domain.callback.ResultListener
-import com.example.lifetogether.domain.model.Category
+import com.example.lifetogether.domain.model.GrocerySuggestion
 import javax.inject.Inject
 
-class AddCategoryUseCase @Inject constructor(
+class SaveGrocerySuggestionUseCase @Inject constructor(
     private val remoteAdminRepositoryImpl: RemoteAdminRepositoryImpl,
 ) {
     suspend operator fun invoke(
-        category: Category,
+        grocerySuggestion: GrocerySuggestion,
     ): ResultListener {
-        println("Inside DeleteCategoryUseCase and trying to delete a category")
-        val firestoreResult = remoteAdminRepositoryImpl.addCategory(category)
-        return firestoreResult
+        return remoteAdminRepositoryImpl.saveGrocerySuggestion(grocerySuggestion)
     }
 }
