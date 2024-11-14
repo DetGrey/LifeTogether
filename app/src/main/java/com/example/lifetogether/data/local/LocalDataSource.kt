@@ -3,8 +3,10 @@ package com.example.lifetogether.data.local
 import com.example.lifetogether.data.local.dao.CategoriesDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
+import com.example.lifetogether.data.local.dao.RecipesDao
 import com.example.lifetogether.data.local.dao.UserInformationDao
 import com.example.lifetogether.data.model.CategoryEntity
+import com.example.lifetogether.data.model.Entity
 import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.model.GrocerySuggestionEntity
 import com.example.lifetogether.data.model.UserEntity
@@ -13,8 +15,12 @@ import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.GroceryItem
 import com.example.lifetogether.domain.model.GrocerySuggestion
 import com.example.lifetogether.domain.model.UserInformation
+import com.example.lifetogether.util.Constants
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class LocalDataSource @Inject constructor(
@@ -22,6 +28,7 @@ class LocalDataSource @Inject constructor(
     private val grocerySuggestionsDao: GrocerySuggestionsDao,
     private val categoriesDao: CategoriesDao,
     private val userInformationDao: UserInformationDao,
+    private val recipesDao: RecipesDao,
 ) {
     // -------------------------------------------------------------- CATEGORIES
     fun getCategories(): Flow<List<CategoryEntity>> {
@@ -29,7 +36,6 @@ class LocalDataSource @Inject constructor(
     }
 
     suspend fun updateCategories(items: List<Category>) {
-
         val categoryEntities = items.map { category ->
             CategoryEntity(
                 emoji = category.emoji,
@@ -60,10 +66,40 @@ class LocalDataSource @Inject constructor(
     }
 
     // -------------------------------------------------------------- ITEMS
-    fun getListItems(familyId: String): Flow<List<GroceryListEntity>> {
-        val items = groceryListDao.getItems(familyId)
+    fun getListItems(
+        listName: String,
+        familyId: String,
+    ): Flow<List<Entity>> {
+//        val items = groceryListDao.getItems(familyId)
+//        println("LocalDataSource getListItems: $items")
+//        return items
+
+        println("LocalDataSource getListItems listname: $listName")
+        val items: Flow<List<Entity>> = when (listName) {
+            Constants.GROCERY_TABLE -> groceryListDao.getItems(familyId).map { list ->
+                list.map { Entity.GroceryList(it) }
+            }
+            Constants.RECIPES_TABLE -> flowOf(emptyList<Entity>()) // TODO like above
+            else -> flowOf(emptyList<Entity>()) // Handle the case where the listName doesn't match any known entity
+        }
         println("LocalDataSource getListItems: $items")
         return items
+    }
+
+    fun getItemById(
+        listName: String,
+        familyId: String,
+        id: String,
+    ): Flow<Entity> {
+        return when (listName) {
+            "recipes" -> flow {
+                val recipe = recipesDao.getRecipeById(familyId, id)
+                if (recipe != null) {
+                    emit(Entity.Recipe(recipe))
+                }
+            }
+            else -> flowOf() // Handle the case where the listName doesn't match any known entity
+        }
     }
 
     suspend fun updateGroceryList(items: List<GroceryItem>) {

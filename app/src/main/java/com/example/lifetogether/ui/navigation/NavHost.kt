@@ -4,7 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.example.lifetogether.ui.feature.admin.AdminScreen
 import com.example.lifetogether.ui.feature.admin.groceryList.AdminGroceryCategoriesScreen
 import com.example.lifetogether.ui.feature.admin.groceryList.AdminGrocerySuggestionsScreen
@@ -12,6 +14,8 @@ import com.example.lifetogether.ui.feature.groceryList.GroceryListScreen
 import com.example.lifetogether.ui.feature.home.HomeScreen
 import com.example.lifetogether.ui.feature.login.LoginScreen
 import com.example.lifetogether.ui.feature.profile.ProfileScreen
+import com.example.lifetogether.ui.feature.recipes.RecipeDetailsScreen
+import com.example.lifetogether.ui.feature.recipes.RecipesScreen
 import com.example.lifetogether.ui.feature.settings.SettingsScreen
 import com.example.lifetogether.ui.feature.signup.SignupScreen
 import com.example.lifetogether.ui.viewmodel.AuthViewModel
@@ -55,15 +59,31 @@ fun NavHost(
             SettingsScreen(appNavigator, authViewModel)
         }
 
-        composable(AppRoutes.GROCERY_LIST_SCREEN) {
-            GroceryListScreen(appNavigator, authViewModel)
-        }
-
         composable(AppRoutes.LOGIN_SCREEN) {
             LoginScreen(appNavigator, authViewModel)
         }
         composable(AppRoutes.SIGNUP_SCREEN) {
             SignupScreen(appNavigator, authViewModel)
+        }
+
+        composable(AppRoutes.GROCERY_LIST_SCREEN) {
+            GroceryListScreen(appNavigator, authViewModel)
+        }
+
+        composable(AppRoutes.RECIPES_SCREEN) {
+            RecipesScreen(appNavigator, authViewModel)
+        }
+
+        composable(AppRoutes.CREATE_RECIPE_SCREEN) {
+            RecipeDetailsScreen(appNavigator, authViewModel, null)
+        }
+
+        composable(
+            route = "${AppRoutes.RECIPE_DETAILS_SCREEN}/{${AppRoutes.RECIPE_ID_ARG}}",
+            arguments = listOf(navArgument(AppRoutes.RECIPE_ID_ARG) { type = NavType.StringType }),
+        ) { backStackEntry ->
+            val recipeId = backStackEntry.arguments?.getString(AppRoutes.RECIPE_ID_ARG)
+            RecipeDetailsScreen(appNavigator, authViewModel, recipeId)
         }
     }
 }

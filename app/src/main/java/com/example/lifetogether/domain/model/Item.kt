@@ -7,5 +7,4 @@ interface Item {
     val familyId: String
     val itemName: String
     var lastUpdated: Date
-    var completed: Boolean
 }

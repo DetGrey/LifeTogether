@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.viewmodel
+package com.example.lifetogether.ui.feature.recipes
 
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -13,27 +13,24 @@ import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.GroceryItem
 import com.example.lifetogether.domain.model.GrocerySuggestion
+import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.usecase.item.DeleteCompletedItemsUseCase
 import com.example.lifetogether.domain.usecase.item.FetchCategoriesUseCase
 import com.example.lifetogether.domain.usecase.item.FetchGrocerySuggestionsUseCase
 import com.example.lifetogether.domain.usecase.item.FetchListItemsUseCase
 import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
 import com.example.lifetogether.domain.usecase.item.ToggleCompletableItemCompletionUseCase
-import com.example.lifetogether.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
 
 @HiltViewModel
-class GroceryListViewModel @Inject constructor(
+class RecipesViewModel @Inject constructor(
     private val saveItemUseCase: SaveItemUseCase,
     private val toggleCompletableItemCompletionUseCase: ToggleCompletableItemCompletionUseCase,
     private val fetchListItemsUseCase: FetchListItemsUseCase,
@@ -53,17 +50,15 @@ class GroceryListViewModel @Inject constructor(
         }
     }
 
-    var isLoading = true // TODO might need to change to false!!! or mutablestate
-
     // ---------------------------------------------------------------- UID
     private var familyIdIsSet = false
     var familyId: String? = null
 
     // ---------------------------------------------------------------- SETUP/FETCH LIST
-    private val _groceryList = MutableStateFlow<List<GroceryItem>>(emptyList())
-    val groceryList: StateFlow<List<GroceryItem>> = _groceryList.asStateFlow()
+    private val _recipes = MutableStateFlow<List<Recipe>>(emptyList())
+    val recipes: StateFlow<List<Recipe>> = _recipes.asStateFlow()
 
-    fun setUpGroceryList(addedFamilyId: String) {
+    fun setUpRecipes(addedFamilyId: String) {
         fetchCategories()
         fetchGrocerySuggestions()
 
@@ -72,17 +67,16 @@ class GroceryListViewModel @Inject constructor(
             familyId = addedFamilyId
             // Use the UID here (e.g., fetch grocery list items)
             viewModelScope.launch {
-                fetchListItemsUseCase(familyId!!, Constants.GROCERY_TABLE, GroceryItem::class).collect { result ->
+                fetchListItemsUseCase(familyId!!, "grocery-list", GroceryItem::class).collect { result ->
                     println("fetchListItemsUseCase result: $result")
                     when (result) {
                         is ListItemsResultListener.Success -> {
                             // Filter and map the result.listItems to only include GroceryItem instances
-                            println("Items found: ${result.listItems}")
-                            val groceryItems = result.listItems.filterIsInstance<GroceryItem>()
-                            if (groceryItems.isNotEmpty()) {
-                                println("_groceryList old value: ${_groceryList.value}")
-                                _groceryList.value = groceryItems
-                                println("groceryList new value: ${groceryList.value}")
+                            val foundRecipes = result.listItems.filterIsInstance<Recipe>()
+                            if (foundRecipes.isNotEmpty()) {
+                                println("_groceryList old value: ${_recipes.value}")
+                                _recipes.value = foundRecipes
+                                println("groceryList new value: ${this@RecipesViewModel.recipes.value}")
 
                                 updateExpandedStates()
                             } else {
@@ -106,19 +100,6 @@ class GroceryListViewModel @Inject constructor(
     }
 
     // ---------------------------------------------------------------- CATEGORIZED LISTS
-    val completedItems: StateFlow<List<GroceryItem>>
-        get() = groceryList
-            .map { list ->
-                list.filter { it.completed }
-            }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
-
-    // StateFlow for categorized items (excluding completed items)
-    val categorizedItems: StateFlow<Map<Category, List<GroceryItem>>>
-        get() = groceryList
-            .map { list ->
-                updateCategorizedItems(list)
-            }
-            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
     private fun updateCategorizedItems(list: List<GroceryItem>): Map<Category, List<GroceryItem>> {
         println("GroceryListViewModel updateCategorizedItems() initial list: $list")
@@ -283,7 +264,7 @@ class GroceryListViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            val result: ResultListener = saveItemUseCase.invoke(groceryItem, Constants.GROCERY_TABLE)
+            val result: ResultListener = saveItemUseCase.invoke(groceryItem, "grocery-list")
             if (result is ResultListener.Success) {
 //                updateCategories(newItemCategory)
                 updateNewItemCategory(null)
@@ -291,7 +272,6 @@ class GroceryListViewModel @Inject constructor(
                 onSuccess()
             } else if (result is ResultListener.Failure) {
                 println("Error: ${result.message}")
-                // TODO popup saying the error for 5 sec
                 error = result.message
                 showAlertDialog = true
             }
@@ -302,38 +282,16 @@ class GroceryListViewModel @Inject constructor(
     fun toggleItemCompleted(
         oldItem: GroceryItem,
     ) {
-        isLoading = true
         val newItem = oldItem.copy(completed = !oldItem.completed, lastUpdated = Date(System.currentTimeMillis()))
 
         viewModelScope.launch {
-            val result: ResultListener = toggleCompletableItemCompletionUseCase.invoke(newItem, Constants.GROCERY_TABLE)
+            val result: ResultListener = toggleCompletableItemCompletionUseCase.invoke(newItem, "grocery-list")
             if (result is ResultListener.Success) {
-                isLoading = false
+//                groceryList = groceryList.minus(oldItem).plus(newItem)
             } else if (result is ResultListener.Failure) {
-                // TODO popup saying the error for 5 sec
                 println("Error: ${result.message}")
                 error = result.message
                 showAlertDialog = true
-                isLoading = false
-            }
-        }
-    }
-
-    // ---------------------------------------------------------------- DELETE COMPLETED ITEMS
-    fun deleteCompletedItems() {
-        if (completedItems.value.isEmpty()) {
-            return
-        }
-        val items = completedItems.value.filter { it.id != null }
-
-        viewModelScope.launch {
-            val result = deleteCompletedItemsUseCase.invoke(
-                Constants.GROCERY_TABLE,
-                items = items,
-            )
-            when (result) {
-                is ResultListener.Success -> showConfirmationDialog = false
-                is ResultListener.Failure -> showConfirmationDialog = false
             }
         }
     }

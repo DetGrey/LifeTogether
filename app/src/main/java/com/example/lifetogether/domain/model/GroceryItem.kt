@@ -11,4 +11,4 @@ data class GroceryItem(
     override var lastUpdated: Date = Date(),
     override var completed: Boolean = false,
     var category: Category? = null,
-) : Item
+) : CompletableItem

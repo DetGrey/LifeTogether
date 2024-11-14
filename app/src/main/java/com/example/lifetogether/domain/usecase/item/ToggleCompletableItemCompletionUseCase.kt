@@ -2,16 +2,16 @@ package com.example.lifetogether.domain.usecase.item
 
 import com.example.lifetogether.data.repository.RemoteListRepositoryImpl
 import com.example.lifetogether.domain.callback.ResultListener
-import com.example.lifetogether.domain.model.Item
+import com.example.lifetogether.domain.model.CompletableItem
 import javax.inject.Inject
 
-class ToggleItemCompletionUseCase @Inject constructor(
+class ToggleCompletableItemCompletionUseCase @Inject constructor(
     private val listRepository: RemoteListRepositoryImpl,
 ) {
     suspend operator fun invoke(
-        item: Item,
+        item: CompletableItem,
         listName: String,
     ): ResultListener {
-        return listRepository.toggleItemCompletion(item, listName)
+        return listRepository.toggleCompletableItemCompletion(item, listName)
     }
 }

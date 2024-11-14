@@ -6,6 +6,7 @@ import com.example.lifetogether.data.local.AppDatabase
 import com.example.lifetogether.data.local.dao.CategoriesDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
+import com.example.lifetogether.data.local.dao.RecipesDao
 import com.example.lifetogether.data.local.dao.UserInformationDao
 import dagger.Module
 import dagger.Provides
@@ -53,5 +54,11 @@ object DatabaseModule {
     @Singleton
     fun provideCategoriesDao(db: AppDatabase): CategoriesDao {
         return db.categoriesDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideRecipesDao(db: AppDatabase): RecipesDao {
+        return db.recipesDao()
     }
 }

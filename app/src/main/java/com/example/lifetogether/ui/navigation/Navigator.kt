@@ -7,9 +7,10 @@ interface Navigator {
     fun navigateToHome()
     fun navigateToProfile()
     fun navigateToSettings()
-    fun navigateToGroceryList()
     fun navigateToLogin()
     fun navigateToSignUp()
     fun navigateBack()
-    // ... other navigation methods
+    fun navigateToGroceryList()
+    fun navigateToRecipes()
+    fun navigateToRecipeDetails(recipeId: String? = null)
 }

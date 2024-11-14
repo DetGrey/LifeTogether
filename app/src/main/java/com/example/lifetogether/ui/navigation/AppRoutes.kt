@@ -10,5 +10,9 @@ object AppRoutes {
     const val LOGIN_SCREEN = "login"
     const val SIGNUP_SCREEN = "signup"
     const val GROCERY_LIST_SCREEN = "grocery"
+    const val RECIPES_SCREEN = "recipes"
+    const val RECIPE_DETAILS_SCREEN = "recipe_details"
+    const val CREATE_RECIPE_SCREEN = "create_recipe_screen"
+    const val RECIPE_ID_ARG = "recipeId"
     // ... other routes
 }

@@ -3,9 +3,10 @@ package com.example.lifetogether.data.model
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.example.lifetogether.util.Constants
 import java.util.Date
 
-@Entity(tableName = "users")
+@Entity(tableName = Constants.USER_TABLE)
 data class UserEntity(
     @PrimaryKey
     val uid: String = "",

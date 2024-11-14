@@ -7,6 +7,7 @@ import com.example.lifetogether.domain.callback.ListItemsResultListener
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.callback.StringResultListener
 import com.example.lifetogether.domain.model.Category
+import com.example.lifetogether.domain.model.CompletableItem
 import com.example.lifetogether.domain.model.GroceryItem
 import com.example.lifetogether.domain.model.GrocerySuggestion
 import com.example.lifetogether.domain.model.Item
@@ -176,35 +177,47 @@ class FirestoreDataSource@Inject constructor() {
         }
     }
 
-    suspend fun toggleItemCompletion(
-        item: Item,
+    suspend fun toggleCompletableItemCompletion(
+        item: CompletableItem,
         listName: String,
     ): ResultListener {
         try {
-            val query = db.collection(listName)
-                .whereEqualTo("familyId", item.familyId)
-                .whereEqualTo("itemName", item.itemName)
+//            println("FirestoreDataSource toggleCompletableItemCompletion item: ${item.toString()}")
+//            println("FirestoreDataSource toggleCompletableItemCompletion item id: ${item.id}")
+//            val query = db.collection(listName)
+//                .whereEqualTo("familyId", item.familyId)
+//                .whereEqualTo("itemName", item.itemName)
+//
+//            if (item is GroceryItem) { // Check if item is of type GroceryItem
+//                query.whereEqualTo("category", item.category)
+//            }
+//            println("FirestoreDataSource toggleCompletableItemCompletion query: $query")
 
-            if (item is GroceryItem) { // Check if item is of type GroceryItem
-                query.whereEqualTo("category", item.category)
-            }
-
-            val querySnapshot = query.get().await()
-
-            // Assuming there's only one matching document, get its reference
-            // Find the document with the exact ID
-            val documentReference = querySnapshot.documents
-                .firstOrNull { it.id == item.id }?.reference
-
-            if (documentReference != null) {
-                // Update the 'completed' field and 'lastUpdated' field of the document
-                documentReference.update(
-                    mapOf(
-                        "completed" to item.completed,
-                        "lastUpdated" to Date(System.currentTimeMillis()), // Set to current time
-                    ),
-                ).await()
+            if (item.id != null) {
+                val querySnapshot = item.id?.let {
+                    db.collection(listName).document(it).update(
+                        mapOf(
+                            "completed" to item.completed,
+                            "lastUpdated" to Date(System.currentTimeMillis()), // Set to current time
+                        ),
+                    ).await()
+                }
                 return ResultListener.Success
+
+//            // Assuming there's only one matching document, get its reference
+//            // Find the document with the exact ID
+//            val documentReference = querySnapshot.documents
+//                .firstOrNull { it.id == item.id }?.reference
+//
+//            if (documentReference != null) {
+//                // Update the 'completed' field and 'lastUpdated' field of the document
+//                documentReference.update(
+//                    mapOf(
+//                        "completed" to item.completed,
+//                        "lastUpdated" to Date(System.currentTimeMillis()), // Set to current time
+//                    ),
+//                ).await()
+//                return ResultListener.Success
             } else {
                 return ResultListener.Failure("Document not found")
             }

@@ -167,7 +167,7 @@ fun HomeScreen(
                             if (userInformationState?.familyId == null) {
                                 // TODO add popup asking to join a family
                             } else {
-                                // TODO
+                                appNavigator?.navigateToRecipes()
                             }
                         },
                         icon = Icon(R.drawable.ic_recipes, "recipes chef hat icon"),

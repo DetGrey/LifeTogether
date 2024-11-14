@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.feature.groceryList
+package com.example.lifetogether.ui.common
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -25,26 +24,38 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
+import com.example.lifetogether.domain.model.Completable
 import com.example.lifetogether.domain.model.GroceryItem
-import com.example.lifetogether.domain.model.Item
+import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import java.util.Date
 
 @Composable
 fun ListItem(
-    item: Item,
+    item: Completable,
     onCompleteToggle: () -> Unit,
 ) {
+    var text = item.itemName
+
+    if (item is Ingredient && item.amount > 0) {
+        val formattedAmount = if (item.amount % 1.0 == 0.0) {
+            item.amount.toInt()
+        } else {
+            item.amount
+        }
+        text = "$formattedAmount ${item.measureType.unit} ${item.itemName}"
+    }
+
     Row(
         modifier = Modifier
             .padding(horizontal = 10.dp, vertical = 5.dp)
-            .fillMaxWidth()
-            .height(30.dp),
+            .fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             modifier = Modifier
-                .fillMaxHeight()
+                .height(30.dp)
                 .aspectRatio(1f)
                 .clip(shape = CircleShape)
                 .border(width = 2.dp, color = MaterialTheme.colorScheme.secondary, shape = CircleShape)
@@ -67,7 +78,7 @@ fun ListItem(
         }
 
         Text(
-            text = item.itemName,
+            text = text,
             style = MaterialTheme.typography.bodyLarge,
             textDecoration = if (item.completed) TextDecoration.LineThrough else TextDecoration.None,
         )
