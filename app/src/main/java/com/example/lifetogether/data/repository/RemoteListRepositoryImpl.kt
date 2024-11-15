@@ -14,20 +14,20 @@ class RemoteListRepositoryImpl @Inject constructor(
         item: Item,
         listName: String,
     ): ResultListener {
-        return firestoreDataSource.saveItem(item, listName.replace("_", "-"))
+        return firestoreDataSource.saveItem(item, listName)
     }
 
     suspend fun toggleCompletableItemCompletion(
         item: CompletableItem,
         listName: String,
     ): ResultListener {
-        return firestoreDataSource.toggleCompletableItemCompletion(item, listName.replace("_", "-"))
+        return firestoreDataSource.toggleCompletableItemCompletion(item, listName)
     }
 
     suspend fun deleteItems(
         listName: String,
         items: List<Item>,
     ): ResultListener {
-        return firestoreDataSource.deleteItems(listName.replace("_", "-"), items)
+        return firestoreDataSource.deleteItems(listName, items)
     }
 }

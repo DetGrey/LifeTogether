@@ -12,6 +12,7 @@ import com.example.lifetogether.domain.model.GroceryItem
 import com.example.lifetogether.domain.model.GrocerySuggestion
 import com.example.lifetogether.domain.model.Item
 import com.example.lifetogether.domain.model.UserInformation
+import com.example.lifetogether.util.Constants
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.channels.awaitClose
@@ -26,7 +27,7 @@ class FirestoreDataSource@Inject constructor() {
     // -------------------------------------- USERS
     fun userInformationSnapshotListener(uid: String) = callbackFlow {
         println("Firestore userInformationSnapshotListener init")
-        val userInformationRef = Firebase.firestore.collection("users").document(uid)
+        val userInformationRef = Firebase.firestore.collection(Constants.USER_TABLE).document(uid)
         val listenerRegistration = userInformationRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 // Handle error
@@ -51,7 +52,7 @@ class FirestoreDataSource@Inject constructor() {
         println("FirestoreDataSource uploadUserInformation getting uploaded")
         try {
             if (userInformation.uid != null) {
-                db.collection("users").document(userInformation.uid).set(userInformation).await()
+                db.collection(Constants.USER_TABLE).document(userInformation.uid).set(userInformation).await()
                 return ResultListener.Success
             } else {
                 return ResultListener.Failure("Cannot upload without being logged in")
@@ -64,7 +65,7 @@ class FirestoreDataSource@Inject constructor() {
 
     suspend fun changeName(uid: String, newName: String): ResultListener {
         try {
-            db.collection("users").document(uid).update("name", newName).await()
+            db.collection(Constants.USER_TABLE).document(uid).update("name", newName).await()
             return ResultListener.Success
         } catch (e: Exception) {
             println("Error: ${e.message}")
@@ -79,7 +80,7 @@ class FirestoreDataSource@Inject constructor() {
     ): ResultListener {
         println("FirestoreDataSource joinFamily()")
         try {
-            val documentReference = db.collection("families").document(familyId).get().await()
+            val documentReference = db.collection(Constants.FAMILIES_TABLE).document(familyId).get().await()
 
             @Suppress("UNCHECKED_CAST")
             val members = documentReference.data?.get("members") as? List<String>
@@ -87,7 +88,7 @@ class FirestoreDataSource@Inject constructor() {
             val updatedMembers = members?.toMutableList() ?: mutableListOf()
             updatedMembers.add(uid)
 
-            db.collection("families").document(familyId).update("members", updatedMembers).await()
+            db.collection(Constants.FAMILIES_TABLE).document(familyId).update("members", updatedMembers).await()
 
             return ResultListener.Success
         } catch (e: Exception) {
@@ -101,7 +102,7 @@ class FirestoreDataSource@Inject constructor() {
         val map = mapOf("owner" to uid)
 
         try {
-            val documentReference = db.collection("families").add(map).await()
+            val documentReference = db.collection(Constants.FAMILIES_TABLE).add(map).await()
             return StringResultListener.Success(documentReference.id)
         } catch (e: Exception) {
             println("Error: ${e.message}")
@@ -115,7 +116,7 @@ class FirestoreDataSource@Inject constructor() {
     ): ResultListener {
         println("FirestoreDataSource leaveFamily()")
         try {
-            val documentReference = db.collection("families").document(familyId).get().await()
+            val documentReference = db.collection(Constants.FAMILIES_TABLE).document(familyId).get().await()
 
             @Suppress("UNCHECKED_CAST")
             val members = documentReference.data?.get("members") as? List<String>
@@ -123,7 +124,7 @@ class FirestoreDataSource@Inject constructor() {
             val updatedMembers = members?.toMutableList() ?: mutableListOf()
             updatedMembers.remove(uid)
 
-            db.collection("families").document(familyId).update("members", updatedMembers).await()
+            db.collection(Constants.FAMILIES_TABLE).document(familyId).update("members", updatedMembers).await()
 
             return ResultListener.Success
         } catch (e: Exception) {
@@ -134,7 +135,7 @@ class FirestoreDataSource@Inject constructor() {
 
     suspend fun updateFamilyId(uid: String, familyId: String?): ResultListener {
         try {
-            db.collection("users").document(uid).update("familyId", familyId).await()
+            db.collection(Constants.USER_TABLE).document(uid).update("familyId", familyId).await()
             return ResultListener.Success
         } catch (e: Exception) {
             println("Error: ${e.message}")
@@ -145,7 +146,7 @@ class FirestoreDataSource@Inject constructor() {
     // -------------------------------------- ITEMS
     fun grocerySnapshotListener(familyId: String) = callbackFlow {
         println("Firestore grocerySnapshotListener init")
-        val groceryItemsRef = Firebase.firestore.collection("grocery-list").whereEqualTo("familyId", familyId)
+        val groceryItemsRef = Firebase.firestore.collection(Constants.GROCERY_TABLE).whereEqualTo("familyId", familyId)
         val listenerRegistration = groceryItemsRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 // Handle error
@@ -193,15 +194,15 @@ class FirestoreDataSource@Inject constructor() {
 //            }
 //            println("FirestoreDataSource toggleCompletableItemCompletion query: $query")
 
-            if (item.id != null) {
-                val querySnapshot = item.id?.let {
-                    db.collection(listName).document(it).update(
-                        mapOf(
-                            "completed" to item.completed,
-                            "lastUpdated" to Date(System.currentTimeMillis()), // Set to current time
-                        ),
-                    ).await()
-                }
+            if (item.id is String) {
+                println("item: ${item.toString()}")
+                val result = db.collection(listName).document(item.id!!).update(
+                    mapOf(
+                        "completed" to item.completed,
+                        "lastUpdated" to Date(System.currentTimeMillis()) // Set to current time
+                    )
+                ).await()
+                println("Update successful: $result")
                 return ResultListener.Success
 
 //            // Assuming there's only one matching document, get its reference
@@ -254,7 +255,7 @@ class FirestoreDataSource@Inject constructor() {
     // -------------------------------------- CATEGORIES
     fun categoriesSnapshotListener() = callbackFlow {
         println("Firestore categoriesSnapshotListener init")
-        val categoryItemsRef = Firebase.firestore.collection("categories")
+        val categoryItemsRef = db.collection(Constants.CATEGORY_TABLE)
         val listenerRegistration = categoryItemsRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 // Handle error
@@ -280,7 +281,7 @@ class FirestoreDataSource@Inject constructor() {
         category: Category,
     ): ResultListener {
         try {
-            db.collection("categories").add(category).await()
+            db.collection(Constants.CATEGORY_TABLE).add(category).await()
             return ResultListener.Success
         } catch (e: Exception) {
             println("Error: ${e.message}")
@@ -294,7 +295,7 @@ class FirestoreDataSource@Inject constructor() {
         println("FirestoreDataSource deleteCategory()")
         try {
             // Query the collection to find the document with the matching 'name' field
-            val querySnapshot = db.collection("categories")
+            val querySnapshot = db.collection(Constants.CATEGORY_TABLE)
                 .whereEqualTo("name", category.name)
                 .get()
                 .await()
@@ -314,7 +315,7 @@ class FirestoreDataSource@Inject constructor() {
     // -------------------------------------- GROCERY SUGGESTIONS
     fun grocerySuggestionsSnapshotListener() = callbackFlow {
         println("Firestore grocerySuggestionsSnapshotListener init")
-        val grocerySuggestionsItemsRef = Firebase.firestore.collection("grocery-suggestions")
+        val grocerySuggestionsItemsRef = db.collection(Constants.GROCERY_SUGGESTIONS_TABLE)
         val listenerRegistration = grocerySuggestionsItemsRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 // Handle error
@@ -341,7 +342,7 @@ class FirestoreDataSource@Inject constructor() {
         try {
             // Query the collection to find the document with the matching 'name' field
             if (grocerySuggestion.id is String) {
-                db.collection("grocery-suggestions").document(grocerySuggestion.id).delete().await()
+                db.collection(Constants.GROCERY_SUGGESTIONS_TABLE).document(grocerySuggestion.id).delete().await()
                 return ResultListener.Success
             } else {
                 return ResultListener.Failure("Problems with grocery suggestion id")
@@ -356,7 +357,7 @@ class FirestoreDataSource@Inject constructor() {
         grocerySuggestion: GrocerySuggestion,
     ): ResultListener {
         try {
-            db.collection("grocery-suggestions").add(grocerySuggestion).await()
+            db.collection(Constants.GROCERY_SUGGESTIONS_TABLE).add(grocerySuggestion).await()
             return ResultListener.Success
         } catch (e: Exception) {
             println("Error: ${e.message}")
