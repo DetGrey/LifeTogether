@@ -18,19 +18,19 @@ import com.example.lifetogether.ui.feature.recipes.RecipeDetailsScreen
 import com.example.lifetogether.ui.feature.recipes.RecipesScreen
 import com.example.lifetogether.ui.feature.settings.SettingsScreen
 import com.example.lifetogether.ui.feature.signup.SignupScreen
-import com.example.lifetogether.ui.viewmodel.AuthViewModel
+import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 
 @Composable
 fun NavHost(
     navController: NavHostController,
 ) {
     val appNavigator = AppNavigator(navController)
-    val authViewModel: AuthViewModel = hiltViewModel()
+    val firebaseViewModel: FirebaseViewModel = hiltViewModel()
 
-    val userInformation = authViewModel.userInformation.collectAsState(initial = null)
+    val userInformation = firebaseViewModel.userInformation.collectAsState(initial = null)
     when (val familyId = userInformation.value?.familyId) {
         is String -> {
-            authViewModel.observeFirestoreFamilyData(familyId)
+            firebaseViewModel.observeFirestoreFamilyData(familyId)
         }
     }
 
@@ -39,43 +39,43 @@ fun NavHost(
         startDestination = AppRoutes.HOME_SCREEN,
     ) {
         composable(AppRoutes.ADMIN_SCREEN) {
-            AdminScreen(appNavigator, authViewModel)
+            AdminScreen(appNavigator, firebaseViewModel)
         }
         composable(AppRoutes.ADMIN_GROCERY_CATEGORIES_SCREEN) {
-            AdminGroceryCategoriesScreen(appNavigator, authViewModel)
+            AdminGroceryCategoriesScreen(appNavigator, firebaseViewModel)
         }
         composable(AppRoutes.ADMIN_GROCERY_SUGGESTIONS_SCREEN) {
-            AdminGrocerySuggestionsScreen(appNavigator, authViewModel)
+            AdminGrocerySuggestionsScreen(appNavigator, firebaseViewModel)
         }
         composable(AppRoutes.HOME_SCREEN) {
-            HomeScreen(appNavigator, authViewModel)
+            HomeScreen(appNavigator, firebaseViewModel)
         }
 
         composable(AppRoutes.PROFILE_SCREEN) {
-            ProfileScreen(appNavigator, authViewModel)
+            ProfileScreen(appNavigator, firebaseViewModel)
         }
 
         composable(AppRoutes.SETTINGS_SCREEN) {
-            SettingsScreen(appNavigator, authViewModel)
+            SettingsScreen(appNavigator, firebaseViewModel)
         }
 
         composable(AppRoutes.LOGIN_SCREEN) {
-            LoginScreen(appNavigator, authViewModel)
+            LoginScreen(appNavigator, firebaseViewModel)
         }
         composable(AppRoutes.SIGNUP_SCREEN) {
-            SignupScreen(appNavigator, authViewModel)
+            SignupScreen(appNavigator, firebaseViewModel)
         }
 
         composable(AppRoutes.GROCERY_LIST_SCREEN) {
-            GroceryListScreen(appNavigator, authViewModel)
+            GroceryListScreen(appNavigator, firebaseViewModel)
         }
 
         composable(AppRoutes.RECIPES_SCREEN) {
-            RecipesScreen(appNavigator, authViewModel)
+            RecipesScreen(appNavigator, firebaseViewModel)
         }
 
         composable(AppRoutes.CREATE_RECIPE_SCREEN) {
-            RecipeDetailsScreen(appNavigator, authViewModel, null)
+            RecipeDetailsScreen(appNavigator, firebaseViewModel, null)
         }
 
         composable(
@@ -83,7 +83,7 @@ fun NavHost(
             arguments = listOf(navArgument(AppRoutes.RECIPE_ID_ARG) { type = NavType.StringType }),
         ) { backStackEntry ->
             val recipeId = backStackEntry.arguments?.getString(AppRoutes.RECIPE_ID_ARG)
-            RecipeDetailsScreen(appNavigator, authViewModel, recipeId)
+            RecipeDetailsScreen(appNavigator, firebaseViewModel, recipeId)
         }
     }
 }

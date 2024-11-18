@@ -10,6 +10,7 @@ import com.example.lifetogether.domain.callback.CategoriesListener
 import com.example.lifetogether.domain.callback.GrocerySuggestionsListener
 import com.example.lifetogether.domain.callback.ListItemsResultListener
 import com.example.lifetogether.domain.callback.ResultListener
+import com.example.lifetogether.domain.callback.StringResultListener
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.GroceryItem
 import com.example.lifetogether.domain.model.GrocerySuggestion
@@ -172,18 +173,6 @@ class GroceryListViewModel @Inject constructor(
         }
     }
 
-    private fun updateCategories(newCategory: Category) {
-        if (!groceryCategories.value.contains(newCategory)) {
-            println("adding new category: $newCategory")
-            _groceryCategories.value = _groceryCategories.value
-                .filterNot { it.name == "Uncategorized" }
-                .plus(newCategory)
-                .sortedBy { it.name }
-                .let { listOf(Category("❓️", "Uncategorized")) + it }
-            updateExpandedStates()
-        }
-    }
-
     // ---------------------------------------------------------------- GROCERY SUGGESTIONS
     private val _grocerySuggestions = MutableStateFlow<List<GrocerySuggestion>>(emptyList())
     private val grocerySuggestions: StateFlow<List<GrocerySuggestion>> = _grocerySuggestions.asStateFlow()
@@ -283,13 +272,13 @@ class GroceryListViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            val result: ResultListener = saveItemUseCase.invoke(groceryItem, Constants.GROCERY_TABLE)
-            if (result is ResultListener.Success) {
+            val result: StringResultListener = saveItemUseCase.invoke(groceryItem, Constants.GROCERY_TABLE)
+            if (result is StringResultListener.Success) {
 //                updateCategories(newItemCategory)
                 updateNewItemCategory(null)
                 newItemText = ""
                 onSuccess()
-            } else if (result is ResultListener.Failure) {
+            } else if (result is StringResultListener.Failure) {
                 println("Error: ${result.message}")
                 // TODO popup saying the error for 5 sec
                 error = result.message

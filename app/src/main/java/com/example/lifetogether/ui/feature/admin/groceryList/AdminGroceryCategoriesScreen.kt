@@ -39,16 +39,15 @@ import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.AuthViewModel
+import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 
 @Composable
 fun AdminGroceryCategoriesScreen(
     appNavigator: AppNavigator? = null,
-    authViewModel: AuthViewModel? = null,
+    firebaseViewModel: FirebaseViewModel? = null,
 ) {
     val groceryCategoriesViewModel: AdminGroceryCategoriesViewModel = hiltViewModel()
 
-    val userInformation by authViewModel?.userInformation!!.collectAsState()
     val groceryCategories by groceryCategoriesViewModel.groceryCategories.collectAsState()
 
     LaunchedEffect(key1 = true) {

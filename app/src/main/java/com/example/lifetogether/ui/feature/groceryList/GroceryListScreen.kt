@@ -20,23 +20,24 @@ import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.GroceryItem
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.enums.UpdateType
+import com.example.lifetogether.ui.common.AddNewListItem
 import com.example.lifetogether.ui.common.ItemCategoryList
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.AuthViewModel
+import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 import com.example.lifetogether.ui.viewmodel.GroceryListViewModel
 
 @Composable
 fun GroceryListScreen(
     appNavigator: AppNavigator? = null,
-    authViewModel: AuthViewModel? = null,
+    firebaseViewModel: FirebaseViewModel? = null,
 ) {
     val groceryListViewModel: GroceryListViewModel = hiltViewModel()
 
-    val userInformationState by authViewModel?.userInformation!!.collectAsState()
+    val userInformationState by firebaseViewModel?.userInformation!!.collectAsState()
 
     LaunchedEffect(key1 = true) {
         // Perform any one-time initialization or side effect here
@@ -118,9 +119,9 @@ fun GroceryListScreen(
                                     groceryListViewModel.toggleItemCompleted(item)
                                 }
                                 if (!item.completed) { // if it was not completed, but now will be
-                                    authViewModel?.updateItemCount("grocery-list", UpdateType.SUBTRACT)
+                                    firebaseViewModel?.updateItemCount("grocery-list", UpdateType.SUBTRACT)
                                 } else {
-                                    authViewModel?.updateItemCount("grocery-list", UpdateType.ADD)
+                                    firebaseViewModel?.updateItemCount("grocery-list", UpdateType.ADD)
                                 }
                             },
                             onDelete = {
@@ -148,7 +149,7 @@ fun GroceryListScreen(
                     groceryListViewModel.newItemText = it.suggestionName
                     groceryListViewModel.newItemCategory = it.category!!
                     groceryListViewModel.addItemToList(onSuccess = {
-                        authViewModel?.updateItemCount("grocery-list", UpdateType.ADD)
+                        firebaseViewModel?.updateItemCount("grocery-list", UpdateType.ADD)
                     })
                 },
             )
@@ -167,7 +168,7 @@ fun GroceryListScreen(
             onTextChange = { groceryListViewModel.newItemText = it },
             onAddClick = {
                 groceryListViewModel.addItemToList(onSuccess = {
-                    authViewModel?.updateItemCount("grocery-list", UpdateType.ADD)
+                    firebaseViewModel?.updateItemCount("grocery-list", UpdateType.ADD)
                 })
             },
             categoryList = groceryCategories,

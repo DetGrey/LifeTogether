@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -22,18 +23,26 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.button.AddButton
+import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.AuthViewModel
+import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 
 @Composable
 fun RecipesScreen(
     appNavigator: AppNavigator? = null,
-    authViewModel: AuthViewModel? = null,
+    firebaseViewModel: FirebaseViewModel? = null,
 ) {
     val recipesViewModel: RecipesViewModel = hiltViewModel()
+    val userInformation by firebaseViewModel?.userInformation!!.collectAsState()
+    val recipes by recipesViewModel.recipes.collectAsState()
 
-    val userInformationState by authViewModel?.userInformation!!.collectAsState()
+    LaunchedEffect(key1 = true) {
+        // Perform any one-time initialization or side effect here
+        println("Recipes familyId: ${userInformation?.familyId}")
+        userInformation?.familyId?.let { recipesViewModel.setUpRecipes(it) }
+    }
 
     Box(
         modifier = Modifier
@@ -67,7 +76,7 @@ fun RecipesScreen(
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
-                            for (tag in listOf("All", "Simple", "Dinner", "Breakfast", "Dessert")) {
+                            for (tag in recipesViewModel.tagsList) {
                                 TagOption(
                                     tag = tag,
                                     selectedTag = "All",
@@ -83,13 +92,14 @@ fun RecipesScreen(
             }
 
             item {
-                // TODO add the recipe list
-                RecipeOverview(
-                    recipe = EXAMPLE_RECIPE,
-                    onClick = {
-                        appNavigator?.navigateToRecipeDetails(EXAMPLE_RECIPE.id)
-                    },
-                )
+                for (recipe in recipes) {
+                    RecipeOverview(
+                        recipe = recipe,
+                        onClick = {
+                            appNavigator?.navigateToRecipeDetails(recipe.id)
+                        },
+                    )
+                }
             }
         }
     }
@@ -97,6 +107,12 @@ fun RecipesScreen(
     AddButton(onClick = {
         appNavigator?.navigateToRecipeDetails()
     })
+
+    // ---------------------------------------------------------------- SHOW ERROR ALERT
+    if (recipesViewModel.showAlertDialog) {
+        ErrorAlertDialog(recipesViewModel.error)
+        recipesViewModel.toggleAlertDialog()
+    }
 }
 
 @Preview(showBackground = true)

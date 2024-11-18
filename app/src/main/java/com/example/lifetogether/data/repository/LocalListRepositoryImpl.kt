@@ -7,6 +7,7 @@ import com.example.lifetogether.domain.callback.GrocerySuggestionsListener
 import com.example.lifetogether.domain.callback.ItemResultListener
 import com.example.lifetogether.domain.callback.ListItemsResultListener
 import com.example.lifetogether.domain.callback.ResultListener
+import com.example.lifetogether.domain.callback.StringResultListener
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.GroceryItem
 import com.example.lifetogether.domain.model.GrocerySuggestion
@@ -25,7 +26,7 @@ class LocalListRepositoryImpl @Inject constructor(
     override suspend fun saveItem(
         item: Item,
         listName: String,
-    ): ResultListener {
+    ): StringResultListener {
         TODO("Not yet implemented")
     }
 
@@ -128,7 +129,7 @@ class LocalListRepositoryImpl @Inject constructor(
                     lastUpdated = this.entity.lastUpdated,
                     completed = this.entity.completed,
                     category = this.entity.category,
-                ) as Item
+                )
                 else -> throw IllegalArgumentException("Unsupported item type: $itemType")
             }
             is Entity.Recipe -> when (itemType) {
@@ -144,7 +145,7 @@ class LocalListRepositoryImpl @Inject constructor(
                     favourite = this.entity.favourite,
                     servings = this.entity.servings,
                     tags = this.entity.tags,
-                ) as Item
+                )
                 else -> throw IllegalArgumentException("Unsupported item type: $itemType")
             }
         }

@@ -29,17 +29,18 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.button.LoveButton
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.AuthViewModel
+import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HomeScreen(
     appNavigator: AppNavigator? = null,
-    authViewModel: AuthViewModel? = null,
+    firebaseViewModel: FirebaseViewModel? = null,
 ) {
-    val userInformationState by authViewModel?.userInformation!!.collectAsState()
+    val userInformationState by firebaseViewModel?.userInformation!!.collectAsState()
 
     if (userInformationState?.familyId == BuildConfig.ADMIN) {
         appNavigator?.navigateToAdmin()
@@ -62,7 +63,7 @@ fun HomeScreen(
                         description = "profile picture icon",
                     ),
                     onLeftClick = {
-                        if (authViewModel?.userInformation?.value != null) {
+                        if (firebaseViewModel?.userInformation?.value != null) {
                             appNavigator?.navigateToProfile()
                         } else {
                             appNavigator?.navigateToLogin()

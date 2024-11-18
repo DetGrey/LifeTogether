@@ -1,5 +1,6 @@
 package com.example.lifetogether.ui.feature.recipes
 
+import android.annotation.SuppressLint
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -7,11 +8,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.callback.ItemResultListener
 import com.example.lifetogether.domain.callback.ResultListener
+import com.example.lifetogether.domain.callback.StringResultListener
+import com.example.lifetogether.domain.model.Completable
+import com.example.lifetogether.domain.model.recipe.Ingredient
+import com.example.lifetogether.domain.model.recipe.Instruction
 import com.example.lifetogether.domain.model.recipe.MutableRecipe
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.model.recipe.toMutableRecipe
+import com.example.lifetogether.domain.model.recipe.toRecipe
 import com.example.lifetogether.domain.usecase.item.FetchItemByIdUseCase
 import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
+import com.example.lifetogether.domain.usecase.item.UpdateItemUseCase
 import com.example.lifetogether.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -22,13 +29,13 @@ import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
 
+@SuppressLint("MutableCollectionMutableState")
 @HiltViewModel
 class RecipeDetailsViewModel @Inject constructor(
     private val saveItemUseCase: SaveItemUseCase,
+    private val updateItemUseCase: UpdateItemUseCase,
     private val fetchItemByIdUseCase: FetchItemByIdUseCase,
 ) : ViewModel() {
-    var showConfirmationDialog: Boolean by mutableStateOf(false)
-
     var showAlertDialog: Boolean by mutableStateOf(false)
     var error: String by mutableStateOf("")
     fun toggleAlertDialog() {
@@ -39,7 +46,10 @@ class RecipeDetailsViewModel @Inject constructor(
         }
     }
 
-    // ---------------------------------------------------------------- UID
+    // ---------------------------------------------------------------- editMode
+    var editMode: Boolean by mutableStateOf(false)
+
+    // ---------------------------------------------------------------- Family Id
     private var familyIdIsSet = false
     var familyId: String? = null
 
@@ -53,35 +63,36 @@ class RecipeDetailsViewModel @Inject constructor(
 
         if (recipeId is String) {
             fetchRecipe(recipeId)
+        } else {
+            editMode = true
         }
     }
 
     // ---------------------------------------------------------------- EXPANDED STATES
-    var expandedStates: MutableMap<String, Boolean> = mutableMapOf("ingredients" to true, "instructions" to true)
+    var expandedStates by mutableStateOf(mutableMapOf("ingredients" to true, "instructions" to true))
 
-    fun toggleCategoryExpanded(name: String) {
+    fun toggleExpandedStates(name: String) {
         val currentState = expandedStates[name] ?: true
-        expandedStates[name] = !currentState
+        expandedStates = expandedStates.toMutableMap().apply { put(name, !currentState) }
     }
 
     // ---------------------------------------------------------------- RECIPE
     private val _recipe = MutableStateFlow<MutableRecipe>(MutableRecipe())
     val recipe: StateFlow<MutableRecipe> = _recipe.asStateFlow()
-//    var recipe: MutableRecipe = MutableRecipe()
 
     private fun fetchRecipe(
         recipeId: String,
     ) {
         viewModelScope.launch {
-            fetchItemByIdUseCase(familyId!!, recipeId, Constants.GROCERY_TABLE, Recipe::class).collect { result ->
+            fetchItemByIdUseCase(familyId!!, recipeId, Constants.RECIPES_TABLE, Recipe::class).collect { result ->
                 println("fetchItemByIdUseCase result: $result")
                 when (result) {
                     is ItemResultListener.Success -> {
                         // Filter and map the result.listItems to only include GroceryItem instances
                         if (result.item is Recipe) {
-                            println("_groceryList old value: ${_recipe.value}")
+                            println("_recipe old value: ${_recipe.value}")
                             _recipe.value = result.item.toMutableRecipe()
-                            println("groceryList new value: ${this@RecipeDetailsViewModel.recipe.value}")
+                            println("recipe new value: ${this@RecipeDetailsViewModel.recipe.value}")
                         } else {
                             println("Error: No recipe found")
                             error = "No recipe found"
@@ -100,12 +111,28 @@ class RecipeDetailsViewModel @Inject constructor(
         }
     }
 
+    fun recipeAddNewItemToList(item: Completable) {
+        println("Trying to add to list: $item")
+        when (item) {
+            is Ingredient -> {
+                val updatedIngredients = _recipe.value.ingredients.toMutableList()
+                updatedIngredients.add(item)
+                val newRecipe = _recipe.value.toRecipe().copy(ingredients = updatedIngredients)
+                _recipe.value = newRecipe.toMutableRecipe()
+            }
+            is Instruction -> {
+                val updatedInstructions = _recipe.value.instructions.toMutableList()
+                updatedInstructions.add(item)
+                val newRecipe = _recipe.value.toRecipe().copy(instructions = updatedInstructions)
+                _recipe.value = newRecipe.toMutableRecipe()
+            }
+        }
+    }
+
     // ---------------------------------------------------------------- ADD NEW ITEM
     // USE CASES
-    fun addRecipeToList(
-        onSuccess: () -> Unit,
-    ) {
-        println("GroceryListViewModel addItemToList()")
+    fun saveRecipe() {
+        println("RecipeDetailsViewModel saveRecipe()")
 
         if (recipe.value.itemName.isEmpty()) { // TODO add more checks
             error = "Please write some text first"
@@ -113,8 +140,9 @@ class RecipeDetailsViewModel @Inject constructor(
             return
         }
 
-        val recipe = familyId?.let {
+        val newRecipe = familyId?.let {
             Recipe(
+                id = recipe.value.id.ifEmpty { null },
                 familyId = familyId!!,
                 itemName = recipe.value.itemName,
                 lastUpdated = Date(),
@@ -127,20 +155,34 @@ class RecipeDetailsViewModel @Inject constructor(
                 tags = recipe.value.tags,
             )
         }
-        if (recipe == null) {
+        if (newRecipe == null) {
             error = "Please connect to a family first"
             showAlertDialog = true
             return
         }
-        ""
+
         viewModelScope.launch {
-            val result: ResultListener = saveItemUseCase.invoke(recipe, Constants.RECIPES_TABLE)
-            if (result is ResultListener.Success) {
-                onSuccess()
-            } else if (result is ResultListener.Failure) {
-                println("Error: ${result.message}")
-                error = result.message
-                showAlertDialog = true
+            if (newRecipe.id.isNullOrEmpty()) {
+                val result: StringResultListener = saveItemUseCase.invoke(newRecipe, Constants.RECIPES_TABLE)
+
+                if (result is StringResultListener.Success) {
+                    _recipe.value.id = result.string
+                    editMode = false
+                } else if (result is StringResultListener.Failure) {
+                    println("Error: ${result.message}")
+                    error = result.message
+                    showAlertDialog = true
+                }
+            } else {
+                val result: ResultListener = updateItemUseCase.invoke(newRecipe, Constants.RECIPES_TABLE)
+
+                if (result is ResultListener.Success) {
+                    editMode = false
+                } else if (result is ResultListener.Failure) {
+                    println("Error: ${result.message}")
+                    error = result.message
+                    showAlertDialog = true
+                }
             }
         }
     }

@@ -31,7 +31,7 @@ class LocalUserRepositoryImpl @Inject constructor(
     }
 
     fun removeSavedUserInformation(): ResultListener {
-        return localDataSource.clearUserInformationTable()
+        return localDataSource.clearUserInformationTables()
     }
 
     override fun logout(): ResultListener {

@@ -24,15 +24,15 @@ import com.example.lifetogether.ui.common.convert.daysSinceDate
 import com.example.lifetogether.ui.feature.home.FeatureOverview
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.AuthViewModel
+import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AdminScreen(
     appNavigator: AppNavigator? = null,
-    authViewModel: AuthViewModel? = null,
+    firebaseViewModel: FirebaseViewModel? = null,
 ) {
-    val userInformationState by authViewModel?.userInformation!!.collectAsState()
+    val userInformationState by firebaseViewModel?.userInformation!!.collectAsState()
 
     if (userInformationState?.familyId != BuildConfig.ADMIN) {
         appNavigator?.navigateToHome()
@@ -55,7 +55,7 @@ fun AdminScreen(
                         description = "profile picture icon",
                     ),
                     onLeftClick = {
-                        if (authViewModel?.userInformation?.value != null) {
+                        if (firebaseViewModel?.userInformation?.value != null) {
                             appNavigator?.navigateToProfile()
                         } else {
                             appNavigator?.navigateToLogin()

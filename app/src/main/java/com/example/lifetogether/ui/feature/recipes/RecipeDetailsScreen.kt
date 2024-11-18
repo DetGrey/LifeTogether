@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -30,24 +32,32 @@ import com.example.lifetogether.domain.model.enums.MeasureType
 import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.domain.model.recipe.Instruction
 import com.example.lifetogether.domain.model.recipe.Recipe
+import com.example.lifetogether.domain.model.toggleCompleted
+import com.example.lifetogether.ui.common.AddNewString
 import com.example.lifetogether.ui.common.CompletableCategoryList
+import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
+import com.example.lifetogether.ui.common.text.EditableTextField
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.AuthViewModel
+import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 import java.util.Date
 
 @Composable
 fun RecipeDetailsScreen(
     appNavigator: AppNavigator? = null,
-    authViewModel: AuthViewModel? = null,
-    recipeId: String?,
+    firebaseViewModel: FirebaseViewModel? = null,
+    recipeId: String? = null,
 ) {
-    val recipeDetailsViewModel: RecipesViewModel = hiltViewModel() // TODO
+    val recipeDetailsViewModel: RecipeDetailsViewModel = hiltViewModel()
 
-    val userInformationState by authViewModel?.userInformation!!.collectAsState()
+    val userInformation by firebaseViewModel?.userInformation!!.collectAsState()
+    val recipe by recipeDetailsViewModel.recipe.collectAsState()
 
-    val recipes = listOf<Recipe>(EXAMPLE_RECIPE)
-    val recipe = recipes.find { it.id == recipeId } ?: Recipe()
+    LaunchedEffect(key1 = true) {
+        // Perform any one-time initialization or side effect here
+        println("GroceryList familyId: ${userInformation?.familyId}")
+        userInformation?.familyId?.let { recipeDetailsViewModel.setUpRecipeDetails(it, recipeId) }
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -81,41 +91,65 @@ fun RecipeDetailsScreen(
                         )
                     }
 
-                    Text(
-                        text = "Top Right",
+                    Box(
                         modifier = Modifier
                             .padding(end = 10.dp, top = 10.dp)
+                            .height(40.dp)
+                            .aspectRatio(1f)
+                            .clickable(
+                                enabled = if (recipeDetailsViewModel.editMode) true else if (recipeId != null) true else false,
+                            ) {
+                                if (recipeDetailsViewModel.editMode) {
+                                    recipeDetailsViewModel.saveRecipe()
+                                } else if (recipeId != null) {
+                                    // TODO Delete recipe
+                                }
+                            }
                             .align(Alignment.TopEnd),
-                    )
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (recipeDetailsViewModel.editMode) {
+                            Text("Save") // TODO make an icon maybe???
+                        } else if (recipeId != null) {
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_trashcan),
+                                contentDescription = "trashcan icon",
+                            )
+                        }
+                    }
 
                     Box(
                         modifier = Modifier
                             .padding(start = 10.dp, end = 40.dp)
                             .align(Alignment.BottomStart),
                     ) {
-                        Text(
-                            text = recipe.itemName.ifEmpty { "Item name" }, // TODO make empty string
-                            style = MaterialTheme.typography.displayMedium,
+                        EditableTextField(
+                            text = recipe.itemName,
+                            onTextChange = { recipe.itemName = it },
+                            label = "Recipe name",
+                            isEditable = recipeDetailsViewModel.editMode,
+                            textStyle = MaterialTheme.typography.displayMedium,
                             color = MaterialTheme.colorScheme.primary,
                         )
                     }
 
-                    Box(
-                        modifier = Modifier
-                            .padding(bottom = 5.dp)
-                            .height(40.dp)
-                            .aspectRatio(1f)
-                            .clickable {
-                                // TODO go to edit mode and hide when in edit mode
-                                // TODO add a save button???
-                            }
-                            .align(Alignment.BottomEnd),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_edit_black),
-                            contentDescription = "edit icon",
-                        )
+                    if (!recipeDetailsViewModel.editMode) {
+                        Box(
+                            modifier = Modifier
+                                .padding(bottom = 5.dp)
+                                .height(40.dp)
+                                .aspectRatio(1f)
+                                .clickable {
+                                    recipeDetailsViewModel.editMode = true
+                                }
+                                .align(Alignment.BottomEnd),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_edit_black),
+                                contentDescription = "edit icon",
+                            )
+                        }
                     }
                 }
             }
@@ -124,38 +158,84 @@ fun RecipeDetailsScreen(
         item {
             Column(
                 modifier = Modifier
+                    .fillMaxWidth()
                     .padding(10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(30.dp),
             ) {
-                Text(
-                    text = recipe.description.ifEmpty { "A classic Italian pasta dish with a rich, savory sauce with more more more more." }, // TODO Make empty
-                    style = MaterialTheme.typography.bodyLarge,
+                EditableTextField(
+                    text = recipe.description,
+                    onTextChange = { recipe.description = it },
+                    label = "Description",
+                    isEditable = recipeDetailsViewModel.editMode,
+                    textStyle = MaterialTheme.typography.bodyLarge,
                 )
 
-                CompletableCategoryList(
-                    category = Category(
-                        "🍎",
-                        "Ingredients",
-                    ),
-                    itemList = EXAMPLE_RECIPE.ingredients,
-                    true,
-                    onClick = {},
-                    onCompleteToggle = {},
-                )
+                Column {
+                    recipeDetailsViewModel.expandedStates["ingredients"]?.let { expanded ->
+                        CompletableCategoryList(
+                            category = Category(
+                                "🍎",
+                                "Ingredients",
+                            ),
+                            itemList = recipe.ingredients,
+                            expanded = expanded,
+                            onClick = {
+                                println("expanded before $expanded")
+                                recipeDetailsViewModel.toggleExpandedStates("ingredients")
+                                println("expanded after $expanded")
+                            },
+                            onCompleteToggle = {
+                                recipe.ingredients = recipe.ingredients.toggleCompleted(it.itemName)
+                            },
+                        )
+                    }
 
-                CompletableCategoryList(
-                    category = Category(
-                        "✔️",
-                        "Instructions",
-                    ),
-                    itemList = EXAMPLE_RECIPE.instructions,
-                    true,
-                    onClick = {},
-                    onCompleteToggle = {},
-                )
+                    if (recipeDetailsViewModel.editMode) {
+                        AddNewIngredient(
+                            onAddClick = {
+                                recipeDetailsViewModel.recipeAddNewItemToList(it)
+                            },
+                        )
+                    }
+                }
+                Column {
+                    recipeDetailsViewModel.expandedStates["instructions"]?.let { expanded ->
+                        CompletableCategoryList(
+                            category = Category(
+                                "✔️",
+                                "Instructions",
+                            ),
+                            itemList = recipe.instructions,
+                            expanded = expanded,
+                            onClick = {
+                                recipeDetailsViewModel.toggleExpandedStates("instructions")
+                            },
+                            onCompleteToggle = {
+                                recipe.instructions =
+                                    recipe.instructions.toggleCompleted(it.itemName)
+                            },
+                        )
+
+                        if (recipeDetailsViewModel.editMode) {
+                            AddNewString(
+                                label = "Add new instruction",
+                                onAddClick = {
+                                    recipeDetailsViewModel.recipeAddNewItemToList(Instruction(itemName = it))
+                                },
+                            )
+                        }
+                    }
+                }
             }
         }
+    }
+    Spacer(modifier = Modifier.height(30.dp))
+
+    // ---------------------------------------------------------------- SHOW ERROR ALERT
+    if (recipeDetailsViewModel.showAlertDialog) {
+        ErrorAlertDialog(recipeDetailsViewModel.error)
+        recipeDetailsViewModel.toggleAlertDialog()
     }
 }
 

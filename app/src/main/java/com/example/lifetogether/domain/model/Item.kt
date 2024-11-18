@@ -8,3 +8,12 @@ interface Item {
     val itemName: String
     var lastUpdated: Date
 }
+
+fun Item.toMap(): Map<String, Any?> {
+    return mapOf(
+        "id" to id,
+        "familyId" to familyId,
+        "itemName" to itemName,
+        "lastUpdated" to lastUpdated,
+    )
+}

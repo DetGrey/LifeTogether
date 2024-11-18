@@ -12,6 +12,8 @@ import com.example.lifetogether.domain.model.GroceryItem
 import com.example.lifetogether.domain.model.GrocerySuggestion
 import com.example.lifetogether.domain.model.Item
 import com.example.lifetogether.domain.model.UserInformation
+import com.example.lifetogether.domain.model.recipe.Recipe
+import com.example.lifetogether.domain.model.toMap
 import com.example.lifetogether.util.Constants
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
@@ -24,10 +26,10 @@ import javax.inject.Inject
 class FirestoreDataSource@Inject constructor() {
     private val db = Firebase.firestore
 
-    // -------------------------------------- USERS
+    // ------------------------------------------------------------------------------- USERS
     fun userInformationSnapshotListener(uid: String) = callbackFlow {
         println("Firestore userInformationSnapshotListener init")
-        val userInformationRef = Firebase.firestore.collection(Constants.USER_TABLE).document(uid)
+        val userInformationRef = db.collection(Constants.USER_TABLE).document(uid)
         val listenerRegistration = userInformationRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 // Handle error
@@ -73,7 +75,7 @@ class FirestoreDataSource@Inject constructor() {
         }
     }
 
-    // -------------------------------------- FAMILY
+    // ------------------------------------------------------------------------------- FAMILY
     suspend fun joinFamily(
         familyId: String,
         uid: String,
@@ -143,10 +145,10 @@ class FirestoreDataSource@Inject constructor() {
         }
     }
 
-    // -------------------------------------- ITEMS
+    // ------------------------------------------------------------------------------- GROCERY LIST
     fun grocerySnapshotListener(familyId: String) = callbackFlow {
         println("Firestore grocerySnapshotListener init")
-        val groceryItemsRef = Firebase.firestore.collection(Constants.GROCERY_TABLE).whereEqualTo("familyId", familyId)
+        val groceryItemsRef = db.collection(Constants.GROCERY_TABLE).whereEqualTo("familyId", familyId)
         val listenerRegistration = groceryItemsRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 // Handle error
@@ -159,19 +161,64 @@ class FirestoreDataSource@Inject constructor() {
                 val items = snapshot.toObjects(GroceryItem::class.java)
                 println("Snapshot items to GroceryItem: $items")
                 trySend(ListItemsResultListener.Success(items)).isSuccess
+            } else {
+                trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess
             }
         }
         // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.
         awaitClose { listenerRegistration.remove() }
     }
 
+    // ------------------------------------------------------------------------------- RECIPES
+    fun recipeSnapshotListener(familyId: String) = callbackFlow {
+        println("Firestore recipeSnapshotListener init")
+        val recipeItemsRef = db.collection(Constants.RECIPES_TABLE).whereEqualTo("familyId", familyId)
+        val listenerRegistration = recipeItemsRef.addSnapshotListener { snapshot, e ->
+            if (e != null) {
+                // Handle error
+                trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess
+                return@addSnapshotListener
+            }
+
+            if (snapshot != null) {
+                // Process the changes and update Room database
+                val items = snapshot.toObjects(Recipe::class.java)
+                println("Snapshot items to Recipe: $items")
+                trySend(ListItemsResultListener.Success(items)).isSuccess
+            } else {
+                trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess
+            }
+        }
+        // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.
+        awaitClose { listenerRegistration.remove() }
+    }
+
+    // ------------------------------------------------------------------------------- ITEMS
+
     suspend fun saveItem(
+        item: Item,
+        listName: String,
+    ): StringResultListener {
+        try {
+            val documentReference = db.collection(listName).add(item).await()
+            return StringResultListener.Success(documentReference.id)
+        } catch (e: Exception) {
+            println("Error: ${e.message}")
+            return StringResultListener.Failure("Error: ${e.message}")
+        }
+    }
+
+    suspend fun updateItem(
         item: Item,
         listName: String,
     ): ResultListener {
         try {
-            db.collection(listName).add(item).await()
-            return ResultListener.Success
+            if (item.id != null) {
+                db.collection(listName).document(item.id!!).update(item.toMap()).await()
+                return ResultListener.Success
+            } else {
+                return ResultListener.Failure("Error: No document id")
+            }
         } catch (e: Exception) {
             println("Error: ${e.message}")
             return ResultListener.Failure("Error: ${e.message}")
@@ -183,42 +230,16 @@ class FirestoreDataSource@Inject constructor() {
         listName: String,
     ): ResultListener {
         try {
-//            println("FirestoreDataSource toggleCompletableItemCompletion item: ${item.toString()}")
-//            println("FirestoreDataSource toggleCompletableItemCompletion item id: ${item.id}")
-//            val query = db.collection(listName)
-//                .whereEqualTo("familyId", item.familyId)
-//                .whereEqualTo("itemName", item.itemName)
-//
-//            if (item is GroceryItem) { // Check if item is of type GroceryItem
-//                query.whereEqualTo("category", item.category)
-//            }
-//            println("FirestoreDataSource toggleCompletableItemCompletion query: $query")
-
             if (item.id is String) {
-                println("item: ${item.toString()}")
+                println("item: $item")
                 val result = db.collection(listName).document(item.id!!).update(
                     mapOf(
                         "completed" to item.completed,
-                        "lastUpdated" to Date(System.currentTimeMillis()) // Set to current time
-                    )
+                        "lastUpdated" to Date(System.currentTimeMillis()), // Set to current time
+                    ),
                 ).await()
                 println("Update successful: $result")
                 return ResultListener.Success
-
-//            // Assuming there's only one matching document, get its reference
-//            // Find the document with the exact ID
-//            val documentReference = querySnapshot.documents
-//                .firstOrNull { it.id == item.id }?.reference
-//
-//            if (documentReference != null) {
-//                // Update the 'completed' field and 'lastUpdated' field of the document
-//                documentReference.update(
-//                    mapOf(
-//                        "completed" to item.completed,
-//                        "lastUpdated" to Date(System.currentTimeMillis()), // Set to current time
-//                    ),
-//                ).await()
-//                return ResultListener.Success
             } else {
                 return ResultListener.Failure("Document not found")
             }
@@ -252,7 +273,7 @@ class FirestoreDataSource@Inject constructor() {
         }
     }
 
-    // -------------------------------------- CATEGORIES
+    // ------------------------------------------------------------------------------- CATEGORIES
     fun categoriesSnapshotListener() = callbackFlow {
         println("Firestore categoriesSnapshotListener init")
         val categoryItemsRef = db.collection(Constants.CATEGORY_TABLE)
@@ -312,7 +333,7 @@ class FirestoreDataSource@Inject constructor() {
         }
     }
 
-    // -------------------------------------- GROCERY SUGGESTIONS
+    // ------------------------------------------------------------------------------- GROCERY SUGGESTIONS
     fun grocerySuggestionsSnapshotListener() = callbackFlow {
         println("Firestore grocerySuggestionsSnapshotListener init")
         val grocerySuggestionsItemsRef = db.collection(Constants.GROCERY_SUGGESTIONS_TABLE)

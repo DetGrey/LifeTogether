@@ -1,8 +1,7 @@
-package com.example.lifetogether.ui.feature.recipes
+package com.example.lifetogether.ui.common.button
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -20,31 +19,29 @@ import com.example.lifetogether.R
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @Composable
-fun AddButton(
-    onClick: () -> Unit,
-) {
+fun LoveButton() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(bottom = 30.dp, end = 30.dp),
-        contentAlignment = Alignment.BottomEnd,
+            .padding(bottom = 20.dp),
+        contentAlignment = Alignment.BottomCenter,
     ) {
         Box(
             modifier = Modifier
-                .size(60.dp)
+                .size(70.dp)
                 .clip(shape = CircleShape)
-                .background(color = MaterialTheme.colorScheme.tertiary)
-                .clickable { onClick() },
+                .background(color = MaterialTheme.colorScheme.tertiary),
+//            .clickable {  } TODO
         ) {
-            Image(painter = painterResource(id = R.drawable.ic_plus), contentDescription = "plus icon")
+            Image(painter = painterResource(id = R.drawable.ic_heart), contentDescription = "heart icon")
         }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun AddButtonPreview() {
+fun LoveButtonPreview() {
     LifeTogetherTheme {
-        AddButton(onClick = {})
+        LoveButton()
     }
 }

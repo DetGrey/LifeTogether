@@ -9,12 +9,14 @@ import com.example.lifetogether.data.model.CategoryEntity
 import com.example.lifetogether.data.model.Entity
 import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.model.GrocerySuggestionEntity
+import com.example.lifetogether.data.model.RecipeEntity
 import com.example.lifetogether.data.model.UserEntity
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.GroceryItem
 import com.example.lifetogether.domain.model.GrocerySuggestion
 import com.example.lifetogether.domain.model.UserInformation
+import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.util.Constants
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -25,10 +27,10 @@ import javax.inject.Inject
 
 class LocalDataSource @Inject constructor(
     private val groceryListDao: GroceryListDao,
+    private val recipesDao: RecipesDao,
     private val grocerySuggestionsDao: GrocerySuggestionsDao,
     private val categoriesDao: CategoriesDao,
     private val userInformationDao: UserInformationDao,
-    private val recipesDao: RecipesDao,
 ) {
     // -------------------------------------------------------------- CATEGORIES
     fun getCategories(): Flow<List<CategoryEntity>> {
@@ -79,7 +81,9 @@ class LocalDataSource @Inject constructor(
             Constants.GROCERY_TABLE -> groceryListDao.getItems(familyId).map { list ->
                 list.map { Entity.GroceryList(it) }
             }
-            Constants.RECIPES_TABLE -> flowOf(emptyList<Entity>()) // TODO like above
+            Constants.RECIPES_TABLE -> recipesDao.getItems(familyId).map { list ->
+                list.map { Entity.Recipe(it) }
+            }
             else -> flowOf(emptyList<Entity>()) // Handle the case where the listName doesn't match any known entity
         }
         println("LocalDataSource getListItems: $items")
@@ -102,8 +106,67 @@ class LocalDataSource @Inject constructor(
         }
     }
 
+    fun deleteItems(
+        listName: String,
+        itemIds: List<String>,
+    ): ResultListener {
+        println("LocalDataSource deleteItems()")
+        try {
+            when (listName) {
+                "grocery-list" -> groceryListDao.deleteItems(itemIds)
+                else -> {}
+            }
+            return ResultListener.Success
+        } catch (e: Exception) {
+            return ResultListener.Failure("Error: ${e.message}")
+        }
+    }
+
+    // -------------------------------------------------------------- GROCERY LIST
+    suspend fun updateRecipes(items: List<Recipe>) {
+        println("LocalDataSource updateRecipes(): Trying to add firestore data to Room")
+
+        println("Recipe list: $items")
+        val recipeEntityList = items.map { item ->
+            RecipeEntity(
+                id = item.id ?: "",
+                familyId = item.familyId,
+                itemName = item.itemName,
+                lastUpdated = item.lastUpdated,
+                description = item.description,
+                ingredients = item.ingredients,
+                instructions = item.instructions,
+                preparationTimeMin = item.preparationTimeMin,
+                favourite = item.favourite,
+                servings = item.servings,
+                tags = item.tags,
+            )
+        }
+        println("recipeEntityList list: $recipeEntityList")
+
+        // Fetch the current items from the Room database
+        val currentItems = recipesDao.getItems(items[0].familyId).first()
+
+        // Determine the items to be inserted or updated
+        val itemsToUpdate = recipeEntityList.filter { newItem ->
+            currentItems.none { currentItem -> newItem.id == currentItem.id && newItem == currentItem }
+        }
+
+        // Determine the items to be deleted
+        val itemsToDelete = currentItems.filter { currentItem ->
+            recipeEntityList.none { newItem -> newItem.id == currentItem.id }
+        }
+
+        // Update the Room database with the new or changed items
+        recipesDao.updateItems(itemsToUpdate)
+
+        // Delete the items that no longer exist in Firestore
+        recipesDao.deleteItems(itemsToDelete.map { it.id })
+    }
+
+    // -------------------------------------------------------------- GROCERY LIST
     suspend fun updateGroceryList(items: List<GroceryItem>) {
-        println("LocalDataSource updateRoomDatabase(): Trying to add firestore data to Room")
+        println("LocalDataSource updateGroceryList(): Trying to add firestore data to Room")
 
         println("GroceryItem list: $items")
         val groceryListEntityList = items.map { item ->
@@ -136,22 +199,6 @@ class LocalDataSource @Inject constructor(
 
         // Delete the items that no longer exist in Firestore
         groceryListDao.deleteItems(itemsToDelete.map { it.id })
-    }
-
-    fun deleteItems(
-        listName: String,
-        itemIds: List<String>,
-    ): ResultListener {
-        println("LocalDataSource deleteItems()")
-        try {
-            when (listName) {
-                "grocery-list" -> groceryListDao.deleteItems(itemIds)
-                else -> {}
-            }
-            return ResultListener.Success
-        } catch (e: Exception) {
-            return ResultListener.Failure("Error: ${e.message}")
-        }
     }
 
     // -------------------------------------------------------------- GROCERY SUGGESTIONS
@@ -209,9 +256,11 @@ class LocalDataSource @Inject constructor(
 
         userInformationDao.updateItems(userEntity)
     }
-    fun clearUserInformationTable(): ResultListener {
+
+    fun clearUserInformationTables(): ResultListener {
         try {
             groceryListDao.deleteTable()
+            recipesDao.deleteTable()
             userInformationDao.deleteTable()
             return ResultListener.Success
         } catch (e: Exception) {

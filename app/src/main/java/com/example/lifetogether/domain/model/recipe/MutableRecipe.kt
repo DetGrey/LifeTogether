@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import java.util.Date
 
 class MutableRecipe {
+    var id: String by mutableStateOf("")
     var itemName: String by mutableStateOf("")
     var description: String by mutableStateOf("")
     var ingredients: List<Ingredient> by mutableStateOf(listOf())
@@ -17,7 +18,7 @@ class MutableRecipe {
     var tags: List<String> by mutableStateOf(listOf())
 }
 
-fun MutableRecipe.toRecipe(id: String? = null, familyId: String = "", lastUpdated: Date = Date()): Recipe {
+fun MutableRecipe.toRecipe(familyId: String = "", lastUpdated: Date = Date()): Recipe {
     return Recipe(
         id = id,
         familyId = familyId,

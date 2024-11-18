@@ -37,16 +37,16 @@ import com.example.lifetogether.ui.common.text.TextHeadingLarge
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.AuthViewModel
+import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 import com.example.lifetogether.ui.viewmodel.ProfileViewModel
 
 @Composable
 fun ProfileScreen(
     appNavigator: AppNavigator? = null,
-    authViewModel: AuthViewModel? = null,
+    firebaseViewModel: FirebaseViewModel? = null,
 ) {
     val profileViewModel: ProfileViewModel = hiltViewModel()
-    val userInformation = authViewModel?.userInformation?.collectAsState(initial = null)
+    val userInformation = firebaseViewModel?.userInformation?.collectAsState(initial = null)
 
     Box(
         modifier = Modifier
@@ -198,7 +198,7 @@ fun ProfileScreen(
                     onConfirm = {
                         profileViewModel.logout(
                             onSuccess = {
-                                authViewModel?.onSignOut()
+                                firebaseViewModel?.onSignOut()
                                 profileViewModel.closeConfirmationDialog()
                                 appNavigator?.navigateToHome()
                             },

@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.feature.groceryList
+package com.example.lifetogether.ui.common
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -30,7 +30,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lifetogether.domain.model.Category
-import com.example.lifetogether.ui.common.CustomTextField
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithDropdown
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.viewmodel.AddNewListItemViewModel

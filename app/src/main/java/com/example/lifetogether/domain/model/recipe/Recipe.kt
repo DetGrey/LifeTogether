@@ -8,7 +8,7 @@ data class Recipe(
     @DocumentId @Transient
     override val id: String? = null,
     override val familyId: String = "",
-    override val itemName: String = "",
+    override var itemName: String = "",
     override var lastUpdated: Date = Date(),
     val description: String = "",
     val ingredients: List<Ingredient> = listOf(),
@@ -18,6 +18,22 @@ data class Recipe(
     val servings: Int = 1,
     val tags: List<String> = listOf(),
 ) : Item
+
+fun Recipe.toMap(): Map<String, Any?> {
+    return mapOf(
+        "id" to id,
+        "familyId" to familyId,
+        "itemName" to itemName,
+        "lastUpdated" to lastUpdated,
+        "description" to description,
+        "ingredients" to ingredients.map { it.toMap() },
+        "instructions" to instructions.map { it.toMap() },
+        "preparationTimeMin" to preparationTimeMin,
+        "favourite" to favourite,
+        "servings" to servings,
+        "tags" to tags,
+    )
+}
 
 fun Recipe.toMutableRecipe(): MutableRecipe {
     return MutableRecipe().apply {

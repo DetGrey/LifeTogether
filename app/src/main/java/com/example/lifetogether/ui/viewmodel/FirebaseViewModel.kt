@@ -12,6 +12,7 @@ import com.example.lifetogether.domain.usecase.observers.ObserveAuthStateUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveCategoriesUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveGroceryListUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveGrocerySuggestionsUseCase
+import com.example.lifetogether.domain.usecase.observers.ObserveRecipesUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveUserInformationUseCase
 import com.example.lifetogether.domain.usecase.user.FetchUserInformationUseCase
 import com.example.lifetogether.domain.usecase.user.RemoveSavedUserInformationUseCase
@@ -23,10 +24,11 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class AuthViewModel @Inject constructor(
+class FirebaseViewModel @Inject constructor(
     private val fetchUserInformationUseCase: FetchUserInformationUseCase,
     private val observeAuthStateUseCase: ObserveAuthStateUseCase,
     private val observeGroceryListUseCase: ObserveGroceryListUseCase,
+    private val observeRecipesUseCase: ObserveRecipesUseCase,
     private val observeCategoriesUseCase: ObserveCategoriesUseCase,
     private val observeGrocerySuggestionsUseCase: ObserveGrocerySuggestionsUseCase,
     private val observeUserInformationUseCase: ObserveUserInformationUseCase,
@@ -41,12 +43,12 @@ class AuthViewModel @Inject constructor(
         // Observe changes to user information
         viewModelScope.launch {
             observeAuthStateUseCase().collect { result ->
-                println("AuthViewModel authstate: $result")
+                println("FirebaseViewModel authState: $result")
                 when (result) {
                     is AuthResultListener.Success -> {
                         result.userInformation.uid?.let { uid ->
                             fetchUserInformation(uid)
-                            observeFirestore(uid)
+                            observeUserInformation(uid)
                         }
                     }
                     is AuthResultListener.Failure -> {
@@ -65,10 +67,10 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    private fun observeFirestore(
+    private fun observeUserInformation(
         uid: String,
     ) {
-        println("AuthViewModel observeFirestore()")
+        println("FirebaseViewModel observeUserInformation()")
         viewModelScope.launch {
             observeUserInformationUseCase.invoke(uid)
         }
@@ -77,17 +79,24 @@ class AuthViewModel @Inject constructor(
     fun observeFirestoreFamilyData(
         familyId: String,
     ) {
-        println("AuthViewModel observeFirestoreFamilyData() familyId: $familyId")
+        println("FirebaseViewModel observeFirestoreFamilyData() familyId: $familyId")
+
         viewModelScope.launch {
+            println("observeFirestoreFamilyData() observeGroceryListUseCase invoked")
             observeGroceryListUseCase.invoke(familyId)
+        }
+
+        viewModelScope.launch {
+            println("observeFirestoreFamilyData() observeRecipesUseCase invoked")
+            observeRecipesUseCase.invoke(familyId)
         }
     }
 
     private fun fetchUserInformation(uid: String) {
-        println("AuthViewModel before calling fetchUserInformationUseCase")
+        println("FirebaseViewModel before calling fetchUserInformationUseCase")
         viewModelScope.launch {
             fetchUserInformationUseCase(uid = uid).collect { result ->
-                println("AuthViewModel fetchUserInformationUseCase result: $result")
+                println("FirebaseViewModel fetchUserInformationUseCase result: $result")
                 when (result) {
                     is AuthResultListener.Success -> {
                         _userInformation.value = result.userInformation
@@ -107,8 +116,6 @@ class AuthViewModel @Inject constructor(
             removeSavedUserInformationUseCase.invoke()
         }
         _userInformation.value = null
-        // TODO clear all user data from Room db
-        // TODO stop observing firestore
     }
 
     // ---------------------------------------------- ITEM COUNT
@@ -123,5 +130,6 @@ class AuthViewModel @Inject constructor(
         itemCount = itemCount.toMutableMap().apply {
             this[collection] = updatedCount
         }
+        println("itemCount: $itemCount")
     }
 }
