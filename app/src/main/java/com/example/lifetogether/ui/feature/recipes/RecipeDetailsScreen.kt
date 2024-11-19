@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,6 +25,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -33,10 +37,13 @@ import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.domain.model.recipe.Instruction
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.model.toggleCompleted
-import com.example.lifetogether.ui.common.AddNewString
-import com.example.lifetogether.ui.common.CompletableCategoryList
+import com.example.lifetogether.ui.common.add.AddNewString
+import com.example.lifetogether.ui.common.list.CompletableCategoryList
+import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
-import com.example.lifetogether.ui.common.text.EditableTextField
+import com.example.lifetogether.ui.common.dropdown.Dropdown
+import com.example.lifetogether.ui.common.textfield.EditableTextField
+import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
@@ -100,19 +107,19 @@ fun RecipeDetailsScreen(
                                 enabled = if (recipeDetailsViewModel.editMode) true else if (recipeId != null) true else false,
                             ) {
                                 if (recipeDetailsViewModel.editMode) {
-                                    recipeDetailsViewModel.saveRecipe()
+                                    // TODO add image
                                 } else if (recipeId != null) {
-                                    // TODO Delete recipe
+                                    recipeDetailsViewModel.showConfirmationDialog = true
                                 }
                             }
                             .align(Alignment.TopEnd),
                         contentAlignment = Alignment.Center,
                     ) {
                         if (recipeDetailsViewModel.editMode) {
-                            Text("Save") // TODO make an icon maybe???
+                            // TODO add image
                         } else if (recipeId != null) {
                             Image(
-                                painter = painterResource(id = R.drawable.ic_trashcan),
+                                painter = painterResource(id = R.drawable.ic_trashcan_black),
                                 contentDescription = "trashcan icon",
                             )
                         }
@@ -171,6 +178,98 @@ fun RecipeDetailsScreen(
                     textStyle = MaterialTheme.typography.bodyLarge,
                 )
 
+                if (recipeDetailsViewModel.editMode) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                }
+
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextDefault("Preparation time in minutes: ")
+                        EditableTextField(
+                            text = recipeDetailsViewModel.preparationTimeMin,
+                            onTextChange = { recipeDetailsViewModel.preparationTimeMin = it },
+                            label = "E.g. 30",
+                            isEditable = recipeDetailsViewModel.editMode,
+                            textStyle = MaterialTheme.typography.bodySmall,
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Done,
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(if (recipeDetailsViewModel.editMode) 1f else 0.45f)
+                            .height(50.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextDefault("Servings: ")
+                        if (recipeDetailsViewModel.editMode) {
+                            EditableTextField(
+                                text = recipeDetailsViewModel.servings,
+                                onTextChange = {
+                                    recipeDetailsViewModel.servings = it
+                                },
+                                label = "E.g. 2",
+                                isEditable = recipeDetailsViewModel.editMode, // TODO is this right?
+                                textStyle = MaterialTheme.typography.bodySmall,
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Done,
+                            )
+                        } else {
+                            Dropdown(
+                                selectedValue = recipeDetailsViewModel.servings,
+                                expanded = recipeDetailsViewModel.servingsExpanded,
+                                onExpandedChange = { recipeDetailsViewModel.servingsExpanded = it },
+                                options = listOf("1","2","3","4","5","6","7","8","9","10","15","20","30","40"),
+                                label = null,
+                                onValueChangedEvent = {
+                                    recipeDetailsViewModel.servings = it
+                                    recipeDetailsViewModel.ingredientsByServings()
+                                }
+                            )
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        TextDefault("Tags:")
+                        if (recipeDetailsViewModel.editMode) {
+                            EditableTextField(
+                                text = recipeDetailsViewModel.tags,
+                                onTextChange = { recipeDetailsViewModel.tags = it },
+                                label = "E.g. \"dinner pasta\"",
+                                isEditable = recipeDetailsViewModel.editMode,
+                                textStyle = MaterialTheme.typography.bodySmall,
+                                keyboardType = KeyboardType.Text,
+                                imeAction = ImeAction.Done,
+                                capitalization = false
+                            )
+                        }
+                        else {
+                            for (tag in recipe.tags) {
+                                TagOption(
+                                    tag = tag,
+                                    selectedTag = tag,
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (recipeDetailsViewModel.editMode) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                }
+
                 Column {
                     recipeDetailsViewModel.expandedStates["ingredients"]?.let { expanded ->
                         CompletableCategoryList(
@@ -178,7 +277,7 @@ fun RecipeDetailsScreen(
                                 "🍎",
                                 "Ingredients",
                             ),
-                            itemList = recipe.ingredients,
+                            itemList = if (recipeDetailsViewModel.editMode) recipe.ingredients else recipeDetailsViewModel.ingredientsByServings,
                             expanded = expanded,
                             onClick = {
                                 println("expanded before $expanded")
@@ -199,6 +298,11 @@ fun RecipeDetailsScreen(
                         )
                     }
                 }
+
+                if (recipeDetailsViewModel.editMode) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                }
+
                 Column {
                     recipeDetailsViewModel.expandedStates["instructions"]?.let { expanded ->
                         CompletableCategoryList(
@@ -227,10 +331,47 @@ fun RecipeDetailsScreen(
                         }
                     }
                 }
+
+                if (recipeDetailsViewModel.editMode) {
+                    Button(
+                        onClick = {
+                            recipeDetailsViewModel.saveRecipe(
+                                recipeId,
+                                onSuccess = {
+                                    appNavigator?.navigateBack()
+                                })
+                        }
+                    ) {
+                        Text("Save")
+                    }
+                }
             }
         }
     }
     Spacer(modifier = Modifier.height(30.dp))
+
+    // ---------------------------------------------------------------- CONFIRM DELETION OF RECIPE
+    if (recipeDetailsViewModel.showConfirmationDialog) {
+        if (recipeId != null) {
+            ConfirmationDialog(
+                onDismiss = { recipeDetailsViewModel.showConfirmationDialog = false },
+                onConfirm = {
+                    recipeDetailsViewModel.deleteRecipe(
+                        recipeId,
+                        onSuccess = {
+                            appNavigator?.navigateBack()
+                        }
+                    )
+                },
+                dialogTitle = "Delete recipe",
+                dialogMessage = "Are you sure you want to the recipe?",
+                dismissButtonMessage = "Cancel",
+                confirmButtonMessage = "Delete",
+            )
+        } else {
+            recipeDetailsViewModel.showConfirmationDialog = false
+        }
+    }
 
     // ---------------------------------------------------------------- SHOW ERROR ALERT
     if (recipeDetailsViewModel.showAlertDialog) {

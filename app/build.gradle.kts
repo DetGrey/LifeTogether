@@ -106,6 +106,7 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     // Declare the dependency for the Cloud Firestore library
     implementation(libs.firebase.firestore)
+    // Declare the dependency for the Firebase Storage library
     implementation(libs.firebase.storage)
     // Add the dependency for the Firebase Authentication library
     implementation(libs.firebase.auth)

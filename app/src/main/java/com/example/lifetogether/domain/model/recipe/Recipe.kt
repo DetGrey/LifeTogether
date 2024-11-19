@@ -6,7 +6,7 @@ import java.util.Date
 
 data class Recipe(
     @DocumentId @Transient
-    override val id: String? = null,
+    override var id: String? = null,
     override val familyId: String = "",
     override var itemName: String = "",
     override var lastUpdated: Date = Date(),
@@ -21,7 +21,6 @@ data class Recipe(
 
 fun Recipe.toMap(): Map<String, Any?> {
     return mapOf(
-        "id" to id,
         "familyId" to familyId,
         "itemName" to itemName,
         "lastUpdated" to lastUpdated,

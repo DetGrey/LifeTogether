@@ -23,7 +23,7 @@ import com.example.lifetogether.ui.theme.LifeTogetherTheme
 fun TagOption(
     tag: String,
     selectedTag: String,
-    onClick: (String) -> Unit,
+    onClick: ((String) -> Unit)? = null,
 ) {
     val selected: Boolean = selectedTag == tag
     Box(
@@ -36,7 +36,13 @@ fun TagOption(
                 color = if (selected) Color.Transparent else Color.Black,
                 shape = RoundedCornerShape(50),
             )
-            .clickable { onClick(tag) }
+            .clickable(
+                enabled = onClick != null
+            ) {
+                if (onClick != null) {
+                    onClick(tag)
+                }
+            }
             .padding(vertical = 5.dp)
             .padding(horizontal = if (tag.length < 5) 20.dp else 15.dp),
         contentAlignment = Alignment.CenterStart,

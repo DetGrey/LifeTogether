@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.common
+package com.example.lifetogether.ui.common.list
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -20,19 +20,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
-import com.example.lifetogether.domain.model.CompletableItem
-import com.example.lifetogether.domain.model.GroceryItem
+import com.example.lifetogether.domain.model.Completable
+import com.example.lifetogether.ui.common.ListItem
+import com.example.lifetogether.ui.feature.recipes.EXAMPLE_RECIPE
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.bodyFontFamily
-import java.util.Date
 
 @Composable
-fun ItemCategoryList(
+fun CompletableCategoryList(
     category: Category,
-    itemList: List<CompletableItem>,
+    itemList: List<Completable>,
     expanded: Boolean,
     onClick: () -> Unit,
-    onCompleteToggle: (CompletableItem) -> Unit,
+    onCompleteToggle: (Completable) -> Unit,
     onDelete: (() -> Unit)? = null,
 ) {
     Column {
@@ -93,40 +93,17 @@ fun ItemCategoryList(
 
 @Preview(showBackground = true)
 @Composable
-fun ItemCategoryListPreview() {
+fun CompletableCategoryListPreview() {
     LifeTogetherTheme {
-        ItemCategoryList(
+        CompletableCategoryList(
             category = Category(
                 "🍎",
-                "Fruits and vegetables",
+                "Ingredients",
             ),
-            itemList = groceryList,
+            itemList = EXAMPLE_RECIPE.ingredients,
             true,
             onClick = {},
             onCompleteToggle = {},
         )
     }
 }
-
-val groceryList = listOf(
-    GroceryItem(
-        familyId = "dsuaihfao",
-        category = Category(
-            "🍎",
-            "Fruits and vegetables",
-        ),
-        itemName = "Bananas",
-        lastUpdated = Date(System.currentTimeMillis()),
-        completed = false,
-    ),
-    GroceryItem(
-        familyId = "dsuaihfao",
-        category = Category(
-            "🍎",
-            "Fruits and vegetables",
-        ),
-        itemName = "Potatoes",
-        lastUpdated = Date(System.currentTimeMillis()),
-        completed = true,
-    ),
-)

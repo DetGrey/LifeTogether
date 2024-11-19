@@ -16,6 +16,7 @@ import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.model.toMap
 import com.example.lifetogether.util.Constants
 import com.google.firebase.Firebase
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
@@ -176,6 +177,7 @@ class FirestoreDataSource@Inject constructor() {
         val listenerRegistration = recipeItemsRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 // Handle error
+                println("Firestore recipeSnapshotListener error: ${e.message}")
                 trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess
                 return@addSnapshotListener
             }
@@ -194,7 +196,6 @@ class FirestoreDataSource@Inject constructor() {
     }
 
     // ------------------------------------------------------------------------------- ITEMS
-
     suspend fun saveItem(
         item: Item,
         listName: String,
@@ -212,9 +213,13 @@ class FirestoreDataSource@Inject constructor() {
         item: Item,
         listName: String,
     ): ResultListener {
+        println("FirestoreDataSource updateItem()")
+        println("FirestoreDataSource updateItem() id: ${item.id}")
         try {
             if (item.id != null) {
-                db.collection(listName).document(item.id!!).update(item.toMap()).await()
+                val map = item.toMap()
+                println("updateItem map: $map")
+                db.collection(listName).document(item.id!!).update(map).await()
                 return ResultListener.Success
             } else {
                 return ResultListener.Failure("Error: No document id")
@@ -243,6 +248,20 @@ class FirestoreDataSource@Inject constructor() {
             } else {
                 return ResultListener.Failure("Document not found")
             }
+        } catch (e: Exception) {
+            println("Error: ${e.message}")
+            return ResultListener.Failure("Error: ${e.message}")
+        }
+    }
+
+    suspend fun deleteItem(
+        itemId: String,
+        listName: String,
+    ): ResultListener {
+        println("FirestoreDataSource deleteItem()")
+        try {
+            db.collection(listName).document(itemId).delete()
+            return ResultListener.Success
         } catch (e: Exception) {
             println("Error: ${e.message}")
             return ResultListener.Failure("Error: ${e.message}")

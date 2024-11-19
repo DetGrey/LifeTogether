@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.common.text
+package com.example.lifetogether.ui.common.textfield
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text

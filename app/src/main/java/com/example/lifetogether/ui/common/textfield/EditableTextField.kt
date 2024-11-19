@@ -1,6 +1,7 @@
-package com.example.lifetogether.ui.common.text
+package com.example.lifetogether.ui.common.textfield
 
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -9,6 +10,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.wear.compose.material.ContentAlpha
 
 @Composable
@@ -19,6 +23,9 @@ fun EditableTextField(
     isEditable: Boolean,
     textStyle: TextStyle = MaterialTheme.typography.bodyMedium,
     color: Color = Color.Black,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    imeAction: ImeAction = ImeAction.Done,
+    capitalization: Boolean = true,
 ) {
     if (isEditable) {
         TextField(
@@ -26,6 +33,11 @@ fun EditableTextField(
             value = text,
             onValueChange = onTextChange,
             label = { Text(label) },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = keyboardType,
+                imeAction = imeAction,
+                capitalization = if (capitalization) KeyboardCapitalization.Sentences else KeyboardCapitalization.None
+            ),
             textStyle = textStyle.copy(color = color),
             colors = TextFieldDefaults.colors(
                 focusedTextColor = color,

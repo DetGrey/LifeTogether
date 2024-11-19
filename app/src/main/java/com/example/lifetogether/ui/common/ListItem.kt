@@ -28,6 +28,7 @@ import com.example.lifetogether.domain.model.Completable
 import com.example.lifetogether.domain.model.GroceryItem
 import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import java.text.DecimalFormat
 import java.util.Date
 
 @Composable
@@ -41,7 +42,7 @@ fun ListItem(
         val formattedAmount = if (item.amount % 1.0 == 0.0) {
             item.amount.toInt()
         } else {
-            item.amount
+            DecimalFormat("#.##").format(item.amount)
         }
         text = "$formattedAmount ${item.measureType.unit} ${item.itemName}"
     }

@@ -20,8 +20,8 @@ import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.GroceryItem
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.enums.UpdateType
-import com.example.lifetogether.ui.common.AddNewListItem
-import com.example.lifetogether.ui.common.ItemCategoryList
+import com.example.lifetogether.ui.common.add.AddNewListItem
+import com.example.lifetogether.ui.common.list.ItemCategoryList
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog

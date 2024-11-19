@@ -16,6 +16,7 @@ import com.example.lifetogether.domain.model.recipe.MutableRecipe
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.model.recipe.toMutableRecipe
 import com.example.lifetogether.domain.model.recipe.toRecipe
+import com.example.lifetogether.domain.usecase.item.DeleteItemUseCase
 import com.example.lifetogether.domain.usecase.item.FetchItemByIdUseCase
 import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
 import com.example.lifetogether.domain.usecase.item.UpdateItemUseCase
@@ -33,9 +34,13 @@ import javax.inject.Inject
 @HiltViewModel
 class RecipeDetailsViewModel @Inject constructor(
     private val saveItemUseCase: SaveItemUseCase,
+    private val deleteItemUseCase: DeleteItemUseCase,
     private val updateItemUseCase: UpdateItemUseCase,
     private val fetchItemByIdUseCase: FetchItemByIdUseCase,
 ) : ViewModel() {
+    var showConfirmationDialog: Boolean by mutableStateOf(false)
+
+    // ---------------------------------------------------------------- ERROR
     var showAlertDialog: Boolean by mutableStateOf(false)
     var error: String by mutableStateOf("")
     fun toggleAlertDialog() {
@@ -84,7 +89,7 @@ class RecipeDetailsViewModel @Inject constructor(
         recipeId: String,
     ) {
         viewModelScope.launch {
-            fetchItemByIdUseCase(familyId!!, recipeId, Constants.RECIPES_TABLE, Recipe::class).collect { result ->
+            fetchItemByIdUseCase.invoke(familyId!!, recipeId, Constants.RECIPES_TABLE, Recipe::class).collect { result ->
                 println("fetchItemByIdUseCase result: $result")
                 when (result) {
                     is ItemResultListener.Success -> {
@@ -93,6 +98,11 @@ class RecipeDetailsViewModel @Inject constructor(
                             println("_recipe old value: ${_recipe.value}")
                             _recipe.value = result.item.toMutableRecipe()
                             println("recipe new value: ${this@RecipeDetailsViewModel.recipe.value}")
+                            preparationTimeMin = result.item.preparationTimeMin.toString()
+                            servings = result.item.servings.toString()
+                            tags = result.item.tags.joinToString(" ")
+                            ingredientsByServings()
+
                         } else {
                             println("Error: No recipe found")
                             error = "No recipe found"
@@ -129,12 +139,39 @@ class RecipeDetailsViewModel @Inject constructor(
         }
     }
 
-    // ---------------------------------------------------------------- ADD NEW ITEM
+    // ---------------------------------------------------------------- SERVINGS + TAGS ETC
+    var preparationTimeMin: String by mutableStateOf("")
+    var servings: String by mutableStateOf("")
+    var servingsExpanded: Boolean by mutableStateOf(false)
+    var tags: String by mutableStateOf("")
+    var ingredientsByServings: List<Ingredient> by mutableStateOf(recipe.value.ingredients)
+
+    fun ingredientsByServings() {
+        val multiplier = servings.toDouble() / recipe.value.servings.toDouble()
+        println("multiplier: $multiplier")
+        println("list: ${recipe.value.ingredients.map { it.copy(amount = it.amount * multiplier) }}")
+        ingredientsByServings = recipe.value.ingredients.map { it.copy(amount = it.amount * multiplier) }
+    }
+
+    // ---------------------------------------------------------------- USE CASES
     // USE CASES
-    fun saveRecipe() {
+    fun saveRecipe(
+        recipeId: String?,
+        onSuccess: () -> Unit
+    ) {
         println("RecipeDetailsViewModel saveRecipe()")
 
-        if (recipe.value.itemName.isEmpty()) { // TODO add more checks
+        if (servings.isNotEmpty()) {
+            _recipe.value.servings = servings.toInt()
+        }
+        if (preparationTimeMin.isNotEmpty()) {
+            _recipe.value.preparationTimeMin = preparationTimeMin.toInt()
+        }
+        if (tags.isNotEmpty()) {
+            _recipe.value.tags = tags.split(" ")
+        }
+
+        if (recipe.value.itemName.isEmpty()) {
             error = "Please write some text first"
             showAlertDialog = true
             return
@@ -142,7 +179,7 @@ class RecipeDetailsViewModel @Inject constructor(
 
         val newRecipe = familyId?.let {
             Recipe(
-                id = recipe.value.id.ifEmpty { null },
+                id = recipeId,
                 familyId = familyId!!,
                 itemName = recipe.value.itemName,
                 lastUpdated = Date(),
@@ -155,6 +192,7 @@ class RecipeDetailsViewModel @Inject constructor(
                 tags = recipe.value.tags,
             )
         }
+
         if (newRecipe == null) {
             error = "Please connect to a family first"
             showAlertDialog = true
@@ -162,28 +200,60 @@ class RecipeDetailsViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
+            println("newRecipe id: ${newRecipe.id}")
             if (newRecipe.id.isNullOrEmpty()) {
+                println("Chosen use case: Recipe is saved as a new one")
                 val result: StringResultListener = saveItemUseCase.invoke(newRecipe, Constants.RECIPES_TABLE)
 
                 if (result is StringResultListener.Success) {
-                    _recipe.value.id = result.string
-                    editMode = false
+                    onSuccess()
+//                    _recipe.value.id = result.string
+//                    editMode = false
                 } else if (result is StringResultListener.Failure) {
                     println("Error: ${result.message}")
                     error = result.message
                     showAlertDialog = true
                 }
             } else {
+                println("Chosen use case: Recipe is updated in old")
                 val result: ResultListener = updateItemUseCase.invoke(newRecipe, Constants.RECIPES_TABLE)
 
                 if (result is ResultListener.Success) {
-                    editMode = false
+                    onSuccess()
                 } else if (result is ResultListener.Failure) {
                     println("Error: ${result.message}")
                     error = result.message
                     showAlertDialog = true
                 }
             }
+        }
+    }
+
+    fun deleteRecipe(
+        recipeId: String,
+        onSuccess: () -> Unit
+    ) {
+        println("RecipeDetailsViewModel deleteRecipe()")
+        println("recipeId: $recipeId")
+
+        if (recipeId.isEmpty()) {
+            error = "Recipe not saved - no id"
+            showAlertDialog = true
+            return
+        }
+
+        viewModelScope.launch {
+            val result: ResultListener = deleteItemUseCase.invoke(recipeId, Constants.RECIPES_TABLE)
+
+            if (result is ResultListener.Success) {
+                onSuccess()
+            }
+            else if (result is ResultListener.Failure) {
+                println("Error: ${result.message}")
+                error = result.message
+                showAlertDialog = true
+            }
+            showConfirmationDialog = false
         }
     }
 }

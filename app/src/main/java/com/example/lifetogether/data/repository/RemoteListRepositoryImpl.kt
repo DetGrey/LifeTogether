@@ -32,6 +32,13 @@ class RemoteListRepositoryImpl @Inject constructor(
         return firestoreDataSource.toggleCompletableItemCompletion(item, listName)
     }
 
+    suspend fun deleteItem(
+        itemId: String,
+        listName: String,
+    ): ResultListener {
+        return firestoreDataSource.deleteItem(itemId, listName)
+    }
+
     suspend fun deleteItems(
         listName: String,
         items: List<Item>,

@@ -2,6 +2,7 @@ package com.example.lifetogether.ui.feature.recipes
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,7 +37,7 @@ fun RecipesScreen(
 ) {
     val recipesViewModel: RecipesViewModel = hiltViewModel()
     val userInformation by firebaseViewModel?.userInformation!!.collectAsState()
-    val recipes by recipesViewModel.recipes.collectAsState()
+    val recipes by recipesViewModel.filteredRecipes.collectAsState()
 
     LaunchedEffect(key1 = true) {
         // Perform any one-time initialization or side effect here
@@ -79,8 +80,8 @@ fun RecipesScreen(
                             for (tag in recipesViewModel.tagsList) {
                                 TagOption(
                                     tag = tag,
-                                    selectedTag = "All",
-                                    onClick = { }, // TODO
+                                    selectedTag = recipesViewModel.selectedTag,
+                                    onClick = { recipesViewModel.selectedTag = it },
                                 )
                             }
                         }
@@ -92,13 +93,17 @@ fun RecipesScreen(
             }
 
             item {
-                for (recipe in recipes) {
-                    RecipeOverview(
-                        recipe = recipe,
-                        onClick = {
-                            appNavigator?.navigateToRecipeDetails(recipe.id)
-                        },
-                    )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    for (recipe in recipes) {
+                        RecipeOverview(
+                            recipe = recipe,
+                            onClick = {
+                                appNavigator?.navigateToRecipeDetails(recipe.id)
+                            },
+                        )
+                    }
                 }
             }
         }

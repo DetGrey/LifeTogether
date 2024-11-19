@@ -316,14 +316,11 @@ class GroceryListViewModel @Inject constructor(
         val items = completedItems.value.filter { it.id != null }
 
         viewModelScope.launch {
-            val result = deleteCompletedItemsUseCase.invoke(
+            deleteCompletedItemsUseCase.invoke(
                 Constants.GROCERY_TABLE,
                 items = items,
             )
-            when (result) {
-                is ResultListener.Success -> showConfirmationDialog = false
-                is ResultListener.Failure -> showConfirmationDialog = false
-            }
+            showConfirmationDialog = false
         }
     }
 }

@@ -3,6 +3,7 @@ package com.example.lifetogether.ui.feature.recipes
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.callback.ListItemsResultListener
@@ -12,8 +13,12 @@ import com.example.lifetogether.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -21,8 +26,7 @@ import javax.inject.Inject
 class RecipesViewModel @Inject constructor(
     private val fetchListItemsUseCase: FetchListItemsUseCase,
 ) : ViewModel() {
-    val tagsList: List<String> = listOf("All", "Simple", "Dinner", "Breakfast", "Dessert", "Pasta", "Rice")
-
+    // ---------------------------------------------------------------- ERROR
     var showAlertDialog: Boolean by mutableStateOf(false)
     var error: String by mutableStateOf("")
     fun toggleAlertDialog() {
@@ -33,13 +37,16 @@ class RecipesViewModel @Inject constructor(
         }
     }
 
-    // ---------------------------------------------------------------- UID
+    // ---------------------------------------------------------------- FAMILY ID
     private var familyIdIsSet = false
     var familyId: String? = null
 
     // ---------------------------------------------------------------- SETUP/FETCH LIST
     private val _recipes = MutableStateFlow<List<Recipe>>(emptyList())
     val recipes: StateFlow<List<Recipe>> = _recipes.asStateFlow()
+
+    private val _filteredRecipes = MutableStateFlow<List<Recipe>>(emptyList())
+    val filteredRecipes: StateFlow<List<Recipe>> = _filteredRecipes
 
     fun setUpRecipes(addedFamilyId: String) {
         if (!familyIdIsSet) {
@@ -59,6 +66,7 @@ class RecipesViewModel @Inject constructor(
                             println("_recipe old value: ${_recipes.value}")
                             _recipes.value = foundRecipes
                             println("recipe new value: ${this@RecipesViewModel.recipes.value}")
+                            updateTagsList(foundRecipes.map { it.tags })
                         } else {
                             println("Error: No Recipe instances found in the result")
                             error = "No Recipe instances found in the result"
@@ -75,5 +83,38 @@ class RecipesViewModel @Inject constructor(
                 }
             }
         }
+        viewModelScope.launch {
+            combine(_recipes, snapshotFlow { selectedTag }) { recipes, tag ->
+                if (tag == "All") {
+                    recipes
+                } else {
+                    recipes.filter { recipe ->
+                        recipe.tags.any { recipeTag ->
+                            recipeTag.equals(tag, ignoreCase = true)
+                        }
+                    }
+                }
+            }.collect { filteredList ->
+                _filteredRecipes.value = filteredList.sortedBy { it.itemName.lowercase() }
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------- TAGS AND FILTERS
+    private val _tagsList: MutableList<String> = mutableListOf("All", "Simple", "Dinner", "Breakfast", "Dessert", "Pasta", "Rice")
+    var tagsList: List<String> by mutableStateOf(_tagsList)
+    var selectedTag: String by mutableStateOf("All")
+
+    private fun updateTagsList(
+        list: List<List<String>>
+    ) {
+        for (tags in list) {
+            for (tag in tags) {
+                if (!tagsList.contains(tag)) {
+                    _tagsList.add(tag)
+                }
+            }
+        }
+        tagsList = _tagsList.toList()
     }
 }
