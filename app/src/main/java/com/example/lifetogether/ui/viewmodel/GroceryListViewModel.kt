@@ -44,6 +44,7 @@ class GroceryListViewModel @Inject constructor(
 ) : ViewModel() {
     var showConfirmationDialog: Boolean by mutableStateOf(false)
 
+    // ---------------------------------------------------------------- ERROR
     var showAlertDialog: Boolean by mutableStateOf(false)
     var error: String by mutableStateOf("")
     fun toggleAlertDialog() {

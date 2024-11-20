@@ -102,7 +102,6 @@ class RecipeDetailsViewModel @Inject constructor(
                             servings = result.item.servings.toString()
                             tags = result.item.tags.joinToString(" ")
                             ingredientsByServings()
-
                         } else {
                             println("Error: No recipe found")
                             error = "No recipe found"
@@ -157,7 +156,7 @@ class RecipeDetailsViewModel @Inject constructor(
     // USE CASES
     fun saveRecipe(
         recipeId: String?,
-        onSuccess: () -> Unit
+        onSuccess: () -> Unit,
     ) {
         println("RecipeDetailsViewModel saveRecipe()")
 
@@ -231,7 +230,7 @@ class RecipeDetailsViewModel @Inject constructor(
 
     fun deleteRecipe(
         recipeId: String,
-        onSuccess: () -> Unit
+        onSuccess: () -> Unit,
     ) {
         println("RecipeDetailsViewModel deleteRecipe()")
         println("recipeId: $recipeId")
@@ -247,8 +246,7 @@ class RecipeDetailsViewModel @Inject constructor(
 
             if (result is ResultListener.Success) {
                 onSuccess()
-            }
-            else if (result is ResultListener.Failure) {
+            } else if (result is ResultListener.Failure) {
                 println("Error: ${result.message}")
                 error = result.message
                 showAlertDialog = true

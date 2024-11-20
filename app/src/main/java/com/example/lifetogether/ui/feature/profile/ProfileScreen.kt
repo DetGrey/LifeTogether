@@ -2,7 +2,6 @@ package com.example.lifetogether.ui.feature.profile
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,24 +14,29 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lifetogether.R
+import com.example.lifetogether.domain.converter.formatDateToString
 import com.example.lifetogether.domain.model.ConfirmationDialogDetails
 import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.ui.common.TopBar
-import com.example.lifetogether.ui.common.convert.formatDateToString
+import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
+import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
+import com.example.lifetogether.ui.common.image.ImageUploadDialog
 import com.example.lifetogether.ui.common.text.TextHeadingLarge
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.navigation.AppNavigator
@@ -46,7 +50,14 @@ fun ProfileScreen(
     firebaseViewModel: FirebaseViewModel? = null,
 ) {
     val profileViewModel: ProfileViewModel = hiltViewModel()
-    val userInformation = firebaseViewModel?.userInformation?.collectAsState(initial = null)
+    val userInformation by firebaseViewModel?.userInformation!!.collectAsState()
+    val bitmap by profileViewModel.bitmap.collectAsState()
+
+    LaunchedEffect(key1 = true) {
+        // Perform any one-time initialization or side effect here
+        println("GroceryList familyId: ${userInformation?.uid}")
+        userInformation?.uid?.let { profileViewModel.setUpProfile(it) }
+    }
 
     Box(
         modifier = Modifier
@@ -96,30 +107,36 @@ fun ProfileScreen(
                                 .background(color = MaterialTheme.colorScheme.onBackground),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Image(
-                                modifier = Modifier
-                                    .fillMaxSize(),
-                                painter = painterResource(id = R.drawable.profile_picture), // TODO update to real picture if added
-                                contentDescription = "profile picture",
-                            )
+                            if (bitmap != null) {
+                                Image(
+                                    modifier = Modifier
+                                        .fillMaxSize(),
+                                    bitmap = bitmap!!.asImageBitmap(),
+                                    contentDescription = "profile picture",
+                                )
+                            } else {
+                                Image(
+                                    modifier = Modifier
+                                        .fillMaxSize(),
+                                    painter = painterResource(id = R.drawable.profile_picture),
+                                    contentDescription = "profile picture",
+                                )
+                            }
                         }
 
                         Box(
                             modifier = Modifier
                                 .padding(end = 10.dp)
-                                .size(60.dp)
-                                .clip(shape = RoundedCornerShape(100))
-                                .background(color = MaterialTheme.colorScheme.tertiary)
-                                .clickable { }, // TODO add picture
+                                .size(50.dp),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(text = "+", fontSize = 30.sp)
+                            AddButton(onClick = { profileViewModel.showImageUploadDialog = true })
                         }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
-                TextHeadingLarge(text = userInformation?.value?.name ?: "")
+                TextHeadingLarge(text = userInformation?.name ?: "")
             }
 
             item {
@@ -134,7 +151,7 @@ fun ProfileScreen(
                             description = "", // TODO
                         ),
                         title = "Name",
-                        value = userInformation?.value?.name ?: "",
+                        value = userInformation?.name ?: "",
                         onClick = {
                             profileViewModel.confirmationDialogType = ProfileViewModel.ProfileConfirmationType.NAME
                             profileViewModel.showConfirmationDialog = true
@@ -146,7 +163,7 @@ fun ProfileScreen(
                             description = "", // TODO
                         ),
                         title = "Email",
-                        value = userInformation?.value?.email ?: "",
+                        value = userInformation?.email ?: "",
                     )
                     ProfileDetails(
                         icon = Icon(
@@ -154,7 +171,7 @@ fun ProfileScreen(
                             description = "", // TODO
                         ),
                         title = "Birthday",
-                        value = userInformation?.value?.birthday?.let { date ->
+                        value = userInformation?.birthday?.let { date ->
                             formatDateToString(date)
                         } ?: "",
                     )
@@ -213,7 +230,7 @@ fun ProfileScreen(
                 ProfileViewModel.ProfileConfirmationType.NAME -> ConfirmationDialogWithTextField(
                     onDismiss = { profileViewModel.closeConfirmationDialog() },
                     onConfirm = {
-                        userInformation?.value?.uid?.let { profileViewModel.changeName(it) }
+                        userInformation?.uid?.let { profileViewModel.changeName(it) }
                     },
                     dialogTitle = "Change name",
                     dialogMessage = "Please enter your new name",
@@ -234,6 +251,26 @@ fun ProfileScreen(
                 null -> {}
             }
         }
+
+        if (profileViewModel.showImageUploadDialog && userInformation != null) {
+            userInformation!!.uid?.let {
+                ImageUploadDialog(
+                    onDismiss = { profileViewModel.showImageUploadDialog = false },
+                    onConfirm = { profileViewModel.showImageUploadDialog = false },
+                    dialogTitle = "Upload profile photo",
+                    dialogMessage = "Select your new profile photo",
+                    imageType = ImageType.ProfileImage(it),
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Upload photo",
+                )
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------- SHOW ERROR ALERT
+    if (profileViewModel.showAlertDialog) {
+        ErrorAlertDialog(profileViewModel.error)
+        profileViewModel.toggleAlertDialog()
     }
 }
 

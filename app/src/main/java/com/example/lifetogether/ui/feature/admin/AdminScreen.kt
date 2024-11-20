@@ -18,9 +18,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.BuildConfig
 import com.example.lifetogether.R
+import com.example.lifetogether.domain.converter.daysSinceDate
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.TopBar
-import com.example.lifetogether.ui.common.convert.daysSinceDate
 import com.example.lifetogether.ui.feature.home.FeatureOverview
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme

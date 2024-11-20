@@ -24,7 +24,7 @@ import com.example.lifetogether.data.model.UserEntity
         UserEntity::class,
         RecipeEntity::class,
     ],
-    version = 5,
+    version = 8,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)

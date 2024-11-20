@@ -13,12 +13,9 @@ import com.example.lifetogether.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -106,7 +103,7 @@ class RecipesViewModel @Inject constructor(
     var selectedTag: String by mutableStateOf("All")
 
     private fun updateTagsList(
-        list: List<List<String>>
+        list: List<List<String>>,
     ) {
         for (tags in list) {
             for (tag in tags) {

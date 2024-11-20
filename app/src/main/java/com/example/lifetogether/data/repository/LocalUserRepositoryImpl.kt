@@ -2,6 +2,7 @@ package com.example.lifetogether.data.repository
 
 import com.example.lifetogether.data.local.LocalDataSource
 import com.example.lifetogether.domain.callback.AuthResultListener
+import com.example.lifetogether.domain.callback.ByteArrayResultListener
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.repository.UserRepository
@@ -15,6 +16,8 @@ class LocalUserRepositoryImpl @Inject constructor(
     fun getUserInformation(uid: String): Flow<AuthResultListener> {
         return localDataSource.getUserInformation(uid).map { user ->
             try {
+                println("LocalUserRepositoryImpl getUserInformation user: $user")
+
                 AuthResultListener.Success(
                     UserInformation(
                         uid = user.uid,
@@ -26,6 +29,21 @@ class LocalUserRepositoryImpl @Inject constructor(
                 )
             } catch (e: Exception) {
                 AuthResultListener.Failure(e.message ?: "Unknown error")
+            }
+        }
+    }
+
+    fun getImageByteArray(uid: String): Flow<ByteArrayResultListener> {
+        println("LocalUserRepositoryImpl getImageByteArray")
+        return localDataSource.getImageByteArray(uid).map { byteArray ->
+            try {
+                if (byteArray != null) {
+                    ByteArrayResultListener.Success(byteArray)
+                } else {
+                    ByteArrayResultListener.Failure("No ByteArray found")
+                }
+            } catch (e: Exception) {
+                ByteArrayResultListener.Failure(e.message ?: "Unknown error")
             }
         }
     }

@@ -8,9 +8,12 @@ import java.util.Date
 
 @Serializable
 data class UserInformation(
-    @DocumentId @Transient val uid: String? = null,
-    val email: String? = null, // TODO remove null and only add this data class after fetching from db
+    @DocumentId @Transient
+    val uid: String? = null,
+    val email: String? = null,
     val name: String? = null,
-    @Serializable(with = DateSerializer::class) val birthday: Date? = null,
+    @Serializable(with = DateSerializer::class)
+    val birthday: Date? = null,
     val familyId: String? = null,
+    val imageUrl: String? = null,
 )

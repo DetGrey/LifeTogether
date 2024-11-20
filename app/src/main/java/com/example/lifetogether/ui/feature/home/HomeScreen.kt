@@ -69,7 +69,7 @@ fun HomeScreen(
                             appNavigator?.navigateToLogin()
                         }
                     },
-                    text = "A Life Together",
+                    text = "Life Together",
                     rightIcon = Icon(
                         resId = R.drawable.ic_settings,
                         description = "settings icon",

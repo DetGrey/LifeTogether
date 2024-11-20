@@ -245,14 +245,30 @@ class LocalDataSource @Inject constructor(
         return userInformationDao.getItems(uid)
     }
 
-    suspend fun updateUserInformation(userInformation: UserInformation) {
-        val userEntity = UserEntity(
+    fun getImageByteArray(uid: String): Flow<ByteArray?> {
+        println("LocalDataSource getImageByteArray")
+        return userInformationDao.getItems(uid).map { item ->
+            println("LocalDataSource getImageByteArray item: $item")
+            item?.imageData
+        }
+    }
+
+    suspend fun updateUserInformation(
+        userInformation: UserInformation,
+        byteArray: ByteArray? = null,
+    ) {
+        var userEntity = UserEntity(
             uid = userInformation.uid ?: "",
             email = userInformation.email,
             name = userInformation.name,
             birthday = userInformation.birthday,
             familyId = userInformation.familyId,
         )
+        if (byteArray != null) {
+            userEntity = userEntity.copy(imageData = byteArray)
+        }
+
+        println("updateUserInformation userEntity: $userEntity")
 
         userInformationDao.updateItems(userEntity)
     }

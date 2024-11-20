@@ -38,12 +38,12 @@ import com.example.lifetogether.domain.model.recipe.Instruction
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.model.toggleCompleted
 import com.example.lifetogether.ui.common.add.AddNewString
-import com.example.lifetogether.ui.common.list.CompletableCategoryList
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.dropdown.Dropdown
-import com.example.lifetogether.ui.common.textfield.EditableTextField
+import com.example.lifetogether.ui.common.list.CompletableCategoryList
 import com.example.lifetogether.ui.common.text.TextDefault
+import com.example.lifetogether.ui.common.textfield.EditableTextField
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
@@ -62,7 +62,7 @@ fun RecipeDetailsScreen(
 
     LaunchedEffect(key1 = true) {
         // Perform any one-time initialization or side effect here
-        println("GroceryList familyId: ${userInformation?.familyId}")
+        println("recipedetails screen familyId: ${userInformation?.familyId}")
         userInformation?.familyId?.let { recipeDetailsViewModel.setUpRecipeDetails(it, recipeId) }
     }
 
@@ -187,7 +187,7 @@ fun RecipeDetailsScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         TextDefault("Preparation time in minutes: ")
                         EditableTextField(
@@ -205,7 +205,7 @@ fun RecipeDetailsScreen(
                         modifier = Modifier
                             .fillMaxWidth(if (recipeDetailsViewModel.editMode) 1f else 0.45f)
                             .height(50.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         TextDefault("Servings: ")
                         if (recipeDetailsViewModel.editMode) {
@@ -225,12 +225,12 @@ fun RecipeDetailsScreen(
                                 selectedValue = recipeDetailsViewModel.servings,
                                 expanded = recipeDetailsViewModel.servingsExpanded,
                                 onExpandedChange = { recipeDetailsViewModel.servingsExpanded = it },
-                                options = listOf("1","2","3","4","5","6","7","8","9","10","15","20","30","40"),
+                                options = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "15", "20", "30", "40"),
                                 label = null,
                                 onValueChangedEvent = {
                                     recipeDetailsViewModel.servings = it
                                     recipeDetailsViewModel.ingredientsByServings()
-                                }
+                                },
                             )
                         }
                     }
@@ -240,7 +240,7 @@ fun RecipeDetailsScreen(
                             .fillMaxWidth()
                             .height(50.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                        horizontalArrangement = Arrangement.spacedBy(5.dp),
                     ) {
                         TextDefault("Tags:")
                         if (recipeDetailsViewModel.editMode) {
@@ -252,10 +252,9 @@ fun RecipeDetailsScreen(
                                 textStyle = MaterialTheme.typography.bodySmall,
                                 keyboardType = KeyboardType.Text,
                                 imeAction = ImeAction.Done,
-                                capitalization = false
+                                capitalization = false,
                             )
-                        }
-                        else {
+                        } else {
                             for (tag in recipe.tags) {
                                 TagOption(
                                     tag = tag,
@@ -285,7 +284,11 @@ fun RecipeDetailsScreen(
                                 println("expanded after $expanded")
                             },
                             onCompleteToggle = {
-                                recipe.ingredients = recipe.ingredients.toggleCompleted(it.itemName)
+                                if (recipeDetailsViewModel.editMode) {
+                                    recipe.ingredients = recipe.ingredients.toggleCompleted(it.itemName)
+                                } else {
+                                    recipeDetailsViewModel.ingredientsByServings = recipeDetailsViewModel.ingredientsByServings.toggleCompleted(it.itemName)
+                                }
                             },
                         )
                     }
@@ -339,8 +342,9 @@ fun RecipeDetailsScreen(
                                 recipeId,
                                 onSuccess = {
                                     appNavigator?.navigateBack()
-                                })
-                        }
+                                },
+                            )
+                        },
                     ) {
                         Text("Save")
                     }
@@ -360,7 +364,7 @@ fun RecipeDetailsScreen(
                         recipeId,
                         onSuccess = {
                             appNavigator?.navigateBack()
-                        }
+                        },
                     )
                 },
                 dialogTitle = "Delete recipe",

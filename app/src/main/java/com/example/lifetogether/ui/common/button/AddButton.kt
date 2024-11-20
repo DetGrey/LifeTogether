@@ -4,13 +4,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
@@ -25,19 +22,12 @@ fun AddButton(
 ) {
     Box(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(bottom = 30.dp, end = 30.dp),
-        contentAlignment = Alignment.BottomEnd,
+            .size(60.dp)
+            .clip(shape = CircleShape)
+            .background(color = MaterialTheme.colorScheme.tertiary)
+            .clickable { onClick() },
     ) {
-        Box(
-            modifier = Modifier
-                .size(60.dp)
-                .clip(shape = CircleShape)
-                .background(color = MaterialTheme.colorScheme.tertiary)
-                .clickable { onClick() },
-        ) {
-            Image(painter = painterResource(id = R.drawable.ic_plus), contentDescription = "plus icon")
-        }
+        Image(painter = painterResource(id = R.drawable.ic_plus), contentDescription = "plus icon")
     }
 }
 

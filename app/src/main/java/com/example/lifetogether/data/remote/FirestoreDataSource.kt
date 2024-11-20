@@ -13,10 +13,10 @@ import com.example.lifetogether.domain.model.GrocerySuggestion
 import com.example.lifetogether.domain.model.Item
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.recipe.Recipe
+import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.model.toMap
 import com.example.lifetogether.util.Constants
 import com.google.firebase.Firebase
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
@@ -254,7 +254,7 @@ class FirestoreDataSource@Inject constructor() {
         }
     }
 
-    suspend fun deleteItem(
+    fun deleteItem(
         itemId: String,
         listName: String,
     ): ResultListener {
@@ -398,6 +398,37 @@ class FirestoreDataSource@Inject constructor() {
     ): ResultListener {
         try {
             db.collection(Constants.GROCERY_SUGGESTIONS_TABLE).add(grocerySuggestion).await()
+            return ResultListener.Success
+        } catch (e: Exception) {
+            println("Error: ${e.message}")
+            return ResultListener.Failure("Error: ${e.message}")
+        }
+    }
+
+    // ------------------------------------------------------------------------------- IMAGES
+    suspend fun saveImageDownloadUrl(
+        url: String,
+        imageType: ImageType,
+    ): ResultListener {
+        try {
+            println("saveImageDownloadUrl url: $url")
+            println("saveImageDownloadUrl imageType: $imageType")
+
+            val photo = mapOf(
+                "imageUrl" to url,
+            )
+            println("saveImageDownloadUrl map: $photo")
+
+            when (imageType) {
+                is ImageType.ProfileImage -> {
+                    db.collection("users").document(imageType.uid).update(photo).await()
+                }
+
+                is ImageType.FamilyImage -> {
+                    db.collection("families").document(imageType.familyId).update(photo).await()
+                }
+            }
+
             return ResultListener.Success
         } catch (e: Exception) {
             println("Error: ${e.message}")

@@ -20,8 +20,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.lifetogether.domain.converter.minToHourMinString
 import com.example.lifetogether.domain.model.recipe.Recipe
-import com.example.lifetogether.ui.common.convert.minToHourMinString
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @Composable

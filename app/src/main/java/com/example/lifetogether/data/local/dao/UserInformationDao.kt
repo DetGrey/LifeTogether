@@ -11,11 +11,14 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface UserInformationDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE) // TODO
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateItems(item: UserEntity)
 
     @Query("SELECT * FROM $USER_TABLE WHERE uid = :uid LIMIT 1")
     fun getItems(uid: String): Flow<UserEntity>
+
+    @Query("SELECT image_data FROM $USER_TABLE WHERE uid = :uid LIMIT 1")
+    fun getImageByteArray(uid: String): Flow<ByteArray?>
 
     @Query("DELETE FROM $USER_TABLE")
     fun deleteTable()

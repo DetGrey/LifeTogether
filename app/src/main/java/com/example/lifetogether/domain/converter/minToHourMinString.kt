@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.common.convert
+package com.example.lifetogether.domain.converter
 
 fun minToHourMinString(allMinutes: Int): String {
     if (allMinutes <= 0) {

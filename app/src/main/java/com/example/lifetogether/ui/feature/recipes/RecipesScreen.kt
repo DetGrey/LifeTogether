@@ -94,7 +94,7 @@ fun RecipesScreen(
 
             item {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     for (recipe in recipes) {
                         RecipeOverview(
@@ -109,10 +109,16 @@ fun RecipesScreen(
         }
     }
 
-    AddButton(onClick = {
-        appNavigator?.navigateToRecipeDetails()
-    })
-
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(bottom = 30.dp, end = 30.dp),
+        contentAlignment = Alignment.BottomEnd,
+    ) {
+        AddButton(onClick = {
+            appNavigator?.navigateToRecipeDetails()
+        })
+    }
     // ---------------------------------------------------------------- SHOW ERROR ALERT
     if (recipesViewModel.showAlertDialog) {
         ErrorAlertDialog(recipesViewModel.error)

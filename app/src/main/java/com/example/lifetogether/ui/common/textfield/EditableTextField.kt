@@ -36,7 +36,7 @@ fun EditableTextField(
             keyboardOptions = KeyboardOptions(
                 keyboardType = keyboardType,
                 imeAction = imeAction,
-                capitalization = if (capitalization) KeyboardCapitalization.Sentences else KeyboardCapitalization.None
+                capitalization = if (capitalization) KeyboardCapitalization.Sentences else KeyboardCapitalization.None,
             ),
             textStyle = textStyle.copy(color = color),
             colors = TextFieldDefaults.colors(

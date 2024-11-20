@@ -124,4 +124,8 @@ dependencies {
 
     // Gson
     implementation(libs.gson)
+
+    // Coil - image loading and processing
+    implementation(libs.coil)
+    implementation(libs.coil.compose)
 }

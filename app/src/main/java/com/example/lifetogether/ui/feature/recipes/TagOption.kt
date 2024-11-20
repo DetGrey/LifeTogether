@@ -37,7 +37,7 @@ fun TagOption(
                 shape = RoundedCornerShape(50),
             )
             .clickable(
-                enabled = onClick != null
+                enabled = onClick != null,
             ) {
                 if (onClick != null) {
                     onClick(tag)
