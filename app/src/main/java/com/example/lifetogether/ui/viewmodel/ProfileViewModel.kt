@@ -1,23 +1,16 @@
 package com.example.lifetogether.ui.viewmodel
 
-import android.graphics.Bitmap
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.callback.ByteArrayResultListener
 import com.example.lifetogether.domain.callback.ResultListener
-import com.example.lifetogether.domain.converter.toBitmap
-import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.usecase.image.FetchImageByteArrayUseCase
 import com.example.lifetogether.domain.usecase.user.ChangeNameUseCase
 import com.example.lifetogether.domain.usecase.user.LogoutUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -39,32 +32,34 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    // ---------------------------------------------------------------- BITMAP
-    private val _bitmap = MutableStateFlow<Bitmap?>(null)
-    val bitmap: StateFlow<Bitmap?> = _bitmap.asStateFlow()
-
-    fun setUpProfile(uid: String) {
-        println("ProfileViewModel setUpProfile")
-        viewModelScope.launch {
-            fetchImageByteArrayUseCase.invoke(ImageType.ProfileImage(uid)).collect { result ->
-                println("fetchImageByteArrayUseCase result: $result")
-                when (result) {
-                    is ByteArrayResultListener.Success -> {
-                        _bitmap.value = result.byteArray.toBitmap()
-                    }
-
-                    is ByteArrayResultListener.Failure -> {
-                        _bitmap.value = null
-                        println("Error: ${result.message}")
-                        if (result.message != "No ByteArray found") {
-                            error = result.message
-                            showAlertDialog = true
-                        }
-                    }
-                }
-            }
-        }
-    }
+//    // ---------------------------------------------------------------- BITMAP
+//    private val _bitmap = MutableStateFlow<Bitmap?>(null)
+//    val bitmap: StateFlow<Bitmap?> = _bitmap.asStateFlow()
+//
+//    // ---------------------------------------------------------------- SET UP
+//    var showImageUploadDialog: Boolean by mutableStateOf(false)
+//    fun setUpProfile(uid: String) {
+//        println("ProfileViewModel setUpProfile")
+//        viewModelScope.launch {
+//            fetchImageByteArrayUseCase.invoke(ImageType.ProfileImage(uid)).collect { result ->
+//                println("fetchImageByteArrayUseCase result: $result")
+//                when (result) {
+//                    is ByteArrayResultListener.Success -> {
+//                        _bitmap.value = result.byteArray.toBitmap()
+//                    }
+//
+//                    is ByteArrayResultListener.Failure -> {
+//                        _bitmap.value = null
+//                        println("Error: ${result.message}")
+//                        if (result.message != "No ByteArray found") {
+//                            error = result.message
+//                            showAlertDialog = true
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
 
     // ---------------------------------------------------------------- CONFIRMATION TYPES
     enum class ProfileConfirmationType {
@@ -74,7 +69,6 @@ class ProfileViewModel @Inject constructor(
     var confirmationDialogType: ProfileConfirmationType? by mutableStateOf(null)
 
     var showConfirmationDialog: Boolean by mutableStateOf(false)
-    var showImageUploadDialog: Boolean by mutableStateOf(false)
 
     fun closeConfirmationDialog() {
         showConfirmationDialog = false

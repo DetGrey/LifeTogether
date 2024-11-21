@@ -42,7 +42,7 @@ class FirebaseViewModel @Inject constructor(
     init {
         // Observe changes to user information
         viewModelScope.launch {
-            observeAuthStateUseCase().collect { result ->
+            observeAuthStateUseCase.invoke().collect { result ->
                 println("FirebaseViewModel authState: $result")
                 when (result) {
                     is AuthResultListener.Success -> {

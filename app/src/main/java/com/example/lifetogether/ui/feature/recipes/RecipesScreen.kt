@@ -105,6 +105,8 @@ fun RecipesScreen(
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.height(70.dp))
             }
         }
     }

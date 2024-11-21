@@ -39,6 +39,7 @@ class FirebaseStorageDataSource@Inject constructor() {
             val path: String = when (imageType) {
                 is ImageType.ProfileImage -> "profile"
                 is ImageType.FamilyImage -> "family"
+                is ImageType.RecipeImage -> "recipe"
             } + "/${UUID.randomUUID()}.jpg"
 
             val photoRef = FirebaseStorage.getInstance().reference.child(path)

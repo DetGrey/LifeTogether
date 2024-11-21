@@ -2,7 +2,7 @@ package com.example.lifetogether.domain.converter
 
 fun minToHourMinString(allMinutes: Int): String {
     if (allMinutes <= 0) {
-        return "⏳ 0min"
+        return ""
     }
 
     if (allMinutes < 60) {

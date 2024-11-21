@@ -107,8 +107,12 @@ class RecipesViewModel @Inject constructor(
     ) {
         for (tags in list) {
             for (tag in tags) {
-                if (!tagsList.contains(tag)) {
-                    _tagsList.add(tag)
+                // Capitalize the first letter and make the rest lowercase
+                val normalizedTag = tag.replaceFirstChar { it.uppercase() }
+
+                // Check if the normalized tag is already in the list, ignoring case
+                if (_tagsList.none { it.equals(normalizedTag, ignoreCase = true) }) {
+                    _tagsList.add(normalizedTag)
                 }
             }
         }

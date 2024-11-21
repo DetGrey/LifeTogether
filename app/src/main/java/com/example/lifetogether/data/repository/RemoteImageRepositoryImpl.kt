@@ -14,7 +14,7 @@ class RemoteImageRepositoryImpl @Inject constructor(
     private val firebaseStorageDataSource: FirebaseStorageDataSource,
     private val firestoreDataSource: FirestoreDataSource,
 ) : ImageRepository {
-    override suspend fun uploadImage(
+    suspend fun uploadImage(
         uri: Uri,
         imageType: ImageType,
         context: Context,
@@ -22,7 +22,7 @@ class RemoteImageRepositoryImpl @Inject constructor(
         return firebaseStorageDataSource.uploadPhoto(uri, imageType, context)
     }
 
-    override suspend fun saveImageDownloadUri(
+    suspend fun saveImageDownloadUri(
         url: String,
         imageType: ImageType,
     ): ResultListener {

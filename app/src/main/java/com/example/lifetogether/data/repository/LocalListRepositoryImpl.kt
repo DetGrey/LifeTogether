@@ -89,6 +89,11 @@ class LocalListRepositoryImpl @Inject constructor(
                     // Convert entities to items
                     val itemsList = entities.map { it.toItem(itemType) }
                     println("LocalListRepoImpl after getting items from local data source")
+                    for (item in itemsList) {
+                        if (item.itemName == "Chicken burger") {
+                            println("chicken burger fetched: $item")
+                        }
+                    }
                     println("fetchListItems of specified itemType: $itemsList")
                     ListItemsResultListener.Success(itemsList)
                 } catch (e: Exception) {

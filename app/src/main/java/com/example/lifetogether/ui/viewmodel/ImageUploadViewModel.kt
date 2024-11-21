@@ -28,7 +28,7 @@ class ImageUploadViewModel @Inject constructor(
     var error: String by mutableStateOf("")
 
     private val _imageUri = MutableStateFlow<Uri?>(null)
-    val imageUri: StateFlow<Uri?> = _imageUri.asStateFlow()
+    private val imageUri: StateFlow<Uri?> = _imageUri.asStateFlow()
 
     private val _bitmap = MutableStateFlow<Bitmap?>(null)
     val bitmap: StateFlow<Bitmap?> = _bitmap.asStateFlow()
@@ -51,9 +51,17 @@ class ImageUploadViewModel @Inject constructor(
         viewModelScope.launch {
             val result = uploadImageUseCase.invoke(uri, imageType, context)
             when (result) {
-                is ResultListener.Success -> _uploadState.value = UploadState.Success
+                is ResultListener.Success -> {
+                    _uploadState.value = UploadState.Success
+                }
                 is ResultListener.Failure -> _uploadState.value = UploadState.Failure(result.message)
             }
         }
+    }
+
+    fun resetViewModel() {
+        _imageUri.value = null
+        _bitmap.value = null
+        _uploadState.value = UploadState.Idle
     }
 }

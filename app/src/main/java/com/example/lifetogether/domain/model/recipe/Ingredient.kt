@@ -9,12 +9,3 @@ data class Ingredient(
     override var itemName: String = "",
     override var completed: Boolean = false,
 ) : Completable
-
-fun Ingredient.toMap(): Map<String, Any?> {
-    return mapOf(
-        "amount" to amount,
-        "measureType" to measureType,
-        "itemName" to itemName,
-        "completed" to completed,
-    )
-}

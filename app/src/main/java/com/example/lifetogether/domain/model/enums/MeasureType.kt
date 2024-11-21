@@ -8,7 +8,6 @@ enum class MeasureType(val unit: String) {
     LITER("l"),
     TEASPOON("tsp"),
     TABLESPOON("tbsp"),
-    CUP("cup"),
     PIECE("pc"),
     SLICE("slice"),
     CAN("can"),

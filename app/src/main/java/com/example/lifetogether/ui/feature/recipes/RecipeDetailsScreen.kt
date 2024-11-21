@@ -24,9 +24,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -36,17 +39,20 @@ import com.example.lifetogether.domain.model.enums.MeasureType
 import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.domain.model.recipe.Instruction
 import com.example.lifetogether.domain.model.recipe.Recipe
+import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.model.toggleCompleted
 import com.example.lifetogether.ui.common.add.AddNewString
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.dropdown.Dropdown
+import com.example.lifetogether.ui.common.image.ImageUploadDialog
 import com.example.lifetogether.ui.common.list.CompletableCategoryList
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.textfield.EditableTextField
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
+import com.example.lifetogether.ui.viewmodel.ImageViewModel
 import java.util.Date
 
 @Composable
@@ -56,14 +62,28 @@ fun RecipeDetailsScreen(
     recipeId: String? = null,
 ) {
     val recipeDetailsViewModel: RecipeDetailsViewModel = hiltViewModel()
+    val imageViewModel: ImageViewModel = hiltViewModel()
 
     val userInformation by firebaseViewModel?.userInformation!!.collectAsState()
     val recipe by recipeDetailsViewModel.recipe.collectAsState()
+    val bitmap by imageViewModel.bitmap.collectAsState()
 
     LaunchedEffect(key1 = true) {
         // Perform any one-time initialization or side effect here
-        println("recipedetails screen familyId: ${userInformation?.familyId}")
-        userInformation?.familyId?.let { recipeDetailsViewModel.setUpRecipeDetails(it, recipeId) }
+        println("recipeDetails screen familyId: ${userInformation?.familyId}")
+        userInformation?.familyId?.let { familyId ->
+            recipeDetailsViewModel.setUpRecipeDetails(familyId, recipeId)
+
+            recipeId?.let { recipeId ->
+                imageViewModel.collectImageFlow(
+                    imageType = ImageType.RecipeImage(familyId, recipeId),
+                    onError = {
+                        recipeDetailsViewModel.error = it
+                        recipeDetailsViewModel.showAlertDialog = true
+                    },
+                )
+            }
+        }
     }
 
     LazyColumn(
@@ -81,6 +101,17 @@ fun RecipeDetailsScreen(
                         .height(200.dp)
                         .background(Color.White),
                 ) {
+                    if (bitmap != null) {
+                        Image(
+                            modifier = Modifier
+                                .fillMaxSize(),
+                            bitmap = bitmap!!.asImageBitmap(),
+                            contentDescription = "recipe image",
+                            contentScale = ContentScale.Crop,
+                            alpha = 0.7f,
+                        )
+                    }
+
                     Box(
                         modifier = Modifier
                             .padding(start = 10.dp, top = 10.dp)
@@ -101,13 +132,13 @@ fun RecipeDetailsScreen(
                     Box(
                         modifier = Modifier
                             .padding(end = 10.dp, top = 10.dp)
-                            .height(40.dp)
+                            .height(if (!recipeDetailsViewModel.editMode && recipeId != null) 40.dp else 50.dp)
                             .aspectRatio(1f)
                             .clickable(
                                 enabled = if (recipeDetailsViewModel.editMode) true else if (recipeId != null) true else false,
                             ) {
                                 if (recipeDetailsViewModel.editMode) {
-                                    // TODO add image
+                                    imageViewModel.showImageUploadDialog = true
                                 } else if (recipeId != null) {
                                     recipeDetailsViewModel.showConfirmationDialog = true
                                 }
@@ -116,7 +147,10 @@ fun RecipeDetailsScreen(
                         contentAlignment = Alignment.Center,
                     ) {
                         if (recipeDetailsViewModel.editMode) {
-                            // TODO add image
+                            Text(
+                                text = if (bitmap != null) "Change image" else "Add image",
+                                textAlign = TextAlign.Right,
+                            )
                         } else if (recipeId != null) {
                             Image(
                                 painter = painterResource(id = R.drawable.ic_trashcan_black),
@@ -140,23 +174,21 @@ fun RecipeDetailsScreen(
                         )
                     }
 
-                    if (!recipeDetailsViewModel.editMode) {
-                        Box(
-                            modifier = Modifier
-                                .padding(bottom = 5.dp)
-                                .height(40.dp)
-                                .aspectRatio(1f)
-                                .clickable {
-                                    recipeDetailsViewModel.editMode = true
-                                }
-                                .align(Alignment.BottomEnd),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.ic_edit_black),
-                                contentDescription = "edit icon",
-                            )
-                        }
+                    Box(
+                        modifier = Modifier
+                            .padding(bottom = 5.dp)
+                            .height(40.dp)
+                            .aspectRatio(1f)
+                            .clickable {
+                                recipeDetailsViewModel.toggleEditMode()
+                            }
+                            .align(Alignment.BottomEnd),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_edit_black),
+                            contentDescription = "edit icon",
+                        )
                     }
                 }
             }
@@ -215,7 +247,7 @@ fun RecipeDetailsScreen(
                                     recipeDetailsViewModel.servings = it
                                 },
                                 label = "E.g. 2",
-                                isEditable = recipeDetailsViewModel.editMode, // TODO is this right?
+                                isEditable = recipeDetailsViewModel.editMode,
                                 textStyle = MaterialTheme.typography.bodySmall,
                                 keyboardType = KeyboardType.Number,
                                 imeAction = ImeAction.Done,
@@ -374,6 +406,23 @@ fun RecipeDetailsScreen(
             )
         } else {
             recipeDetailsViewModel.showConfirmationDialog = false
+        }
+    }
+
+    // ---------------------------------------------------------------- IMAGE UPLOAD DIALOG
+    if (imageViewModel.showImageUploadDialog && userInformation != null) {
+        userInformation!!.familyId?.let { familyId ->
+            recipeId?.let { recipeId ->
+                ImageUploadDialog(
+                    onDismiss = { imageViewModel.showImageUploadDialog = false },
+                    onConfirm = { imageViewModel.showImageUploadDialog = false },
+                    dialogTitle = "Upload recipe image",
+                    dialogMessage = "Select an image for your recipe",
+                    imageType = ImageType.RecipeImage(familyId, recipeId),
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Upload image",
+                )
+            }
         }
     }
 

@@ -17,6 +17,7 @@ import com.example.lifetogether.domain.model.GroceryItem
 import com.example.lifetogether.domain.model.GrocerySuggestion
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.recipe.Recipe
+import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.util.Constants
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -96,7 +97,7 @@ class LocalDataSource @Inject constructor(
         id: String,
     ): Flow<Entity> {
         return when (listName) {
-            "recipes" -> flow {
+            Constants.RECIPES_TABLE -> flow {
                 val recipe = recipesDao.getRecipeById(familyId, id)
                 if (recipe != null) {
                     emit(Entity.Recipe(recipe))
@@ -113,7 +114,7 @@ class LocalDataSource @Inject constructor(
         println("LocalDataSource deleteItems()")
         try {
             when (listName) {
-                "grocery-list" -> groceryListDao.deleteItems(itemIds)
+                Constants.GROCERY_TABLE -> groceryListDao.deleteItems(itemIds)
                 else -> {}
             }
             return ResultListener.Success
@@ -122,12 +123,15 @@ class LocalDataSource @Inject constructor(
         }
     }
 
-    // -------------------------------------------------------------- GROCERY LIST
-    suspend fun updateRecipes(items: List<Recipe>) {
+    // -------------------------------------------------------------- RECIPES
+    suspend fun updateRecipes(
+        items: List<Recipe>,
+        byteArrays: Map<String, ByteArray>,
+    ) {
         println("LocalDataSource updateRecipes(): Trying to add firestore data to Room")
 
         println("Recipe list: $items")
-        val recipeEntityList = items.map { item ->
+        var recipeEntityList = items.map { item ->
             RecipeEntity(
                 id = item.id ?: "",
                 familyId = item.familyId,
@@ -142,15 +146,35 @@ class LocalDataSource @Inject constructor(
                 tags = item.tags,
             )
         }
-        println("recipeEntityList list: $recipeEntityList")
+
+        if (byteArrays.isNotEmpty()) {
+            recipeEntityList = recipeEntityList.map { item ->
+                item.copy(imageData = if (byteArrays[item.id] != null) byteArrays[item.id] else null)
+            }
+        }
+
+//        println("recipeEntityList list: ${recipeEntityList.map { listOf(it.itemName, it.tags) }}")
 
         // Fetch the current items from the Room database
         val currentItems = recipesDao.getItems(items[0].familyId).first()
+
+        for (item in currentItems) {
+            if (item.itemName == "Chicken burger") {
+                println("chicken burger currentitems: $item")
+            }
+        }
+        for (item in recipeEntityList) {
+            if (item.itemName == "Chicken burger") {
+                println("chicken burger recipeEntityList: $item")
+            }
+        }
 
         // Determine the items to be inserted or updated
         val itemsToUpdate = recipeEntityList.filter { newItem ->
             currentItems.none { currentItem -> newItem.id == currentItem.id && newItem == currentItem }
         }
+
+        println("recipeEntityList itemsToUpdate: ${itemsToUpdate.map { listOf(it.itemName, it.tags) }}")
 
         // Determine the items to be deleted
         val itemsToDelete = currentItems.filter { currentItem ->
@@ -245,11 +269,16 @@ class LocalDataSource @Inject constructor(
         return userInformationDao.getItems(uid)
     }
 
-    fun getImageByteArray(uid: String): Flow<ByteArray?> {
-        println("LocalDataSource getImageByteArray")
-        return userInformationDao.getItems(uid).map { item ->
-            println("LocalDataSource getImageByteArray item: $item")
-            item?.imageData
+    fun getImageByteArray(imageType: ImageType): Flow<ByteArray?> {
+        println("LocalDataSource getImageByteArray imageType: $imageType")
+        return when (imageType) {
+            is ImageType.ProfileImage -> userInformationDao.getImageByteArray(imageType.uid)
+
+            is ImageType.FamilyImage -> {
+                flowOf() // TODO
+            }
+
+            is ImageType.RecipeImage -> recipesDao.getImageByteArray(imageType.familyId, imageType.recipeId)
         }
     }
 

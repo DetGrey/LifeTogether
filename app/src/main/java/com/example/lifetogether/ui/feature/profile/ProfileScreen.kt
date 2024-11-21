@@ -42,6 +42,7 @@ import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
+import com.example.lifetogether.ui.viewmodel.ImageViewModel
 import com.example.lifetogether.ui.viewmodel.ProfileViewModel
 
 @Composable
@@ -50,13 +51,23 @@ fun ProfileScreen(
     firebaseViewModel: FirebaseViewModel? = null,
 ) {
     val profileViewModel: ProfileViewModel = hiltViewModel()
+    val imageViewModel: ImageViewModel = hiltViewModel()
+
     val userInformation by firebaseViewModel?.userInformation!!.collectAsState()
-    val bitmap by profileViewModel.bitmap.collectAsState()
+    val bitmap by imageViewModel.bitmap.collectAsState()
 
     LaunchedEffect(key1 = true) {
         // Perform any one-time initialization or side effect here
-        println("GroceryList familyId: ${userInformation?.uid}")
-        userInformation?.uid?.let { profileViewModel.setUpProfile(it) }
+        println("ProfileScreen uid: ${userInformation?.uid}")
+        userInformation?.uid?.let { uid ->
+            imageViewModel.collectImageFlow(
+                imageType = ImageType.ProfileImage(uid),
+                onError = {
+                    profileViewModel.error = it
+                    profileViewModel.showAlertDialog = true
+                },
+            )
+        }
     }
 
     Box(
@@ -130,7 +141,7 @@ fun ProfileScreen(
                                 .size(50.dp),
                             contentAlignment = Alignment.Center,
                         ) {
-                            AddButton(onClick = { profileViewModel.showImageUploadDialog = true })
+                            AddButton(onClick = { imageViewModel.showImageUploadDialog = true })
                         }
                     }
                 }
@@ -206,64 +217,64 @@ fun ProfileScreen(
                 Spacer(modifier = Modifier.height(30.dp))
             }
         }
+    }
+    // ------------------------------------------------------ DIALOGS
+    if (profileViewModel.showConfirmationDialog) {
+        when (profileViewModel.confirmationDialogType) {
+            ProfileViewModel.ProfileConfirmationType.LOGOUT -> ConfirmationDialog(
+                onDismiss = { profileViewModel.closeConfirmationDialog() },
+                onConfirm = {
+                    profileViewModel.logout(
+                        onSuccess = {
+                            firebaseViewModel?.onSignOut()
+                            profileViewModel.closeConfirmationDialog()
+                            appNavigator?.navigateToHome()
+                        },
+                    )
+                },
+                dialogTitle = "Logout",
+                dialogMessage = "Are you sure you want to logout?",
+                dismissButtonMessage = "Cancel",
+                confirmButtonMessage = "Logout",
+            )
 
-        // ------------------------------------------------------ DIALOGS
-        if (profileViewModel.showConfirmationDialog) {
-            when (profileViewModel.confirmationDialogType) {
-                ProfileViewModel.ProfileConfirmationType.LOGOUT -> ConfirmationDialog(
-                    onDismiss = { profileViewModel.closeConfirmationDialog() },
-                    onConfirm = {
-                        profileViewModel.logout(
-                            onSuccess = {
-                                firebaseViewModel?.onSignOut()
-                                profileViewModel.closeConfirmationDialog()
-                                appNavigator?.navigateToHome()
-                            },
-                        )
-                    },
-                    dialogTitle = "Logout",
-                    dialogMessage = "Are you sure you want to logout?",
-                    dismissButtonMessage = "Cancel",
-                    confirmButtonMessage = "Logout",
-                )
+            ProfileViewModel.ProfileConfirmationType.NAME -> ConfirmationDialogWithTextField(
+                onDismiss = { profileViewModel.closeConfirmationDialog() },
+                onConfirm = {
+                    userInformation?.uid?.let { profileViewModel.changeName(it) }
+                },
+                dialogTitle = "Change name",
+                dialogMessage = "Please enter your new name",
+                dismissButtonMessage = "Cancel",
+                confirmButtonMessage = "Change name",
+                textValue = profileViewModel.newName,
+                onTextValueChange = { profileViewModel.newName = it },
+                capitalization = true,
+            )
 
-                ProfileViewModel.ProfileConfirmationType.NAME -> ConfirmationDialogWithTextField(
-                    onDismiss = { profileViewModel.closeConfirmationDialog() },
-                    onConfirm = {
-                        userInformation?.uid?.let { profileViewModel.changeName(it) }
-                    },
-                    dialogTitle = "Change name",
-                    dialogMessage = "Please enter your new name",
-                    dismissButtonMessage = "Cancel",
-                    confirmButtonMessage = "Change name",
-                    textValue = profileViewModel.newName,
-                    onTextValueChange = { profileViewModel.newName = it },
-                    capitalization = true,
-                )
+            ProfileViewModel.ProfileConfirmationType.PASSWORD -> ConfirmationDialogDetails(
+                dialogTitle = "Change password",
+                dialogMessage = "Are you sure you want change password?", // TODO
+                confirmButtonMessage = "Change password",
+                onConfirm = {}, // TODO
+            )
 
-                ProfileViewModel.ProfileConfirmationType.PASSWORD -> ConfirmationDialogDetails(
-                    dialogTitle = "Change password",
-                    dialogMessage = "Are you sure you want change password?", // TODO
-                    confirmButtonMessage = "Change password",
-                    onConfirm = {}, // TODO
-                )
-
-                null -> {}
-            }
+            null -> {}
         }
+    }
 
-        if (profileViewModel.showImageUploadDialog && userInformation != null) {
-            userInformation!!.uid?.let {
-                ImageUploadDialog(
-                    onDismiss = { profileViewModel.showImageUploadDialog = false },
-                    onConfirm = { profileViewModel.showImageUploadDialog = false },
-                    dialogTitle = "Upload profile photo",
-                    dialogMessage = "Select your new profile photo",
-                    imageType = ImageType.ProfileImage(it),
-                    dismissButtonMessage = "Cancel",
-                    confirmButtonMessage = "Upload photo",
-                )
-            }
+    // ---------------------------------------------------------------- IMAGE UPLOAD DIALOG
+    if (imageViewModel.showImageUploadDialog && userInformation != null) {
+        userInformation!!.uid?.let {
+            ImageUploadDialog(
+                onDismiss = { imageViewModel.showImageUploadDialog = false },
+                onConfirm = { imageViewModel.showImageUploadDialog = false },
+                dialogTitle = "Upload profile photo",
+                dialogMessage = "Select your new profile photo",
+                imageType = ImageType.ProfileImage(it),
+                dismissButtonMessage = "Cancel",
+                confirmButtonMessage = "Upload photo",
+            )
         }
     }
 

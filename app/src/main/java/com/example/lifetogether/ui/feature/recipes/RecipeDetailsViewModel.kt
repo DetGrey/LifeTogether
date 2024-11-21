@@ -9,13 +9,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.callback.ItemResultListener
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.callback.StringResultListener
+import com.example.lifetogether.domain.converter.toMutableRecipe
+import com.example.lifetogether.domain.converter.toRecipe
 import com.example.lifetogether.domain.model.Completable
 import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.domain.model.recipe.Instruction
 import com.example.lifetogether.domain.model.recipe.MutableRecipe
 import com.example.lifetogether.domain.model.recipe.Recipe
-import com.example.lifetogether.domain.model.recipe.toMutableRecipe
-import com.example.lifetogether.domain.model.recipe.toRecipe
 import com.example.lifetogether.domain.usecase.item.DeleteItemUseCase
 import com.example.lifetogether.domain.usecase.item.FetchItemByIdUseCase
 import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
@@ -54,6 +54,13 @@ class RecipeDetailsViewModel @Inject constructor(
     // ---------------------------------------------------------------- editMode
     var editMode: Boolean by mutableStateOf(false)
 
+    fun toggleEditMode() {
+        if (editMode) {
+            updateRecipeFlow(_originalRecipe.value.toRecipe())
+        }
+        editMode = !editMode
+    }
+
     // ---------------------------------------------------------------- Family Id
     private var familyIdIsSet = false
     var familyId: String? = null
@@ -82,8 +89,20 @@ class RecipeDetailsViewModel @Inject constructor(
     }
 
     // ---------------------------------------------------------------- RECIPE
+    private val _originalRecipe = MutableStateFlow<MutableRecipe>(MutableRecipe())
     private val _recipe = MutableStateFlow<MutableRecipe>(MutableRecipe())
     val recipe: StateFlow<MutableRecipe> = _recipe.asStateFlow()
+
+    private fun updateRecipeFlow(recipe: Recipe) {
+        println("_recipe old value: ${_recipe.value}")
+        _originalRecipe.value = recipe.toMutableRecipe()
+        _recipe.value = recipe.toMutableRecipe()
+        println("recipe new value: ${this@RecipeDetailsViewModel.recipe.value}")
+        preparationTimeMin = recipe.preparationTimeMin.toString()
+        servings = recipe.servings.toString()
+        tags = recipe.tags.joinToString(" ")
+        ingredientsByServings()
+    }
 
     private fun fetchRecipe(
         recipeId: String,
@@ -93,15 +112,8 @@ class RecipeDetailsViewModel @Inject constructor(
                 println("fetchItemByIdUseCase result: $result")
                 when (result) {
                     is ItemResultListener.Success -> {
-                        // Filter and map the result.listItems to only include GroceryItem instances
                         if (result.item is Recipe) {
-                            println("_recipe old value: ${_recipe.value}")
-                            _recipe.value = result.item.toMutableRecipe()
-                            println("recipe new value: ${this@RecipeDetailsViewModel.recipe.value}")
-                            preparationTimeMin = result.item.preparationTimeMin.toString()
-                            servings = result.item.servings.toString()
-                            tags = result.item.tags.joinToString(" ")
-                            ingredientsByServings()
+                            updateRecipeFlow(result.item)
                         } else {
                             println("Error: No recipe found")
                             error = "No recipe found"
@@ -167,7 +179,7 @@ class RecipeDetailsViewModel @Inject constructor(
             _recipe.value.preparationTimeMin = preparationTimeMin.toInt()
         }
         if (tags.isNotEmpty()) {
-            _recipe.value.tags = tags.split(" ")
+            _recipe.value.tags = tags.lowercase().split(" ")
         }
 
         if (recipe.value.itemName.isEmpty()) {
@@ -206,8 +218,6 @@ class RecipeDetailsViewModel @Inject constructor(
 
                 if (result is StringResultListener.Success) {
                     onSuccess()
-//                    _recipe.value.id = result.string
-//                    editMode = false
                 } else if (result is StringResultListener.Failure) {
                     println("Error: ${result.message}")
                     error = result.message

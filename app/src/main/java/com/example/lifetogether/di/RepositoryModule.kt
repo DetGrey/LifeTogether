@@ -1,5 +1,6 @@
 package com.example.lifetogether.di
 
+import com.example.lifetogether.data.repository.LocalImageRepositoryImpl
 import com.example.lifetogether.data.repository.LocalListRepositoryImpl
 import com.example.lifetogether.data.repository.LocalUserRepositoryImpl
 import com.example.lifetogether.data.repository.RemoteAdminRepositoryImpl
@@ -43,6 +44,11 @@ abstract class RepositoryModule {
     abstract fun bindLocalUserRepository(
         localUserRepositoryImpl: LocalUserRepositoryImpl,
     ): UserRepository
+
+    @Binds
+    abstract fun bindLocalImageRepository(
+        localImageRepositoryImpl: LocalImageRepositoryImpl,
+    ): ImageRepository
 
     @Binds
     abstract fun bindRemoteImageRepository(
