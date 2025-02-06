@@ -22,6 +22,22 @@ class RemoteImageRepositoryImpl @Inject constructor(
         return firebaseStorageDataSource.uploadPhoto(uri, imageType, context)
     }
 
+    suspend fun deleteImage(
+        imageType: ImageType,
+    ): ResultListener {
+        return when (val urlResult = firestoreDataSource.getImageUrl(imageType)) {
+            is StringResultListener.Success -> {
+                firebaseStorageDataSource.deleteImage(urlResult.string)
+            }
+
+            is StringResultListener.Failure -> {
+                ResultListener.Failure(urlResult.message)
+            }
+
+            null -> ResultListener.Success // Means that there is no image to delete
+        }
+    }
+
     suspend fun saveImageDownloadUri(
         url: String,
         imageType: ImageType,

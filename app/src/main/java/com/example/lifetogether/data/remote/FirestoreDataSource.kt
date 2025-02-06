@@ -523,6 +523,34 @@ class FirestoreDataSource@Inject constructor() {
     }
 
     // ------------------------------------------------------------------------------- IMAGES
+    suspend fun getImageUrl(
+        imageType: ImageType,
+    ): StringResultListener? {
+        println("getImageUrl imageType: $imageType")
+        try {
+            when (imageType) {
+                is ImageType.ProfileImage -> {
+                    val documentReference = db.collection("users").document(imageType.uid).get().await()
+                    return documentReference.getString("imageUrl")
+                        ?.let { StringResultListener.Success(it) }
+                }
+                is ImageType.FamilyImage -> {
+                    val documentReference = db.collection("families").document(imageType.familyId).get().await()
+                    return documentReference.getString("imageUrl")
+                        ?.let { StringResultListener.Success(it) }
+                }
+                is ImageType.RecipeImage -> {
+                    val documentReference = db.collection("recipes").document(imageType.recipeId).get().await()
+                    return documentReference.getString("imageUrl")
+                        ?.let { StringResultListener.Success(it) }
+                }
+            }
+        } catch (e: Exception) {
+            println("Error: ${e.message}")
+            return StringResultListener.Failure("Error: ${e.message}")
+        }
+    }
+
     suspend fun saveImageDownloadUrl(
         url: String,
         imageType: ImageType,

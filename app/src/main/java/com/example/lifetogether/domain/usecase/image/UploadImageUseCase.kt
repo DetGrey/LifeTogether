@@ -23,8 +23,14 @@ class UploadImageUseCase @Inject constructor(
             is StringResultListener.Success -> {
                 val url = firebaseStorageResult.string
                 println("UploadImageUseCase image download url: $url")
-                val firestoreResult = remoteImageRepositoryImpl.saveImageDownloadUri(url, imageType)
-                return firestoreResult
+                val firestoreDeleteOldImageResult = remoteImageRepositoryImpl.deleteImage(imageType)
+
+                val firestoreNewUrlResult = remoteImageRepositoryImpl.saveImageDownloadUri(url, imageType)
+
+                if (firestoreDeleteOldImageResult is ResultListener.Failure && firestoreNewUrlResult is ResultListener.Success) {
+                    return firestoreDeleteOldImageResult
+                }
+                return firestoreNewUrlResult
             }
             is StringResultListener.Failure -> {
                 return ResultListener.Failure(firebaseStorageResult.message)

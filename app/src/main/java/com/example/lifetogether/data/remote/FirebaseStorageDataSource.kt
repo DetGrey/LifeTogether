@@ -7,6 +7,7 @@ import android.net.Uri
 import coil.ImageLoader
 import coil.request.ImageRequest
 import com.example.lifetogether.domain.callback.ByteArrayResultListener
+import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.callback.StringResultListener
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.google.firebase.storage.FirebaseStorage
@@ -105,6 +106,16 @@ class FirebaseStorageDataSource@Inject constructor() {
 
             val result = imageLoader.execute(request)
             (result.drawable as? BitmapDrawable)?.bitmap
+        }
+    }
+
+    suspend fun deleteImage(url: String): ResultListener {
+        return try {
+            val storageRef = FirebaseStorage.getInstance().getReferenceFromUrl(url)
+            storageRef.delete().await()
+            ResultListener.Success
+        } catch (e: Exception) {
+            ResultListener.Failure("Error: ${e.message}")
         }
     }
 }
