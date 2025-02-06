@@ -21,6 +21,10 @@ class AppNavigator(private val navController: NavController) : Navigator {
         navController.navigate(AppRoutes.PROFILE_SCREEN)
     }
 
+    override fun navigateToFamily() {
+        navController.navigate(AppRoutes.FAMILY_SCREEN)
+    }
+
     override fun navigateToSettings() {
         navController.navigate(AppRoutes.SETTINGS_SCREEN)
     }

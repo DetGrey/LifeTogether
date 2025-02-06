@@ -32,35 +32,6 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-//    // ---------------------------------------------------------------- BITMAP
-//    private val _bitmap = MutableStateFlow<Bitmap?>(null)
-//    val bitmap: StateFlow<Bitmap?> = _bitmap.asStateFlow()
-//
-//    // ---------------------------------------------------------------- SET UP
-//    var showImageUploadDialog: Boolean by mutableStateOf(false)
-//    fun setUpProfile(uid: String) {
-//        println("ProfileViewModel setUpProfile")
-//        viewModelScope.launch {
-//            fetchImageByteArrayUseCase.invoke(ImageType.ProfileImage(uid)).collect { result ->
-//                println("fetchImageByteArrayUseCase result: $result")
-//                when (result) {
-//                    is ByteArrayResultListener.Success -> {
-//                        _bitmap.value = result.byteArray.toBitmap()
-//                    }
-//
-//                    is ByteArrayResultListener.Failure -> {
-//                        _bitmap.value = null
-//                        println("Error: ${result.message}")
-//                        if (result.message != "No ByteArray found") {
-//                            error = result.message
-//                            showAlertDialog = true
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//    }
-
     // ---------------------------------------------------------------- CONFIRMATION TYPES
     enum class ProfileConfirmationType {
         LOGOUT, NAME, PASSWORD
@@ -85,7 +56,8 @@ class ProfileViewModel @Inject constructor(
                 println("ProfileViewModel: Logout successful")
                 onSuccess()
             } else if (result is ResultListener.Failure) {
-                // TODO
+                error = result.message
+                showAlertDialog = true
             }
         }
     }
@@ -93,18 +65,23 @@ class ProfileViewModel @Inject constructor(
     // ---------------------------------------------------------------- CHANGE NAME
     var newName: String by mutableStateOf("")
 
-    fun changeName(uid: String) {
+    fun changeName(
+        uid: String,
+        familyId: String?,
+    ) {
         val name = newName
         if (name.isEmpty()) {
             return
         }
 
         viewModelScope.launch {
-            val result = changeNameUseCase.invoke(uid, name)
+            val result = changeNameUseCase.invoke(uid, familyId, name)
             if (result is ResultListener.Success) {
                 closeConfirmationDialog()
             } else if (result is ResultListener.Failure) {
-                // TODO
+                closeConfirmationDialog()
+                error = result.message
+                showAlertDialog = true
             }
         }
     }

@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -124,6 +125,7 @@ fun ProfileScreen(
                                         .fillMaxSize(),
                                     bitmap = bitmap!!.asImageBitmap(),
                                     contentDescription = "profile picture",
+                                    contentScale = ContentScale.Crop,
                                 )
                             } else {
                                 Image(
@@ -158,8 +160,8 @@ fun ProfileScreen(
 
                     ProfileDetails(
                         icon = Icon(
-                            resId = R.drawable.ic_profile, // TODO
-                            description = "", // TODO
+                            resId = R.drawable.ic_profile,
+                            description = "person icon",
                         ),
                         title = "Name",
                         value = userInformation?.name ?: "",
@@ -170,16 +172,16 @@ fun ProfileScreen(
                     )
                     ProfileDetails(
                         icon = Icon(
-                            resId = R.drawable.ic_profile, // TODO
-                            description = "", // TODO
+                            resId = R.drawable.ic_email_black,
+                            description = "at sign icon",
                         ),
                         title = "Email",
                         value = userInformation?.email ?: "",
                     )
                     ProfileDetails(
                         icon = Icon(
-                            resId = R.drawable.ic_profile, // TODO
-                            description = "", // TODO
+                            resId = R.drawable.ic_cake_black,
+                            description = "cake icon",
                         ),
                         title = "Birthday",
                         value = userInformation?.birthday?.let { date ->
@@ -188,8 +190,8 @@ fun ProfileScreen(
                     )
                     ProfileDetails(
                         icon = Icon(
-                            resId = R.drawable.ic_profile, // TODO
-                            description = "", // TODO
+                            resId = R.drawable.ic_password_black,
+                            description = "password icon",
                         ),
                         title = "Password",
                         value = "Change password",
@@ -200,7 +202,7 @@ fun ProfileScreen(
                     )
                     ProfileDetails(
                         icon = Icon(
-                            resId = R.drawable.ic_logout,
+                            resId = R.drawable.ic_logout_black,
                             description = "logout icon",
                         ),
                         title = "Logout",
@@ -241,7 +243,9 @@ fun ProfileScreen(
             ProfileViewModel.ProfileConfirmationType.NAME -> ConfirmationDialogWithTextField(
                 onDismiss = { profileViewModel.closeConfirmationDialog() },
                 onConfirm = {
-                    userInformation?.uid?.let { profileViewModel.changeName(it) }
+                    userInformation?.uid?.let {
+                        profileViewModel.changeName(it, userInformation?.familyId)
+                    }
                 },
                 dialogTitle = "Change name",
                 dialogMessage = "Please enter your new name",

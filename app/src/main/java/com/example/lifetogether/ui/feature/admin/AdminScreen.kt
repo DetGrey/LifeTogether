@@ -51,7 +51,7 @@ fun AdminScreen(
             item {
                 TopBar(
                     leftIcon = Icon(
-                        resId = R.drawable.ic_profile_picture,
+                        resId = R.drawable.ic_profile_picture_black,
                         description = "profile picture icon",
                     ),
                     onLeftClick = {

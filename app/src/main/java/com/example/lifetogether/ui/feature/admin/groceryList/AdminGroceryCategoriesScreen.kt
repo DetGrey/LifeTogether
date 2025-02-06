@@ -26,7 +26,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lifetogether.R
@@ -38,7 +37,6 @@ import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 
 @Composable
@@ -168,13 +166,5 @@ fun AdminGroceryCategoriesScreen(
     if (groceryCategoriesViewModel.showAlertDialog) {
         ErrorAlertDialog(groceryCategoriesViewModel.error)
         groceryCategoriesViewModel.toggleAlertDialog()
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun AdminGroceryListScreenPreview() {
-    LifeTogetherTheme {
-        AdminGroceryCategoriesScreen()
     }
 }

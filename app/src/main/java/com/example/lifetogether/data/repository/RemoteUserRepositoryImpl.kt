@@ -52,16 +52,21 @@ class RemoteUserRepositoryImpl @Inject constructor(
         return firebaseAuthDataSource.logout()
     }
 
-    suspend fun changeName(uid: String, newName: String): ResultListener {
-        return firestoreDataSource.changeName(uid, newName)
+    suspend fun changeName(
+        uid: String,
+        familyId: String?,
+        newName: String,
+    ): ResultListener {
+        return firestoreDataSource.changeName(uid, familyId, newName)
     }
 
     suspend fun joinFamily(
         familyId: String,
         uid: String,
+        name: String,
     ): ResultListener {
         println("RemoteUserRepositoryImpl joinFamily()")
-        when (val result = firestoreDataSource.joinFamily(familyId, uid)) {
+        when (val result = firestoreDataSource.joinFamily(familyId, uid, name)) {
             is ResultListener.Success -> {
                 val updateResult = firestoreDataSource.updateFamilyId(uid, familyId)
                 return updateResult
@@ -72,9 +77,12 @@ class RemoteUserRepositoryImpl @Inject constructor(
         }
     }
 
-    suspend fun createNewFamily(uid: String): ResultListener {
+    suspend fun createNewFamily(
+        uid: String,
+        name: String,
+    ): ResultListener {
         println("RemoteUserRepositoryImpl createNewFamily()")
-        when (val result = firestoreDataSource.createNewFamily(uid)) {
+        when (val result = firestoreDataSource.createNewFamily(uid, name)) {
             is StringResultListener.Success -> {
                 val updateResult = firestoreDataSource.updateFamilyId(uid, result.string)
                 return updateResult
@@ -99,5 +107,12 @@ class RemoteUserRepositoryImpl @Inject constructor(
                 return ResultListener.Failure(result.message)
             }
         }
+    }
+
+    suspend fun deleteFamily(
+        familyId: String,
+    ): ResultListener {
+        println("RemoteUserRepositoryImpl deleteFamily()")
+        return firestoreDataSource.deleteFamily(familyId)
     }
 }

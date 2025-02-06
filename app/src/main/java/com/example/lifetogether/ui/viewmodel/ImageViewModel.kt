@@ -33,7 +33,7 @@ class ImageViewModel @Inject constructor(
         imageType: ImageType,
         onError: (String) -> Unit,
     ) {
-        println("ProfileViewModel setUpProfile")
+        println("ImageViewModel collectImageFlow")
         viewModelScope.launch {
             fetchImageByteArrayUseCase.invoke(imageType).collect { result ->
                 println("fetchImageByteArrayUseCase result: $result")

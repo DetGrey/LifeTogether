@@ -2,6 +2,7 @@ package com.example.lifetogether.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -10,6 +11,7 @@ import androidx.navigation.navArgument
 import com.example.lifetogether.ui.feature.admin.AdminScreen
 import com.example.lifetogether.ui.feature.admin.groceryList.AdminGroceryCategoriesScreen
 import com.example.lifetogether.ui.feature.admin.groceryList.AdminGrocerySuggestionsScreen
+import com.example.lifetogether.ui.feature.family.FamilyScreen
 import com.example.lifetogether.ui.feature.groceryList.GroceryListScreen
 import com.example.lifetogether.ui.feature.home.HomeScreen
 import com.example.lifetogether.ui.feature.login.LoginScreen
@@ -27,8 +29,8 @@ fun NavHost(
     val appNavigator = AppNavigator(navController)
     val firebaseViewModel: FirebaseViewModel = hiltViewModel()
 
-    val userInformation = firebaseViewModel.userInformation.collectAsState(initial = null)
-    when (val familyId = userInformation.value?.familyId) {
+    val userInformation by firebaseViewModel.userInformation.collectAsState()
+    when (val familyId = userInformation?.familyId) {
         is String -> {
             firebaseViewModel.observeFirestoreFamilyData(familyId)
         }
@@ -47,12 +49,17 @@ fun NavHost(
         composable(AppRoutes.ADMIN_GROCERY_SUGGESTIONS_SCREEN) {
             AdminGrocerySuggestionsScreen(appNavigator, firebaseViewModel)
         }
+
         composable(AppRoutes.HOME_SCREEN) {
             HomeScreen(appNavigator, firebaseViewModel)
         }
 
         composable(AppRoutes.PROFILE_SCREEN) {
             ProfileScreen(appNavigator, firebaseViewModel)
+        }
+
+        composable(AppRoutes.FAMILY_SCREEN) {
+            FamilyScreen(appNavigator, firebaseViewModel)
         }
 
         composable(AppRoutes.SETTINGS_SCREEN) {

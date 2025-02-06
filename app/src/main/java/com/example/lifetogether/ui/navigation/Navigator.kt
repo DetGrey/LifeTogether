@@ -6,6 +6,7 @@ interface Navigator {
     fun navigateToAdminGrocerySuggestions()
     fun navigateToHome()
     fun navigateToProfile()
+    fun navigateToFamily()
     fun navigateToSettings()
     fun navigateToLogin()
     fun navigateToSignUp()

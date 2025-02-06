@@ -27,25 +27,54 @@ class FirebaseStorageDataSource@Inject constructor() {
         return try {
             println("FirebaseStorageDataSource uploadPhoto uri: $uri")
 
-            // Resize the image using Coil
-            val resizedBitmap = resizeImageWithCoil(context, uri, 500, 500)
+            var path = ""
+            var maxWidth = 600
+            var maxHeight = 600
+            var needsResize = true
+            val type = ".jpg"
 
-            // Convert the resized Bitmap to ByteArray
-            val stream = ByteArrayOutputStream()
-            resizedBitmap?.compress(Bitmap.CompressFormat.PNG, 80, stream)
-            val byteArray = stream.toByteArray()
+            when (imageType) {
+                is ImageType.ProfileImage -> {
+                    path = "profile"
+                }
+                is ImageType.FamilyImage -> {
+                    path = "family"
+                    maxWidth = 1200
+                }
+                is ImageType.RecipeImage -> {
+                    path = "recipe"
+                    maxWidth = 1200
+                }
+//                is ImageType.GalleryImage -> {
+//                    twoVersions = true
+//                    path = "gallery"
+//                    var needsResize = false
+//                    type = ".png"
+//                    // TODO make low-quality (50-70% jpg) and high-quality (100% png) versions like:
+//                        // val previewPath = "previews/$path"
+//                        // val fullPath = "full/$path"
+//
+//                }
+            }
+
+            // Resize image only if needed
+            val byteArray = if (needsResize) {
+                val resizedBitmap = resizeImageWithCoil(context, uri, maxWidth, maxHeight)
+
+                ByteArrayOutputStream().apply {
+                    resizedBitmap?.compress(Bitmap.CompressFormat.JPEG, 70, this)
+                }.toByteArray()
+            } else {
+                context.contentResolver.openInputStream(uri)?.readBytes() ?: ByteArray(0)
+            }
 
             // Create a reference to Firebase Storage
-            val path: String = when (imageType) {
-                is ImageType.ProfileImage -> "profile"
-                is ImageType.FamilyImage -> "family"
-                is ImageType.RecipeImage -> "recipe"
-            } + "/${UUID.randomUUID()}.jpg"
+            path += "/${UUID.randomUUID()}$type"
 
             val photoRef = FirebaseStorage.getInstance().reference.child(path)
 
             // Upload the ByteArray to Firebase Storage
-            val uploadTask = photoRef.putBytes(byteArray).await()
+            photoRef.putBytes(byteArray).await()
 
             // Get the download URL
             val downloadUrl = photoRef.downloadUrl.await()

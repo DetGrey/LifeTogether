@@ -4,14 +4,13 @@ import com.example.lifetogether.data.repository.RemoteUserRepositoryImpl
 import com.example.lifetogether.domain.callback.ResultListener
 import javax.inject.Inject
 
-data class CreateNewFamilyUseCase @Inject constructor(
+data class DeleteFamilyUseCase @Inject constructor(
     private val remoteUserRepositoryImpl: RemoteUserRepositoryImpl,
 ) {
     suspend operator fun invoke(
-        uid: String,
-        name: String,
+        familyId: String,
     ): ResultListener {
-        println("CreateNewFamilyUseCase invoked")
-        return remoteUserRepositoryImpl.createNewFamily(uid, name)
+        println("DeleteFamilyUseCase invoked")
+        return remoteUserRepositoryImpl.deleteFamily(familyId)
     }
 }

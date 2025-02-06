@@ -1,5 +1,6 @@
 package com.example.lifetogether.ui.feature.home
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,23 +17,29 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lifetogether.BuildConfig
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.UserInformation
+import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.LoveButton
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
+import com.example.lifetogether.ui.viewmodel.ImageViewModel
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -40,10 +47,26 @@ fun HomeScreen(
     appNavigator: AppNavigator? = null,
     firebaseViewModel: FirebaseViewModel? = null,
 ) {
+    val imageViewModel: ImageViewModel = hiltViewModel()
+    val bitmap by imageViewModel.bitmap.collectAsState()
+
     val userInformationState by firebaseViewModel?.userInformation!!.collectAsState()
 
     if (userInformationState?.familyId == BuildConfig.ADMIN) {
         appNavigator?.navigateToAdmin()
+    }
+
+    LaunchedEffect(key1 = true) {
+        // Perform any one-time initialization or side effect here
+        println("HomeScreen familyId: ${userInformationState?.familyId}")
+
+        userInformationState?.familyId?.let { familyId ->
+            imageViewModel.collectImageFlow(
+                imageType = ImageType.FamilyImage(familyId),
+                onError = {
+                },
+            )
+        }
     }
 
     Box(
@@ -59,7 +82,7 @@ fun HomeScreen(
             item {
                 TopBar(
                     leftIcon = Icon(
-                        resId = R.drawable.ic_profile_picture,
+                        resId = R.drawable.ic_profile_picture_black,
                         description = "profile picture icon",
                     ),
                     onLeftClick = {
@@ -90,6 +113,15 @@ fun HomeScreen(
                         .background(color = MaterialTheme.colorScheme.onBackground),
                 ) {
                     // TODO add image
+                    if (bitmap != null) {
+                        Image(
+                            modifier = Modifier
+                                .fillMaxSize(),
+                            bitmap = bitmap!!.asImageBitmap(),
+                            contentDescription = "family image",
+                            contentScale = ContentScale.Crop,
+                        )
+                    }
                 }
             }
 

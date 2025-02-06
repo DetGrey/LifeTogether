@@ -10,8 +10,9 @@ data class JoinFamilyUseCase @Inject constructor(
     suspend operator fun invoke(
         familyId: String,
         uid: String,
+        name: String,
     ): ResultListener {
         println("JoinFamilyUseCase invoked")
-        return remoteUserRepositoryImpl.joinFamily(familyId, uid)
+        return remoteUserRepositoryImpl.joinFamily(familyId, uid, name)
     }
 }

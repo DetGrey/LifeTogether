@@ -9,8 +9,9 @@ class ChangeNameUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(
         uid: String,
+        familyId: String?,
         newName: String,
     ): ResultListener {
-        return remoteUserRepositoryImpl.changeName(uid, newName)
+        return remoteUserRepositoryImpl.changeName(uid, familyId, newName)
     }
 }

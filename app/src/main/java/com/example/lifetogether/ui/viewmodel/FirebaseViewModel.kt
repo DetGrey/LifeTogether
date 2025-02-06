@@ -10,6 +10,7 @@ import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.enums.UpdateType
 import com.example.lifetogether.domain.usecase.observers.ObserveAuthStateUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveCategoriesUseCase
+import com.example.lifetogether.domain.usecase.observers.ObserveFamilyInformationUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveGroceryListUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveGrocerySuggestionsUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveRecipesUseCase
@@ -32,6 +33,7 @@ class FirebaseViewModel @Inject constructor(
     private val observeCategoriesUseCase: ObserveCategoriesUseCase,
     private val observeGrocerySuggestionsUseCase: ObserveGrocerySuggestionsUseCase,
     private val observeUserInformationUseCase: ObserveUserInformationUseCase,
+    private val observeFamilyInformationUseCase: ObserveFamilyInformationUseCase,
     private val removeSavedUserInformationUseCase: RemoveSavedUserInformationUseCase,
 ) : ViewModel() {
     // ---------------------------------------------- USER
@@ -82,6 +84,11 @@ class FirebaseViewModel @Inject constructor(
         println("FirebaseViewModel observeFirestoreFamilyData() familyId: $familyId")
 
         viewModelScope.launch {
+            println("observeFirestoreFamilyData() observeFamilyInformationUseCase invoked")
+            observeFamilyInformationUseCase.invoke(familyId)
+        }
+
+        viewModelScope.launch {
             println("observeFirestoreFamilyData() observeGroceryListUseCase invoked")
             observeGroceryListUseCase.invoke(familyId)
         }
@@ -95,7 +102,7 @@ class FirebaseViewModel @Inject constructor(
     private fun fetchUserInformation(uid: String) {
         println("FirebaseViewModel before calling fetchUserInformationUseCase")
         viewModelScope.launch {
-            fetchUserInformationUseCase(uid = uid).collect { result ->
+            fetchUserInformationUseCase.invoke(uid = uid).collect { result ->
                 println("FirebaseViewModel fetchUserInformationUseCase result: $result")
                 when (result) {
                     is AuthResultListener.Success -> {

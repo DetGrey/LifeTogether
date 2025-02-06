@@ -2,6 +2,7 @@ package com.example.lifetogether.data.remote
 
 import com.example.lifetogether.domain.callback.AuthResultListener
 import com.example.lifetogether.domain.callback.CategoriesListener
+import com.example.lifetogether.domain.callback.FamilyInformationResultListener
 import com.example.lifetogether.domain.callback.GrocerySuggestionsListener
 import com.example.lifetogether.domain.callback.ListItemsResultListener
 import com.example.lifetogether.domain.callback.ResultListener
@@ -13,6 +14,8 @@ import com.example.lifetogether.domain.model.GroceryItem
 import com.example.lifetogether.domain.model.GrocerySuggestion
 import com.example.lifetogether.domain.model.Item
 import com.example.lifetogether.domain.model.UserInformation
+import com.example.lifetogether.domain.model.family.FamilyInformation
+import com.example.lifetogether.domain.model.family.FamilyMember
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.util.Constants
@@ -66,9 +69,51 @@ class FirestoreDataSource@Inject constructor() {
         }
     }
 
-    suspend fun changeName(uid: String, newName: String): ResultListener {
+    suspend fun updateFamilyId(uid: String, familyId: String?): ResultListener {
         try {
+            db.collection(Constants.USER_TABLE).document(uid).update("familyId", familyId).await()
+            return ResultListener.Success
+        } catch (e: Exception) {
+            println("Error: ${e.message}")
+            return ResultListener.Failure("Error: ${e.message}")
+        }
+    }
+
+    suspend fun changeName(
+        uid: String,
+        familyId: String?,
+        newName: String,
+    ): ResultListener {
+        try {
+            // Update the name in the user's document
             db.collection(Constants.USER_TABLE).document(uid).update("name", newName).await()
+
+            // Also update the name in the family document
+            if (familyId != null) {
+                val familyDocRef = db.collection(Constants.FAMILIES_TABLE).document(familyId)
+                val familySnapshot = familyDocRef.get().await()
+
+                // Check if family document exists
+                if (familySnapshot.exists()) {
+                    // Fetch current members list
+                    @Suppress("UNCHECKED_CAST")
+                    val members =
+                        familySnapshot.get("members") as? List<Map<String, String>> ?: emptyList()
+
+                    // Update the name in the family document for the matching uid
+                    val updatedMembers = members.map { member ->
+                        if (member["uid"] == uid) {
+                            member.toMutableMap().apply { this["name"] = newName }
+                        } else {
+                            member
+                        }
+                    }
+
+                    // Save the updated members list to the family document
+                    familyDocRef.update("members", updatedMembers).await()
+                }
+            }
+
             return ResultListener.Success
         } catch (e: Exception) {
             println("Error: ${e.message}")
@@ -77,21 +122,63 @@ class FirestoreDataSource@Inject constructor() {
     }
 
     // ------------------------------------------------------------------------------- FAMILY
+    fun familyInformationSnapshotListener(familyId: String) = callbackFlow {
+        println("Firestore familyInformationSnapshotListener init")
+        val familyInformationRef = db.collection(Constants.FAMILIES_TABLE).document(familyId)
+        val listenerRegistration = familyInformationRef.addSnapshotListener { snapshot, e ->
+            if (e != null) {
+                // Handle error
+                trySend(AuthResultListener.Failure("Error: ${e.message}")).isSuccess
+                return@addSnapshotListener
+            }
+
+            if (snapshot != null && snapshot.exists()) {
+                // Fetch members data (uid and name)
+                @Suppress("UNCHECKED_CAST")
+                val membersData = snapshot.get("members") as? List<Map<String, String>> ?: emptyList()
+
+                // Map members data into FamilyMember objects
+                val membersList = membersData.map { member ->
+                    FamilyMember(
+                        uid = member["uid"],
+                        name = member["name"],
+                    )
+                }
+
+                val familyInformation = FamilyInformation(
+                    familyId = familyId,
+                    members = membersList,
+                    imageUrl = snapshot.getString("imageUrl"),
+                )
+
+                println("Snapshot of familyInformation: $familyInformation")
+                trySend(FamilyInformationResultListener.Success(familyInformation)).isSuccess
+            }
+        }
+        // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.
+        awaitClose { listenerRegistration.remove() }
+    }
+
     suspend fun joinFamily(
         familyId: String,
         uid: String,
+        name: String,
     ): ResultListener {
         println("FirestoreDataSource joinFamily()")
         try {
             val documentReference = db.collection(Constants.FAMILIES_TABLE).document(familyId).get().await()
 
             @Suppress("UNCHECKED_CAST")
-            val members = documentReference.data?.get("members") as? List<String>
+            val membersData = documentReference.data?.get("members") as? List<Map<String, String>>
 
-            val updatedMembers = members?.toMutableList() ?: mutableListOf()
-            updatedMembers.add(uid)
+            val updatedMembers = membersData?.toMutableList() ?: mutableListOf()
 
-            db.collection(Constants.FAMILIES_TABLE).document(familyId).update("members", updatedMembers).await()
+            // Add the new member with uid and a default null name
+            updatedMembers.add(mapOf("uid" to uid, "name" to name))
+
+            db.collection(Constants.FAMILIES_TABLE).document(familyId)
+                .update("members", updatedMembers)
+                .await()
 
             return ResultListener.Success
         } catch (e: Exception) {
@@ -100,9 +187,14 @@ class FirestoreDataSource@Inject constructor() {
         }
     }
 
-    suspend fun createNewFamily(uid: String): StringResultListener {
+    suspend fun createNewFamily(
+        uid: String,
+        name: String,
+    ): StringResultListener {
         println("FirestoreDataSource createNewFamily getting uploaded")
-        val map = mapOf("owner" to uid)
+        val map = mapOf(
+            "members" to listOf(mapOf("uid" to uid, "name" to name)),
+        )
 
         try {
             val documentReference = db.collection(Constants.FAMILIES_TABLE).add(map).await()
@@ -122,12 +214,14 @@ class FirestoreDataSource@Inject constructor() {
             val documentReference = db.collection(Constants.FAMILIES_TABLE).document(familyId).get().await()
 
             @Suppress("UNCHECKED_CAST")
-            val members = documentReference.data?.get("members") as? List<String>
+            val members = documentReference.data?.get("members") as? List<Map<String, String>>
 
-            val updatedMembers = members?.toMutableList() ?: mutableListOf()
-            updatedMembers.remove(uid)
+            // Remove the member from the list by matching the uid
+            val updatedMembers = members?.filterNot { it["uid"] == uid }?.toMutableList() ?: mutableListOf()
 
-            db.collection(Constants.FAMILIES_TABLE).document(familyId).update("members", updatedMembers).await()
+            db.collection(Constants.FAMILIES_TABLE).document(familyId)
+                .update("members", updatedMembers)
+                .await()
 
             return ResultListener.Success
         } catch (e: Exception) {
@@ -136,9 +230,30 @@ class FirestoreDataSource@Inject constructor() {
         }
     }
 
-    suspend fun updateFamilyId(uid: String, familyId: String?): ResultListener {
+    suspend fun deleteFamily(
+        familyId: String,
+    ): ResultListener {
+        println("FirestoreDataSource deleteFamily()")
         try {
-            db.collection(Constants.USER_TABLE).document(uid).update("familyId", familyId).await()
+            db.collection(Constants.FAMILIES_TABLE).document(familyId).delete().await()
+
+            val usersRef = db.collection(Constants.USER_TABLE).whereEqualTo("familyId", familyId).get().await()
+
+            // Iterate over each document in the result set
+            val failures = mutableListOf<String>()
+
+            for (userDocument in usersRef.documents) {
+                val uid = userDocument.id
+                val result = updateFamilyId(uid, null)
+                if (result is ResultListener.Failure) {
+                    failures.add(result.message)
+                }
+            }
+
+            if (failures.isNotEmpty()) {
+                return ResultListener.Failure("Could not remove familyId from all users: $failures")
+            }
+
             return ResultListener.Success
         } catch (e: Exception) {
             println("Error: ${e.message}")

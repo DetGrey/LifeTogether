@@ -1,12 +1,15 @@
 package com.example.lifetogether.data.local
 
 import com.example.lifetogether.data.local.dao.CategoriesDao
+import com.example.lifetogether.data.local.dao.FamilyInformationDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
 import com.example.lifetogether.data.local.dao.RecipesDao
 import com.example.lifetogether.data.local.dao.UserInformationDao
 import com.example.lifetogether.data.model.CategoryEntity
 import com.example.lifetogether.data.model.Entity
+import com.example.lifetogether.data.model.FamilyEntity
+import com.example.lifetogether.data.model.FamilyMemberEntity
 import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.model.GrocerySuggestionEntity
 import com.example.lifetogether.data.model.RecipeEntity
@@ -16,6 +19,7 @@ import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.GroceryItem
 import com.example.lifetogether.domain.model.GrocerySuggestion
 import com.example.lifetogether.domain.model.UserInformation
+import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.util.Constants
@@ -32,6 +36,7 @@ class LocalDataSource @Inject constructor(
     private val grocerySuggestionsDao: GrocerySuggestionsDao,
     private val categoriesDao: CategoriesDao,
     private val userInformationDao: UserInformationDao,
+    private val familyInformationDao: FamilyInformationDao,
 ) {
     // -------------------------------------------------------------- CATEGORIES
     fun getCategories(): Flow<List<CategoryEntity>> {
@@ -269,19 +274,6 @@ class LocalDataSource @Inject constructor(
         return userInformationDao.getItems(uid)
     }
 
-    fun getImageByteArray(imageType: ImageType): Flow<ByteArray?> {
-        println("LocalDataSource getImageByteArray imageType: $imageType")
-        return when (imageType) {
-            is ImageType.ProfileImage -> userInformationDao.getImageByteArray(imageType.uid)
-
-            is ImageType.FamilyImage -> {
-                flowOf() // TODO
-            }
-
-            is ImageType.RecipeImage -> recipesDao.getImageByteArray(imageType.familyId, imageType.recipeId)
-        }
-    }
-
     suspend fun updateUserInformation(
         userInformation: UserInformation,
         byteArray: ByteArray? = null,
@@ -310,6 +302,58 @@ class LocalDataSource @Inject constructor(
             return ResultListener.Success
         } catch (e: Exception) {
             return ResultListener.Failure("Error: $e")
+        }
+    }
+
+    // -------------------------------------------------------------- FAMILY INFORMATION
+    fun getFamilyInformation(familyId: String): Flow<FamilyEntity> {
+        return familyInformationDao.getFamilyInfo(familyId)
+    }
+
+    fun getFamilyMembers(familyId: String): Flow<List<FamilyMemberEntity>> {
+        return familyInformationDao.getFamilyMembers(familyId)
+    }
+
+    suspend fun updateFamilyInformation(
+        familyInformation: FamilyInformation,
+        byteArray: ByteArray? = null,
+    ) {
+        // Update FamilyEntity
+        var familyEntity = FamilyEntity(
+            familyId = familyInformation.familyId ?: "",
+        )
+
+        if (byteArray != null) {
+            familyEntity = familyEntity.copy(imageData = byteArray)
+        }
+
+        println("updateFamilyInformation familyEntity: $familyEntity")
+
+        // Update FamilyEntity in the database
+        familyInformationDao.updateFamily(familyEntity)
+
+        // Update Family Members
+        val familyMembers = familyInformation.members?.map {
+            FamilyMemberEntity(
+                uid = it.uid ?: "",
+                familyId = familyInformation.familyId,
+                name = it.name,
+            )
+        } ?: emptyList()
+
+        // Insert or update FamilyMemberEntity
+        familyInformationDao.updateFamilyMembers(familyMembers)
+    }
+
+    // -------------------------------------------------------------- IMAGES
+    fun getImageByteArray(imageType: ImageType): Flow<ByteArray?> {
+        println("LocalDataSource getImageByteArray imageType: $imageType")
+        return when (imageType) {
+            is ImageType.ProfileImage -> userInformationDao.getImageByteArray(imageType.uid)
+
+            is ImageType.FamilyImage -> familyInformationDao.getImageByteArray(imageType.familyId)
+
+            is ImageType.RecipeImage -> recipesDao.getImageByteArray(imageType.familyId, imageType.recipeId)
         }
     }
 }

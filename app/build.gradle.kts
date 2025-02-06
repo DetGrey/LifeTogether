@@ -31,6 +31,8 @@ android {
         buildFeatures {
             buildConfig = true
         }
+
+        setProperty("archivesBaseName", "LifeTogether-$versionName")
     }
 
     buildTypes {
