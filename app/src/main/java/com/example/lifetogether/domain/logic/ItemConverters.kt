@@ -1,4 +1,4 @@
-package com.example.lifetogether.domain.converter
+package com.example.lifetogether.domain.logic
 
 import com.example.lifetogether.domain.model.Item
 import com.example.lifetogether.domain.model.recipe.Ingredient

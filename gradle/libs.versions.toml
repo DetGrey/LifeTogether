@@ -1,8 +1,13 @@
 [versions]
+accompanistPermissions = "0.31.1-alpha"
 agp = "8.7.2"
 coil = "2.1.0"
 coilCompose = "2.1.0"
 firebaseBom = "33.6.0"
+firebaseMessaging = "24.1.0"
+googleApiClient = "1.35.0"
+googleAuthLibraryOauth2Http = "1.12.0"
+googleHttpClientGson = "1.41.8"
 gson = "2.10.1"
 hiltAndroid = "2.51.1"
 hiltAndroidGradlePlugin = "2.51.1"
@@ -22,8 +27,10 @@ navigationRuntimeKtx = "2.8.4"
 firebaseDataconnect = "16.0.0-beta03"
 roomRuntime = "2.6.1"
 composeMaterial = "1.4.0"
+firebaseMessagingKtx = "24.1.0"
 
 [libraries]
+accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycleRuntimeKtx" }
@@ -38,7 +45,11 @@ coil = { module = "io.coil-kt:coil", version.ref = "coil" }
 firebase-auth = { module = "com.google.firebase:firebase-auth" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
+firebase-messaging = { module = "com.google.firebase:firebase-messaging", version.ref = "firebaseMessaging" }
 firebase-storage = { module = "com.google.firebase:firebase-storage" }
+google-api-client = { module = "com.google.api-client:google-api-client", version.ref = "googleApiClient" }
+google-auth-library-oauth2-http = { module = "com.google.auth:google-auth-library-oauth2-http", version.ref = "googleAuthLibraryOauth2Http" }
+google-http-client-gson = { module = "com.google.http-client:google-http-client-gson", version.ref = "googleHttpClientGson" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroid" }
 hilt-android-gradle-plugin = { module = "com.google.dagger:hilt-android-gradle-plugin", version.ref = "hiltAndroidGradlePlugin" }
@@ -59,6 +70,7 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 firebase-dataconnect = { group = "com.google.firebase", name = "firebase-dataconnect", version.ref = "firebaseDataconnect" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 androidx-compose-material = { group = "androidx.wear.compose", name = "compose-material", version.ref = "composeMaterial" }
+firebase-messaging-ktx = { group = "com.google.firebase", name = "firebase-messaging-ktx", version.ref = "firebaseMessagingKtx" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

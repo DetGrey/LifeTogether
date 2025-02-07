@@ -20,7 +20,7 @@ android {
         minSdk = 30
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -60,6 +60,7 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "/META-INF/DEPENDENCIES"
         }
     }
 }
@@ -85,6 +86,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.firebase.dataconnect)
     implementation(libs.androidx.compose.material)
+    implementation(libs.firebase.messaging.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -112,6 +114,11 @@ dependencies {
     implementation(libs.firebase.storage)
     // Add the dependency for the Firebase Authentication library
     implementation(libs.firebase.auth)
+    // Add the dependency for the Firebase Messaging library
+    implementation(libs.firebase.messaging)
+    implementation(libs.google.api.client)
+    implementation(libs.google.auth.library.oauth2.http)
+    implementation(libs.google.http.client.gson)
 
     // Room
     implementation(libs.androidx.room.runtime)
@@ -130,4 +137,7 @@ dependencies {
     // Coil - image loading and processing
     implementation(libs.coil)
     implementation(libs.coil.compose)
+
+    // Notification permission
+    implementation(libs.accompanist.permissions)
 }

@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.feature.login
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -111,6 +113,7 @@ fun LoginScreen(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Preview(showBackground = true)
 @Composable
 fun LoginScreenPreview() {

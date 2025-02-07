@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.feature.profile
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -28,7 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lifetogether.R
-import com.example.lifetogether.domain.converter.formatDateToString
+import com.example.lifetogether.domain.logic.formatDateToString
 import com.example.lifetogether.domain.model.ConfirmationDialogDetails
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.sealed.ImageType
@@ -226,13 +228,17 @@ fun ProfileScreen(
             ProfileViewModel.ProfileConfirmationType.LOGOUT -> ConfirmationDialog(
                 onDismiss = { profileViewModel.closeConfirmationDialog() },
                 onConfirm = {
-                    profileViewModel.logout(
-                        onSuccess = {
-                            firebaseViewModel?.onSignOut()
-                            profileViewModel.closeConfirmationDialog()
-                            appNavigator?.navigateToHome()
-                        },
-                    )
+                    userInformation?.uid?.let { uid ->
+                        profileViewModel.logout(
+                            uid,
+                            userInformation!!.familyId,
+                            onSuccess = {
+                                firebaseViewModel?.onSignOut()
+                                profileViewModel.closeConfirmationDialog()
+                                appNavigator?.navigateToHome()
+                            },
+                        )
+                    }
                 },
                 dialogTitle = "Logout",
                 dialogMessage = "Are you sure you want to logout?",
@@ -289,6 +295,7 @@ fun ProfileScreen(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Preview(showBackground = true)
 @Composable
 fun ProfileScreenPreview() {

@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.common
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Completable
-import com.example.lifetogether.domain.model.GroceryItem
+import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import java.text.DecimalFormat
@@ -35,6 +37,7 @@ import java.util.Date
 fun ListItem(
     item: Completable,
     onCompleteToggle: () -> Unit,
+    onBellClick: (() -> Unit)? = null,
 ) {
     var text = item.itemName
 
@@ -51,41 +54,65 @@ fun ListItem(
         modifier = Modifier
             .padding(horizontal = 10.dp, vertical = 5.dp)
             .fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .height(30.dp)
-                .aspectRatio(1f)
-                .clip(shape = CircleShape)
-                .border(width = 2.dp, color = MaterialTheme.colorScheme.secondary, shape = CircleShape)
-                .clickable { onCompleteToggle() }
-                .then(
-                    if (item.completed) {
-                        Modifier.background(color = MaterialTheme.colorScheme.secondary)
-                    } else {
-                        Modifier
-                    },
-                ),
-            contentAlignment = Alignment.Center,
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            if (item.completed) {
+            Box(
+                modifier = Modifier
+                    .height(30.dp)
+                    .aspectRatio(1f)
+                    .clip(shape = CircleShape)
+                    .border(
+                        width = 2.dp,
+                        color = MaterialTheme.colorScheme.secondary,
+                        shape = CircleShape,
+                    )
+                    .clickable { onCompleteToggle() }
+                    .then(
+                        if (item.completed) {
+                            Modifier.background(color = MaterialTheme.colorScheme.secondary)
+                        } else {
+                            Modifier
+                        },
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (item.completed) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_checkmark),
+                        contentDescription = "checkmark icon",
+                    )
+                }
+            }
+
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyLarge,
+                textDecoration = if (item.completed) TextDecoration.LineThrough else TextDecoration.None,
+            )
+        }
+
+        if (item is GroceryItem && onBellClick != null) {
+            Box(
+                modifier = Modifier
+                    .height(30.dp)
+                    .aspectRatio(1f)
+                    .clickable { onBellClick() },
+                contentAlignment = Alignment.Center,
+            ) {
                 Image(
-                    painter = painterResource(id = R.drawable.ic_checkmark),
-                    contentDescription = "checkmark icon",
+                    painter = painterResource(id = R.drawable.ic_bell_black),
+                    contentDescription = "bell notification icon",
                 )
             }
         }
-
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyLarge,
-            textDecoration = if (item.completed) TextDecoration.LineThrough else TextDecoration.None,
-        )
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Preview(showBackground = true)
 @Composable
 fun ListItemPreview() {

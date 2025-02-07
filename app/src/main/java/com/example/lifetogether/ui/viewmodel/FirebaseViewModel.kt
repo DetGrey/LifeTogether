@@ -17,6 +17,7 @@ import com.example.lifetogether.domain.usecase.observers.ObserveRecipesUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveUserInformationUseCase
 import com.example.lifetogether.domain.usecase.user.FetchUserInformationUseCase
 import com.example.lifetogether.domain.usecase.user.RemoveSavedUserInformationUseCase
+import com.example.lifetogether.domain.usecase.user.StoreFcmTokenUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -35,6 +36,7 @@ class FirebaseViewModel @Inject constructor(
     private val observeUserInformationUseCase: ObserveUserInformationUseCase,
     private val observeFamilyInformationUseCase: ObserveFamilyInformationUseCase,
     private val removeSavedUserInformationUseCase: RemoveSavedUserInformationUseCase,
+    private val storeFcmTokenUseCase: StoreFcmTokenUseCase,
 ) : ViewModel() {
     // ---------------------------------------------- USER
     // Create a StateFlow to hold user information
@@ -138,5 +140,14 @@ class FirebaseViewModel @Inject constructor(
             this[collection] = updatedCount
         }
         println("itemCount: $itemCount")
+    }
+
+    fun storeFcmToken(
+        uid: String,
+        familyId: String,
+    ) {
+        viewModelScope.launch {
+            storeFcmTokenUseCase.invoke(uid, familyId)
+        }
     }
 }

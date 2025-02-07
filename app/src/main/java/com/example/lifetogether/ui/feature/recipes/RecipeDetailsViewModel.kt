@@ -9,8 +9,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.callback.ItemResultListener
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.callback.StringResultListener
-import com.example.lifetogether.domain.converter.toMutableRecipe
-import com.example.lifetogether.domain.converter.toRecipe
+import com.example.lifetogether.domain.logic.toMutableRecipe
+import com.example.lifetogether.domain.logic.toRecipe
 import com.example.lifetogether.domain.model.Completable
 import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.domain.model.recipe.Instruction

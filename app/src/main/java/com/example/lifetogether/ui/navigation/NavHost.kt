@@ -1,9 +1,7 @@
 package com.example.lifetogether.ui.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
@@ -25,16 +23,9 @@ import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 @Composable
 fun NavHost(
     navController: NavHostController,
+    firebaseViewModel: FirebaseViewModel,
 ) {
     val appNavigator = AppNavigator(navController)
-    val firebaseViewModel: FirebaseViewModel = hiltViewModel()
-
-    val userInformation by firebaseViewModel.userInformation.collectAsState()
-    when (val familyId = userInformation?.familyId) {
-        is String -> {
-            firebaseViewModel.observeFirestoreFamilyData(familyId)
-        }
-    }
 
     androidx.navigation.compose.NavHost(
         navController = navController,

@@ -28,7 +28,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lifetogether.R
-import com.example.lifetogether.domain.converter.copyToClipboard
+import com.example.lifetogether.domain.logic.copyToClipboard
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.family.FamilyMember
 import com.example.lifetogether.domain.model.sealed.ImageType

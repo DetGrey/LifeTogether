@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.common.list
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,16 +17,22 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lifetogether.R
+import com.example.lifetogether.domain.logic.groceryListNotificationOptions
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.CompletableItem
-import com.example.lifetogether.domain.model.GroceryItem
+import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.ui.common.ListItem
+import com.example.lifetogether.ui.navigation.AppRoutes
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.bodyFontFamily
+import com.example.lifetogether.ui.viewmodel.NotificationViewModel
+import com.example.lifetogether.util.Constants
 import java.util.Date
 
 @Composable
@@ -36,6 +44,8 @@ fun ItemCategoryList(
     onCompleteToggle: (CompletableItem) -> Unit,
     onDelete: (() -> Unit)? = null,
 ) {
+    val context = LocalContext.current
+    val notificationViewModel: NotificationViewModel = hiltViewModel()
     Column {
         Column(
             modifier = Modifier
@@ -84,6 +94,23 @@ fun ItemCategoryList(
                     ListItem(
                         item = item,
                         onCompleteToggle = { onCompleteToggle(item) },
+                        onBellClick = if (item is GroceryItem) {
+                            {
+                                println("bell clicked")
+                                val option = groceryListNotificationOptions(item.itemName, item.category?.emoji ?: "")
+
+                                notificationViewModel.sendNotification(
+                                    context,
+                                    familyId = item.familyId,
+                                    title = option.title,
+                                    message = option.message,
+                                    channelId = Constants.GROCERY_LIST_CHANNEL,
+                                    destination = AppRoutes.GROCERY_LIST_SCREEN,
+                                )
+                            }
+                        } else {
+                            null
+                        },
                     )
                 }
             }
@@ -92,6 +119,7 @@ fun ItemCategoryList(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Preview(showBackground = true)
 @Composable
 fun ItemCategoryListPreview() {

@@ -83,6 +83,7 @@ fun CompletableCategoryList(
                     ListItem(
                         item = item,
                         onCompleteToggle = { onCompleteToggle(item) },
+                        onBellClick = {},
                     )
                 }
             }

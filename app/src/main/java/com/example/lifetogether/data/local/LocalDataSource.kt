@@ -16,10 +16,10 @@ import com.example.lifetogether.data.model.RecipeEntity
 import com.example.lifetogether.data.model.UserEntity
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.model.Category
-import com.example.lifetogether.domain.model.GroceryItem
-import com.example.lifetogether.domain.model.GrocerySuggestion
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.family.FamilyInformation
+import com.example.lifetogether.domain.model.grocery.GroceryItem
+import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.util.Constants

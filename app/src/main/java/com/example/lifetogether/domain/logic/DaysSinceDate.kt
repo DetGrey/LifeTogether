@@ -1,4 +1,4 @@
-package com.example.lifetogether.domain.converter
+package com.example.lifetogether.domain.logic
 
 import java.time.LocalDate
 import java.time.ZoneId

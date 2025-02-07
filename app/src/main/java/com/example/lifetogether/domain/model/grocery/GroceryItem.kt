@@ -1,5 +1,7 @@
-package com.example.lifetogether.domain.model
+package com.example.lifetogether.domain.model.grocery
 
+import com.example.lifetogether.domain.model.Category
+import com.example.lifetogether.domain.model.CompletableItem
 import com.google.firebase.firestore.DocumentId
 import java.util.Date
 

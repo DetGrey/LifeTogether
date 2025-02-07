@@ -29,7 +29,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.lifetogether.BuildConfig
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.UserInformation
@@ -52,9 +51,10 @@ fun HomeScreen(
 
     val userInformationState by firebaseViewModel?.userInformation!!.collectAsState()
 
-    if (userInformationState?.familyId == BuildConfig.ADMIN) {
-        appNavigator?.navigateToAdmin()
-    }
+    // TODO add admin stuff on this screen
+//    if (userInformationState?.familyId == BuildConfig.ADMIN) {
+//        appNavigator?.navigateToAdmin()
+//    }
 
     LaunchedEffect(key1 = true) {
         // Perform any one-time initialization or side effect here
@@ -112,7 +112,6 @@ fun HomeScreen(
                         .clip(shape = RoundedCornerShape(20))
                         .background(color = MaterialTheme.colorScheme.onBackground),
                 ) {
-                    // TODO add image
                     if (bitmap != null) {
                         Image(
                             modifier = Modifier

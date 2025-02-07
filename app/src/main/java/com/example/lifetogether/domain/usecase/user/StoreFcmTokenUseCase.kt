@@ -4,10 +4,13 @@ import com.example.lifetogether.data.repository.RemoteUserRepositoryImpl
 import com.example.lifetogether.domain.callback.ResultListener
 import javax.inject.Inject
 
-class LogoutUseCase @Inject constructor(
+class StoreFcmTokenUseCase @Inject constructor(
     private val remoteUserRepositoryImpl: RemoteUserRepositoryImpl,
 ) {
-    operator fun invoke(uid: String, familyId: String?): ResultListener {
-        return remoteUserRepositoryImpl.logout(uid, familyId)
+    suspend operator fun invoke(
+        uid: String,
+        familyId: String,
+    ): ResultListener {
+        return remoteUserRepositoryImpl.storeFcmToken(uid, familyId)
     }
 }

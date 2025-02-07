@@ -1,5 +1,6 @@
 package com.example.lifetogether.data.remote
 
+import android.util.Log
 import com.example.lifetogether.domain.callback.AuthResultListener
 import com.example.lifetogether.domain.callback.CategoriesListener
 import com.example.lifetogether.domain.callback.FamilyInformationResultListener
@@ -7,20 +8,21 @@ import com.example.lifetogether.domain.callback.GrocerySuggestionsListener
 import com.example.lifetogether.domain.callback.ListItemsResultListener
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.callback.StringResultListener
-import com.example.lifetogether.domain.converter.itemToMap
+import com.example.lifetogether.domain.logic.itemToMap
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.CompletableItem
-import com.example.lifetogether.domain.model.GroceryItem
-import com.example.lifetogether.domain.model.GrocerySuggestion
 import com.example.lifetogether.domain.model.Item
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.model.family.FamilyMember
+import com.example.lifetogether.domain.model.grocery.GroceryItem
+import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.util.Constants
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
@@ -45,6 +47,13 @@ class FirestoreDataSource@Inject constructor() {
                 // Process the changes and update Room database
                 val userInformation = snapshot.toObject(UserInformation::class.java)
                 println("Snapshot of userInformation: $userInformation")
+//                if (userInformation != null) {
+//                    userInformation.uid?.let { uid ->
+//                        userInformation.familyId?.let { familyId ->
+//                            storeDeviceToken(uid, familyId)
+//                        }
+//                    }
+//                }
                 if (userInformation != null) {
                     trySend(AuthResultListener.Success(userInformation)).isSuccess
                 }
@@ -58,7 +67,8 @@ class FirestoreDataSource@Inject constructor() {
         println("FirestoreDataSource uploadUserInformation getting uploaded")
         try {
             if (userInformation.uid != null) {
-                db.collection(Constants.USER_TABLE).document(userInformation.uid).set(userInformation).await()
+                db.collection(Constants.USER_TABLE).document(userInformation.uid)
+                    .set(userInformation).await()
                 return ResultListener.Success
             } else {
                 return ResultListener.Failure("Cannot upload without being logged in")
@@ -135,7 +145,8 @@ class FirestoreDataSource@Inject constructor() {
             if (snapshot != null && snapshot.exists()) {
                 // Fetch members data (uid and name)
                 @Suppress("UNCHECKED_CAST")
-                val membersData = snapshot.get("members") as? List<Map<String, String>> ?: emptyList()
+                val membersData =
+                    snapshot.get("members") as? List<Map<String, String>> ?: emptyList()
 
                 // Map members data into FamilyMember objects
                 val membersList = membersData.map { member ->
@@ -166,7 +177,8 @@ class FirestoreDataSource@Inject constructor() {
     ): ResultListener {
         println("FirestoreDataSource joinFamily()")
         try {
-            val documentReference = db.collection(Constants.FAMILIES_TABLE).document(familyId).get().await()
+            val documentReference =
+                db.collection(Constants.FAMILIES_TABLE).document(familyId).get().await()
 
             @Suppress("UNCHECKED_CAST")
             val membersData = documentReference.data?.get("members") as? List<Map<String, String>>
@@ -211,13 +223,15 @@ class FirestoreDataSource@Inject constructor() {
     ): ResultListener {
         println("FirestoreDataSource leaveFamily()")
         try {
-            val documentReference = db.collection(Constants.FAMILIES_TABLE).document(familyId).get().await()
+            val documentReference =
+                db.collection(Constants.FAMILIES_TABLE).document(familyId).get().await()
 
             @Suppress("UNCHECKED_CAST")
             val members = documentReference.data?.get("members") as? List<Map<String, String>>
 
             // Remove the member from the list by matching the uid
-            val updatedMembers = members?.filterNot { it["uid"] == uid }?.toMutableList() ?: mutableListOf()
+            val updatedMembers =
+                members?.filterNot { it["uid"] == uid }?.toMutableList() ?: mutableListOf()
 
             db.collection(Constants.FAMILIES_TABLE).document(familyId)
                 .update("members", updatedMembers)
@@ -237,7 +251,8 @@ class FirestoreDataSource@Inject constructor() {
         try {
             db.collection(Constants.FAMILIES_TABLE).document(familyId).delete().await()
 
-            val usersRef = db.collection(Constants.USER_TABLE).whereEqualTo("familyId", familyId).get().await()
+            val usersRef =
+                db.collection(Constants.USER_TABLE).whereEqualTo("familyId", familyId).get().await()
 
             // Iterate over each document in the result set
             val failures = mutableListOf<String>()
@@ -264,7 +279,8 @@ class FirestoreDataSource@Inject constructor() {
     // ------------------------------------------------------------------------------- GROCERY LIST
     fun grocerySnapshotListener(familyId: String) = callbackFlow {
         println("Firestore grocerySnapshotListener init")
-        val groceryItemsRef = db.collection(Constants.GROCERY_TABLE).whereEqualTo("familyId", familyId)
+        val groceryItemsRef =
+            db.collection(Constants.GROCERY_TABLE).whereEqualTo("familyId", familyId)
         val listenerRegistration = groceryItemsRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 // Handle error
@@ -288,7 +304,8 @@ class FirestoreDataSource@Inject constructor() {
     // ------------------------------------------------------------------------------- RECIPES
     fun recipeSnapshotListener(familyId: String) = callbackFlow {
         println("Firestore recipeSnapshotListener init")
-        val recipeItemsRef = db.collection(Constants.RECIPES_TABLE).whereEqualTo("familyId", familyId)
+        val recipeItemsRef =
+            db.collection(Constants.RECIPES_TABLE).whereEqualTo("familyId", familyId)
         val listenerRegistration = recipeItemsRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 // Handle error
@@ -499,7 +516,8 @@ class FirestoreDataSource@Inject constructor() {
         try {
             // Query the collection to find the document with the matching 'name' field
             if (grocerySuggestion.id is String) {
-                db.collection(Constants.GROCERY_SUGGESTIONS_TABLE).document(grocerySuggestion.id).delete().await()
+                db.collection(Constants.GROCERY_SUGGESTIONS_TABLE).document(grocerySuggestion.id)
+                    .delete().await()
                 return ResultListener.Success
             } else {
                 return ResultListener.Failure("Problems with grocery suggestion id")
@@ -530,17 +548,22 @@ class FirestoreDataSource@Inject constructor() {
         try {
             when (imageType) {
                 is ImageType.ProfileImage -> {
-                    val documentReference = db.collection("users").document(imageType.uid).get().await()
+                    val documentReference =
+                        db.collection("users").document(imageType.uid).get().await()
                     return documentReference.getString("imageUrl")
                         ?.let { StringResultListener.Success(it) }
                 }
+
                 is ImageType.FamilyImage -> {
-                    val documentReference = db.collection("families").document(imageType.familyId).get().await()
+                    val documentReference =
+                        db.collection("families").document(imageType.familyId).get().await()
                     return documentReference.getString("imageUrl")
                         ?.let { StringResultListener.Success(it) }
                 }
+
                 is ImageType.RecipeImage -> {
-                    val documentReference = db.collection("recipes").document(imageType.recipeId).get().await()
+                    val documentReference =
+                        db.collection("recipes").document(imageType.recipeId).get().await()
                     return documentReference.getString("imageUrl")
                         ?.let { StringResultListener.Success(it) }
                 }
@@ -568,9 +591,11 @@ class FirestoreDataSource@Inject constructor() {
                 is ImageType.ProfileImage -> {
                     db.collection("users").document(imageType.uid).update(photo).await()
                 }
+
                 is ImageType.FamilyImage -> {
                     db.collection("families").document(imageType.familyId).update(photo).await()
                 }
+
                 is ImageType.RecipeImage -> {
                     db.collection("recipes").document(imageType.recipeId).update(photo).await()
                 }
@@ -581,6 +606,118 @@ class FirestoreDataSource@Inject constructor() {
             println("Error: ${e.message}")
             return ResultListener.Failure("Error: ${e.message}")
         }
+    }
+
+    // ------------------------------------------------------------------------------- DEVICE TOKEN MANAGEMENT
+    // Store the FCM token along with familyId
+    suspend fun storeFcmToken(uid: String, familyId: String) {
+        var fcmToken: String? = null
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                fcmToken = task.result
+                // Process updatedMembers here
+            } else {
+                Log.e("FirestoreDataSource", "Failed to fetch FCM token: ${task.exception}")
+            }
+        }.await()
+
+        if (fcmToken == null) {
+            println("Failed to fetch FCM token")
+            return
+        }
+
+        val familyDocRef = db.collection(Constants.FAMILIES_TABLE).document(familyId)
+
+        val familyDocSnaphot = familyDocRef.get().await()
+
+        if (familyDocSnaphot.exists()) {
+            // Fetch the current family document
+            val members = familyDocSnaphot.get("members") as? List<Map<String, Any>> ?: emptyList()
+
+            // Find the member with the matching uid
+            var updateNeeded = false
+            val updatedMembers = members.map { member ->
+                if (member["uid"] == uid) {
+                    val currentToken = member["fcmToken"] as? String
+                    if (currentToken == null || currentToken != fcmToken) {
+                        // Update only if no token exists or the token is different
+                        updateNeeded = true
+                        member.toMutableMap().apply {
+                            put("fcmToken", fcmToken!!)
+                        }
+                    } else {
+                        member
+                    }
+                } else {
+                    member
+                }
+            }
+
+            println("Is it needed to update FCM token: $updateNeeded")
+            if (updateNeeded) {
+                // Update the members array in Firestore
+                familyDocRef.update("members", updatedMembers)
+                    .addOnSuccessListener {
+                        println("FCM token updated successfully.")
+                    }
+                    .addOnFailureListener { e ->
+                        println("Error updating FCM token: ${e.message}")
+                    }
+            }
+        } else {
+            println("Family document not found")
+        }
+    }
+
+    fun removeDeviceToken(uid: String, familyId: String) {
+        val familyDocRef = db.collection(Constants.FAMILIES_TABLE).document(familyId)
+
+        // Fetch the current family document
+        familyDocRef.get().addOnSuccessListener { document ->
+            if (document.exists()) {
+                val members = document.get("members") as? List<Map<String, Any>> ?: emptyList()
+
+                // Remove the fcmToken for the specified uid
+                val updatedMembers = members.map { member ->
+                    if (member["uid"] == uid) {
+                        // Remove the fcmToken
+                        member.toMutableMap().apply {
+                            remove("fcmToken")
+                        }
+                    } else {
+                        member
+                    }
+                }
+
+                // Update the members array in Firestore
+                familyDocRef.update("members", updatedMembers)
+                    .addOnSuccessListener {
+                        println("FCM token removed successfully.")
+                    }
+                    .addOnFailureListener { e ->
+                        println("Error removing FCM token: ${e.message}")
+                    }
+            }
+        }.addOnFailureListener { e ->
+            println("Error fetching family document: ${e.message}")
+        }
+    }
+
+    suspend fun getFcmTokensFromFamily(familyId: String): List<String>? {
+        // Get the family document to retrieve the fcmTokens
+        val familyDocRef = db.collection(Constants.FAMILIES_TABLE).document(familyId).get().await()
+
+        val document = familyDocRef.data
+        val members = document?.get("members") as? List<Map<String, Any>> ?: emptyList()
+
+        // Extract fcmTokens for all members
+        val tokens = members.mapNotNull { it["fcmToken"] as? String }
+
+        if (tokens.isNotEmpty()) {
+            // Send notification to all tokens
+            return tokens
+        }
+        return null
     }
 }
 

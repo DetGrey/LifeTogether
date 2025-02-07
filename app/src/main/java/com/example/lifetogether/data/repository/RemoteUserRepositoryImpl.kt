@@ -48,8 +48,11 @@ class RemoteUserRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun logout(): ResultListener {
-        return firebaseAuthDataSource.logout()
+    override fun logout(
+        uid: String,
+        familyId: String?,
+    ): ResultListener {
+        return firebaseAuthDataSource.logout(uid, familyId)
     }
 
     suspend fun changeName(
@@ -114,5 +117,19 @@ class RemoteUserRepositoryImpl @Inject constructor(
     ): ResultListener {
         println("RemoteUserRepositoryImpl deleteFamily()")
         return firestoreDataSource.deleteFamily(familyId)
+    }
+
+    suspend fun storeFcmToken(
+        uid: String,
+        familyId: String,
+    ): ResultListener {
+        firestoreDataSource.storeFcmToken(uid, familyId)
+        return ResultListener.Success // TODO this is temp!
+    }
+
+    suspend fun fetchFcmTokens(
+        familyId: String,
+    ): List<String>? {
+        return firestoreDataSource.getFcmTokensFromFamily(familyId)
     }
 }

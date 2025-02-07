@@ -1,4 +1,4 @@
-package com.example.lifetogether.domain.converter
+package com.example.lifetogether.domain.logic
 
 import java.text.SimpleDateFormat
 import java.util.Date

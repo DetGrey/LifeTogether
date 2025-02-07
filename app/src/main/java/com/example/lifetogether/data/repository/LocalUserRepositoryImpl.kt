@@ -90,7 +90,7 @@ class LocalUserRepositoryImpl @Inject constructor(
         return localDataSource.clearUserInformationTables()
     }
 
-    override fun logout(): ResultListener {
+    override fun logout(uid: String, familyId: String?): ResultListener {
         TODO("Not yet implemented")
     }
 }

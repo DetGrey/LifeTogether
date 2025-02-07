@@ -1,5 +1,6 @@
-package com.example.lifetogether.domain.model
+package com.example.lifetogether.domain.model.grocery
 
+import com.example.lifetogether.domain.model.Category
 import com.google.firebase.firestore.DocumentId
 
 data class GrocerySuggestion(
