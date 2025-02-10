@@ -11,8 +11,7 @@ import kotlinx.coroutines.flow.Flow
 // Data Access Object (DAO)
 @Dao
 interface GroceryListDao {
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE) // TODO
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateItems(items: List<GroceryListEntity>)
 
     @Query("SELECT * FROM $GROCERY_TABLE WHERE family_id = :familyId")

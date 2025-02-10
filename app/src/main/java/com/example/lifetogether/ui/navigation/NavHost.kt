@@ -1,69 +1,83 @@
 package com.example.lifetogether.ui.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.runtime.getValue
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.composable
-import com.example.lifetogether.ui.feature.admin.AdminScreen
+import androidx.navigation.navArgument
 import com.example.lifetogether.ui.feature.admin.groceryList.AdminGroceryCategoriesScreen
 import com.example.lifetogether.ui.feature.admin.groceryList.AdminGrocerySuggestionsScreen
+import com.example.lifetogether.ui.feature.family.FamilyScreen
 import com.example.lifetogether.ui.feature.groceryList.GroceryListScreen
 import com.example.lifetogether.ui.feature.home.HomeScreen
 import com.example.lifetogether.ui.feature.login.LoginScreen
 import com.example.lifetogether.ui.feature.profile.ProfileScreen
+import com.example.lifetogether.ui.feature.recipes.RecipeDetailsScreen
+import com.example.lifetogether.ui.feature.recipes.RecipesScreen
 import com.example.lifetogether.ui.feature.settings.SettingsScreen
 import com.example.lifetogether.ui.feature.signup.SignupScreen
-import com.example.lifetogether.ui.viewmodel.AuthViewModel
+import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 
 @Composable
 fun NavHost(
     navController: NavHostController,
+    firebaseViewModel: FirebaseViewModel,
 ) {
     val appNavigator = AppNavigator(navController)
-    val authViewModel: AuthViewModel = hiltViewModel()
-
-    val userInformation = authViewModel.userInformation.collectAsState(initial = null)
-    when (val familyId = userInformation.value?.familyId) {
-        is String -> {
-            authViewModel.observeFirestoreFamilyData(familyId)
-        }
-    }
 
     androidx.navigation.compose.NavHost(
         navController = navController,
         startDestination = AppRoutes.HOME_SCREEN,
     ) {
-        composable(AppRoutes.ADMIN_SCREEN) {
-            AdminScreen(appNavigator, authViewModel)
-        }
         composable(AppRoutes.ADMIN_GROCERY_CATEGORIES_SCREEN) {
-            AdminGroceryCategoriesScreen(appNavigator, authViewModel)
+            AdminGroceryCategoriesScreen(appNavigator, firebaseViewModel)
         }
         composable(AppRoutes.ADMIN_GROCERY_SUGGESTIONS_SCREEN) {
-            AdminGrocerySuggestionsScreen(appNavigator, authViewModel)
+            AdminGrocerySuggestionsScreen(appNavigator, firebaseViewModel)
         }
+
         composable(AppRoutes.HOME_SCREEN) {
-            HomeScreen(appNavigator, authViewModel)
+            HomeScreen(appNavigator, firebaseViewModel)
         }
 
         composable(AppRoutes.PROFILE_SCREEN) {
-            ProfileScreen(appNavigator, authViewModel)
+            ProfileScreen(appNavigator, firebaseViewModel)
+        }
+
+        composable(AppRoutes.FAMILY_SCREEN) {
+            FamilyScreen(appNavigator, firebaseViewModel)
         }
 
         composable(AppRoutes.SETTINGS_SCREEN) {
-            SettingsScreen(appNavigator, authViewModel)
-        }
-
-        composable(AppRoutes.GROCERY_LIST_SCREEN) {
-            GroceryListScreen(appNavigator, authViewModel)
+            SettingsScreen(appNavigator, firebaseViewModel)
         }
 
         composable(AppRoutes.LOGIN_SCREEN) {
-            LoginScreen(appNavigator, authViewModel)
+            LoginScreen(appNavigator, firebaseViewModel)
         }
         composable(AppRoutes.SIGNUP_SCREEN) {
-            SignupScreen(appNavigator, authViewModel)
+            SignupScreen(appNavigator, firebaseViewModel)
+        }
+
+        composable(AppRoutes.GROCERY_LIST_SCREEN) {
+            GroceryListScreen(appNavigator, firebaseViewModel)
+        }
+
+        composable(AppRoutes.RECIPES_SCREEN) {
+            RecipesScreen(appNavigator, firebaseViewModel)
+        }
+
+        composable(AppRoutes.CREATE_RECIPE_SCREEN) {
+            RecipeDetailsScreen(appNavigator, firebaseViewModel, null)
+        }
+
+        composable(
+            route = "${AppRoutes.RECIPE_DETAILS_SCREEN}/{${AppRoutes.RECIPE_ID_ARG}}",
+            arguments = listOf(navArgument(AppRoutes.RECIPE_ID_ARG) { type = NavType.StringType }),
+        ) { backStackEntry ->
+            val recipeId = backStackEntry.arguments?.getString(AppRoutes.RECIPE_ID_ARG)
+            RecipeDetailsScreen(appNavigator, firebaseViewModel, recipeId)
         }
     }
 }

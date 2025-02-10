@@ -9,8 +9,9 @@ data class CreateNewFamilyUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(
         uid: String,
+        name: String,
     ): ResultListener {
         println("CreateNewFamilyUseCase invoked")
-        return remoteUserRepositoryImpl.createNewFamily(uid)
+        return remoteUserRepositoryImpl.createNewFamily(uid, name)
     }
 }

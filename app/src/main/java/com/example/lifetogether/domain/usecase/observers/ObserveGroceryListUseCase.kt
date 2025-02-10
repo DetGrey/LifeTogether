@@ -19,8 +19,7 @@ class ObserveGroceryListUseCase @Inject constructor(
                 is ListItemsResultListener.Success -> {
                     if (result.listItems.isEmpty()) {
                         println("grocerySnapshotListener().collect result: is empty")
-                    }
-                    else {
+                    } else {
                         localDataSource.updateGroceryList(result.listItems)
                     }
                 }

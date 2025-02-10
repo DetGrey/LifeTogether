@@ -7,7 +7,7 @@ import javax.inject.Inject
 class LogoutUseCase @Inject constructor(
     private val remoteUserRepositoryImpl: RemoteUserRepositoryImpl,
 ) {
-    suspend operator fun invoke(): ResultListener {
-        return remoteUserRepositoryImpl.logout()
+    operator fun invoke(uid: String, familyId: String?): ResultListener {
+        return remoteUserRepositoryImpl.logout(uid, familyId)
     }
 }

@@ -30,13 +30,16 @@ class SettingsViewModel @Inject constructor(
         addedFamilyId = ""
     }
 
-    fun joinFamily(uid: String) {
+    fun joinFamily(
+        uid: String,
+        name: String,
+    ) {
         if (addedFamilyId.isEmpty()) {
             return
         }
 
         viewModelScope.launch {
-            when (joinFamilyUseCase.invoke(addedFamilyId, uid)) {
+            when (joinFamilyUseCase.invoke(addedFamilyId, uid, name)) {
                 is ResultListener.Success -> {
                     closeConfirmationDialog()
                 }
@@ -47,9 +50,12 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun createNewFamily(uid: String) {
+    fun createNewFamily(
+        uid: String,
+        name: String,
+    ) {
         viewModelScope.launch {
-            when (createNewFamilyUseCase.invoke(uid)) {
+            when (createNewFamilyUseCase.invoke(uid, name)) {
                 is ResultListener.Success -> {
                     closeConfirmationDialog()
                 }

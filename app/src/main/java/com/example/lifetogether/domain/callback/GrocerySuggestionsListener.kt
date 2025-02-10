@@ -1,6 +1,6 @@
 package com.example.lifetogether.domain.callback
 
-import com.example.lifetogether.domain.model.GrocerySuggestion
+import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 
 sealed class GrocerySuggestionsListener {
     data class Success(val listItems: List<GrocerySuggestion>) : GrocerySuggestionsListener()

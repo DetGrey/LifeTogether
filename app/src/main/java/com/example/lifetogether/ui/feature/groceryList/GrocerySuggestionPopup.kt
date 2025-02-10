@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.lifetogether.domain.model.GrocerySuggestion
+import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 
 @Composable
 fun GrocerySuggestionPopup(

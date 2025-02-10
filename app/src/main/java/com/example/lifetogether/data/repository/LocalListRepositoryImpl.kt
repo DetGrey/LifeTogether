@@ -1,15 +1,18 @@
 package com.example.lifetogether.data.repository
 
 import com.example.lifetogether.data.local.LocalDataSource
-import com.example.lifetogether.data.model.GroceryListEntity
+import com.example.lifetogether.data.model.Entity
 import com.example.lifetogether.domain.callback.CategoriesListener
 import com.example.lifetogether.domain.callback.GrocerySuggestionsListener
+import com.example.lifetogether.domain.callback.ItemResultListener
 import com.example.lifetogether.domain.callback.ListItemsResultListener
 import com.example.lifetogether.domain.callback.ResultListener
+import com.example.lifetogether.domain.callback.StringResultListener
 import com.example.lifetogether.domain.model.Category
-import com.example.lifetogether.domain.model.GroceryItem
-import com.example.lifetogether.domain.model.GrocerySuggestion
 import com.example.lifetogether.domain.model.Item
+import com.example.lifetogether.domain.model.grocery.GroceryItem
+import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
+import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.repository.ListRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -23,7 +26,7 @@ class LocalListRepositoryImpl @Inject constructor(
     override suspend fun saveItem(
         item: Item,
         listName: String,
-    ): ResultListener {
+    ): StringResultListener {
         TODO("Not yet implemented")
     }
 
@@ -45,7 +48,7 @@ class LocalListRepositoryImpl @Inject constructor(
                             emoji = category.emoji,
                             name = category.name,
                         )
-                    }
+                    },
                 )
             } catch (e: Exception) {
                 CategoriesListener.Failure(e.message ?: "Unknown error")
@@ -77,15 +80,20 @@ class LocalListRepositoryImpl @Inject constructor(
         listName: String,
         familyId: String,
         itemType: KClass<T>,
-    ): Flow<ListItemsResultListener<T>> {
+    ): Flow<ListItemsResultListener<Item>> {
         println("LocalListRepoImpl fetchListItems init")
-        return localDataSource.getListItems(familyId)
+        return localDataSource.getListItems(listName, familyId)
             .map { entities ->
                 try {
                     println("LocalListRepoImpl fetchListItems entities: $entities")
                     // Convert entities to items
                     val itemsList = entities.map { it.toItem(itemType) }
                     println("LocalListRepoImpl after getting items from local data source")
+                    for (item in itemsList) {
+                        if (item.itemName == "Chicken burger") {
+                            println("chicken burger fetched: $item")
+                        }
+                    }
                     println("fetchListItems of specified itemType: $itemsList")
                     ListItemsResultListener.Success(itemsList)
                 } catch (e: Exception) {
@@ -95,20 +103,56 @@ class LocalListRepositoryImpl @Inject constructor(
             }
     }
 
+    fun fetchItemById(
+        listName: String,
+        familyId: String,
+        id: String,
+        itemType: KClass<out Item>,
+    ): Flow<ItemResultListener<Item>> {
+        return localDataSource.getItemById(listName, familyId, id)
+            .map { entity ->
+                try {
+                    println("LocalListRepoImpl fetchItemById entity: $entity")
+                    val item = entity.toItem(itemType)
+                    println("fetchItemById of specified itemType: $item")
+                    ItemResultListener.Success(item)
+                } catch (e: Exception) {
+                    ItemResultListener.Failure(e.message ?: "Unknown error")
+                }
+            }
+    }
+
     // Assuming GroceryItem is a subclass of Item and has a matching constructor
     // TODO ADD MORE ITEM CLASSES
-    private fun <T : Item> GroceryListEntity.toItem(itemType: KClass<T>): T {
-        @Suppress("UNCHECKED_CAST")
-        return when (itemType) {
-            GroceryItem::class -> GroceryItem(
-                id = this.id,
-                familyId = this.familyId,
-                itemName = this.name,
-                lastUpdated = this.lastUpdated,
-                completed = this.completed,
-                category = this.category,
-            ) as T // Cast to T
-            else -> throw IllegalArgumentException("Unsupported item type: $itemType")
+    private fun Entity.toItem(itemType: KClass<out Item>): Item {
+        return when (this) {
+            is Entity.GroceryList -> when (itemType) {
+                GroceryItem::class -> GroceryItem(
+                    id = this.entity.id,
+                    familyId = this.entity.familyId,
+                    itemName = this.entity.name,
+                    lastUpdated = this.entity.lastUpdated,
+                    completed = this.entity.completed,
+                    category = this.entity.category,
+                )
+                else -> throw IllegalArgumentException("Unsupported item type: $itemType")
+            }
+            is Entity.Recipe -> when (itemType) {
+                Recipe::class -> Recipe(
+                    id = this.entity.id,
+                    familyId = this.entity.familyId,
+                    itemName = this.entity.itemName,
+                    lastUpdated = this.entity.lastUpdated,
+                    description = this.entity.description,
+                    ingredients = this.entity.ingredients,
+                    instructions = this.entity.instructions,
+                    preparationTimeMin = this.entity.preparationTimeMin,
+                    favourite = this.entity.favourite,
+                    servings = this.entity.servings,
+                    tags = this.entity.tags,
+                )
+                else -> throw IllegalArgumentException("Unsupported item type: $itemType")
+            }
         }
     }
 }

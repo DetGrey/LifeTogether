@@ -15,4 +15,5 @@ class AddNewListItemViewModel @Inject constructor() : ViewModel() {
     var selectedCategory: String by mutableStateOf("")
     var categoryOptions: List<String> by mutableStateOf(listOf())
     var oldCategoryList: List<Category> by mutableStateOf(listOf())
+    var textValue: String by mutableStateOf("")
 }

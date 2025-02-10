@@ -10,15 +10,17 @@ import com.example.lifetogether.domain.callback.CategoriesListener
 import com.example.lifetogether.domain.callback.GrocerySuggestionsListener
 import com.example.lifetogether.domain.callback.ListItemsResultListener
 import com.example.lifetogether.domain.callback.ResultListener
+import com.example.lifetogether.domain.callback.StringResultListener
 import com.example.lifetogether.domain.model.Category
-import com.example.lifetogether.domain.model.GroceryItem
-import com.example.lifetogether.domain.model.GrocerySuggestion
+import com.example.lifetogether.domain.model.grocery.GroceryItem
+import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.usecase.item.DeleteCompletedItemsUseCase
 import com.example.lifetogether.domain.usecase.item.FetchCategoriesUseCase
 import com.example.lifetogether.domain.usecase.item.FetchGrocerySuggestionsUseCase
 import com.example.lifetogether.domain.usecase.item.FetchListItemsUseCase
 import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
-import com.example.lifetogether.domain.usecase.item.ToggleItemCompletionUseCase
+import com.example.lifetogether.domain.usecase.item.ToggleCompletableItemCompletionUseCase
+import com.example.lifetogether.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,7 +36,7 @@ import javax.inject.Inject
 @HiltViewModel
 class GroceryListViewModel @Inject constructor(
     private val saveItemUseCase: SaveItemUseCase,
-    private val toggleItemCompletionUseCase: ToggleItemCompletionUseCase,
+    private val toggleCompletableItemCompletionUseCase: ToggleCompletableItemCompletionUseCase,
     private val fetchListItemsUseCase: FetchListItemsUseCase,
     private val fetchCategoriesUseCase: FetchCategoriesUseCase,
     private val deleteCompletedItemsUseCase: DeleteCompletedItemsUseCase,
@@ -42,6 +44,7 @@ class GroceryListViewModel @Inject constructor(
 ) : ViewModel() {
     var showConfirmationDialog: Boolean by mutableStateOf(false)
 
+    // ---------------------------------------------------------------- ERROR
     var showAlertDialog: Boolean by mutableStateOf(false)
     var error: String by mutableStateOf("")
     fun toggleAlertDialog() {
@@ -71,18 +74,24 @@ class GroceryListViewModel @Inject constructor(
             familyId = addedFamilyId
             // Use the UID here (e.g., fetch grocery list items)
             viewModelScope.launch {
-                fetchListItemsUseCase(familyId!!, "grocery-list", GroceryItem::class).collect { result ->
+                fetchListItemsUseCase(familyId!!, Constants.GROCERY_TABLE, GroceryItem::class).collect { result ->
                     println("fetchListItemsUseCase result: $result")
                     when (result) {
                         is ListItemsResultListener.Success -> {
-                            println("_groceryList old value: ${_groceryList.value}")
-                            _groceryList.value = result.listItems
-                            println("groceryList new value: ${groceryList.value}")
+                            // Filter and map the result.listItems to only include GroceryItem instances
+                            println("Items found: ${result.listItems}")
+                            val groceryItems = result.listItems.filterIsInstance<GroceryItem>()
+                            if (groceryItems.isNotEmpty()) {
+                                println("_groceryList old value: ${_groceryList.value}")
+                                _groceryList.value = groceryItems
+                                println("groceryList new value: ${groceryList.value}")
 
-//                            result.listItems.forEach { item ->
-//                                updateCategories(item.category ?: uncategorizedCategory)
-//                            }
-                            updateExpandedStates()
+                                updateExpandedStates()
+                            } else {
+                                println("Error: No GroceryItem instances found in the result")
+                                error = "No GroceryItem instances found in the result"
+                                showAlertDialog = true
+                            }
                         }
 
                         is ListItemsResultListener.Failure -> {
@@ -162,18 +171,6 @@ class GroceryListViewModel @Inject constructor(
                     }
                 }
             }
-        }
-    }
-
-    private fun updateCategories(newCategory: Category) {
-        if (!groceryCategories.value.contains(newCategory)) {
-            println("adding new category: $newCategory")
-            _groceryCategories.value = _groceryCategories.value
-                .filterNot { it.name == "Uncategorized" }
-                .plus(newCategory)
-                .sortedBy { it.name }
-                .let { listOf(Category("❓️", "Uncategorized")) + it }
-            updateExpandedStates()
         }
     }
 
@@ -276,13 +273,13 @@ class GroceryListViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            val result: ResultListener = saveItemUseCase.invoke(groceryItem, "grocery-list")
-            if (result is ResultListener.Success) {
+            val result: StringResultListener = saveItemUseCase.invoke(groceryItem, Constants.GROCERY_TABLE)
+            if (result is StringResultListener.Success) {
 //                updateCategories(newItemCategory)
                 updateNewItemCategory(null)
                 newItemText = ""
                 onSuccess()
-            } else if (result is ResultListener.Failure) {
+            } else if (result is StringResultListener.Failure) {
                 println("Error: ${result.message}")
                 // TODO popup saying the error for 5 sec
                 error = result.message
@@ -299,9 +296,8 @@ class GroceryListViewModel @Inject constructor(
         val newItem = oldItem.copy(completed = !oldItem.completed, lastUpdated = Date(System.currentTimeMillis()))
 
         viewModelScope.launch {
-            val result: ResultListener = toggleItemCompletionUseCase.invoke(newItem, "grocery-list")
+            val result: ResultListener = toggleCompletableItemCompletionUseCase.invoke(newItem, Constants.GROCERY_TABLE)
             if (result is ResultListener.Success) {
-//                groceryList = groceryList.minus(oldItem).plus(newItem)
                 isLoading = false
             } else if (result is ResultListener.Failure) {
                 // TODO popup saying the error for 5 sec
@@ -321,14 +317,11 @@ class GroceryListViewModel @Inject constructor(
         val items = completedItems.value.filter { it.id != null }
 
         viewModelScope.launch {
-            val result = deleteCompletedItemsUseCase.invoke(
-                "grocery-list",
+            deleteCompletedItemsUseCase.invoke(
+                Constants.GROCERY_TABLE,
                 items = items,
             )
-            when (result) {
-                is ResultListener.Success -> showConfirmationDialog = false
-                is ResultListener.Failure -> showConfirmationDialog = false
-            }
+            showConfirmationDialog = false
         }
     }
 }

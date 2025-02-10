@@ -111,7 +111,7 @@ fun SettingsItemPreview() {
     LifeTogetherTheme {
         ProvideTextStyle(value = AppTypography.bodyMedium) {
             SettingsItem(
-                icon = Icon(R.drawable.ic_profile_picture, "profile pic"),
+                icon = Icon(R.drawable.ic_profile_picture, "profile icon"),
                 title = "Username",
                 link = "Edit my profile",
             )

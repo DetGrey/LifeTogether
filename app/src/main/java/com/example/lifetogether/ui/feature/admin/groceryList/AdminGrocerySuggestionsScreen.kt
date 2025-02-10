@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.feature.admin.groceryList
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -23,22 +26,21 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.add.AddNewListItem
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
-import com.example.lifetogether.ui.feature.groceryList.AddNewListItem
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.AuthViewModel
+import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 
 @Composable
 fun AdminGrocerySuggestionsScreen(
     appNavigator: AppNavigator? = null,
-    authViewModel: AuthViewModel? = null,
+    firebaseViewModel: FirebaseViewModel? = null,
 ) {
     val grocerySuggestionsViewModel: AdminGrocerySuggestionsViewModel = hiltViewModel()
 
-    val userInformation by authViewModel?.userInformation!!.collectAsState()
     val groceryCategories by grocerySuggestionsViewModel.groceryCategories.collectAsState()
     val grocerySuggestions by grocerySuggestionsViewModel.grocerySuggestions.collectAsState()
 
@@ -72,6 +74,15 @@ fun AdminGrocerySuggestionsScreen(
             }
 
             item {
+                Text(modifier = Modifier.padding(horizontal = 5.dp),
+                    text = "Add a new suggestion by choosing the category (emoji) and writing the suggestion name.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Black,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
                 TextHeadingMedium("Grocery suggestions")
                 if (grocerySuggestions.isNotEmpty()) {
                     ListEditorContainer(
@@ -91,29 +102,27 @@ fun AdminGrocerySuggestionsScreen(
                     )
                 }
             }
-
-            item {
-                Text(
-                    text = "Add new category as a string with an emoji and a name with whitespace between e.g. \"\uD83C\uDF5E Bakery\"",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Black,
-                )
-                Spacer(modifier = Modifier.height(20.dp))
-
-                AddNewListItem(
-                    textValue = grocerySuggestionsViewModel.newSuggestionText,
-                    onTextChange = { grocerySuggestionsViewModel.newSuggestionText = it },
-                    onAddClick = {
-                        grocerySuggestionsViewModel.addNewGrocerySuggestion()
-                    },
-                    categoryList = groceryCategories,
-                    selectedCategory = grocerySuggestionsViewModel.newSuggestionCategory,
-                    onCategoryChange = { newCategory ->
-                        grocerySuggestionsViewModel.updateNewSuggestionCategory(newCategory)
-                    },
-                )
-            }
         }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(10.dp),
+        contentAlignment = Alignment.BottomCenter,
+    ) {
+        AddNewListItem(
+            textValue = grocerySuggestionsViewModel.newSuggestionText,
+            onTextChange = { grocerySuggestionsViewModel.newSuggestionText = it },
+            onAddClick = {
+                grocerySuggestionsViewModel.addNewGrocerySuggestion()
+            },
+            categoryList = groceryCategories,
+            selectedCategory = grocerySuggestionsViewModel.newSuggestionCategory,
+            onCategoryChange = { newCategory ->
+                grocerySuggestionsViewModel.updateNewSuggestionCategory(newCategory)
+            },
+        )
     }
 
     if (grocerySuggestionsViewModel.showDeleteCategoryConfirmationDialog && grocerySuggestionsViewModel.selectedSuggestion != null) {
@@ -135,6 +144,7 @@ fun AdminGrocerySuggestionsScreen(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Preview(showBackground = true)
 @Composable
 fun AdminGrocerySuggestionsScreenPreview() {

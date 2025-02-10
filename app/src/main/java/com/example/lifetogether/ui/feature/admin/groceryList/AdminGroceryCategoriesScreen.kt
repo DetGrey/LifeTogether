@@ -26,29 +26,28 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Icon
-import com.example.lifetogether.ui.common.CustomTextField
 import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.add.AddNewListItem
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
+import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.AuthViewModel
+import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 
 @Composable
 fun AdminGroceryCategoriesScreen(
     appNavigator: AppNavigator? = null,
-    authViewModel: AuthViewModel? = null,
+    firebaseViewModel: FirebaseViewModel? = null,
 ) {
     val groceryCategoriesViewModel: AdminGroceryCategoriesViewModel = hiltViewModel()
 
-    val userInformation by authViewModel?.userInformation!!.collectAsState()
     val groceryCategories by groceryCategoriesViewModel.groceryCategories.collectAsState()
 
     LaunchedEffect(key1 = true) {
@@ -81,6 +80,15 @@ fun AdminGroceryCategoriesScreen(
             }
 
             item {
+                Text(modifier = Modifier.padding(horizontal = 5.dp),
+                    text = "Add new category as a string with an emoji and a name with whitespace between e.g. \"\uD83C\uDF5E Bakery\"",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Black,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
                 TextHeadingMedium("Grocery categories")
                 if (groceryCategories.isNotEmpty()) {
                     ListEditorContainer(
@@ -91,63 +99,62 @@ fun AdminGroceryCategoriesScreen(
                             groceryCategoriesViewModel.showDeleteCategoryConfirmationDialog = true
                         },
                     )
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    Text(
-                        text = "Add new category as a string with an emoji and a name with whitespace between e.g. \"\uD83C\uDF5E Bakery\"",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Black,
-                    )
                 }
             }
 
-            item {
-                Box(
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(10.dp),
+        contentAlignment = Alignment.BottomCenter,
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(60.dp)
+                .clip(shape = RoundedCornerShape(20))
+                .background(color = MaterialTheme.colorScheme.onBackground),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Row(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(60.dp)
-                        .clip(shape = RoundedCornerShape(20))
-                        .background(color = MaterialTheme.colorScheme.onBackground),
-                    contentAlignment = Alignment.CenterStart,
+                        .fillMaxWidth(0.8f),
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxSize(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth(0.8f),
-                        ) {
-                            CustomTextField(
-                                value = groceryCategoriesViewModel.newCategory,
-                                onValueChange = {
-                                    groceryCategoriesViewModel.newCategory = it
-                                },
-                                label = "Add category",
-                                keyboardType = KeyboardType.Text,
-                                imeAction = ImeAction.Done,
-                            )
-                        }
-                        Row(
-                            modifier = Modifier
-                                .padding(10.dp)
-                                .fillMaxHeight()
-                                .clickable {
-                                    groceryCategoriesViewModel.addCategory()
-                                },
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(text = "Add", color = Color.White)
+                    CustomTextField(
+                        value = groceryCategoriesViewModel.newCategory,
+                        onValueChange = {
+                            groceryCategoriesViewModel.newCategory = it
+                        },
+                        label = "Add category",
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Done,
+                    )
+                }
+                Row(
+                    modifier = Modifier
+                        .padding(10.dp)
+                        .fillMaxHeight()
+                        .clickable {
+                            groceryCategoriesViewModel.addCategory()
+                        },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(text = "Add", color = Color.White)
 
-                            Spacer(modifier = Modifier.width(5.dp))
+                    Spacer(modifier = Modifier.width(5.dp))
 
-                            Text(
-                                text = ">",
-                                color = MaterialTheme.colorScheme.secondary,
-                            )
-                        }
-                    }
+                    Text(
+                        text = ">",
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
                 }
             }
         }
@@ -169,13 +176,5 @@ fun AdminGroceryCategoriesScreen(
     if (groceryCategoriesViewModel.showAlertDialog) {
         ErrorAlertDialog(groceryCategoriesViewModel.error)
         groceryCategoriesViewModel.toggleAlertDialog()
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun AdminGroceryListScreenPreview() {
-    LifeTogetherTheme {
-        AdminGroceryCategoriesScreen()
     }
 }

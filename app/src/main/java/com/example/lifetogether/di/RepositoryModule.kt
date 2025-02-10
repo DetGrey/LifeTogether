@@ -1,11 +1,14 @@
 package com.example.lifetogether.di
 
+import com.example.lifetogether.data.repository.LocalImageRepositoryImpl
 import com.example.lifetogether.data.repository.LocalListRepositoryImpl
 import com.example.lifetogether.data.repository.LocalUserRepositoryImpl
 import com.example.lifetogether.data.repository.RemoteAdminRepositoryImpl
+import com.example.lifetogether.data.repository.RemoteImageRepositoryImpl
 import com.example.lifetogether.data.repository.RemoteListRepositoryImpl
 import com.example.lifetogether.data.repository.RemoteUserRepositoryImpl
 import com.example.lifetogether.domain.repository.AdminRepository
+import com.example.lifetogether.domain.repository.ImageRepository
 import com.example.lifetogether.domain.repository.ListRepository
 import com.example.lifetogether.domain.repository.UserRepository
 import dagger.Binds
@@ -41,4 +44,14 @@ abstract class RepositoryModule {
     abstract fun bindLocalUserRepository(
         localUserRepositoryImpl: LocalUserRepositoryImpl,
     ): UserRepository
+
+    @Binds
+    abstract fun bindLocalImageRepository(
+        localImageRepositoryImpl: LocalImageRepositoryImpl,
+    ): ImageRepository
+
+    @Binds
+    abstract fun bindRemoteImageRepository(
+        remoteImageRepositoryImpl: RemoteImageRepositoryImpl,
+    ): ImageRepository
 }
