@@ -3,9 +3,7 @@ package com.example.lifetogether.ui.navigation
 import androidx.navigation.NavController
 
 class AppNavigator(private val navController: NavController) : Navigator {
-    override fun navigateToAdmin() {
-        navController.navigate(AppRoutes.ADMIN_SCREEN)
-    }
+
     override fun navigateToAdminGroceryCategories() {
         navController.navigate(AppRoutes.ADMIN_GROCERY_CATEGORIES_SCREEN)
     }

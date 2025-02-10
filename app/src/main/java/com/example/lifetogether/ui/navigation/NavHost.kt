@@ -6,7 +6,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.example.lifetogether.ui.feature.admin.AdminScreen
 import com.example.lifetogether.ui.feature.admin.groceryList.AdminGroceryCategoriesScreen
 import com.example.lifetogether.ui.feature.admin.groceryList.AdminGrocerySuggestionsScreen
 import com.example.lifetogether.ui.feature.family.FamilyScreen
@@ -31,9 +30,6 @@ fun NavHost(
         navController = navController,
         startDestination = AppRoutes.HOME_SCREEN,
     ) {
-        composable(AppRoutes.ADMIN_SCREEN) {
-            AdminScreen(appNavigator, firebaseViewModel)
-        }
         composable(AppRoutes.ADMIN_GROCERY_CATEGORIES_SCREEN) {
             AdminGroceryCategoriesScreen(appNavigator, firebaseViewModel)
         }

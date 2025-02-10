@@ -1,3 +1,4 @@
+import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
@@ -26,8 +27,10 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        
+        val adminList: String = gradleLocalProperties(rootDir, providers).getProperty("adminList")
+        buildConfigField("String", "ADMIN_LIST", adminList)
 
-        buildConfigField("String", "ADMIN", "\"G55CzHoPRKOmSL977x0I\"")
         buildFeatures {
             buildConfig = true
         }

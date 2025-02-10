@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.feature.home
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,12 +31,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.lifetogether.BuildConfig
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.LoveButton
+import com.example.lifetogether.ui.common.text.TextDisplayLarge
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
@@ -50,11 +54,6 @@ fun HomeScreen(
     val bitmap by imageViewModel.bitmap.collectAsState()
 
     val userInformationState by firebaseViewModel?.userInformation!!.collectAsState()
-
-    // TODO add admin stuff on this screen
-//    if (userInformationState?.familyId == BuildConfig.ADMIN) {
-//        appNavigator?.navigateToAdmin()
-//    }
 
     LaunchedEffect(key1 = true) {
         // Perform any one-time initialization or side effect here
@@ -244,8 +243,54 @@ fun HomeScreen(
                 }
             }
 
+            if (userInformationState?.uid in BuildConfig.ADMIN_LIST.split(",")) {
+                item {
+                    Spacer(modifier = Modifier.height(250.dp))
+
+                    TextDisplayLarge("Admin features")
+
+                    FlowRow(
+                        maxItemsInEachRow = 2,
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        // TODO use a when statement with enum class to show main features
+                        // TODO E.g. when clicking grocery list, it shows the features grocery categories and suggestions
+
+                        FeatureOverview(
+                            "Grocery categories",
+                            0,
+                            "Recipe",
+                            onClick = {
+                                if (userInformationState?.familyId == null) {
+                                    // TODO add popup asking to join a family
+                                } else {
+                                    appNavigator?.navigateToAdminGroceryCategories()
+                                }
+                            },
+                            icon = Icon(R.drawable.ic_groceries, "groceries basket icon"),
+                            fullWidth = true,
+                        )
+                        FeatureOverview(
+                            "Grocery suggestions",
+                            0,
+                            "Recipe",
+                            onClick = {
+                                if (userInformationState?.familyId == null) {
+                                    // TODO add popup asking to join a family
+                                } else {
+                                    appNavigator?.navigateToAdminGrocerySuggestions()
+                                }
+                            },
+                            icon = Icon(R.drawable.ic_groceries, "groceries basket icon"),
+                            fullWidth = true,
+                        )
+                    }
+                }
+            }
+
             item {
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(40.dp))
             }
         }
     }
@@ -253,6 +298,7 @@ fun HomeScreen(
     LoveButton()
 }
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Preview(showBackground = true)
 @Composable
 fun HomeScreenPreview() {

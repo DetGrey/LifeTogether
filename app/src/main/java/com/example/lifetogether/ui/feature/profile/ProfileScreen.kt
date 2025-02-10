@@ -29,6 +29,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.lifetogether.BuildConfig
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.formatDateToString
 import com.example.lifetogether.domain.model.ConfirmationDialogDetails
@@ -190,6 +191,16 @@ fun ProfileScreen(
                             formatDateToString(date)
                         } ?: "",
                     )
+                    if (userInformation?.uid in BuildConfig.ADMIN_LIST.split(",")) {
+                        ProfileDetails(
+                            icon = Icon(
+                                resId = R.drawable.ic_settings,
+                                description = "settings icon",
+                            ),
+                            title = "User type",
+                            value = "Admin",
+                        )
+                    }
                     ProfileDetails(
                         icon = Icon(
                             resId = R.drawable.ic_password_black,

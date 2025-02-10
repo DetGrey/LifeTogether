@@ -1,7 +1,6 @@
 package com.example.lifetogether.ui.navigation
 
 object AppRoutes {
-    const val ADMIN_SCREEN = "admin"
     const val ADMIN_GROCERY_CATEGORIES_SCREEN = "admin_grocery_categories"
     const val ADMIN_GROCERY_SUGGESTIONS_SCREEN = "admin_grocery_suggestions"
     const val HOME_SCREEN = "home"
