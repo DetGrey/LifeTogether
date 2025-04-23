@@ -17,7 +17,7 @@ class RemoteListRepositoryImpl @Inject constructor(
     ): StringResultListener {
         return firestoreDataSource.saveItem(item, listName)
     }
-
+    // ...
     suspend fun updateItem(
         item: Item,
         listName: String,
