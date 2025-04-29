@@ -10,6 +10,7 @@ import com.example.lifetogether.domain.callback.ByteArrayResultListener
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.callback.StringResultListener
 import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.util.Constants
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
@@ -32,30 +33,25 @@ class FirebaseStorageDataSource@Inject constructor() {
             var maxWidth = 600
             var maxHeight = 600
             var needsResize = true
-            val type = ".jpg"
+            var type = ".jpg"
 
             when (imageType) {
                 is ImageType.ProfileImage -> {
-                    path = "profile"
+                    path = Constants.USER_TABLE
                 }
                 is ImageType.FamilyImage -> {
-                    path = "family"
+                    path = Constants.FAMILIES_TABLE
                     maxWidth = 1200
                 }
                 is ImageType.RecipeImage -> {
-                    path = "recipe"
+                    path = Constants.RECIPES_TABLE
                     maxWidth = 1200
                 }
-//                is ImageType.GalleryImage -> {
-//                    twoVersions = true
-//                    path = "gallery"
-//                    var needsResize = false
-//                    type = ".png"
-//                    // TODO make low-quality (50-70% jpg) and high-quality (100% png) versions like:
-//                        // val previewPath = "previews/$path"
-//                        // val fullPath = "full/$path"
-//
-//                }
+                is ImageType.GalleryImage -> {
+                    path = Constants.GALLERY_IMAGES_TABLE
+                    needsResize = false
+                    type = ".png"
+                }
             }
 
             // Resize image only if needed
@@ -70,7 +66,7 @@ class FirebaseStorageDataSource@Inject constructor() {
             }
 
             // Create a reference to Firebase Storage
-            path += "/${UUID.randomUUID()}$type"
+            path += "/${UUID.randomUUID()}-${System.currentTimeMillis()}$type"
 
             val photoRef = FirebaseStorage.getInstance().reference.child(path)
 

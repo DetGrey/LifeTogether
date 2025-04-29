@@ -1,15 +1,19 @@
 package com.example.lifetogether.data.local
 
+import com.example.lifetogether.data.local.dao.AlbumsDao
 import com.example.lifetogether.data.local.dao.CategoriesDao
 import com.example.lifetogether.data.local.dao.FamilyInformationDao
+import com.example.lifetogether.data.local.dao.GalleryImagesDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
 import com.example.lifetogether.data.local.dao.RecipesDao
 import com.example.lifetogether.data.local.dao.UserInformationDao
+import com.example.lifetogether.data.model.AlbumEntity
 import com.example.lifetogether.data.model.CategoryEntity
 import com.example.lifetogether.data.model.Entity
 import com.example.lifetogether.data.model.FamilyEntity
 import com.example.lifetogether.data.model.FamilyMemberEntity
+import com.example.lifetogether.data.model.GalleryImageEntity
 import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.model.GrocerySuggestionEntity
 import com.example.lifetogether.data.model.RecipeEntity
@@ -18,6 +22,8 @@ import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.family.FamilyInformation
+import com.example.lifetogether.domain.model.gallery.Album
+import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.model.recipe.Recipe
@@ -25,6 +31,7 @@ import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.util.Constants
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -37,6 +44,8 @@ class LocalDataSource @Inject constructor(
     private val categoriesDao: CategoriesDao,
     private val userInformationDao: UserInformationDao,
     private val familyInformationDao: FamilyInformationDao,
+    private val galleryImagesDao: GalleryImagesDao,
+    private val albumsDao: AlbumsDao,
 ) {
     // -------------------------------------------------------------- CATEGORIES
     fun getCategories(): Flow<List<CategoryEntity>> {
@@ -78,9 +87,6 @@ class LocalDataSource @Inject constructor(
         listName: String,
         familyId: String,
     ): Flow<List<Entity>> {
-//        val items = groceryListDao.getItems(familyId)
-//        println("LocalDataSource getListItems: $items")
-//        return items
 
         println("LocalDataSource getListItems listname: $listName")
         val items: Flow<List<Entity>> = when (listName) {
@@ -89,6 +95,12 @@ class LocalDataSource @Inject constructor(
             }
             Constants.RECIPES_TABLE -> recipesDao.getItems(familyId).map { list ->
                 list.map { Entity.Recipe(it) }
+            }
+            Constants.ALBUMS_TABLE -> albumsDao.getItems(familyId).map { list ->
+                list.map { Entity.Album(it) }
+            }
+            Constants.GALLERY_IMAGES_TABLE -> galleryImagesDao.getItems(familyId).map { list ->
+                list.map { Entity.GalleryImage(it) }
             }
             else -> flowOf(emptyList<Entity>()) // Handle the case where the listName doesn't match any known entity
         }
@@ -193,6 +205,13 @@ class LocalDataSource @Inject constructor(
         recipesDao.deleteItems(itemsToDelete.map { it.id })
     }
 
+    suspend fun deleteFamilyRecipes(familyId: String) {
+        val currentFamilyItems = recipesDao.getItems(familyId).firstOrNull()
+        if (currentFamilyItems != null) {
+            recipesDao.deleteItems(currentFamilyItems.map { it.id })
+        }
+    }
+
     // -------------------------------------------------------------- GROCERY LIST
     suspend fun updateGroceryList(items: List<GroceryItem>) {
         println("LocalDataSource updateGroceryList(): Trying to add firestore data to Room")
@@ -228,6 +247,13 @@ class LocalDataSource @Inject constructor(
 
         // Delete the items that no longer exist in Firestore
         groceryListDao.deleteItems(itemsToDelete.map { it.id })
+    }
+
+    suspend fun deleteFamilyGroceryItems(familyId: String) {
+        val currentFamilyItems = groceryListDao.getItems(familyId).firstOrNull()
+        if (currentFamilyItems != null) {
+            groceryListDao.deleteItems(currentFamilyItems.map { it.id })
+        }
     }
 
     // -------------------------------------------------------------- GROCERY SUGGESTIONS
@@ -345,6 +371,106 @@ class LocalDataSource @Inject constructor(
         familyInformationDao.updateFamilyMembers(familyMembers)
     }
 
+    // -------------------------------------------------------------- GALLERY IMAGES
+    suspend fun updateGalleryImages(
+        items: List<GalleryImage>,
+        byteArrays: Map<String, ByteArray>,
+    ) {
+        println("LocalDataSource updateGalleryImages(): Trying to add firestore data to Room")
+
+        println("Gallery image list: $items")
+        var entityList = items.map { item ->
+            GalleryImageEntity(
+                id = item.id ?: "",
+                familyId = item.familyId,
+                itemName = item.itemName,
+                lastUpdated = item.lastUpdated,
+                albumId = item.albumId,
+                dateCreated = item.dateCreated,
+            )
+        }
+
+        if (byteArrays.isNotEmpty()) {
+            entityList = entityList.map { item ->
+                item.copy(imageData = if (byteArrays[item.id] != null) byteArrays[item.id] else null)
+            }
+        }
+
+        // Fetch the current items from the Room database
+        val currentItems = galleryImagesDao.getItems(items[0].familyId).first()
+
+        // Determine the items to be inserted or updated
+        val itemsToUpdate = entityList.filter { newItem ->
+            currentItems.none { currentItem -> newItem.id == currentItem.id && newItem == currentItem }
+        }
+
+        println("galleryImageEntityList itemsToUpdate: ${itemsToUpdate.map { it.itemName }}")
+
+        // Determine the items to be deleted
+        val itemsToDelete = currentItems.filter { currentItem ->
+            entityList.none { newItem -> newItem.id == currentItem.id }
+        }
+
+        // Update the Room database with the new or changed items
+        galleryImagesDao.updateItems(itemsToUpdate)
+
+        // Delete the items that no longer exist in Firestore
+        galleryImagesDao.deleteItems(itemsToDelete.map { it.id })
+    }
+
+    suspend fun deleteFamilyGalleryImages(familyId: String) {
+        val currentFamilyItems = galleryImagesDao.getItems(familyId).firstOrNull()
+        if (currentFamilyItems != null) {
+            galleryImagesDao.deleteItems(currentFamilyItems.map { it.id })
+        }
+    }
+
+    // -------------------------------------------------------------- ALBUMS
+    suspend fun updateAlbums(
+        items: List<Album>,
+    ) {
+        println("LocalDataSource updateAlbums(): Trying to add firestore data to Room")
+
+        println("Album list: $items")
+        val entityList = items.map { item ->
+            AlbumEntity(
+                id = item.id ?: "",
+                familyId = item.familyId,
+                itemName = item.itemName,
+                lastUpdated = item.lastUpdated,
+                count = item.count,
+            )
+        }
+
+        // Fetch the current items from the Room database
+        val currentItems = albumsDao.getItems(items[0].familyId).first()
+
+        // Determine the items to be inserted or updated
+        val itemsToUpdate = entityList.filter { newItem ->
+            currentItems.none { currentItem -> newItem.id == currentItem.id && newItem == currentItem }
+        }
+
+        println("albumEntityList itemsToUpdate: ${itemsToUpdate.map { it.itemName }}")
+
+        // Determine the items to be deleted
+        val itemsToDelete = currentItems.filter { currentItem ->
+            entityList.none { newItem -> newItem.id == currentItem.id }
+        }
+
+        // Update the Room database with the new or changed items
+        albumsDao.updateItems(itemsToUpdate)
+
+        // Delete the items that no longer exist in Firestore
+        albumsDao.deleteItems(itemsToDelete.map { it.id })
+    }
+
+    suspend fun deleteFamilyAlbums(familyId: String) {
+        val currentFamilyItems = albumsDao.getItems(familyId).firstOrNull()
+        if (currentFamilyItems != null) {
+            albumsDao.deleteItems(currentFamilyItems.map { it.id })
+        }
+    }
+
     // -------------------------------------------------------------- IMAGES
     fun getImageByteArray(imageType: ImageType): Flow<ByteArray?> {
         println("LocalDataSource getImageByteArray imageType: $imageType")
@@ -354,6 +480,8 @@ class LocalDataSource @Inject constructor(
             is ImageType.FamilyImage -> familyInformationDao.getImageByteArray(imageType.familyId)
 
             is ImageType.RecipeImage -> recipesDao.getImageByteArray(imageType.familyId, imageType.recipeId)
+
+            is ImageType.GalleryImage -> galleryImagesDao.getImageByteArray(imageType.familyId, imageType.albumId)
         }
     }
 }

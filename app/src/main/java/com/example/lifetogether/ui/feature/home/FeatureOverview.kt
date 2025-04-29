@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.feature.home
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -28,17 +30,10 @@ import com.example.lifetogether.ui.theme.LifeTogetherTheme
 @Composable
 fun RowScope.FeatureOverview(
     title: String,
-    itemCount: Int,
-    itemType: String,
     fullWidth: Boolean = false,
     onClick: () -> Unit,
     icon: Icon = Icon(R.drawable.ic_reload, "icon not found"),
 ) {
-    var itemTypeText = itemType
-    if (itemCount > 1) {
-        itemTypeText = "${itemType}s"
-    }
-
     Column(
         modifier = Modifier
             .clip(shape = RoundedCornerShape(20))
@@ -61,15 +56,10 @@ fun RowScope.FeatureOverview(
         )
 
         TextHeadingMedium(text = title)
-
-//        Text(
-//            text = "$itemCount $itemTypeText",
-//            style = MaterialTheme.typography.bodyMedium,
-//            color = Color.White,
-//        )
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.S)
 @OptIn(ExperimentalLayoutApi::class)
 @Preview(showBackground = true)
 @Composable
@@ -83,33 +73,23 @@ fun FeatureOverviewPreview() {
         ) {
             FeatureOverview(
                 "Grocery list",
-                10,
-                "Recipe",
                 onClick = {},
             )
             FeatureOverview(
                 "Recipes",
-                1,
-                "Recipe",
                 onClick = {},
             )
             FeatureOverview(
                 "Memory lane",
-                4,
-                "Recipe",
                 true,
                 onClick = {},
             )
             FeatureOverview(
                 "Gallery",
-                10,
-                "Recipe",
                 onClick = {},
             )
             FeatureOverview(
                 "Note Corner",
-                43,
-                "Recipe",
                 onClick = {},
             )
         }

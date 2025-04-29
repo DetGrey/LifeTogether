@@ -6,6 +6,7 @@ import com.example.lifetogether.data.remote.FirebaseStorageDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.callback.StringResultListener
+import com.example.lifetogether.domain.model.Item
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.repository.ImageRepository
 import javax.inject.Inject
@@ -43,5 +44,12 @@ class RemoteImageRepositoryImpl @Inject constructor(
         imageType: ImageType,
     ): ResultListener {
         return firestoreDataSource.saveImageDownloadUrl(url, imageType)
+    }
+
+    suspend fun saveImagesMetaData(
+        imageType: ImageType,
+        imagesDataList: List<Item>
+    ): ResultListener {
+        return firestoreDataSource.saveImagesMetaData(imageType, imagesDataList)
     }
 }

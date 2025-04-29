@@ -15,6 +15,8 @@ import com.example.lifetogether.domain.model.Item
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.model.family.FamilyMember
+import com.example.lifetogether.domain.model.gallery.Album
+import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.model.recipe.Recipe
@@ -327,6 +329,58 @@ class FirestoreDataSource@Inject constructor() {
         awaitClose { listenerRegistration.remove() }
     }
 
+    // ------------------------------------------------------------------------------- ALBUMS
+    fun albumsSnapshotListener(familyId: String) = callbackFlow {
+        println("Firestore albumSnapshotListener init")
+        val itemsRef =
+            db.collection(Constants.ALBUMS_TABLE).whereEqualTo("familyId", familyId)
+        val listenerRegistration = itemsRef.addSnapshotListener { snapshot, e ->
+            if (e != null) {
+                // Handle error
+                println("Firestore albumSnapshotListener error: ${e.message}")
+                trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess
+                return@addSnapshotListener
+            }
+
+            if (snapshot != null) {
+                // Process the changes and update Room database
+                val items = snapshot.toObjects(Album::class.java)
+                println("Snapshot items to Album: $items")
+                trySend(ListItemsResultListener.Success(items)).isSuccess
+            } else {
+                trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess
+            }
+        }
+        // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.
+        awaitClose { listenerRegistration.remove() }
+    }
+
+    // ------------------------------------------------------------------------------- GALLERY IMAGES
+    fun galleryImagesSnapshotListener(familyId: String) = callbackFlow {
+        println("Firestore galleryImagesSnapshotListener init")
+        val itemsRef =
+            db.collection(Constants.GALLERY_IMAGES_TABLE).whereEqualTo("familyId", familyId)
+        val listenerRegistration = itemsRef.addSnapshotListener { snapshot, e ->
+            if (e != null) {
+                // Handle error
+                println("Firestore galleryImagesSnapshotListener error: ${e.message}")
+                trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess
+                return@addSnapshotListener
+            }
+
+            if (snapshot != null) {
+                // Process the changes and update Room database
+                val items = snapshot.toObjects(GalleryImage::class.java)
+                println("Snapshot items to GalleryImage: $items")
+                trySend(ListItemsResultListener.Success(items)).isSuccess
+            } else {
+                trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess
+            }
+        }
+        // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.
+        awaitClose { listenerRegistration.remove() }
+    }
+
     // ------------------------------------------------------------------------------- ITEMS
     suspend fun saveItem(
         item: Item,
@@ -549,24 +603,26 @@ class FirestoreDataSource@Inject constructor() {
             when (imageType) {
                 is ImageType.ProfileImage -> {
                     val documentReference =
-                        db.collection("users").document(imageType.uid).get().await()
+                        db.collection(Constants.USER_TABLE).document(imageType.uid).get().await()
                     return documentReference.getString("imageUrl")
                         ?.let { StringResultListener.Success(it) }
                 }
 
                 is ImageType.FamilyImage -> {
                     val documentReference =
-                        db.collection("families").document(imageType.familyId).get().await()
+                        db.collection(Constants.FAMILIES_TABLE).document(imageType.familyId).get().await()
                     return documentReference.getString("imageUrl")
                         ?.let { StringResultListener.Success(it) }
                 }
 
                 is ImageType.RecipeImage -> {
                     val documentReference =
-                        db.collection("recipes").document(imageType.recipeId).get().await()
+                        db.collection(Constants.RECIPES_TABLE).document(imageType.recipeId).get().await()
                     return documentReference.getString("imageUrl")
                         ?.let { StringResultListener.Success(it) }
                 }
+
+                is ImageType.GalleryImage -> TODO()
             }
         } catch (e: Exception) {
             println("Error: ${e.message}")
@@ -589,15 +645,51 @@ class FirestoreDataSource@Inject constructor() {
 
             when (imageType) {
                 is ImageType.ProfileImage -> {
-                    db.collection("users").document(imageType.uid).update(photo).await()
+                    db.collection(Constants.USER_TABLE).document(imageType.uid).update(photo).await()
                 }
 
                 is ImageType.FamilyImage -> {
-                    db.collection("families").document(imageType.familyId).update(photo).await()
+                    db.collection(Constants.FAMILIES_TABLE).document(imageType.familyId).update(photo).await()
                 }
 
                 is ImageType.RecipeImage -> {
-                    db.collection("recipes").document(imageType.recipeId).update(photo).await()
+                    db.collection(Constants.RECIPES_TABLE).document(imageType.recipeId).update(photo).await()
+                }
+
+                else -> {
+                    ResultListener.Failure("Image type is not connected to one specific document")
+                }
+            }
+
+            return ResultListener.Success
+        } catch (e: Exception) {
+            println("Error: ${e.message}")
+            return ResultListener.Failure("Error: ${e.message}")
+        }
+    }
+
+    suspend fun saveImagesMetaData(
+        imageType: ImageType,
+        imageDataList: List<Item>,
+    ): ResultListener {
+        try {
+            println("saveImageDownloadUrl imageType: $imageType")
+
+            when (imageType) {
+                is ImageType.GalleryImage -> {
+                    val batch = db.batch() // Create a batched write
+                    val collectionRef = db.collection(Constants.GALLERY_IMAGES_TABLE)
+
+                    imageDataList.forEach { image ->
+                        val docRef = collectionRef.document() // Generate a new document reference
+                        batch.set(docRef, image) // Add set operation to batch
+                    }
+
+                    batch.commit().await() // Commit the batch operation
+                }
+
+                else -> {
+                    ResultListener.Failure("Image type does not include metadata")
                 }
             }
 

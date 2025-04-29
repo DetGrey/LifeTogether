@@ -5,28 +5,28 @@ import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.callback.ListItemsResultListener
 import javax.inject.Inject
 
-class ObserveGroceryListUseCase @Inject constructor(
+class ObserveAlbumsUseCase @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
     private val localDataSource: LocalDataSource,
 ) {
     suspend operator fun invoke(
         familyId: String,
     ) {
-        println("ObserveGroceryListUseCase invoked")
-        firestoreDataSource.grocerySnapshotListener(familyId).collect { result ->
-            println("grocerySnapshotListener().collect result: $result")
+        println("ObserveAlbumsUseCase invoked")
+        firestoreDataSource.albumsSnapshotListener(familyId).collect { result ->
+            println("albumsSnapshotListener().collect result: $result")
             when (result) {
                 is ListItemsResultListener.Success -> {
                     if (result.listItems.isEmpty()) {
-                        println("grocerySnapshotListener().collect result: is empty")
-                        localDataSource.deleteFamilyGroceryItems(familyId)
+                        println("albumsSnapshotListener().collect result: is empty")
+                        localDataSource.deleteFamilyAlbums(familyId)
                     } else {
-                        localDataSource.updateGroceryList(result.listItems)
+                        localDataSource.updateAlbums(result.listItems)
                     }
                 }
                 is ListItemsResultListener.Failure -> {
                     // Handle failure
-                    println("ObserveFirestoreUseCase failure: ${result.message}")
+                    println("ObserveAlbumsUseCase failure: ${result.message}")
                 }
             }
         }

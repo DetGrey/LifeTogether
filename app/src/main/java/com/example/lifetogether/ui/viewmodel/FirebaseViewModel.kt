@@ -8,9 +8,11 @@ import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.callback.AuthResultListener
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.enums.UpdateType
+import com.example.lifetogether.domain.usecase.observers.ObserveAlbumsUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveAuthStateUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveCategoriesUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveFamilyInformationUseCase
+import com.example.lifetogether.domain.usecase.observers.ObserveGalleryImagesUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveGroceryListUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveGrocerySuggestionsUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveRecipesUseCase
@@ -35,6 +37,8 @@ class FirebaseViewModel @Inject constructor(
     private val observeGrocerySuggestionsUseCase: ObserveGrocerySuggestionsUseCase,
     private val observeUserInformationUseCase: ObserveUserInformationUseCase,
     private val observeFamilyInformationUseCase: ObserveFamilyInformationUseCase,
+    private val observeAlbumsUseCase: ObserveAlbumsUseCase,
+    private val observeGalleryImagesUseCase: ObserveGalleryImagesUseCase,
     private val removeSavedUserInformationUseCase: RemoveSavedUserInformationUseCase,
     private val storeFcmTokenUseCase: StoreFcmTokenUseCase,
 ) : ViewModel() {
@@ -98,6 +102,16 @@ class FirebaseViewModel @Inject constructor(
         viewModelScope.launch {
             println("observeFirestoreFamilyData() observeRecipesUseCase invoked")
             observeRecipesUseCase.invoke(familyId)
+        }
+
+        viewModelScope.launch {
+            println("observeFirestoreFamilyData() observeAlbumsUseCase invoked")
+            observeAlbumsUseCase.invoke(familyId)
+        }
+
+        viewModelScope.launch {
+            println("observeFirestoreFamilyData() observeGalleryImagesUseCase invoked")
+            observeGalleryImagesUseCase.invoke(familyId)
         }
     }
 

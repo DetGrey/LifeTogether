@@ -14,5 +14,6 @@ object AppRoutes {
     const val RECIPE_DETAILS_SCREEN = "recipe_details"
     const val CREATE_RECIPE_SCREEN = "create_recipe_screen"
     const val RECIPE_ID_ARG = "recipeId"
+    const val GALLERY_SCREEN = "gallery"
     // ... other routes
 }

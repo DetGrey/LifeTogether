@@ -9,6 +9,7 @@ import androidx.navigation.navArgument
 import com.example.lifetogether.ui.feature.admin.groceryList.AdminGroceryCategoriesScreen
 import com.example.lifetogether.ui.feature.admin.groceryList.AdminGrocerySuggestionsScreen
 import com.example.lifetogether.ui.feature.family.FamilyScreen
+import com.example.lifetogether.ui.feature.gallery.GalleryScreen
 import com.example.lifetogether.ui.feature.groceryList.GroceryListScreen
 import com.example.lifetogether.ui.feature.home.HomeScreen
 import com.example.lifetogether.ui.feature.login.LoginScreen
@@ -78,6 +79,10 @@ fun NavHost(
         ) { backStackEntry ->
             val recipeId = backStackEntry.arguments?.getString(AppRoutes.RECIPE_ID_ARG)
             RecipeDetailsScreen(appNavigator, firebaseViewModel, recipeId)
+        }
+
+        composable(AppRoutes.GALLERY_SCREEN) {
+            GalleryScreen(appNavigator, firebaseViewModel)
         }
     }
 }

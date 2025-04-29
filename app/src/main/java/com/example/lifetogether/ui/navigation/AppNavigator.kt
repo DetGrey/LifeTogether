@@ -55,6 +55,10 @@ class AppNavigator(private val navController: NavController) : Navigator {
         } ?: AppRoutes.CREATE_RECIPE_SCREEN
         navController.navigate(route)
     }
+
+    override fun navigateToGallery() {
+        navController.navigate(AppRoutes.GALLERY_SCREEN)
+    }
 }
 
 /*

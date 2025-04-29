@@ -7,7 +7,7 @@ import com.example.lifetogether.domain.callback.ByteArrayResultListener
 import com.example.lifetogether.domain.callback.ListItemsResultListener
 import javax.inject.Inject
 
-class ObserveRecipesUseCase @Inject constructor(
+class ObserveGalleryImagesUseCase @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
     private val firebaseStorageDataSource: FirebaseStorageDataSource,
     private val localDataSource: LocalDataSource,
@@ -15,17 +15,15 @@ class ObserveRecipesUseCase @Inject constructor(
     suspend operator fun invoke(
         familyId: String,
     ) {
-        println("ObserveRecipesUseCase invoked")
-        firestoreDataSource.recipeSnapshotListener(familyId).collect { result ->
-            println("recipeSnapshotListener().collect result: $result")
+        println("ObserveGalleryImagesUseCase invoked")
+        firestoreDataSource.galleryImagesSnapshotListener(familyId).collect { result ->
+            println("galleryImagesSnapshotListener().collect result: $result")
             when (result) {
                 is ListItemsResultListener.Success -> {
                     if (result.listItems.isEmpty()) {
-                        println("recipeSnapshotListener().collect result: is empty")
-                        localDataSource.deleteFamilyRecipes(familyId)
+                        println("galleryImagesSnapshotListener().collect result: is empty")
+                        localDataSource.deleteFamilyGalleryImages(familyId)
                     } else {
-                        // println("recipeSnapshotListener().collect result: ${result.listItems.map { listOf(it.itemName, it.tags) }}")
-
                         val byteArrays: MutableMap<String, ByteArray> = mutableMapOf()
                         for (recipe in result.listItems) {
                             val byteArrayResult: ByteArrayResultListener? =
@@ -38,12 +36,12 @@ class ObserveRecipesUseCase @Inject constructor(
                             }
                         }
 
-                        localDataSource.updateRecipes(result.listItems, byteArrays)
+                        localDataSource.updateGalleryImages(result.listItems, byteArrays)
                     }
                 }
                 is ListItemsResultListener.Failure -> {
                     // Handle failure
-                    println("ObserveRecipesUseCase failure: ${result.message}")
+                    println("ObserveGalleryImagesUseCase failure: ${result.message}")
                 }
             }
         }

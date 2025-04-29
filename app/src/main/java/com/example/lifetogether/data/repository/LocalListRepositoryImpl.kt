@@ -10,6 +10,8 @@ import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.callback.StringResultListener
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Item
+import com.example.lifetogether.domain.model.gallery.Album
+import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.model.recipe.Recipe
@@ -137,6 +139,7 @@ class LocalListRepositoryImpl @Inject constructor(
                 )
                 else -> throw IllegalArgumentException("Unsupported item type: $itemType")
             }
+
             is Entity.Recipe -> when (itemType) {
                 Recipe::class -> Recipe(
                     id = this.entity.id,
@@ -150,6 +153,29 @@ class LocalListRepositoryImpl @Inject constructor(
                     favourite = this.entity.favourite,
                     servings = this.entity.servings,
                     tags = this.entity.tags,
+                )
+                else -> throw IllegalArgumentException("Unsupported item type: $itemType")
+            }
+
+            is Entity.Album -> when (itemType) {
+                Album::class -> Album(
+                    id = this.entity.id,
+                    familyId = this.entity.familyId,
+                    itemName = this.entity.itemName,
+                    lastUpdated = this.entity.lastUpdated,
+                    count = this.entity.count,
+                )
+                else -> throw IllegalArgumentException("Unsupported item type: $itemType")
+            }
+
+            is Entity.GalleryImage -> when (itemType) {
+                GalleryImage::class -> GalleryImage(
+                    id = this.entity.id,
+                    familyId = this.entity.familyId,
+                    itemName = this.entity.itemName,
+                    lastUpdated = this.entity.lastUpdated,
+                    albumId = this.entity.albumId,
+                    dateCreated = this.entity.dateCreated,
                 )
                 else -> throw IllegalArgumentException("Unsupported item type: $itemType")
             }

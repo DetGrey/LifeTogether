@@ -176,11 +176,9 @@ fun HomeScreen(
                     maxItemsInEachRow = 2,
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) { // TODO add real items
+                ) {
                     FeatureOverview(
                         "Grocery list",
-                        10,
-                        "Recipe",
                         onClick = {
                             if (userInformationState?.familyId == null) {
                                 // TODO add popup asking to join a family
@@ -192,8 +190,6 @@ fun HomeScreen(
                     )
                     FeatureOverview(
                         "Recipes",
-                        1,
-                        "Recipe",
                         onClick = {
                             if (userInformationState?.familyId == null) {
                                 // TODO add popup asking to join a family
@@ -205,35 +201,31 @@ fun HomeScreen(
                     )
 //                    FeatureOverview(
 //                        "Memory lane",
-//                        4,
-//                        "Recipe",
 //                        fullWidth = true,
 //                        onClick = {
-//                            if (userInformation?.value?.familyId == null) {
+//                            if (userInformationState?.familyId == null) {
 //                                // TODO add popup asking to join a family
 //                            } else {
 //                                // TODO
 //                            }
 //                        },
 //                    )
-//                    FeatureOverview(
-//                        "Gallery",
-//                        10,
-//                        "Recipe",
-//                        onClick = {
-//                            if (userInformation?.value?.familyId == null) {
-//                                // TODO add popup asking to join a family
-//                            } else {
-//                                // TODO
-//                            }
-//                        },
-//                    )
+                    FeatureOverview(
+                        "Gallery",
+                        onClick = {
+                            if (userInformationState?.familyId == null) {
+                                // TODO add popup asking to join a family
+                            } else {
+                                println("Gallery clicked")
+                                appNavigator?.navigateToGallery()
+                            }
+                        },
+                        icon = Icon(R.drawable.ic_gallery, "image gallery icon"),
+                    )
 //                    FeatureOverview(
 //                        "Note Corner",
-//                        43,
-//                        "Recipe",
 //                        onClick = {
-//                            if (userInformation?.value?.familyId == null) {
+//                            if (userInformationState?.familyId == null) {
 //                                // TODO add popup asking to join a family
 //                            } else {
 //                                // TODO
@@ -259,8 +251,6 @@ fun HomeScreen(
 
                         FeatureOverview(
                             "Grocery categories",
-                            0,
-                            "Recipe",
                             onClick = {
                                 if (userInformationState?.familyId == null) {
                                     // TODO add popup asking to join a family
@@ -273,8 +263,6 @@ fun HomeScreen(
                         )
                         FeatureOverview(
                             "Grocery suggestions",
-                            0,
-                            "Recipe",
                             onClick = {
                                 if (userInformationState?.familyId == null) {
                                     // TODO add popup asking to join a family

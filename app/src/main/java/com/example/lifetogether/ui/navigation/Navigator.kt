@@ -13,4 +13,5 @@ interface Navigator {
     fun navigateToGroceryList()
     fun navigateToRecipes()
     fun navigateToRecipeDetails(recipeId: String? = null)
+    fun navigateToGallery()
 }

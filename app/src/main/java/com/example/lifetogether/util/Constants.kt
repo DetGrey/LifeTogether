@@ -8,6 +8,8 @@ object Constants {
     const val FAMILY_MEMBERS_TABLE = "family_members"
     const val CATEGORY_TABLE = "categories"
     const val RECIPES_TABLE = "recipes"
+    const val ALBUMS_TABLE = "albums"
+    const val GALLERY_IMAGES_TABLE = "gallery_images"
 
     const val GROCERY_LIST_CHANNEL = "grocery_list_notification_channel"
     const val DEFAULT_CHANNEL = "default_channel"

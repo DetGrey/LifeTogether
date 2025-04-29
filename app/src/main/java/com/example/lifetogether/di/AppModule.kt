@@ -18,7 +18,7 @@ object AppModule {
 
     @Singleton
     @Provides
-    fun provideObserverViewModel(
+    fun provideObserverViewModel( // DOES NOT NEED TO BE UPDATED SINCE NOT USED!
         observeGroceryListUseCase: ObserveGroceryListUseCase,
         observeGrocerySuggestionsUseCase: ObserveGrocerySuggestionsUseCase,
         observeCategoriesUseCase: ObserveCategoriesUseCase,
