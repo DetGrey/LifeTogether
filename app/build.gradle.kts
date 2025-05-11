@@ -5,21 +5,22 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
     id("com.google.gms.google-services")
-    id("org.jlleitschuh.gradle.ktlint") version "11.5.0"
-    kotlin("plugin.serialization") version "1.9.24"
+    id("org.jlleitschuh.gradle.ktlint") version "12.2.0"
+    kotlin("plugin.serialization") version "2.1.0"
     id("com.google.devtools.ksp")
     id("kotlin-kapt")
     id("dagger.hilt.android.plugin")
+    alias(libs.plugins.kotlinCompose)
 }
 
 android {
     namespace = "com.example.lifetogether"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.lifetogether"
         minSdk = 30
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.2"
 
@@ -27,7 +28,7 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
-        
+
         val adminList: String = gradleLocalProperties(rootDir, providers).getProperty("adminList")
         buildConfigField("String", "ADMIN_LIST", adminList)
 
@@ -35,7 +36,9 @@ android {
             buildConfig = true
         }
 
-        setProperty("archivesBaseName", "LifeTogether-$versionName")
+        base {
+            archivesName.set("LifeTogether-$versionName")
+        }
     }
 
     buildTypes {
@@ -48,11 +51,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
-    kotlinOptions {
-        jvmTarget = "11"
+    kotlin {
+        jvmToolchain(21) // Ensure compatibility with Kotlin 1.9.0
     }
     buildFeatures {
         compose = true

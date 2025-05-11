@@ -16,9 +16,12 @@
    5. /local/LocalDataSource
       - Update getListItems() with table + dao reference
       - Add update function (e.g. updateAlbums) with entity + dao
+      - Update getItemById() if needed
+      - Update deleteItems() if needed
    6. /local/AppDatabase
       - Update entities list
       - Add abstract fun for new dao
+      - Update db version
 4. /di/DatabaseModule
    - Add dao reference
 5. /data/remote/FirestoreDataSource

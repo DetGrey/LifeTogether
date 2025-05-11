@@ -17,7 +17,7 @@ interface AlbumsDao {
     fun getItems(familyId: String): Flow<List<AlbumEntity>>
 
     @Query("SELECT * FROM $ALBUMS_TABLE WHERE family_id = :familyId AND id = :id LIMIT 1")
-    fun getRecipeById(familyId: String, id: String): AlbumEntity?
+    fun getItemById(familyId: String, id: String): AlbumEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateItems(items: List<AlbumEntity>)

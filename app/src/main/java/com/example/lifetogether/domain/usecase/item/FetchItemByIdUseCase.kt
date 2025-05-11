@@ -16,7 +16,7 @@ class FetchItemByIdUseCase @Inject constructor(
         listName: String,
         itemType: KClass<T>,
     ): Flow<ItemResultListener<Item>> {
-        println("Inside FetchListItemsUseCase and trying to fetch from local storage")
+        println("Inside FetchItemByIdUseCase and trying to fetch from local storage")
         // Return a flow that emits updates to the list items
         return localListRepository.fetchItemById(listName, familyId, id, itemType)
     }

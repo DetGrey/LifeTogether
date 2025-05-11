@@ -68,7 +68,7 @@ class RecipeDetailsViewModel @Inject constructor(
     // ---------------------------------------------------------------- SETUP/FETCH LIST
     fun setUpRecipeDetails(addedFamilyId: String, recipeId: String?) {
         if (!familyIdIsSet) {
-            println("RecipeDetailsViewModel setting UID")
+            println("RecipeDetailsViewModel setting familyId")
             familyId = addedFamilyId
             familyIdIsSet = true
         }

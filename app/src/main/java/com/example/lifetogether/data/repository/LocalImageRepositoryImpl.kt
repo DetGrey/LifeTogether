@@ -25,4 +25,16 @@ class LocalImageRepositoryImpl @Inject constructor(
             }
         }
     }
+
+    suspend fun getAlbumImageThumbnail(
+        imageId: String,
+    ): ByteArrayResultListener {
+        println("LocalUserRepositoryImpl getAlbumImageThumbnail")
+        val result = localDataSource.getAlbumImageThumbnail(imageId)
+        return if (result != null) {
+            ByteArrayResultListener.Success(result)
+        } else {
+            ByteArrayResultListener.Failure("No thumbnail found")
+        }
+    }
 }

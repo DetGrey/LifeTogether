@@ -1,5 +1,6 @@
 package com.example.lifetogether.data.repository
 
+import androidx.core.net.toUri
 import com.example.lifetogether.data.local.LocalDataSource
 import com.example.lifetogether.data.model.Entity
 import com.example.lifetogether.domain.callback.CategoriesListener
@@ -78,6 +79,27 @@ class LocalListRepositoryImpl @Inject constructor(
         }
     }
 
+    fun fetchAlbumImages(
+        familyId: String,
+        albumId: String,
+    ): Flow<ListItemsResultListener<GalleryImage>> {
+        println("LocalListRepoImpl fetchAlbumImages init")
+        return localDataSource.getAlbumImages(familyId, albumId)
+            .map { entities ->
+                try {
+                    println("LocalListRepoImpl fetchAlbumImages entities: ${ entities.map { it.entity.copy(imageUri = null, thumbnail = null) } }")
+                    // Convert entities to items
+                    val itemsList = entities.map { it.toItem(GalleryImage::class) }.filterIsInstance<GalleryImage>()
+                    println("LocalListRepoImpl after getting items from local data source")
+                    println("fetchAlbumImages of specified itemType: $itemsList")
+                    ListItemsResultListener.Success(itemsList)
+                } catch (e: Exception) {
+                    println("Error: ${e.message}")
+                    ListItemsResultListener.Failure(e.message ?: "Unknown error")
+                }
+            }
+    }
+
     fun <T : Item> fetchListItems(
         listName: String,
         familyId: String,
@@ -91,11 +113,6 @@ class LocalListRepositoryImpl @Inject constructor(
                     // Convert entities to items
                     val itemsList = entities.map { it.toItem(itemType) }
                     println("LocalListRepoImpl after getting items from local data source")
-                    for (item in itemsList) {
-                        if (item.itemName == "Chicken burger") {
-                            println("chicken burger fetched: $item")
-                        }
-                    }
                     println("fetchListItems of specified itemType: $itemsList")
                     ListItemsResultListener.Success(itemsList)
                 } catch (e: Exception) {
@@ -124,8 +141,6 @@ class LocalListRepositoryImpl @Inject constructor(
             }
     }
 
-    // Assuming GroceryItem is a subclass of Item and has a matching constructor
-    // TODO ADD MORE ITEM CLASSES
     private fun Entity.toItem(itemType: KClass<out Item>): Item {
         return when (this) {
             is Entity.GroceryList -> when (itemType) {
@@ -176,6 +191,7 @@ class LocalListRepositoryImpl @Inject constructor(
                     lastUpdated = this.entity.lastUpdated,
                     albumId = this.entity.albumId,
                     dateCreated = this.entity.dateCreated,
+                    imageUri = this.entity.imageUri?.toUri(),
                 )
                 else -> throw IllegalArgumentException("Unsupported item type: $itemType")
             }

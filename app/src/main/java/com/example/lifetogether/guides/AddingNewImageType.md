@@ -10,7 +10,7 @@
    3. /remote/FirestoreDataSource
       - Update getImageUrl() to handle new type
       - Update saveImageDownloadUrl() to handle new type
-      - Update saveImageMetaData() to handle new type
+      - Update saveImageMetaData() (*Optional*) if metadata is needed
 3. /domain/usecase/image/UploadImagesUseCase (*optional*)
    - If adding new images of the type should include metadata (like galleryImages)
-   - Then update firestoreNewUrlResult to include new type
+   - Then update when() to include new type

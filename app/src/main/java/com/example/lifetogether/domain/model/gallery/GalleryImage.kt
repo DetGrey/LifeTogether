@@ -1,5 +1,6 @@
 package com.example.lifetogether.domain.model.gallery
 
+import android.net.Uri
 import com.example.lifetogether.domain.model.Item
 import com.google.firebase.firestore.DocumentId
 import java.util.Date
@@ -13,4 +14,6 @@ data class GalleryImage(
     val albumId: String = "",
     val dateCreated: Date? = null,
     val imageUrl: String? = null,
+    @Transient
+    val imageUri: Uri? = null,
 ) : Item

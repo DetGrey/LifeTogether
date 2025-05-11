@@ -25,14 +25,14 @@ class ObserveGalleryImagesUseCase @Inject constructor(
                         localDataSource.deleteFamilyGalleryImages(familyId)
                     } else {
                         val byteArrays: MutableMap<String, ByteArray> = mutableMapOf()
-                        for (recipe in result.listItems) {
+                        for (galleryImage in result.listItems) {
                             val byteArrayResult: ByteArrayResultListener? =
-                                recipe.imageUrl?.let { url ->
+                                galleryImage.imageUrl?.let { url ->
                                     firebaseStorageDataSource.downloadImage(url)
                                 }
 
                             if (byteArrayResult is ByteArrayResultListener.Success) {
-                                recipe.id?.let { byteArrays.put(it, byteArrayResult.byteArray) }
+                                galleryImage.id?.let { byteArrays.put(it, byteArrayResult.byteArray) }
                             }
                         }
 

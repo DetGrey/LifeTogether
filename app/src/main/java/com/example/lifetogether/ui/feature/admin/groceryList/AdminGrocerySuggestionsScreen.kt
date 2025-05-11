@@ -74,11 +74,12 @@ fun AdminGrocerySuggestionsScreen(
             }
 
             item {
-                Text(modifier = Modifier.padding(horizontal = 5.dp),
+                Text(
+                    modifier = Modifier.padding(horizontal = 5.dp),
                     text = "Add a new suggestion by choosing the category (emoji) and writing the suggestion name.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Black,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))

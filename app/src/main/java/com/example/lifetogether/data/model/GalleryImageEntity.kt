@@ -3,8 +3,6 @@ package com.example.lifetogether.data.model
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.example.lifetogether.domain.model.recipe.Ingredient
-import com.example.lifetogether.domain.model.recipe.Instruction
 import com.example.lifetogether.util.Constants
 import java.util.Date
 
@@ -22,9 +20,9 @@ data class GalleryImageEntity(
     val albumId: String = "",
     @ColumnInfo(name = "date_created")
     val dateCreated: Date? = null,
-    @ColumnInfo(name = "image_data")
-    val imageData: ByteArray? = null,
-
+    @ColumnInfo(name = "image_uri")
+    val imageUri: String? = null,
+    val thumbnail: ByteArray? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -38,10 +36,11 @@ data class GalleryImageEntity(
         if (lastUpdated != other.lastUpdated) return false
         if (albumId != other.albumId) return false
         if (dateCreated != other.dateCreated) return false
-        if (imageData != null) {
-            if (other.imageData == null) return false
-            if (!imageData.contentEquals(other.imageData)) return false
-        } else if (other.imageData != null) return false
+        if (imageUri != other.imageUri) return false
+        if (thumbnail != null) {
+            if (other.thumbnail == null) return false
+            if (!thumbnail.contentEquals(other.thumbnail)) return false
+        } else if (other.thumbnail != null) return false
 
         return true
     }
@@ -53,7 +52,8 @@ data class GalleryImageEntity(
         result = 31 * result + lastUpdated.hashCode()
         result = 31 * result + albumId.hashCode()
         result = 31 * result + (dateCreated?.hashCode() ?: 0)
-        result = 31 * result + (imageData?.contentHashCode() ?: 0)
+        result = 31 * result + (imageUri?.hashCode() ?: 0)
+        result = 31 * result + (thumbnail?.contentHashCode() ?: 0)
         return result
     }
 }

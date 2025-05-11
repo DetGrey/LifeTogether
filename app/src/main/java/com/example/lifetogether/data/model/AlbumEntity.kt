@@ -3,8 +3,6 @@ package com.example.lifetogether.data.model
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.example.lifetogether.domain.model.recipe.Ingredient
-import com.example.lifetogether.domain.model.recipe.Instruction
 import com.example.lifetogether.util.Constants
 import java.util.Date
 

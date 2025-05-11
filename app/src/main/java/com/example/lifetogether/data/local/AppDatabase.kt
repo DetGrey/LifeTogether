@@ -11,16 +11,16 @@ import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
 import com.example.lifetogether.data.local.dao.RecipesDao
 import com.example.lifetogether.data.local.dao.UserInformationDao
+import com.example.lifetogether.data.model.AlbumEntity
 import com.example.lifetogether.data.model.CategoryEntity
 import com.example.lifetogether.data.model.FamilyEntity
 import com.example.lifetogether.data.model.FamilyMemberEntity
+import com.example.lifetogether.data.model.GalleryImageEntity
 import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.model.GrocerySuggestionEntity
 import com.example.lifetogether.data.model.ListCountEntity
 import com.example.lifetogether.data.model.RecipeEntity
 import com.example.lifetogether.data.model.UserEntity
-import com.example.lifetogether.data.model.AlbumEntity
-import com.example.lifetogether.data.model.GalleryImageEntity
 
 @Database(
     entities = [
@@ -35,7 +35,7 @@ import com.example.lifetogether.data.model.GalleryImageEntity
         AlbumEntity::class,
         GalleryImageEntity::class,
     ],
-    version = 15,
+    version = 17,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)

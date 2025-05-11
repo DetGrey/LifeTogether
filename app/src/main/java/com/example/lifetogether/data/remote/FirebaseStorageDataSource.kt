@@ -2,10 +2,12 @@ package com.example.lifetogether.data.remote
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import coil.ImageLoader
 import coil.request.ImageRequest
+import com.example.lifetogether.data.logic.rotateBasedOnExif
 import com.example.lifetogether.domain.callback.ByteArrayResultListener
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.callback.StringResultListener
@@ -33,7 +35,7 @@ class FirebaseStorageDataSource@Inject constructor() {
             var maxWidth = 600
             var maxHeight = 600
             var needsResize = true
-            var type = ".jpg"
+            var ext = ".jpeg"
 
             when (imageType) {
                 is ImageType.ProfileImage -> {
@@ -50,23 +52,28 @@ class FirebaseStorageDataSource@Inject constructor() {
                 is ImageType.GalleryImage -> {
                     path = Constants.GALLERY_IMAGES_TABLE
                     needsResize = false
-                    type = ".png"
+                    ext = imageType.galleryImageUploadData.find { it.uri == uri }?.ext ?: ".jpeg"
                 }
+            }
+            val correctedByteArray = uri.rotateBasedOnExif(context)
+            if (correctedByteArray == null) {
+                println("Failed to rotate image")
+                return StringResultListener.Failure("Failed to rotate image")
             }
 
             // Resize image only if needed
             val byteArray = if (needsResize) {
-                val resizedBitmap = resizeImageWithCoil(context, uri, maxWidth, maxHeight)
+                val resizedBitmap = resizeImageWithCoil(context, correctedByteArray, maxWidth, maxHeight)
 
                 ByteArrayOutputStream().apply {
                     resizedBitmap?.compress(Bitmap.CompressFormat.JPEG, 70, this)
                 }.toByteArray()
             } else {
-                context.contentResolver.openInputStream(uri)?.readBytes() ?: ByteArray(0)
+                correctedByteArray
             }
 
             // Create a reference to Firebase Storage
-            path += "/${UUID.randomUUID()}-${System.currentTimeMillis()}$type"
+            path += "/${UUID.randomUUID()}-${System.currentTimeMillis()}$ext"
 
             val photoRef = FirebaseStorage.getInstance().reference.child(path)
 
@@ -84,6 +91,7 @@ class FirebaseStorageDataSource@Inject constructor() {
 
     suspend fun downloadImage(url: String): ByteArrayResultListener {
         return try {
+            println("FirebaseStorageDataSource downloadImage()")
             val storageRef = FirebaseStorage.getInstance().getReferenceFromUrl(url)
             val byteArray = storageRef.getBytes(Long.MAX_VALUE).await()
             ByteArrayResultListener.Success(byteArray)
@@ -92,11 +100,13 @@ class FirebaseStorageDataSource@Inject constructor() {
         }
     }
 
-    private suspend fun resizeImageWithCoil(context: Context, uri: Uri, maxWidth: Int, maxHeight: Int): Bitmap? {
+    private suspend fun resizeImageWithCoil(context: Context, imageData: ByteArray, maxWidth: Int, maxHeight: Int): Bitmap? {
         return withContext(Dispatchers.IO) {
+            val bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.size)
+
             val imageLoader = ImageLoader(context)
             val request = ImageRequest.Builder(context)
-                .data(uri)
+                .data(bitmap) // Use decoded bitmap instead of URI
                 .size(maxWidth, maxHeight)
                 .build()
 

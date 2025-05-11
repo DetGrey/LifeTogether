@@ -70,7 +70,7 @@ class GroceryListViewModel @Inject constructor(
         fetchGrocerySuggestions()
 
         if (!familyIdIsSet) {
-            println("GroceryListViewModel setting UID")
+            println("GroceryListViewModel setting familyId")
             familyId = addedFamilyId
             // Use the UID here (e.g., fetch grocery list items)
             viewModelScope.launch {

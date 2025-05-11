@@ -59,6 +59,13 @@ class AppNavigator(private val navController: NavController) : Navigator {
     override fun navigateToGallery() {
         navController.navigate(AppRoutes.GALLERY_SCREEN)
     }
+
+    override fun navigateToAlbumImages(albumId: String?) {
+        val route = albumId?.let {
+            "${AppRoutes.ALBUM_IMAGES_SCREEN}/$it"
+        } ?: AppRoutes.GALLERY_SCREEN
+        navController.navigate(route)
+    }
 }
 
 /*

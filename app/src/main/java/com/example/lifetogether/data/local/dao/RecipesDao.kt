@@ -17,7 +17,7 @@ interface RecipesDao {
     fun getItems(familyId: String): Flow<List<RecipeEntity>>
 
     @Query("SELECT * FROM $RECIPES_TABLE WHERE family_id = :familyId AND id = :id LIMIT 1")
-    fun getRecipeById(familyId: String, id: String): RecipeEntity?
+    fun getItemById(familyId: String, id: String): RecipeEntity?
 
     @Query("SELECT image_data FROM $RECIPES_TABLE WHERE family_id = :familyId AND id = :id LIMIT 1")
     fun getImageByteArray(familyId: String, id: String): Flow<ByteArray?>

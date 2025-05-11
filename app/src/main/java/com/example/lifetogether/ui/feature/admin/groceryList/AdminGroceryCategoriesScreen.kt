@@ -33,7 +33,6 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.TopBar
-import com.example.lifetogether.ui.common.add.AddNewListItem
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
@@ -80,11 +79,12 @@ fun AdminGroceryCategoriesScreen(
             }
 
             item {
-                Text(modifier = Modifier.padding(horizontal = 5.dp),
+                Text(
+                    modifier = Modifier.padding(horizontal = 5.dp),
                     text = "Add new category as a string with an emoji and a name with whitespace between e.g. \"\uD83C\uDF5E Bakery\"",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Black,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -101,7 +101,6 @@ fun AdminGroceryCategoriesScreen(
                     )
                 }
             }
-
         }
     }
 

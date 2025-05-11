@@ -39,7 +39,7 @@ class RemoteImageRepositoryImpl @Inject constructor(
         }
     }
 
-    suspend fun saveImageDownloadUri(
+    suspend fun saveImageDownloadUrl(
         url: String,
         imageType: ImageType,
     ): ResultListener {
@@ -48,7 +48,7 @@ class RemoteImageRepositoryImpl @Inject constructor(
 
     suspend fun saveImagesMetaData(
         imageType: ImageType,
-        imagesDataList: List<Item>
+        imagesDataList: List<Item>,
     ): ResultListener {
         return firestoreDataSource.saveImagesMetaData(imageType, imagesDataList)
     }

@@ -1,33 +1,34 @@
 [versions]
 accompanistPermissions = "0.31.1-alpha"
-agp = "8.7.2"
+agp = "8.7.3"
 coil = "2.1.0"
 coilCompose = "2.1.0"
-firebaseBom = "33.6.0"
-firebaseMessaging = "24.1.0"
+firebaseBom = "33.13.0"
+firebaseMessaging = "24.1.1"
+firebaseAuth = "23.2.0"
 googleApiClient = "1.35.0"
 googleAuthLibraryOauth2Http = "1.12.0"
-googleHttpClientGson = "1.41.8"
+googleHttpClientGson = "1.42.2"
 gson = "2.10.1"
 hiltAndroid = "2.51.1"
 hiltAndroidGradlePlugin = "2.51.1"
 hiltCompiler = "2.51.1"
 hiltNavigationCompose = "1.2.0"
-kotlin = "1.9.23"
-coreKtx = "1.13.1"
+kotlin = "2.1.20"
+coreKtx = "1.16.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
-kotlinxSerializationJson = "1.6.3"
-lifecycleRuntimeKtx = "2.8.7"
-activityCompose = "1.9.3"
-composeBom = "2024.11.00"
+kotlinxSerializationJson = "1.7.3"
+lifecycleRuntimeKtx = "2.9.0"
+activityCompose = "1.10.1"
+composeBom = "2025.05.00"
 multidex = "2.0.1"
-navigationRuntimeKtx = "2.8.4"
-firebaseDataconnect = "16.0.0-beta03"
-roomRuntime = "2.6.1"
-composeMaterial = "1.4.0"
-firebaseMessagingKtx = "24.1.0"
+navigationRuntimeKtx = "2.9.0"
+firebaseDataconnect = "16.0.1"
+roomRuntime = "2.7.1"
+composeMaterial = "1.4.1"
+firebaseMessagingKtx = "24.1.1"
 exifinterface = "1.4.1"
 
 [libraries]
@@ -43,7 +44,7 @@ androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomRunt
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntime" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
 coil = { module = "io.coil-kt:coil", version.ref = "coil" }
-firebase-auth = { module = "com.google.firebase:firebase-auth" }
+firebase-auth = { module = "com.google.firebase:firebase-auth", version.ref = "firebaseAuth" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
 firebase-messaging = { module = "com.google.firebase:firebase-messaging", version.ref = "firebaseMessaging" }
@@ -77,4 +78,5 @@ androidx-exifinterface = { group = "androidx.exifinterface", name = "exifinterfa
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 jetbrainsKotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlinCompose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 

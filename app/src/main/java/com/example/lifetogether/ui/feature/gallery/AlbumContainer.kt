@@ -44,7 +44,7 @@ fun AlbumContainer(
                 .aspectRatio(1f) // Maintain aspect ratio
                 .clip(shape = RoundedCornerShape(20.dp))
                 .background(MaterialTheme.colorScheme.onBackground),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             if (bitmap != null) {
                 Image(
@@ -65,12 +65,12 @@ fun AlbumContainer(
         TextBodyLarge(
             text = albumName,
             modifier = Modifier
-                .padding(start = 5.dp)
+                .padding(start = 5.dp),
         )
 
         TextDefault(
             text = count.toString(),
-            modifier = Modifier.padding(start = 5.dp)
+            modifier = Modifier.padding(start = 5.dp),
         )
     }
 }

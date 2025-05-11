@@ -10,5 +10,6 @@ plugins {
     // Add the dependency for the Google services Gradle plugin
     id("com.google.gms.google-services") version "4.4.2" apply false
     // Necessary for Room
-    id("com.google.devtools.ksp") version "1.9.23-1.0.19" apply false
+    id("com.google.devtools.ksp") version "2.1.20-2.0.1" apply false
+    alias(libs.plugins.kotlinCompose) apply false
 }

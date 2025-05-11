@@ -14,9 +14,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -26,7 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -77,7 +74,7 @@ fun ImageUploadMultipleDialog(
                                 .size(75.dp) // Square size
                                 .clip(RectangleShape) // Crop to a square
                                 .background(Color.Gray),
-                            contentScale = ContentScale.Crop // Center the image
+                            contentScale = ContentScale.Crop, // Center the image
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                     }

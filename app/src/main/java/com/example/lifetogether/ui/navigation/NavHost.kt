@@ -1,7 +1,6 @@
 package com.example.lifetogether.ui.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
@@ -9,6 +8,7 @@ import androidx.navigation.navArgument
 import com.example.lifetogether.ui.feature.admin.groceryList.AdminGroceryCategoriesScreen
 import com.example.lifetogether.ui.feature.admin.groceryList.AdminGrocerySuggestionsScreen
 import com.example.lifetogether.ui.feature.family.FamilyScreen
+import com.example.lifetogether.ui.feature.gallery.AlbumImagesScreen
 import com.example.lifetogether.ui.feature.gallery.GalleryScreen
 import com.example.lifetogether.ui.feature.groceryList.GroceryListScreen
 import com.example.lifetogether.ui.feature.home.HomeScreen
@@ -83,6 +83,14 @@ fun NavHost(
 
         composable(AppRoutes.GALLERY_SCREEN) {
             GalleryScreen(appNavigator, firebaseViewModel)
+        }
+
+        composable(
+            route = "${AppRoutes.ALBUM_IMAGES_SCREEN}/{${AppRoutes.ALBUM_IMAGES_ID_ARG}}",
+            arguments = listOf(navArgument(AppRoutes.ALBUM_IMAGES_ID_ARG) { type = NavType.StringType }),
+        ) { backStackEntry ->
+            val albumId = backStackEntry.arguments?.getString(AppRoutes.ALBUM_IMAGES_ID_ARG)
+            AlbumImagesScreen(appNavigator, firebaseViewModel, albumId)
         }
     }
 }

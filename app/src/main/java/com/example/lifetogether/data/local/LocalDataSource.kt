@@ -1,5 +1,10 @@
 package com.example.lifetogether.data.local
 
+import android.content.ContentValues
+import android.content.Context
+import android.net.Uri
+import android.provider.MediaStore
+import androidx.core.net.toUri
 import com.example.lifetogether.data.local.dao.AlbumsDao
 import com.example.lifetogether.data.local.dao.CategoriesDao
 import com.example.lifetogether.data.local.dao.FamilyInformationDao
@@ -8,6 +13,7 @@ import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
 import com.example.lifetogether.data.local.dao.RecipesDao
 import com.example.lifetogether.data.local.dao.UserInformationDao
+import com.example.lifetogether.data.logic.toThumbnail
 import com.example.lifetogether.data.model.AlbumEntity
 import com.example.lifetogether.data.model.CategoryEntity
 import com.example.lifetogether.data.model.Entity
@@ -29,6 +35,7 @@ import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.util.Constants
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
@@ -38,6 +45,7 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class LocalDataSource @Inject constructor(
+    @ApplicationContext private val context: Context, // Injected app context
     private val groceryListDao: GroceryListDao,
     private val recipesDao: RecipesDao,
     private val grocerySuggestionsDao: GrocerySuggestionsDao,
@@ -87,7 +95,6 @@ class LocalDataSource @Inject constructor(
         listName: String,
         familyId: String,
     ): Flow<List<Entity>> {
-
         println("LocalDataSource getListItems listname: $listName")
         val items: Flow<List<Entity>> = when (listName) {
             Constants.GROCERY_TABLE -> groceryListDao.getItems(familyId).map { list ->
@@ -115,9 +122,15 @@ class LocalDataSource @Inject constructor(
     ): Flow<Entity> {
         return when (listName) {
             Constants.RECIPES_TABLE -> flow {
-                val recipe = recipesDao.getRecipeById(familyId, id)
+                val recipe = recipesDao.getItemById(familyId, id)
                 if (recipe != null) {
                     emit(Entity.Recipe(recipe))
+                }
+            }
+            Constants.ALBUMS_TABLE -> flow {
+                val album = albumsDao.getItemById(familyId, id)
+                if (album != null) {
+                    emit(Entity.Album(album))
                 }
             }
             else -> flowOf() // Handle the case where the listName doesn't match any known entity
@@ -372,14 +385,44 @@ class LocalDataSource @Inject constructor(
     }
 
     // -------------------------------------------------------------- GALLERY IMAGES
+    fun getAlbumImages(
+        familyId: String,
+        albumId: String,
+    ): Flow<List<Entity.GalleryImage>> {
+        println("LocalDataSource getAlbumImages")
+        val items: Flow<List<Entity.GalleryImage>> = galleryImagesDao.getItemsByAlbumId(familyId, albumId)
+            .map { list ->
+                list.map { Entity.GalleryImage(it) }
+            }
+        println("LocalDataSource getAlbumImages: $items")
+        return items
+    }
+
+    suspend fun getAlbumImageThumbnail(
+        imageId: String,
+    ): ByteArray? {
+        return galleryImagesDao.getImageThumbnail(imageId)
+    }
+
     suspend fun updateGalleryImages(
         items: List<GalleryImage>,
         byteArrays: Map<String, ByteArray>,
     ) {
-        println("LocalDataSource updateGalleryImages(): Trying to add firestore data to Room")
+        println("LocalDataSource updateGalleryImages(): Saving images to MediaStore")
 
-        println("Gallery image list: $items")
-        var entityList = items.map { item ->
+        val resolver = context.contentResolver
+
+        // Fetch current items from Room
+        val currentItems = galleryImagesDao.getItems(items.firstOrNull()?.familyId ?: "").first()
+        val currentImageUris = currentItems.associateBy({ it.id }, { it.imageUri })
+
+        val entityList = items.map { item ->
+            val imageData = byteArrays[item.id] ?: return@map null
+
+            // Check if image already exists with an uri in Room
+            val imageUri = currentImageUris[item.id] // Keep existing URI if no update needed
+                ?: saveImageToGallery(context, imageData, item)?.toString() // Save only if missing
+
             GalleryImageEntity(
                 id = item.id ?: "",
                 familyId = item.familyId,
@@ -387,41 +430,77 @@ class LocalDataSource @Inject constructor(
                 lastUpdated = item.lastUpdated,
                 albumId = item.albumId,
                 dateCreated = item.dateCreated,
+                imageUri = imageUri, // Use saved or existing URI
+                thumbnail = imageData.toThumbnail(),
             )
-        }
+        }.filterNotNull()
 
-        if (byteArrays.isNotEmpty()) {
-            entityList = entityList.map { item ->
-                item.copy(imageData = if (byteArrays[item.id] != null) byteArrays[item.id] else null)
+        // Determine items to update
+        val itemsToUpdate = entityList.filter { newItem ->
+            currentItems.none { currentItem ->
+                newItem.id == currentItem.id && newItem == currentItem
             }
         }
 
-        // Fetch the current items from the Room database
-        val currentItems = galleryImagesDao.getItems(items[0].familyId).first()
-
-        // Determine the items to be inserted or updated
-        val itemsToUpdate = entityList.filter { newItem ->
-            currentItems.none { currentItem -> newItem.id == currentItem.id && newItem == currentItem }
-        }
-
-        println("galleryImageEntityList itemsToUpdate: ${itemsToUpdate.map { it.itemName }}")
-
-        // Determine the items to be deleted
+        // Determine items to delete
         val itemsToDelete = currentItems.filter { currentItem ->
             entityList.none { newItem -> newItem.id == currentItem.id }
         }
 
-        // Update the Room database with the new or changed items
+        // Delete images from MediaStore
+        itemsToDelete.forEach { item ->
+            item.imageUri?.let { resolver.delete(it.toUri(), null, null) }
+        }
+
+        // Update Room database
         galleryImagesDao.updateItems(itemsToUpdate)
 
-        // Delete the items that no longer exist in Firestore
+        // Delete metadata of removed images
         galleryImagesDao.deleteItems(itemsToDelete.map { it.id })
+    }
+
+    private fun saveImageToGallery(context: Context, imageData: ByteArray, item: GalleryImage): Uri? {
+        val contentValues = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, item.itemName)
+            put(MediaStore.Images.Media.MIME_TYPE, getMimeType(item.itemName))
+            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/LifeTogetherGallery")
+            put(MediaStore.Images.Media.DATE_TAKEN, item.dateCreated?.time)
+        }
+
+        val resolver = context.contentResolver
+        val imageUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+
+        imageUri?.let { uri ->
+            resolver.openOutputStream(uri)?.use { outputStream ->
+                outputStream.write(imageData)
+            }
+        }
+
+        return imageUri
+    }
+
+    private fun getMimeType(fileName: String): String {
+        return when {
+            fileName.endsWith(".png", ignoreCase = true) -> "image/png"
+            fileName.endsWith(".gif", ignoreCase = true) -> "image/gif"
+            fileName.endsWith(".webp", ignoreCase = true) -> "image/webp"
+            fileName.endsWith(".bmp", ignoreCase = true) -> "image/bmp"
+            else -> "image/jpeg" // Default to JPEG
+        }
     }
 
     suspend fun deleteFamilyGalleryImages(familyId: String) {
         val currentFamilyItems = galleryImagesDao.getItems(familyId).firstOrNull()
+
         if (currentFamilyItems != null) {
             galleryImagesDao.deleteItems(currentFamilyItems.map { it.id })
+
+            val resolver = context.contentResolver
+
+            // Delete images from MediaStore
+            currentFamilyItems.forEach { item ->
+                item.imageUri?.let { resolver.delete(it.toUri(), null, null) }
+            }
         }
     }
 
@@ -481,7 +560,7 @@ class LocalDataSource @Inject constructor(
 
             is ImageType.RecipeImage -> recipesDao.getImageByteArray(imageType.familyId, imageType.recipeId)
 
-            is ImageType.GalleryImage -> galleryImagesDao.getImageByteArray(imageType.familyId, imageType.albumId)
+            is ImageType.GalleryImage -> flowOf(null)
         }
     }
 }

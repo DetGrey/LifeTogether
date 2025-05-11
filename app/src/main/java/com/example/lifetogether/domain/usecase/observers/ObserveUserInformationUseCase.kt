@@ -24,7 +24,7 @@ class ObserveUserInformationUseCase @Inject constructor(
                         firebaseStorageDataSource.downloadImage(url)
                     }
 
-                    println("ObserveUserInformationUseCase biteArrayResult: $byteArrayResult")
+//                    println("ObserveUserInformationUseCase byteArrayResult: $byteArrayResult")
 
                     when (byteArrayResult) {
                         is ByteArrayResultListener.Success -> {

@@ -16,11 +16,11 @@ interface GalleryImagesDao {
     @Query("SELECT * FROM $GALLERY_IMAGES_TABLE WHERE family_id = :familyId")
     fun getItems(familyId: String): Flow<List<GalleryImageEntity>>
 
-    @Query("SELECT * FROM $GALLERY_IMAGES_TABLE WHERE family_id = :familyId AND id = :id LIMIT 1")
-    fun getRecipeById(familyId: String, id: String): GalleryImageEntity?
+    @Query("SELECT * FROM $GALLERY_IMAGES_TABLE WHERE family_id = :familyId AND album_id = :albumId")
+    fun getItemsByAlbumId(familyId: String, albumId: String): Flow<List<GalleryImageEntity>>
 
-    @Query("SELECT image_data FROM $GALLERY_IMAGES_TABLE WHERE family_id = :familyId AND album_id = :albumId LIMIT 1")
-    fun getImageByteArray(familyId: String, albumId: String): Flow<ByteArray?>
+    @Query("SELECT thumbnail FROM $GALLERY_IMAGES_TABLE WHERE id = :id LIMIT 1")
+    suspend fun getImageThumbnail(id: String): ByteArray?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateItems(items: List<GalleryImageEntity>)

@@ -38,15 +38,6 @@ class MainActivity : ComponentActivity() {
 
         val destination = intent?.getStringExtra("destination")
 
-        // [START handle_data_extras]
-//        intent.extras?.let {
-//            for (key in it.keySet()) {
-//                val value = intent.extras?.get(key)
-//                Log.d(TAG, "Key: $key Value: $value")
-//            }
-//        }
-        // [END handle_data_extras]
-
         setContent {
             LifeTogetherTheme {
                 // A surface container using the 'background' color from the theme
