@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.viewmodel
+package com.example.lifetogether.ui.feature.settings
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -9,7 +9,6 @@ import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.model.enums.SettingsConfirmationTypes
 import com.example.lifetogether.domain.usecase.family.CreateNewFamilyUseCase
 import com.example.lifetogether.domain.usecase.family.JoinFamilyUseCase
-import com.example.lifetogether.domain.usecase.family.LeaveFamilyUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -18,7 +17,6 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
     private val createNewFamilyUseCase: CreateNewFamilyUseCase,
     private val joinFamilyUseCase: JoinFamilyUseCase,
-    private val leaveFamilyUseCase: LeaveFamilyUseCase,
 ) : ViewModel() {
     var confirmationDialogType: SettingsConfirmationTypes? by mutableStateOf(null)
     var showConfirmationDialog: Boolean by mutableStateOf(false)
@@ -56,21 +54,6 @@ class SettingsViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             when (createNewFamilyUseCase.invoke(uid, name)) {
-                is ResultListener.Success -> {
-                    closeConfirmationDialog()
-                }
-                is ResultListener.Failure -> {
-                    // TODO popup
-                }
-            }
-        }
-    }
-    fun leaveFamily(
-        familyId: String,
-        uid: String,
-    ) {
-        viewModelScope.launch {
-            when (leaveFamilyUseCase.invoke(familyId, uid)) {
                 is ResultListener.Success -> {
                     closeConfirmationDialog()
                 }

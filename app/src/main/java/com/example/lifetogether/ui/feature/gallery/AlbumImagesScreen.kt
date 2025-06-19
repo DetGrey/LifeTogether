@@ -27,7 +27,6 @@ import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.image.ImageUploadMultipleDialog
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.AlbumImagesViewModel
 import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 import com.example.lifetogether.ui.viewmodel.ImageViewModel
 

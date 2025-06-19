@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.viewmodel
+package com.example.lifetogether.ui.feature.gallery
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf

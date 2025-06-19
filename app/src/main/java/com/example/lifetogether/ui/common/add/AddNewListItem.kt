@@ -26,14 +26,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithDropdown
 import com.example.lifetogether.ui.common.textfield.CustomTextField
-import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.AddNewListItemViewModel
 
 @Composable
 fun AddNewListItem(
@@ -161,21 +158,6 @@ fun AddNewListItem(
             onValueChange = { string ->
                 addNewListItemViewModel.selectedCategory = string
             },
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun AddNewListItemPreview() {
-    LifeTogetherTheme {
-        AddNewListItem(
-            textValue = "hello",
-            onTextChange = {},
-            onAddClick = {},
-            categoryList = listOf(),
-            selectedCategory = Category("❓", "Uncategorized"),
-            onCategoryChange = {},
         )
     }
 }

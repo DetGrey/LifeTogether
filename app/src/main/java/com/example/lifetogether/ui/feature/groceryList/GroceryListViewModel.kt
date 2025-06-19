@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.viewmodel
+package com.example.lifetogether.ui.feature.groceryList
 
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -112,7 +112,7 @@ class GroceryListViewModel @Inject constructor(
         get() = groceryList
             .map { list ->
                 list.filter { it.completed }
-            }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+            }.stateIn(viewModelScope, SharingStarted.Companion.Eagerly, emptyList())
 
     // StateFlow for categorized items (excluding completed items)
     val categorizedItems: StateFlow<Map<Category, List<GroceryItem>>>
@@ -120,7 +120,7 @@ class GroceryListViewModel @Inject constructor(
             .map { list ->
                 updateCategorizedItems(list)
             }
-            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+            .stateIn(viewModelScope, SharingStarted.Companion.Eagerly, emptyMap())
 
     private fun updateCategorizedItems(list: List<GroceryItem>): Map<Category, List<GroceryItem>> {
         println("GroceryListViewModel updateCategorizedItems() initial list: $list")

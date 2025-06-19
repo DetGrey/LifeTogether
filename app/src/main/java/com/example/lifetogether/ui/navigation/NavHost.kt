@@ -57,10 +57,10 @@ fun NavHost(
         }
 
         composable(AppRoutes.LOGIN_SCREEN) {
-            LoginScreen(appNavigator, firebaseViewModel)
+            LoginScreen(appNavigator)
         }
         composable(AppRoutes.SIGNUP_SCREEN) {
-            SignupScreen(appNavigator, firebaseViewModel)
+            SignupScreen(appNavigator)
         }
 
         composable(AppRoutes.GROCERY_LIST_SCREEN) {

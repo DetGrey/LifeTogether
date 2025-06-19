@@ -1,7 +1,5 @@
 package com.example.lifetogether.ui.feature.profile
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -47,7 +45,6 @@ import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 import com.example.lifetogether.ui.viewmodel.ImageViewModel
-import com.example.lifetogether.ui.viewmodel.ProfileViewModel
 
 @Composable
 fun ProfileScreen(
@@ -244,7 +241,7 @@ fun ProfileScreen(
                             uid,
                             userInformation!!.familyId,
                             onSuccess = {
-                                firebaseViewModel?.onSignOut()
+                                firebaseViewModel.onSignOut()
                                 profileViewModel.closeConfirmationDialog()
                                 appNavigator?.navigateToHome()
                             },
@@ -306,7 +303,6 @@ fun ProfileScreen(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.S)
 @Preview(showBackground = true)
 @Composable
 fun ProfileScreenPreview() {

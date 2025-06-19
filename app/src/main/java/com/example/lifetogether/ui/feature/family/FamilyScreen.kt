@@ -24,7 +24,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lifetogether.R
@@ -41,8 +40,6 @@ import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.feature.profile.ProfileDetails
 import com.example.lifetogether.ui.feature.settings.SettingsItem
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.FamilyViewModel
 import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 import com.example.lifetogether.ui.viewmodel.ImageViewModel
 
@@ -303,13 +300,5 @@ fun FamilyScreen(
     if (familyViewModel.showAlertDialog) {
         ErrorAlertDialog(familyViewModel.error)
         familyViewModel.toggleAlertDialog()
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun FamilyScreenPreview() {
-    LifeTogetherTheme {
-        FamilyScreen()
     }
 }

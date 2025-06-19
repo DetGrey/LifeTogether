@@ -19,7 +19,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.lifetogether"
-        minSdk = 30
+        minSdk = 31
         targetSdk = 35
         versionCode = 1
         versionName = "1.2"
@@ -34,10 +34,6 @@ android {
 
         buildFeatures {
             buildConfig = true
-        }
-
-        base {
-            archivesName.set("LifeTogether-$versionName")
         }
     }
 
@@ -147,4 +143,24 @@ dependencies {
 
     // Notification permission
     implementation(libs.accompanist.permissions)
+}
+
+// 1. Create the rename task: Post-Build Rename APK file
+tasks.register<Copy>("renameReleaseApk") {
+    val versionName = android.defaultConfig.versionName ?: "unknown"
+    val buildType = "release"
+    val apkName = "app-$buildType.apk"
+    val newName = "LifeTogether-$versionName.apk"
+
+    from(layout.buildDirectory.dir("outputs/apk/$buildType")) {
+        include(apkName)
+        rename(apkName, newName)
+    }
+    into(layout.buildDirectory.dir("outputs/renamed-apk"))
+}
+
+// 2. Hook it automatically to run after the APK is built
+afterEvaluate {
+    tasks.findByName("assembleRelease")?.finalizedBy(tasks.named("renameReleaseApk"))
+        ?: logger.warn("assembleRelease task not found — renameReleaseApk will not run automatically.")
 }

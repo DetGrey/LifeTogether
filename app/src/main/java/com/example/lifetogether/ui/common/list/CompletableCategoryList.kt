@@ -16,14 +16,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Completable
 import com.example.lifetogether.ui.common.ListItem
-import com.example.lifetogether.ui.feature.recipes.EXAMPLE_RECIPE
-import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.bodyFontFamily
 
 @Composable
@@ -89,22 +86,5 @@ fun CompletableCategoryList(
             }
         }
         Spacer(modifier = Modifier.height(30.dp))
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun CompletableCategoryListPreview() {
-    LifeTogetherTheme {
-        CompletableCategoryList(
-            category = Category(
-                "🍎",
-                "Ingredients",
-            ),
-            itemList = EXAMPLE_RECIPE.ingredients,
-            true,
-            onClick = {},
-            onCompleteToggle = {},
-        )
     }
 }

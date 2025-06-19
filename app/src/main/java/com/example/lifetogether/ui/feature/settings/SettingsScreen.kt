@@ -23,7 +23,6 @@ import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
-import com.example.lifetogether.ui.viewmodel.SettingsViewModel
 
 @Composable
 fun SettingsScreen(

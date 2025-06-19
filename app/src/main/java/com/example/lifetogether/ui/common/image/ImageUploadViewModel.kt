@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.viewmodel
+package com.example.lifetogether.ui.common.image
 
 import android.content.ContentResolver
 import android.content.Context
@@ -201,7 +201,7 @@ class ImageUploadViewModel @Inject constructor(
         return try {
             val outputFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
             date.let { outputFormat.format(it) }.plus(ext)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null // Handle parsing errors
         }
     }

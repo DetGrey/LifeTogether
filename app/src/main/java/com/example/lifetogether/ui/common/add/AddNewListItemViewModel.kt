@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.viewmodel
+package com.example.lifetogether.ui.common.add
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf

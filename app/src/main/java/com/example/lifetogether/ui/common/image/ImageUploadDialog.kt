@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.model.sealed.UploadState
-import com.example.lifetogether.ui.viewmodel.ImageUploadViewModel
 
 @Composable
 fun ImageUploadDialog(

@@ -12,7 +12,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lifetogether.R
@@ -26,9 +25,7 @@ import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.list.ItemCategoryList
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
-import com.example.lifetogether.ui.viewmodel.GroceryListViewModel
 
 @Composable
 fun GroceryListScreen(
@@ -97,7 +94,6 @@ fun GroceryListScreen(
                                             groceryListViewModel.toggleItemCompleted(item)
                                         }
                                     },
-                                    // TODO implement notification functionality
                                 )
                             }
                         }
@@ -120,9 +116,9 @@ fun GroceryListScreen(
                                     groceryListViewModel.toggleItemCompleted(item)
                                 }
                                 if (!item.completed) { // if it was not completed, but now will be
-                                    firebaseViewModel?.updateItemCount("grocery-list", UpdateType.SUBTRACT)
+                                    firebaseViewModel.updateItemCount("grocery-list", UpdateType.SUBTRACT)
                                 } else {
-                                    firebaseViewModel?.updateItemCount("grocery-list", UpdateType.ADD)
+                                    firebaseViewModel.updateItemCount("grocery-list", UpdateType.ADD)
                                 }
                             },
                             onDelete = {
@@ -150,7 +146,7 @@ fun GroceryListScreen(
                     groceryListViewModel.newItemText = it.suggestionName
                     groceryListViewModel.newItemCategory = it.category!!
                     groceryListViewModel.addItemToList(onSuccess = {
-                        firebaseViewModel?.updateItemCount("grocery-list", UpdateType.ADD)
+                        firebaseViewModel.updateItemCount("grocery-list", UpdateType.ADD)
                     })
                 },
             )
@@ -169,7 +165,7 @@ fun GroceryListScreen(
             onTextChange = { groceryListViewModel.newItemText = it },
             onAddClick = {
                 groceryListViewModel.addItemToList(onSuccess = {
-                    firebaseViewModel?.updateItemCount("grocery-list", UpdateType.ADD)
+                    firebaseViewModel.updateItemCount("grocery-list", UpdateType.ADD)
                 })
             },
             categoryList = groceryCategories,
@@ -198,13 +194,5 @@ fun GroceryListScreen(
     if (groceryListViewModel.showAlertDialog) {
         ErrorAlertDialog(groceryListViewModel.error)
         groceryListViewModel.toggleAlertDialog()
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GroceryListScreenPreview() {
-    LifeTogetherTheme {
-        GroceryListScreen()
     }
 }

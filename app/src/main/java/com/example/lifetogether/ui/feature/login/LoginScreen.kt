@@ -1,7 +1,5 @@
 package com.example.lifetogether.ui.feature.login
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,13 +25,10 @@ import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
-import com.example.lifetogether.ui.viewmodel.LoginViewModel
 
 @Composable
 fun LoginScreen(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
 ) {
     val loginViewModel: LoginViewModel = hiltViewModel()
 
@@ -113,7 +108,6 @@ fun LoginScreen(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.S)
 @Preview(showBackground = true)
 @Composable
 fun LoginScreenPreview() {

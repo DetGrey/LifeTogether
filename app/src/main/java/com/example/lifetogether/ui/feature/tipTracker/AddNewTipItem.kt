@@ -28,8 +28,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lifetogether.domain.logic.formatDateToDayString
 import com.example.lifetogether.ui.common.CustomTextField
+import com.example.lifetogether.ui.common.add.AddNewListItemViewModel
 import com.example.lifetogether.ui.common.dialog.CustomDatePickerDialog
-import com.example.lifetogether.ui.viewmodel.AddNewListItemViewModel
 import java.util.Date
 
 @Composable

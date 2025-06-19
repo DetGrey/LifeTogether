@@ -31,7 +31,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.rememberAsyncImagePainter
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.model.sealed.UploadState
-import com.example.lifetogether.ui.viewmodel.ImageUploadViewModel
 
 @Composable
 fun ImageUploadMultipleDialog(

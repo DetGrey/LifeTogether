@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.viewmodel
+package com.example.lifetogether.ui.feature.profile
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -6,7 +6,6 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.callback.ResultListener
-import com.example.lifetogether.domain.usecase.image.FetchImageByteArrayUseCase
 import com.example.lifetogether.domain.usecase.user.ChangeNameUseCase
 import com.example.lifetogether.domain.usecase.user.LogoutUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,7 +15,6 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val fetchImageByteArrayUseCase: FetchImageByteArrayUseCase,
     private val logoutUseCase: LogoutUseCase,
     private val changeNameUseCase: ChangeNameUseCase,
 ) : ViewModel() {

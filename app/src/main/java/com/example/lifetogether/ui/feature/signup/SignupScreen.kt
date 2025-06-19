@@ -16,7 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lifetogether.R
@@ -26,14 +25,10 @@ import com.example.lifetogether.ui.common.dialog.CustomDatePickerDialog
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.common.textfield.DatePickerTextField
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
-import com.example.lifetogether.ui.viewmodel.SignUpViewModel
 
 @Composable
 fun SignupScreen(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
 ) {
     val signupViewModel: SignUpViewModel = hiltViewModel()
 
@@ -138,13 +133,5 @@ fun SignupScreen(
                 },
             )
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun SignupScreenPreview() {
-    LifeTogetherTheme {
-        SignupScreen()
     }
 }

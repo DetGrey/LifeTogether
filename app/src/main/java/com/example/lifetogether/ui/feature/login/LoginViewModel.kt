@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.viewmodel
+package com.example.lifetogether.ui.feature.login
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -8,42 +8,31 @@ import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.callback.AuthResultListener
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
-import com.example.lifetogether.domain.usecase.user.SignUpUseCase
+import com.example.lifetogether.domain.usecase.user.LoginUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
-import java.util.Date
 import javax.inject.Inject
 
 @HiltViewModel
-class SignUpViewModel @Inject constructor(
-    private val signUpUseCase: SignUpUseCase,
+class LoginViewModel @Inject constructor(
+    private val loginUseCase: LoginUseCase,
 ) : ViewModel() {
     var error: String by mutableStateOf("")
 
     // TEXT FIELDS
-    var name: String by mutableStateOf("")
     var email: String by mutableStateOf("")
-    var birthday: Date? by mutableStateOf(null)
-    var birthdayExpanded: Boolean by mutableStateOf(false)
     var password: String by mutableStateOf("")
-    var confirmPassword: String by mutableStateOf("")
 
-    fun onSignUpClicked(
+    fun onLoginClicked(
         onSuccess: (UserInformation) -> Unit,
     ) {
-        println("SignUpViewModel onSignUpClicked")
+        println("Login clicked")
         error = ""
 
-        val userInformation = UserInformation(
-            name = name,
-            email = email,
-            birthday = birthday,
-        )
-        println("SignUpViewModel userInformation: $userInformation")
-
         viewModelScope.launch {
-            val loginResult: AuthResultListener = signUpUseCase.invoke(User(email, password), userInformation)
+            val loginResult: AuthResultListener = loginUseCase.invoke(User(email, password))
             if (loginResult is AuthResultListener.Success) {
+                println("LoginViewModel: Login successful")
                 onSuccess(loginResult.userInformation)
             } else if (loginResult is AuthResultListener.Failure) {
                 error = loginResult.message
