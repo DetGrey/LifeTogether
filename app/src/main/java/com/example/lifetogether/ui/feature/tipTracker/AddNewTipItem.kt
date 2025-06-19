@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.feature.groceryList
+package com.example.lifetogether.ui.feature.tipTracker
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -14,46 +14,33 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.lifetogether.domain.model.Category
+import com.example.lifetogether.domain.logic.formatDateToDayString
 import com.example.lifetogether.ui.common.CustomTextField
-import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithDropdown
-import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.common.dialog.CustomDatePickerDialog
 import com.example.lifetogether.ui.viewmodel.AddNewListItemViewModel
+import java.util.Date
 
 @Composable
-fun AddNewListItem(
+fun AddNewTipItem(
     textValue: String,
     onTextChange: (String) -> Unit,
     onAddClick: () -> Unit,
-    categoryList: List<Category>,
-    selectedCategory: Category,
-    onCategoryChange: (Category) -> Unit,
+    dateValue: Date,
+    onDateChange: (Date) -> Unit,
 ) {
     val addNewListItemViewModel: AddNewListItemViewModel = hiltViewModel()
-    // Use LaunchedEffect to set the initial value once
-    LaunchedEffect(key1 = "init") {
-        addNewListItemViewModel.selectedCategory = "${selectedCategory.emoji} ${selectedCategory.name}"
-    }
-    if (categoryList != addNewListItemViewModel.oldCategoryList) {
-        addNewListItemViewModel.oldCategoryList = categoryList
-        addNewListItemViewModel.categoryOptions = categoryList.map { "${it.emoji} ${it.name}" }
-        println("AddNewListItem categoryOptions: ${addNewListItemViewModel.categoryOptions}")
-    }
 
     Box(
         modifier = Modifier
@@ -77,27 +64,27 @@ fun AddNewListItem(
                         .padding(10.dp)
                         .fillMaxHeight()
                         .aspectRatio(1f, true)
-                        .clip(shape = CircleShape)
                         .border(
-                            width = 2.dp,
+                            width = 4.dp,
                             color = MaterialTheme.colorScheme.secondary,
-                            shape = CircleShape,
+                            shape = RoundedCornerShape(10.dp),
                         )
                         .clickable {
                             addNewListItemViewModel.showDialog = true
                         },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(text = selectedCategory.emoji)
+                    Text(text = formatDateToDayString(dateValue), color = Color.White)
                 }
+
+//                VerticalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.secondary, modifier = Modifier.padding(vertical = 10.dp))
 
                 CustomTextField(
                     value = textValue,
                     onValueChange = onTextChange,
-                    label = "Add an item...",
-                    keyboardType = KeyboardType.Text,
+                    label = "Add tip amount...",
+                    keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Done,
-                    capitalization = true,
                 )
             }
 
@@ -123,50 +110,15 @@ fun AddNewListItem(
     }
 
     if (addNewListItemViewModel.showDialog) {
-        ConfirmationDialogWithDropdown(
-            onDismiss = { addNewListItemViewModel.showDialog = false },
-            onConfirm = {
-                val string = addNewListItemViewModel.selectedCategory
-                val emojiEndIndex = string.offsetByCodePoints(0, 1)
-                val list = listOf(string.substring(0, emojiEndIndex), string.substring(emojiEndIndex).trim())
-                println("category list: $list")
-                onCategoryChange(
-                    Category(
-                        emoji = list[0],
-                        name = list[1],
-                    ),
-                )
+        CustomDatePickerDialog(
+            selectedDate = dateValue,
+            onDismiss = {
                 addNewListItemViewModel.showDialog = false
             },
-            dialogTitle = "Change category",
-            dialogMessage = "",
-            dismissButtonMessage = "Cancel",
-            confirmButtonMessage = "Change",
-            selectedValue = addNewListItemViewModel.selectedCategory,
-            expanded = addNewListItemViewModel.changeCategoryExpanded,
-            onExpandedChange = {
-                addNewListItemViewModel.changeCategoryExpanded =
-                    !addNewListItemViewModel.changeCategoryExpanded
+            onDateSelected = {
+                onDateChange(it)
+                addNewListItemViewModel.showDialog = false
             },
-            options = addNewListItemViewModel.categoryOptions,
-            onValueChange = { string ->
-                addNewListItemViewModel.selectedCategory = string
-            },
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun AddNewListItemPreview() {
-    LifeTogetherTheme {
-        AddNewListItem(
-            textValue = "hello",
-            onTextChange = {},
-            onAddClick = {},
-            categoryList = listOf(),
-            selectedCategory = Category("❓", "Uncategorized"),
-            onCategoryChange = {},
         )
     }
 }

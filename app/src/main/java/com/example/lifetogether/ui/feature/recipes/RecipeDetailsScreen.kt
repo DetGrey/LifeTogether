@@ -30,15 +30,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
-import com.example.lifetogether.domain.model.enums.MeasureType
-import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.domain.model.recipe.Instruction
-import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.model.toggleCompleted
 import com.example.lifetogether.ui.common.add.AddNewString
@@ -47,13 +43,12 @@ import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.dropdown.Dropdown
 import com.example.lifetogether.ui.common.image.ImageUploadDialog
 import com.example.lifetogether.ui.common.list.CompletableCategoryList
+import com.example.lifetogether.ui.common.tagOptionRow.TagOption
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.textfield.EditableTextField
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 import com.example.lifetogether.ui.viewmodel.ImageViewModel
-import java.util.Date
 
 @Composable
 fun RecipeDetailsScreen(
@@ -432,40 +427,3 @@ fun RecipeDetailsScreen(
         recipeDetailsViewModel.toggleAlertDialog()
     }
 }
-
-@Preview(showBackground = true)
-@Composable
-fun RecipeDetailsScreenPreview() {
-    LifeTogetherTheme {
-        RecipeDetailsScreen(recipeId = EXAMPLE_RECIPE.id)
-    }
-}
-
-val EXAMPLE_RECIPE = Recipe(
-    id = "1",
-    familyId = "family123",
-    itemName = "Spaghetti Bolognese",
-    lastUpdated = Date(),
-    description = "A classic Italian pasta dish with a rich, savory sauce.",
-    ingredients = listOf(
-        Ingredient(amount = 200.0, measureType = MeasureType.GRAM, itemName = "spaghetti"),
-        Ingredient(amount = 100.0, measureType = MeasureType.GRAM, itemName = "ground beef"),
-        Ingredient(amount = 1.0, measureType = MeasureType.CAN, itemName = "tomato sauce"),
-        Ingredient(amount = 1.0, measureType = MeasureType.PIECE, itemName = "onion, diced"),
-        Ingredient(amount = 2.0, measureType = MeasureType.CLOVE, itemName = "garlic, minced"),
-        Ingredient(amount = 0.0, measureType = MeasureType.PINCH, itemName = "Salt and pepper to taste"),
-        Ingredient(amount = 0.0, measureType = MeasureType.SLICE, itemName = "Grated Parmesan cheese"),
-    ),
-    instructions = listOf(
-        Instruction("Cook the spaghetti according to the package instructions."),
-        Instruction("In a separate pan, sauté the onion and garlic until translucent."),
-        Instruction("Add the ground beef to the pan and cook until browned."),
-        Instruction("Pour in the tomato sauce and let it simmer for 15 minutes."),
-        Instruction("Season with salt and pepper."),
-        Instruction("Serve the sauce over the spaghetti and top with grated Parmesan cheese."),
-    ),
-    preparationTimeMin = 30,
-    favourite = true,
-    servings = 2,
-    tags = listOf("Dinner", "Pasta", "Italian"),
-)

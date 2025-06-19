@@ -36,7 +36,7 @@ import com.example.lifetogether.ui.viewmodel.ImageViewModel
 fun AlbumImagesScreen(
     appNavigator: AppNavigator? = null,
     firebaseViewModel: FirebaseViewModel? = null,
-    albumId: String? = null,
+    albumId: String,
 ) {
     val albumImagesViewModel: AlbumImagesViewModel = hiltViewModel()
     val imageViewModel: ImageViewModel = hiltViewModel()
@@ -48,12 +48,8 @@ fun AlbumImagesScreen(
 
     LaunchedEffect(key1 = true) {
         // Perform any one-time initialization or side effect here
-        if (albumId == null) {
-            appNavigator?.navigateBack()
-        } else {
-            userInformation?.familyId?.let {
-                albumImagesViewModel.setUpAlbumImages(it, albumId)
-            }
+        userInformation?.familyId?.let {
+            albumImagesViewModel.setUpAlbumImages(it, albumId)
         }
     }
 
@@ -92,6 +88,7 @@ fun AlbumImagesScreen(
                         .fillMaxWidth(),
                     columns = GridCells.Fixed(2),
                     verticalArrangement = Arrangement.spacedBy(30.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     items(albumImages.size) { index ->
                         val image = albumImages[index]
@@ -103,7 +100,11 @@ fun AlbumImagesScreen(
 
                         ImageContainer(
                             thumbnail = thumbnail,
-                            onClick = { /* Handle click */ },
+                            onClick = {
+                                image.id?.let {
+                                    appNavigator?.navigateToGalleryImage(image.id!!)
+                                }
+                            },
                         )
                     }
                 }
@@ -131,7 +132,7 @@ fun AlbumImagesScreen(
                 onConfirm = { imageViewModel.showImageUploadDialog = false },
                 dialogTitle = "Upload images",
                 dialogMessage = "Select the images to upload",
-                imageType = ImageType.GalleryImage(familyId, albumId ?: "", listOf()),
+                imageType = ImageType.GalleryImage(familyId, albumId, listOf()),
                 dismissButtonMessage = "Cancel",
                 confirmButtonMessage = "Upload images",
             )

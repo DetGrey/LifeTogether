@@ -2,6 +2,7 @@ package com.example.lifetogether.domain.usecase.image
 
 import android.content.Context
 import com.example.lifetogether.data.repository.RemoteImageRepositoryImpl
+import com.example.lifetogether.data.repository.RemoteListRepositoryImpl
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.callback.StringResultListener
 import com.example.lifetogether.domain.model.gallery.GalleryImage
@@ -10,6 +11,7 @@ import javax.inject.Inject
 
 class UploadImagesUseCase @Inject constructor(
     private val remoteImageRepositoryImpl: RemoteImageRepositoryImpl,
+    private val remoteListRepositoryImpl: RemoteListRepositoryImpl,
 ) {
     suspend operator fun invoke(
         imageType: ImageType,
@@ -41,6 +43,7 @@ class UploadImagesUseCase @Inject constructor(
 
                 val imageTypeUpdated = imageType.copy(galleryImageUploadData = listOf())
                 val saveMetaDataResult = remoteImageRepositoryImpl.saveImagesMetaData(imageTypeUpdated, imagesToUpload)
+                val updateAlbumCountResult = remoteListRepositoryImpl.updateAlbumCount(imageType.albumId, imagesToUpload.size)
 
                 return saveMetaDataResult
             }

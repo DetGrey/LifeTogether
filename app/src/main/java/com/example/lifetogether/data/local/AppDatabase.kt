@@ -10,6 +10,7 @@ import com.example.lifetogether.data.local.dao.GalleryImagesDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
 import com.example.lifetogether.data.local.dao.RecipesDao
+import com.example.lifetogether.data.local.dao.TipTrackerDao
 import com.example.lifetogether.data.local.dao.UserInformationDao
 import com.example.lifetogether.data.model.AlbumEntity
 import com.example.lifetogether.data.model.CategoryEntity
@@ -20,6 +21,7 @@ import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.model.GrocerySuggestionEntity
 import com.example.lifetogether.data.model.ListCountEntity
 import com.example.lifetogether.data.model.RecipeEntity
+import com.example.lifetogether.data.model.TipEntity
 import com.example.lifetogether.data.model.UserEntity
 
 @Database(
@@ -34,8 +36,9 @@ import com.example.lifetogether.data.model.UserEntity
         RecipeEntity::class,
         AlbumEntity::class,
         GalleryImageEntity::class,
+        TipEntity::class,
     ],
-    version = 17,
+    version = 18,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -49,5 +52,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun recipesDao(): RecipesDao
     abstract fun albumsDao(): AlbumsDao
     abstract fun galleryImagesDao(): GalleryImagesDao
+    abstract fun tipTrackerDao(): TipTrackerDao
     // Add other DAOs here
 }

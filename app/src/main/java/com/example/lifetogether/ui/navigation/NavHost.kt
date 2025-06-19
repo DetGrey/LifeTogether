@@ -9,6 +9,7 @@ import com.example.lifetogether.ui.feature.admin.groceryList.AdminGroceryCategor
 import com.example.lifetogether.ui.feature.admin.groceryList.AdminGrocerySuggestionsScreen
 import com.example.lifetogether.ui.feature.family.FamilyScreen
 import com.example.lifetogether.ui.feature.gallery.AlbumImagesScreen
+import com.example.lifetogether.ui.feature.gallery.GalleryImageScreen
 import com.example.lifetogether.ui.feature.gallery.GalleryScreen
 import com.example.lifetogether.ui.feature.groceryList.GroceryListScreen
 import com.example.lifetogether.ui.feature.home.HomeScreen
@@ -18,6 +19,7 @@ import com.example.lifetogether.ui.feature.recipes.RecipeDetailsScreen
 import com.example.lifetogether.ui.feature.recipes.RecipesScreen
 import com.example.lifetogether.ui.feature.settings.SettingsScreen
 import com.example.lifetogether.ui.feature.signup.SignupScreen
+import com.example.lifetogether.ui.feature.tipTracker.TipTrackerScreen
 import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 
 @Composable
@@ -90,7 +92,25 @@ fun NavHost(
             arguments = listOf(navArgument(AppRoutes.ALBUM_IMAGES_ID_ARG) { type = NavType.StringType }),
         ) { backStackEntry ->
             val albumId = backStackEntry.arguments?.getString(AppRoutes.ALBUM_IMAGES_ID_ARG)
+            if (albumId == null) {
+                return@composable
+            }
             AlbumImagesScreen(appNavigator, firebaseViewModel, albumId)
+        }
+
+        composable(
+            route = "${AppRoutes.GALLERY_IMAGE_SCREEN}/{${AppRoutes.GALLERY_IMAGE_ID_ARG}}",
+            arguments = listOf(navArgument(AppRoutes.GALLERY_IMAGE_ID_ARG) { type = NavType.StringType }),
+        ) { backStackEntry ->
+            val imageId = backStackEntry.arguments?.getString(AppRoutes.GALLERY_IMAGE_ID_ARG)
+            if (imageId == null) {
+                return@composable
+            }
+            GalleryImageScreen(appNavigator, firebaseViewModel, imageId)
+        }
+
+        composable(AppRoutes.TIP_TRACKER_SCREEN) {
+            TipTrackerScreen(appNavigator, firebaseViewModel)
         }
     }
 }

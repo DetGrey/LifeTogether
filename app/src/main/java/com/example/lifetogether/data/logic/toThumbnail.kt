@@ -11,7 +11,7 @@ fun ByteArray.toThumbnail(): ByteArray {
         val originalBitmap = BitmapFactory.decodeByteArray(this, 0, this.size)
         val displayMetrics = Resources.getSystem().displayMetrics
         val screenWidth = displayMetrics.widthPixels
-        val optimalSize = screenWidth / 3 // Use this as the width limit
+        val optimalSize = screenWidth / 2 // Use this as the width limit
 
         // Calculate the scaled height while maintaining aspect ratio
         val aspectRatio = originalBitmap.width.toFloat() / originalBitmap.height.toFloat()

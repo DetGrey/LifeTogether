@@ -12,6 +12,7 @@ import com.example.lifetogether.domain.logic.itemToMap
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.CompletableItem
 import com.example.lifetogether.domain.model.Item
+import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.model.family.FamilyMember
@@ -353,6 +354,19 @@ class FirestoreDataSource@Inject constructor() {
         }
         // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.
         awaitClose { listenerRegistration.remove() }
+    }
+
+    fun updateAlbumCount(albumId: String, count: Int): ResultListener { // TODO not working
+        try {
+            println("FirestoreDataSource updateAlbumCount()")
+            val oldCount = db.collection(Constants.ALBUMS_TABLE).document(albumId).get().result.getLong("count")?.toInt()
+            val newCount = oldCount?.plus(count) ?: count
+            db.collection(Constants.ALBUMS_TABLE).document(albumId).update("count", newCount)
+            return ResultListener.Success
+        } catch (e: Exception) {
+            println("Error: ${e.message}")
+            return ResultListener.Failure("Error: ${e.message}")
+        }
     }
 
     // ------------------------------------------------------------------------------- GALLERY IMAGES
@@ -698,6 +712,32 @@ class FirestoreDataSource@Inject constructor() {
             println("Error: ${e.message}")
             return ResultListener.Failure("Error: ${e.message}")
         }
+    }
+
+    // ------------------------------------------------------------------------------- TIP TRACKER
+    fun tipTrackerSnapshotListener(familyId: String) = callbackFlow {
+        println("Firestore tipTrackerSnapshotListener init")
+        val tipTrackerItemsRef =
+            db.collection(Constants.TIP_TRACKER_TABLE).whereEqualTo("familyId", familyId)
+        val listenerRegistration = tipTrackerItemsRef.addSnapshotListener { snapshot, e ->
+            if (e != null) {
+                // Handle error
+                trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess
+                return@addSnapshotListener
+            }
+
+            if (snapshot != null) {
+                // Process the changes and update Room database
+                val tips = snapshot.toObjects(TipItem::class.java)
+
+                println("Snapshot items to TipItems: $tips")
+                trySend(ListItemsResultListener.Success(tips)).isSuccess
+            } else {
+                trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess
+            }
+        }
+        // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.
+        awaitClose { listenerRegistration.remove() }
     }
 
     // ------------------------------------------------------------------------------- DEVICE TOKEN MANAGEMENT

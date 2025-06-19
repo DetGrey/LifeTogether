@@ -46,4 +46,11 @@ class RemoteListRepositoryImpl @Inject constructor(
     ): ResultListener {
         return firestoreDataSource.deleteItems(listName, items)
     }
+
+    fun updateAlbumCount(
+        albumId: String,
+        count: Int,
+    ): ResultListener {
+        return firestoreDataSource.updateAlbumCount(albumId, count)
+    }
 }

@@ -5,4 +5,5 @@ sealed class Entity {
     data class Recipe(val entity: RecipeEntity) : Entity()
     data class Album(val entity: AlbumEntity) : Entity()
     data class GalleryImage(val entity: GalleryImageEntity) : Entity()
+    data class Tip(val entity: TipEntity) : Entity()
 }

@@ -11,6 +11,7 @@ import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.callback.StringResultListener
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Item
+import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.domain.model.gallery.Album
 import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.grocery.GroceryItem
@@ -152,6 +153,7 @@ class LocalListRepositoryImpl @Inject constructor(
                     completed = this.entity.completed,
                     category = this.entity.category,
                 )
+
                 else -> throw IllegalArgumentException("Unsupported item type: $itemType")
             }
 
@@ -169,6 +171,7 @@ class LocalListRepositoryImpl @Inject constructor(
                     servings = this.entity.servings,
                     tags = this.entity.tags,
                 )
+
                 else -> throw IllegalArgumentException("Unsupported item type: $itemType")
             }
 
@@ -180,6 +183,7 @@ class LocalListRepositoryImpl @Inject constructor(
                     lastUpdated = this.entity.lastUpdated,
                     count = this.entity.count,
                 )
+
                 else -> throw IllegalArgumentException("Unsupported item type: $itemType")
             }
 
@@ -193,6 +197,21 @@ class LocalListRepositoryImpl @Inject constructor(
                     dateCreated = this.entity.dateCreated,
                     imageUri = this.entity.imageUri?.toUri(),
                 )
+
+                else -> throw IllegalArgumentException("Unsupported item type: $itemType")
+            }
+
+            is Entity.Tip -> when (itemType) {
+                TipItem::class -> TipItem(
+                    id = this.entity.id,
+                    familyId = this.entity.familyId,
+                    itemName = this.entity.itemName,
+                    lastUpdated = this.entity.lastUpdated,
+                    amount = this.entity.amount,
+                    currency = this.entity.currency,
+                    date = this.entity.date,
+                )
+
                 else -> throw IllegalArgumentException("Unsupported item type: $itemType")
             }
         }

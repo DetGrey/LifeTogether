@@ -17,5 +17,8 @@ object AppRoutes {
     const val GALLERY_SCREEN = "gallery"
     const val ALBUM_IMAGES_SCREEN = "album_images"
     const val ALBUM_IMAGES_ID_ARG = "albumId"
+    const val GALLERY_IMAGE_SCREEN = "gallery_image"
+    const val GALLERY_IMAGE_ID_ARG = "imageId"
+    const val TIP_TRACKER_SCREEN = "tip_tracker"
     // ... other routes
 }

@@ -12,6 +12,7 @@ import com.example.lifetogether.data.local.dao.GalleryImagesDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
 import com.example.lifetogether.data.local.dao.RecipesDao
+import com.example.lifetogether.data.local.dao.TipTrackerDao
 import com.example.lifetogether.data.local.dao.UserInformationDao
 import com.example.lifetogether.data.logic.toThumbnail
 import com.example.lifetogether.data.model.AlbumEntity
@@ -23,9 +24,11 @@ import com.example.lifetogether.data.model.GalleryImageEntity
 import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.model.GrocerySuggestionEntity
 import com.example.lifetogether.data.model.RecipeEntity
+import com.example.lifetogether.data.model.TipEntity
 import com.example.lifetogether.data.model.UserEntity
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.model.Category
+import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.model.gallery.Album
@@ -54,6 +57,7 @@ class LocalDataSource @Inject constructor(
     private val familyInformationDao: FamilyInformationDao,
     private val galleryImagesDao: GalleryImagesDao,
     private val albumsDao: AlbumsDao,
+    private val tipTrackerDao: TipTrackerDao,
 ) {
     // -------------------------------------------------------------- CATEGORIES
     fun getCategories(): Flow<List<CategoryEntity>> {
@@ -108,6 +112,9 @@ class LocalDataSource @Inject constructor(
             }
             Constants.GALLERY_IMAGES_TABLE -> galleryImagesDao.getItems(familyId).map { list ->
                 list.map { Entity.GalleryImage(it) }
+            }
+            Constants.TIP_TRACKER_TABLE -> tipTrackerDao.getItems(familyId).map { list ->
+                list.map { Entity.Tip(it) }
             }
             else -> flowOf(emptyList<Entity>()) // Handle the case where the listName doesn't match any known entity
         }
@@ -309,7 +316,7 @@ class LocalDataSource @Inject constructor(
     }
 
     // -------------------------------------------------------------- USER INFORMATION
-    fun getUserInformation(uid: String): Flow<UserEntity> {
+    fun getUserInformation(uid: String): Flow<UserEntity?> {
         return userInformationDao.getItems(uid)
     }
 
@@ -338,6 +345,18 @@ class LocalDataSource @Inject constructor(
             groceryListDao.deleteTable()
             recipesDao.deleteTable()
             userInformationDao.deleteTable()
+            familyInformationDao.deleteFamiliesTable()
+            familyInformationDao.deleteFamilyMembersTable()
+
+            val resolver = context.contentResolver
+            val galleryImages = galleryImagesDao.getAll()
+            galleryImages.forEach { item ->
+                item.imageUri?.let { resolver.delete(it.toUri(), null, null) }
+            }
+
+            galleryImagesDao.deleteTable()
+            albumsDao.deleteTable()
+
             return ResultListener.Success
         } catch (e: Exception) {
             return ResultListener.Failure("Error: $e")
@@ -411,9 +430,10 @@ class LocalDataSource @Inject constructor(
         println("LocalDataSource updateGalleryImages(): Saving images to MediaStore")
 
         val resolver = context.contentResolver
+        val familyId = items.firstOrNull()?.familyId ?: ""
 
         // Fetch current items from Room
-        val currentItems = galleryImagesDao.getItems(items.firstOrNull()?.familyId ?: "").first()
+        val currentItems = galleryImagesDao.getItems(familyId).first()
         val currentImageUris = currentItems.associateBy({ it.id }, { it.imageUri })
 
         val entityList = items.map { item ->
@@ -463,7 +483,7 @@ class LocalDataSource @Inject constructor(
         val contentValues = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, item.itemName)
             put(MediaStore.Images.Media.MIME_TYPE, getMimeType(item.itemName))
-            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/LifeTogetherGallery")
+            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/LifeTogether")
             put(MediaStore.Images.Media.DATE_TAKEN, item.dateCreated?.time)
         }
 
@@ -474,6 +494,13 @@ class LocalDataSource @Inject constructor(
             resolver.openOutputStream(uri)?.use { outputStream ->
                 outputStream.write(imageData)
             }
+
+            // **Explicitly update metadata after inserting**
+            val updateValues = ContentValues().apply {
+                put(MediaStore.Images.Media.DATE_TAKEN, item.dateCreated?.time)
+                put(MediaStore.Images.Media.DATE_MODIFIED, item.dateCreated?.time!! / 1000) // Convert to seconds
+            }
+            resolver.update(uri, updateValues, null, null)
         }
 
         return imageUri
@@ -547,6 +574,51 @@ class LocalDataSource @Inject constructor(
         val currentFamilyItems = albumsDao.getItems(familyId).firstOrNull()
         if (currentFamilyItems != null) {
             albumsDao.deleteItems(currentFamilyItems.map { it.id })
+        }
+    }
+
+    // -------------------------------------------------------------- GROCERY LIST
+    suspend fun updateTipTracker(items: List<TipItem>) {
+        println("LocalDataSource updateTipTracker(): Trying to add firestore data to Room")
+
+        println("TipItem list: $items")
+        val tipEntityList = items.map { item ->
+            TipEntity(
+                id = item.id ?: "",
+                familyId = item.familyId,
+                itemName = item.itemName,
+                lastUpdated = item.lastUpdated,
+                amount = item.amount,
+                currency = item.currency,
+                date = item.date,
+            )
+        }
+        println("tipEntityList list: $tipEntityList")
+
+        // Fetch the current items from the Room database
+        val currentItems = tipTrackerDao.getItems(items[0].familyId).first()
+
+        // Determine the items to be inserted or updated
+        val itemsToUpdate = tipEntityList.filter { newItem ->
+            currentItems.none { currentItem -> newItem.id == currentItem.id && newItem == currentItem }
+        }
+
+        // Determine the items to be deleted
+        val itemsToDelete = currentItems.filter { currentItem ->
+            tipEntityList.none { newItem -> newItem.id == currentItem.id }
+        }
+
+        // Update the Room database with the new or changed items
+        tipTrackerDao.updateItems(itemsToUpdate)
+
+        // Delete the items that no longer exist in Firestore
+        tipTrackerDao.deleteItems(itemsToDelete.map { it.id })
+    }
+
+    suspend fun deleteFamilyTipItems(familyId: String) {
+        val currentFamilyItems = tipTrackerDao.getItems(familyId).firstOrNull()
+        if (currentFamilyItems != null) {
+            tipTrackerDao.deleteItems(currentFamilyItems.map { it.id })
         }
     }
 

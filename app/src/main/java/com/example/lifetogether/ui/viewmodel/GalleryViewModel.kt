@@ -106,7 +106,7 @@ class GalleryViewModel @Inject constructor(
                         val albumItems = result.listItems.filterIsInstance<Album>()
                         if (albumItems.isNotEmpty()) {
                             println("_albums old value: ${_albums.value}")
-                            _albums.value = albumItems
+                            _albums.value = albumItems.sortedBy { it.itemName }
                             println("albums new value: ${albums.value}")
                         } else {
                             println("Error: No Album instances found in the result")

@@ -78,7 +78,9 @@ fun GalleryScreen(
                     ) {
                         for (album in albums) {
                             AlbumContainer(album.itemName, album.count, onClick = {
-                                appNavigator?.navigateToAlbumImages(album.id)
+                                if (album.id != null) {
+                                    appNavigator?.navigateToAlbumImages(album.id!!)
+                                }
                             })
                         }
                     }

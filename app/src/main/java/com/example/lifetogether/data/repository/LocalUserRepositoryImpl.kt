@@ -20,7 +20,9 @@ class LocalUserRepositoryImpl @Inject constructor(
         return localDataSource.getUserInformation(uid).map { user ->
             try {
                 println("LocalUserRepositoryImpl getUserInformation user: $user")
-
+                if (user == null) {
+                    return@map AuthResultListener.Failure("User not found")
+                }
                 AuthResultListener.Success(
                     UserInformation(
                         uid = user.uid,

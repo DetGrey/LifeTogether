@@ -10,6 +10,7 @@ import com.example.lifetogether.data.local.dao.GalleryImagesDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
 import com.example.lifetogether.data.local.dao.RecipesDao
+import com.example.lifetogether.data.local.dao.TipTrackerDao
 import com.example.lifetogether.data.local.dao.UserInformationDao
 import dagger.Module
 import dagger.Provides
@@ -31,7 +32,7 @@ object DatabaseModule {
             "life_together_database",
         )
             .allowMainThreadQueries()
-            .fallbackToDestructiveMigration()
+            .fallbackToDestructiveMigration(false)
             .build()
     }
 
@@ -81,5 +82,11 @@ object DatabaseModule {
     @Singleton
     fun provideGalleryImagesDao(db: AppDatabase): GalleryImagesDao {
         return db.galleryImagesDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideTipTrackerDao(db: AppDatabase): TipTrackerDao {
+        return db.tipTrackerDao()
     }
 }

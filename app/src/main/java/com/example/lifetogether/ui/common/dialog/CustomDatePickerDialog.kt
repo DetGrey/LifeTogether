@@ -12,6 +12,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
+import java.time.LocalDate
 import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -23,11 +24,13 @@ fun CustomDatePickerDialog(
 ) {
     val datePickerDialogViewModel: DatePickerDialogViewModel = hiltViewModel()
 
+    val currentYear = LocalDate.now().year
+
     val datePickerState =
         rememberDatePickerState(
             initialSelectedDateMillis = selectedDate?.time,
             initialDisplayedMonthMillis = selectedDate?.time ?: System.currentTimeMillis(),
-            yearRange = 1950..2024,
+            yearRange = 1920..currentYear,
         )
 
     DatePickerDialog(

@@ -16,6 +16,7 @@ import com.example.lifetogether.domain.usecase.observers.ObserveGalleryImagesUse
 import com.example.lifetogether.domain.usecase.observers.ObserveGroceryListUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveGrocerySuggestionsUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveRecipesUseCase
+import com.example.lifetogether.domain.usecase.observers.ObserveTipTrackerUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveUserInformationUseCase
 import com.example.lifetogether.domain.usecase.user.FetchUserInformationUseCase
 import com.example.lifetogether.domain.usecase.user.RemoveSavedUserInformationUseCase
@@ -39,6 +40,7 @@ class FirebaseViewModel @Inject constructor(
     private val observeFamilyInformationUseCase: ObserveFamilyInformationUseCase,
     private val observeAlbumsUseCase: ObserveAlbumsUseCase,
     private val observeGalleryImagesUseCase: ObserveGalleryImagesUseCase,
+    private val observeTipTrackerUseCase: ObserveTipTrackerUseCase,
     private val removeSavedUserInformationUseCase: RemoveSavedUserInformationUseCase,
     private val storeFcmTokenUseCase: StoreFcmTokenUseCase,
 ) : ViewModel() {
@@ -112,6 +114,11 @@ class FirebaseViewModel @Inject constructor(
         viewModelScope.launch {
             println("observeFirestoreFamilyData() observeGalleryImagesUseCase invoked")
             observeGalleryImagesUseCase.invoke(familyId)
+        }
+
+        viewModelScope.launch {
+            println("observeFirestoreFamilyData() observeTipTrackerUseCase invoked")
+            observeTipTrackerUseCase.invoke(familyId)
         }
     }
 

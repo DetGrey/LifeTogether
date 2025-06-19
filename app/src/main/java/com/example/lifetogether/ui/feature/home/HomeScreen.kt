@@ -85,7 +85,7 @@ fun HomeScreen(
                         description = "profile picture icon",
                     ),
                     onLeftClick = {
-                        if (firebaseViewModel?.userInformation?.value != null) {
+                        if (firebaseViewModel.userInformation.value != null) {
                             appNavigator?.navigateToProfile()
                         } else {
                             appNavigator?.navigateToLogin()
@@ -221,6 +221,18 @@ fun HomeScreen(
                             }
                         },
                         icon = Icon(R.drawable.ic_gallery, "image gallery icon"),
+                    )
+                    FeatureOverview(
+                        "Tip Tracker",
+                        onClick = {
+                            if (userInformationState?.familyId == null) {
+                                // TODO add popup asking to join a family
+                            } else {
+                                println("Tip tracker clicked")
+                                appNavigator?.navigateToTipTracker()
+                            }
+                        },
+                        icon = Icon(R.drawable.ic_tip, "money tip icon"),
                     )
 //                    FeatureOverview(
 //                        "Note Corner",

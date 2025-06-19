@@ -19,6 +19,9 @@ interface GalleryImagesDao {
     @Query("SELECT * FROM $GALLERY_IMAGES_TABLE WHERE family_id = :familyId AND album_id = :albumId")
     fun getItemsByAlbumId(familyId: String, albumId: String): Flow<List<GalleryImageEntity>>
 
+    @Query("SELECT COUNT(*) FROM $GALLERY_IMAGES_TABLE WHERE family_id = :familyId AND album_id = :albumId")
+    fun getItemCountByAlbumId(familyId: String, albumId: String): Int
+
     @Query("SELECT thumbnail FROM $GALLERY_IMAGES_TABLE WHERE id = :id LIMIT 1")
     suspend fun getImageThumbnail(id: String): ByteArray?
 

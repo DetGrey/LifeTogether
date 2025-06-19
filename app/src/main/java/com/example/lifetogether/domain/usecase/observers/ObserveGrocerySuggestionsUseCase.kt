@@ -19,7 +19,7 @@ class ObserveGrocerySuggestionsUseCase @Inject constructor(
                 }
                 is GrocerySuggestionsListener.Failure -> {
                     // Handle failure
-                    println("ObserveFirestoreUseCase failure: ${result.message}")
+                    println("ObserveGrocerySuggestionsUseCase failure: ${result.message}")
                 }
             }
         }
