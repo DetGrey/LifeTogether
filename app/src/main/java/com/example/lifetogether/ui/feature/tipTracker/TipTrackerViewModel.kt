@@ -74,11 +74,11 @@ class TipTrackerViewModel @Inject constructor(
                                 weeklyTotal = getTotalForLastDays(tipItems, 7)
                                 monthlyTotal = getTotalForLastDays(tipItems, 30)
                                 yearlyTotal = getTotalForLastDays(tipItems, 365)
-                                total = tipItems.sumOf { it.amount.toDouble() }.toFloat()
+                                total = getTotalForLastDays(tipItems, null)
                                 weeklyAverage = getAverageForLastDays(tipItems, 7)
                                 monthlyAverage = getAverageForLastDays(tipItems, 30)
                                 yearlyAverage = getAverageForLastDays(tipItems, 365)
-                                totalAverage = tipItems.sumOf { it.amount.toDouble() }.toFloat() / tipItems.size
+                                totalAverage = getAverageForLastDays(tipItems, null)
 
                                 groupedTips = tips.value.groupBy { formatDateToString(it.date) }
                             }
@@ -105,11 +105,13 @@ class TipTrackerViewModel @Inject constructor(
     var yearlyTotal: Float by mutableFloatStateOf(0f)
     var total: Float by mutableFloatStateOf(0f)
 
-    private fun getTotalForLastDays(tips: List<TipItem>, days: Int): Float {
-        val cutoff = Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(days.toLong()))
-        return tips.filter { it.date.after(cutoff) }
-            .sumOf { it.amount.toDouble() }
-            .toFloat()
+    private fun getTotalForLastDays(tips: List<TipItem>, days: Int?): Float {
+        return if (days != null) {
+            val cutoff = Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(days.toLong()))
+            tips.filter { it.date.after(cutoff) }.sumOf { it.amount.toDouble() }.toFloat()
+        } else {
+            tips.sumOf { it.amount.toDouble() }.toFloat()
+        }
     }
 
     var weeklyAverage: Float by mutableFloatStateOf(0f)
@@ -117,9 +119,13 @@ class TipTrackerViewModel @Inject constructor(
     var yearlyAverage: Float by mutableFloatStateOf(0f)
     var totalAverage: Float by mutableFloatStateOf(0f)
 
-    private fun getAverageForLastDays(tips: List<TipItem>, days: Int): Float {
-        val cutoff = Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(days.toLong()))
-        val filteredTips = tips.filter { it.date.after(cutoff) }
+    private fun getAverageForLastDays(tips: List<TipItem>, days: Int?): Float {
+        val filteredTips = if (days != null) {
+            val cutoff = Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(days.toLong()))
+            tips.filter { it.date.after(cutoff) }
+        } else {
+            tips
+        }
 
         return if (filteredTips.isNotEmpty()) {
             val average = filteredTips.sumOf { it.amount.toDouble() } / filteredTips.size

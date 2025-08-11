@@ -1,8 +1,10 @@
 package com.example.lifetogether.ui.feature.tipTracker
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,16 +20,48 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lifetogether.domain.model.TipItem
+import com.example.lifetogether.ui.common.text.TextDefault
+import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 
 @Composable
 fun TipsCalendar(
     groupedTips: Map<String, List<TipItem>>,
 ) {
     val viewModel: TipsCalendarViewModel = hiltViewModel()
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(25.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TextDefault(
+            text = "< Previous",
+            modifier = Modifier.clickable { viewModel.selectPreviousMonth() }.weight(1f),
+            color = MaterialTheme.colorScheme.secondary,
+            textAlign = TextAlign.End,
+        )
+        TextDefault(
+            text = "Current month",
+            modifier = Modifier.clickable { viewModel.selectCurrentMonth() }.weight(1f),
+            color = MaterialTheme.colorScheme.secondary,
+            textAlign = TextAlign.Center,
+        )
+        TextDefault(
+            text = "Next >",
+            modifier = Modifier.clickable { viewModel.selectNextMonth() }.weight(1f),
+            color = MaterialTheme.colorScheme.secondary,
+            textAlign = TextAlign.Start,
+        )
+    }
+
+    TextSubHeadingMedium(viewModel.getCurrentMonthYearDisplay(), MaterialTheme.colorScheme.primary)
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(5),
@@ -61,7 +95,7 @@ fun TipsCalendar(
 
                     if (tipTotal > 0f) {
                         Text(
-                            text = tipTotal.toString(),
+                            text = viewModel.formatTipTotal(tipTotal),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.primary,
                             fontSize = 18.sp,

@@ -75,7 +75,12 @@ fun TipTrackerScreen(
                         center = true,
                     )
                     StatsCard(
-                        title = if (tipTrackerViewModel.timePeriod == "All") "All Time" else "This ${tipTrackerViewModel.timePeriod}",
+                        title = when (tipTrackerViewModel.timePeriod) {
+                            "Week" -> "Last 7 days"
+                            "Month" -> "Last 30 days"
+                            "Year" -> "Last 365 days"
+                            else -> "All time"
+                        },
                         total = when (tipTrackerViewModel.timePeriod) {
                             "Week" -> tipTrackerViewModel.weeklyTotal.toString()
                             "Month" -> tipTrackerViewModel.monthlyTotal.toString()
@@ -123,7 +128,7 @@ fun TipTrackerScreen(
         }
     }
 
-    // ---------------------------------------------------------------- ADD NEW GROCERY ITEM
+    // ---------------------------------------------------------------- ADD NEW TIP ITEM
     Box(
         modifier = Modifier
             .padding(10.dp)

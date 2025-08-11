@@ -146,9 +146,9 @@ dependencies {
 }
 
 // 1. Create the rename task: Post-Build Rename APK file
-tasks.register<Copy>("renameReleaseApk") {
+tasks.register<Copy>("renameDebugApk") {
     val versionName = android.defaultConfig.versionName ?: "unknown"
-    val buildType = "release"
+    val buildType = "debug"
     val apkName = "app-$buildType.apk"
     val newName = "LifeTogether-$versionName.apk"
 
@@ -161,6 +161,6 @@ tasks.register<Copy>("renameReleaseApk") {
 
 // 2. Hook it automatically to run after the APK is built
 afterEvaluate {
-    tasks.findByName("assembleRelease")?.finalizedBy(tasks.named("renameReleaseApk"))
-        ?: logger.warn("assembleRelease task not found — renameReleaseApk will not run automatically.")
+    tasks.findByName("assembleDebug")?.finalizedBy(tasks.named("renameDebugApk"))
+        ?: logger.warn("assembleDebug task not found — renameDebugApk will not run automatically.")
 }
