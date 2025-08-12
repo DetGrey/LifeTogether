@@ -13,6 +13,7 @@ import com.example.lifetogether.ui.feature.gallery.GalleryImageScreen
 import com.example.lifetogether.ui.feature.gallery.GalleryScreen
 import com.example.lifetogether.ui.feature.groceryList.GroceryListScreen
 import com.example.lifetogether.ui.feature.home.HomeScreen
+import com.example.lifetogether.ui.feature.loading.LoadingScreen
 import com.example.lifetogether.ui.feature.login.LoginScreen
 import com.example.lifetogether.ui.feature.profile.ProfileScreen
 import com.example.lifetogether.ui.feature.recipes.RecipeDetailsScreen
@@ -31,13 +32,17 @@ fun NavHost(
 
     androidx.navigation.compose.NavHost(
         navController = navController,
-        startDestination = AppRoutes.HOME_SCREEN,
+        startDestination = AppRoutes.LOADING_SCREEN,
     ) {
         composable(AppRoutes.ADMIN_GROCERY_CATEGORIES_SCREEN) {
             AdminGroceryCategoriesScreen(appNavigator, firebaseViewModel)
         }
         composable(AppRoutes.ADMIN_GROCERY_SUGGESTIONS_SCREEN) {
             AdminGrocerySuggestionsScreen(appNavigator, firebaseViewModel)
+        }
+
+        composable(AppRoutes.LOADING_SCREEN) {
+            LoadingScreen(appNavigator, firebaseViewModel)
         }
 
         composable(AppRoutes.HOME_SCREEN) {

@@ -89,8 +89,6 @@ class GroceryListViewModel @Inject constructor(
                                 updateExpandedStates()
                             } else {
                                 println("Error: No GroceryItem instances found in the result")
-                                error = "No GroceryItem instances found in the result"
-                                showAlertDialog = true
                             }
                         }
 

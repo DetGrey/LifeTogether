@@ -22,6 +22,7 @@ import com.example.lifetogether.domain.usecase.user.FetchUserInformationUseCase
 import com.example.lifetogether.domain.usecase.user.RemoveSavedUserInformationUseCase
 import com.example.lifetogether.domain.usecase.user.StoreFcmTokenUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -49,6 +50,10 @@ class FirebaseViewModel @Inject constructor(
     private val _userInformation = MutableStateFlow<UserInformation?>(null)
     val userInformation: StateFlow<UserInformation?> = _userInformation.asStateFlow()
 
+    private var _loading by mutableStateOf(true)
+    val loading: Boolean
+        get() = _loading
+    
     init {
         // Observe changes to user information
         viewModelScope.launch {
@@ -65,6 +70,8 @@ class FirebaseViewModel @Inject constructor(
                         _userInformation.value = null
                     }
                 }
+                delay(2000)
+                _loading = false
             }
         }
 
