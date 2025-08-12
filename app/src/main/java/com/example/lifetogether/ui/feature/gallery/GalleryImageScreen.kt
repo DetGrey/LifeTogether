@@ -16,9 +16,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
-import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
+import com.example.lifetogether.ui.common.image.DisplayImageFromUri
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 
@@ -60,12 +60,18 @@ fun GalleryImageScreen(
                     appNavigator?.navigateBack()
                 },
                 text = when (imageData) {
-                    is GalleryImage -> {
-                        imageData!!.itemName
-                    }
+//                    is GalleryImage -> {
+//                        imageData!!.itemName
+//                    }
                     else -> "Image"
                 },
             )
+            if (imageData?.imageUri != null) {
+                DisplayImageFromUri(
+                    imageUri = imageData?.imageUri!!,
+                    description = imageData?.itemName,
+                )
+            }
         }
     }
 

@@ -86,7 +86,7 @@ fun AlbumImagesScreen(
                         .padding(10.dp)
                         .fillMaxWidth(),
                     columns = GridCells.Fixed(2),
-                    verticalArrangement = Arrangement.spacedBy(30.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     items(albumImages.size) { index ->

@@ -140,6 +140,12 @@ class LocalDataSource @Inject constructor(
                     emit(Entity.Album(album))
                 }
             }
+            Constants.GALLERY_IMAGES_TABLE -> flow {
+                val galleryImage = galleryImagesDao.getItemById(familyId, id)
+                if (galleryImage != null) {
+                    emit(Entity.GalleryImage(galleryImage))
+                }
+            }
             else -> flowOf() // Handle the case where the listName doesn't match any known entity
         }
     }
