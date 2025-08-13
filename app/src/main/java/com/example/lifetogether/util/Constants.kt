@@ -9,7 +9,7 @@ object Constants {
     const val CATEGORY_TABLE = "categories"
     const val RECIPES_TABLE = "recipes"
     const val ALBUMS_TABLE = "albums"
-    const val GALLERY_IMAGES_TABLE = "gallery_images"
+    const val GALLERY_MEDIA_TABLE = "gallery_media"
     const val TIP_TRACKER_TABLE = "tip_tracker"
 
     const val GROCERY_LIST_CHANNEL = "grocery_list_notification_channel"

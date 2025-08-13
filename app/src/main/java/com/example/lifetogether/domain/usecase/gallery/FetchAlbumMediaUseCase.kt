@@ -2,19 +2,19 @@ package com.example.lifetogether.domain.usecase.gallery
 
 import com.example.lifetogether.data.repository.LocalListRepositoryImpl
 import com.example.lifetogether.domain.callback.ListItemsResultListener
-import com.example.lifetogether.domain.model.gallery.GalleryImage
+import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-class FetchAlbumImagesUseCase @Inject constructor(
+class FetchAlbumMediaUseCase @Inject constructor(
     private val localListRepository: LocalListRepositoryImpl,
 ) {
     operator fun invoke(
         familyId: String,
         albumId: String,
-    ): Flow<ListItemsResultListener<GalleryImage>> {
-        println("Inside FetchAlbumImagesUseCase and trying to fetch from local storage")
+    ): Flow<ListItemsResultListener<GalleryMedia>> {
+        println("Inside FetchAlbumMediaUseCase and trying to fetch from local storage")
         // Return a flow that emits updates to the list items
-        return localListRepository.fetchAlbumImages(familyId, albumId)
+        return localListRepository.fetchAlbumMedia(familyId, albumId)
     }
 }

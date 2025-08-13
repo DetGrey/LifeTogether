@@ -21,7 +21,7 @@ class ObserveUserInformationUseCase @Inject constructor(
             when (result) {
                 is AuthResultListener.Success -> {
                     val byteArrayResult: ByteArrayResultListener? = result.userInformation.imageUrl?.let { url ->
-                        firebaseStorageDataSource.downloadImage(url)
+                        firebaseStorageDataSource.fetchImageByteArray(url)
                     }
 
 //                    println("ObserveUserInformationUseCase byteArrayResult: $byteArrayResult")

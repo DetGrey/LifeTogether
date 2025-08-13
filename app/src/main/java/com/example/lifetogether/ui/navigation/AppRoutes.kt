@@ -16,10 +16,10 @@ object AppRoutes {
     const val CREATE_RECIPE_SCREEN = "create_recipe_screen"
     const val RECIPE_ID_ARG = "recipeId"
     const val GALLERY_SCREEN = "gallery"
-    const val ALBUM_IMAGES_SCREEN = "album_images"
-    const val ALBUM_IMAGES_ID_ARG = "albumId"
-    const val GALLERY_IMAGE_SCREEN = "gallery_image"
-    const val GALLERY_IMAGE_ID_ARG = "imageId"
+    const val ALBUM_MEDIA_SCREEN = "album_media"
+    const val ALBUM_MEDIA_ID_ARG = "albumId"
+    const val GALLERY_MEDIA_SCREEN = "gallery_media"
+    const val GALLERY_MEDIA_ID_ARG = "mediaId"
     const val TIP_TRACKER_SCREEN = "tip_tracker"
     // ... other routes
 }

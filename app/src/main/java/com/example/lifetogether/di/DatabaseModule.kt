@@ -6,7 +6,7 @@ import com.example.lifetogether.data.local.AppDatabase
 import com.example.lifetogether.data.local.dao.AlbumsDao
 import com.example.lifetogether.data.local.dao.CategoriesDao
 import com.example.lifetogether.data.local.dao.FamilyInformationDao
-import com.example.lifetogether.data.local.dao.GalleryImagesDao
+import com.example.lifetogether.data.local.dao.GalleryMediaDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
 import com.example.lifetogether.data.local.dao.RecipesDao
@@ -80,8 +80,8 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideGalleryImagesDao(db: AppDatabase): GalleryImagesDao {
-        return db.galleryImagesDao()
+    fun provideGalleryMediaDao(db: AppDatabase): GalleryMediaDao {
+        return db.galleryMediaDao()
     }
 
     @Provides

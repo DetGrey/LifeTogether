@@ -22,7 +22,7 @@ android {
         minSdk = 31
         targetSdk = 35
         versionCode = 1
-        versionName = "1.2"
+        versionName = "1.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -143,6 +143,11 @@ dependencies {
 
     // Notification permission
     implementation(libs.accompanist.permissions)
+
+    // Media3 - video player
+    implementation(libs.androidx.media3.exoplayer) // Core ExoPlayer
+    implementation(libs.androidx.media3.ui) // For UI components like PlayerControlView
+    implementation(libs.androidx.media3.session) // For media sessions (optional but good practice)
 }
 
 // 1. Create the rename task: Post-Build Rename APK file

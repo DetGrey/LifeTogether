@@ -26,11 +26,23 @@ class LocalImageRepositoryImpl @Inject constructor(
         }
     }
 
-    suspend fun getAlbumImageThumbnail(
-        imageId: String,
+    suspend fun getAlbumMediaThumbnail(
+        mediaId: String,
     ): ByteArrayResultListener {
-        println("LocalUserRepositoryImpl getAlbumImageThumbnail")
-        val result = localDataSource.getAlbumImageThumbnail(imageId)
+        println("LocalUserRepositoryImpl getAlbumMediaThumbnail")
+        val result = localDataSource.getAlbumMediaThumbnail(mediaId)
+        return if (result != null) {
+            ByteArrayResultListener.Success(result)
+        } else {
+            ByteArrayResultListener.Failure("No thumbnail found")
+        }
+    }
+
+    suspend fun getAlbumThumbnail(
+        albumId: String,
+    ): ByteArrayResultListener {
+        println("LocalUserRepositoryImpl getAlbumThumbnail")
+        val result = localDataSource.getAlbumThumbnail(albumId)
         return if (result != null) {
             ByteArrayResultListener.Success(result)
         } else {

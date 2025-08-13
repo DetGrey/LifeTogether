@@ -21,34 +21,36 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.gallery.Album
+import com.example.lifetogether.domain.model.gallery.GalleryImage
+import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
-import com.example.lifetogether.ui.common.image.ImageUploadMultipleDialog
+import com.example.lifetogether.ui.common.image.MediaUploadMultipleDialog
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 import com.example.lifetogether.ui.viewmodel.ImageViewModel
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun AlbumImagesScreen(
+fun AlbumMediaScreen(
     appNavigator: AppNavigator? = null,
     firebaseViewModel: FirebaseViewModel? = null,
     albumId: String,
 ) {
-    val albumImagesViewModel: AlbumImagesViewModel = hiltViewModel()
+    val albumMediaViewModel: AlbumMediaViewModel = hiltViewModel()
     val imageViewModel: ImageViewModel = hiltViewModel()
 
     val userInformation by firebaseViewModel?.userInformation!!.collectAsState()
-    val album by albumImagesViewModel.album.collectAsState()
-    val albumImages by albumImagesViewModel.albumImages.collectAsState()
-    val thumbnails by albumImagesViewModel.thumbnails.collectAsState()
+    val album by albumMediaViewModel.album.collectAsState()
+    val albumMedia by albumMediaViewModel.albumMedia.collectAsState()
+    val thumbnails by albumMediaViewModel.thumbnails.collectAsState()
 
     LaunchedEffect(key1 = true) {
         // Perform any one-time initialization or side effect here
         userInformation?.familyId?.let {
-            albumImagesViewModel.setUpAlbumImages(it, albumId)
+            albumMediaViewModel.setUpAlbumMedia(it, albumId)
         }
     }
 
@@ -78,7 +80,7 @@ fun AlbumImagesScreen(
                 },
             )
 
-            if (albumImages.isEmpty()) {
+            if (albumMedia.isEmpty()) {
                 Text(text = "No images in this album. Press + to create one.")
             } else {
                 LazyVerticalGrid(
@@ -89,22 +91,35 @@ fun AlbumImagesScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    items(albumImages.size) { index ->
-                        val image = albumImages[index]
-                        val thumbnail = thumbnails[image.id]
+                    items(albumMedia.size) { index ->
+                        val media = albumMedia[index]
+                        val thumbnail = thumbnails[media.id]
 
-                        LaunchedEffect(image.id) {
-                            image.id?.let { albumImagesViewModel.fetchThumbnail(it) }
+                        LaunchedEffect(media.id) {
+                            media.id?.let { albumMediaViewModel.fetchThumbnail(it) }
                         }
 
-                        ImageContainer(
-                            thumbnail = thumbnail,
-                            onClick = {
-                                image.id?.let {
-                                    appNavigator?.navigateToGalleryImage(image.id!!)
-                                }
-                            },
-                        )
+                        if (media is GalleryImage) {
+                            ThumbnailContainer(
+                                thumbnail = thumbnail,
+                                onClick = {
+                                    media.id?.let {
+                                        appNavigator?.navigateToGalleryMedia(media.id!!)
+                                    }
+                                },
+                            )
+                        } else if (media is GalleryVideo) {
+                            ThumbnailContainer(
+                                thumbnail = thumbnail,
+                                onClick = {
+                                    media.id?.let {
+                                        appNavigator?.navigateToGalleryMedia(media.id!!)
+                                    }
+                                },
+                                isVideo = true,
+                                duration = media.duration,
+                            )
+                        }
                     }
                 }
             }
@@ -126,12 +141,12 @@ fun AlbumImagesScreen(
     // ---------------------------------------------------------------- IMAGE UPLOAD DIALOG
     if (imageViewModel.showImageUploadDialog && userInformation != null) {
         userInformation!!.familyId?.let { familyId ->
-            ImageUploadMultipleDialog(
+            MediaUploadMultipleDialog(
                 onDismiss = { imageViewModel.showImageUploadDialog = false },
                 onConfirm = { imageViewModel.showImageUploadDialog = false },
                 dialogTitle = "Upload images",
                 dialogMessage = "Select the images to upload",
-                imageType = ImageType.GalleryImage(familyId, albumId, listOf()),
+                imageType = ImageType.GalleryMedia(familyId, albumId, null),
                 dismissButtonMessage = "Cancel",
                 confirmButtonMessage = "Upload images",
             )
@@ -139,8 +154,8 @@ fun AlbumImagesScreen(
     }
 
     // ---------------------------------------------------------------- SHOW ERROR ALERT
-    if (albumImagesViewModel.showAlertDialog) {
-        ErrorAlertDialog(albumImagesViewModel.error)
-        albumImagesViewModel.toggleAlertDialog()
+    if (albumMediaViewModel.showAlertDialog) {
+        ErrorAlertDialog(albumMediaViewModel.error)
+        albumMediaViewModel.toggleAlertDialog()
     }
 }

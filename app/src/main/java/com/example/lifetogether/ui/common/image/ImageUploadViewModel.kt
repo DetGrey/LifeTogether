@@ -4,37 +4,26 @@ import android.content.ContentResolver
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
-import android.provider.MediaStore
-import android.webkit.MimeTypeMap
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.callback.ResultListener
-import com.example.lifetogether.domain.logic.parseExifDate
 import com.example.lifetogether.domain.logic.toBitmap
-import com.example.lifetogether.domain.model.gallery.GalleryImage
-import com.example.lifetogether.domain.model.gallery.GalleryImageUploadData
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.model.sealed.UploadState
 import com.example.lifetogether.domain.usecase.image.UploadImageUseCase
-import com.example.lifetogether.domain.usecase.image.UploadImagesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
 class ImageUploadViewModel @Inject constructor(
     private val uploadImageUseCase: UploadImageUseCase,
-    private val uploadImagesUseCase: UploadImagesUseCase,
 ) : ViewModel() {
     var error: String by mutableStateOf("")
 
@@ -44,7 +33,6 @@ class ImageUploadViewModel @Inject constructor(
     fun resetViewModel() {
         _imageUri.value = null
         _bitmap.value = null
-        _imageUris.value = emptyList()
         _uploadState.value = UploadState.Idle
     }
 
@@ -75,134 +63,6 @@ class ImageUploadViewModel @Inject constructor(
                 }
                 is ResultListener.Failure -> _uploadState.value = UploadState.Failure(result.message)
             }
-        }
-    }
-
-    // ---------------------------------------------------------------- MULTIPLE IMAGES
-    private val _imageUris = MutableStateFlow<List<Uri>>(emptyList())
-    val imageUris: StateFlow<List<Uri>> = _imageUris.asStateFlow()
-
-    fun setImageUris(uris: List<Uri>) {
-        _imageUris.value = uris
-    }
-
-    fun uploadPhotos(imageType: ImageType, context: Context) {
-        if (uploadState.value is UploadState.Uploading) {
-            return
-        }
-
-        if (imageUris.value.isEmpty()) return
-        _uploadState.value = UploadState.Uploading
-
-        val images: List<GalleryImageUploadData> = when (imageType) {
-            is ImageType.GalleryImage -> {
-                imageUris.value.map { uri ->
-                    val exifData = extractImageMetadata(context, uri)
-                    GalleryImageUploadData(
-                        uri,
-                        GalleryImage(
-                            familyId = imageType.familyId,
-                            itemName = exifData.itemName,
-                            albumId = imageType.albumId,
-                            dateCreated = exifData.dateCreated,
-                        ),
-                        exifData.ext,
-                    )
-                }
-            }
-            else -> {
-                _uploadState.value = UploadState.Failure("Invalid image type")
-                return
-            }
-        }
-
-        println("Images: $images")
-        val imageTypeUpdated = imageType.copy(galleryImageUploadData = images)
-
-        viewModelScope.launch {
-            when (val results = uploadImagesUseCase.invoke(imageTypeUpdated, context)) {
-                is ResultListener.Success -> _uploadState.value = UploadState.Success
-                is ResultListener.Failure -> _uploadState.value = UploadState.Failure(results.message)
-            }
-        }
-    }
-
-    data class ExifData(
-        val uri: Uri,
-        val itemName: String,
-        val dateCreated: Date?,
-        val ext: String,
-    )
-
-    private fun extractImageMetadata(context: Context, uri: Uri): ExifData {
-        // Get the date and name metadata
-        val dateCreated = getExifDate(context, uri)
-        val ext = getImageExtension(context, uri) ?: ".jpeg"
-        val itemName = formatExifDateImageName(dateCreated, ext) ?: ""
-
-        return ExifData(uri, itemName, dateCreated, ext)
-    }
-
-    private fun getImageExtension(context: Context, uri: Uri): String? {
-        val mimeType = context.contentResolver.getType(uri) ?: return null
-        return "." + MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
-    }
-
-    private fun getExifDate(context: Context, uri: Uri): Date? {
-        val inputStream = context.contentResolver.openInputStream(uri)
-        val exif = inputStream?.let { ExifInterface(it) }
-
-        var dateCreatedString: String? = null
-        var dateCreated: Date? = null
-
-        val dateCreatedOriginal = exif?.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL) // e.g., "2025:04:24 14:33:00"
-        if (!dateCreatedOriginal.isNullOrBlank()) {
-            dateCreatedString = dateCreatedOriginal
-        } else {
-            val dateModified = exif?.getAttribute(ExifInterface.TAG_DATETIME)
-            if (!dateModified.isNullOrBlank()) {
-                dateCreatedString = dateModified
-            } else {
-                val dateTaken = exif?.getAttribute(ExifInterface.TAG_DATETIME_DIGITIZED)
-                if (!dateTaken.isNullOrBlank()) {
-                    dateCreatedString = dateTaken
-                }
-            }
-        }
-
-        if (!dateCreatedString.isNullOrBlank()) {
-            dateCreated = parseExifDate(dateCreatedString)
-        } else {
-            val mediaStoreDate = getImageDateFromMediaStore(context, uri)
-            if (mediaStoreDate != null) {
-                dateCreated = parseExifDate(timestamp = mediaStoreDate)
-            }
-        }
-
-        inputStream?.close()
-        return dateCreated
-    }
-
-    private fun getImageDateFromMediaStore(context: Context, uri: Uri): Long? {
-        val projection = arrayOf(MediaStore.Images.Media.DATE_TAKEN)
-
-        context.contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val dateIndex = cursor.getColumnIndex(MediaStore.Images.Media.DATE_TAKEN)
-                return if (dateIndex != -1) cursor.getLong(dateIndex) else null
-            }
-        }
-        return null // No date found
-    }
-
-    private fun formatExifDateImageName(date: Date?, ext: String): String? {
-        if (date == null) return null
-
-        return try {
-            val outputFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
-            date.let { outputFormat.format(it) }.plus(ext)
-        } catch (_: Exception) {
-            null // Handle parsing errors
         }
     }
 }

@@ -27,4 +27,3 @@ fun DisplayImageFromUri(imageUri: Uri, description: String?) {
         contentScale = ContentScale.Crop, // Or ContentScale.Fit, etc.
     )
 }
-    

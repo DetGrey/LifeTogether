@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lifetogether.R
+import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
@@ -36,6 +37,7 @@ fun GalleryScreen(
 
     val userInformation by firebaseViewModel?.userInformation!!.collectAsState()
     val albums by galleryViewModel.albums.collectAsState()
+    val thumbnails by galleryViewModel.thumbnails.collectAsState()
 
     LaunchedEffect(key1 = true) {
         // Perform any one-time initialization or side effect here
@@ -76,11 +78,17 @@ fun GalleryScreen(
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         for (album in albums) {
-                            AlbumContainer(album.itemName, album.count, onClick = {
-                                if (album.id != null) {
-                                    appNavigator?.navigateToAlbumImages(album.id!!)
-                                }
-                            })
+                            val thumbnail = thumbnails[album.id]
+                            AlbumContainer(
+                                album.itemName,
+                                album.count,
+                                thumbnail?.toBitmap(),
+                                onClick = {
+                                    if (album.id != null) {
+                                        appNavigator?.navigateToAlbumMedia(album.id!!)
+                                    }
+                                },
+                            )
                         }
                     }
                 }

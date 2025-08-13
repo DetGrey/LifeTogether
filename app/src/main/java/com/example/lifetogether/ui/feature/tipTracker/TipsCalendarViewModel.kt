@@ -9,7 +9,6 @@ import androidx.lifecycle.ViewModel
 import com.example.lifetogether.domain.model.TipItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
-import java.time.Month
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale

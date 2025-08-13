@@ -5,13 +5,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.lifetogether.domain.callback.ByteArrayResultListener
 import com.example.lifetogether.domain.callback.ListItemsResultListener
 import com.example.lifetogether.domain.callback.StringResultListener
 import com.example.lifetogether.domain.model.gallery.Album
+import com.example.lifetogether.domain.usecase.image.FetchAlbumThumbnailUseCase
 import com.example.lifetogether.domain.usecase.item.FetchListItemsUseCase
 import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
 import com.example.lifetogether.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,6 +25,7 @@ import javax.inject.Inject
 @HiltViewModel
 class GalleryViewModel @Inject constructor(
     private val fetchListItemsUseCase: FetchListItemsUseCase,
+    private val fetchAlbumThumbnailUseCase: FetchAlbumThumbnailUseCase,
     private val saveItemUseCase: SaveItemUseCase,
 ) : ViewModel() {
     // ---------------------------------------------------------------- ERROR
@@ -108,6 +112,7 @@ class GalleryViewModel @Inject constructor(
                             println("_albums old value: ${_albums.value}")
                             _albums.value = albumItems.sortedBy { it.itemName }
                             println("albums new value: ${albums.value}")
+                            fetchThumbnails()
                         } else {
                             println("Error: No Album instances found in the result")
                         }
@@ -124,7 +129,23 @@ class GalleryViewModel @Inject constructor(
         }
     }
 
-    // ---------------------------------------------------------------- GALLERY IMAGES
-    // TODO get image count for each album
-    // TODO maybe get newest image from each album
+    // ---------------------------------------------------------------- ALBUM THUMBNAIL
+    private val _thumbnails = MutableStateFlow<Map<String, ByteArray>>(emptyMap())
+    val thumbnails: StateFlow<Map<String, ByteArray>> = _thumbnails.asStateFlow()
+
+    fun fetchThumbnails() {
+        for (album in albums.value) {
+            if (album.id != null) {
+                viewModelScope.launch(Dispatchers.IO) {
+                    when (val result = fetchAlbumThumbnailUseCase.invoke(album.id!!)) {
+                        is ByteArrayResultListener.Success -> {
+                            _thumbnails.value += mapOf(album.id!! to result.byteArray)
+                        }
+                        is ByteArrayResultListener.Failure -> {
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

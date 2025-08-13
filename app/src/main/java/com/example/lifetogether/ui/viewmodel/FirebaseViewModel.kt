@@ -1,5 +1,6 @@
 package com.example.lifetogether.ui.viewmodel
 
+import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -12,7 +13,7 @@ import com.example.lifetogether.domain.usecase.observers.ObserveAlbumsUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveAuthStateUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveCategoriesUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveFamilyInformationUseCase
-import com.example.lifetogether.domain.usecase.observers.ObserveGalleryImagesUseCase
+import com.example.lifetogether.domain.usecase.observers.ObserveGalleryMediaUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveGroceryListUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveGrocerySuggestionsUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveRecipesUseCase
@@ -31,6 +32,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class FirebaseViewModel @Inject constructor(
+    private val application: Application,
     private val fetchUserInformationUseCase: FetchUserInformationUseCase,
     private val observeAuthStateUseCase: ObserveAuthStateUseCase,
     private val observeGroceryListUseCase: ObserveGroceryListUseCase,
@@ -40,7 +42,7 @@ class FirebaseViewModel @Inject constructor(
     private val observeUserInformationUseCase: ObserveUserInformationUseCase,
     private val observeFamilyInformationUseCase: ObserveFamilyInformationUseCase,
     private val observeAlbumsUseCase: ObserveAlbumsUseCase,
-    private val observeGalleryImagesUseCase: ObserveGalleryImagesUseCase,
+    private val observeGalleryMediaUseCase: ObserveGalleryMediaUseCase,
     private val observeTipTrackerUseCase: ObserveTipTrackerUseCase,
     private val removeSavedUserInformationUseCase: RemoveSavedUserInformationUseCase,
     private val storeFcmTokenUseCase: StoreFcmTokenUseCase,
@@ -53,7 +55,7 @@ class FirebaseViewModel @Inject constructor(
     private var _loading by mutableStateOf(true)
     val loading: Boolean
         get() = _loading
-    
+
     init {
         // Observe changes to user information
         viewModelScope.launch {
@@ -70,7 +72,7 @@ class FirebaseViewModel @Inject constructor(
                         _userInformation.value = null
                     }
                 }
-                delay(2000)
+                delay(1000)
                 _loading = false
             }
         }
@@ -120,7 +122,7 @@ class FirebaseViewModel @Inject constructor(
 
         viewModelScope.launch {
             println("observeFirestoreFamilyData() observeGalleryImagesUseCase invoked")
-            observeGalleryImagesUseCase.invoke(familyId)
+            observeGalleryMediaUseCase.invoke(familyId, application.applicationContext)
         }
 
         viewModelScope.launch {

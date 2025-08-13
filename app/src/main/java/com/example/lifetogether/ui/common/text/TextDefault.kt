@@ -12,13 +12,13 @@ fun TextDefault(
     text: String,
     modifier: Modifier = Modifier,
     color: Color? = null,
-    textAlign: TextAlign? = null
+    textAlign: TextAlign? = null,
 ) {
     Text(
         text = text,
         style = MaterialTheme.typography.bodyMedium,
         color = color ?: MaterialTheme.colorScheme.primary,
         modifier = modifier,
-        textAlign = textAlign ?: TextAlign.Unspecified
+        textAlign = textAlign ?: TextAlign.Unspecified,
     )
 }

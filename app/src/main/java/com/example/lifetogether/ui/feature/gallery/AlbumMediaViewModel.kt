@@ -9,9 +9,9 @@ import com.example.lifetogether.domain.callback.ByteArrayResultListener
 import com.example.lifetogether.domain.callback.ItemResultListener
 import com.example.lifetogether.domain.callback.ListItemsResultListener
 import com.example.lifetogether.domain.model.gallery.Album
-import com.example.lifetogether.domain.model.gallery.GalleryImage
-import com.example.lifetogether.domain.usecase.gallery.FetchAlbumImagesUseCase
-import com.example.lifetogether.domain.usecase.image.FetchAlbumImageByteArrayListUseCase
+import com.example.lifetogether.domain.model.gallery.GalleryMedia
+import com.example.lifetogether.domain.usecase.gallery.FetchAlbumMediaUseCase
+import com.example.lifetogether.domain.usecase.image.FetchAlbumMediaThumbnailUseCase
 import com.example.lifetogether.domain.usecase.item.FetchItemByIdUseCase
 import com.example.lifetogether.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -24,10 +24,10 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class AlbumImagesViewModel @Inject constructor(
-    private val fetchAlbumImagesUseCase: FetchAlbumImagesUseCase,
+class AlbumMediaViewModel @Inject constructor(
+    private val fetchAlbumMediaUseCase: FetchAlbumMediaUseCase,
     private val fetchItemByIdUseCase: FetchItemByIdUseCase,
-    private val fetchAlbumImageByteArrayListUseCase: FetchAlbumImageByteArrayListUseCase,
+    private val fetchAlbumMediaThumbnailUseCase: FetchAlbumMediaThumbnailUseCase,
 ) : ViewModel() {
     // ---------------------------------------------------------------- ERROR
     var showAlertDialog: Boolean by mutableStateOf(false)
@@ -83,45 +83,45 @@ class AlbumImagesViewModel @Inject constructor(
     }
 
     // ---------------------------------------------------------------- SETUP/FETCH LIST
-    fun setUpAlbumImages(
+    fun setUpAlbumMedia(
         addedFamilyId: String,
         addedAlbumId: String,
     ) {
         if (!familyIdIsSet) {
-            println("AlbumImagesViewModel setting familyId and albumId")
+            println("AlbumMediaViewModel setting familyId and albumId")
             familyId = addedFamilyId
             albumId = addedAlbumId
             // Use the Family ID here (e.g., fetch list items)
             fetchAlbum()
-            fetchAlbumImages()
+            fetchAlbumMedia()
             familyIdIsSet = true
         }
     }
 
     // ---------------------------------------------------------------- GALLERY IMAGES
-    private val _albumImages = MutableStateFlow<List<GalleryImage>>(emptyList())
-    val albumImages: StateFlow<List<GalleryImage>> = _albumImages.asStateFlow()
+    private val _albumMedia = MutableStateFlow<List<GalleryMedia>>(emptyList())
+    val albumMedia: StateFlow<List<GalleryMedia>> = _albumMedia.asStateFlow()
 
-    private fun fetchAlbumImages() {
+    private fun fetchAlbumMedia() {
         viewModelScope.launch {
-            fetchAlbumImagesUseCase.invoke(
+            fetchAlbumMediaUseCase.invoke(
                 familyId!!,
                 albumId!!,
             ).collect { result ->
-                println("fetchAlbumImagesUseCase result: $result")
+                println("fetchAlbumMediaUseCase result: $result")
                 when (result) {
                     is ListItemsResultListener.Success -> {
-                        // Filter and map the result.listItems to only include GalleryImage instances
+                        // Filter and map the result.listItems to only include GalleryMedia instances
                         println("Items found: ${result.listItems}")
                         val items = result.listItems
                         if (items.isNotEmpty()) {
-                            println("_albums old value: ${_albumImages.value}")
-                            val sortedImages = items.sortedByDescending { it.dateCreated } // Sort by newest first
-                            _albumImages.value = sortedImages // Emit sorted list
+                            println("_albums old value: ${_albumMedia.value}")
+                            val sortedMedia = items.sortedByDescending { it.dateCreated } // Sort by newest first
+                            _albumMedia.value = sortedMedia // Emit sorted list
 
-                            println("albums new value: ${albumImages.value}")
+                            println("albums new value: ${albumMedia.value}")
                         } else {
-                            println("Error: No GalleryImage instances found in the result")
+                            println("Error: No GalleryMedia instances found in the result")
                         }
                     }
 
@@ -137,14 +137,14 @@ class AlbumImagesViewModel @Inject constructor(
     }
 
     // ---------------------------------------------------------------- THUMBNAILS
-    private val _thumbnails = MutableStateFlow<Map<String, ByteArray?>>(emptyMap())
-    val thumbnails: StateFlow<Map<String, ByteArray?>> = _thumbnails.asStateFlow()
+    private val _thumbnails = MutableStateFlow<Map<String, ByteArray>>(emptyMap())
+    val thumbnails: StateFlow<Map<String, ByteArray>> = _thumbnails.asStateFlow()
 
-    fun fetchThumbnail(imageId: String) {
+    fun fetchThumbnail(mediaId: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            when (val result = fetchAlbumImageByteArrayListUseCase.invoke(imageId)) {
+            when (val result = fetchAlbumMediaThumbnailUseCase.invoke(mediaId)) {
                 is ByteArrayResultListener.Success -> {
-                    _thumbnails.value += mapOf(imageId to result.byteArray)
+                    _thumbnails.value += mapOf(mediaId to result.byteArray)
                 }
                 is ByteArrayResultListener.Failure -> {
                 }

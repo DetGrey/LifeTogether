@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -51,6 +52,7 @@ fun AlbumContainer(
                     bitmap = bitmap.asImageBitmap(),
                     contentDescription = "image",
                     contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
                 )
             } else {
                 Image(

@@ -33,7 +33,7 @@ class RemoteListRepositoryImpl @Inject constructor(
         return firestoreDataSource.toggleCompletableItemCompletion(item, listName)
     }
 
-    suspend fun deleteItem(
+    fun deleteItem(
         itemId: String,
         listName: String,
     ): ResultListener {
@@ -47,7 +47,7 @@ class RemoteListRepositoryImpl @Inject constructor(
         return firestoreDataSource.deleteItems(listName, items)
     }
 
-    fun updateAlbumCount(
+    suspend fun updateAlbumCount(
         albumId: String,
         count: Int,
     ): ResultListener {

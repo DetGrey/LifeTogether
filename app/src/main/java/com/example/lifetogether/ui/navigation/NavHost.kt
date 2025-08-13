@@ -8,8 +8,8 @@ import androidx.navigation.navArgument
 import com.example.lifetogether.ui.feature.admin.groceryList.AdminGroceryCategoriesScreen
 import com.example.lifetogether.ui.feature.admin.groceryList.AdminGrocerySuggestionsScreen
 import com.example.lifetogether.ui.feature.family.FamilyScreen
-import com.example.lifetogether.ui.feature.gallery.AlbumImagesScreen
-import com.example.lifetogether.ui.feature.gallery.GalleryImageScreen
+import com.example.lifetogether.ui.feature.gallery.AlbumMediaScreen
+import com.example.lifetogether.ui.feature.gallery.GalleryMediaScreen
 import com.example.lifetogether.ui.feature.gallery.GalleryScreen
 import com.example.lifetogether.ui.feature.groceryList.GroceryListScreen
 import com.example.lifetogether.ui.feature.home.HomeScreen
@@ -93,25 +93,25 @@ fun NavHost(
         }
 
         composable(
-            route = "${AppRoutes.ALBUM_IMAGES_SCREEN}/{${AppRoutes.ALBUM_IMAGES_ID_ARG}}",
-            arguments = listOf(navArgument(AppRoutes.ALBUM_IMAGES_ID_ARG) { type = NavType.StringType }),
+            route = "${AppRoutes.ALBUM_MEDIA_SCREEN}/{${AppRoutes.ALBUM_MEDIA_ID_ARG}}",
+            arguments = listOf(navArgument(AppRoutes.ALBUM_MEDIA_ID_ARG) { type = NavType.StringType }),
         ) { backStackEntry ->
-            val albumId = backStackEntry.arguments?.getString(AppRoutes.ALBUM_IMAGES_ID_ARG)
+            val albumId = backStackEntry.arguments?.getString(AppRoutes.ALBUM_MEDIA_ID_ARG)
             if (albumId == null) {
                 return@composable
             }
-            AlbumImagesScreen(appNavigator, firebaseViewModel, albumId)
+            AlbumMediaScreen(appNavigator, firebaseViewModel, albumId)
         }
 
         composable(
-            route = "${AppRoutes.GALLERY_IMAGE_SCREEN}/{${AppRoutes.GALLERY_IMAGE_ID_ARG}}",
-            arguments = listOf(navArgument(AppRoutes.GALLERY_IMAGE_ID_ARG) { type = NavType.StringType }),
+            route = "${AppRoutes.GALLERY_MEDIA_SCREEN}/{${AppRoutes.GALLERY_MEDIA_ID_ARG}}",
+            arguments = listOf(navArgument(AppRoutes.GALLERY_MEDIA_ID_ARG) { type = NavType.StringType }),
         ) { backStackEntry ->
-            val imageId = backStackEntry.arguments?.getString(AppRoutes.GALLERY_IMAGE_ID_ARG)
-            if (imageId == null) {
+            val mediaId = backStackEntry.arguments?.getString(AppRoutes.GALLERY_MEDIA_ID_ARG)
+            if (mediaId == null) {
                 return@composable
             }
-            GalleryImageScreen(appNavigator, firebaseViewModel, imageId)
+            GalleryMediaScreen(appNavigator, firebaseViewModel, mediaId)
         }
 
         composable(AppRoutes.TIP_TRACKER_SCREEN) {

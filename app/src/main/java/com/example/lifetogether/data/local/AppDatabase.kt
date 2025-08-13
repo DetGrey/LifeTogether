@@ -6,7 +6,7 @@ import androidx.room.TypeConverters
 import com.example.lifetogether.data.local.dao.AlbumsDao
 import com.example.lifetogether.data.local.dao.CategoriesDao
 import com.example.lifetogether.data.local.dao.FamilyInformationDao
-import com.example.lifetogether.data.local.dao.GalleryImagesDao
+import com.example.lifetogether.data.local.dao.GalleryMediaDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
 import com.example.lifetogether.data.local.dao.RecipesDao
@@ -16,7 +16,7 @@ import com.example.lifetogether.data.model.AlbumEntity
 import com.example.lifetogether.data.model.CategoryEntity
 import com.example.lifetogether.data.model.FamilyEntity
 import com.example.lifetogether.data.model.FamilyMemberEntity
-import com.example.lifetogether.data.model.GalleryImageEntity
+import com.example.lifetogether.data.model.GalleryMediaEntity
 import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.model.GrocerySuggestionEntity
 import com.example.lifetogether.data.model.ListCountEntity
@@ -35,10 +35,10 @@ import com.example.lifetogether.data.model.UserEntity
         FamilyMemberEntity::class,
         RecipeEntity::class,
         AlbumEntity::class,
-        GalleryImageEntity::class,
+        GalleryMediaEntity::class,
         TipEntity::class,
     ],
-    version = 18,
+    version = 19,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -51,7 +51,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun categoriesDao(): CategoriesDao
     abstract fun recipesDao(): RecipesDao
     abstract fun albumsDao(): AlbumsDao
-    abstract fun galleryImagesDao(): GalleryImagesDao
+    abstract fun galleryMediaDao(): GalleryMediaDao
     abstract fun tipTrackerDao(): TipTrackerDao
     // Add other DAOs here
 }

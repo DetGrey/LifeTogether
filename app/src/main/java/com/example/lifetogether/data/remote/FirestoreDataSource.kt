@@ -18,12 +18,15 @@ import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.model.family.FamilyMember
 import com.example.lifetogether.domain.model.gallery.Album
 import com.example.lifetogether.domain.model.gallery.GalleryImage
+import com.example.lifetogether.domain.model.gallery.GalleryMedia
+import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.util.Constants
 import com.google.firebase.Firebase
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.firestore
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.channels.awaitClose
@@ -356,12 +359,12 @@ class FirestoreDataSource@Inject constructor() {
         awaitClose { listenerRegistration.remove() }
     }
 
-    fun updateAlbumCount(albumId: String, count: Int): ResultListener { // TODO not working
+    suspend fun updateAlbumCount(albumId: String, increment: Int): ResultListener {
         try {
-            println("FirestoreDataSource updateAlbumCount()")
-            val oldCount = db.collection(Constants.ALBUMS_TABLE).document(albumId).get().result.getLong("count")?.toInt()
-            val newCount = oldCount?.plus(count) ?: count
-            db.collection(Constants.ALBUMS_TABLE).document(albumId).update("count", newCount)
+            println("FirestoreDataSource updateAlbumCount() with increment: $increment")
+            val albumDocRef = db.collection(Constants.ALBUMS_TABLE).document(albumId)
+            albumDocRef.update("count", FieldValue.increment(increment.toDouble())).await()
+            println("FirestoreDataSource updateAlbumCount() successful using FieldValue.increment()")
             return ResultListener.Success
         } catch (e: Exception) {
             println("Error: ${e.message}")
@@ -369,24 +372,47 @@ class FirestoreDataSource@Inject constructor() {
         }
     }
 
-    // ------------------------------------------------------------------------------- GALLERY IMAGES
-    fun galleryImagesSnapshotListener(familyId: String) = callbackFlow {
-        println("Firestore galleryImagesSnapshotListener init")
-        val itemsRef =
-            db.collection(Constants.GALLERY_IMAGES_TABLE).whereEqualTo("familyId", familyId)
+    // ------------------------------------------------------------------------------- GALLERY MEDIA
+    fun galleryMediaSnapshotListener(familyId: String) = callbackFlow<ListItemsResultListener<GalleryMedia>> {
+        println("Firestore galleryMediaSnapshotListener init")
+        val itemsRef = db.collection(Constants.GALLERY_MEDIA_TABLE)
+            .whereEqualTo("familyId", familyId)
         val listenerRegistration = itemsRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 // Handle error
-                println("Firestore galleryImagesSnapshotListener error: ${e.message}")
+                println("Firestore galleryMediaSnapshotListener error: ${e.message}")
                 trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess
                 return@addSnapshotListener
             }
 
+//            if (snapshot != null) {
+//                // Process the changes and update Room database
+//                val items = snapshot.toObjects(GalleryImage::class.java)
+//                println("Snapshot items to GalleryImage: $items")
+//                trySend(ListItemsResultListener.Success(items)).isSuccess
+//            } else {
+//                trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess
+//            }
             if (snapshot != null) {
-                // Process the changes and update Room database
-                val items = snapshot.toObjects(GalleryImage::class.java)
-                println("Snapshot items to GalleryImage: $items")
-                trySend(ListItemsResultListener.Success(items)).isSuccess
+                val mediaItems = mutableListOf<GalleryMedia>()
+                for (document in snapshot.documents) {
+                    try {
+                        val mediaType = document.getString("mediaType")
+                        val item: GalleryMedia? = when (mediaType?.lowercase()) {
+                            "image" -> document.toObject(GalleryImage::class.java) as GalleryMedia
+                            "video" -> document.toObject(GalleryVideo::class.java) as GalleryMedia
+                            else -> {
+                                Log.w("FirestoreDS", "Unknown mediaType '$mediaType' for document ${document.id}")
+                                null
+                            }
+                        }
+                        item?.let { mediaItems.add(it) }
+                    } catch (parseEx: Exception) {
+                        Log.e("FirestoreDS", "Error parsing document ${document.id} to GalleryMedia: ${parseEx.message}", parseEx)
+                    }
+                }
+                Log.d("FirestoreDS", "Snapshot items mapped to GalleryMedia: $mediaItems")
+                trySend(ListItemsResultListener.Success(mediaItems)).isSuccess
             } else {
                 trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess
             }
@@ -636,7 +662,7 @@ class FirestoreDataSource@Inject constructor() {
                         ?.let { StringResultListener.Success(it) }
                 }
 
-                is ImageType.GalleryImage -> return StringResultListener.Failure("Image type GalleryImage is not connected to one specific document")
+                is ImageType.GalleryMedia -> return StringResultListener.Failure("Image type GalleryImage is not connected to one specific document")
             }
         } catch (e: Exception) {
             println("Error: ${e.message}")
@@ -682,30 +708,21 @@ class FirestoreDataSource@Inject constructor() {
         }
     }
 
-    suspend fun saveImagesMetaData(
-        imageType: ImageType,
-        imageDataList: List<Item>,
+    suspend fun saveGalleryMediaMetaData(
+        galleryMedia: List<GalleryMedia>,
     ): ResultListener {
         try {
-            println("saveImageDownloadUrl imageType: $imageType")
+            println("saveGalleryMediaMetaData trying to upload GalleryMedia metadata")
 
-            when (imageType) {
-                is ImageType.GalleryImage -> {
-                    val batch = db.batch() // Create a batched write
-                    val collectionRef = db.collection(Constants.GALLERY_IMAGES_TABLE)
+            val batch = db.batch() // Create a batched write
+            val collectionRef = db.collection(Constants.GALLERY_MEDIA_TABLE)
 
-                    imageDataList.forEach { image ->
-                        val docRef = collectionRef.document() // Generate a new document reference
-                        batch.set(docRef, image) // Add set operation to batch
-                    }
-
-                    batch.commit().await() // Commit the batch operation
-                }
-
-                else -> {
-                    ResultListener.Failure("Image type does not include metadata")
-                }
+            galleryMedia.forEach { mediaItem ->
+                val docRef = collectionRef.document() // Generate a new document reference
+                batch.set(docRef, mediaItem) // Add set operation to batch
             }
+
+            batch.commit().await() // Commit the batch operation
 
             return ResultListener.Success
         } catch (e: Exception) {
@@ -775,7 +792,7 @@ class FirestoreDataSource@Inject constructor() {
                         // Update only if no token exists or the token is different
                         updateNeeded = true
                         member.toMutableMap().apply {
-                            put("fcmToken", fcmToken!!)
+                            put("fcmToken", fcmToken)
                         }
                     } else {
                         member

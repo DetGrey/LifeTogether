@@ -30,7 +30,7 @@ class ObserveRecipesUseCase @Inject constructor(
                         for (recipe in result.listItems) {
                             val byteArrayResult: ByteArrayResultListener? =
                                 recipe.imageUrl?.let { url ->
-                                    firebaseStorageDataSource.downloadImage(url)
+                                    firebaseStorageDataSource.fetchImageByteArray(url)
                                 }
 
                             if (byteArrayResult is ByteArrayResultListener.Success) {

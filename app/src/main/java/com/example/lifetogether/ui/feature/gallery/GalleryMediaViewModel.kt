@@ -6,7 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.callback.ItemResultListener
-import com.example.lifetogether.domain.model.gallery.GalleryImage
+import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.usecase.item.FetchItemByIdUseCase
 import com.example.lifetogether.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class GalleryImageViewModel @Inject constructor(
+class GalleryMediaViewModel @Inject constructor(
     private val fetchItemByIdUseCase: FetchItemByIdUseCase,
 ) : ViewModel() {
     // ---------------------------------------------------------------- ERROR
@@ -37,28 +37,28 @@ class GalleryImageViewModel @Inject constructor(
     var familyId: String? = null
 
     // ---------------------------------------------------------------- Album
-    var imageId: String? by mutableStateOf(null)
+    var mediaId: String? by mutableStateOf(null)
 
-    private val _imageData = MutableStateFlow<GalleryImage?>(null)
-    val imageData: StateFlow<GalleryImage?> = _imageData.asStateFlow()
+    private val _mediaData = MutableStateFlow<GalleryMedia?>(null)
+    val mediaData: StateFlow<GalleryMedia?> = _mediaData.asStateFlow()
 
-    private fun fetchImageData() {
+    private fun fetchMediaData() {
         viewModelScope.launch {
             fetchItemByIdUseCase.invoke(
                 familyId!!,
-                imageId!!,
-                Constants.GALLERY_IMAGES_TABLE,
-                GalleryImage::class,
+                mediaId!!,
+                Constants.GALLERY_MEDIA_TABLE,
+                GalleryMedia::class,
             ).collect { result ->
                 println("fetchItemByIdUseCase result: $result")
                 when (result) {
                     is ItemResultListener.Success -> {
                         // Filter and map the result.listItems to only include GalleryImage instances
-                        if (result.item is GalleryImage) {
-                            _imageData.value = result.item
+                        if (result.item is GalleryMedia) {
+                            _mediaData.value = result.item
                         } else {
-                            println("Error: Cannot find the image")
-                            error = "Cannot find the image"
+                            println("Error: Cannot find the media")
+                            error = "Cannot find the media"
                             showAlertDialog = true
                         }
                     }
@@ -75,16 +75,16 @@ class GalleryImageViewModel @Inject constructor(
     }
 
     // ---------------------------------------------------------------- SETUP/FETCH LIST
-    fun setUpImageData(
+    fun setUpMediaData(
         addedFamilyId: String,
         addedImageId: String,
     ) {
         if (!familyIdIsSet) {
-            println("GalleryImageViewModel setting familyId and imageId")
+            println("GalleryMediaViewModel setting familyId and mediaId")
             familyId = addedFamilyId
-            imageId = addedImageId
+            mediaId = addedImageId
             // Use the Family ID here (e.g., fetch list items)
-            fetchImageData()
+            fetchMediaData()
             familyIdIsSet = true
         }
     }
