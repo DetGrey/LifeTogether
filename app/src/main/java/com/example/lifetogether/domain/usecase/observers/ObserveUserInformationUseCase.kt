@@ -20,21 +20,38 @@ class ObserveUserInformationUseCase @Inject constructor(
             println("userInformationSnapshotListener().collect result: $result")
             when (result) {
                 is AuthResultListener.Success -> {
-                    val byteArrayResult: ByteArrayResultListener? = result.userInformation.imageUrl?.let { url ->
-                        firebaseStorageDataSource.fetchImageByteArray(url)
-                    }
+                    // Check if user already has a profile image to avoid re-downloading
+                    val hasExistingImage = result.userInformation.uid?.let { uid ->
+                        localDataSource.userHasProfileImage(uid)
+                    } ?: false
+
+                    if (!hasExistingImage) {
+                        // Only download if image doesn't exist
+                        val byteArrayResult: ByteArrayResultListener? =
+                            result.userInformation.imageUrl?.let { url ->
+                                firebaseStorageDataSource.fetchImageByteArray(url)
+                            }
 
 //                    println("ObserveUserInformationUseCase byteArrayResult: $byteArrayResult")
 
-                    when (byteArrayResult) {
-                        is ByteArrayResultListener.Success -> {
-                            localDataSource.updateUserInformation(result.userInformation, byteArrayResult.byteArray)
-                        }
-                        is ByteArrayResultListener.Failure -> {
-                            println("ByteArrayResultListener failure: ${byteArrayResult.message}")
-                        }
+                        when (byteArrayResult) {
+                            is ByteArrayResultListener.Success -> {
+                                localDataSource.updateUserInformation(result.userInformation, byteArrayResult.byteArray)
+                            }
+                            is ByteArrayResultListener.Failure -> {
+                                println("ByteArrayResultListener failure: ${byteArrayResult.message}")
+                                // Update without image on failure
+                                localDataSource.updateUserInformation(result.userInformation)
+                            }
 
-                        null -> localDataSource.updateUserInformation(result.userInformation)
+                            null -> {
+                                // No image URL provided, update without image
+                                localDataSource.updateUserInformation(result.userInformation)
+                            }
+                        }
+                    } else {
+                        println("ObserveUserInformationUseCase: Skipping download - user image already exists locally")
+                        // Don't update to preserve existing image data
                     }
                 }
                 is AuthResultListener.Failure -> {

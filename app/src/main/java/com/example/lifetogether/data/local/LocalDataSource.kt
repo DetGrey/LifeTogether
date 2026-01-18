@@ -245,6 +245,10 @@ class LocalDataSource @Inject constructor(
         }
     }
 
+    suspend fun getRecipeIdsWithImages(familyId: String): Set<String> {
+        return recipesDao.getRecipeIdsWithImages(familyId).toSet()
+    }
+
     // -------------------------------------------------------------- GROCERY LIST
     suspend fun updateGroceryList(items: List<GroceryItem>) {
         println("LocalDataSource updateGroceryList(): Trying to add firestore data to Room")
@@ -353,6 +357,10 @@ class LocalDataSource @Inject constructor(
         userInformationDao.updateItems(userEntity)
     }
 
+    suspend fun userHasProfileImage(uid: String): Boolean {
+        return (userInformationDao.hasImageData(uid) ?: 0) == 1
+    }
+
     fun clearUserInformationTables(): ResultListener {
         try {
             groceryListDao.deleteTable()
@@ -416,6 +424,10 @@ class LocalDataSource @Inject constructor(
         familyInformationDao.updateFamilyMembers(familyMembers)
     }
 
+    suspend fun familyHasImage(familyId: String): Boolean {
+        return (familyInformationDao.hasImageData(familyId) ?: 0) == 1
+    }
+
     // -------------------------------------------------------------- GALLERY MEDIA
     fun getAlbumMedia(
         familyId: String,
@@ -440,6 +452,18 @@ class LocalDataSource @Inject constructor(
         albumId: String,
     ): ByteArray? {
         return galleryMediaDao.getNewestMediaThumbnailByAlbumId(albumId)
+    }
+
+    suspend fun getExistingGalleryMediaInfo(
+        familyId: String,
+    ): Map<String, Pair<String?, String?>> {
+        // Returns a map of mediaId to (mediaUri, mediaUrl)
+        // Since we don't store mediaUrl, we return null for it
+        // This checks if media exists locally by checking if mediaUri exists
+        val entities = galleryMediaDao.getExistingMediaIdsWithUris(familyId)
+        return entities.associate { entity ->
+            entity.id to Pair(entity.media_uri, null)
+        }
     }
 
     suspend fun updateGalleryMedia(
@@ -564,6 +588,7 @@ class LocalDataSource @Inject constructor(
     }
 
     // --- Unified function to save ANY media File (image or video) to MediaStore ---
+    // TODO use internal filestorage instead of mediastore
     private fun saveMediaFileToGallery(
         context: Context,
         mediaFile: File,

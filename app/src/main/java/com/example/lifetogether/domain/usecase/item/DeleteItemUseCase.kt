@@ -7,7 +7,7 @@ import javax.inject.Inject
 class DeleteItemUseCase @Inject constructor(
     private val remoteListRepository: RemoteListRepositoryImpl,
 ) {
-    suspend operator fun invoke(
+    operator fun invoke(
         itemId: String,
         listName: String,
     ): ResultListener {

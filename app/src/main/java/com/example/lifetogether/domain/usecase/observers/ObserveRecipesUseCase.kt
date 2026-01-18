@@ -26,8 +26,17 @@ class ObserveRecipesUseCase @Inject constructor(
                     } else {
                         // println("recipeSnapshotListener().collect result: ${result.listItems.map { listOf(it.itemName, it.tags) }}")
 
+                        // Get existing recipe IDs that already have images to avoid re-downloading
+                        val existingRecipeIdsWithImages = localDataSource.getRecipeIdsWithImages(familyId)
+
                         val byteArrays: MutableMap<String, ByteArray> = mutableMapOf()
                         for (recipe in result.listItems) {
+                            // Skip download if this recipe already has an image stored locally
+                            if (recipe.id != null && existingRecipeIdsWithImages.contains(recipe.id)) {
+                                println("ObserveRecipesUseCase: Skipping download for ${recipe.itemName} - image already exists locally")
+                                continue
+                            }
+
                             val byteArrayResult: ByteArrayResultListener? =
                                 recipe.imageUrl?.let { url ->
                                     firebaseStorageDataSource.fetchImageByteArray(url)

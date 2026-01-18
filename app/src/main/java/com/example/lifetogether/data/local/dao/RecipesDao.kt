@@ -22,6 +22,9 @@ interface RecipesDao {
     @Query("SELECT image_data FROM $RECIPES_TABLE WHERE family_id = :familyId AND id = :id LIMIT 1")
     fun getImageByteArray(familyId: String, id: String): Flow<ByteArray?>
 
+    @Query("SELECT id FROM $RECIPES_TABLE WHERE family_id = :familyId AND image_data IS NOT NULL")
+    suspend fun getRecipeIdsWithImages(familyId: String): List<String>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateItems(items: List<RecipeEntity>)
 

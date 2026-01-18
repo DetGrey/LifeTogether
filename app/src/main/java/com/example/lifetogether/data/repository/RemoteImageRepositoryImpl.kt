@@ -39,6 +39,12 @@ class RemoteImageRepositoryImpl @Inject constructor(
         }
     }
 
+    suspend fun deleteMediaFiles(
+        urlList: List<String>,
+    ): ResultListener {
+        return firebaseStorageDataSource.deleteImages(urlList)
+    }
+
     suspend fun saveImageDownloadUrl(
         url: String,
         imageType: ImageType,

@@ -35,6 +35,9 @@ class ObserveGalleryMediaUseCase @Inject constructor(
                         println("galleryMediaSnapshotListener().collect result: is empty")
                         localDataSource.deleteFamilyGalleryMedia(familyId)
                     } else {
+                        // Get existing media from local database to avoid re-downloading
+                        val existingMediaMap = localDataSource.getExistingGalleryMediaInfo(familyId)
+
                         val tempFileDownloadSuccessResults: MutableList<Pair<GalleryMedia, File>> = mutableListOf()
 
                         coroutineScope { // For concurrent downloads
@@ -44,6 +47,15 @@ class ObserveGalleryMediaUseCase @Inject constructor(
 
                                     async(Dispatchers.IO) { // Ensure download happens on IO dispatcher
                                         galleryMedia.mediaUrl?.let { url ->
+                                            val mediaId = galleryMedia.id
+                                            val existingMediaUri = existingMediaMap[mediaId]?.first
+
+                                            // Only download if media doesn't exist locally (no mediaUri stored)
+                                            if (existingMediaUri != null) {
+                                                println("ObserveGalleryMediaUseCase: Skipping download for ${galleryMedia.itemName} - already exists locally")
+                                                return@async null // Media already exists, skip download
+                                            }
+
                                             val fallbackExtension = if (galleryMedia is GalleryImage) "jpeg" else "mp4"
                                             val extension = "." + galleryMedia.itemName.substringAfterLast('.', fallbackExtension)
 

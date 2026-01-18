@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.example.lifetogether.data.model.GalleryMediaEntity
+import com.example.lifetogether.data.model.GalleryMediaIdWithUri
 import com.example.lifetogether.util.Constants.GALLERY_MEDIA_TABLE
 import kotlinx.coroutines.flow.Flow
 
@@ -21,6 +22,9 @@ interface GalleryMediaDao {
 
     @Query("SELECT * FROM $GALLERY_MEDIA_TABLE WHERE family_id = :familyId AND id = :id LIMIT 1")
     fun getItemById(familyId: String, id: String): GalleryMediaEntity?
+
+    @Query("SELECT id, media_uri FROM $GALLERY_MEDIA_TABLE WHERE family_id = :familyId")
+    suspend fun getExistingMediaIdsWithUris(familyId: String): List<GalleryMediaIdWithUri>
 
     @Query("SELECT COUNT(*) FROM $GALLERY_MEDIA_TABLE WHERE family_id = :familyId AND album_id = :albumId")
     fun getItemCountByAlbumId(familyId: String, albumId: String): Int

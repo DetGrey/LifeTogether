@@ -1,6 +1,7 @@
 package com.example.lifetogether.domain.logic
 
 import com.example.lifetogether.domain.model.Item
+import com.example.lifetogether.domain.model.gallery.Album
 import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.domain.model.recipe.Instruction
 import com.example.lifetogether.domain.model.recipe.MutableRecipe
@@ -12,11 +13,24 @@ fun itemToMap(item: Item): Map<String, Any?>? {
         is Recipe -> {
             return item.toMap()
         }
+        is Album -> {
+            return item.toMap()
+        }
     }
     return null
 }
 
 // ------------------------------------------------------------------------------- ITEMS
+fun Album.toMap(): Map<String, Any?> {
+    return mapOf(
+        "id" to id,
+        "familyId" to familyId,
+        "itemName" to itemName,
+        "lastUpdated" to lastUpdated,
+        "count" to count
+    )
+}
+
 fun Recipe.toMap(): Map<String, Any?> {
     return mapOf(
         "familyId" to familyId,

@@ -312,12 +312,12 @@ class GroceryListViewModel @Inject constructor(
         if (completedItems.value.isEmpty()) {
             return
         }
-        val items = completedItems.value.filter { it.id != null }
+        val idsToDelete = completedItems.value.mapNotNull { it.id }
 
         viewModelScope.launch {
             deleteCompletedItemsUseCase.invoke(
                 Constants.GROCERY_TABLE,
-                items = items,
+                idsList = idsToDelete,
             )
             showConfirmationDialog = false
         }

@@ -8,7 +8,6 @@ import com.example.lifetogether.domain.callback.GrocerySuggestionsListener
 import com.example.lifetogether.domain.callback.ListItemsResultListener
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.callback.StringResultListener
-import com.example.lifetogether.domain.logic.itemToMap
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.CompletableItem
 import com.example.lifetogether.domain.model.Item
@@ -27,6 +26,7 @@ import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.util.Constants
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.firestore
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.channels.awaitClose
@@ -443,11 +443,10 @@ class FirestoreDataSource@Inject constructor() {
         println("FirestoreDataSource updateItem() id: ${item.id}")
         try {
             if (item.id != null) {
-                val map = itemToMap(item)
-                println("updateItem map: $map")
-                if (map != null) {
-                    db.collection(listName).document(item.id!!).update(map).await()
-                }
+                db.collection(listName).document(item.id!!)
+                    .set(item, SetOptions.merge()) // Use set with merge for update behavior
+                    .await()
+
                 return ResultListener.Success
             } else {
                 return ResultListener.Failure("Error: No document id")
@@ -498,18 +497,16 @@ class FirestoreDataSource@Inject constructor() {
 
     suspend fun deleteItems(
         listName: String,
-        items: List<Item>,
+        idsList: List<String>,
     ): ResultListener {
         println("FirestoreDataSource deleteItems()")
         try {
             val batch = db.batch()
 
-            items.forEach { item ->
-                println("item id: ${item.id}")
-                if (item.id != null) {
-                    val documentRef = db.collection(listName).document(item.id!!)
-                    batch.delete(documentRef)
-                }
+            idsList.forEach { id ->
+                println("id: $id")
+                val documentRef = db.collection(listName).document(id)
+                batch.delete(documentRef)
             }
 
             batch.commit().await()

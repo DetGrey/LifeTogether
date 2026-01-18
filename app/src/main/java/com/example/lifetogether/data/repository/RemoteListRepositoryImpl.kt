@@ -42,9 +42,9 @@ class RemoteListRepositoryImpl @Inject constructor(
 
     suspend fun deleteItems(
         listName: String,
-        items: List<Item>,
+        idsList: List<String>,
     ): ResultListener {
-        return firestoreDataSource.deleteItems(listName, items)
+        return firestoreDataSource.deleteItems(listName, idsList)
     }
 
     suspend fun updateAlbumCount(

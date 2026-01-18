@@ -17,6 +17,9 @@ import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.util.Constants
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
@@ -139,6 +142,36 @@ class FirebaseStorageDataSource@Inject constructor() {
             ResultListener.Failure("Error: ${e.message}")
         }
     }
+
+    suspend fun deleteImages(urlList: List<String>): ResultListener =
+        coroutineScope {
+            if (urlList.isEmpty()) {
+                Log.i("FirebaseStorageDS", "deleteImages: URL list is empty. Nothing to delete.")
+                return@coroutineScope ResultListener.Success
+            }
+
+            val deferredResults = urlList.map { url ->
+                async(Dispatchers.IO) {
+                    deleteImage(url)
+                }
+            }
+
+            val results = deferredResults.awaitAll()
+
+            // Check if all operations were successful
+            val allSucceeded = results.all { it is ResultListener.Success }
+
+            if (allSucceeded) {
+                Log.i("FirebaseStorageDS", "Successfully deleted all ${urlList.size} images.")
+                ResultListener.Success
+            } else {
+                val failedCount = results.count { it is ResultListener.Failure }
+                val firstErrorMessage = (results.firstOrNull { it is ResultListener.Failure } as? ResultListener.Failure)?.message
+                    ?: "One or more images failed to delete."
+                Log.e("FirebaseStorageDS", "$failedCount image(s) failed to delete. First error: $firstErrorMessage")
+                ResultListener.Failure("$failedCount image(s) failed to delete. First error: $firstErrorMessage")
+            }
+        }
 
     // ------------------------------------------------------------------------------- VIDEOS
     suspend fun uploadVideo(

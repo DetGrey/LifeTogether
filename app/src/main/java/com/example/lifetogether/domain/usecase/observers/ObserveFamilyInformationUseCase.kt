@@ -20,21 +20,38 @@ class ObserveFamilyInformationUseCase @Inject constructor(
             println("familyInformationSnapshotListener().collect result: $result")
             when (result) {
                 is FamilyInformationResultListener.Success -> {
-                    val byteArrayResult: ByteArrayResultListener? = result.familyInformation.imageUrl?.let { url ->
-                        firebaseStorageDataSource.fetchImageByteArray(url)
-                    }
+                    // Check if family already has an image to avoid re-downloading
+                    val hasExistingImage = result.familyInformation.familyId?.let { familyId ->
+                        localDataSource.familyHasImage(familyId)
+                    } ?: false
 
-                    println("ObserveUserInformationUseCase biteArrayResult: $byteArrayResult")
+                    if (!hasExistingImage) {
+                        // Only download if image doesn't exist
+                        val byteArrayResult: ByteArrayResultListener? =
+                            result.familyInformation.imageUrl?.let { url ->
+                                firebaseStorageDataSource.fetchImageByteArray(url)
+                            }
 
-                    when (byteArrayResult) {
-                        is ByteArrayResultListener.Success -> {
-                            localDataSource.updateFamilyInformation(result.familyInformation, byteArrayResult.byteArray)
+                        println("ObserveFamilyInformationUseCase byteArrayResult: $byteArrayResult")
+
+                        when (byteArrayResult) {
+                            is ByteArrayResultListener.Success -> {
+                                localDataSource.updateFamilyInformation(result.familyInformation, byteArrayResult.byteArray)
+                            }
+                            is ByteArrayResultListener.Failure -> {
+                                println("ByteArrayResultListener failure: ${byteArrayResult.message}")
+                                // Update without image on failure
+                                localDataSource.updateFamilyInformation(result.familyInformation)
+                            }
+
+                            null -> {
+                                // No image URL provided, update without image
+                                localDataSource.updateFamilyInformation(result.familyInformation)
+                            }
                         }
-                        is ByteArrayResultListener.Failure -> {
-                            println("ByteArrayResultListener failure: ${byteArrayResult.message}")
-                        }
-
-                        null -> localDataSource.updateFamilyInformation(result.familyInformation)
+                    } else {
+                        println("ObserveFamilyInformationUseCase: Skipping download - family image already exists locally")
+                        // Don't update to preserve existing image data
                     }
                 }
                 is FamilyInformationResultListener.Failure -> {

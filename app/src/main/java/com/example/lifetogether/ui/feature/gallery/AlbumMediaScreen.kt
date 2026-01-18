@@ -24,8 +24,11 @@ import com.example.lifetogether.domain.model.gallery.Album
 import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.ui.common.OverflowMenu
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
+import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
+import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.image.MediaUploadMultipleDialog
 import com.example.lifetogether.ui.navigation.AppNavigator
@@ -78,6 +81,14 @@ fun AlbumMediaScreen(
                     }
                     else -> "Album images"
                 },
+                rightIcon = Icon(
+                    resId = R.drawable.ic_overflow_menu,
+                    description = "overflow menu",
+                ),
+                onRightClick = {
+                    albumMediaViewModel.toggleOverflowMenu()
+                },
+
             )
 
             if (albumMedia.isEmpty()) {
@@ -138,6 +149,33 @@ fun AlbumMediaScreen(
         })
     }
 
+    // ---------------------------------------------------------------- OVERFLOW MENU
+    if (albumMediaViewModel.showOverflowMenu) {
+        OverflowMenu(
+            onDismiss = { albumMediaViewModel.toggleOverflowMenu() },
+            actionsList = listOf(
+                mapOf(
+                    "Rename album" to {
+                        albumMediaViewModel.overflowMenuAction = AlbumMediaViewModel.OverflowMenuActions.RENAME_ALBUM
+                        albumMediaViewModel.showOverflowMenuActionDialog = true
+                    },
+                ),
+                mapOf(
+                    "Select media" to {
+                        // todo
+                    },
+                ),
+                mapOf(
+                    "Delete album" to {
+                        albumMediaViewModel.overflowMenuAction = AlbumMediaViewModel.OverflowMenuActions.DELETE_ALBUM
+                        albumMediaViewModel.showOverflowMenuActionDialog = true
+                    },
+                ),
+
+            ),
+        )
+    }
+
     // ---------------------------------------------------------------- IMAGE UPLOAD DIALOG
     if (imageViewModel.showImageUploadDialog && userInformation != null) {
         userInformation!!.familyId?.let { familyId ->
@@ -150,6 +188,48 @@ fun AlbumMediaScreen(
                 dismissButtonMessage = "Cancel",
                 confirmButtonMessage = "Upload images",
             )
+        }
+    }
+
+    // ---------------------------------------------------------------- OVERFLOW MENU ACTIONS DIALOG
+    if (albumMediaViewModel.showOverflowMenuActionDialog && albumMediaViewModel.overflowMenuAction != null) {
+        when (albumMediaViewModel.overflowMenuAction) {
+            AlbumMediaViewModel.OverflowMenuActions.RENAME_ALBUM -> {
+                ConfirmationDialogWithTextField(
+                    onDismiss = {
+                        albumMediaViewModel.dismissOverflowMenuActionDialog()
+                    },
+                    onConfirm = {
+                        albumMediaViewModel.renameAlbum()
+                    },
+                    dialogTitle = "Rename album",
+                    dialogMessage = "Enter a new name for the album",
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Rename album",
+                    textValue = albumMediaViewModel.actionDialogText,
+                    onTextValueChange = { albumMediaViewModel.actionDialogText = it },
+                    capitalization = true,
+                )
+            }
+            AlbumMediaViewModel.OverflowMenuActions.SELECT_MEDIA -> {
+            }
+            AlbumMediaViewModel.OverflowMenuActions.DELETE_ALBUM -> {
+                ConfirmationDialog(
+                    onDismiss = {
+                        albumMediaViewModel.dismissOverflowMenuActionDialog()
+                    },
+                    onConfirm = {
+                        albumMediaViewModel.deleteAlbum(onDeleteSuccess = {
+                            appNavigator?.navigateBack()
+                        })
+                    },
+                    dialogTitle = "Delete album",
+                    dialogMessage = "Are you sure you want to delete this album?",
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Delete album",
+                )
+            }
+            else -> {}
         }
     }
 
