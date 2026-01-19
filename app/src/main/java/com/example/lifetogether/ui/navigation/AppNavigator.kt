@@ -57,17 +57,30 @@ class AppNavigator(private val navController: NavController) : Navigator {
     }
 
     override fun navigateToGallery() {
-        navController.navigate(AppRoutes.GALLERY_SCREEN)
+        navController.navigate(AppRoutes.GALLERY_SCREEN) {
+            launchSingleTop = true
+            // Clear any album or media screens when returning to gallery
+            popUpTo(AppRoutes.GALLERY_SCREEN) {
+                inclusive = false
+            }
+        }
     }
 
     override fun navigateToAlbumMedia(albumId: String) {
         val route = "${AppRoutes.ALBUM_MEDIA_SCREEN}/$albumId"
-        navController.navigate(route)
+        navController.navigate(route) {
+            // Clear any existing album/media screens from back stack
+            popUpTo(AppRoutes.GALLERY_SCREEN) {
+                inclusive = false
+            }
+        }
     }
 
     override fun navigateToGalleryMedia(mediaId: String) {
         val route = "${AppRoutes.GALLERY_MEDIA_SCREEN}/$mediaId"
-        navController.navigate(route)
+        navController.navigate(route) {
+            launchSingleTop = true
+        }
     }
 
     override fun navigateToTipTracker() {

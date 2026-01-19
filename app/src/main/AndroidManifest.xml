@@ -1,10 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Android 14+ media permissions for accessing photos and videos -->
+    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
+    <!-- Declare the use case for broad photo/video access (Android 14+) -->
+    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
 
+    <queries>
+        <package android:name="com.google.android.gms" />
+    </queries>
 
     <application
         android:name=".ui.MyApplication"
@@ -15,7 +24,14 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
-        android:theme="@style/Theme.LifeTogether">
+        android:theme="@style/Theme.LifeTogether"
+        tools:targetApi="34">
+        
+        <!-- Declare use case for broad access to media files (Android 14+) -->
+        <meta-data
+            android:name="android.content.GranularMediaPermissions"
+            android:value="true" />
+        
         <activity
             android:name=".MainActivity"
             android:exported="true"

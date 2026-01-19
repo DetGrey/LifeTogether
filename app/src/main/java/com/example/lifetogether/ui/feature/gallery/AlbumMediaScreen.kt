@@ -9,7 +9,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.pullToRefresh
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -20,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
-import com.example.lifetogether.domain.model.gallery.Album
 import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.domain.model.sealed.ImageType
@@ -35,7 +38,7 @@ import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 import com.example.lifetogether.ui.viewmodel.ImageViewModel
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun AlbumMediaScreen(
     appNavigator: AppNavigator? = null,
@@ -46,23 +49,29 @@ fun AlbumMediaScreen(
     val imageViewModel: ImageViewModel = hiltViewModel()
 
     val userInformation by firebaseViewModel?.userInformation!!.collectAsState()
-    val album by albumMediaViewModel.album.collectAsState()
-    val albumMedia by albumMediaViewModel.albumMedia.collectAsState()
-    val thumbnails by albumMediaViewModel.thumbnails.collectAsState()
+    val uiState by albumMediaViewModel.uiState.collectAsState()
 
-    LaunchedEffect(key1 = true) {
-        // Perform any one-time initialization or side effect here
+    LaunchedEffect(key1 = albumId) {
         userInformation?.familyId?.let {
             albumMediaViewModel.setUpAlbumMedia(it, albumId)
         }
     }
 
+    // Material3 pull-to-refresh state
+    val pullToRefreshState = rememberPullToRefreshState()
+
     Box(
         modifier = Modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .pullToRefresh(
+                state = pullToRefreshState,
+                isRefreshing = uiState.isRefreshing,
+                onRefresh = { albumMediaViewModel.retryFetchAlbumMedia() },
+            ),
     ) {
         Column(
             modifier = Modifier
+                .fillMaxSize()
                 .padding(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(30.dp),
@@ -72,28 +81,29 @@ fun AlbumMediaScreen(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
                 ),
-                onLeftClick = {
-                    appNavigator?.navigateBack()
-                },
-                text = when (album) {
-                    is Album -> {
-                        album!!.itemName
-                    }
-                    else -> "Album images"
-                },
+                onLeftClick = { appNavigator?.navigateBack() },
+                text = uiState.album?.itemName ?: "Album images",
                 rightIcon = Icon(
                     resId = R.drawable.ic_overflow_menu,
                     description = "overflow menu",
                 ),
-                onRightClick = {
-                    albumMediaViewModel.toggleOverflowMenu()
-                },
-
+                onRightClick = { albumMediaViewModel.toggleOverflowMenu() },
             )
 
-            if (albumMedia.isEmpty()) {
-                Text(text = "No images in this album. Press + to create one.")
+            if (uiState.media.isEmpty()) {
+                if (uiState.isSyncing) {
+                    Text(text = "Syncing media…")
+                } else {
+                    Text(text = "No images in this album. Press + to create one.")
+                }
             } else {
+                if (uiState.isPartialLoad) {
+                    Text(
+                        text = "⚠ Only ${uiState.media.size} of ${uiState.album?.count} items loaded. Pull to refresh to retry.",
+                        modifier = Modifier.padding(vertical = 10.dp),
+                        style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                    )
+                }
                 LazyVerticalGrid(
                     modifier = Modifier
                         .padding(10.dp)
@@ -102,9 +112,9 @@ fun AlbumMediaScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    items(albumMedia.size) { index ->
-                        val media = albumMedia[index]
-                        val thumbnail = thumbnails[media.id]
+                    items(uiState.media.size) { index ->
+                        val media = uiState.media[index]
+                        val thumbnail = uiState.thumbnails[media.id]
 
                         LaunchedEffect(media.id) {
                             media.id?.let { albumMediaViewModel.fetchThumbnail(it) }
@@ -113,20 +123,12 @@ fun AlbumMediaScreen(
                         if (media is GalleryImage) {
                             ThumbnailContainer(
                                 thumbnail = thumbnail,
-                                onClick = {
-                                    media.id?.let {
-                                        appNavigator?.navigateToGalleryMedia(media.id!!)
-                                    }
-                                },
+                                onClick = { media.id?.let { appNavigator?.navigateToGalleryMedia(it) } },
                             )
                         } else if (media is GalleryVideo) {
                             ThumbnailContainer(
                                 thumbnail = thumbnail,
-                                onClick = {
-                                    media.id?.let {
-                                        appNavigator?.navigateToGalleryMedia(media.id!!)
-                                    }
-                                },
+                                onClick = { media.id?.let { appNavigator?.navigateToGalleryMedia(it) } },
                                 isVideo = true,
                                 duration = media.duration,
                             )
@@ -135,6 +137,12 @@ fun AlbumMediaScreen(
                 }
             }
         }
+
+        PullToRefreshDefaults.Indicator(
+            state = pullToRefreshState,
+            isRefreshing = uiState.isRefreshing,
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
     }
 
     // ---------------------------------------------------------------- ADD NEW IMAGE
@@ -144,20 +152,17 @@ fun AlbumMediaScreen(
             .padding(bottom = 30.dp, end = 30.dp),
         contentAlignment = Alignment.BottomEnd,
     ) {
-        AddButton(onClick = {
-            imageViewModel.showImageUploadDialog = true
-        })
+        AddButton(onClick = { imageViewModel.showImageUploadDialog = true })
     }
 
     // ---------------------------------------------------------------- OVERFLOW MENU
-    if (albumMediaViewModel.showOverflowMenu) {
+    if (uiState.showOverflowMenu) {
         OverflowMenu(
             onDismiss = { albumMediaViewModel.toggleOverflowMenu() },
             actionsList = listOf(
                 mapOf(
                     "Rename album" to {
-                        albumMediaViewModel.overflowMenuAction = AlbumMediaViewModel.OverflowMenuActions.RENAME_ALBUM
-                        albumMediaViewModel.showOverflowMenuActionDialog = true
+                        albumMediaViewModel.startOverflowAction(AlbumMediaViewModel.OverflowMenuActions.RENAME_ALBUM)
                     },
                 ),
                 mapOf(
@@ -167,8 +172,7 @@ fun AlbumMediaScreen(
                 ),
                 mapOf(
                     "Delete album" to {
-                        albumMediaViewModel.overflowMenuAction = AlbumMediaViewModel.OverflowMenuActions.DELETE_ALBUM
-                        albumMediaViewModel.showOverflowMenuActionDialog = true
+                        albumMediaViewModel.startOverflowAction(AlbumMediaViewModel.OverflowMenuActions.DELETE_ALBUM)
                     },
                 ),
 
@@ -192,22 +196,18 @@ fun AlbumMediaScreen(
     }
 
     // ---------------------------------------------------------------- OVERFLOW MENU ACTIONS DIALOG
-    if (albumMediaViewModel.showOverflowMenuActionDialog && albumMediaViewModel.overflowMenuAction != null) {
-        when (albumMediaViewModel.overflowMenuAction) {
+    if (uiState.showOverflowMenuActionDialog && uiState.overflowMenuAction != null) {
+        when (uiState.overflowMenuAction) {
             AlbumMediaViewModel.OverflowMenuActions.RENAME_ALBUM -> {
                 ConfirmationDialogWithTextField(
-                    onDismiss = {
-                        albumMediaViewModel.dismissOverflowMenuActionDialog()
-                    },
-                    onConfirm = {
-                        albumMediaViewModel.renameAlbum()
-                    },
+                    onDismiss = { albumMediaViewModel.dismissOverflowMenuActionDialog() },
+                    onConfirm = { albumMediaViewModel.renameAlbum() },
                     dialogTitle = "Rename album",
                     dialogMessage = "Enter a new name for the album",
                     dismissButtonMessage = "Cancel",
                     confirmButtonMessage = "Rename album",
-                    textValue = albumMediaViewModel.actionDialogText,
-                    onTextValueChange = { albumMediaViewModel.actionDialogText = it },
+                    textValue = uiState.actionDialogText,
+                    onTextValueChange = { albumMediaViewModel.setActionDialogText(it) },
                     capitalization = true,
                 )
             }
@@ -215,13 +215,9 @@ fun AlbumMediaScreen(
             }
             AlbumMediaViewModel.OverflowMenuActions.DELETE_ALBUM -> {
                 ConfirmationDialog(
-                    onDismiss = {
-                        albumMediaViewModel.dismissOverflowMenuActionDialog()
-                    },
+                    onDismiss = { albumMediaViewModel.dismissOverflowMenuActionDialog() },
                     onConfirm = {
-                        albumMediaViewModel.deleteAlbum(onDeleteSuccess = {
-                            appNavigator?.navigateBack()
-                        })
+                        albumMediaViewModel.deleteAlbum(onDeleteSuccess = { appNavigator?.navigateBack() })
                     },
                     dialogTitle = "Delete album",
                     dialogMessage = "Are you sure you want to delete this album?",
@@ -234,8 +230,8 @@ fun AlbumMediaScreen(
     }
 
     // ---------------------------------------------------------------- SHOW ERROR ALERT
-    if (albumMediaViewModel.showAlertDialog) {
-        ErrorAlertDialog(albumMediaViewModel.error)
-        albumMediaViewModel.toggleAlertDialog()
+    if (uiState.showAlertDialog) {
+        ErrorAlertDialog(uiState.error)
+        albumMediaViewModel.dismissAlert()
     }
 }

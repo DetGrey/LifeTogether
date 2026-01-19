@@ -67,7 +67,12 @@ class FirebaseStorageDataSource@Inject constructor() {
                     ext = imageType.galleryMediaUploadData.extension
                 }
             }
-            val correctedByteArray = uri.rotateBasedOnExif(context)
+
+            // Perform heavy image processing on IO dispatcher
+            val correctedByteArray = withContext(Dispatchers.IO) {
+                uri.rotateBasedOnExif(context)
+            }
+
             if (correctedByteArray == null) {
                 println("Failed to rotate image")
                 return StringResultListener.Failure("Failed to rotate image")

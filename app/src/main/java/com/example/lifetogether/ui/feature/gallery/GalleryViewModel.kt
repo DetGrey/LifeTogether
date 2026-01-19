@@ -1,8 +1,5 @@
 package com.example.lifetogether.ui.feature.gallery
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.callback.ByteArrayResultListener
@@ -19,8 +16,19 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+data class GalleryUiState(
+    val albums: List<Album> = emptyList(),
+    val thumbnails: Map<String, ByteArray> = emptyMap(),
+    val showNewAlbumDialog: Boolean = false,
+    val newAlbumName: String = "",
+    val showAlertDialog: Boolean = false,
+    val error: String = "",
+    val isInitialized: Boolean = false,
+)
 
 @HiltViewModel
 class GalleryViewModel @Inject constructor(
@@ -28,124 +36,119 @@ class GalleryViewModel @Inject constructor(
     private val fetchAlbumThumbnailUseCase: FetchAlbumThumbnailUseCase,
     private val saveItemUseCase: SaveItemUseCase,
 ) : ViewModel() {
-    // ---------------------------------------------------------------- ERROR
-    var showAlertDialog: Boolean by mutableStateOf(false)
-    var error: String by mutableStateOf("")
-    fun toggleAlertDialog() {
-        viewModelScope.launch {
-            delay(3000)
-            showAlertDialog = false
-            error = ""
-        }
-    }
+    private val _uiState = MutableStateFlow(GalleryUiState())
+    val uiState: StateFlow<GalleryUiState> = _uiState.asStateFlow()
 
-    // ---------------------------------------------------------------- Family ID
-    private var familyIdIsSet = false
-    var familyId: String? = null
+    private var familyId: String? = null
 
-    // ---------------------------------------------------------------- SETUP/FETCH LIST
     fun setUpGallery(addedFamilyId: String) {
-        if (!familyIdIsSet) {
-            println("GalleryViewModel setting familyId")
-            familyId = addedFamilyId
-            // Use the Family ID here (e.g., fetch list items)
-            fetchAlbums()
-            familyIdIsSet = true
-        }
+        if (_uiState.value.isInitialized) return
+
+        familyId = addedFamilyId
+        fetchAlbums()
     }
 
-    // ---------------------------------------------------------------- ALBUMS
-    private val _albums = MutableStateFlow<List<Album>>(emptyList())
-    val albums: StateFlow<List<Album>> = _albums.asStateFlow()
-
-    var showNewAlbumDialog: Boolean by mutableStateOf(false)
-    var newAlbumName: String by mutableStateOf("")
+    fun openNewAlbumDialog() {
+        _uiState.update { it.copy(showNewAlbumDialog = true) }
+    }
 
     fun closeNewAlbumDialog() {
-        showNewAlbumDialog = false
-        newAlbumName = ""
+        _uiState.update { it.copy(showNewAlbumDialog = false, newAlbumName = "") }
+    }
+
+    fun setNewAlbumName(name: String) {
+        _uiState.update { it.copy(newAlbumName = name) }
     }
 
     fun createNewAlbum() {
-        if (newAlbumName.isEmpty()) {
-            error = "Please enter an album name first"
-            showAlertDialog = true
+        val familyIdValue = familyId
+        val albumName = _uiState.value.newAlbumName.trim()
+
+        if (albumName.isEmpty()) {
+            showError("Please enter an album name first")
+            return
         }
 
-        if (familyId == null) {
-            error = "You are not logged in"
-            showAlertDialog = true
+        if (familyIdValue == null) {
+            showError("You are not logged in")
+            return
         }
 
         val album = Album(
-            itemName = newAlbumName,
-            familyId = familyId!!,
+            itemName = albumName,
+            familyId = familyIdValue,
         )
 
         viewModelScope.launch {
-            val result: StringResultListener = saveItemUseCase(album, Constants.ALBUMS_TABLE)
-
-            if (result is StringResultListener.Success) {
-                closeNewAlbumDialog()
-            } else if (result is StringResultListener.Failure) {
-                println("Error: ${result.message}")
-                error = result.message
-                showAlertDialog = true
+            when (val result = saveItemUseCase(album, Constants.ALBUMS_TABLE)) {
+                is StringResultListener.Success -> closeNewAlbumDialog()
+                is StringResultListener.Failure -> showError(result.message)
             }
         }
     }
 
     private fun fetchAlbums() {
+        val familyIdValue = familyId ?: return
+
         viewModelScope.launch {
             fetchListItemsUseCase(
-                familyId!!,
+                familyIdValue,
                 Constants.ALBUMS_TABLE,
                 Album::class,
             ).collect { result ->
-                println("fetchListItemsUseCase result: $result")
                 when (result) {
-                    is ListItemsResultListener.Success -> {
-                        // Filter and map the result.listItems to only include Album instances
-                        println("Items found: ${result.listItems}")
-                        val albumItems = result.listItems.filterIsInstance<Album>()
-                        if (albumItems.isNotEmpty()) {
-                            println("_albums old value: ${_albums.value}")
-                            _albums.value = albumItems.sortedBy { it.itemName }
-                            println("albums new value: ${albums.value}")
-                            fetchThumbnails()
-                        } else {
-                            println("Error: No Album instances found in the result")
+                    is ListItemsResultListener.Success -> handleAlbumsSuccess(result.listItems.filterIsInstance<Album>())
+                    is ListItemsResultListener.Failure -> showError(result.message)
+                }
+            }
+        }
+    }
+
+    private fun handleAlbumsSuccess(albumItems: List<Album>) {
+        if (albumItems.isEmpty()) {
+            _uiState.update { it.copy(albums = emptyList(), isInitialized = true) }
+            return
+        }
+
+        val sortedAlbums = albumItems.sortedBy { it.itemName }
+        _uiState.update {
+            it.copy(
+                albums = sortedAlbums,
+                isInitialized = true,
+            )
+        }
+        fetchThumbnails(sortedAlbums)
+    }
+
+    private fun fetchThumbnails(albums: List<Album>) {
+        albums.forEach { album ->
+            val albumId = album.id ?: return@forEach
+            val alreadyLoaded = _uiState.value.thumbnails.containsKey(albumId)
+            if (alreadyLoaded) return@forEach
+
+            viewModelScope.launch(Dispatchers.IO) {
+                when (val result = fetchAlbumThumbnailUseCase.invoke(albumId)) {
+                    is ByteArrayResultListener.Success -> {
+                        _uiState.update { current ->
+                            current.copy(thumbnails = current.thumbnails + (albumId to result.byteArray))
                         }
                     }
-
-                    is ListItemsResultListener.Failure -> {
-                        // Handle failure, e.g., show an error message
-                        println("Error: ${result.message}")
-                        error = result.message
-                        showAlertDialog = true
+                    is ByteArrayResultListener.Failure -> {
+                        // Ignore missing thumbnails
                     }
                 }
             }
         }
     }
 
-    // ---------------------------------------------------------------- ALBUM THUMBNAIL
-    private val _thumbnails = MutableStateFlow<Map<String, ByteArray>>(emptyMap())
-    val thumbnails: StateFlow<Map<String, ByteArray>> = _thumbnails.asStateFlow()
-
-    fun fetchThumbnails() {
-        for (album in albums.value) {
-            if (album.id != null) {
-                viewModelScope.launch(Dispatchers.IO) {
-                    when (val result = fetchAlbumThumbnailUseCase.invoke(album.id!!)) {
-                        is ByteArrayResultListener.Success -> {
-                            _thumbnails.value += mapOf(album.id!! to result.byteArray)
-                        }
-                        is ByteArrayResultListener.Failure -> {
-                        }
-                    }
-                }
-            }
+    fun dismissAlert() {
+        viewModelScope.launch {
+            delay(3000)
+            _uiState.update { it.copy(showAlertDialog = false, error = "") }
         }
+    }
+
+    private fun showError(message: String) {
+        _uiState.update { it.copy(showAlertDialog = true, error = message) }
     }
 }

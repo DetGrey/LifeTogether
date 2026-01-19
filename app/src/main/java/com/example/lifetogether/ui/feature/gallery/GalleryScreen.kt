@@ -36,12 +36,9 @@ fun GalleryScreen(
     val galleryViewModel: GalleryViewModel = hiltViewModel()
 
     val userInformation by firebaseViewModel?.userInformation!!.collectAsState()
-    val albums by galleryViewModel.albums.collectAsState()
-    val thumbnails by galleryViewModel.thumbnails.collectAsState()
+    val uiState by galleryViewModel.uiState.collectAsState()
 
-    LaunchedEffect(key1 = true) {
-        // Perform any one-time initialization or side effect here
-        println("Gallery familyId: ${userInformation?.familyId}")
+    LaunchedEffect(key1 = userInformation?.familyId) {
         userInformation?.familyId?.let { galleryViewModel.setUpGallery(it) }
     }
 
@@ -69,7 +66,7 @@ fun GalleryScreen(
             }
 
             item {
-                if (albums.isEmpty()) {
+                if (uiState.albums.isEmpty()) {
                     Text(text = "No albums created. Press + to create one.")
                 } else {
                     FlowRow(
@@ -77,8 +74,8 @@ fun GalleryScreen(
                         maxItemsInEachRow = 2,
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        for (album in albums) {
-                            val thumbnail = thumbnails[album.id]
+                        for (album in uiState.albums) {
+                            val thumbnail = uiState.thumbnails[album.id]
                             AlbumContainer(
                                 album.itemName,
                                 album.count,
@@ -104,29 +101,27 @@ fun GalleryScreen(
         contentAlignment = Alignment.BottomEnd,
     ) {
         AddButton(onClick = {
-            galleryViewModel.showNewAlbumDialog = true
+            galleryViewModel.openNewAlbumDialog()
         })
     }
 
-    if (galleryViewModel.showNewAlbumDialog) {
+    if (uiState.showNewAlbumDialog) {
         ConfirmationDialogWithTextField(
             onDismiss = { galleryViewModel.closeNewAlbumDialog() },
-            onConfirm = {
-                galleryViewModel.createNewAlbum()
-            },
+            onConfirm = { galleryViewModel.createNewAlbum() },
             dialogTitle = "Create new album",
             dialogMessage = "Please enter a name for your new album",
             dismissButtonMessage = "Cancel",
             confirmButtonMessage = "Create",
-            textValue = galleryViewModel.newAlbumName,
-            onTextValueChange = { galleryViewModel.newAlbumName = it },
+            textValue = uiState.newAlbumName,
+            onTextValueChange = { galleryViewModel.setNewAlbumName(it) },
             capitalization = true,
         )
     }
 
     // ---------------------------------------------------------------- SHOW ERROR ALERT
-    if (galleryViewModel.showAlertDialog) {
-        ErrorAlertDialog(galleryViewModel.error)
-        galleryViewModel.toggleAlertDialog()
+    if (uiState.showAlertDialog) {
+        ErrorAlertDialog(uiState.error)
+        galleryViewModel.dismissAlert()
     }
 }

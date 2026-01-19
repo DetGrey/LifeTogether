@@ -1,7 +1,5 @@
 package com.example.lifetogether.ui.feature.admin.groceryList
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer

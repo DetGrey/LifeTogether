@@ -6,6 +6,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -34,10 +37,10 @@ fun GalleryMediaScreen(
     val galleryMediaViewModel: GalleryMediaViewModel = hiltViewModel()
 
     val userInformation by firebaseViewModel?.userInformation!!.collectAsState()
-    val imageData by galleryMediaViewModel.mediaData.collectAsState()
+    val uiState by galleryMediaViewModel.uiState.collectAsState()
 
-    LaunchedEffect(key1 = true) {
-        // Perform any one-time initialization or side effect here
+    LaunchedEffect(key1 = mediaId) {
+        // Re-run when mediaId changes (navigating to different media)
         userInformation?.familyId?.let {
             galleryMediaViewModel.setUpMediaData(it, mediaId)
         }
@@ -61,30 +64,53 @@ fun GalleryMediaScreen(
                 onLeftClick = {
                     appNavigator?.navigateBack()
                 },
-                text = when (imageData?.mediaType) {
+                text = when (uiState.mediaData?.mediaType) {
                     MediaType.IMAGE -> "Image"
                     MediaType.VIDEO -> "Video"
                     else -> "Media"
                 },
             )
-            if (imageData?.mediaUri != null) {
-                if (imageData?.mediaType == MediaType.IMAGE) {
+            if (uiState.mediaData?.mediaUri != null) {
+                if (uiState.mediaData?.mediaType == MediaType.IMAGE) {
                     DisplayImageFromUri(
-                        imageUri = imageData?.mediaUri!!,
-                        description = imageData?.itemName,
+                        imageUri = uiState.mediaData?.mediaUri!!,
+                        description = uiState.mediaData?.itemName,
                     )
-                } else if (imageData?.mediaType == MediaType.VIDEO) {
+                } else if (uiState.mediaData?.mediaType == MediaType.VIDEO) {
                     DisplayVideoFromUri(
-                        videoUri = imageData?.mediaUri!!,
+                        videoUri = uiState.mediaData?.mediaUri!!,
                     )
+                }
+            }
+
+            // ---------------------------------------------------------------- DOWNLOAD BUTTON
+            if (uiState.downloadMessage != null) {
+                if (uiState.isDownloading) {
+                    CircularProgressIndicator()
+                    Text(text = uiState.downloadMessage!!)
+                } else {
+                    Text(text = uiState.downloadMessage!!)
+                }
+            } else {
+                Button(
+                    onClick = { galleryMediaViewModel.downloadMedia() },
+                    enabled = !uiState.isDownloading && uiState.mediaData != null,
+                ) {
+                    // TODO: Add icon
+//                    Icon(
+//                        imageVector = Icons.Filled.Download,
+//                        contentDescription = "Download",
+//                        modifier = Modifier.padding(end = 8.dp),
+//                    )
+                    Text(text = "Download")
                 }
             }
         }
     }
 
     // ---------------------------------------------------------------- SHOW ERROR ALERT
-    if (galleryMediaViewModel.showAlertDialog) {
-        ErrorAlertDialog(galleryMediaViewModel.error)
-        galleryMediaViewModel.toggleAlertDialog()
+    if (uiState.showAlertDialog) {
+        ErrorAlertDialog(uiState.error)
+        galleryMediaViewModel.dismissAlert()
     }
 }

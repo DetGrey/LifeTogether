@@ -121,7 +121,7 @@ class MediaUploadViewModel @Inject constructor(
 
         _uploadState.value = UploadState.Uploading
 
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val mediaUploadDataList = mutableListOf<MediaUploadData>()
 
             for (uri in urisToUpload) {
@@ -158,11 +158,15 @@ class MediaUploadViewModel @Inject constructor(
             }
 
             if (mediaUploadDataList.isEmpty() && urisToUpload.isNotEmpty()) {
-                _uploadState.value = UploadState.Failure("No supported files found to upload.")
+                withContext(Dispatchers.Main) {
+                    _uploadState.value = UploadState.Failure("No supported files found to upload.")
+                }
                 return@launch
             }
             if (mediaUploadDataList.isEmpty()) {
-                _uploadState.value = UploadState.Idle // Or a specific state like "No valid files"
+                withContext(Dispatchers.Main) {
+                    _uploadState.value = UploadState.Idle
+                }
                 return@launch
             }
 
@@ -172,12 +176,16 @@ class MediaUploadViewModel @Inject constructor(
             // It will also be responsible for creating Firestore/Room entries
             when (val result = uploadGalleryMediaItemsUseCase.invoke(mediaUploadDataList, context)) {
                 is ResultListener.Success -> {
-                    _uploadState.value = UploadState.Success
+                    withContext(Dispatchers.Main) {
+                        _uploadState.value = UploadState.Success
+                    }
                     Log.d("MediaUploadVM", "Upload successful for all items.")
                 }
                 is ResultListener.Failure -> {
-                    _uploadState.value = UploadState.Failure(result.message)
-                    error = result.message
+                    withContext(Dispatchers.Main) {
+                        _uploadState.value = UploadState.Failure(result.message)
+                        error = result.message
+                    }
                     Log.e("MediaUploadVM", "Upload failed: ${result.message}")
                 }
             }
@@ -186,13 +194,13 @@ class MediaUploadViewModel @Inject constructor(
 
     // --- Metadata Extraction ---
 
-    private fun extractImageMetadata(
+    private suspend fun extractImageMetadata(
         context: Context,
         uri: Uri,
         familyId: String,
         albumId: String,
         ext: String,
-    ): Pair<GalleryImage, String> {
+    ): Pair<GalleryImage, String> = withContext(Dispatchers.IO) {
         val dateCreated = getExifDate(context, uri)
         val itemName = formatMediaName(dateCreated, ext)
 
@@ -202,7 +210,7 @@ class MediaUploadViewModel @Inject constructor(
             albumId = albumId,
             dateCreated = dateCreated,
         )
-        return Pair(galleryImage, ext)
+        Pair(galleryImage, ext)
     }
 
     private suspend fun extractVideoMetadata(

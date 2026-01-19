@@ -69,7 +69,7 @@ class TipTrackerViewModel @Inject constructor(
             fetchListItemsUseCase(
                 familyId!!,
                 Constants.TIP_TRACKER_TABLE,
-                TipItem::class
+                TipItem::class,
             ).collect { result ->
                 when (result) {
                     is ListItemsResultListener.Success -> {

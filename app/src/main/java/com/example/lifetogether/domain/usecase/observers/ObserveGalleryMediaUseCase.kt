@@ -1,6 +1,7 @@
 package com.example.lifetogether.domain.usecase.observers
 
 import android.content.Context
+import android.util.Log
 import com.example.lifetogether.data.local.LocalDataSource
 import com.example.lifetogether.data.remote.FirebaseStorageDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
@@ -13,6 +14,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Semaphore
 import java.io.File
 import javax.inject.Inject
 import kotlin.let
@@ -22,72 +25,217 @@ class ObserveGalleryMediaUseCase @Inject constructor(
     private val firebaseStorageDataSource: FirebaseStorageDataSource,
     private val localDataSource: LocalDataSource,
 ) {
+    companion object {
+        private const val TAG = "ObserveGalleryMedia"
+
+        // Limit concurrent downloads to prevent ANR and memory exhaustion
+        private const val MAX_CONCURRENT_DOWNLOADS = 3
+
+        // Batch size for Room database updates to prevent blocking main thread
+        private const val BATCH_SIZE = 25
+
+        // Retry attempts for failed individual downloads
+        private const val MAX_RETRY_ATTEMPTS = 3
+
+        // Base delay for exponential backoff (ms)
+        private const val BASE_RETRY_DELAY = 500L
+
+        // How many rounds to retry failed items (in addition to per-item retries)
+        // Increased to ensure all items get multiple attempts across observer updates
+        private const val MAX_DOWNLOAD_ROUNDS = 10
+
+        // Delay between rounds (ms)
+        private const val ROUND_RETRY_DELAY = 2000L
+    }
+
     suspend operator fun invoke(
         familyId: String,
         context: Context,
     ) {
-        println("ObserveGalleryMediaUseCase invoked")
+        Log.d(TAG, "invoked")
         firestoreDataSource.galleryMediaSnapshotListener(familyId).collect { result ->
-            println("galleryMediaSnapshotListener().collect result: $result")
+            Log.d(TAG, "galleryMediaSnapshotListener().collect result: $result")
             when (result) {
                 is ListItemsResultListener.Success -> {
+                    // Only process non-empty lists from Firestore
+                    // Empty responses are likely transient network issues, so we ignore them
+                    // to prevent losing local cached media
                     if (result.listItems.isEmpty()) {
-                        println("galleryMediaSnapshotListener().collect result: is empty")
-                        localDataSource.deleteFamilyGalleryMedia(familyId)
-                    } else {
-                        // Get existing media from local database to avoid re-downloading
-                        val existingMediaMap = localDataSource.getExistingGalleryMediaInfo(familyId)
+                        Log.d(TAG, "galleryMediaSnapshotListener().collect result: is empty - ignoring to preserve local cache")
+                        // Don't delete anything - empty responses are unreliable
+                        return@collect
+                    }
 
-                        val tempFileDownloadSuccessResults: MutableList<Pair<GalleryMedia, File>> = mutableListOf()
+                    // Get existing media from local database to avoid re-downloading
+                    val existingMediaMap = localDataSource.getExistingGalleryMediaInfo(familyId)
 
-                        coroutineScope { // For concurrent downloads
-                            // Explicitly type the list of Deferred objects
-                            val downloadTasks: List<Deferred<Pair<GalleryMedia, File>?>> =
-                                result.listItems.map { galleryMedia ->
+                    // Filter items that need downloading (not already in local storage)
+                    val itemsToDownload = result.listItems.filter { galleryMedia ->
+                        val mediaId = galleryMedia.id
+                        val existingMediaUri = existingMediaMap[mediaId]?.first
+                        existingMediaUri == null // Only download if not already locally cached
+                    }
 
-                                    async(Dispatchers.IO) { // Ensure download happens on IO dispatcher
-                                        galleryMedia.mediaUrl?.let { url ->
-                                            val mediaId = galleryMedia.id
-                                            val existingMediaUri = existingMediaMap[mediaId]?.first
+                    if (itemsToDownload.isEmpty()) {
+                        Log.d(TAG, "All ${result.listItems.size} items already exist locally")
+                        return@collect
+                    }
 
-                                            // Only download if media doesn't exist locally (no mediaUri stored)
-                                            if (existingMediaUri != null) {
-                                                println("ObserveGalleryMediaUseCase: Skipping download for ${galleryMedia.itemName} - already exists locally")
-                                                return@async null // Media already exists, skip download
-                                            }
+                    Log.d(TAG, "Need to download ${itemsToDownload.size} items out of ${result.listItems.size}")
 
-                                            val fallbackExtension = if (galleryMedia is GalleryImage) "jpeg" else "mp4"
-                                            val extension = "." + galleryMedia.itemName.substringAfterLast('.', fallbackExtension)
+                    // Track items that fail after all retries for detection/logging
+                    val failedItems = mutableSetOf<String>()
 
-                                            val downloadResult = firebaseStorageDataSource.downloadContentToTempFile(context, url, extension)
-                                            if (downloadResult is TempFileDownloadResult.Success) {
-                                                Pair(galleryMedia, downloadResult.downloadedFile)
-                                            } else {
-                                                if (downloadResult is TempFileDownloadResult.Failure) {
-                                                    println("ObserveGalleryMediaUseCase: Failed to download ${galleryMedia.itemName}: ${downloadResult.message}")
-                                                } else {
-                                                    println("ObserveGalleryMediaUseCase: Unknown error downloading ${galleryMedia.itemName}")
+                    // Process downloads in batches with limited concurrency to prevent ANR/OOM
+                    val allDownloadedItems: MutableList<Pair<GalleryMedia, File>> = mutableListOf()
+
+                    var remainingItems = itemsToDownload
+                    var round = 1
+
+                    while (remainingItems.isNotEmpty() && round <= MAX_DOWNLOAD_ROUNDS) {
+                        Log.d(TAG, "Download round $round: ${remainingItems.size} items remaining")
+
+                        val roundFailedItems = mutableSetOf<String>()
+
+                        remainingItems.chunked(BATCH_SIZE).forEachIndexed { batchIndex, batch ->
+                            Log.d(TAG, "Processing batch ${batchIndex + 1} (round $round) with ${batch.size} items")
+
+                            val batchResults: MutableList<Pair<GalleryMedia, File>> = mutableListOf()
+
+                            coroutineScope {
+                                // Use semaphore to limit concurrent downloads to MAX_CONCURRENT_DOWNLOADS
+                                val semaphore = Semaphore(MAX_CONCURRENT_DOWNLOADS)
+
+                                val downloadTasks: List<Deferred<Pair<GalleryMedia, File>?>> =
+                                    batch.map { galleryMedia ->
+                                        async(Dispatchers.IO) {
+                                            semaphore.acquire()
+                                            try {
+                                                galleryMedia.mediaUrl?.let { url ->
+                                                    val fallbackExtension =
+                                                        if (galleryMedia is GalleryImage) "jpeg" else "mp4"
+                                                    val extension = "." + galleryMedia.itemName.substringAfterLast(
+                                                        '.',
+                                                        fallbackExtension,
+                                                    )
+
+                                                    // Retry logic with exponential backoff
+                                                    var downloadResult: TempFileDownloadResult? = null
+                                                    var lastException: Exception? = null
+
+                                                    repeat(MAX_RETRY_ATTEMPTS) { attempt ->
+                                                        if (downloadResult is TempFileDownloadResult.Success) {
+                                                            return@repeat // Exit early if successful
+                                                        }
+
+                                                        try {
+                                                            downloadResult = firebaseStorageDataSource.downloadContentToTempFile(
+                                                                context,
+                                                                url,
+                                                                extension,
+                                                            )
+
+                                                            if (downloadResult is TempFileDownloadResult.Success) {
+                                                                if (attempt > 0) {
+                                                                    Log.d(TAG, "Downloaded on retry ${attempt + 1}: ${galleryMedia.itemName}")
+                                                                } else {
+                                                                    Log.d(TAG, "Downloaded: ${galleryMedia.itemName}")
+                                                                }
+                                                            } else if (attempt < MAX_RETRY_ATTEMPTS - 1) {
+                                                                // Exponential backoff before retry
+                                                                val delayMs = BASE_RETRY_DELAY * (attempt + 1)
+                                                                Log.d(TAG, "Download failed for ${galleryMedia.itemName}, retrying in ${delayMs}ms (attempt ${attempt + 1}/${MAX_RETRY_ATTEMPTS})")
+                                                                delay(delayMs)
+                                                            }
+                                                        } catch (e: Exception) {
+                                                            lastException = e
+                                                            if (attempt < MAX_RETRY_ATTEMPTS - 1) {
+                                                                val delayMs = BASE_RETRY_DELAY * (attempt + 1)
+                                                                Log.d(TAG, "Download exception for ${galleryMedia.itemName}: ${e.message}, retrying in ${delayMs}ms (attempt ${attempt + 1}/${MAX_RETRY_ATTEMPTS})")
+                                                                delay(delayMs)
+                                                            }
+                                                        }
+                                                    }
+
+                                                    if (downloadResult is TempFileDownloadResult.Success) {
+                                                        Pair(
+                                                            galleryMedia,
+                                                            downloadResult.downloadedFile,
+                                                        )
+                                                    } else {
+                                                        roundFailedItems.add(galleryMedia.id ?: "unknown")
+                                                        if (downloadResult is TempFileDownloadResult.Failure) {
+                                                            Log.d(TAG, "Failed to download ${galleryMedia.itemName} after $MAX_RETRY_ATTEMPTS attempts: ${downloadResult.message}")
+                                                        } else if (lastException != null) {
+                                                            Log.d(TAG, "Failed to download ${galleryMedia.itemName} after $MAX_RETRY_ATTEMPTS attempts: ${lastException.message}")
+                                                        }
+                                                        null
+                                                    }
                                                 }
-                                                null // Indicate failure for this item
+                                            } finally {
+                                                semaphore.release()
                                             }
                                         }
-                                        // If mediaUrl is null, this async block implicitly returns null (as per Pair<GalleryMedia, File>?)
                                     }
-                                }
-                            // awaitAll() will return List<Pair<GalleryMedia, File>?>
-                            // filterNotNull() will then correctly change it to List<Pair<GalleryMedia, File>>
-                            val successfulDownloads = downloadTasks.awaitAll().filterNotNull()
-                            tempFileDownloadSuccessResults.addAll(successfulDownloads)
+
+                                val successfulDownloads = downloadTasks.awaitAll().filterNotNull()
+                                batchResults.addAll(successfulDownloads)
+                            }
+
+                            // Update database after each batch to avoid blocking main thread for too long
+                            if (batchResults.isNotEmpty()) {
+                                Log.d(TAG, "Saving batch ${batchIndex + 1} (round $round) with ${batchResults.size} items to database")
+                                // Pass complete source list so deletions can be detected
+                                localDataSource.updateGalleryMedia(familyId, batchResults, result.listItems)
+                                allDownloadedItems.addAll(batchResults)
+                            }
                         }
 
-                        if (tempFileDownloadSuccessResults.isNotEmpty()) {
-                            localDataSource.updateGalleryMedia(familyId, tempFileDownloadSuccessResults)
+                        // Prepare for next round if needed
+                        if (roundFailedItems.isNotEmpty()) {
+                            Log.d(TAG, "Round $round completed with ${roundFailedItems.size} failed items: $roundFailedItems")
+                            // Track permanently failed items (those that fail in last round)
+                            if (round >= MAX_DOWNLOAD_ROUNDS) {
+                                failedItems.addAll(roundFailedItems)
+                            }
+                            // Filter to remaining items by id
+                            remainingItems = remainingItems.filter { media ->
+                                roundFailedItems.contains(media.id)
+                            }
+                        } else {
+                            remainingItems = emptyList()
                         }
+
+                        if (remainingItems.isNotEmpty() && round < MAX_DOWNLOAD_ROUNDS) {
+                            Log.d(TAG, "Scheduling next download round after ${ROUND_RETRY_DELAY}ms for ${remainingItems.size} remaining items")
+                            delay(ROUND_RETRY_DELAY)
+                        }
+
+                        round += 1
+                    }
+
+                    Log.d(TAG, "Completed downloading ${allDownloadedItems.size} items")
+
+                    // Detect partial downloads and log warning
+                    if (failedItems.isNotEmpty()) {
+                        Log.w(TAG, "${failedItems.size} items failed to download after $MAX_DOWNLOAD_ROUNDS rounds: $failedItems")
+                    }
+
+                    if (remainingItems.isNotEmpty()) {
+                        Log.w(TAG, "Download reached max rounds ($MAX_DOWNLOAD_ROUNDS) with ${remainingItems.size} items still failing")
+                        failedItems.addAll(remainingItems.mapNotNull { it.id })
+                    }
+
+                    val expectedCount = result.listItems.size
+                    val actualCount = allDownloadedItems.size + existingMediaMap.size
+                    if (actualCount < expectedCount) {
+                        Log.w(TAG, "Partial media load - Expected $expectedCount items, got $actualCount (${failedItems.size} failed, ${existingMediaMap.size} already cached)")
                     }
                 }
+
                 is ListItemsResultListener.Failure -> {
                     // Handle failure
-                    println("ObserveGalleryMediaUseCase failure: ${result.message}")
+                    Log.e(TAG, "failure: ${result.message}")
                 }
             }
         }

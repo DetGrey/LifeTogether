@@ -1,8 +1,5 @@
 package com.example.lifetogether.ui.feature.gallery
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.callback.ByteArrayResultListener
@@ -23,8 +20,25 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+data class AlbumMediaUiState(
+    val album: Album? = null,
+    val media: List<GalleryMedia> = emptyList(),
+    val thumbnails: Map<String, ByteArray> = emptyMap(),
+    val isSyncing: Boolean = false,
+    val showOverflowMenu: Boolean = false,
+    val showOverflowMenuActionDialog: Boolean = false,
+    val overflowMenuAction: AlbumMediaViewModel.OverflowMenuActions? = null,
+    val actionDialogText: String = "",
+    val showAlertDialog: Boolean = false,
+    val error: String = "",
+    val isInitialized: Boolean = false,
+    val isPartialLoad: Boolean = false, // True when some media failed to load
+    val isRefreshing: Boolean = false, // User-triggered refresh
+)
 
 @HiltViewModel
 class AlbumMediaViewModel @Inject constructor(
@@ -34,23 +48,8 @@ class AlbumMediaViewModel @Inject constructor(
     private val fetchItemByIdUseCase: FetchItemByIdUseCase,
     private val fetchAlbumMediaThumbnailUseCase: FetchAlbumMediaThumbnailUseCase,
 ) : ViewModel() {
-    // ---------------------------------------------------------------- ERROR
-    var showAlertDialog: Boolean by mutableStateOf(false)
-    var error: String by mutableStateOf("")
-    fun toggleAlertDialog() {
-        viewModelScope.launch {
-            delay(3000)
-            showAlertDialog = false
-            error = ""
-        }
-    }
-
-    // ---------------------------------------------------------------- OVERFLOW MENU
-    var showOverflowMenu: Boolean by mutableStateOf(false)
-        private set
-    fun toggleOverflowMenu(show: Boolean? = null) {
-        showOverflowMenu = show ?: !showOverflowMenu
-    }
+    private val _uiState = MutableStateFlow(AlbumMediaUiState())
+    val uiState: StateFlow<AlbumMediaUiState> = _uiState.asStateFlow()
 
     enum class OverflowMenuActions {
         RENAME_ALBUM,
@@ -58,170 +57,232 @@ class AlbumMediaViewModel @Inject constructor(
         DELETE_ALBUM,
     }
 
-    var showOverflowMenuActionDialog: Boolean by mutableStateOf(false)
-    var overflowMenuAction: OverflowMenuActions? by mutableStateOf(null)
-    fun dismissOverflowMenuActionDialog() {
-        showOverflowMenuActionDialog = false
-        overflowMenuAction = null
-        actionDialogText = ""
+    private var familyId: String? = null
+    private var albumId: String? = null
+
+    private var syncRetryAttempts = 0
+    private val maxSyncRetryAttempts = 3
+
+    fun setUpAlbumMedia(addedFamilyId: String, addedAlbumId: String) {
+        if (_uiState.value.isInitialized && albumId == addedAlbumId) return
+
+        familyId = addedFamilyId
+        albumId = addedAlbumId
+        syncRetryAttempts = 0
+
+        _uiState.update { it.copy(isInitialized = true, isSyncing = false) }
+        fetchAlbum()
+        fetchAlbumMedia()
     }
-    var actionDialogText: String by mutableStateOf("")
-
-    // ---------------------------------------------------------------- Family ID
-    private var familyIdIsSet = false
-    var familyId: String? = null
-
-    // ---------------------------------------------------------------- Album
-    var albumId: String? by mutableStateOf(null)
-
-    private val _album = MutableStateFlow<Album?>(null)
-    val album: StateFlow<Album?> = _album.asStateFlow()
 
     private fun fetchAlbum() {
+        val familyIdValue = familyId ?: return
+        val albumIdValue = albumId ?: return
+
         viewModelScope.launch {
             fetchItemByIdUseCase.invoke(
-                familyId!!,
-                albumId!!,
+                familyIdValue,
+                albumIdValue,
                 Constants.ALBUMS_TABLE,
                 Album::class,
             ).collect { result ->
-                println("fetchItemByIdUseCase result: $result")
                 when (result) {
                     is ItemResultListener.Success -> {
-                        // Filter and map the result.listItems to only include GalleryImage instances
-                        if (result.item is Album) {
-                            _album.value = result.item
+                        val album = result.item as? Album
+                        if (album != null) {
+                            _uiState.update { state ->
+                                state.copy(
+                                    album = album,
+                                    isSyncing = album.count > 0 && state.media.isEmpty(),
+                                )
+                            }
                         } else {
-                            println("Error: Cannot find the album")
-                            error = "Cannot find the album"
-                            showAlertDialog = true
+                            showError("Cannot find the album")
                         }
                     }
 
-                    is ItemResultListener.Failure -> {
-                        // Handle failure, e.g., show an error message
-                        println("Error: ${result.message}")
-                        error = result.message
-                        showAlertDialog = true
-                    }
+                    is ItemResultListener.Failure -> showError(result.message)
                 }
             }
         }
     }
 
     fun renameAlbum() {
-        val newName = actionDialogText.trim()
+        val newName = _uiState.value.actionDialogText.trim()
+        val currentAlbum = _uiState.value.album
 
         if (newName.isEmpty()) {
-            error = "Album name cannot be empty"
-            showAlertDialog = true
+            showError("Album name cannot be empty")
             return
         }
-        if (newName == album.value?.itemName) {
-            error = "Album already called $newName"
-            showAlertDialog = true
+        if (newName == currentAlbum?.itemName) {
+            showError("Album already called $newName")
             return
         }
 
-        val updatedAlbum = album.value?.copy(itemName = newName) ?: return
+        val updatedAlbum = currentAlbum?.copy(itemName = newName) ?: return
 
         viewModelScope.launch {
-            val result = updateItemUseCase.invoke(updatedAlbum, Constants.ALBUMS_TABLE)
-            if (result is ResultListener.Success) {
-                _album.value = updatedAlbum
-                dismissOverflowMenuActionDialog()
-            } else if (result is ResultListener.Failure) {
-                error = result.message
-                showAlertDialog = true
-            }
-            actionDialogText = ""
-        }
-    }
-
-    fun deleteAlbum(
-        onDeleteSuccess: () -> Unit,
-    ) {
-        if (album.value?.id == null) return
-
-        viewModelScope.launch {
-            val result = deleteAlbumUseCase.invoke(album.value?.id!!, albumMedia.value)
-            if (result is ResultListener.Success) {
-                dismissOverflowMenuActionDialog()
-                onDeleteSuccess()
-            } else if (result is ResultListener.Failure) {
-                error = result.message
-                showAlertDialog = true
+            when (val result = updateItemUseCase.invoke(updatedAlbum, Constants.ALBUMS_TABLE)) {
+                is ResultListener.Success -> {
+                    _uiState.update { it.copy(album = updatedAlbum) }
+                    dismissOverflowMenuActionDialog()
+                }
+                is ResultListener.Failure -> showError(result.message)
             }
         }
     }
 
-    // ---------------------------------------------------------------- SETUP/FETCH LIST
-    fun setUpAlbumMedia(
-        addedFamilyId: String,
-        addedAlbumId: String,
-    ) {
-        if (!familyIdIsSet) {
-            println("AlbumMediaViewModel setting familyId and albumId")
-            familyId = addedFamilyId
-            albumId = addedAlbumId
-            // Use the Family ID here (e.g., fetch list items)
-            fetchAlbum()
-            fetchAlbumMedia()
-            familyIdIsSet = true
+    fun deleteAlbum(onDeleteSuccess: () -> Unit) {
+        val albumIdValue = _uiState.value.album?.id ?: return
+
+        viewModelScope.launch {
+            when (val result = deleteAlbumUseCase.invoke(albumIdValue, _uiState.value.media)) {
+                is ResultListener.Success -> {
+                    dismissOverflowMenuActionDialog()
+                    onDeleteSuccess()
+                }
+                is ResultListener.Failure -> showError(result.message)
+            }
         }
     }
 
-    // ---------------------------------------------------------------- GALLERY MEDIA
-    private val _albumMedia = MutableStateFlow<List<GalleryMedia>>(emptyList())
-    val albumMedia: StateFlow<List<GalleryMedia>> = _albumMedia.asStateFlow()
+    fun retryFetchAlbumMedia() {
+        _uiState.update { it.copy(isRefreshing = true) }
+        syncRetryAttempts = 0
+        fetchAlbumMedia()
+    }
+
+    fun onRefreshComplete() {
+        _uiState.update { it.copy(isRefreshing = false) }
+    }
 
     private fun fetchAlbumMedia() {
+        val familyIdValue = familyId ?: return
+        val albumIdValue = albumId ?: return
+
         viewModelScope.launch {
+            val expectedCount = _uiState.value.album?.count ?: 0
+            if (expectedCount > 0 && _uiState.value.media.isEmpty()) {
+                _uiState.update { it.copy(isSyncing = true) }
+            }
+
             fetchAlbumMediaUseCase.invoke(
-                familyId!!,
-                albumId!!,
+                familyIdValue,
+                albumIdValue,
             ).collect { result ->
-                println("fetchAlbumMediaUseCase result: $result")
                 when (result) {
-                    is ListItemsResultListener.Success -> {
-                        // Filter and map the result.listItems to only include GalleryMedia instances
-                        println("Items found: ${result.listItems}")
-                        val items = result.listItems
-                        if (items.isNotEmpty()) {
-                            println("_albums old value: ${_albumMedia.value}")
-                            val sortedMedia = items.sortedByDescending { it.dateCreated } // Sort by newest first
-                            _albumMedia.value = sortedMedia // Emit sorted list
-
-                            println("albums new value: ${albumMedia.value}")
-                        } else {
-                            println("Error: No GalleryMedia instances found in the result")
-                        }
-                    }
-
-                    is ListItemsResultListener.Failure -> {
-                        // Handle failure, e.g., show an error message
-                        println("Error: ${result.message}")
-                        error = result.message
-                        showAlertDialog = true
-                    }
+                    is ListItemsResultListener.Success -> handleMediaSuccess(result.listItems)
+                    is ListItemsResultListener.Failure -> handleMediaFailure(result.message)
                 }
             }
         }
     }
 
-    // ---------------------------------------------------------------- THUMBNAILS
-    private val _thumbnails = MutableStateFlow<Map<String, ByteArray>>(emptyMap())
-    val thumbnails: StateFlow<Map<String, ByteArray>> = _thumbnails.asStateFlow()
+    private fun handleMediaSuccess(items: List<GalleryMedia>) {
+        if (items.isNotEmpty()) {
+            val sortedMedia = items.sortedByDescending { it.dateCreated }
+            _uiState.update {
+                it.copy(
+                    media = sortedMedia,
+                    isSyncing = false,
+                )
+            }
+
+            // Detect partial downloads and trigger retry if needed
+            val expectedCount = _uiState.value.album?.count ?: 0
+            if (expectedCount > items.size && syncRetryAttempts < maxSyncRetryAttempts) {
+                println("Partial media load detected: got ${items.size} of $expectedCount items, will retry")
+                _uiState.update { it.copy(isSyncing = true, isPartialLoad = true) }
+                syncRetryAttempts += 1
+                viewModelScope.launch {
+                    delay(3000) // Wait 3 seconds before retry to allow failed downloads to complete
+                    fetchAlbumMedia()
+                }
+                return
+            } else if (expectedCount > items.size) {
+                // Max retries reached, mark as partial load permanently
+                println("Partial media load detected but max retries reached: got ${items.size} of $expectedCount items")
+                _uiState.update { it.copy(isPartialLoad = true, isSyncing = false, isRefreshing = false) }
+                return
+            }
+
+            syncRetryAttempts = 0
+            _uiState.update { it.copy(isPartialLoad = false, isRefreshing = false) }
+            return
+        }
+
+        val expectedCount = _uiState.value.album?.count ?: 0
+        if (expectedCount > 0 && syncRetryAttempts < maxSyncRetryAttempts) {
+            _uiState.update { it.copy(isSyncing = true) }
+            syncRetryAttempts += 1
+            viewModelScope.launch {
+                delay(2000)
+                fetchAlbumMedia()
+            }
+        } else {
+            _uiState.update { it.copy(isSyncing = false) }
+        }
+    }
+
+    private fun handleMediaFailure(message: String) {
+        _uiState.update { it.copy(isSyncing = false, isRefreshing = false) }
+        showError(message)
+    }
 
     fun fetchThumbnail(mediaId: String) {
+        if (_uiState.value.thumbnails.containsKey(mediaId)) return
+
         viewModelScope.launch(Dispatchers.IO) {
             when (val result = fetchAlbumMediaThumbnailUseCase.invoke(mediaId)) {
                 is ByteArrayResultListener.Success -> {
-                    _thumbnails.value += mapOf(mediaId to result.byteArray)
+                    _uiState.update { state ->
+                        state.copy(thumbnails = state.thumbnails + (mediaId to result.byteArray))
+                    }
                 }
                 is ByteArrayResultListener.Failure -> {
+                    // Ignore missing thumbnail
                 }
             }
         }
+    }
+
+    fun toggleOverflowMenu(show: Boolean? = null) {
+        _uiState.update { it.copy(showOverflowMenu = show ?: !it.showOverflowMenu) }
+    }
+
+    fun startOverflowAction(action: OverflowMenuActions) {
+        _uiState.update {
+            it.copy(
+                overflowMenuAction = action,
+                showOverflowMenuActionDialog = true,
+                showOverflowMenu = false,
+            )
+        }
+    }
+
+    fun setActionDialogText(text: String) {
+        _uiState.update { it.copy(actionDialogText = text) }
+    }
+
+    fun dismissOverflowMenuActionDialog() {
+        _uiState.update {
+            it.copy(
+                showOverflowMenuActionDialog = false,
+                overflowMenuAction = null,
+                actionDialogText = "",
+            )
+        }
+    }
+
+    fun dismissAlert() {
+        viewModelScope.launch {
+            delay(3000)
+            _uiState.update { it.copy(showAlertDialog = false, error = "") }
+        }
+    }
+
+    private fun showError(message: String) {
+        _uiState.update { it.copy(showAlertDialog = true, error = message) }
     }
 }
