@@ -27,7 +27,7 @@ fun Album.toMap(): Map<String, Any?> {
         "familyId" to familyId,
         "itemName" to itemName,
         "lastUpdated" to lastUpdated,
-        "count" to count
+        "count" to count,
     )
 }
 

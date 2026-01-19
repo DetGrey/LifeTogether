@@ -6,19 +6,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 
 @Composable
 fun TextDefault(
     text: String,
     modifier: Modifier = Modifier,
-    color: Color? = null,
-    textAlign: TextAlign? = null,
+    color: Color = MaterialTheme.colorScheme.primary,
+    textAlign: TextAlign = TextAlign.Unspecified,
+    maxLines: Int = Int.MAX_VALUE,
 ) {
     Text(
         text = text,
         style = MaterialTheme.typography.bodyMedium,
-        color = color ?: MaterialTheme.colorScheme.primary,
+        color = color,
         modifier = modifier,
-        textAlign = textAlign ?: TextAlign.Unspecified,
+        textAlign = textAlign,
+        maxLines = maxLines,
+        overflow = TextOverflow.Ellipsis,
     )
 }

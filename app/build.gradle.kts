@@ -90,6 +90,7 @@ dependencies {
     implementation(libs.androidx.compose.material)
     implementation(libs.firebase.messaging.ktx)
     implementation(libs.androidx.exifinterface)
+    implementation(libs.androidx.compose.foundation)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

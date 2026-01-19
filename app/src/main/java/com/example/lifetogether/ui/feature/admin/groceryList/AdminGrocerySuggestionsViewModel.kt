@@ -10,7 +10,6 @@ import com.example.lifetogether.domain.callback.GrocerySuggestionsListener
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
-import com.example.lifetogether.domain.usecase.item.AddCategoryUseCase
 import com.example.lifetogether.domain.usecase.item.DeleteGrocerySuggestionUseCase
 import com.example.lifetogether.domain.usecase.item.FetchCategoriesUseCase
 import com.example.lifetogether.domain.usecase.item.FetchGrocerySuggestionsUseCase
@@ -20,6 +19,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -28,7 +28,6 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
     private val fetchCategoriesUseCase: FetchCategoriesUseCase,
     private val fetchGrocerySuggestionsUseCase: FetchGrocerySuggestionsUseCase,
     private val deleteGrocerySuggestionUseCase: DeleteGrocerySuggestionUseCase,
-    private val addCategoryUseCase: AddCategoryUseCase,
     private val saveGrocerySuggestionUseCase: SaveGrocerySuggestionUseCase,
 ) : ViewModel() {
     var showDeleteCategoryConfirmationDialog: Boolean by mutableStateOf(false)
@@ -86,14 +85,17 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
         }
     }
 
-    private fun updateCategories(newCategory: Category) {
-        if (!groceryCategories.value.contains(newCategory)) {
-            println("adding new category: $newCategory")
-            _groceryCategories.value = _groceryCategories.value
-                .filterNot { it.name == "Uncategorized" }
-                .plus(newCategory)
-                .sortedBy { it.name }
-                .let { listOf(Category("❓️", "Uncategorized")) + it }
+    // ---------------------------------------------------------------- EXPANDED STATES
+    private val _categoryExpandedStates = MutableStateFlow<Set<String>>(emptySet())
+    val categoryExpandedStates: StateFlow<Set<String>> = _categoryExpandedStates.asStateFlow()
+
+    fun toggleCategory(categoryName: String) {
+        _categoryExpandedStates.update { currentSet ->
+            if (currentSet.contains(categoryName)) {
+                currentSet - categoryName // Remove if exists (collapse)
+            } else {
+                currentSet + categoryName // Add if not exists (expand)
+            }
         }
     }
 
