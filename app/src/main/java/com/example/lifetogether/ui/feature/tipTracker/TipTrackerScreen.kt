@@ -30,15 +30,11 @@ fun TipTrackerScreen(
     val tipTrackerViewModel: TipTrackerViewModel = hiltViewModel()
 
     val userInformationState by firebaseViewModel?.userInformation!!.collectAsState()
+    val uiState by tipTrackerViewModel.uiState.collectAsState()
 
-    LaunchedEffect(key1 = true) {
-        // Perform any one-time initialization or side effect here
-        println("TipTracker familyId: ${userInformationState?.familyId}")
+    LaunchedEffect(key1 = userInformationState?.familyId) {
         userInformationState?.familyId?.let { tipTrackerViewModel.setUpTipTracker(it) }
     }
-
-    // Collecting the StateFlows as state
-    val tipItems by tipTrackerViewModel.tips.collectAsState()
 
     Box(
         modifier = Modifier
@@ -65,33 +61,33 @@ fun TipTrackerScreen(
             }
 
             item {
-                if (tipItems.isNotEmpty()) {
+                if (uiState.tips.isNotEmpty()) {
                     TagOptionRow(
                         options = listOf("Week", "Month", "Year", "All"),
-                        selectedOption = tipTrackerViewModel.timePeriod,
+                        selectedOption = uiState.timePeriod,
                         onSelectedOptionChange = {
-                            tipTrackerViewModel.timePeriod = it
+                            tipTrackerViewModel.setTimePeriod(it)
                         },
                         center = true,
                     )
                     StatsCard(
-                        title = when (tipTrackerViewModel.timePeriod) {
+                        title = when (uiState.timePeriod) {
                             "Week" -> "Last 7 days"
                             "Month" -> "Last 30 days"
                             "Year" -> "Last 365 days"
                             else -> "All time"
                         },
-                        total = when (tipTrackerViewModel.timePeriod) {
-                            "Week" -> tipTrackerViewModel.weeklyTotal.toString()
-                            "Month" -> tipTrackerViewModel.monthlyTotal.toString()
-                            "Year" -> tipTrackerViewModel.yearlyTotal.toString()
-                            else -> tipTrackerViewModel.total.toString()
+                        total = when (uiState.timePeriod) {
+                            "Week" -> uiState.stats.weeklyTotal.toString()
+                            "Month" -> uiState.stats.monthlyTotal.toString()
+                            "Year" -> uiState.stats.yearlyTotal.toString()
+                            else -> uiState.stats.total.toString()
                         },
-                        average = when (tipTrackerViewModel.timePeriod) {
-                            "Week" -> tipTrackerViewModel.weeklyAverage.toString()
-                            "Month" -> tipTrackerViewModel.monthlyAverage.toString()
-                            "Year" -> tipTrackerViewModel.yearlyAverage.toString()
-                            else -> tipTrackerViewModel.totalAverage.toString()
+                        average = when (uiState.timePeriod) {
+                            "Week" -> uiState.stats.weeklyAverage.toString()
+                            "Month" -> uiState.stats.monthlyAverage.toString()
+                            "Year" -> uiState.stats.yearlyAverage.toString()
+                            else -> uiState.stats.totalAverage.toString()
                         },
 
                     )
@@ -99,26 +95,26 @@ fun TipTrackerScreen(
             }
 
             item {
-                if (tipItems.isNotEmpty()) {
+                if (uiState.tips.isNotEmpty()) {
                     TagOptionRow(
                         options = listOf("Calendar", "List"),
-                        selectedOption = tipTrackerViewModel.overviewOption,
+                        selectedOption = uiState.overviewOption,
                         onSelectedOptionChange = {
-                            tipTrackerViewModel.overviewOption = it
+                            tipTrackerViewModel.setOverviewOption(it)
                         },
                         center = true,
                     )
-                    when (tipTrackerViewModel.overviewOption) {
+                    when (uiState.overviewOption) {
                         "Calendar" -> {
-                            TipsCalendar(tipTrackerViewModel.groupedTips)
+                            TipsCalendar(uiState.groupedTips)
                         }
 
                         "List" -> {
                             TipsList(
-                                tipTrackerViewModel.groupedTips,
+                                uiState.groupedTips,
                                 onDeleteClick = {
-                                    tipTrackerViewModel.selectedTip = it
-                                    tipTrackerViewModel.showConfirmationDialog = true
+                                    tipTrackerViewModel.setSelectedTip(it)
+                                    tipTrackerViewModel.setShowConfirmationDialog(true)
                                 },
                             )
                         }
@@ -136,24 +132,24 @@ fun TipTrackerScreen(
         contentAlignment = Alignment.BottomCenter,
     ) {
         AddNewTipItem(
-            textValue = tipTrackerViewModel.newItemAmount,
-            onTextChange = { tipTrackerViewModel.newItemAmount = it },
+            textValue = uiState.newItemAmount,
+            onTextChange = { tipTrackerViewModel.setNewItemAmount(it) },
             onAddClick = {
                 tipTrackerViewModel.addItemToList {
-                    tipTrackerViewModel.showConfirmationDialog = false
+                    tipTrackerViewModel.setShowConfirmationDialog(false)
                 }
             },
-            dateValue = tipTrackerViewModel.newItemDate,
+            dateValue = uiState.newItemDate,
             onDateChange = {
-                tipTrackerViewModel.newItemDate = it
+                tipTrackerViewModel.setNewItemDate(it)
             },
         )
     }
 
     // ---------------------------------------------------------------- CONFIRM DELETION OF COMPLETED ITEMS
-    if (tipTrackerViewModel.showConfirmationDialog && tipTrackerViewModel.selectedTip != null) {
+    if (uiState.showConfirmationDialog && uiState.selectedTip != null) {
         ConfirmationDialog(
-            onDismiss = { tipTrackerViewModel.showConfirmationDialog = false },
+            onDismiss = { tipTrackerViewModel.setShowConfirmationDialog(false) },
             onConfirm = {
                 tipTrackerViewModel.deleteItem()
             },
@@ -165,8 +161,8 @@ fun TipTrackerScreen(
     }
 
     // ---------------------------------------------------------------- SHOW ERROR ALERT
-    if (tipTrackerViewModel.showAlertDialog) {
-        ErrorAlertDialog(tipTrackerViewModel.error)
-        tipTrackerViewModel.toggleAlertDialog()
+    if (uiState.showAlertDialog) {
+        ErrorAlertDialog(uiState.error)
+        tipTrackerViewModel.dismissAlert()
     }
 }

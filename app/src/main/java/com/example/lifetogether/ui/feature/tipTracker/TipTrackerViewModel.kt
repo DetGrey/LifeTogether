@@ -1,9 +1,5 @@
 package com.example.lifetogether.ui.feature.tipTracker
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.callback.ListItemsResultListener
@@ -20,11 +16,39 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
+
+// Data classes for state management
+data class TipStats(
+    val weeklyTotal: Float = 0f,
+    val monthlyTotal: Float = 0f,
+    val yearlyTotal: Float = 0f,
+    val total: Float = 0f,
+    val weeklyAverage: Float = 0f,
+    val monthlyAverage: Float = 0f,
+    val yearlyAverage: Float = 0f,
+    val totalAverage: Float = 0f,
+)
+
+data class TipTrackerUiState(
+    val tips: List<TipItem> = emptyList(),
+    val stats: TipStats = TipStats(),
+    val groupedTips: Map<String, List<TipItem>> = emptyMap(),
+    val selectedTip: TipItem? = null,
+    val timePeriod: String = "Week",
+    val overviewOption: String = "Calendar",
+    val newItemAmount: String = "",
+    val newItemDate: Date = Date(),
+    val showConfirmationDialog: Boolean = false,
+    val showAlertDialog: Boolean = false,
+    val error: String = "",
+    val isInitialized: Boolean = false,
+)
 
 @HiltViewModel
 class TipTrackerViewModel @Inject constructor(
@@ -32,101 +56,80 @@ class TipTrackerViewModel @Inject constructor(
     private val fetchListItemsUseCase: FetchListItemsUseCase,
     private val deleteItemUseCase: DeleteItemUseCase,
 ) : ViewModel() {
-    var showConfirmationDialog: Boolean by mutableStateOf(false)
+    private val _uiState = MutableStateFlow(TipTrackerUiState())
+    val uiState: StateFlow<TipTrackerUiState> = _uiState.asStateFlow()
 
-    // ---------------------------------------------------------------- ERROR
-    var showAlertDialog: Boolean by mutableStateOf(false)
-    var error: String by mutableStateOf("")
-    fun toggleAlertDialog() {
-        viewModelScope.launch {
-            delay(3000)
-            showAlertDialog = false
-            error = ""
-        }
-    }
-
-    // ---------------------------------------------------------------- UID
-    private var familyIdIsSet = false
-    var familyId: String? = null
-
-    // ---------------------------------------------------------------- SETUP/FETCH LIST
-    private val _tips = MutableStateFlow<List<TipItem>>(emptyList())
-    val tips: StateFlow<List<TipItem>> = _tips.asStateFlow()
+    private var familyId: String? = null
 
     fun setUpTipTracker(addedFamilyId: String) {
-        if (!familyIdIsSet) {
-            println("TipTrackerViewModel setting familyId")
-            familyId = addedFamilyId
-            // Use the UID here (e.g., fetch grocery list items)
-            viewModelScope.launch {
-                fetchListItemsUseCase(familyId!!, Constants.TIP_TRACKER_TABLE, TipItem::class).collect { result ->
-                    println("fetchListItemsUseCase result: $result")
-                    when (result) {
-                        is ListItemsResultListener.Success -> {
-                            // Filter and map the result.listItems to only include TipItem instances
-                            println("Items found: ${result.listItems}")
-                            val tipItems = result.listItems.filterIsInstance<TipItem>()
-                            if (tipItems.isNotEmpty()) {
-                                println("_tipTracker old value: ${_tips.value}")
-                                _tips.value = tipItems.sortedByDescending { it.date }
-                                println("tipTracker new value: ${tips.value}")
+        if (_uiState.value.isInitialized) return
 
-                                weeklyTotal = getTotalForLastDays(tipItems, 7)
-                                monthlyTotal = getTotalForLastDays(tipItems, 30)
-                                yearlyTotal = getTotalForLastDays(tipItems, 365)
-                                total = getTotalForLastDays(tipItems, null)
-                                weeklyAverage = getAverageForLastDays(tipItems, 7)
-                                monthlyAverage = getAverageForLastDays(tipItems, 30)
-                                yearlyAverage = getAverageForLastDays(tipItems, 365)
-                                totalAverage = getAverageForLastDays(tipItems, null)
+        familyId = addedFamilyId
+        viewModelScope.launch {
+            fetchListItemsUseCase(
+                familyId!!,
+                Constants.TIP_TRACKER_TABLE,
+                TipItem::class
+            ).collect { result ->
+                when (result) {
+                    is ListItemsResultListener.Success -> {
+                        handleTipsSuccess(result.listItems.filterIsInstance<TipItem>())
+                    }
 
-                                groupedTips = tips.value.groupBy { formatDateToString(it.date) }
-                            }
-                        }
-
-                        is ListItemsResultListener.Failure -> {
-                            // Handle failure, e.g., show an error message
-                            println("Error: ${result.message}")
-                            error = result.message
-                            showAlertDialog = true
-                        }
+                    is ListItemsResultListener.Failure -> {
+                        handleTipsError(result.message)
                     }
                 }
             }
-            familyIdIsSet = true
         }
     }
 
-    // ---------------------------------------------------------------- STATS
-    var timePeriod: String by mutableStateOf("Week")
+    private fun handleTipsSuccess(tipItems: List<TipItem>) {
+        if (tipItems.isEmpty()) return
 
-    var weeklyTotal: Float by mutableFloatStateOf(0f)
-    var monthlyTotal: Float by mutableFloatStateOf(0f)
-    var yearlyTotal: Float by mutableFloatStateOf(0f)
-    var total: Float by mutableFloatStateOf(0f)
+        val sortedTips = tipItems.sortedByDescending { it.date }
+        val stats = calculateStats(sortedTips)
+        val groupedTips = sortedTips.groupBy { formatDateToString(it.date) }
 
-    private fun getTotalForLastDays(tips: List<TipItem>, days: Int?): Float {
-        return if (days != null) {
-            val cutoff = Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(days.toLong()))
-            tips.filter { it.date.after(cutoff) }.sumOf { it.amount.toDouble() }.toFloat()
-        } else {
-            tips.sumOf { it.amount.toDouble() }.toFloat()
+        _uiState.update {
+            it.copy(
+                tips = sortedTips,
+                stats = stats,
+                groupedTips = groupedTips,
+                isInitialized = true,
+            )
         }
     }
 
-    var weeklyAverage: Float by mutableFloatStateOf(0f)
-    var monthlyAverage: Float by mutableFloatStateOf(0f)
-    var yearlyAverage: Float by mutableFloatStateOf(0f)
-    var totalAverage: Float by mutableFloatStateOf(0f)
-
-    private fun getAverageForLastDays(tips: List<TipItem>, days: Int?): Float {
-        val filteredTips = if (days != null) {
-            val cutoff = Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(days.toLong()))
-            tips.filter { it.date.after(cutoff) }
-        } else {
-            tips
+    private fun handleTipsError(message: String) {
+        _uiState.update {
+            it.copy(
+                error = message,
+                showAlertDialog = true,
+            )
         }
+    }
 
+    private fun calculateStats(tips: List<TipItem>): TipStats {
+        return TipStats(
+            weeklyTotal = calculateTotal(tips, 7),
+            monthlyTotal = calculateTotal(tips, 30),
+            yearlyTotal = calculateTotal(tips, 365),
+            total = calculateTotal(tips, null),
+            weeklyAverage = calculateAverage(tips, 7),
+            monthlyAverage = calculateAverage(tips, 30),
+            yearlyAverage = calculateAverage(tips, 365),
+            totalAverage = calculateAverage(tips, null),
+        )
+    }
+
+    private fun calculateTotal(tips: List<TipItem>, days: Int?): Float {
+        val filteredTips = filterTipsByDays(tips, days)
+        return filteredTips.sumOf { it.amount.toDouble() }.toFloat()
+    }
+
+    private fun calculateAverage(tips: List<TipItem>, days: Int?): Float {
+        val filteredTips = filterTipsByDays(tips, days)
         return if (filteredTips.isNotEmpty()) {
             val average = filteredTips.sumOf { it.amount.toDouble() } / filteredTips.size
             String.format(Locale.US, "%.2f", average).toFloat()
@@ -135,69 +138,120 @@ class TipTrackerViewModel @Inject constructor(
         }
     }
 
-    // ---------------------------------------------------------------- TIP OVERVIEW
-    var overviewOption: String by mutableStateOf("Calendar")
-    var groupedTips: Map<String, List<TipItem>> by mutableStateOf(mapOf())
-    var selectedTip: TipItem? by mutableStateOf(null)
+    private fun filterTipsByDays(tips: List<TipItem>, days: Int?): List<TipItem> {
+        return if (days != null) {
+            val cutoff = Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(days.toLong()))
+            tips.filter { it.date.after(cutoff) }
+        } else {
+            tips
+        }
+    }
 
-    // ---------------------------------------------------------------- NEW ITEM
-    var newItemAmount: String by mutableStateOf("")
-    var newItemDate: Date by mutableStateOf(Date())
+    fun setTimePeriod(period: String) {
+        _uiState.update { it.copy(timePeriod = period) }
+    }
 
-    // ---------------------------------------------------------------- ADD NEW ITEM
-    // USE CASES
-    fun addItemToList(
-        onSuccess: () -> Unit,
-    ) {
-        println("TipTrackerViewModel addItemToList()")
+    fun setOverviewOption(option: String) {
+        _uiState.update { it.copy(overviewOption = option) }
+    }
 
-        if (newItemAmount.isEmpty()) {
-            error = "Please write some text first"
-            showAlertDialog = true
+    fun setSelectedTip(tip: TipItem?) {
+        _uiState.update { it.copy(selectedTip = tip) }
+    }
+
+    fun setNewItemAmount(amount: String) {
+        _uiState.update { it.copy(newItemAmount = amount) }
+    }
+
+    fun setNewItemDate(date: Date) {
+        _uiState.update { it.copy(newItemDate = date) }
+    }
+
+    fun setShowConfirmationDialog(show: Boolean) {
+        _uiState.update { it.copy(showConfirmationDialog = show) }
+    }
+
+    fun dismissAlert() {
+        viewModelScope.launch {
+            delay(3000)
+            _uiState.update {
+                it.copy(
+                    showAlertDialog = false,
+                    error = "",
+                )
+            }
+        }
+    }
+
+    fun addItemToList(onSuccess: () -> Unit) {
+        val currentState = _uiState.value
+
+        if (currentState.newItemAmount.isEmpty()) {
+            showError("Please write some text first")
             return
         }
 
-        val tipItem = familyId?.let {
-            TipItem(
-                familyId = it,
-                lastUpdated = Date(System.currentTimeMillis()),
-                amount = newItemAmount.toFloat(),
-                date = newItemDate,
-            )
-        }
-        if (tipItem == null) {
-            error = "Please connect to a family first"
-            showAlertDialog = true
+        val familyIdValue = familyId
+        if (familyIdValue == null) {
+            showError("Please connect to a family first")
             return
         }
+
+        val tipItem = TipItem(
+            familyId = familyIdValue,
+            lastUpdated = Date(System.currentTimeMillis()),
+            amount = currentState.newItemAmount.toFloat(),
+            date = currentState.newItemDate,
+        )
 
         viewModelScope.launch {
-            val result: StringResultListener = saveItemUseCase.invoke(tipItem, Constants.TIP_TRACKER_TABLE)
-            if (result is StringResultListener.Success) {
-                newItemAmount = ""
-                newItemDate = Date()
-                onSuccess()
-            } else if (result is StringResultListener.Failure) {
-                println("Error: ${result.message}")
-                error = result.message
-                showAlertDialog = true
+            val result = saveItemUseCase.invoke(tipItem, Constants.TIP_TRACKER_TABLE)
+            when (result) {
+                is StringResultListener.Success -> {
+                    _uiState.update {
+                        it.copy(
+                            newItemAmount = "",
+                            newItemDate = Date(),
+                        )
+                    }
+                    onSuccess()
+                }
+
+                is StringResultListener.Failure -> {
+                    showError(result.message)
+                }
             }
         }
     }
 
     fun deleteItem() {
-        selectedTip?.id?.let { tipId ->
-            viewModelScope.launch {
-                val result: ResultListener =
-                    deleteItemUseCase.invoke(tipId, Constants.TIP_TRACKER_TABLE)
-                if (result is ResultListener.Success) {
-                    showConfirmationDialog = false
-                } else if (result is ResultListener.Failure) {
-                    println("Error: ${result.message}")
-                    showConfirmationDialog = false
-                    error = result.message
+        val tipId = _uiState.value.selectedTip?.id ?: return
+
+        viewModelScope.launch {
+            val result = deleteItemUseCase.invoke(tipId, Constants.TIP_TRACKER_TABLE)
+            when (result) {
+                is ResultListener.Success -> {
+                    _uiState.update {
+                        it.copy(showConfirmationDialog = false)
+                    }
+                }
+
+                is ResultListener.Failure -> {
+                    _uiState.update {
+                        it.copy(showConfirmationDialog = false)
+                    }
+                    showError(result.message)
                 }
             }
+        }
+    }
+
+    private fun showError(message: String) {
+        _uiState.update {
+            it.copy(
+                error = message,
+                showAlertDialog = true,
+            )
         }
     }
 }
