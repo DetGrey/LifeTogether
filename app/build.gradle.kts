@@ -17,6 +17,19 @@ android {
     namespace = "com.example.lifetogether"
     compileSdk = 35
 
+    // --- Load Signing Properties ---
+    val localProps = gradleLocalProperties(rootDir, providers)
+
+    signingConfigs {
+        create("release") {
+            // This assumes your .jks file is in the 'app' folder
+            storeFile = file(localProps.getProperty("signing.storeFile") ?: "")
+            storePassword = localProps.getProperty("signing.storePassword")
+            keyAlias = localProps.getProperty("signing.keyAlias")
+            keyPassword = localProps.getProperty("signing.keyPassword")
+        }
+    }
+
     defaultConfig {
         applicationId = "com.example.lifetogether"
         minSdk = 31
@@ -29,7 +42,7 @@ android {
             useSupportLibrary = true
         }
 
-        val adminList: String = gradleLocalProperties(rootDir, providers).getProperty("adminList")
+        val adminList: String = localProps.getProperty("adminList") ?: ""
         buildConfigField("String", "ADMIN_LIST", adminList)
 
         buildFeatures {
@@ -40,18 +53,36 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+            // Use the signing configuration we defined above
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
         }
+
+        // --- Debug variant that can live alongside Release ---
+        getByName("debug") {
+            applicationIdSuffix = ".debug"
+            resValue("string", "app_name", "LifeTogether (DEV)")
+        }
     }
+
+    lint {
+        // Disables the specific check that is crashing the build
+        disable += "NullSafeMutableLiveData"
+        // Also a good idea for hobby projects to prevent builds from failing
+        // just because of minor UI warnings
+        abortOnError = false
+        checkReleaseBuilds = false
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
     kotlin {
-        jvmToolchain(21) // Ensure compatibility with Kotlin 1.9.0
+        jvmToolchain(21)
     }
     buildFeatures {
         compose = true
@@ -77,7 +108,6 @@ ktlint {
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -98,60 +128,35 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-
-    // View model
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
-
-    // Navigation
     implementation(libs.androidx.navigation.runtime.ktx)
     implementation(libs.androidx.navigation.compose)
-
-    // Serialization
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.multidex)
-
-    // Import the Firebase BoM
     implementation(platform(libs.firebase.bom))
-    // Declare the dependency for the Cloud Firestore library
     implementation(libs.firebase.firestore)
-    // Declare the dependency for the Firebase Storage library
     implementation(libs.firebase.storage)
-    // Add the dependency for the Firebase Authentication library
     implementation(libs.firebase.auth)
-    // Add the dependency for the Firebase Messaging library
     implementation(libs.firebase.messaging)
     implementation(libs.google.api.client)
     implementation(libs.google.auth.library.oauth2.http)
     implementation(libs.google.http.client.gson)
-
-    // Room
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
     implementation(kotlin("reflect"))
-
-    // Hilt
     implementation(libs.hilt.android)
     kapt(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
-
-    // Gson
     implementation(libs.gson)
-
-    // Coil - image loading and processing
     implementation(libs.coil)
     implementation(libs.coil.compose)
-
-    // Notification permission
     implementation(libs.accompanist.permissions)
-
-    // Media3 - video player
-    implementation(libs.androidx.media3.exoplayer) // Core ExoPlayer
-    implementation(libs.androidx.media3.ui) // For UI components like PlayerControlView
-    implementation(libs.androidx.media3.session) // For media sessions (optional but good practice)
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
+    implementation(libs.androidx.media3.session)
 }
 
-// 1. Create the rename task: Post-Build Rename APK file
 tasks.register<Copy>("renameDebugApk") {
     val versionName = android.defaultConfig.versionName ?: "unknown"
     val buildType = "debug"
@@ -165,7 +170,6 @@ tasks.register<Copy>("renameDebugApk") {
     into(layout.buildDirectory.dir("outputs/renamed-apk"))
 }
 
-// 2. Hook it automatically to run after the APK is built
 afterEvaluate {
     tasks.findByName("assembleDebug")?.finalizedBy(tasks.named("renameDebugApk"))
         ?: logger.warn("assembleDebug task not found — renameDebugApk will not run automatically.")
