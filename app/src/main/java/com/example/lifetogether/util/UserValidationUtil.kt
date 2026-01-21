@@ -60,7 +60,7 @@ object UserValidationUtil {
             return ValidationResult.Error("Email cannot be empty")
         }
 
-        val emailRegex = "^([A-Za-z0-9._%+-])+@[a-zA-Z0-9-]+\\.[a-zA-Z.]{2,}\$"
+        val emailRegex = "^([A-Za-z0-9._%+-])+@[a-zA-Z0-9-]+\\.[a-zA-Z.]{2,}$"
         if (!email.matches(emailRegex.toRegex())) {
             return ValidationResult.Error("Wrong email format")
         }

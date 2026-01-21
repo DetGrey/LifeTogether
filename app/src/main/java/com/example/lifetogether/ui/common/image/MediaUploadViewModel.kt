@@ -245,9 +245,7 @@ class MediaUploadViewModel @Inject constructor(
                     }
                 }
                 // Fallback to file's last modified date if EXIF-like date is not available or parsable
-                if (dateCreated == null) {
-                    dateCreated = getFileLastModifiedDate(context, uri)
-                }
+                dateCreated = dateCreated ?: getFileLastModifiedDate(context, uri)
             } catch (e: Exception) {
                 Log.e("MediaUploadVM", "Error extracting video metadata for $uri", e)
             } finally {
@@ -258,9 +256,7 @@ class MediaUploadViewModel @Inject constructor(
                 }
             }
         }
-        if (dateCreated == null) { // Absolute fallback if no other date found
-            dateCreated = Date()
-        }
+        dateCreated = dateCreated ?: Date() // Absolute fallback if no other date found
 
         val itemName = formatMediaName(dateCreated, ext)
 

@@ -1,15 +1,15 @@
 package com.example.lifetogether.domain.usecase.observers
 
 import com.example.lifetogether.data.local.LocalDataSource
-import com.example.lifetogether.data.remote.FirebaseStorageDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
+import com.example.lifetogether.domain.repository.StorageRepository
 import com.example.lifetogether.domain.callback.AuthResultListener
 import com.example.lifetogether.domain.callback.ByteArrayResultListener
 import javax.inject.Inject
 
 class ObserveUserInformationUseCase @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
-    private val firebaseStorageDataSource: FirebaseStorageDataSource,
+    private val storageRepository: StorageRepository,
     private val localDataSource: LocalDataSource,
 ) {
     suspend operator fun invoke(
@@ -29,7 +29,7 @@ class ObserveUserInformationUseCase @Inject constructor(
                         // Only download if image doesn't exist
                         val byteArrayResult: ByteArrayResultListener? =
                             result.userInformation.imageUrl?.let { url ->
-                                firebaseStorageDataSource.fetchImageByteArray(url)
+                                storageRepository.fetchImageByteArray(url)
                             }
 
 //                    println("ObserveUserInformationUseCase byteArrayResult: $byteArrayResult")

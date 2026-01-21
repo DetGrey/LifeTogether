@@ -9,7 +9,6 @@ import com.google.api.client.http.GenericUrl
 import com.google.api.client.http.HttpHeaders
 import com.google.api.client.http.HttpRequest
 import com.google.api.client.http.HttpResponse
-import com.google.api.client.json.gson.GsonFactory
 import com.google.auth.http.HttpCredentialsAdapter
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
@@ -37,7 +36,6 @@ suspend fun sendFCMNotification(
 
     // Initialize the transport and request factory
     val transport = GoogleNetHttpTransport.newTrustedTransport()
-    val jsonFactory: GsonFactory = GsonFactory.getDefaultInstance()
 
     // Create the HTTP request factory with OAuth 2.0 credentials
     val requestFactory = transport.createRequestFactory(HttpCredentialsAdapter(credentials))

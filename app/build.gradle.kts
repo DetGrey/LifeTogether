@@ -3,19 +3,17 @@ import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
     alias(libs.plugins.androidApplication)
-    alias(libs.plugins.jetbrainsKotlinAndroid)
-    id("com.google.gms.google-services")
-    id("org.jlleitschuh.gradle.ktlint") version "12.2.0"
-    kotlin("plugin.serialization") version "2.1.0"
-    id("com.google.devtools.ksp")
-    id("kotlin-kapt")
-    id("dagger.hilt.android.plugin")
     alias(libs.plugins.kotlinCompose)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
+    id("com.google.gms.google-services")
+    alias(libs.plugins.ktlint)
+    kotlin("plugin.serialization") version "2.1.0"
 }
 
 android {
     namespace = "com.example.lifetogether"
-    compileSdk = 35
+    compileSdk = 36
 
     // --- Load Signing Properties ---
     val localProps = gradleLocalProperties(rootDir, providers)
@@ -30,23 +28,38 @@ android {
         }
     }
 
+    // Define which keys you want to export
+    val localPropertiesKeys =
+        mapOf(
+            "R2_ACCOUNT_ID" to "r2.accountId",
+            "R2_BUCKET_NAME" to "r2.bucketName",
+            "R2_ACCESS_KEY_ID" to "r2.accessKeyId",
+            "R2_SECRET_ACCESS_KEY" to "r2.secretAccessKey",
+            "R2_PUBLIC_DOMAIN" to "r2.publicDomain",
+            "ADMIN_LIST" to "adminList",
+        )
+    // Loop through them and apply them to defaultConfig
+    for ((configName, propKey) in localPropertiesKeys) {
+        val propValue = localProps.getProperty(propKey) ?: ""
+        defaultConfig.buildConfigField("String", configName, "\"$propValue\"")
+    }
+
     defaultConfig {
         applicationId = "com.example.lifetogether"
         minSdk = 31
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
-        versionName = "1.3"
+        versionName = "1.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
 
-        val adminList: String = localProps.getProperty("adminList") ?: ""
-        buildConfigField("String", "ADMIN_LIST", adminList)
-
         buildFeatures {
+            compose = true
             buildConfig = true
+            resValues = true
         }
     }
 
@@ -81,30 +94,19 @@ android {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
-    kotlin {
-        jvmToolchain(21)
-    }
-    buildFeatures {
-        compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.11"
-    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
             excludes += "/META-INF/DEPENDENCIES"
+            excludes += "META-INF/INDEX.LIST"
+            excludes += "META-INF/LICENSE*"
+            excludes += "META-INF/NOTICE*"
         }
     }
 }
 
-ktlint {
-    android = true
-    ignoreFailures = false
-    version = "0.50.0"
-    reporters {
-        reporter(ReporterType.CHECKSTYLE)
-    }
+kotlin {
+    jvmToolchain(21)
 }
 
 dependencies {
@@ -115,10 +117,10 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.compose.material.icons.core)
     implementation(libs.androidx.material3)
     implementation(libs.firebase.dataconnect)
     implementation(libs.androidx.compose.material)
-    implementation(libs.firebase.messaging.ktx)
     implementation(libs.androidx.exifinterface)
     implementation(libs.androidx.compose.foundation)
     testImplementation(libs.junit)
@@ -132,7 +134,6 @@ dependencies {
     implementation(libs.androidx.navigation.runtime.ktx)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
-    implementation(libs.androidx.multidex)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
@@ -146,7 +147,7 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     implementation(kotlin("reflect"))
     implementation(libs.hilt.android)
-    kapt(libs.hilt.compiler)
+    ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.gson)
     implementation(libs.coil)
@@ -155,6 +156,20 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.media3.session)
+    implementation(libs.s3)
+    implementation(libs.aws.config)
+    implementation(libs.http.client.engine.okhttp)
+    constraints {
+        // Force compatible gRPC version for Firebase Firestore 26.1.0
+        // Using 1.65.1 which is tested and compatible
+        val grpcVersion = "1.65.1"
+        implementation("io.grpc:grpc-okhttp:$grpcVersion")
+        implementation("io.grpc:grpc-android:$grpcVersion")
+        implementation("io.grpc:grpc-protobuf-lite:$grpcVersion")
+        implementation("io.grpc:grpc-stub:$grpcVersion")
+        implementation("io.grpc:grpc-api:$grpcVersion")
+        implementation("io.grpc:grpc-core:$grpcVersion")
+    }
 }
 
 tasks.register<Copy>("renameDebugApk") {
@@ -168,6 +183,27 @@ tasks.register<Copy>("renameDebugApk") {
         rename(apkName, newName)
     }
     into(layout.buildDirectory.dir("outputs/renamed-apk"))
+}
+
+ktlint {
+    android = true
+    ignoreFailures = false
+    reporters {
+        reporter(ReporterType.CHECKSTYLE)
+    }
+}
+subprojects {
+    plugins.withId("org.jlleitschuh.gradle.ktlint") {
+        tasks.named("ktlintCheck") {
+            dependsOn("ktlintFormat")
+        }
+    }
+}
+// This creates a global "fix all and check all" command
+tasks.register("ktlint") {
+    group = "verification"
+    // Collects all ktlintCheck tasks from all submodules
+    dependsOn(subprojects.map { "${it.path}:ktlintCheck" })
 }
 
 afterEvaluate {

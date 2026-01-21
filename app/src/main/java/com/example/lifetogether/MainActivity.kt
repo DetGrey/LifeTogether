@@ -16,9 +16,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.lifetogether.ui.feature.notification.NotificationService
@@ -68,6 +69,14 @@ class MainActivity : ComponentActivity() {
                     }
 
                     val firebaseViewModel: FirebaseViewModel = hiltViewModel()
+                    val navControllerState = rememberNavController()
+                    navController = navControllerState
+
+                    LaunchedEffect(destination, navControllerState) {
+                        if (destination != null) {
+                            navControllerState.navigate(destination)
+                        }
+                    }
 
                     val userInformation by firebaseViewModel.userInformation.collectAsState()
                     when (val familyId = userInformation?.familyId) {
@@ -75,20 +84,17 @@ class MainActivity : ComponentActivity() {
                             firebaseViewModel.observeFirestoreFamilyData(familyId)
 
                             userInformation?.uid?.let { firebaseViewModel.storeFcmToken(it, familyId) }
-
-                            if (destination != null) {
-                                navController.navigate(destination)
-                            }
                         }
                     }
 
-                    val notificationService = NotificationService(this)
-                    notificationService.addNotificationChannels()
+                    val notificationService = remember { NotificationService(this) }
+                    LaunchedEffect(Unit) {
+                        notificationService.addNotificationChannels()
+                    }
 
                     // Makes the default Text style bodyMedium instead of bodyLarge
                     ProvideTextStyle(value = AppTypography.bodyMedium) {
-                        navController = rememberNavController()
-                        NavHost(navController = navController, firebaseViewModel = firebaseViewModel)
+                        NavHost(navController = navControllerState, firebaseViewModel = firebaseViewModel)
                     }
                 }
             }

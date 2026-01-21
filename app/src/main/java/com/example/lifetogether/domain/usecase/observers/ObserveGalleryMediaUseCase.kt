@@ -3,9 +3,9 @@ package com.example.lifetogether.domain.usecase.observers
 import android.content.Context
 import android.util.Log
 import com.example.lifetogether.data.local.LocalDataSource
-import com.example.lifetogether.data.remote.FirebaseStorageDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.callback.ListItemsResultListener
+import com.example.lifetogether.domain.repository.StorageRepository
 import com.example.lifetogether.domain.callback.TempFileDownloadResult
 import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
@@ -22,28 +22,22 @@ import kotlin.let
 
 class ObserveGalleryMediaUseCase @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
-    private val firebaseStorageDataSource: FirebaseStorageDataSource,
+    private val storageRepository: StorageRepository,
     private val localDataSource: LocalDataSource,
 ) {
     companion object {
         private const val TAG = "ObserveGalleryMedia"
-
         // Limit concurrent downloads to prevent ANR and memory exhaustion
         private const val MAX_CONCURRENT_DOWNLOADS = 3
-
         // Batch size for Room database updates to prevent blocking main thread
         private const val BATCH_SIZE = 25
-
         // Retry attempts for failed individual downloads
         private const val MAX_RETRY_ATTEMPTS = 3
-
         // Base delay for exponential backoff (ms)
         private const val BASE_RETRY_DELAY = 500L
-
         // How many rounds to retry failed items (in addition to per-item retries)
         // Increased to ensure all items get multiple attempts across observer updates
         private const val MAX_DOWNLOAD_ROUNDS = 10
-
         // Delay between rounds (ms)
         private const val ROUND_RETRY_DELAY = 2000L
     }
@@ -57,13 +51,17 @@ class ObserveGalleryMediaUseCase @Inject constructor(
             Log.d(TAG, "galleryMediaSnapshotListener().collect result: $result")
             when (result) {
                 is ListItemsResultListener.Success -> {
-                    // Only process non-empty lists from Firestore
-                    // Empty responses are likely transient network issues, so we ignore them
-                    // to prevent losing local cached media
-                    if (result.listItems.isEmpty()) {
-                        Log.d(TAG, "galleryMediaSnapshotListener().collect result: is empty - ignoring to preserve local cache")
-                        // Don't delete anything - empty responses are unreliable
+                    // Only allow empty list to delete local files if data is from server (not cache)
+                    // This prevents offline/cached empty responses from deleting local data
+                    // But allows legitimate deletions when confirmed by the server
+                    if (result.listItems.isEmpty() && result.isFromCache) {
+                        Log.d(TAG, "galleryMediaSnapshotListener().collect result: is empty from cache - ignoring to preserve local cache")
+                        // Don't delete anything - cached empty responses are unreliable
                         return@collect
+                    }
+                    
+                    if (result.listItems.isEmpty()) {
+                        Log.d(TAG, "galleryMediaSnapshotListener().collect result: is empty from server - processing deletions")
                     }
 
                     // Get existing media from local database to avoid re-downloading
@@ -78,11 +76,17 @@ class ObserveGalleryMediaUseCase @Inject constructor(
 
                     if (itemsToDownload.isEmpty()) {
                         Log.d(TAG, "All ${result.listItems.size} items already exist locally")
+                        // Still need to call updateGalleryMedia with completeSourceList to handle deletions
+                        localDataSource.updateGalleryMedia(
+                            familyId = familyId,
+                            items = emptyList(), // No new items to download
+                            completeSourceList = result.listItems // Pass complete list for deletion detection
+                        )
                         return@collect
                     }
 
                     Log.d(TAG, "Need to download ${itemsToDownload.size} items out of ${result.listItems.size}")
-
+                    
                     // Track items that fail after all retries for detection/logging
                     val failedItems = mutableSetOf<String>()
 
@@ -116,7 +120,7 @@ class ObserveGalleryMediaUseCase @Inject constructor(
                                                         if (galleryMedia is GalleryImage) "jpeg" else "mp4"
                                                     val extension = "." + galleryMedia.itemName.substringAfterLast(
                                                         '.',
-                                                        fallbackExtension,
+                                                        fallbackExtension
                                                     )
 
                                                     // Retry logic with exponential backoff
@@ -129,10 +133,10 @@ class ObserveGalleryMediaUseCase @Inject constructor(
                                                         }
 
                                                         try {
-                                                            downloadResult = firebaseStorageDataSource.downloadContentToTempFile(
+                                                            downloadResult = storageRepository.downloadContentToTempFile(
                                                                 context,
                                                                 url,
-                                                                extension,
+                                                                extension
                                                             )
 
                                                             if (downloadResult is TempFileDownloadResult.Success) {
@@ -160,7 +164,7 @@ class ObserveGalleryMediaUseCase @Inject constructor(
                                                     if (downloadResult is TempFileDownloadResult.Success) {
                                                         Pair(
                                                             galleryMedia,
-                                                            downloadResult.downloadedFile,
+                                                            downloadResult.downloadedFile
                                                         )
                                                     } else {
                                                         roundFailedItems.add(galleryMedia.id ?: "unknown")
@@ -185,8 +189,8 @@ class ObserveGalleryMediaUseCase @Inject constructor(
                             // Update database after each batch to avoid blocking main thread for too long
                             if (batchResults.isNotEmpty()) {
                                 Log.d(TAG, "Saving batch ${batchIndex + 1} (round $round) with ${batchResults.size} items to database")
-                                // Pass complete source list so deletions can be detected
-                                localDataSource.updateGalleryMedia(familyId, batchResults, result.listItems)
+                                // Don't pass completeSourceList here - we'll do it at the end to handle deletions once
+                                localDataSource.updateGalleryMedia(familyId, batchResults, completeSourceList = null)
                                 allDownloadedItems.addAll(batchResults)
                             }
                         }
@@ -215,17 +219,26 @@ class ObserveGalleryMediaUseCase @Inject constructor(
                     }
 
                     Log.d(TAG, "Completed downloading ${allDownloadedItems.size} items")
-
+                    
+                    // Final update with complete source list to handle deletions
+                    // This ensures items deleted from Firestore are also deleted locally
+                    Log.d(TAG, "Performing final sync to detect and remove deleted items")
+                    localDataSource.updateGalleryMedia(
+                        familyId = familyId,
+                        items = emptyList(), // No new items to add
+                        completeSourceList = result.listItems // Pass complete list for deletion detection
+                    )
+                    
                     // Detect partial downloads and log warning
                     if (failedItems.isNotEmpty()) {
                         Log.w(TAG, "${failedItems.size} items failed to download after $MAX_DOWNLOAD_ROUNDS rounds: $failedItems")
                     }
-
+                    
                     if (remainingItems.isNotEmpty()) {
                         Log.w(TAG, "Download reached max rounds ($MAX_DOWNLOAD_ROUNDS) with ${remainingItems.size} items still failing")
                         failedItems.addAll(remainingItems.mapNotNull { it.id })
                     }
-
+                    
                     val expectedCount = result.listItems.size
                     val actualCount = allDownloadedItems.size + existingMediaMap.size
                     if (actualCount < expectedCount) {

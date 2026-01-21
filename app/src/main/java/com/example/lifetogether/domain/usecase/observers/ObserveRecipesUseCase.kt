@@ -1,15 +1,15 @@
 package com.example.lifetogether.domain.usecase.observers
 
 import com.example.lifetogether.data.local.LocalDataSource
-import com.example.lifetogether.data.remote.FirebaseStorageDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
+import com.example.lifetogether.domain.repository.StorageRepository
 import com.example.lifetogether.domain.callback.ByteArrayResultListener
 import com.example.lifetogether.domain.callback.ListItemsResultListener
 import javax.inject.Inject
 
 class ObserveRecipesUseCase @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
-    private val firebaseStorageDataSource: FirebaseStorageDataSource,
+    private val storageRepository: StorageRepository,
     private val localDataSource: LocalDataSource,
 ) {
     suspend operator fun invoke(
@@ -39,7 +39,7 @@ class ObserveRecipesUseCase @Inject constructor(
 
                             val byteArrayResult: ByteArrayResultListener? =
                                 recipe.imageUrl?.let { url ->
-                                    firebaseStorageDataSource.fetchImageByteArray(url)
+                                    storageRepository.fetchImageByteArray(url)
                                 }
 
                             if (byteArrayResult is ByteArrayResultListener.Success) {

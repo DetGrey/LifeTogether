@@ -2,25 +2,24 @@ package com.example.lifetogether.data.repository
 
 import android.content.Context
 import android.net.Uri
-import com.example.lifetogether.data.remote.FirebaseStorageDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
+import com.example.lifetogether.domain.repository.StorageRepository
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.callback.StringResultListener
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.sealed.ImageType
-import com.example.lifetogether.domain.repository.ImageRepository
 import javax.inject.Inject
 
 class RemoteImageRepositoryImpl @Inject constructor(
-    private val firebaseStorageDataSource: FirebaseStorageDataSource,
+    private val storageRepository: StorageRepository,
     private val firestoreDataSource: FirestoreDataSource,
-) : ImageRepository {
+) {
     suspend fun uploadImage(
         uri: Uri,
         imageType: ImageType,
         context: Context,
     ): StringResultListener {
-        return firebaseStorageDataSource.uploadPhoto(uri, imageType, context)
+        return storageRepository.uploadPhoto(uri, imageType, context)
     }
 
     suspend fun deleteImage(
@@ -28,7 +27,7 @@ class RemoteImageRepositoryImpl @Inject constructor(
     ): ResultListener {
         return when (val urlResult = firestoreDataSource.getImageUrl(imageType)) {
             is StringResultListener.Success -> {
-                firebaseStorageDataSource.deleteImage(urlResult.string)
+                storageRepository.deleteImage(urlResult.string)
             }
 
             is StringResultListener.Failure -> {
@@ -42,7 +41,7 @@ class RemoteImageRepositoryImpl @Inject constructor(
     suspend fun deleteMediaFiles(
         urlList: List<String>,
     ): ResultListener {
-        return firebaseStorageDataSource.deleteImages(urlList)
+        return storageRepository.deleteImages(urlList)
     }
 
     suspend fun saveImageDownloadUrl(
@@ -64,6 +63,6 @@ class RemoteImageRepositoryImpl @Inject constructor(
         path: String,
         extension: String,
     ): StringResultListener {
-        return firebaseStorageDataSource.uploadVideo(uri, path, extension)
+        return storageRepository.uploadVideo(uri, path, extension)
     }
 }

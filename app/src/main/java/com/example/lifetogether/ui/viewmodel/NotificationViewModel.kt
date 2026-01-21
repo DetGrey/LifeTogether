@@ -1,8 +1,6 @@
 package com.example.lifetogether.ui.viewmodel
 
 import android.content.Context
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.usecase.notification.FetchFcmTokensUseCase

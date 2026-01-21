@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -16,7 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.enums.MediaType
@@ -69,6 +68,15 @@ fun GalleryMediaScreen(
                     MediaType.VIDEO -> "Video"
                     else -> "Media"
                 },
+                rightIcon = Icon(
+                    resId = R.drawable.ic_overflow_menu, // TODO add download icon or more options
+                    description = "overflow menu",
+                ),
+                onRightClick = {
+                    if (!uiState.isDownloading && uiState.mediaData != null) {
+                        galleryMediaViewModel.downloadMedia()
+                    }
+                }
             )
             if (uiState.mediaData?.mediaUri != null) {
                 if (uiState.mediaData?.mediaType == MediaType.IMAGE) {
@@ -82,27 +90,15 @@ fun GalleryMediaScreen(
                     )
                 }
             }
-
-            // ---------------------------------------------------------------- DOWNLOAD BUTTON
-            if (uiState.downloadMessage != null) {
+        }
+        // ---------------------------------------------------------------- DOWNLOAD
+        if (uiState.downloadMessage != null) {
+            Box {
                 if (uiState.isDownloading) {
                     CircularProgressIndicator()
                     Text(text = uiState.downloadMessage!!)
                 } else {
                     Text(text = uiState.downloadMessage!!)
-                }
-            } else {
-                Button(
-                    onClick = { galleryMediaViewModel.downloadMedia() },
-                    enabled = !uiState.isDownloading && uiState.mediaData != null,
-                ) {
-                    // TODO: Add icon
-//                    Icon(
-//                        imageVector = Icons.Filled.Download,
-//                        contentDescription = "Download",
-//                        modifier = Modifier.padding(end = 8.dp),
-//                    )
-                    Text(text = "Download")
                 }
             }
         }

@@ -411,8 +411,9 @@ class FirestoreDataSource@Inject constructor() {
                         Log.e("FirestoreDS", "Error parsing document ${document.id} to GalleryMedia: ${parseEx.message}", parseEx)
                     }
                 }
-                Log.d("FirestoreDS", "Snapshot items mapped to GalleryMedia: $mediaItems")
-                trySend(ListItemsResultListener.Success(mediaItems)).isSuccess
+                val isFromCache = snapshot.metadata.isFromCache
+                Log.d("FirestoreDS", "Snapshot items mapped to GalleryMedia: $mediaItems (isFromCache: $isFromCache)")
+                trySend(ListItemsResultListener.Success(mediaItems, isFromCache)).isSuccess
             } else {
                 trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess
             }

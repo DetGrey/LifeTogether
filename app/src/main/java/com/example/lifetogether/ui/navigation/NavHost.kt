@@ -97,9 +97,7 @@ fun NavHost(
             arguments = listOf(navArgument(AppRoutes.ALBUM_MEDIA_ID_ARG) { type = NavType.StringType }),
         ) { backStackEntry ->
             val albumId = backStackEntry.arguments?.getString(AppRoutes.ALBUM_MEDIA_ID_ARG)
-            if (albumId == null) {
-                return@composable
-            }
+                ?: return@composable
             AlbumMediaScreen(appNavigator, firebaseViewModel, albumId)
         }
 
@@ -108,9 +106,7 @@ fun NavHost(
             arguments = listOf(navArgument(AppRoutes.GALLERY_MEDIA_ID_ARG) { type = NavType.StringType }),
         ) { backStackEntry ->
             val mediaId = backStackEntry.arguments?.getString(AppRoutes.GALLERY_MEDIA_ID_ARG)
-            if (mediaId == null) {
-                return@composable
-            }
+                ?: return@composable
             GalleryMediaScreen(appNavigator, firebaseViewModel, mediaId)
         }
 

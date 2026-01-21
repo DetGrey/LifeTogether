@@ -521,7 +521,7 @@ class LocalDataSource @Inject constructor(
         // This checks if media exists locally by checking if mediaUri exists
         val entities = galleryMediaDao.getExistingMediaIdsWithUris(familyId)
         return entities.associate { entity ->
-            entity.id to Pair(entity.media_uri, null)
+            entity.id to Pair(entity.mediaUri, null)
         }
     }
 
@@ -530,12 +530,11 @@ class LocalDataSource @Inject constructor(
         items: List<Pair<GalleryMedia, File>>,
         completeSourceList: List<GalleryMedia>? = null, // Complete list from Firestore to detect deletions
     ) {
-        if (items.isEmpty()) {
+        // Allow empty items list if completeSourceList is provided (for deletion-only operations)
+        if (items.isEmpty() && completeSourceList == null) {
             return
         }
         println("LocalDataSource updateGalleryMedia(): Saving images and videos to MediaStore")
-
-        val resolver = context.contentResolver
 
         // Fetch current items from Room
         val currentRoomItems = galleryMediaDao.getItems(familyId).firstOrNull() ?: emptyList()

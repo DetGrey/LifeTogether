@@ -1,52 +1,54 @@
 [versions]
-accompanistPermissions = "0.31.1-alpha"
-agp = "8.7.3"
-coil = "2.1.0"
-coilCompose = "2.1.0"
-firebaseBom = "33.13.0"
-firebaseMessaging = "24.1.1"
-firebaseAuth = "23.2.0"
-googleApiClient = "1.35.0"
-googleAuthLibraryOauth2Http = "1.12.0"
-googleHttpClientGson = "1.42.2"
-gson = "2.10.1"
-hiltAndroid = "2.51.1"
-hiltAndroidGradlePlugin = "2.51.1"
-hiltCompiler = "2.51.1"
-hiltNavigationCompose = "1.2.0"
-kotlin = "2.1.20"
-coreKtx = "1.16.0"
+accompanistPermissions = "0.37.3"
+agp = "9.0.0"
+awsConfig = "1.5.123"
+coil = "2.7.0"
+coilCompose = "2.7.0"
+firebaseBom = "34.8.0"
+firebaseMessaging = "25.0.1"
+firebaseAuth = "24.0.1"
+googleApiClient = "2.8.1"
+googleAuthLibraryOauth2Http = "1.41.0"
+googleHttpClientGson = "2.0.3"
+gson = "2.13.2"
+hilt = "2.59"
+hiltNavigationCompose = "1.3.0"
+httpClientEngineOkhttp = "1.5.28"
+kotlin = "2.1.0"
+ksp = "2.1.0-1.0.29"
+ktlintPlugin = "14.0.1"
+coreKtx = "1.17.0"
 junit = "4.13.2"
-junitVersion = "1.2.1"
-espressoCore = "3.6.1"
-kotlinxSerializationJson = "1.7.3"
-lifecycleRuntimeKtx = "2.9.0"
-activityCompose = "1.10.1"
-composeBom = "2025.05.00"
-media3Ui = "1.8.0"
-multidex = "2.0.1"
-navigationRuntimeKtx = "2.9.0"
-firebaseDataconnect = "16.0.1"
-roomRuntime = "2.7.1"
-composeMaterial = "1.4.1"
-firebaseMessagingKtx = "24.1.1"
-exifinterface = "1.4.1"
+junitVersion = "1.3.0"
+espressoCore = "3.7.0"
+kotlinxSerializationJson = "1.9.0"
+lifecycleRuntimeKtx = "2.10.0"
+activityCompose = "1.12.2"
+composeBom = "2026.01.00"
+media3Ui = "1.9.0"
+navigationRuntimeKtx = "2.9.6"
+firebaseDataconnect = "17.1.3"
+roomRuntime = "2.8.4"
+composeMaterial = "1.5.6"
+exifinterface = "1.4.2"
 foundation = "1.10.1"
+s3 = "1.5.123"
 
 [libraries]
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
+androidx-compose-material-icons-core = { group = "androidx.compose.material", name = "material-icons-core" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3Ui" }
 androidx-media3-session = { module = "androidx.media3:media3-session", version.ref = "media3Ui" }
 androidx-media3-ui = { module = "androidx.media3:media3-ui", version.ref = "media3Ui" }
-androidx-multidex = { module = "androidx.multidex:multidex", version.ref = "multidex" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationRuntimeKtx" }
 androidx-navigation-runtime-ktx = { module = "androidx.navigation:navigation-runtime-ktx", version.ref = "navigationRuntimeKtx" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomRuntime" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomRuntime" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntime" }
+aws-config = { module = "aws.sdk.kotlin:aws-config", version.ref = "awsConfig" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
 coil = { module = "io.coil-kt:coil", version.ref = "coil" }
 firebase-auth = { module = "com.google.firebase:firebase-auth", version.ref = "firebaseAuth" }
@@ -58,9 +60,10 @@ google-api-client = { module = "com.google.api-client:google-api-client", versio
 google-auth-library-oauth2-http = { module = "com.google.auth:google-auth-library-oauth2-http", version.ref = "googleAuthLibraryOauth2Http" }
 google-http-client-gson = { module = "com.google.http-client:google-http-client-gson", version.ref = "googleHttpClientGson" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
-hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroid" }
-hilt-android-gradle-plugin = { module = "com.google.dagger:hilt-android-gradle-plugin", version.ref = "hiltAndroidGradlePlugin" }
-hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hiltCompiler" }
+hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
+hilt-android-gradle-plugin = { module = "com.google.dagger:hilt-android-gradle-plugin", version.ref = "hilt" }
+hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
+http-client-engine-okhttp = { module = "aws.smithy.kotlin:http-client-engine-okhttp", version.ref = "httpClientEngineOkhttp" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -77,12 +80,13 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 firebase-dataconnect = { group = "com.google.firebase", name = "firebase-dataconnect", version.ref = "firebaseDataconnect" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 androidx-compose-material = { group = "androidx.wear.compose", name = "compose-material", version.ref = "composeMaterial" }
-firebase-messaging-ktx = { group = "com.google.firebase", name = "firebase-messaging-ktx", version.ref = "firebaseMessagingKtx" }
 androidx-exifinterface = { group = "androidx.exifinterface", name = "exifinterface", version.ref = "exifinterface" }
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
+s3 = { module = "aws.sdk.kotlin:s3", version.ref = "s3" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
-jetbrainsKotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlinCompose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }

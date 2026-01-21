@@ -1,7 +1,5 @@
 package com.example.lifetogether.ui.feature.home
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -59,7 +57,6 @@ fun RowScope.FeatureOverview(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.S)
 @OptIn(ExperimentalLayoutApi::class)
 @Preview(showBackground = true)
 @Composable
