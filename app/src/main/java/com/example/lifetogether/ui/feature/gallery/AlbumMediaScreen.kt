@@ -123,12 +123,12 @@ fun AlbumMediaScreen(
                         if (media is GalleryImage) {
                             ThumbnailContainer(
                                 thumbnail = thumbnail,
-                                onClick = { media.id?.let { appNavigator?.navigateToGalleryMedia(it) } },
+                                onClick = { appNavigator?.navigateToGalleryMedia(albumId, index) },
                             )
                         } else if (media is GalleryVideo) {
                             ThumbnailContainer(
                                 thumbnail = thumbnail,
-                                onClick = { media.id?.let { appNavigator?.navigateToGalleryMedia(it) } },
+                                onClick = { appNavigator?.navigateToGalleryMedia(albumId, index) },
                                 isVideo = true,
                                 duration = media.duration,
                             )

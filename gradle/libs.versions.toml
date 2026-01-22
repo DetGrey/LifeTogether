@@ -33,6 +33,7 @@ composeMaterial = "1.5.6"
 exifinterface = "1.4.2"
 foundation = "1.10.1"
 s3 = "1.5.123"
+zoomableImageCoil = "0.18.0"
 
 [libraries]
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
@@ -83,6 +84,7 @@ androidx-compose-material = { group = "androidx.wear.compose", name = "compose-m
 androidx-exifinterface = { group = "androidx.exifinterface", name = "exifinterface", version.ref = "exifinterface" }
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
 s3 = { module = "aws.sdk.kotlin:s3", version.ref = "s3" }
+zoomable-image-coil = { module = "me.saket.telephoto:zoomable-image-coil", version.ref = "zoomableImageCoil" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

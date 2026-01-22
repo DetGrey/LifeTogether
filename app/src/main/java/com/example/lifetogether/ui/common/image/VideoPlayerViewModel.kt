@@ -29,8 +29,17 @@ class VideoPlayerViewModel @Inject constructor(
     application: Application,
 ) : AndroidViewModel(application) {
 
-    // Keep ExoPlayer instance within the ViewModel
-    val exoPlayer: ExoPlayer = ExoPlayer.Builder(application).build()
+    // Keep ExoPlayer instance within the ViewModel with optimized settings
+    val exoPlayer: ExoPlayer = ExoPlayer.Builder(application)
+        .setSeekBackIncrementMs(10000) // 10 second rewind
+        .setSeekForwardIncrementMs(10000) // 10 second forward
+        .build()
+        .apply {
+            // Enable repeat mode for better UX
+            repeatMode = Player.REPEAT_MODE_OFF
+            // Set volume
+            volume = 1f
+        }
 
     private val _playerState = MutableStateFlow(VideoPlayerState())
     val playerState: StateFlow<VideoPlayerState> = _playerState.asStateFlow()
@@ -47,14 +56,17 @@ class VideoPlayerViewModel @Inject constructor(
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
-                _playerState.value = _playerState.value.copy(
-                    isLoading = playbackState == Player.STATE_BUFFERING,
-                    // You can add more detailed state handling here
-                )
+                val isLoading = when (playbackState) {
+                    Player.STATE_BUFFERING -> true
+                    Player.STATE_IDLE -> currentUri != null // Show loading if we have a URI but player is idle
+                    else -> false
+                }
+                _playerState.value = _playerState.value.copy(isLoading = isLoading)
+                
                 if (playbackState == Player.STATE_ENDED) {
-                    // Handle video end, e.g., seek to start, show replay button
+                    // Handle video end - pause at end for better UX
                     exoPlayer.seekTo(0)
-                    exoPlayer.playWhenReady = false // Stop playing
+                    exoPlayer.pause()
                 }
             }
 
@@ -85,6 +97,13 @@ class VideoPlayerViewModel @Inject constructor(
 
     fun pause() {
         exoPlayer.pause()
+    }
+
+    fun stop() {
+        exoPlayer.stop()
+        exoPlayer.clearMediaItems()
+        currentUri = null
+        _playerState.value = VideoPlayerState()
     }
 
     // LifecycleObserver to manage player state based on Activity/Fragment lifecycle

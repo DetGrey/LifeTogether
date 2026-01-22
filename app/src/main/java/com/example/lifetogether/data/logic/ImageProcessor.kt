@@ -86,6 +86,30 @@ class ImageProcessor @Inject constructor() {
     }
 
     /**
+     * Calculate inSampleSize to avoid loading huge images into memory.
+     */
+    private fun calculateInSampleSize(
+        options: BitmapFactory.Options,
+        reqWidth: Int,
+        reqHeight: Int
+    ): Int {
+        val (height: Int, width: Int) = options.run { outHeight to outWidth }
+        var inSampleSize = 1
+
+        if (height > reqHeight || width > reqWidth) {
+            val halfHeight: Int = height / 2
+            val halfWidth: Int = width / 2
+
+            while ((halfHeight / inSampleSize) >= reqHeight &&
+                (halfWidth / inSampleSize) >= reqWidth) {
+                inSampleSize *= 2
+            }
+        }
+
+        return inSampleSize
+    }
+
+    /**
      * Resize image using Coil image loader with specified dimensions.
      */
     private suspend fun resizeImageWithCoil(
@@ -96,7 +120,17 @@ class ImageProcessor @Inject constructor() {
     ): Bitmap? {
         return withContext(Dispatchers.IO) {
             try {
-                val bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.size)
+                // First decode bounds to calculate inSampleSize
+                val options = BitmapFactory.Options().apply {
+                    inJustDecodeBounds = true
+                }
+                BitmapFactory.decodeByteArray(imageData, 0, imageData.size, options)
+                
+                // Calculate inSampleSize to avoid OOM on very large images
+                options.inSampleSize = calculateInSampleSize(options, maxWidth * 2, maxHeight * 2)
+                options.inJustDecodeBounds = false
+                
+                val bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.size, options)
                     ?: return@withContext null
 
                 val imageLoader = ImageLoader(context)

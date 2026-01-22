@@ -19,7 +19,8 @@ object AppRoutes {
     const val ALBUM_MEDIA_SCREEN = "album_media"
     const val ALBUM_MEDIA_ID_ARG = "albumId"
     const val GALLERY_MEDIA_SCREEN = "gallery_media"
-    const val GALLERY_MEDIA_ID_ARG = "mediaId"
+    const val GALLERY_MEDIA_ALBUM_ARG = "albumId"
+    const val GALLERY_MEDIA_INDEX_ARG = "initialIndex"
     const val TIP_TRACKER_SCREEN = "tip_tracker"
     // ... other routes
 }

@@ -25,6 +25,7 @@
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/Theme.LifeTogether"
+        android:largeHeap="true"
         tools:targetApi="36">
         
         <!-- Declare use case for broad access to media files (Android 14+) -->

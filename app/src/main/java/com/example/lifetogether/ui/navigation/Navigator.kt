@@ -15,6 +15,6 @@ interface Navigator {
     fun navigateToRecipeDetails(recipeId: String? = null)
     fun navigateToGallery()
     fun navigateToAlbumMedia(albumId: String)
-    fun navigateToGalleryMedia(mediaId: String)
+    fun navigateToGalleryMedia(albumId: String, initialIndex: Int)
     fun navigateToTipTracker()
 }

@@ -76,11 +76,9 @@ class AppNavigator(private val navController: NavController) : Navigator {
         }
     }
 
-    override fun navigateToGalleryMedia(mediaId: String) {
-        val route = "${AppRoutes.GALLERY_MEDIA_SCREEN}/$mediaId"
-        navController.navigate(route) {
-            launchSingleTop = true
-        }
+    override fun navigateToGalleryMedia(albumId: String, initialIndex: Int) {
+        val route = "${AppRoutes.GALLERY_MEDIA_SCREEN}/$albumId/$initialIndex"
+        navController.navigate(route)
     }
 
     override fun navigateToTipTracker() {

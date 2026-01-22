@@ -47,13 +47,9 @@ fun generateImageThumbnailFromFile(imageFile: File): ByteArray? {
 
         // Ensure scaled dimensions are positive
         if (scaledWidth <= 0 || scaledHeight <= 0) {
-            Log.w("LocalDataSource", "Calculated invalid scaled dimensions ($scaledWidth x $scaledHeight) for ${imageFile.name}. Using original image as thumbnail (if small enough) or failing.")
-            // Fallback for safety, or return null if original is too big to be a thumbnail
-            return if (imageFile.length() < 500 * 1024) { // e.g. < 500KB
-                imageFile.readBytes()
-            } else {
-                null
-            }
+            Log.w("LocalDataSource", "Calculated invalid scaled dimensions ($scaledWidth x $scaledHeight) for ${imageFile.name}. Skipping thumbnail generation.")
+            // Don't try to load the entire file as a fallback - this can cause OOM
+            return null
         }
 
         val thumbnailBitmap = originalBitmap.scale(scaledWidth, scaledHeight, true) // Use filter = true for better quality scaling

@@ -49,7 +49,7 @@ android {
         minSdk = 31
         targetSdk = 36
         versionCode = 1
-        versionName = "1.4"
+        versionName = "1.4.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -152,6 +152,7 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.coil)
     implementation(libs.coil.compose)
+    implementation(libs.zoomable.image.coil)
     implementation(libs.accompanist.permissions)
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui)

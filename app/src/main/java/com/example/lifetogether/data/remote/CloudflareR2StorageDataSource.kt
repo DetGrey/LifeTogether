@@ -12,6 +12,7 @@ import aws.sdk.kotlin.services.s3.model.GetObjectRequest
 import aws.sdk.kotlin.services.s3.model.PutObjectRequest
 import aws.smithy.kotlin.runtime.content.asByteStream
 import aws.smithy.kotlin.runtime.content.toByteArray
+import aws.smithy.kotlin.runtime.content.writeToFile
 import aws.smithy.kotlin.runtime.net.url.Url
 import com.example.lifetogether.BuildConfig
 import com.example.lifetogether.data.logic.ImageProcessor
@@ -27,11 +28,9 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.FileOutputStream
 import java.util.UUID
 import javax.inject.Inject
 import androidx.core.net.toUri
-
 class CloudflareR2StorageDataSource @Inject constructor(
     private val application: Application,
     private val imageProcessor: ImageProcessor,
@@ -60,6 +59,9 @@ class CloudflareR2StorageDataSource @Inject constructor(
             region = "auto"
             endpointUrl = Url.parse(ENDPOINT)
             credentialsProvider = StaticCredentialsProvider(credentials)
+            retryStrategy {
+                maxAttempts = 1  // Minimize retries to reduce memory usage
+            }
         }
     }
 
@@ -176,19 +178,19 @@ class CloudflareR2StorageDataSource @Inject constructor(
             val fileName = "${UUID.randomUUID()}-${System.currentTimeMillis()}$extension"
             val objectKey = "$path/$fileName"
 
-            // Read video file from Uri using application context
-            val videoBytes = withContext(Dispatchers.IO) {
-                application.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                    ?: throw IllegalStateException("Failed to read video file from Uri")
+            // Open and use input stream, ensuring it's closed after upload
+            withContext(Dispatchers.IO) {
+                application.contentResolver.openInputStream(uri)?.use { videoStream ->
+                    // Stream video upload to avoid loading entire file into memory
+                    val putObjectRequest = PutObjectRequest {
+                        bucket = BUCKET_NAME
+                        key = objectKey
+                        body = videoStream.asByteStream()
+                        contentType = "video/mp4"
+                    }
+                    s3Client.putObject(putObjectRequest)
+                } ?: throw IllegalStateException("Failed to open video stream from Uri")
             }
-
-            val putObjectRequest = PutObjectRequest {
-                bucket = BUCKET_NAME
-                key = objectKey
-                body = videoBytes.asByteStream()
-                contentType = "video/mp4"
-            }
-            s3Client.putObject(putObjectRequest)
 
             val downloadUrl = "$PUBLIC_URL_BASE/$objectKey"
             
@@ -216,9 +218,8 @@ class CloudflareR2StorageDataSource @Inject constructor(
                 key = objectKey
             }
             s3Client.getObject(getObjectRequest) { resp ->
-                resp.body?.toByteArray()?.let { bytes ->
-                    FileOutputStream(tempFile).use { it.write(bytes) }
-                }
+                // Stream directly to disk to avoid loading large objects into memory
+                resp.body?.writeToFile(tempFile)
             }
 
             TempFileDownloadResult.Success(tempFile)

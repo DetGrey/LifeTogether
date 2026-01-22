@@ -30,7 +30,7 @@ class ObserveGalleryMediaUseCase @Inject constructor(
         // Limit concurrent downloads to prevent ANR and memory exhaustion
         private const val MAX_CONCURRENT_DOWNLOADS = 3
         // Batch size for Room database updates to prevent blocking main thread
-        private const val BATCH_SIZE = 25
+        private const val BATCH_SIZE = 10 // Reduced from 25 to process smaller chunks
         // Retry attempts for failed individual downloads
         private const val MAX_RETRY_ATTEMPTS = 3
         // Base delay for exponential backoff (ms)

@@ -3,6 +3,7 @@ package com.example.lifetogether.ui.feature.gallery
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.callback.ItemResultListener
+import com.example.lifetogether.domain.callback.ListItemsResultListener
 import com.example.lifetogether.domain.callback.ResultListener
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.usecase.image.DownloadMediaUseCase
@@ -19,6 +20,8 @@ import javax.inject.Inject
 
 data class GalleryMediaUiState(
     val mediaData: GalleryMedia? = null,
+    val mediaList: List<GalleryMedia> = emptyList(),
+    val currentIndex: Int = 0,
     val isDownloading: Boolean = false,
     val downloadMessage: String? = null,
     val showAlertDialog: Boolean = false,
@@ -30,51 +33,51 @@ data class GalleryMediaUiState(
 class GalleryMediaViewModel @Inject constructor(
     private val fetchItemByIdUseCase: FetchItemByIdUseCase,
     private val downloadMediaUseCase: DownloadMediaUseCase,
+    private val fetchAlbumMediaUseCase: com.example.lifetogether.domain.usecase.gallery.FetchAlbumMediaUseCase,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(GalleryMediaUiState())
     val uiState: StateFlow<GalleryMediaUiState> = _uiState.asStateFlow()
 
     private var familyId: String? = null
-    private var mediaId: String? = null
+    private var albumId: String? = null
+    private var initialIndex: Int = 0
 
-    fun setUpMediaData(addedFamilyId: String, addedImageId: String) {
-        if (_uiState.value.isInitialized && mediaId == addedImageId) return
-
+    fun setUpMediaData(addedFamilyId: String, addedAlbumId: String, addedInitialIndex: Int) {
         familyId = addedFamilyId
-        mediaId = addedImageId
-        _uiState.update { it.copy(isInitialized = true) }
-        fetchMediaData()
+        albumId = addedAlbumId
+        initialIndex = addedInitialIndex
+        _uiState.update { it.copy(isInitialized = true, currentIndex = addedInitialIndex) }
+        loadAlbumMedia()
     }
 
-    private fun fetchMediaData() {
+    fun loadAlbumMedia() {
         val familyIdValue = familyId ?: return
-        val mediaIdValue = mediaId ?: return
+        val albumIdValue = albumId ?: return
 
         viewModelScope.launch {
-            fetchItemByIdUseCase.invoke(
-                familyIdValue,
-                mediaIdValue,
-                Constants.GALLERY_MEDIA_TABLE,
-                GalleryMedia::class,
-            ).collect { result ->
-                when (result) {
-                    is ItemResultListener.Success -> {
-                        val media = result.item as? GalleryMedia
-                        if (media != null) {
-                            _uiState.update { it.copy(mediaData = media) }
-                        } else {
-                            showError("Cannot find the media")
+            fetchAlbumMediaUseCase.invoke(familyIdValue, albumIdValue)
+                .collect { result ->
+                    when (result) {
+                        is ListItemsResultListener.Success -> {
+                            val mediaList = result.listItems
+                            _uiState.update { 
+                                it.copy(
+                                    mediaList = mediaList,
+                                    mediaData = mediaList.getOrNull(initialIndex)
+                                ) 
+                            }
+                        }
+                        is ListItemsResultListener.Failure -> {
+                            showError(result.message)
                         }
                     }
-
-                    is ItemResultListener.Failure -> showError(result.message)
                 }
-            }
         }
     }
 
-    fun downloadMedia() {
-        val currentMedia = _uiState.value.mediaData
+    fun downloadMedia(index: Int? = null) {
+        val mediaIndex = index ?: _uiState.value.currentIndex
+        val currentMedia = _uiState.value.mediaList.getOrNull(mediaIndex)
         val familyIdValue = familyId
 
         if (currentMedia == null || familyIdValue == null) {

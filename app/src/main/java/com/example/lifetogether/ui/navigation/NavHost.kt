@@ -102,12 +102,17 @@ fun NavHost(
         }
 
         composable(
-            route = "${AppRoutes.GALLERY_MEDIA_SCREEN}/{${AppRoutes.GALLERY_MEDIA_ID_ARG}}",
-            arguments = listOf(navArgument(AppRoutes.GALLERY_MEDIA_ID_ARG) { type = NavType.StringType }),
+            route = "${AppRoutes.GALLERY_MEDIA_SCREEN}/{${AppRoutes.GALLERY_MEDIA_ALBUM_ARG}}/{${AppRoutes.GALLERY_MEDIA_INDEX_ARG}}",
+            arguments = listOf(
+                navArgument(AppRoutes.GALLERY_MEDIA_ALBUM_ARG) { type = NavType.StringType },
+                navArgument(AppRoutes.GALLERY_MEDIA_INDEX_ARG) { type = NavType.IntType }
+            ),
         ) { backStackEntry ->
-            val mediaId = backStackEntry.arguments?.getString(AppRoutes.GALLERY_MEDIA_ID_ARG)
+            val albumId = backStackEntry.arguments?.getString(AppRoutes.GALLERY_MEDIA_ALBUM_ARG)
                 ?: return@composable
-            GalleryMediaScreen(appNavigator, firebaseViewModel, mediaId)
+            val initialIndex = backStackEntry.arguments?.getInt(AppRoutes.GALLERY_MEDIA_INDEX_ARG)
+                ?: 0
+            GalleryMediaScreen(appNavigator, firebaseViewModel, albumId, initialIndex)
         }
 
         composable(AppRoutes.TIP_TRACKER_SCREEN) {

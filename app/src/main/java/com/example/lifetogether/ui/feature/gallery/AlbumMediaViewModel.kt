@@ -181,10 +181,9 @@ class AlbumMediaViewModel @Inject constructor(
 
     private fun handleMediaSuccess(items: List<GalleryMedia>) {
         if (items.isNotEmpty()) {
-            val sortedMedia = items.sortedByDescending { it.dateCreated }
             _uiState.update {
                 it.copy(
-                    media = sortedMedia,
+                    media = items,
                     isSyncing = false,
                 )
             }

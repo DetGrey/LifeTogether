@@ -28,9 +28,10 @@ import androidx.media3.ui.PlayerView
 fun DisplayVideoFromUri(
     videoUri: Uri,
     modifier: Modifier = Modifier,
-    autoPlay: Boolean = true,
+    autoPlay: Boolean = false, // Default to false for gallery viewing
     useController: Boolean = true,
     resizeMode: Int = AspectRatioFrameLayout.RESIZE_MODE_FIT,
+    keepScreenOn: Boolean = true, // Keep screen on during video playback
 ) {
     val viewModel: VideoPlayerViewModel = hiltViewModel()
 
@@ -59,18 +60,28 @@ fun DisplayVideoFromUri(
         AndroidView(
             factory = { context ->
                 PlayerView(context).apply {
-                    this.player = viewModel.exoPlayer // Get ExoPlayer from ViewModel
+                    this.player = viewModel.exoPlayer
                     this.useController = useController
+                    this.keepScreenOn = keepScreenOn
                     layoutParams = FrameLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT,
                     )
                     this.resizeMode = resizeMode
+                    // Enable gesture controls
+                    this.controllerShowTimeoutMs = 3000
+                    this.controllerHideOnTouch = true
+                    // Show buffering indicator
+                    this.setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
                 }
             },
             modifier = Modifier.fillMaxSize(),
-            // No update block needed usually if the player instance doesn't change
-            // and PlayerView correctly observes the player's state.
+            update = { playerView ->
+                // Update properties that might change
+                playerView.resizeMode = resizeMode
+                playerView.useController = useController
+                playerView.keepScreenOn = keepScreenOn
+            }
         )
 
         // Example: Show loading indicator or error message based on ViewModel state
