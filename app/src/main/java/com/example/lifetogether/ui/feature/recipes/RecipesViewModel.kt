@@ -6,7 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.callback.ListItemsResultListener
+import com.example.lifetogether.domain.listener.ListItemsResultListener
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.usecase.item.FetchListItemsUseCase
 import com.example.lifetogether.util.Constants

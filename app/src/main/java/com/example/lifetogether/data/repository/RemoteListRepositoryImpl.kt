@@ -1,8 +1,8 @@
 package com.example.lifetogether.data.repository
 
 import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.callback.ResultListener
-import com.example.lifetogether.domain.callback.StringResultListener
+import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.model.CompletableItem
 import com.example.lifetogether.domain.model.Item
 import com.example.lifetogether.domain.repository.ListRepository
@@ -11,6 +11,7 @@ import javax.inject.Inject
 class RemoteListRepositoryImpl @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
 ) : ListRepository {
+    // ------------------------------------------ GENERAL LISTS
     override suspend fun saveItem(
         item: Item,
         listName: String,
@@ -18,7 +19,6 @@ class RemoteListRepositoryImpl @Inject constructor(
         return firestoreDataSource.saveItem(item, listName)
     }
 
-    // ...
     suspend fun updateItem(
         item: Item,
         listName: String,
@@ -33,7 +33,7 @@ class RemoteListRepositoryImpl @Inject constructor(
         return firestoreDataSource.toggleCompletableItemCompletion(item, listName)
     }
 
-    fun deleteItem(
+    suspend fun deleteItem(
         itemId: String,
         listName: String,
     ): ResultListener {
@@ -46,11 +46,18 @@ class RemoteListRepositoryImpl @Inject constructor(
     ): ResultListener {
         return firestoreDataSource.deleteItems(listName, idsList)
     }
-
+    // ------------------------------------------ CUSTOM FUNCTIONS
     suspend fun updateAlbumCount(
         albumId: String,
         count: Int,
     ): ResultListener {
         return firestoreDataSource.updateAlbumCount(albumId, count)
+    }
+    suspend fun moveMediaToAlbum(
+        mediaIdList: Set<String>,
+        newAlbumId: String,
+        oldAlbumId: String,
+    ): ResultListener {
+        return firestoreDataSource.moveMediaToAlbum(mediaIdList, newAlbumId, oldAlbumId)
     }
 }

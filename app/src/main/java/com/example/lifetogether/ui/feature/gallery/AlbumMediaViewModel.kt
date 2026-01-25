@@ -2,17 +2,26 @@ package com.example.lifetogether.ui.feature.gallery
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.callback.ByteArrayResultListener
-import com.example.lifetogether.domain.callback.ItemResultListener
-import com.example.lifetogether.domain.callback.ListItemsResultListener
-import com.example.lifetogether.domain.callback.ResultListener
+import com.example.lifetogether.domain.listener.AlbumUiModelResultListener
+import com.example.lifetogether.domain.listener.ByteArrayResultListener
+import com.example.lifetogether.domain.listener.ItemResultListener
+import com.example.lifetogether.domain.listener.ListItemsResultListener
+import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.model.SaveProgress
 import com.example.lifetogether.domain.model.gallery.Album
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.usecase.gallery.DeleteAlbumUseCase
+import com.example.lifetogether.domain.usecase.gallery.DeleteMediaUseCase
 import com.example.lifetogether.domain.usecase.gallery.FetchAlbumMediaUseCase
+import com.example.lifetogether.domain.usecase.gallery.GetAlbumDisplayModelsUseCase
+import com.example.lifetogether.domain.usecase.image.DownloadMediaUseCase
 import com.example.lifetogether.domain.usecase.image.FetchAlbumMediaThumbnailUseCase
+import com.example.lifetogether.domain.usecase.image.FetchAlbumThumbnailUseCase
 import com.example.lifetogether.domain.usecase.item.FetchItemByIdUseCase
+import com.example.lifetogether.domain.usecase.item.MoveMediaToAlbumUseCase
 import com.example.lifetogether.domain.usecase.item.UpdateItemUseCase
+import com.example.lifetogether.ui.model.AlbumUiModel
+import com.example.lifetogether.ui.model.MenuAction
 import com.example.lifetogether.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -31,31 +40,36 @@ data class AlbumMediaUiState(
     val isSyncing: Boolean = false,
     val showOverflowMenu: Boolean = false,
     val showOverflowMenuActionDialog: Boolean = false,
-    val overflowMenuAction: AlbumMediaViewModel.OverflowMenuActions? = null,
+    val overflowMenuAction: MenuAction? = null,
     val actionDialogText: String = "",
     val showAlertDialog: Boolean = false,
     val error: String = "",
     val isInitialized: Boolean = false,
     val isPartialLoad: Boolean = false, // True when some media failed to load
     val isRefreshing: Boolean = false, // User-triggered refresh
+    val isSelectionModeActive: Boolean = false,
+    val selectedMedia: Set<String> = emptySet(),
+    val isAllMediaSelected: Boolean = false,
+    val albums: List<AlbumUiModel> = emptyList(),
+    val isDownloading: Boolean = false,
+    val downloadMessage: String? = null,
 )
 
 @HiltViewModel
 class AlbumMediaViewModel @Inject constructor(
     private val fetchAlbumMediaUseCase: FetchAlbumMediaUseCase,
     private val updateItemUseCase: UpdateItemUseCase,
+    private val moveMediaToAlbumUseCase: MoveMediaToAlbumUseCase,
     private val deleteAlbumUseCase: DeleteAlbumUseCase,
     private val fetchItemByIdUseCase: FetchItemByIdUseCase,
     private val fetchAlbumMediaThumbnailUseCase: FetchAlbumMediaThumbnailUseCase,
+    private val getAlbumDisplayModelsUseCase: GetAlbumDisplayModelsUseCase,
+    private val fetchAlbumThumbnailUseCase: FetchAlbumThumbnailUseCase,
+    private val deleteMediaUseCase: DeleteMediaUseCase,
+    private val downloadMediaUseCase: DownloadMediaUseCase,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(AlbumMediaUiState())
     val uiState: StateFlow<AlbumMediaUiState> = _uiState.asStateFlow()
-
-    enum class OverflowMenuActions {
-        RENAME_ALBUM,
-        SELECT_MEDIA,
-        DELETE_ALBUM,
-    }
 
     private var familyId: String? = null
     private var albumId: String? = null
@@ -106,57 +120,6 @@ class AlbumMediaViewModel @Inject constructor(
             }
         }
     }
-
-    fun renameAlbum() {
-        val newName = _uiState.value.actionDialogText.trim()
-        val currentAlbum = _uiState.value.album
-
-        if (newName.isEmpty()) {
-            showError("Album name cannot be empty")
-            return
-        }
-        if (newName == currentAlbum?.itemName) {
-            showError("Album already called $newName")
-            return
-        }
-
-        val updatedAlbum = currentAlbum?.copy(itemName = newName) ?: return
-
-        viewModelScope.launch {
-            when (val result = updateItemUseCase.invoke(updatedAlbum, Constants.ALBUMS_TABLE)) {
-                is ResultListener.Success -> {
-                    _uiState.update { it.copy(album = updatedAlbum) }
-                    dismissOverflowMenuActionDialog()
-                }
-                is ResultListener.Failure -> showError(result.message)
-            }
-        }
-    }
-
-    fun deleteAlbum(onDeleteSuccess: () -> Unit) {
-        val albumIdValue = _uiState.value.album?.id ?: return
-
-        viewModelScope.launch {
-            when (val result = deleteAlbumUseCase.invoke(albumIdValue, _uiState.value.media)) {
-                is ResultListener.Success -> {
-                    dismissOverflowMenuActionDialog()
-                    onDeleteSuccess()
-                }
-                is ResultListener.Failure -> showError(result.message)
-            }
-        }
-    }
-
-    fun retryFetchAlbumMedia() {
-        _uiState.update { it.copy(isRefreshing = true) }
-        syncRetryAttempts = 0
-        fetchAlbumMedia()
-    }
-
-    fun onRefreshComplete() {
-        _uiState.update { it.copy(isRefreshing = false) }
-    }
-
     private fun fetchAlbumMedia() {
         val familyIdValue = familyId ?: return
         val albumIdValue = albumId ?: return
@@ -178,7 +141,6 @@ class AlbumMediaViewModel @Inject constructor(
             }
         }
     }
-
     private fun handleMediaSuccess(items: List<GalleryMedia>) {
         if (items.isNotEmpty()) {
             _uiState.update {
@@ -223,12 +185,15 @@ class AlbumMediaViewModel @Inject constructor(
             _uiState.update { it.copy(isSyncing = false) }
         }
     }
-
     private fun handleMediaFailure(message: String) {
         _uiState.update { it.copy(isSyncing = false, isRefreshing = false) }
         showError(message)
     }
-
+    fun retryFetchAlbumMedia() {
+        _uiState.update { it.copy(isRefreshing = true) }
+        syncRetryAttempts = 0
+        fetchAlbumMedia()
+    }
     fun fetchThumbnail(mediaId: String) {
         if (_uiState.value.thumbnails.containsKey(mediaId)) return
 
@@ -245,25 +210,198 @@ class AlbumMediaViewModel @Inject constructor(
             }
         }
     }
+    // ---------------------------------------------------------------- OVERFLOW ACTION FUNCTIONS
+    // ---------------------------------- ALBUM OPTIONS
+    fun renameAlbum() {
+        val newName = _uiState.value.actionDialogText.trim()
+        val currentAlbum = _uiState.value.album
 
+        if (newName.isEmpty()) {
+            showError("Album name cannot be empty")
+            return
+        }
+        if (newName == currentAlbum?.itemName) {
+            showError("Album already called $newName")
+            return
+        }
+
+        val updatedAlbum = currentAlbum?.copy(itemName = newName) ?: return
+
+        viewModelScope.launch {
+            when (val result = updateItemUseCase.invoke(updatedAlbum, Constants.ALBUMS_TABLE)) {
+                is ResultListener.Success -> {
+                    _uiState.update { it.copy(album = updatedAlbum) }
+                    dismissOverflowMenuActionDialog()
+                }
+                is ResultListener.Failure -> showError(result.message)
+            }
+        }
+    }
+    fun deleteAlbum(onDeleteSuccess: () -> Unit) {
+        val albumIdValue = uiState.value.album?.id ?: return
+
+        viewModelScope.launch {
+            when (val result = deleteAlbumUseCase.invoke(albumIdValue, uiState.value.media)) {
+                is ResultListener.Success -> {
+                    dismissOverflowMenuActionDialog()
+                    onDeleteSuccess()
+                }
+                is ResultListener.Failure -> showError(result.message)
+            }
+        }
+    }
+    // ---------------------------------- SELECTED MEDIA OPTIONS
+    fun downloadSelectedMedia() {
+        val familyIdValue = familyId
+        val selectedMedia = _uiState.value.selectedMedia.toList()
+        if (selectedMedia.isEmpty() || familyIdValue == null) {
+            showError("Media data not available")
+            return
+        }
+
+        viewModelScope.launch {
+            downloadMediaUseCase(
+                mediaIds = selectedMedia,
+                familyId = familyIdValue,
+            ).collect { progress ->
+                when (progress) {
+                    is SaveProgress.Loading -> {
+                        _uiState.update { it.copy(isDownloading = true, downloadMessage = "Downloading ${progress.current} of ${progress.total}") }
+                    }
+                    is SaveProgress.Finished -> {
+                        if (progress.failureCount == 0) {
+                            dismissOverflowMenuActionDialog()
+                            val message = if (progress.failureCount == 0) { "Downloaded ${progress.successCount} item" }
+                            else { "Downloaded ${progress.successCount} of ${progress.successCount + progress.failureCount} items" }
+
+                            _uiState.update { it.copy(downloadMessage = message) }
+                            delay(2000)
+                            _uiState.update { it.copy(downloadMessage = null, isDownloading = false) }
+                        } else {
+                            showError("Failed to download media")
+                        }
+                    }
+
+                    is SaveProgress.Error -> {
+                        _uiState.update { it.copy(isDownloading = false, downloadMessage = null) }
+                        showError(progress.message)
+                    }
+                }
+            }
+        }
+    }
+    private fun fetchAlbums() {
+        val familyIdValue = familyId ?: return
+
+        viewModelScope.launch {
+            getAlbumDisplayModelsUseCase(familyIdValue).collect { result ->
+                when (result) {
+                    is AlbumUiModelResultListener.Success -> {
+                        val possibleAlbums = result.albums.filterNot { it.id == albumId }
+                        _uiState.update { it.copy(albums = possibleAlbums, showOverflowMenuActionDialog = true) }
+
+                        possibleAlbums.forEach { model ->
+                            if (model.thumbnail == null) {
+                                fetchAlbumThumbnailUseCase.invoke(model.id)
+                            }
+                        }
+                    }
+                    is AlbumUiModelResultListener.Failure -> showError(result.message)
+                }
+            }
+        }
+    }
+    fun moveSelectedMediaToAlbum(newAlbumId: String) {
+        val oldAlbumId = albumId ?: return
+        val selectedMedia = _uiState.value.selectedMedia
+        if (selectedMedia.isEmpty() || newAlbumId == _uiState.value.album?.id || newAlbumId.isEmpty()) return
+
+        viewModelScope.launch {
+            when (val result = moveMediaToAlbumUseCase.invoke(selectedMedia, newAlbumId, oldAlbumId)) {
+                is ResultListener.Success -> {
+                    dismissOverflowMenuActionDialog()
+                    toggleSelectionMode()
+                }
+                is ResultListener.Failure -> showError(result.message)
+            }
+        }
+    }
+    fun deleteSelectedMedia() {
+        val albumIdValue = uiState.value.album?.id ?: return
+        val selectedMedia = uiState.value.media.filter { it.id in uiState.value.selectedMedia }
+
+        if (selectedMedia.isEmpty()) return
+
+        viewModelScope.launch {
+            when (val result = deleteMediaUseCase.invoke(albumIdValue, selectedMedia)) {
+                is ResultListener.Success -> {
+                    dismissOverflowMenuActionDialog()
+                    toggleSelectionMode()
+                }
+                is ResultListener.Failure -> showError(result.message)
+            }
+        }
+    }
+    // ----------------------------------- SELECT MODE
+    fun toggleSelectionMode() {
+        _uiState.update { it.copy(isSelectionModeActive = !it.isSelectionModeActive) }
+        if (!uiState.value.isSelectionModeActive) {
+            _uiState.update { it.copy(selectedMedia = emptySet()) }
+        }
+    }
+    fun toggleAllMediaSelection() {
+        when (_uiState.value.isAllMediaSelected) {
+            true -> {
+                _uiState.update { it.copy(
+                    selectedMedia = emptySet(),
+                    isAllMediaSelected = false,
+                    isSelectionModeActive = false
+                )}
+            }
+            false -> {
+                _uiState.update { state ->
+                    state.copy(
+                        selectedMedia = _uiState.value.media.mapNotNull { it.id }.toSet(),
+                        isAllMediaSelected = true
+                    )
+                }
+            }
+        }
+    }
+    fun toggleMediaSelection(mediaId: String?) {
+        if (mediaId == null) return
+
+        if (_uiState.value.selectedMedia.contains(mediaId)) {
+            _uiState.update { state ->
+                state.copy(selectedMedia = state.selectedMedia - mediaId)
+            }
+        }
+        else {
+            _uiState.update { state ->
+                state.copy(selectedMedia = state.selectedMedia + mediaId)
+            }
+        }
+    }
+    // ---------------------------------------------------------------- OVERFLOW MENU + DIALOG
     fun toggleOverflowMenu(show: Boolean? = null) {
         _uiState.update { it.copy(showOverflowMenu = show ?: !it.showOverflowMenu) }
     }
-
-    fun startOverflowAction(action: OverflowMenuActions) {
+    fun startOverflowAction(action: MenuAction) {
         _uiState.update {
             it.copy(
                 overflowMenuAction = action,
-                showOverflowMenuActionDialog = true,
                 showOverflowMenu = false,
             )
         }
+        if (action == MenuAction.SelectionActions.MOVE) {
+            fetchAlbums()
+        } else {
+            _uiState.update { it.copy(showOverflowMenuActionDialog = true) }
+        }
     }
-
     fun setActionDialogText(text: String) {
         _uiState.update { it.copy(actionDialogText = text) }
     }
-
     fun dismissOverflowMenuActionDialog() {
         _uiState.update {
             it.copy(
@@ -273,15 +411,14 @@ class AlbumMediaViewModel @Inject constructor(
             )
         }
     }
-
+    // ---------------------------------------------------------------- SHOW ERROR ALERT
     fun dismissAlert() {
         viewModelScope.launch {
             delay(3000)
             _uiState.update { it.copy(showAlertDialog = false, error = "") }
         }
     }
-
-    private fun showError(message: String) {
+    fun showError(message: String) {
         _uiState.update { it.copy(showAlertDialog = true, error = message) }
     }
 }

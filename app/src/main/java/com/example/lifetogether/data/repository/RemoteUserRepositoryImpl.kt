@@ -2,9 +2,9 @@ package com.example.lifetogether.data.repository
 
 import com.example.lifetogether.data.remote.FirebaseAuthDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.callback.AuthResultListener
-import com.example.lifetogether.domain.callback.ResultListener
-import com.example.lifetogether.domain.callback.StringResultListener
+import com.example.lifetogether.domain.listener.AuthResultListener
+import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.repository.UserRepository
@@ -48,7 +48,7 @@ class RemoteUserRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun logout(
+    suspend fun logout(
         uid: String,
         familyId: String?,
     ): ResultListener {

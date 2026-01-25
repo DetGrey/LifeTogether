@@ -6,9 +6,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.callback.ItemResultListener
-import com.example.lifetogether.domain.callback.ResultListener
-import com.example.lifetogether.domain.callback.StringResultListener
+import com.example.lifetogether.domain.listener.ItemResultListener
+import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.logic.toMutableRecipe
 import com.example.lifetogether.domain.logic.toRecipe
 import com.example.lifetogether.domain.model.Completable
@@ -89,8 +89,8 @@ class RecipeDetailsViewModel @Inject constructor(
     }
 
     // ---------------------------------------------------------------- RECIPE
-    private val _originalRecipe = MutableStateFlow<MutableRecipe>(MutableRecipe())
-    private val _recipe = MutableStateFlow<MutableRecipe>(MutableRecipe())
+    private val _originalRecipe = MutableStateFlow(MutableRecipe())
+    private val _recipe = MutableStateFlow(MutableRecipe())
     val recipe: StateFlow<MutableRecipe> = _recipe.asStateFlow()
 
     private fun updateRecipeFlow(recipe: Recipe) {

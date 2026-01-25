@@ -2,9 +2,9 @@ package com.example.lifetogether.ui.feature.tipTracker
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.callback.ListItemsResultListener
-import com.example.lifetogether.domain.callback.ResultListener
-import com.example.lifetogether.domain.callback.StringResultListener
+import com.example.lifetogether.domain.listener.ListItemsResultListener
+import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.logic.formatDateToString
 import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.domain.usecase.item.DeleteItemUseCase

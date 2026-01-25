@@ -1,9 +1,9 @@
 package com.example.lifetogether.data.repository
 
 import com.example.lifetogether.data.local.LocalDataSource
-import com.example.lifetogether.domain.callback.AuthResultListener
-import com.example.lifetogether.domain.callback.FamilyInformationResultListener
-import com.example.lifetogether.domain.callback.ResultListener
+import com.example.lifetogether.domain.listener.AuthResultListener
+import com.example.lifetogether.domain.listener.FamilyInformationResultListener
+import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.model.family.FamilyMember
@@ -90,9 +90,5 @@ class LocalUserRepositoryImpl @Inject constructor(
 
     fun removeSavedUserInformation(): ResultListener {
         return localDataSource.clearUserInformationTables()
-    }
-
-    override fun logout(uid: String, familyId: String?): ResultListener {
-        TODO("Not yet implemented")
     }
 }

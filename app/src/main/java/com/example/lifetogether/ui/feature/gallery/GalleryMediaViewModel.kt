@@ -2,13 +2,12 @@ package com.example.lifetogether.ui.feature.gallery
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.callback.ItemResultListener
-import com.example.lifetogether.domain.callback.ListItemsResultListener
-import com.example.lifetogether.domain.callback.ResultListener
+import com.example.lifetogether.domain.listener.ListItemsResultListener
+import com.example.lifetogether.domain.model.SaveProgress
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
+import com.example.lifetogether.domain.usecase.gallery.FetchAlbumMediaUseCase
 import com.example.lifetogether.domain.usecase.image.DownloadMediaUseCase
-import com.example.lifetogether.domain.usecase.item.FetchItemByIdUseCase
-import com.example.lifetogether.util.Constants
+import com.example.lifetogether.ui.model.MenuAction
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,13 +26,16 @@ data class GalleryMediaUiState(
     val showAlertDialog: Boolean = false,
     val error: String = "",
     val isInitialized: Boolean = false,
+    val showOverflowMenu: Boolean = false,
+    val showOverflowMenuActionDialog: Boolean = false,
+    val overflowMenuAction: MenuAction.GalleryMediaActions? = null,
+    val actionDialogText: String = "",
 )
 
 @HiltViewModel
 class GalleryMediaViewModel @Inject constructor(
-    private val fetchItemByIdUseCase: FetchItemByIdUseCase,
     private val downloadMediaUseCase: DownloadMediaUseCase,
-    private val fetchAlbumMediaUseCase: com.example.lifetogether.domain.usecase.gallery.FetchAlbumMediaUseCase,
+    private val fetchAlbumMediaUseCase: FetchAlbumMediaUseCase,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(GalleryMediaUiState())
     val uiState: StateFlow<GalleryMediaUiState> = _uiState.asStateFlow()
@@ -77,45 +79,79 @@ class GalleryMediaViewModel @Inject constructor(
 
     fun downloadMedia(index: Int? = null) {
         val mediaIndex = index ?: _uiState.value.currentIndex
-        val currentMedia = _uiState.value.mediaList.getOrNull(mediaIndex)
+        val currentMediaId = _uiState.value.mediaList.getOrNull(mediaIndex)?.id
         val familyIdValue = familyId
 
-        if (currentMedia == null || familyIdValue == null) {
+        if (currentMediaId == null || familyIdValue == null) {
             showError("Media data not available")
             return
         }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isDownloading = true, downloadMessage = "Downloading...") }
-
-            val result = downloadMediaUseCase.invoke(
-                mediaId = currentMedia.id!!,
+            downloadMediaUseCase(
+                mediaIds = listOf(currentMediaId),
                 familyId = familyIdValue,
-                fileName = currentMedia.itemName,
-            )
+            ).collect { progress ->
+                when (progress) {
+                    is SaveProgress.Loading -> {
+                        _uiState.update { it.copy(isDownloading = true, downloadMessage = "Downloading ${progress.current} of ${progress.total}") }
+                    }
+                    is SaveProgress.Finished -> {
+                        if (progress.failureCount == 0) {
+                            dismissOverflowMenuActionDialog()
+                            val message = if (progress.failureCount == 0) { "Downloaded 1 item" }
+                            else { "Downloaded ${progress.successCount} of ${progress.successCount + progress.failureCount} items" }
 
-            when (result) {
-                is ResultListener.Success -> {
-                    _uiState.update { it.copy(downloadMessage = "Downloaded successfully!") }
-                    delay(2000)
-                    _uiState.update { it.copy(downloadMessage = null) }
-                }
-                is ResultListener.Failure -> {
-                    _uiState.update { it.copy(downloadMessage = null) }
-                    showError(result.message)
+                            _uiState.update { it.copy(downloadMessage = message) }
+                            delay(2000)
+                            _uiState.update { it.copy(downloadMessage = null, isDownloading = false) }
+                        } else {
+                            showError("Failed to download media")
+                        }
+                    }
+
+                    is SaveProgress.Error -> {
+                        _uiState.update { it.copy(isDownloading = false, downloadMessage = null) }
+                        showError(progress.message)
+                    }
                 }
             }
-            _uiState.update { it.copy(isDownloading = false) }
         }
     }
 
+    // ---------------------------------------------------------------- Overflow menu
+    fun toggleOverflowMenu(show: Boolean? = null) {
+        _uiState.update { it.copy(showOverflowMenu = show ?: !it.showOverflowMenu) }
+    }
+
+    fun startOverflowAction(action: MenuAction.GalleryMediaActions) {
+        _uiState.update {
+            it.copy(
+                overflowMenuAction = action,
+                showOverflowMenuActionDialog = true,
+                showOverflowMenu = false,
+            )
+        }
+    }
+    fun setActionDialogText(text: String) {
+        _uiState.update { it.copy(actionDialogText = text) }
+    }
+    fun dismissOverflowMenuActionDialog() {
+        _uiState.update {
+            it.copy(
+                showOverflowMenuActionDialog = false,
+                overflowMenuAction = null,
+                actionDialogText = "",
+            )
+        }
+    }
+    // ---------------------------------------------------------------- SHOW ERROR ALERT
     fun dismissAlert() {
         viewModelScope.launch {
             delay(3000)
             _uiState.update { it.copy(showAlertDialog = false, error = "") }
         }
     }
-
     private fun showError(message: String) {
         _uiState.update { it.copy(showAlertDialog = true, error = message) }
     }

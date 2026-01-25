@@ -1,4 +1,4 @@
-package com.example.lifetogether.domain.callback
+package com.example.lifetogether.domain.listener
 
 sealed class ResultListener {
     object Success : ResultListener()

@@ -2,16 +2,15 @@ package com.example.lifetogether.ui.feature.gallery
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.callback.ByteArrayResultListener
-import com.example.lifetogether.domain.callback.ListItemsResultListener
-import com.example.lifetogether.domain.callback.StringResultListener
+import com.example.lifetogether.domain.listener.AlbumUiModelResultListener
+import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.model.gallery.Album
+import com.example.lifetogether.domain.usecase.gallery.GetAlbumDisplayModelsUseCase
 import com.example.lifetogether.domain.usecase.image.FetchAlbumThumbnailUseCase
-import com.example.lifetogether.domain.usecase.item.FetchListItemsUseCase
 import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
+import com.example.lifetogether.ui.model.AlbumUiModel
 import com.example.lifetogether.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,8 +20,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class GalleryUiState(
-    val albums: List<Album> = emptyList(),
-    val thumbnails: Map<String, ByteArray> = emptyMap(),
+    val albums: List<AlbumUiModel> = emptyList(),
     val showNewAlbumDialog: Boolean = false,
     val newAlbumName: String = "",
     val showAlertDialog: Boolean = false,
@@ -32,13 +30,14 @@ data class GalleryUiState(
 
 @HiltViewModel
 class GalleryViewModel @Inject constructor(
-    private val fetchListItemsUseCase: FetchListItemsUseCase,
+    private val getAlbumDisplayModelsUseCase: GetAlbumDisplayModelsUseCase,
     private val fetchAlbumThumbnailUseCase: FetchAlbumThumbnailUseCase,
     private val saveItemUseCase: SaveItemUseCase,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(GalleryUiState())
     val uiState: StateFlow<GalleryUiState> = _uiState.asStateFlow()
 
+    private val requestedThumbnails = mutableSetOf<String>()
     private var familyId: String? = null
 
     fun setUpGallery(addedFamilyId: String) {
@@ -91,51 +90,19 @@ class GalleryViewModel @Inject constructor(
         val familyIdValue = familyId ?: return
 
         viewModelScope.launch {
-            fetchListItemsUseCase(
-                familyIdValue,
-                Constants.ALBUMS_TABLE,
-                Album::class,
-            ).collect { result ->
+            getAlbumDisplayModelsUseCase.invoke(familyIdValue).collect { result ->
                 when (result) {
-                    is ListItemsResultListener.Success -> handleAlbumsSuccess(result.listItems.filterIsInstance<Album>())
-                    is ListItemsResultListener.Failure -> showError(result.message)
-                }
-            }
-        }
-    }
+                    is AlbumUiModelResultListener.Success -> {
+                        _uiState.update { it.copy(albums = result.albums, isInitialized = true) }
 
-    private fun handleAlbumsSuccess(albumItems: List<Album>) {
-        if (albumItems.isEmpty()) {
-            _uiState.update { it.copy(albums = emptyList(), isInitialized = true) }
-            return
-        }
-
-        val sortedAlbums = albumItems.sortedBy { it.itemName }
-        _uiState.update {
-            it.copy(
-                albums = sortedAlbums,
-                isInitialized = true,
-            )
-        }
-        fetchThumbnails(sortedAlbums)
-    }
-
-    private fun fetchThumbnails(albums: List<Album>) {
-        albums.forEach { album ->
-            val albumId = album.id ?: return@forEach
-            val alreadyLoaded = _uiState.value.thumbnails.containsKey(albumId)
-            if (alreadyLoaded) return@forEach
-
-            viewModelScope.launch(Dispatchers.IO) {
-                when (val result = fetchAlbumThumbnailUseCase.invoke(albumId)) {
-                    is ByteArrayResultListener.Success -> {
-                        _uiState.update { current ->
-                            current.copy(thumbnails = current.thumbnails + (albumId to result.byteArray))
+                        result.albums.forEach { album ->
+                            if (album.thumbnail == null && !requestedThumbnails.contains(album.id)) {
+                                requestedThumbnails.add(album.id)
+                                fetchAlbumThumbnailUseCase(album.id)
+                            }
                         }
                     }
-                    is ByteArrayResultListener.Failure -> {
-                        // Ignore missing thumbnails
-                    }
+                    is AlbumUiModelResultListener.Failure -> showError(result.message)
                 }
             }
         }

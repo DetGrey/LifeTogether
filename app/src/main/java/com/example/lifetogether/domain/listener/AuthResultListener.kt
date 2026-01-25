@@ -1,4 +1,4 @@
-package com.example.lifetogether.domain.callback
+package com.example.lifetogether.domain.listener
 
 import com.example.lifetogether.domain.model.UserInformation
 

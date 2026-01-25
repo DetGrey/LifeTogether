@@ -1,6 +1,6 @@
 package com.example.lifetogether.domain.repository
 
-import com.example.lifetogether.domain.callback.StringResultListener
+import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.model.Item
 
 interface ListRepository {

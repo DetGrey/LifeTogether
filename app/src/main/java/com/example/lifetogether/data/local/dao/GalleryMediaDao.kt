@@ -17,6 +17,9 @@ interface GalleryMediaDao {
     @Query("SELECT * FROM $GALLERY_MEDIA_TABLE WHERE family_id = :familyId")
     fun getItems(familyId: String): Flow<List<GalleryMediaEntity>>
 
+    @Query("SELECT * FROM $GALLERY_MEDIA_TABLE WHERE family_id = :familyId AND id in (:ids)")
+    fun getItemsByIds(familyId: String, ids: List<String>): List<GalleryMediaEntity>?
+
     @Query("SELECT * FROM $GALLERY_MEDIA_TABLE WHERE family_id = :familyId AND album_id = :albumId")
     fun getItemsByAlbumId(familyId: String, albumId: String): Flow<List<GalleryMediaEntity>>
 

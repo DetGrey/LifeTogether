@@ -1,7 +1,7 @@
 package com.example.lifetogether.domain.usecase.user
 
 import com.example.lifetogether.data.repository.LocalUserRepositoryImpl
-import com.example.lifetogether.domain.callback.ResultListener
+import com.example.lifetogether.domain.listener.ResultListener
 import javax.inject.Inject
 
 class RemoveSavedUserInformationUseCase @Inject constructor(

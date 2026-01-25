@@ -14,7 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.callback.ResultListener
+import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.logic.getVideoThumbnail
 import com.example.lifetogether.domain.logic.isVideoUri
 import com.example.lifetogether.domain.logic.parseExifDate

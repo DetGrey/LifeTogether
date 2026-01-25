@@ -75,15 +75,12 @@ fun GalleryScreen(
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         for (album in uiState.albums) {
-                            val thumbnail = uiState.thumbnails[album.id]
                             AlbumContainer(
-                                album.itemName,
-                                album.count,
-                                thumbnail?.toBitmap(),
+                                album.name,
+                                album.mediaCount,
+                                album.thumbnail?.toBitmap(),
                                 onClick = {
-                                    if (album.id != null) {
-                                        appNavigator?.navigateToAlbumMedia(album.id!!)
-                                    }
+                                    appNavigator?.navigateToAlbumMedia(album.id)
                                 },
                             )
                         }

@@ -28,10 +28,11 @@ import com.example.lifetogether.data.model.GrocerySuggestionEntity
 import com.example.lifetogether.data.model.RecipeEntity
 import com.example.lifetogether.data.model.TipEntity
 import com.example.lifetogether.data.model.UserEntity
-import com.example.lifetogether.domain.callback.ResultListener
+import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.domain.model.UserInformation
+import com.example.lifetogether.domain.model.enums.MediaType
 import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.model.gallery.Album
 import com.example.lifetogether.domain.model.gallery.GalleryImage
@@ -64,11 +65,13 @@ class LocalDataSource @Inject constructor(
     private val albumsDao: AlbumsDao,
     private val tipTrackerDao: TipTrackerDao,
 ) {
+    companion object {
+        private const val TAG = "LocalDataSource"
+    }
     // -------------------------------------------------------------- CATEGORIES
     fun getCategories(): Flow<List<CategoryEntity>> {
         return categoriesDao.getItems()
     }
-
     suspend fun updateCategories(items: List<Category>) {
         val categoryEntities = items.map { category ->
             CategoryEntity(
@@ -79,23 +82,15 @@ class LocalDataSource @Inject constructor(
         categoriesDao.updateItems(categoryEntities)
 
         // Fetch the current items from the Room database
-        //   getItems() returns a Flow, so you need to use first() to get the current value
         val currentItems = categoriesDao.getItems().first()
 
-        // Determine the items to be inserted or updated
         val itemsToUpdate = categoryEntities.filter { newItem ->
             currentItems.none { currentItem -> newItem.name == currentItem.name && newItem.emoji == currentItem.emoji }
         }
-
-        // Determine the items to be deleted
         val itemsToDelete = currentItems.filter { currentItem ->
             categoryEntities.none { newItem -> newItem.name == currentItem.name }
         }
-
-        // Update the Room database with the new or changed items
         categoriesDao.updateItems(itemsToUpdate)
-
-        // Delete the items that no longer exist in Firestore
         categoriesDao.deleteItems(itemsToDelete)
     }
 
@@ -104,31 +99,25 @@ class LocalDataSource @Inject constructor(
         listName: String,
         familyId: String,
     ): Flow<List<Entity>> {
-        println("LocalDataSource getListItems listName: $listName")
+        Log.d(TAG, "getListItems listName: $listName")
         val items: Flow<List<Entity>> = when (listName) {
             Constants.GROCERY_TABLE -> groceryListDao.getItems(familyId).map { list ->
                 list.map { Entity.GroceryList(it) }
             }
-
             Constants.RECIPES_TABLE -> recipesDao.getItems(familyId).map { list ->
                 list.map { Entity.Recipe(it) }
             }
-
             Constants.ALBUMS_TABLE -> albumsDao.getItems(familyId).map { list ->
                 list.map { Entity.Album(it) }
             }
-
             Constants.GALLERY_MEDIA_TABLE -> galleryMediaDao.getItems(familyId).map { list ->
                 list.map { Entity.GalleryMedia(it) }
             }
-
             Constants.TIP_TRACKER_TABLE -> tipTrackerDao.getItems(familyId).map { list ->
                 list.map { Entity.Tip(it) }
             }
-
             else -> flowOf(emptyList()) // Handle the case where the listName doesn't match any known entity
         }
-        println("LocalDataSource getListItems: $items")
         return items
     }
 
@@ -144,21 +133,18 @@ class LocalDataSource @Inject constructor(
                     emit(Entity.Recipe(recipe))
                 }
             }
-
             Constants.ALBUMS_TABLE -> flow {
                 val album = albumsDao.getItemById(familyId, id)
                 if (album != null) {
                     emit(Entity.Album(album))
                 }
             }
-
             Constants.GALLERY_MEDIA_TABLE -> flow {
                 val galleryMedia = galleryMediaDao.getItemById(familyId, id)
                 if (galleryMedia != null) {
                     emit(Entity.GalleryMedia(galleryMedia))
                 }
             }
-
             else -> flowOf() // Handle the case where the listName doesn't match any known entity
         }
     }
@@ -167,7 +153,7 @@ class LocalDataSource @Inject constructor(
         listName: String,
         itemIds: List<String>,
     ): ResultListener {
-        println("LocalDataSource deleteItems()")
+        Log.d(TAG, "deleteItems()")
         try {
             when (listName) {
                 Constants.GROCERY_TABLE -> groceryListDao.deleteItems(itemIds)
@@ -184,9 +170,8 @@ class LocalDataSource @Inject constructor(
         items: List<Recipe>,
         byteArrays: Map<String, ByteArray>,
     ) {
-        println("LocalDataSource updateRecipes(): Trying to add firestore data to Room")
+        Log.d(TAG, "updateRecipes()")
 
-        println("Recipe list: $items")
         var recipeEntityList = items.map { item ->
             RecipeEntity(
                 id = item.id ?: "",
@@ -209,37 +194,13 @@ class LocalDataSource @Inject constructor(
             }
         }
 
-//        println("recipeEntityList list: ${recipeEntityList.map { listOf(it.itemName, it.tags) }}")
-
         // Fetch the current items from the Room database
         val currentItems = recipesDao.getItems(items[0].familyId).first()
-
-        for (item in currentItems) {
-            if (item.itemName == "Chicken burger") {
-                println("chicken burger currentItems: $item")
-            }
-        }
-        for (item in recipeEntityList) {
-            if (item.itemName == "Chicken burger") {
-                println("chicken burger recipeEntityList: $item")
-            }
-        }
 
         // Determine the items to be inserted or updated
         val itemsToUpdate = recipeEntityList.filter { newItem ->
             currentItems.none { currentItem -> newItem.id == currentItem.id && newItem == currentItem }
         }
-
-        println(
-            "recipeEntityList itemsToUpdate: ${
-                itemsToUpdate.map {
-                    listOf(
-                        it.itemName,
-                        it.tags,
-                    )
-                }
-            }",
-        )
 
         // Determine the items to be deleted
         val itemsToDelete = currentItems.filter { currentItem ->
@@ -266,9 +227,8 @@ class LocalDataSource @Inject constructor(
 
     // -------------------------------------------------------------- GROCERY LIST
     suspend fun updateGroceryList(items: List<GroceryItem>) {
-        println("LocalDataSource updateGroceryList(): Trying to add firestore data to Room")
+        Log.d(TAG, "updateGroceryList()")
 
-        println("GroceryItem list: $items")
         val groceryListEntityList = items.map { item ->
             GroceryListEntity(
                 id = item.id ?: "",
@@ -279,7 +239,6 @@ class LocalDataSource @Inject constructor(
                 category = item.category,
             )
         }
-        println("groceryListEntity list: $groceryListEntityList")
 
         // Fetch the current items from the Room database
         val currentItems = groceryListDao.getItems(items[0].familyId).first()
@@ -314,7 +273,7 @@ class LocalDataSource @Inject constructor(
     }
 
     suspend fun updateGrocerySuggestions(items: List<GrocerySuggestion>) {
-        println("LocalDataSource updateGrocerySuggestions(): Trying to add firestore data to Room")
+        Log.d(TAG, "updateGrocerySuggestions()")
         val grocerySuggestionEntities = items.mapNotNull { grocerySuggestion ->
             grocerySuggestion.id?.let { id ->
                 GrocerySuggestionEntity(
@@ -366,8 +325,6 @@ class LocalDataSource @Inject constructor(
         if (byteArray != null) {
             userEntity = userEntity.copy(imageData = byteArray)
         }
-
-        println("updateUserInformation userEntity: $userEntity")
 
         userInformationDao.updateItems(userEntity)
     }
@@ -421,8 +378,6 @@ class LocalDataSource @Inject constructor(
             familyEntity = familyEntity.copy(imageData = byteArray)
         }
 
-        println("updateFamilyInformation familyEntity: $familyEntity")
-
         // Update FamilyEntity in the database
         familyInformationDao.updateFamily(familyEntity)
 
@@ -448,13 +403,12 @@ class LocalDataSource @Inject constructor(
         familyId: String,
         albumId: String,
     ): Flow<List<Entity.GalleryMedia>> {
-        println("LocalDataSource getAlbumMedia")
+        Log.d(TAG, "getAlbumMedia")
         val items: Flow<List<Entity.GalleryMedia>> =
             galleryMediaDao.getItemsByAlbumId(familyId, albumId)
                 .map { list ->
                     list.map { Entity.GalleryMedia(it) }
                 }
-        println("LocalDataSource getAlbumMedia: $items")
         return items
     }
 
@@ -491,11 +445,11 @@ class LocalDataSource @Inject constructor(
             } ?: return null
 
             val regenerated = when (entity.mediaType) {
-                com.example.lifetogether.domain.model.enums.MediaType.IMAGE -> generateImageThumbnailFromFile(
+                MediaType.IMAGE -> generateImageThumbnailFromFile(
                     tempFile,
                 )
 
-                com.example.lifetogether.domain.model.enums.MediaType.VIDEO -> generateVideoThumbnailFromFile(
+                MediaType.VIDEO -> generateVideoThumbnailFromFile(
                     tempFile,
                 )
             }
@@ -534,13 +488,30 @@ class LocalDataSource @Inject constructor(
         if (items.isEmpty() && completeSourceList == null) {
             return
         }
-        println("LocalDataSource updateGalleryMedia(): Saving images and videos to MediaStore")
+        Log.d(TAG, "updateGalleryMedia(): Saving images and videos to MediaStore")
 
         // Fetch current items from Room
         val currentRoomItems = galleryMediaDao.getItems(familyId).firstOrNull() ?: emptyList()
         val currentMediaStoreUrisMap = currentRoomItems.associateBy({ it.id }, { it.mediaUri })
 
         val entityList = mutableListOf<GalleryMediaEntity>()
+
+        // If we already have all files locally and only metadata changed (e.g., album move),
+        // rebuild entities from the complete Firestore list so we can upsert metadata changes
+        // without re-downloading the media files.
+        if (items.isEmpty() && completeSourceList != null) {
+            val currentItemsById = currentRoomItems.associateBy { it.id }
+            completeSourceList.forEach { mediaItem ->
+                val existing = mediaItem.id?.let { currentItemsById[it] } ?: return@forEach
+                entityList.add(
+                    existing.copy(
+                        albumId = mediaItem.albumId,
+                        itemName = mediaItem.itemName,
+                        lastUpdated = mediaItem.lastUpdated,
+                    ),
+                )
+            }
+        }
 
         for ((mediaItem, downloadedFile) in items) {
             Log.d(
@@ -629,6 +600,7 @@ class LocalDataSource @Inject constructor(
                 newEntity.id == currentEntity.id &&
                     newEntity.mediaUri == currentEntity.mediaUri && // Key comparison points
                     newEntity.itemName == currentEntity.itemName &&
+                    newEntity.albumId == currentEntity.albumId &&
                     newEntity.lastUpdated == currentEntity.lastUpdated &&
                     (
                         newEntity.thumbnail?.contentEquals(
@@ -759,9 +731,7 @@ class LocalDataSource @Inject constructor(
     suspend fun updateAlbums(
         items: List<Album>,
     ) {
-        println("LocalDataSource updateAlbums(): Trying to add firestore data to Room")
-
-        println("Album list: $items")
+        Log.d(TAG, "updateAlbums()")
         val entityList = items.map { item ->
             AlbumEntity(
                 id = item.id ?: "",
@@ -779,8 +749,6 @@ class LocalDataSource @Inject constructor(
         val itemsToUpdate = entityList.filter { newItem ->
             currentItems.none { currentItem -> newItem.id == currentItem.id && newItem == currentItem }
         }
-
-        println("albumEntityList itemsToUpdate: ${itemsToUpdate.map { it.itemName }}")
 
         // Determine the items to be deleted
         val itemsToDelete = currentItems.filter { currentItem ->
@@ -803,9 +771,7 @@ class LocalDataSource @Inject constructor(
 
     // -------------------------------------------------------------- GROCERY LIST
     suspend fun updateTipTracker(items: List<TipItem>) {
-        println("LocalDataSource updateTipTracker(): Trying to add firestore data to Room")
-
-        println("TipItem list: $items")
+        Log.d(TAG, "updateTipTracker()")
         val tipEntityList = items.map { item ->
             TipEntity(
                 id = item.id ?: "",
@@ -817,7 +783,6 @@ class LocalDataSource @Inject constructor(
                 date = item.date,
             )
         }
-        println("tipEntityList list: $tipEntityList")
 
         // Fetch the current items from the Room database
         val currentItems = tipTrackerDao.getItems(items[0].familyId).first()
@@ -848,7 +813,7 @@ class LocalDataSource @Inject constructor(
 
     // -------------------------------------------------------------- IMAGES
     fun getImageByteArray(imageType: ImageType): Flow<ByteArray?> {
-        println("LocalDataSource getImageByteArray imageType: $imageType")
+        Log.d(TAG, "getImageByteArray imageType: $imageType")
         return when (imageType) {
             is ImageType.ProfileImage -> userInformationDao.getImageByteArray(imageType.uid)
 
@@ -864,148 +829,124 @@ class LocalDataSource @Inject constructor(
     }
 
     // --- Download helper functions ---
-    suspend fun getMediaFileForDownload(
-        mediaId: String,
+    fun getMediaFilesForDownload(
+        mediaIds: List<String>,
         familyId: String,
-    ): Pair<File, GalleryMedia?>? {
-        return try {
-            val mediaItem = galleryMediaDao.getItemByIdDirect(mediaId)
-            mediaItem?.mediaUri?.let { path ->
-                val file = File(path)
-                if (file.exists()) {
-                    Log.d("LocalDataSource", "Found media file at: $path")
-                    // Map entity to domain model based on mediaType
-                    val domainMediaItem = when (mediaItem.mediaType) {
-                        com.example.lifetogether.domain.model.enums.MediaType.IMAGE -> {
-                            GalleryImage(
-                                id = mediaItem.id,
-                                familyId = mediaItem.familyId,
-                                itemName = mediaItem.itemName,
-                                lastUpdated = mediaItem.lastUpdated,
-                                albumId = mediaItem.albumId,
-                                dateCreated = mediaItem.dateCreated,
-                            )
+    ): List<Pair<File, GalleryMedia?>>? {
+        try {
+            val pairs: MutableList<Pair<File, GalleryMedia?>> = mutableListOf()
+            val mediaItems = galleryMediaDao.getItemsByIds(familyId,mediaIds)
+            mediaItems?.forEach { mediaItem ->
+                mediaItem.mediaUri?.let { path ->
+                    val file = File(path)
+                    if (file.exists()) {
+                        Log.d("LocalDataSource", "Found media file at: $path")
+                        val domainMediaItem = when (mediaItem.mediaType) {
+                            MediaType.IMAGE -> {
+                                GalleryImage(
+                                    id = mediaItem.id,
+                                    familyId = mediaItem.familyId,
+                                    itemName = mediaItem.itemName,
+                                    lastUpdated = mediaItem.lastUpdated,
+                                    albumId = mediaItem.albumId,
+                                    dateCreated = mediaItem.dateCreated,
+                                )
+                            }
+
+                            MediaType.VIDEO -> {
+                                GalleryVideo(
+                                    id = mediaItem.id,
+                                    familyId = mediaItem.familyId,
+                                    itemName = mediaItem.itemName,
+                                    lastUpdated = mediaItem.lastUpdated,
+                                    albumId = mediaItem.albumId,
+                                    dateCreated = mediaItem.dateCreated,
+                                    duration = mediaItem.videoDuration,
+                                )
+                            }
                         }
-                        com.example.lifetogether.domain.model.enums.MediaType.VIDEO -> {
-                            GalleryVideo(
-                                id = mediaItem.id,
-                                familyId = mediaItem.familyId,
-                                itemName = mediaItem.itemName,
-                                lastUpdated = mediaItem.lastUpdated,
-                                albumId = mediaItem.albumId,
-                                dateCreated = mediaItem.dateCreated,
-                                duration = mediaItem.videoDuration,
-                            )
-                        }
+                        pairs.add(Pair(file, domainMediaItem))
+                    } else {
+                        Log.w("LocalDataSource", "Media file path doesn't exist: $path")
                     }
-                    Pair(file, domainMediaItem)
-                } else {
-                    Log.w("LocalDataSource", "Media file path doesn't exist: $path")
-                    null
                 }
             }
+            return pairs
         } catch (e: Exception) {
             Log.e("LocalDataSource", "Error getting media file for download: ${e.message}", e)
-            null
+            return null
         }
     }
 
-    suspend fun copyMediaToGalleryFolder(
+    fun copyMediaToGalleryFolder(
         mediaFile: File,
-        mediaId: String,
-        fileName: String,
-        mediaItem: GalleryMedia?,
+        mediaItem: GalleryMedia,
     ): ResultListener {
-        return try {
-            val resolver = context.contentResolver
-            val contentValues = ContentValues()
-            val collectionUri: Uri
+        val resolver = context.contentResolver
+        var mediaStoreUri: Uri? = null
 
-            contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
-            mediaItem?.dateCreated?.time?.let {
-                contentValues.put(
-                    MediaStore.MediaColumns.DATE_TAKEN,
-                    it,
+        return try {
+            val (collectionUri, relativePath, mimeType) = when (mediaItem) {
+                is GalleryImage -> Triple(
+                    MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY),
+                    "Pictures/LifeTogether",
+                    "image/jpeg"
+                )
+                is GalleryVideo -> Triple(
+                    MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY),
+                    "Movies/LifeTogether",
+                    "video/mp4"
                 )
             }
 
-            val mimeType = when (mediaItem) {
-                is GalleryImage -> {
-                    collectionUri =
-                        MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-                    contentValues.put(
-                        MediaStore.Images.Media.RELATIVE_PATH,
-                        "Pictures/LifeTogether",
-                    )
-                    "image/jpeg"
+            // 2. Prepare Metadata
+            val contentValues = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, mediaItem.itemName)
+                put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+                put(MediaStore.MediaColumns.RELATIVE_PATH, relativePath)
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
+
+                mediaItem.dateCreated?.time?.let {
+                    put(MediaStore.MediaColumns.DATE_TAKEN, it)
                 }
 
-                is GalleryVideo -> {
-                    collectionUri =
-                        MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-                    contentValues.put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/LifeTogether")
-                    mediaItem.duration?.let {
-                        contentValues.put(
-                            MediaStore.Video.Media.DURATION,
-                            it,
-                        )
-                    }
-                    "video/mp4"
-                }
-
-                else -> {
-                    // Fallback: try to determine from file extension
-                    val extension = fileName.substringAfterLast('.')
-                    if (extension in listOf("jpg", "jpeg", "png", "gif")) {
-                        collectionUri =
-                            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-                        contentValues.put(
-                            MediaStore.Images.Media.RELATIVE_PATH,
-                            "Pictures/LifeTogether",
-                        )
-                        "image/jpeg"
-                    } else {
-                        collectionUri =
-                            MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-                        contentValues.put(
-                            MediaStore.Video.Media.RELATIVE_PATH,
-                            "Movies/LifeTogether",
-                        )
-                        "video/mp4"
-                    }
+                if (mediaItem is GalleryVideo) {
+                    mediaItem.duration?.let { put(MediaStore.Video.Media.DURATION, it) }
                 }
             }
 
-            contentValues.put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
-            contentValues.put(MediaStore.MediaColumns.IS_PENDING, 1)
+            // 3. Insert Empty File (Reserve the spot)
+            mediaStoreUri = resolver.insert(collectionUri, contentValues)
+                ?: return ResultListener.Failure("Failed to create MediaStore entry")
 
-            var mediaStoreUri: Uri? = null
-            try {
-                mediaStoreUri = resolver.insert(collectionUri, contentValues)
-                mediaStoreUri?.let { uri ->
-                    resolver.openOutputStream(uri)?.use { outputStream ->
-                        mediaFile.inputStream().use { inputStream ->
-                            inputStream.copyTo(outputStream)
-                        }
-                    }
-                    contentValues.clear()
-                    contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
-                    resolver.update(uri, contentValues, null, null)
-
-                    Log.d("LocalDataSource", "Media file downloaded to gallery: $uri")
-                    ResultListener.Success
-                } ?: run {
-                    Log.e("LocalDataSource", "MediaStore insert returned null URI")
-                    ResultListener.Failure("Failed to save to gallery")
+            // 4. Write Data to Stream
+            resolver.openOutputStream(mediaStoreUri)?.use { outputStream ->
+                mediaFile.inputStream().use { inputStream ->
+                    inputStream.copyTo(outputStream)
                 }
-            } catch (e: Exception) {
-                Log.e("LocalDataSource", "Error downloading media to gallery: ${e.message}", e)
-                mediaStoreUri?.let { resolver.delete(it, null, null) }
-                ResultListener.Failure("Failed to download file: ${e.message}")
-            }
+            } ?: return ResultListener.Failure("Failed to open output stream")
+
+            // 5. Finalize (Publish the file)
+            contentValues.clear()
+            contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
+            resolver.update(mediaStoreUri, contentValues, null, null)
+
+            Log.d("LocalDataSource", "Media saved successfully: $mediaStoreUri")
+            ResultListener.Success
+
         } catch (e: Exception) {
-            Log.e("LocalDataSource", "Error in copyMediaToGalleryFolder: ${e.message}", e)
-            ResultListener.Failure("Failed to download file: ${e.message}")
+            Log.e("LocalDataSource", "Error saving media: ${e.message}", e)
+
+            // Cleanup: Delete the corrupted/empty file if we crashed midway
+            mediaStoreUri?.let { uri ->
+                try {
+                    resolver.delete(uri, null, null)
+                } catch (e: Exception) {
+                    Log.w("LocalDataSource", "Failed to clean up partial file: $uri")
+                }
+            }
+
+            ResultListener.Failure("Failed to save file: ${e.message}")
         }
     }
 }

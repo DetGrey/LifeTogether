@@ -1,7 +1,7 @@
 package com.example.lifetogether.domain.usecase.family
 
 import com.example.lifetogether.data.repository.RemoteUserRepositoryImpl
-import com.example.lifetogether.domain.callback.ResultListener
+import com.example.lifetogether.domain.listener.ResultListener
 import javax.inject.Inject
 
 data class CreateNewFamilyUseCase @Inject constructor(

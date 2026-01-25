@@ -5,8 +5,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.callback.FamilyInformationResultListener
-import com.example.lifetogether.domain.callback.ResultListener
+import com.example.lifetogether.domain.listener.FamilyInformationResultListener
+import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.model.family.FamilyMember
 import com.example.lifetogether.domain.usecase.family.DeleteFamilyUseCase

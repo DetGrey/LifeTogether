@@ -1,7 +1,7 @@
 package com.example.lifetogether.domain.usecase.image
 
 import com.example.lifetogether.data.repository.LocalImageRepositoryImpl
-import com.example.lifetogether.domain.callback.ByteArrayResultListener
+import com.example.lifetogether.domain.listener.ByteArrayResultListener
 import com.example.lifetogether.domain.model.sealed.ImageType
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject

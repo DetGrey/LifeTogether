@@ -1,7 +1,7 @@
 package com.example.lifetogether.domain.usecase.family
 
 import com.example.lifetogether.data.repository.LocalUserRepositoryImpl
-import com.example.lifetogether.domain.callback.FamilyInformationResultListener
+import com.example.lifetogether.domain.listener.FamilyInformationResultListener
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 

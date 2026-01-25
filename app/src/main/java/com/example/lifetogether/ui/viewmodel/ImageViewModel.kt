@@ -6,7 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.callback.ByteArrayResultListener
+import com.example.lifetogether.domain.listener.ByteArrayResultListener
 import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.usecase.image.FetchImageByteArrayUseCase

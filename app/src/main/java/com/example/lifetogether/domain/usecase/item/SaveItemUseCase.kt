@@ -1,7 +1,7 @@
 package com.example.lifetogether.domain.usecase.item
 
 import com.example.lifetogether.data.repository.RemoteListRepositoryImpl
-import com.example.lifetogether.domain.callback.StringResultListener
+import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.model.Item
 import javax.inject.Inject
 

@@ -3,12 +3,12 @@ package com.example.lifetogether.data.repository
 import androidx.core.net.toUri
 import com.example.lifetogether.data.local.LocalDataSource
 import com.example.lifetogether.data.model.Entity
-import com.example.lifetogether.domain.callback.CategoriesListener
-import com.example.lifetogether.domain.callback.GrocerySuggestionsListener
-import com.example.lifetogether.domain.callback.ItemResultListener
-import com.example.lifetogether.domain.callback.ListItemsResultListener
-import com.example.lifetogether.domain.callback.ResultListener
-import com.example.lifetogether.domain.callback.StringResultListener
+import com.example.lifetogether.domain.listener.CategoriesListener
+import com.example.lifetogether.domain.listener.GrocerySuggestionsListener
+import com.example.lifetogether.domain.listener.ItemResultListener
+import com.example.lifetogether.domain.listener.ListItemsResultListener
+import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Item
 import com.example.lifetogether.domain.model.TipItem
@@ -144,7 +144,7 @@ class LocalListRepositoryImpl @Inject constructor(
                 try {
                     println("LocalListRepoImpl fetchListItems entities: $entities")
                     // Convert entities to items
-                    val itemsList = entities.map { it.toItem(itemType) }
+                    val itemsList = entities.map { it.toItem(itemType) }.sortedBy { it.itemName }
                     println("LocalListRepoImpl after getting items from local data source")
                     println("fetchListItems of specified itemType: $itemsList")
                     ListItemsResultListener.Success(itemsList)

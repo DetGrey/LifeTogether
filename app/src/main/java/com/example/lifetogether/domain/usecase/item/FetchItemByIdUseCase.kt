@@ -1,7 +1,7 @@
 package com.example.lifetogether.domain.usecase.item
 
 import com.example.lifetogether.data.repository.LocalListRepositoryImpl
-import com.example.lifetogether.domain.callback.ItemResultListener
+import com.example.lifetogether.domain.listener.ItemResultListener
 import com.example.lifetogether.domain.model.Item
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject

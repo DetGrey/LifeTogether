@@ -6,8 +6,8 @@ import android.provider.MediaStore
 import android.util.Log
 import com.example.lifetogether.data.repository.RemoteImageRepositoryImpl
 import com.example.lifetogether.data.repository.RemoteListRepositoryImpl
-import com.example.lifetogether.domain.callback.ResultListener
-import com.example.lifetogether.domain.callback.StringResultListener
+import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo

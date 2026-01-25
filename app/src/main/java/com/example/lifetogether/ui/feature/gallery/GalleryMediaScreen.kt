@@ -21,10 +21,13 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.enums.MediaType
+import com.example.lifetogether.ui.common.OverflowMenu
 import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.image.DisplayImageFromUri
 import com.example.lifetogether.ui.common.image.DisplayVideoFromUri
+import com.example.lifetogether.ui.model.MenuAction
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 
@@ -52,6 +55,7 @@ fun GalleryMediaScreen(
         pageCount = { mediaList.size }
     )
 
+    // TODO is this needed since it is empty?
     // Pause videos when swiping away from them
     LaunchedEffect(pagerState.currentPage) {
         // This will be called whenever the page changes
@@ -88,20 +92,16 @@ fun GalleryMediaScreen(
                 },
                 rightIcon = Icon(
                     resId = R.drawable.ic_overflow_menu,
-                    description = "download menu",
+                    description = "overflow menu",
                 ),
-                onRightClick = {
-                    if (!uiState.isDownloading && mediaList.isNotEmpty()) {
-                        galleryMediaViewModel.downloadMedia(pagerState.currentPage)
-                    }
-                }
+                onRightClick = { galleryMediaViewModel.toggleOverflowMenu() },
             )
 
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.weight(1f),
-                pageSpacing = 16.dp, // Better UX for horizontal images
-                beyondViewportPageCount = 1 // Pre-loads for performance
+                pageSpacing = 16.dp,
+                beyondViewportPageCount = 1
             ) { page ->
                 val media = mediaList[page]
 
@@ -141,6 +141,41 @@ fun GalleryMediaScreen(
                     Text(text = uiState.downloadMessage!!)
                 }
             }
+        }
+
+    }
+    // ---------------------------------------------------------------- OVERFLOW MENU
+    if (uiState.showOverflowMenu) {
+        OverflowMenu(
+            onDismiss = { galleryMediaViewModel.toggleOverflowMenu() },
+            actionsList = MenuAction.GalleryMediaActions.entries.map {
+                mapOf(it.label to { galleryMediaViewModel.startOverflowAction(it) })
+            }
+        )
+    }
+    // ---------------------------------------------------------------- OVERFLOW MENU ACTIONS DIALOG
+    if (uiState.showOverflowMenuActionDialog && uiState.overflowMenuAction != null) {
+        when (uiState.overflowMenuAction) {
+            MenuAction.GalleryMediaActions.DOWNLOAD -> {
+                if (!uiState.isDownloading && mediaList.isNotEmpty()) {
+                    galleryMediaViewModel.downloadMedia(pagerState.currentPage)
+
+                }
+            }
+            MenuAction.GalleryMediaActions.DELETE -> {
+                ConfirmationDialog(
+                    onDismiss = { galleryMediaViewModel.dismissOverflowMenuActionDialog() },
+                    onConfirm = {
+                        // TODO
+//                        galleryMediaViewModel.deleteAlbum(onDeleteSuccess = { appNavigator?.navigateBack() })
+                    },
+                    dialogTitle = "Delete",
+                    dialogMessage = "Are you sure you want to delete this?",
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Delete",
+                )
+            }
+            else -> {}
         }
     }
     // ---------------------------------------------------------------- SHOW ERROR ALERT

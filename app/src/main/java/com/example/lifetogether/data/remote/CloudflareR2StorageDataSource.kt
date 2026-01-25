@@ -16,10 +16,10 @@ import aws.smithy.kotlin.runtime.content.writeToFile
 import aws.smithy.kotlin.runtime.net.url.Url
 import com.example.lifetogether.BuildConfig
 import com.example.lifetogether.data.logic.ImageProcessor
-import com.example.lifetogether.domain.callback.ByteArrayResultListener
-import com.example.lifetogether.domain.callback.ResultListener
-import com.example.lifetogether.domain.callback.StringResultListener
-import com.example.lifetogether.domain.callback.TempFileDownloadResult
+import com.example.lifetogether.domain.listener.ByteArrayResultListener
+import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.listener.StringResultListener
+import com.example.lifetogether.domain.listener.TempFileDownloadResult
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.repository.StorageRepository
 import kotlinx.coroutines.Dispatchers

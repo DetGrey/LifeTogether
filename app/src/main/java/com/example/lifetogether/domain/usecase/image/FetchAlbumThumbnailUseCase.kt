@@ -1,7 +1,6 @@
 package com.example.lifetogether.domain.usecase.image
 
 import com.example.lifetogether.data.repository.LocalImageRepositoryImpl
-import com.example.lifetogether.domain.callback.ByteArrayResultListener
 import javax.inject.Inject
 
 class FetchAlbumThumbnailUseCase @Inject constructor(
@@ -9,7 +8,7 @@ class FetchAlbumThumbnailUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(
         albumId: String,
-    ): ByteArrayResultListener {
-        return localImageRepositoryImpl.getAlbumThumbnail(albumId)
+    ) {
+        localImageRepositoryImpl.getAlbumThumbnail(albumId)
     }
 }

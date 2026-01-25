@@ -6,7 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.callback.AuthResultListener
+import com.example.lifetogether.domain.listener.AuthResultListener
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.enums.UpdateType
 import com.example.lifetogether.domain.usecase.observers.ObserveAlbumsUseCase

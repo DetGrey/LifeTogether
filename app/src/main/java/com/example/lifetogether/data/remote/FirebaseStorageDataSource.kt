@@ -4,10 +4,10 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import com.example.lifetogether.data.logic.ImageProcessor
-import com.example.lifetogether.domain.callback.ByteArrayResultListener
-import com.example.lifetogether.domain.callback.ResultListener
-import com.example.lifetogether.domain.callback.StringResultListener
-import com.example.lifetogether.domain.callback.TempFileDownloadResult
+import com.example.lifetogether.domain.listener.ByteArrayResultListener
+import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.listener.StringResultListener
+import com.example.lifetogether.domain.listener.TempFileDownloadResult
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.repository.StorageRepository
 import com.google.firebase.storage.FirebaseStorage

@@ -4,8 +4,8 @@ import android.content.Context
 import android.net.Uri
 import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.repository.StorageRepository
-import com.example.lifetogether.domain.callback.ResultListener
-import com.example.lifetogether.domain.callback.StringResultListener
+import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.sealed.ImageType
 import javax.inject.Inject

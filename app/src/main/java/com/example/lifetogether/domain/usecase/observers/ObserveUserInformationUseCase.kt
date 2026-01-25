@@ -3,8 +3,8 @@ package com.example.lifetogether.domain.usecase.observers
 import com.example.lifetogether.data.local.LocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.repository.StorageRepository
-import com.example.lifetogether.domain.callback.AuthResultListener
-import com.example.lifetogether.domain.callback.ByteArrayResultListener
+import com.example.lifetogether.domain.listener.AuthResultListener
+import com.example.lifetogether.domain.listener.ByteArrayResultListener
 import javax.inject.Inject
 
 class ObserveUserInformationUseCase @Inject constructor(

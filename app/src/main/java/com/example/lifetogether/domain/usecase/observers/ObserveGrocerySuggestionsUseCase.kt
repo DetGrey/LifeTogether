@@ -2,7 +2,7 @@ package com.example.lifetogether.domain.usecase.observers
 
 import com.example.lifetogether.data.local.LocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.callback.GrocerySuggestionsListener
+import com.example.lifetogether.domain.listener.GrocerySuggestionsListener
 import javax.inject.Inject
 
 class ObserveGrocerySuggestionsUseCase @Inject constructor(

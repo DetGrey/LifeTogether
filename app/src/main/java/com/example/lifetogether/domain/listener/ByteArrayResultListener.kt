@@ -1,4 +1,4 @@
-package com.example.lifetogether.domain.callback
+package com.example.lifetogether.domain.listener
 
 sealed class ByteArrayResultListener {
     data class Success(val byteArray: ByteArray) : ByteArrayResultListener() {

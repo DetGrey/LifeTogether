@@ -4,9 +4,9 @@ import android.content.Context
 import android.util.Log
 import com.example.lifetogether.data.local.LocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.callback.ListItemsResultListener
+import com.example.lifetogether.domain.listener.ListItemsResultListener
 import com.example.lifetogether.domain.repository.StorageRepository
-import com.example.lifetogether.domain.callback.TempFileDownloadResult
+import com.example.lifetogether.domain.listener.TempFileDownloadResult
 import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import kotlinx.coroutines.Deferred
@@ -28,15 +28,14 @@ class ObserveGalleryMediaUseCase @Inject constructor(
     companion object {
         private const val TAG = "ObserveGalleryMedia"
         // Limit concurrent downloads to prevent ANR and memory exhaustion
-        private const val MAX_CONCURRENT_DOWNLOADS = 3
+        private const val MAX_CONCURRENT_DOWNLOADS = 2
         // Batch size for Room database updates to prevent blocking main thread
-        private const val BATCH_SIZE = 10 // Reduced from 25 to process smaller chunks
+        private const val BATCH_SIZE = 10
         // Retry attempts for failed individual downloads
         private const val MAX_RETRY_ATTEMPTS = 3
         // Base delay for exponential backoff (ms)
         private const val BASE_RETRY_DELAY = 500L
         // How many rounds to retry failed items (in addition to per-item retries)
-        // Increased to ensure all items get multiple attempts across observer updates
         private const val MAX_DOWNLOAD_ROUNDS = 10
         // Delay between rounds (ms)
         private const val ROUND_RETRY_DELAY = 2000L

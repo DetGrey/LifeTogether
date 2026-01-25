@@ -2,35 +2,60 @@ package com.example.lifetogether.domain.usecase.image
 
 import android.util.Log
 import com.example.lifetogether.data.local.LocalDataSource
-import com.example.lifetogether.domain.callback.ResultListener
+import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.model.SaveProgress
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 class DownloadMediaUseCase @Inject constructor(
     private val localDataSource: LocalDataSource,
 ) {
-    suspend operator fun invoke(
-        mediaId: String,
+    operator fun invoke(
+        mediaIds: List<String>,
         familyId: String,
-        fileName: String,
-    ): ResultListener {
-        return try {
-            Log.d("DownloadMediaUseCase", "Attempting to download media: $mediaId")
+    ): Flow<SaveProgress> = flow {
+        Log.d("DownloadMediaUseCase", "Attempting to download media")
 
-            val mediaFileWithItem = localDataSource.getMediaFileForDownload(mediaId, familyId)
-            if (mediaFileWithItem == null) {
-                Log.w("DownloadMediaUseCase", "Media file not found: $mediaId")
-                return ResultListener.Failure("Media file not found")
+        if (mediaIds.isEmpty()) {
+            emit(SaveProgress.Finished(0, 0))
+            return@flow
+        }
+
+        try {
+            val items = localDataSource.getMediaFilesForDownload(mediaIds, familyId)
+
+            if (items.isNullOrEmpty()) {
+                emit(SaveProgress.Error("No media items found"))
+                return@flow
             }
 
-            val (mediaFile, mediaItem) = mediaFileWithItem
-            val result = localDataSource.copyMediaToGalleryFolder(mediaFile, mediaId, fileName, mediaItem)
-            if (result is ResultListener.Success) {
-                Log.d("DownloadMediaUseCase", "Media downloaded successfully: $mediaId")
+            var successCount = 0
+            var failureCount = 0
+
+            items.forEachIndexed { index, (file, mediaItem) ->
+                emit(SaveProgress.Loading(current = index + 1, total = items.size))
+
+                if (mediaItem == null) {
+                    failureCount++
+                    return@forEachIndexed
+                }
+
+                val result = localDataSource.copyMediaToGalleryFolder(file, mediaItem)
+
+                if (result is ResultListener.Success) {
+                    successCount++
+                } else {
+                    failureCount++
+                }
             }
-            result
+
+            emit(SaveProgress.Finished(successCount, failureCount))
+
         } catch (e: Exception) {
-            Log.e("DownloadMediaUseCase", "Error downloading media: ${e.message}", e)
-            ResultListener.Failure("Error downloading media: ${e.message}")
+            Log.e("DownloadMediaUseCase", "Critical failure", e)
+            emit(SaveProgress.Error("Unexpected error: ${e.message}"))
         }
     }
 }
+

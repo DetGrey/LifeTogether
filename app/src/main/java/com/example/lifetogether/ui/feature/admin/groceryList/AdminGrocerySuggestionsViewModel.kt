@@ -5,9 +5,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.callback.CategoriesListener
-import com.example.lifetogether.domain.callback.GrocerySuggestionsListener
-import com.example.lifetogether.domain.callback.ResultListener
+import com.example.lifetogether.domain.listener.CategoriesListener
+import com.example.lifetogether.domain.listener.GrocerySuggestionsListener
+import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.usecase.item.DeleteGrocerySuggestionUseCase

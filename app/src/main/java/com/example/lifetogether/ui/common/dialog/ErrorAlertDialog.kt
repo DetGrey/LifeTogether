@@ -17,34 +17,45 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 
 @Composable
 fun ErrorAlertDialog(error: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
+    Dialog(
+        onDismissRequest = {},
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnBackPress = false,
+            dismissOnClickOutside = false,
+        )
     ) {
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.TopCenter) // Align the inner box to the top center
-                .clip(RoundedCornerShape(16.dp)) // Rounded corners
-                .background(MaterialTheme.colorScheme.error) // Orange background color
-                .padding(16.dp),
+                .fillMaxSize()
+                .padding(16.dp)
         ) {
-            Column {
-                Text(
-                    text = "An error occurred",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Color.White,
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = error,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White,
-                )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.TopCenter)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.error)
+                    .padding(16.dp),
+            ) {
+                Column {
+                    Text(
+                        text = "An error occurred",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.White,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White,
+                    )
+                }
             }
         }
     }

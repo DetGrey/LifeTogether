@@ -2,11 +2,12 @@ package com.example.lifetogether.ui.feature.gallery
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -22,21 +23,29 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.durationToString
+import com.example.lifetogether.ui.common.list.CompletableBox
 import com.example.lifetogether.ui.common.text.TextDefault
 
 @Composable
 fun ThumbnailContainer(
     thumbnail: ByteArray?,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
     isVideo: Boolean = false,
     duration: Long? = null,
+    isSelectionMode: Boolean = false,
+    isSelected: Boolean = false,
+    onSelectionToggle: () -> Unit = {},
 ) {
     Box(
         modifier = Modifier
             .aspectRatio(1f)
             .clip(RoundedCornerShape(10))
             .background(MaterialTheme.colorScheme.onBackground)
-            .clickable { onClick() },
+            .combinedClickable(
+                onClick = { onClick() },
+                onLongClick = { onLongClick() }
+            ),
         contentAlignment = Alignment.Center,
     ) {
         if (thumbnail != null) {
@@ -75,6 +84,19 @@ fun ThumbnailContainer(
                 contentAlignment = Alignment.BottomEnd,
             ) {
                 TextDefault(durationToString(duration), color = Color.White)
+            }
+        }
+        if (isSelectionMode) {
+            Box(
+                modifier = Modifier
+                    .size(50.dp)
+                    .align(Alignment.TopStart)
+                    .padding(5.dp),
+            ) {
+                CompletableBox(
+                    isCompleted = isSelected,
+                    onCompleteToggle = onSelectionToggle,
+                )
             }
         }
     }

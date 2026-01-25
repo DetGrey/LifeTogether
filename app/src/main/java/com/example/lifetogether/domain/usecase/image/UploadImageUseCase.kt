@@ -3,8 +3,8 @@ package com.example.lifetogether.domain.usecase.image
 import android.content.Context
 import android.net.Uri
 import com.example.lifetogether.data.repository.RemoteImageRepositoryImpl
-import com.example.lifetogether.domain.callback.ResultListener
-import com.example.lifetogether.domain.callback.StringResultListener
+import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.model.sealed.ImageType
 import javax.inject.Inject
 

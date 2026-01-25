@@ -1,7 +1,7 @@
 package com.example.lifetogether.data.remote
 
-import com.example.lifetogether.domain.callback.AuthResultListener
-import com.example.lifetogether.domain.callback.ResultListener
+import com.example.lifetogether.domain.listener.AuthResultListener
+import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
 import com.google.firebase.Firebase
@@ -74,7 +74,7 @@ class FirebaseAuthDataSource@Inject constructor(
         }
     }
 
-    fun logout(
+    suspend fun logout(
         uid: String,
         familyId: String?,
     ): ResultListener {

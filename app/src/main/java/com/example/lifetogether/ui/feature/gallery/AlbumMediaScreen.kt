@@ -1,14 +1,20 @@
 package com.example.lifetogether.ui.feature.gallery
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
@@ -23,8 +29,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
+import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.model.Icon
-import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.ui.common.OverflowMenu
@@ -32,8 +38,12 @@ import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
+import com.example.lifetogether.ui.common.dialog.CustomConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.image.MediaUploadMultipleDialog
+import com.example.lifetogether.ui.common.list.CompletableBox
+import com.example.lifetogether.ui.common.text.TextDefault
+import com.example.lifetogether.ui.model.MenuAction
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 import com.example.lifetogether.ui.viewmodel.ImageViewModel
@@ -74,7 +84,7 @@ fun AlbumMediaScreen(
                 .fillMaxSize()
                 .padding(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(30.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             TopBar(
                 leftIcon = Icon(
@@ -89,19 +99,51 @@ fun AlbumMediaScreen(
                 ),
                 onRightClick = { albumMediaViewModel.toggleOverflowMenu() },
             )
+            when (uiState.isSelectionModeActive) {
+                true -> {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(20.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CompletableBox(
+                                isCompleted = uiState.isAllMediaSelected,
+                                onCompleteToggle = {
+                                    albumMediaViewModel.toggleAllMediaSelection()
+                                }
+                            )
+                            TextDefault(text = "All")
+                        }
+                        val selectedMediaCount = uiState.selectedMedia.size
+                        TextDefault(text = "$selectedMediaCount selected")
+                        TextDefault(
+                            text = "Cancel",
+                            modifier = Modifier.clickable {
+                                albumMediaViewModel.toggleSelectionMode()
+                            }
+                        )
+                    }
+                }
+                false -> Spacer(modifier = Modifier.height(30.dp))
+            }
 
             if (uiState.media.isEmpty()) {
                 if (uiState.isSyncing) {
-                    Text(text = "Syncing media…")
+                    TextDefault(text = "Syncing media…")
                 } else {
-                    Text(text = "No images in this album. Press + to create one.")
+                    TextDefault(text = "No images in this album. Press + to create one.")
                 }
             } else {
                 if (uiState.isPartialLoad) {
-                    Text(
+                    TextDefault(
                         text = "⚠ Only ${uiState.media.size} of ${uiState.album?.count} items loaded. Pull to refresh to retry.",
                         modifier = Modifier.padding(vertical = 10.dp),
-                        style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
                     )
                 }
                 LazyVerticalGrid(
@@ -120,19 +162,32 @@ fun AlbumMediaScreen(
                             media.id?.let { albumMediaViewModel.fetchThumbnail(it) }
                         }
 
-                        if (media is GalleryImage) {
-                            ThumbnailContainer(
-                                thumbnail = thumbnail,
-                                onClick = { appNavigator?.navigateToGalleryMedia(albumId, index) },
-                            )
-                        } else if (media is GalleryVideo) {
-                            ThumbnailContainer(
-                                thumbnail = thumbnail,
-                                onClick = { appNavigator?.navigateToGalleryMedia(albumId, index) },
-                                isVideo = true,
-                                duration = media.duration,
-                            )
-                        }
+                        val isVideo = media is GalleryVideo
+                        val duration = (media as? GalleryVideo)?.duration
+
+                        ThumbnailContainer(
+                            thumbnail = thumbnail,
+                            isVideo = isVideo,
+                            duration = duration,
+                            onClick = {
+                                if (uiState.isSelectionModeActive) {
+                                    albumMediaViewModel.toggleMediaSelection(media.id)
+                                } else {
+                                    appNavigator?.navigateToGalleryMedia(albumId, index)
+                                }
+                            },
+                            onLongClick = {
+                                if (!uiState.isSelectionModeActive) {
+                                    albumMediaViewModel.toggleSelectionMode()
+                                    albumMediaViewModel.toggleMediaSelection(media.id)
+                                }
+                            },
+                            isSelectionMode = uiState.isSelectionModeActive,
+                            isSelected = uiState.selectedMedia.contains(media.id),
+                            onSelectionToggle = {
+                                albumMediaViewModel.toggleMediaSelection(media.id)
+                            }
+                        )
                     }
                 }
             }
@@ -157,26 +212,16 @@ fun AlbumMediaScreen(
 
     // ---------------------------------------------------------------- OVERFLOW MENU
     if (uiState.showOverflowMenu) {
+        val actions = when (uiState.isSelectionModeActive) {
+            true -> MenuAction.SelectionActions.entries
+            false -> MenuAction.AlbumActions.entries
+        }
+
         OverflowMenu(
             onDismiss = { albumMediaViewModel.toggleOverflowMenu() },
-            actionsList = listOf(
-                mapOf(
-                    "Rename album" to {
-                        albumMediaViewModel.startOverflowAction(AlbumMediaViewModel.OverflowMenuActions.RENAME_ALBUM)
-                    },
-                ),
-                mapOf(
-                    "Select media" to {
-                        // todo
-                    },
-                ),
-                mapOf(
-                    "Delete album" to {
-                        albumMediaViewModel.startOverflowAction(AlbumMediaViewModel.OverflowMenuActions.DELETE_ALBUM)
-                    },
-                ),
-
-            ),
+            actionsList = actions.map {
+                mapOf(it.label to { albumMediaViewModel.startOverflowAction(it) })
+            }
         )
     }
 
@@ -197,41 +242,102 @@ fun AlbumMediaScreen(
 
     // ---------------------------------------------------------------- OVERFLOW MENU ACTIONS DIALOG
     if (uiState.showOverflowMenuActionDialog && uiState.overflowMenuAction != null) {
-        when (uiState.overflowMenuAction) {
-            AlbumMediaViewModel.OverflowMenuActions.RENAME_ALBUM -> {
-                ConfirmationDialogWithTextField(
-                    onDismiss = { albumMediaViewModel.dismissOverflowMenuActionDialog() },
-                    onConfirm = { albumMediaViewModel.renameAlbum() },
-                    dialogTitle = "Rename album",
-                    dialogMessage = "Enter a new name for the album",
-                    dismissButtonMessage = "Cancel",
-                    confirmButtonMessage = "Rename album",
-                    textValue = uiState.actionDialogText,
-                    onTextValueChange = { albumMediaViewModel.setActionDialogText(it) },
-                    capitalization = true,
-                )
+        when (val action = uiState.overflowMenuAction) {
+            is MenuAction.AlbumActions -> {
+                when (action) {
+                    MenuAction.AlbumActions.RENAME -> {
+                        ConfirmationDialogWithTextField(
+                            onDismiss = { albumMediaViewModel.dismissOverflowMenuActionDialog() },
+                            onConfirm = { albumMediaViewModel.renameAlbum() },
+                            dialogTitle = "Rename album",
+                            dialogMessage = "Enter a new name for the album",
+                            dismissButtonMessage = "Cancel",
+                            confirmButtonMessage = "Rename album",
+                            textValue = uiState.actionDialogText,
+                            onTextValueChange = { albumMediaViewModel.setActionDialogText(it) },
+                            capitalization = true,
+                        )
+                    }
+                    MenuAction.AlbumActions.DELETE -> {
+                        ConfirmationDialog(
+                            onDismiss = { albumMediaViewModel.dismissOverflowMenuActionDialog() },
+                            onConfirm = {
+                                albumMediaViewModel.deleteAlbum(onDeleteSuccess = { appNavigator?.navigateBack() })
+                            },
+                            dialogTitle = "Delete album",
+                            dialogMessage = "Are you sure you want to delete this album?",
+                            dismissButtonMessage = "Cancel",
+                            confirmButtonMessage = "Delete album",
+                        )
+                    }
+                }
             }
-            AlbumMediaViewModel.OverflowMenuActions.SELECT_MEDIA -> {
-            }
-            AlbumMediaViewModel.OverflowMenuActions.DELETE_ALBUM -> {
-                ConfirmationDialog(
-                    onDismiss = { albumMediaViewModel.dismissOverflowMenuActionDialog() },
-                    onConfirm = {
-                        albumMediaViewModel.deleteAlbum(onDeleteSuccess = { appNavigator?.navigateBack() })
-                    },
-                    dialogTitle = "Delete album",
-                    dialogMessage = "Are you sure you want to delete this album?",
-                    dismissButtonMessage = "Cancel",
-                    confirmButtonMessage = "Delete album",
-                )
+            is MenuAction.SelectionActions -> {
+                when (action) {
+                    MenuAction.SelectionActions.DOWNLOAD -> {
+                        albumMediaViewModel.downloadSelectedMedia()
+                    }
+                    MenuAction.SelectionActions.DELETE -> {
+                        ConfirmationDialog(
+                            onDismiss = { albumMediaViewModel.dismissOverflowMenuActionDialog() },
+                            onConfirm = {
+                                albumMediaViewModel.deleteSelectedMedia()
+                            },
+                            dialogTitle = "Delete selected media",
+                            dialogMessage = "Are you sure you want to delete the selected media?",
+                            dismissButtonMessage = "Cancel",
+                            confirmButtonMessage = "Delete selected",
+                        )
+                    }
+                    MenuAction.SelectionActions.MOVE -> {
+                        CustomConfirmationDialog(
+                            onDismiss = { albumMediaViewModel.dismissOverflowMenuActionDialog() },
+                            onConfirm = {
+                                albumMediaViewModel.showError("Please choose an album first")
+                            },
+                            dialogTitle = "Move to another album",
+                            dialogMessage = "Are you sure you want to move the selected media to another album?",
+                            dismissButtonMessage = "Cancel",
+                            confirmButtonMessage = "Move",
+                            content = {
+                                FlowRow(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    maxItemsInEachRow = 2,
+                                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                                ) {
+                                    for (album in uiState.albums) {
+                                        AlbumContainer(
+                                            album.name,
+                                            album.mediaCount,
+                                            album.thumbnail?.toBitmap(),
+                                            onClick = {
+                                                albumMediaViewModel.moveSelectedMediaToAlbum(album.id)
+                                            },
+                                        )
+                                    }
+                                }
+                            }
+                        )
+                    }
+                }
             }
             else -> {}
         }
     }
-
+    // ---------------------------------------------------------------- DOWNLOAD
+    if (uiState.downloadMessage != null) {
+        Box { // TODO make something for this??
+            if (uiState.isDownloading) {
+                CircularProgressIndicator()
+                Text(text = uiState.downloadMessage!!)
+            } else {
+                Text(text = uiState.downloadMessage!!)
+            }
+        }
+    }
     // ---------------------------------------------------------------- SHOW ERROR ALERT
     if (uiState.showAlertDialog) {
-        ErrorAlertDialog(uiState.error)
+        ErrorAlertDialog(error = uiState.error)
         albumMediaViewModel.dismissAlert()
     }
 }

@@ -1,7 +1,7 @@
 package com.example.lifetogether.domain.usecase.gallery
 
 import com.example.lifetogether.data.repository.LocalListRepositoryImpl
-import com.example.lifetogether.domain.callback.ListItemsResultListener
+import com.example.lifetogether.domain.listener.ListItemsResultListener
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map

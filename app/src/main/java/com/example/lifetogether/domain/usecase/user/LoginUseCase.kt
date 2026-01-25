@@ -1,7 +1,7 @@
 package com.example.lifetogether.domain.usecase.user
 
 import com.example.lifetogether.data.repository.RemoteUserRepositoryImpl
-import com.example.lifetogether.domain.callback.AuthResultListener
+import com.example.lifetogether.domain.listener.AuthResultListener
 import com.example.lifetogether.domain.model.User
 import javax.inject.Inject
 
