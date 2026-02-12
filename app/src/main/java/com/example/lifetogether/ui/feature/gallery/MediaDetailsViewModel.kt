@@ -3,8 +3,10 @@ package com.example.lifetogether.ui.feature.gallery
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.listener.ListItemsResultListener
+import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.model.SaveProgress
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
+import com.example.lifetogether.domain.usecase.gallery.DeleteMediaUseCase
 import com.example.lifetogether.domain.usecase.gallery.FetchAlbumMediaUseCase
 import com.example.lifetogether.domain.usecase.image.DownloadMediaUseCase
 import com.example.lifetogether.ui.model.MenuAction
@@ -18,7 +20,6 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class MediaDetailsUiState(
-    val mediaData: GalleryMedia? = null,
     val mediaList: List<GalleryMedia> = emptyList(),
     val currentIndex: Int = 0,
     val isDownloading: Boolean = false,
@@ -37,6 +38,7 @@ data class MediaDetailsUiState(
 class MediaDetailsViewModel @Inject constructor(
     private val downloadMediaUseCase: DownloadMediaUseCase,
     private val fetchAlbumMediaUseCase: FetchAlbumMediaUseCase,
+    private val deleteMediaUseCase: DeleteMediaUseCase,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(MediaDetailsUiState())
     val uiState: StateFlow<MediaDetailsUiState> = _uiState.asStateFlow()
@@ -66,7 +68,6 @@ class MediaDetailsViewModel @Inject constructor(
                             _uiState.update { 
                                 it.copy(
                                     mediaList = mediaList,
-                                    mediaData = mediaList.getOrNull(initialIndex)
                                 ) 
                             }
                         }
@@ -116,6 +117,20 @@ class MediaDetailsViewModel @Inject constructor(
                         showError(progress.message)
                     }
                 }
+            }
+        }
+    }
+
+    fun deleteMedia(index: Int? = null) {
+        val mediaIndex = index ?: _uiState.value.currentIndex
+        val currentMedia = _uiState.value.mediaList.getOrNull(mediaIndex) ?: return
+
+        viewModelScope.launch {
+            when (val result = deleteMediaUseCase.invoke(currentMedia.albumId, listOf(currentMedia))) {
+                is ResultListener.Success -> {
+                    dismissOverflowMenuActionDialog()
+                }
+                is ResultListener.Failure -> showError(result.message)
             }
         }
     }

@@ -35,6 +35,7 @@ import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.regex.Pattern
 import javax.inject.Inject
 
 @HiltViewModel
@@ -201,7 +202,7 @@ class MediaUploadViewModel @Inject constructor(
         albumId: String,
         ext: String,
     ): Pair<GalleryImage, String> = withContext(Dispatchers.IO) {
-        val dateCreated = getExifDate(context, uri)
+        val dateCreated = getBestDate(context, uri)
         val itemName = formatMediaName(dateCreated, ext)
 
         val galleryImage = GalleryImage(
@@ -298,6 +299,20 @@ class MediaUploadViewModel @Inject constructor(
         return mimeType?.let { MimeTypeMap.getSingleton().getExtensionFromMimeType(it) }?.let { ".$it" }
     }
 
+    fun getBestDate(context: Context, uri: Uri): Date? {
+
+        // 1. Try Exif (Best for Camera photos, usually null for WhatsApp)
+        val exifDate = getExifDate(context, uri)
+        if (exifDate != null) return exifDate
+
+        // 2. Try the "last_modified" column (Specific to your URI type)
+        val documentDate = getDocumentLastModified(context, uri)
+        if (documentDate != null) return documentDate
+
+        // 3. Fallback to Filename (Date only, no time)
+        return parseWhatsAppFilename(context, uri)
+    }
+
     private fun getExifDate(context: Context, uri: Uri): Date? {
         val inputStream = context.contentResolver.openInputStream(uri)
         val exif = inputStream?.let { ExifInterface(it) }
@@ -331,6 +346,67 @@ class MediaUploadViewModel @Inject constructor(
 
         inputStream?.close()
         return dateCreated
+    }
+
+    private fun getDocumentLastModified(context: Context, uri: Uri): Date? {
+        // The column name explicitly found in your logs
+        val columnLastModified = "last_modified"
+
+        try {
+            val cursor = context.contentResolver.query(uri, null, null, null, null)
+            cursor?.use {
+                if (it.moveToFirst()) {
+                    val index = it.getColumnIndex(columnLastModified)
+                    if (index != -1) {
+                        val lastModified = it.getLong(index)
+
+                        // VALIDATION: Check if it's seconds or milliseconds
+                        // If the number is small (e.g. 17xxxxx), it's seconds -> * 1000
+                        // If the number is huge (e.g. 17xxxxxxxxx), it's millis -> Use as is
+                        if (lastModified > 0) {
+                            // Simple heuristic: Timestamp in millis for year 2000 is ~9.4e11
+                            return if (lastModified < 10000000000L) {
+                                Date(lastModified * 1000)
+                            } else {
+                                Date(lastModified)
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.message?.let { Log.e("MediaUploadViewModel",it) }
+            // Log error
+        }
+        return null
+    }
+
+    // --- Helper: Parse WhatsApp Filename ---
+    // WhatsApp files are named like "IMG-20240214-WA0001.jpg"
+    private fun parseWhatsAppFilename(context: Context, uri: Uri): Date? {
+        try {
+            // Get the filename from the URI
+            var filename: String? = null
+            val cursor = context.contentResolver.query(uri, arrayOf(MediaStore.MediaColumns.DISPLAY_NAME), null, null, null)
+            cursor?.use {
+                if (it.moveToFirst()) {
+                    filename = it.getString(it.getColumnIndexOrThrow(MediaStore.MediaColumns.DISPLAY_NAME))
+                }
+            }
+
+            if (filename != null && filename.startsWith("IMG-")) {
+                // Regex to match YYYYMMDD
+                val pattern = Pattern.compile("IMG-(\\d{8})-WA.*")
+                val matcher = pattern.matcher(filename)
+                if (matcher.find()) {
+                    val dateString = matcher.group(1) ?: return null // Extracts "20240214"
+                    return SimpleDateFormat("yyyyMMdd", Locale.US).parse(dateString)
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return null
     }
 
     private fun getImageDateFromMediaStore(context: Context, uri: Uri): Long? {

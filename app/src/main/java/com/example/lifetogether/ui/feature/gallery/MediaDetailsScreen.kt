@@ -216,8 +216,7 @@ fun MediaDetailsScreen(
                 ConfirmationDialog(
                     onDismiss = { mediaDetailsViewModel.dismissOverflowMenuActionDialog() },
                     onConfirm = {
-                        // TODO
-//                        mediaDetailsViewModel.deleteAlbum(onDeleteSuccess = { appNavigator?.navigateBack() })
+                        mediaDetailsViewModel.deleteMedia(pagerState.currentPage)
                     },
                     dialogTitle = "Delete",
                     dialogMessage = "Are you sure you want to delete this?",
