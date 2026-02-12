@@ -26,7 +26,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.example.lifetogether.domain.logic.formatDateToDayString
+import com.example.lifetogether.domain.logic.toDayOfMonthString
 import com.example.lifetogether.ui.common.CustomTextField
 import com.example.lifetogether.ui.common.add.AddNewListItemViewModel
 import com.example.lifetogether.ui.common.dialog.CustomDatePickerDialog
@@ -74,7 +74,7 @@ fun AddNewTipItem(
                         },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(text = formatDateToDayString(dateValue), color = Color.White)
+                    Text(text = dateValue.toDayOfMonthString(), color = Color.White)
                 }
 
 //                VerticalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.secondary, modifier = Modifier.padding(vertical = 10.dp))

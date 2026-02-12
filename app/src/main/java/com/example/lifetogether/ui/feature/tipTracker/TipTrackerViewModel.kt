@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.listener.ListItemsResultListener
 import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.listener.StringResultListener
-import com.example.lifetogether.domain.logic.formatDateToString
+import com.example.lifetogether.domain.logic.toFullDateString
 import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.domain.usecase.item.DeleteItemUseCase
 import com.example.lifetogether.domain.usecase.item.FetchListItemsUseCase
@@ -89,7 +89,7 @@ class TipTrackerViewModel @Inject constructor(
 
         val sortedTips = tipItems.sortedByDescending { it.date }
         val stats = calculateStats(sortedTips)
-        val groupedTips = sortedTips.groupBy { formatDateToString(it.date) }
+        val groupedTips = sortedTips.groupBy { it.date.toFullDateString() }
 
         _uiState.update {
             it.copy(

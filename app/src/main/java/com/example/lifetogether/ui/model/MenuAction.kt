@@ -14,7 +14,7 @@ sealed interface MenuAction {
         DELETE("Delete selected")
     }
 
-    enum class GalleryMediaActions(override val label: String) : MenuAction {
+    enum class MediaDetailsActions(override val label: String) : MenuAction {
         DOWNLOAD("Download"),
         DELETE("Delete"),
     }

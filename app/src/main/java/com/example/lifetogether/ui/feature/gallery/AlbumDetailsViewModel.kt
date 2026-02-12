@@ -33,7 +33,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class AlbumMediaUiState(
+data class AlbumDetailsUiState(
     val album: Album? = null,
     val media: List<GalleryMedia> = emptyList(),
     val thumbnails: Map<String, ByteArray> = emptyMap(),
@@ -56,7 +56,7 @@ data class AlbumMediaUiState(
 )
 
 @HiltViewModel
-class AlbumMediaViewModel @Inject constructor(
+class AlbumDetailsViewModel @Inject constructor(
     private val fetchAlbumMediaUseCase: FetchAlbumMediaUseCase,
     private val updateItemUseCase: UpdateItemUseCase,
     private val moveMediaToAlbumUseCase: MoveMediaToAlbumUseCase,
@@ -68,8 +68,8 @@ class AlbumMediaViewModel @Inject constructor(
     private val deleteMediaUseCase: DeleteMediaUseCase,
     private val downloadMediaUseCase: DownloadMediaUseCase,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(AlbumMediaUiState())
-    val uiState: StateFlow<AlbumMediaUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(AlbumDetailsUiState())
+    val uiState: StateFlow<AlbumDetailsUiState> = _uiState.asStateFlow()
 
     private var familyId: String? = null
     private var albumId: String? = null

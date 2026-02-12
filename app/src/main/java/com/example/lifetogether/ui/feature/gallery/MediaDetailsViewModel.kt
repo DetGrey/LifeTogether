@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class GalleryMediaUiState(
+data class MediaDetailsUiState(
     val mediaData: GalleryMedia? = null,
     val mediaList: List<GalleryMedia> = emptyList(),
     val currentIndex: Int = 0,
@@ -28,17 +28,18 @@ data class GalleryMediaUiState(
     val isInitialized: Boolean = false,
     val showOverflowMenu: Boolean = false,
     val showOverflowMenuActionDialog: Boolean = false,
-    val overflowMenuAction: MenuAction.GalleryMediaActions? = null,
+    val overflowMenuAction: MenuAction.MediaDetailsActions? = null,
     val actionDialogText: String = "",
+    var offsetY: Float = 0f,
 )
 
 @HiltViewModel
-class GalleryMediaViewModel @Inject constructor(
+class MediaDetailsViewModel @Inject constructor(
     private val downloadMediaUseCase: DownloadMediaUseCase,
     private val fetchAlbumMediaUseCase: FetchAlbumMediaUseCase,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(GalleryMediaUiState())
-    val uiState: StateFlow<GalleryMediaUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(MediaDetailsUiState())
+    val uiState: StateFlow<MediaDetailsUiState> = _uiState.asStateFlow()
 
     private var familyId: String? = null
     private var albumId: String? = null
@@ -124,7 +125,7 @@ class GalleryMediaViewModel @Inject constructor(
         _uiState.update { it.copy(showOverflowMenu = show ?: !it.showOverflowMenu) }
     }
 
-    fun startOverflowAction(action: MenuAction.GalleryMediaActions) {
+    fun startOverflowAction(action: MenuAction.MediaDetailsActions) {
         _uiState.update {
             it.copy(
                 overflowMenuAction = action,
@@ -144,6 +145,30 @@ class GalleryMediaViewModel @Inject constructor(
                 actionDialogText = "",
             )
         }
+    }
+    // ---------------------------------------------------------------- DRAG
+    // TODO this was changed from 0.4f just to make it look nice but probably means some part is not showing
+    private fun getMaxOffset(totalHeight: Int) = -totalHeight * 0.35f
+
+    fun onVerticalDrag(dragAmount: Float, totalHeight: Int) {
+        val maxOffset = getMaxOffset(totalHeight)
+        val newOffset = (uiState.value.offsetY + dragAmount).coerceIn(maxOffset, 0f)
+        _uiState.update { it.copy(offsetY = newOffset) }
+    }
+
+    fun onDragEnd(totalHeight: Int) {
+        val currentOffset = uiState.value.offsetY
+        val maxOffset = getMaxOffset(totalHeight)
+
+        // SNAP LOGIC:
+        // If the panel is more than 30% open, snap to fully open.
+        // Otherwise, snap back to closed.
+        val snapTarget = if (currentOffset < maxOffset * 0.3f) {
+            maxOffset
+        } else {
+            0f
+        }
+        _uiState.update { it.copy(offsetY = snapTarget) }
     }
     // ---------------------------------------------------------------- SHOW ERROR ALERT
     fun dismissAlert() {

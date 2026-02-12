@@ -8,8 +8,8 @@ import androidx.navigation.navArgument
 import com.example.lifetogether.ui.feature.admin.groceryList.AdminGroceryCategoriesScreen
 import com.example.lifetogether.ui.feature.admin.groceryList.AdminGrocerySuggestionsScreen
 import com.example.lifetogether.ui.feature.family.FamilyScreen
-import com.example.lifetogether.ui.feature.gallery.AlbumMediaScreen
-import com.example.lifetogether.ui.feature.gallery.GalleryMediaScreen
+import com.example.lifetogether.ui.feature.gallery.AlbumDetailsScreen
+import com.example.lifetogether.ui.feature.gallery.MediaDetailsScreen
 import com.example.lifetogether.ui.feature.gallery.GalleryScreen
 import com.example.lifetogether.ui.feature.groceryList.GroceryListScreen
 import com.example.lifetogether.ui.feature.home.HomeScreen
@@ -98,7 +98,7 @@ fun NavHost(
         ) { backStackEntry ->
             val albumId = backStackEntry.arguments?.getString(AppRoutes.ALBUM_MEDIA_ID_ARG)
                 ?: return@composable
-            AlbumMediaScreen(appNavigator, firebaseViewModel, albumId)
+            AlbumDetailsScreen(appNavigator, firebaseViewModel, albumId)
         }
 
         composable(
@@ -112,7 +112,7 @@ fun NavHost(
                 ?: return@composable
             val initialIndex = backStackEntry.arguments?.getInt(AppRoutes.GALLERY_MEDIA_INDEX_ARG)
                 ?: 0
-            GalleryMediaScreen(appNavigator, firebaseViewModel, albumId, initialIndex)
+            MediaDetailsScreen(appNavigator, firebaseViewModel, albumId, initialIndex)
         }
 
         composable(AppRoutes.TIP_TRACKER_SCREEN) {

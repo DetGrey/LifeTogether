@@ -50,20 +50,20 @@ import com.example.lifetogether.ui.viewmodel.ImageViewModel
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun AlbumMediaScreen(
+fun AlbumDetailsScreen(
     appNavigator: AppNavigator? = null,
     firebaseViewModel: FirebaseViewModel? = null,
     albumId: String,
 ) {
-    val albumMediaViewModel: AlbumMediaViewModel = hiltViewModel()
+    val albumDetailsViewModel: AlbumDetailsViewModel = hiltViewModel()
     val imageViewModel: ImageViewModel = hiltViewModel()
 
     val userInformation by firebaseViewModel?.userInformation!!.collectAsState()
-    val uiState by albumMediaViewModel.uiState.collectAsState()
+    val uiState by albumDetailsViewModel.uiState.collectAsState()
 
     LaunchedEffect(key1 = albumId) {
         userInformation?.familyId?.let {
-            albumMediaViewModel.setUpAlbumMedia(it, albumId)
+            albumDetailsViewModel.setUpAlbumMedia(it, albumId)
         }
     }
 
@@ -76,7 +76,7 @@ fun AlbumMediaScreen(
             .pullToRefresh(
                 state = pullToRefreshState,
                 isRefreshing = uiState.isRefreshing,
-                onRefresh = { albumMediaViewModel.retryFetchAlbumMedia() },
+                onRefresh = { albumDetailsViewModel.retryFetchAlbumMedia() },
             ),
     ) {
         Column(
@@ -97,7 +97,7 @@ fun AlbumMediaScreen(
                     resId = R.drawable.ic_overflow_menu,
                     description = "overflow menu",
                 ),
-                onRightClick = { albumMediaViewModel.toggleOverflowMenu() },
+                onRightClick = { albumDetailsViewModel.toggleOverflowMenu() },
             )
             when (uiState.isSelectionModeActive) {
                 true -> {
@@ -115,7 +115,7 @@ fun AlbumMediaScreen(
                             CompletableBox(
                                 isCompleted = uiState.isAllMediaSelected,
                                 onCompleteToggle = {
-                                    albumMediaViewModel.toggleAllMediaSelection()
+                                    albumDetailsViewModel.toggleAllMediaSelection()
                                 }
                             )
                             TextDefault(text = "All")
@@ -125,7 +125,7 @@ fun AlbumMediaScreen(
                         TextDefault(
                             text = "Cancel",
                             modifier = Modifier.clickable {
-                                albumMediaViewModel.toggleSelectionMode()
+                                albumDetailsViewModel.toggleSelectionMode()
                             }
                         )
                     }
@@ -159,7 +159,7 @@ fun AlbumMediaScreen(
                         val thumbnail = uiState.thumbnails[media.id]
 
                         LaunchedEffect(media.id) {
-                            media.id?.let { albumMediaViewModel.fetchThumbnail(it) }
+                            media.id?.let { albumDetailsViewModel.fetchThumbnail(it) }
                         }
 
                         val isVideo = media is GalleryVideo
@@ -171,21 +171,21 @@ fun AlbumMediaScreen(
                             duration = duration,
                             onClick = {
                                 if (uiState.isSelectionModeActive) {
-                                    albumMediaViewModel.toggleMediaSelection(media.id)
+                                    albumDetailsViewModel.toggleMediaSelection(media.id)
                                 } else {
                                     appNavigator?.navigateToGalleryMedia(albumId, index)
                                 }
                             },
                             onLongClick = {
                                 if (!uiState.isSelectionModeActive) {
-                                    albumMediaViewModel.toggleSelectionMode()
-                                    albumMediaViewModel.toggleMediaSelection(media.id)
+                                    albumDetailsViewModel.toggleSelectionMode()
+                                    albumDetailsViewModel.toggleMediaSelection(media.id)
                                 }
                             },
                             isSelectionMode = uiState.isSelectionModeActive,
                             isSelected = uiState.selectedMedia.contains(media.id),
                             onSelectionToggle = {
-                                albumMediaViewModel.toggleMediaSelection(media.id)
+                                albumDetailsViewModel.toggleMediaSelection(media.id)
                             }
                         )
                     }
@@ -218,9 +218,9 @@ fun AlbumMediaScreen(
         }
 
         OverflowMenu(
-            onDismiss = { albumMediaViewModel.toggleOverflowMenu() },
+            onDismiss = { albumDetailsViewModel.toggleOverflowMenu() },
             actionsList = actions.map {
-                mapOf(it.label to { albumMediaViewModel.startOverflowAction(it) })
+                mapOf(it.label to { albumDetailsViewModel.startOverflowAction(it) })
             }
         )
     }
@@ -247,22 +247,22 @@ fun AlbumMediaScreen(
                 when (action) {
                     MenuAction.AlbumActions.RENAME -> {
                         ConfirmationDialogWithTextField(
-                            onDismiss = { albumMediaViewModel.dismissOverflowMenuActionDialog() },
-                            onConfirm = { albumMediaViewModel.renameAlbum() },
+                            onDismiss = { albumDetailsViewModel.dismissOverflowMenuActionDialog() },
+                            onConfirm = { albumDetailsViewModel.renameAlbum() },
                             dialogTitle = "Rename album",
                             dialogMessage = "Enter a new name for the album",
                             dismissButtonMessage = "Cancel",
                             confirmButtonMessage = "Rename album",
                             textValue = uiState.actionDialogText,
-                            onTextValueChange = { albumMediaViewModel.setActionDialogText(it) },
+                            onTextValueChange = { albumDetailsViewModel.setActionDialogText(it) },
                             capitalization = true,
                         )
                     }
                     MenuAction.AlbumActions.DELETE -> {
                         ConfirmationDialog(
-                            onDismiss = { albumMediaViewModel.dismissOverflowMenuActionDialog() },
+                            onDismiss = { albumDetailsViewModel.dismissOverflowMenuActionDialog() },
                             onConfirm = {
-                                albumMediaViewModel.deleteAlbum(onDeleteSuccess = { appNavigator?.navigateBack() })
+                                albumDetailsViewModel.deleteAlbum(onDeleteSuccess = { appNavigator?.navigateBack() })
                             },
                             dialogTitle = "Delete album",
                             dialogMessage = "Are you sure you want to delete this album?",
@@ -275,13 +275,13 @@ fun AlbumMediaScreen(
             is MenuAction.SelectionActions -> {
                 when (action) {
                     MenuAction.SelectionActions.DOWNLOAD -> {
-                        albumMediaViewModel.downloadSelectedMedia()
+                        albumDetailsViewModel.downloadSelectedMedia()
                     }
                     MenuAction.SelectionActions.DELETE -> {
                         ConfirmationDialog(
-                            onDismiss = { albumMediaViewModel.dismissOverflowMenuActionDialog() },
+                            onDismiss = { albumDetailsViewModel.dismissOverflowMenuActionDialog() },
                             onConfirm = {
-                                albumMediaViewModel.deleteSelectedMedia()
+                                albumDetailsViewModel.deleteSelectedMedia()
                             },
                             dialogTitle = "Delete selected media",
                             dialogMessage = "Are you sure you want to delete the selected media?",
@@ -291,9 +291,9 @@ fun AlbumMediaScreen(
                     }
                     MenuAction.SelectionActions.MOVE -> {
                         CustomConfirmationDialog(
-                            onDismiss = { albumMediaViewModel.dismissOverflowMenuActionDialog() },
+                            onDismiss = { albumDetailsViewModel.dismissOverflowMenuActionDialog() },
                             onConfirm = {
-                                albumMediaViewModel.showError("Please choose an album first")
+                                albumDetailsViewModel.showError("Please choose an album first")
                             },
                             dialogTitle = "Move to another album",
                             dialogMessage = "Are you sure you want to move the selected media to another album?",
@@ -311,7 +311,7 @@ fun AlbumMediaScreen(
                                             album.mediaCount,
                                             album.thumbnail?.toBitmap(),
                                             onClick = {
-                                                albumMediaViewModel.moveSelectedMediaToAlbum(album.id)
+                                                albumDetailsViewModel.moveSelectedMediaToAlbum(album.id)
                                             },
                                         )
                                     }
@@ -338,6 +338,6 @@ fun AlbumMediaScreen(
     // ---------------------------------------------------------------- SHOW ERROR ALERT
     if (uiState.showAlertDialog) {
         ErrorAlertDialog(error = uiState.error)
-        albumMediaViewModel.dismissAlert()
+        albumDetailsViewModel.dismissAlert()
     }
 }

@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.BuildConfig
 import com.example.lifetogether.R
-import com.example.lifetogether.domain.logic.formatDateToString
+import com.example.lifetogether.domain.logic.toFullDateString
 import com.example.lifetogether.domain.model.ConfirmationDialogDetails
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.sealed.ImageType
@@ -184,9 +184,7 @@ fun ProfileScreen(
                             description = "cake icon",
                         ),
                         title = "Birthday",
-                        value = userInformation?.birthday?.let { date ->
-                            formatDateToString(date)
-                        } ?: "",
+                        value = userInformation?.birthday?.toFullDateString() ?: "",
                     )
                     if (userInformation?.uid in BuildConfig.ADMIN_LIST.split(",")) {
                         ProfileDetails(

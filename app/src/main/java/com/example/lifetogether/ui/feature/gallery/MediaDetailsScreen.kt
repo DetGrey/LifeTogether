@@ -1,14 +1,23 @@
 package com.example.lifetogether.ui.feature.gallery
 
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -16,36 +25,43 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
+import com.example.lifetogether.domain.logic.toAbbreviatedDateString
 import com.example.lifetogether.domain.model.Icon
-import com.example.lifetogether.domain.model.enums.MediaType
+import com.example.lifetogether.domain.model.gallery.GalleryImage
+import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.ui.common.OverflowMenu
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.image.DisplayImageFromUri
 import com.example.lifetogether.ui.common.image.DisplayVideoFromUri
+import com.example.lifetogether.ui.common.image.MediaInfoPanel
 import com.example.lifetogether.ui.model.MenuAction
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun GalleryMediaScreen(
+fun MediaDetailsScreen(
     appNavigator: AppNavigator? = null,
     firebaseViewModel: FirebaseViewModel? = null,
     albumId: String,
     initialIndex: Int,
 ) {
-    val galleryMediaViewModel: GalleryMediaViewModel = hiltViewModel()
+    val mediaDetailsViewModel: MediaDetailsViewModel = hiltViewModel()
     val userInformation by firebaseViewModel?.userInformation!!.collectAsState()
-    val uiState by galleryMediaViewModel.uiState.collectAsState()
+    val uiState by mediaDetailsViewModel.uiState.collectAsState()
 
     LaunchedEffect(albumId) {
         userInformation?.familyId?.let {
-            galleryMediaViewModel.setUpMediaData(it, albumId, initialIndex)
+            mediaDetailsViewModel.setUpMediaData(it, albumId, initialIndex)
         }
     }
 
@@ -62,15 +78,35 @@ fun GalleryMediaScreen(
         // Video players in non-visible pages will pause via lifecycle
     }
 
-    Box(modifier = Modifier
-        .fillMaxSize()
+    val containerSize = LocalWindowInfo.current.containerSize
+
+    // Animate the "snap" when the user lets go
+    val animatedOffset by animateFloatAsState(
+        targetValue = uiState.offsetY,
+        label = "offsetAnimation",
+        animationSpec = spring(stiffness = Spring.StiffnessLow) // Makes it feel premium
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .pointerInput(containerSize) { // Re-bind if size changes
+                detectVerticalDragGestures(
+                    onVerticalDrag = { change, dragAmount ->
+                        change.consume()
+                        mediaDetailsViewModel.onVerticalDrag(dragAmount, containerSize.height)
+                    },
+                    onDragEnd = {
+                        mediaDetailsViewModel.onDragEnd(containerSize.height)
+                    }
+                )
+            }
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(30.dp),
         ) {
             TopBar(
                 leftIcon = Icon(
@@ -80,42 +116,38 @@ fun GalleryMediaScreen(
                 onLeftClick = {
                     appNavigator?.navigateBack()
                 },
-                text = if (mediaList.isNotEmpty()) {
-                    val currentMedia = mediaList.getOrNull(pagerState.currentPage)
-                    when (currentMedia?.mediaType) {
-                        MediaType.IMAGE -> "Image ${pagerState.currentPage + 1}/${mediaList.size}"
-                        MediaType.VIDEO -> "Video ${pagerState.currentPage + 1}/${mediaList.size}"
-                        else -> "Media ${pagerState.currentPage + 1}/${mediaList.size}"
-                    }
-                } else {
-                    "Media"
-                },
+                text = mediaList.getOrNull(pagerState.currentPage)
+                    ?.dateCreated
+                    ?.toAbbreviatedDateString()
+                    ?: "Media",
                 rightIcon = Icon(
                     resId = R.drawable.ic_overflow_menu,
                     description = "overflow menu",
                 ),
-                onRightClick = { galleryMediaViewModel.toggleOverflowMenu() },
+                onRightClick = { mediaDetailsViewModel.toggleOverflowMenu() },
             )
 
             HorizontalPager(
                 state = pagerState,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f),
                 pageSpacing = 16.dp,
                 beyondViewportPageCount = 1
             ) { page ->
                 val media = mediaList[page]
 
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    when (media.mediaType) {
-                        MediaType.IMAGE -> {
-                            media.mediaUri?.let { uri ->
-                                DisplayImageFromUri(
-                                    imageUri = uri,
-                                    description = media.itemName,
-                                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                ) {
+                    when (media) {
+                        is GalleryImage -> {
+                            media.mediaUri?.let {
+                                DisplayImageFromUri(it, media.itemName)
                             }
                         }
-                        MediaType.VIDEO -> {
+                        is GalleryVideo -> {
                             media.mediaUri?.let { uri ->
                                 DisplayVideoFromUri(
                                     videoUri = uri,
@@ -128,6 +160,22 @@ fun GalleryMediaScreen(
                         }
                     }
                 }
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.4f) // This is our panel height
+                .align(Alignment.BottomCenter)
+                .graphicsLayer {
+                    translationY = animatedOffset + (size.height) // Offset it by its own height to hide it
+                }
+                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                .background(MaterialTheme.colorScheme.surface)
+        ) {
+            mediaList.getOrNull(pagerState.currentPage)?.let {
+                MediaInfoPanel(it)
             }
         }
 
@@ -147,27 +195,27 @@ fun GalleryMediaScreen(
     // ---------------------------------------------------------------- OVERFLOW MENU
     if (uiState.showOverflowMenu) {
         OverflowMenu(
-            onDismiss = { galleryMediaViewModel.toggleOverflowMenu() },
-            actionsList = MenuAction.GalleryMediaActions.entries.map {
-                mapOf(it.label to { galleryMediaViewModel.startOverflowAction(it) })
+            onDismiss = { mediaDetailsViewModel.toggleOverflowMenu() },
+            actionsList = MenuAction.MediaDetailsActions.entries.map {
+                mapOf(it.label to { mediaDetailsViewModel.startOverflowAction(it) })
             }
         )
     }
     // ---------------------------------------------------------------- OVERFLOW MENU ACTIONS DIALOG
     if (uiState.showOverflowMenuActionDialog && uiState.overflowMenuAction != null) {
         when (uiState.overflowMenuAction) {
-            MenuAction.GalleryMediaActions.DOWNLOAD -> {
+            MenuAction.MediaDetailsActions.DOWNLOAD -> {
                 if (!uiState.isDownloading && mediaList.isNotEmpty()) {
-                    galleryMediaViewModel.downloadMedia(pagerState.currentPage)
+                    mediaDetailsViewModel.downloadMedia(pagerState.currentPage)
 
                 }
             }
-            MenuAction.GalleryMediaActions.DELETE -> {
+            MenuAction.MediaDetailsActions.DELETE -> {
                 ConfirmationDialog(
-                    onDismiss = { galleryMediaViewModel.dismissOverflowMenuActionDialog() },
+                    onDismiss = { mediaDetailsViewModel.dismissOverflowMenuActionDialog() },
                     onConfirm = {
                         // TODO
-//                        galleryMediaViewModel.deleteAlbum(onDeleteSuccess = { appNavigator?.navigateBack() })
+//                        mediaDetailsViewModel.deleteAlbum(onDeleteSuccess = { appNavigator?.navigateBack() })
                     },
                     dialogTitle = "Delete",
                     dialogMessage = "Are you sure you want to delete this?",
@@ -181,6 +229,6 @@ fun GalleryMediaScreen(
     // ---------------------------------------------------------------- SHOW ERROR ALERT
     if (uiState.showAlertDialog) {
         ErrorAlertDialog(uiState.error)
-        galleryMediaViewModel.dismissAlert()
+        mediaDetailsViewModel.dismissAlert()
     }
 }

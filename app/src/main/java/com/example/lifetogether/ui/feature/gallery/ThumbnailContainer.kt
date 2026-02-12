@@ -83,7 +83,7 @@ fun ThumbnailContainer(
                     .padding(bottom = 5.dp, end = 7.dp),
                 contentAlignment = Alignment.BottomEnd,
             ) {
-                TextDefault(durationToString(duration), color = Color.White)
+                TextDefault(duration.durationToString(), color = Color.White)
             }
         }
         if (isSelectionMode) {
