@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
@@ -43,6 +45,7 @@ import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.image.MediaUploadMultipleDialog
 import com.example.lifetogether.ui.common.list.CompletableBox
 import com.example.lifetogether.ui.common.text.TextDefault
+import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.model.MenuAction
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
@@ -130,7 +133,7 @@ fun AlbumDetailsScreen(
                         )
                     }
                 }
-                false -> Spacer(modifier = Modifier.height(30.dp))
+                false -> Spacer(modifier = Modifier.height(20.dp))
             }
 
             if (uiState.media.isEmpty()) {
@@ -154,40 +157,52 @@ fun AlbumDetailsScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    items(uiState.media.size) { index ->
-                        val media = uiState.media[index]
-                        val thumbnail = uiState.thumbnails[media.id]
+                    uiState.groupedMedia.forEach { (dateKey, itemsInDay) ->
 
-                        LaunchedEffect(media.id) {
-                            media.id?.let { albumDetailsViewModel.fetchThumbnail(it) }
+                        // 1. THE DATE HEADER (Spans both columns)
+                        item(span = { GridItemSpan(maxLineSpan) }) {
+                            TextSubHeadingMedium(dateKey)
                         }
 
-                        val isVideo = media is GalleryVideo
-                        val duration = (media as? GalleryVideo)?.duration
+                        // 2. THE MEDIA ITEMS FOR THAT DAY
+                        items(itemsInDay) { media ->
+                            val thumbnail = uiState.thumbnails[media.id]
 
-                        ThumbnailContainer(
-                            thumbnail = thumbnail,
-                            isVideo = isVideo,
-                            duration = duration,
-                            onClick = {
-                                if (uiState.isSelectionModeActive) {
-                                    albumDetailsViewModel.toggleMediaSelection(media.id)
-                                } else {
-                                    appNavigator?.navigateToGalleryMedia(albumId, index)
-                                }
-                            },
-                            onLongClick = {
-                                if (!uiState.isSelectionModeActive) {
-                                    albumDetailsViewModel.toggleSelectionMode()
-                                    albumDetailsViewModel.toggleMediaSelection(media.id)
-                                }
-                            },
-                            isSelectionMode = uiState.isSelectionModeActive,
-                            isSelected = uiState.selectedMedia.contains(media.id),
-                            onSelectionToggle = {
-                                albumDetailsViewModel.toggleMediaSelection(media.id)
+                            LaunchedEffect(media.id) {
+                                media.id?.let { albumDetailsViewModel.fetchThumbnail(it) }
                             }
-                        )
+
+                            val isVideo = media is GalleryVideo
+                            val duration = (media as? GalleryVideo)?.duration
+
+                            // Find the global index for navigation if needed
+                            // (You might need to pass the media ID instead of index to the detail screen)
+                            val globalIndex = uiState.media.indexOf(media)
+
+                            ThumbnailContainer(
+                                thumbnail = thumbnail,
+                                isVideo = isVideo,
+                                duration = duration,
+                                onClick = {
+                                    if (uiState.isSelectionModeActive) {
+                                        albumDetailsViewModel.toggleMediaSelection(media.id)
+                                    } else {
+                                        appNavigator?.navigateToGalleryMedia(albumId, globalIndex)
+                                    }
+                                },
+                                onLongClick = {
+                                    if (!uiState.isSelectionModeActive) {
+                                        albumDetailsViewModel.toggleSelectionMode()
+                                        albumDetailsViewModel.toggleMediaSelection(media.id)
+                                    }
+                                },
+                                isSelectionMode = uiState.isSelectionModeActive,
+                                isSelected = uiState.selectedMedia.contains(media.id),
+                                onSelectionToggle = {
+                                    albumDetailsViewModel.toggleMediaSelection(media.id)
+                                }
+                            )
+                        }
                     }
                 }
             }

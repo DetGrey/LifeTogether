@@ -7,6 +7,7 @@ import com.example.lifetogether.domain.listener.ByteArrayResultListener
 import com.example.lifetogether.domain.listener.ItemResultListener
 import com.example.lifetogether.domain.listener.ListItemsResultListener
 import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.logic.toFullDateString
 import com.example.lifetogether.domain.model.SaveProgress
 import com.example.lifetogether.domain.model.gallery.Album
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
@@ -36,6 +37,7 @@ import javax.inject.Inject
 data class AlbumDetailsUiState(
     val album: Album? = null,
     val media: List<GalleryMedia> = emptyList(),
+    val groupedMedia: List<Pair<String, List<GalleryMedia>>> = emptyList(),
     val thumbnails: Map<String, ByteArray> = emptyMap(),
     val isSyncing: Boolean = false,
     val showOverflowMenu: Boolean = false,
@@ -149,6 +151,7 @@ class AlbumDetailsViewModel @Inject constructor(
                     isSyncing = false,
                 )
             }
+            groupMedia()
 
             // Detect partial downloads and trigger retry if needed
             val expectedCount = _uiState.value.album?.count ?: 0
@@ -184,6 +187,17 @@ class AlbumDetailsViewModel @Inject constructor(
         } else {
             _uiState.update { it.copy(isSyncing = false) }
         }
+    }
+    private fun groupMedia() {
+        val grouped = uiState.value.media
+            // 1. Sort everything by newest first
+            .sortedByDescending { it.dateCreated }
+            // 2. Group by the day (ignoring time)
+            .groupBy { it.dateCreated?.toFullDateString() ?: "Unknown Date" }
+            // 3. Convert to a list of pairs so the UI can iterate easily
+            .toList()
+
+        _uiState.update { it.copy(groupedMedia = grouped) }
     }
     private fun handleMediaFailure(message: String) {
         _uiState.update { it.copy(isSyncing = false, isRefreshing = false) }
