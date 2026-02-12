@@ -18,7 +18,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -40,6 +39,7 @@ import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
+import com.example.lifetogether.ui.common.dialog.CustomAlertDialog
 import com.example.lifetogether.ui.common.dialog.CustomConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.image.MediaUploadMultipleDialog
@@ -340,16 +340,18 @@ fun AlbumDetailsScreen(
         }
     }
     // ---------------------------------------------------------------- DOWNLOAD
-    if (uiState.downloadMessage != null) {
-        Box { // TODO make something for this??
-            if (uiState.isDownloading) {
-                CircularProgressIndicator()
-                Text(text = uiState.downloadMessage!!)
-            } else {
-                Text(text = uiState.downloadMessage!!)
+    uiState.downloadMessage?.let { message ->
+        CustomAlertDialog(
+            title = if (uiState.isDownloading) "Downloading..." else "Finished downloading",
+            details = message,
+            extraContent = {
+                if (uiState.isDownloading) {
+                    CircularProgressIndicator()
+                }
             }
-        }
+        )
     }
+
     // ---------------------------------------------------------------- SHOW ERROR ALERT
     if (uiState.showAlertDialog) {
         ErrorAlertDialog(error = uiState.error)

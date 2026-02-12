@@ -18,7 +18,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -39,6 +38,7 @@ import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.ui.common.OverflowMenu
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
+import com.example.lifetogether.ui.common.dialog.CustomAlertDialog
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.image.DisplayImageFromUri
 import com.example.lifetogether.ui.common.image.DisplayVideoFromUri
@@ -178,20 +178,21 @@ fun MediaDetailsScreen(
                 MediaInfoPanel(it)
             }
         }
+    }
 
-        // ---------------------------------------------------------------- DOWNLOAD
-        if (uiState.downloadMessage != null) {
-            Box { // TODO make something for this??
+    // ---------------------------------------------------------------- DOWNLOAD
+    uiState.downloadMessage?.let { message ->
+        CustomAlertDialog(
+            title = if (uiState.isDownloading) "Downloading..." else "Finished downloading",
+            details = message,
+            extraContent = {
                 if (uiState.isDownloading) {
                     CircularProgressIndicator()
-                    Text(text = uiState.downloadMessage!!)
-                } else {
-                    Text(text = uiState.downloadMessage!!)
                 }
             }
-        }
-
+        )
     }
+
     // ---------------------------------------------------------------- OVERFLOW MENU
     if (uiState.showOverflowMenu) {
         OverflowMenu(
@@ -201,6 +202,7 @@ fun MediaDetailsScreen(
             }
         )
     }
+
     // ---------------------------------------------------------------- OVERFLOW MENU ACTIONS DIALOG
     if (uiState.showOverflowMenuActionDialog && uiState.overflowMenuAction != null) {
         when (uiState.overflowMenuAction) {
