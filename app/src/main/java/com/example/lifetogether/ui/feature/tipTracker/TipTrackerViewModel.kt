@@ -18,9 +18,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.temporal.TemporalAdjusters
 import java.util.Date
 import java.util.Locale
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 // Data classes for state management
@@ -29,10 +34,14 @@ data class TipStats(
     val monthlyTotal: Float = 0f,
     val yearlyTotal: Float = 0f,
     val total: Float = 0f,
+
     val weeklyAverage: Float = 0f,
     val monthlyAverage: Float = 0f,
     val yearlyAverage: Float = 0f,
     val totalAverage: Float = 0f,
+
+    val highestTip: TipItem? = null,
+    val bestMonth: Pair<String,Float>? = null,
 )
 
 data class TipTrackerUiState(
@@ -110,26 +119,32 @@ class TipTrackerViewModel @Inject constructor(
         }
     }
 
+    private enum class Period { WEEK, MONTH, YEAR, ALL }
+
     private fun calculateStats(tips: List<TipItem>): TipStats {
         return TipStats(
-            weeklyTotal = calculateTotal(tips, 7),
-            monthlyTotal = calculateTotal(tips, 30),
-            yearlyTotal = calculateTotal(tips, 365),
-            total = calculateTotal(tips, null),
-            weeklyAverage = calculateAverage(tips, 7),
-            monthlyAverage = calculateAverage(tips, 30),
-            yearlyAverage = calculateAverage(tips, 365),
-            totalAverage = calculateAverage(tips, null),
+            weeklyTotal = calculateTotal(tips, Period.WEEK),
+            monthlyTotal = calculateTotal(tips, Period.MONTH),
+            yearlyTotal = calculateTotal(tips, Period.YEAR),
+            total = calculateTotal(tips, Period.ALL),
+
+            weeklyAverage = calculateAverage(tips, Period.WEEK),
+            monthlyAverage = calculateAverage(tips, Period.MONTH),
+            yearlyAverage = calculateAverage(tips, Period.YEAR),
+            totalAverage = calculateAverage(tips, Period.ALL),
+
+            highestTip = tips.maxByOrNull { it.amount },
+            bestMonth = calculateBestMonth(tips)
         )
     }
 
-    private fun calculateTotal(tips: List<TipItem>, days: Int?): Float {
-        val filteredTips = filterTipsByDays(tips, days)
+    private fun calculateTotal(tips: List<TipItem>, period: Period): Float {
+        val filteredTips = filterTipsByPeriod(tips, period)
         return filteredTips.sumOf { it.amount.toDouble() }.toFloat()
     }
 
-    private fun calculateAverage(tips: List<TipItem>, days: Int?): Float {
-        val filteredTips = filterTipsByDays(tips, days)
+    private fun calculateAverage(tips: List<TipItem>, period: Period): Float {
+        val filteredTips = filterTipsByPeriod(tips, period)
         return if (filteredTips.isNotEmpty()) {
             val average = filteredTips.sumOf { it.amount.toDouble() } / filteredTips.size
             String.format(Locale.US, "%.2f", average).toFloat()
@@ -138,12 +153,56 @@ class TipTrackerViewModel @Inject constructor(
         }
     }
 
-    private fun filterTipsByDays(tips: List<TipItem>, days: Int?): List<TipItem> {
-        return if (days != null) {
-            val cutoff = Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(days.toLong()))
-            tips.filter { it.date.after(cutoff) }
+    private fun filterTipsByPeriod(tips: List<TipItem>, period: Period): List<TipItem> {
+        if (period == Period.ALL) return tips
+
+        val today = LocalDate.now()
+
+        val startDate = when (period) {
+            Period.WEEK -> today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+            Period.MONTH -> today.with(TemporalAdjusters.firstDayOfMonth())
+            Period.YEAR -> today.with(TemporalAdjusters.firstDayOfYear())
+            else -> LocalDate.MIN // Should not happen given the check above
+        }
+
+        return tips.filter { tip ->
+            val tipDate = tip.date.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate()
+
+            // Check if tip is ON or AFTER the start date
+            !tipDate.isBefore(startDate)
+        }
+    }
+
+    private fun calculateBestMonth(tips: List<TipItem>): Pair<String, Float>? {
+        if (tips.isEmpty()) return null
+
+        val zoneId = ZoneId.systemDefault()
+
+        // 2. Group by Year-Month key (e.g., "2024-01")
+        // We use a Map<YearMonth, Double>
+        val monthlyTotals = tips.groupBy { tip ->
+            // Convert Date -> LocalDate -> YearMonth
+            val localDate = tip.date.toInstant().atZone(zoneId).toLocalDate()
+            YearMonth.from(localDate)
+        }.mapValues { entry ->
+            // Sum the amounts for this specific month
+            entry.value.sumOf { it.amount.toDouble() }
+        }
+
+        // 3. Find the entry with the max value
+        val bestEntry = monthlyTotals.maxByOrNull { it.value }
+
+        return if (bestEntry != null) {
+            // Format the key (YearMonth) into a nice string "MMMM yyyy"
+            val formatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.US)
+            Pair(
+                bestEntry.key.format(formatter),
+                bestEntry.value.toFloat()
+            )
         } else {
-            tips
+            null
         }
     }
 

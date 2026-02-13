@@ -1,9 +1,12 @@
 package com.example.lifetogether.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
 import com.example.lifetogether.ui.feature.admin.groceryList.AdminGroceryCategoriesScreen
 import com.example.lifetogether.ui.feature.admin.groceryList.AdminGrocerySuggestionsScreen
@@ -20,7 +23,9 @@ import com.example.lifetogether.ui.feature.recipes.RecipeDetailsScreen
 import com.example.lifetogether.ui.feature.recipes.RecipesScreen
 import com.example.lifetogether.ui.feature.settings.SettingsScreen
 import com.example.lifetogether.ui.feature.signup.SignupScreen
+import com.example.lifetogether.ui.feature.tipTracker.TipStatisticsScreen
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerScreen
+import com.example.lifetogether.ui.feature.tipTracker.TipTrackerViewModel
 import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 
 @Composable
@@ -115,8 +120,28 @@ fun NavHost(
             MediaDetailsScreen(appNavigator, firebaseViewModel, albumId, initialIndex)
         }
 
-        composable(AppRoutes.TIP_TRACKER_SCREEN) {
-            TipTrackerScreen(appNavigator, firebaseViewModel)
+        // Nested graph
+        navigation(startDestination = AppRoutes.TIP_TRACKER_SCREEN, route = AppRoutes.TIP_TRACKER_GRAPH) {
+
+            composable(AppRoutes.TIP_TRACKER_SCREEN) { backStackEntry ->
+                // Get the ViewModel scoped to "AppRoutes.TIP_TRACKER_GRAPH"
+                val sharedEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry(AppRoutes.TIP_TRACKER_GRAPH)
+                }
+                val viewModel: TipTrackerViewModel = hiltViewModel(sharedEntry)
+
+                TipTrackerScreen(appNavigator, firebaseViewModel, viewModel)
+            }
+
+            composable(AppRoutes.TIP_STATISTICS_SCREEN) { backStackEntry ->
+                // Get the SAME ViewModel scoped to "AppRoutes.TIP_TRACKER_GRAPH"
+                val sharedEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry(AppRoutes.TIP_TRACKER_GRAPH)
+                }
+                val viewModel: TipTrackerViewModel = hiltViewModel(sharedEntry)
+
+                TipStatisticsScreen(appNavigator, firebaseViewModel, viewModel)
+            }
         }
     }
 }

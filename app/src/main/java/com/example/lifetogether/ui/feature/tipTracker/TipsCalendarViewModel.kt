@@ -8,7 +8,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import com.example.lifetogether.domain.model.TipItem
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.math.RoundingMode
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
@@ -37,6 +39,37 @@ class TipsCalendarViewModel @Inject constructor() : ViewModel() {
 
     fun getTipTotal(dateKey: String, filteredTips: Map<String, List<TipItem>>): Float {
         return filteredTips[dateKey]?.sumOf { it.amount.toDouble() }?.toFloat() ?: 0f
+    }
+
+    data class MonthlyStats(val total: Float, val average: Float)
+
+    fun getMonthlySummary(allTips: Map<String, List<TipItem>>): MonthlyStats {
+        val zoneId = ZoneId.systemDefault()
+        val targetMonth = currentDisplayedDate.month
+        val targetYear = currentDisplayedDate.year
+
+        // 1. Filter the tips ONCE
+        val tipsInMonth = allTips.values.flatten().filter { tip ->
+            val tipDate = tip.date.toInstant()
+                .atZone(zoneId)
+                .toLocalDate()
+
+            tipDate.month == targetMonth && tipDate.year == targetYear
+        }
+
+        // 2. Calculate stats
+        val total = tipsInMonth.sumOf { it.amount.toDouble() }
+            .toBigDecimal()
+            .setScale(2, RoundingMode.HALF_DOWN)
+            .toFloat()
+        val average = if (tipsInMonth.isNotEmpty()) {
+            (total / tipsInMonth.size)
+                .toBigDecimal()
+                .setScale(2, RoundingMode.HALF_DOWN)
+                .toFloat()
+        } else 0f
+
+        return MonthlyStats(total, average)
     }
 
     fun selectPreviousMonth() {

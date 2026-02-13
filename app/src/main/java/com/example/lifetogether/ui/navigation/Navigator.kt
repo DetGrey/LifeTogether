@@ -17,4 +17,5 @@ interface Navigator {
     fun navigateToAlbumMedia(albumId: String)
     fun navigateToGalleryMedia(albumId: String, initialIndex: Int)
     fun navigateToTipTracker()
+    fun navigateToTipStatistics()
 }

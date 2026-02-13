@@ -5,10 +5,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -62,6 +64,27 @@ fun TipsCalendar(
     }
 
     TextSubHeadingMedium(viewModel.getCurrentMonthYearDisplay(), MaterialTheme.colorScheme.primary)
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        val monthlyStats = viewModel.getMonthlySummary(groupedTips)
+        TextDefault(
+            text = "Total: ${monthlyStats.total}",
+            color = MaterialTheme.colorScheme.secondary,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.width(15.dp))
+        TextDefault(
+            text = "Average: ${monthlyStats.average}",
+            color = MaterialTheme.colorScheme.secondary,
+            textAlign = TextAlign.Center,
+        )
+    }
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(5),

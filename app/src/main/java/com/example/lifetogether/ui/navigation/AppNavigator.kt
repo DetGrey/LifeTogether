@@ -84,6 +84,10 @@ class AppNavigator(private val navController: NavController) : Navigator {
     override fun navigateToTipTracker() {
         navController.navigate(AppRoutes.TIP_TRACKER_SCREEN)
     }
+
+    override fun navigateToTipStatistics() {
+        navController.navigate(AppRoutes.TIP_STATISTICS_SCREEN)
+    }
 }
 
 /*

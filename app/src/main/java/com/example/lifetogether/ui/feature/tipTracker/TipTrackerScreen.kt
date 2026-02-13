@@ -12,7 +12,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.TopBar
@@ -26,8 +25,8 @@ import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 fun TipTrackerScreen(
     appNavigator: AppNavigator? = null,
     firebaseViewModel: FirebaseViewModel? = null,
+    tipTrackerViewModel: TipTrackerViewModel,
 ) {
-    val tipTrackerViewModel: TipTrackerViewModel = hiltViewModel()
 
     val userInformationState by firebaseViewModel?.userInformation!!.collectAsState()
     val uiState by tipTrackerViewModel.uiState.collectAsState()
@@ -57,41 +56,14 @@ fun TipTrackerScreen(
                         appNavigator?.navigateBack()
                     },
                     text = "Tip Tracker",
+                    rightIcon = Icon(
+                        resId = R.drawable.ic_back_arrow, // TODO make statistics icon
+                        description = "back arrow icon",
+                    ),
+                    onRightClick = {
+                        appNavigator?.navigateToTipStatistics()
+                    },
                 )
-            }
-
-            item {
-                if (uiState.tips.isNotEmpty()) {
-                    TagOptionRow(
-                        options = listOf("Week", "Month", "Year", "All"),
-                        selectedOption = uiState.timePeriod,
-                        onSelectedOptionChange = {
-                            tipTrackerViewModel.setTimePeriod(it)
-                        },
-                        center = true,
-                    )
-                    StatsCard(
-                        title = when (uiState.timePeriod) {
-                            "Week" -> "Last 7 days"
-                            "Month" -> "Last 30 days"
-                            "Year" -> "Last 365 days"
-                            else -> "All time"
-                        },
-                        total = when (uiState.timePeriod) {
-                            "Week" -> uiState.stats.weeklyTotal.toString()
-                            "Month" -> uiState.stats.monthlyTotal.toString()
-                            "Year" -> uiState.stats.yearlyTotal.toString()
-                            else -> uiState.stats.total.toString()
-                        },
-                        average = when (uiState.timePeriod) {
-                            "Week" -> uiState.stats.weeklyAverage.toString()
-                            "Month" -> uiState.stats.monthlyAverage.toString()
-                            "Year" -> uiState.stats.yearlyAverage.toString()
-                            else -> uiState.stats.totalAverage.toString()
-                        },
-
-                    )
-                }
             }
 
             item {
