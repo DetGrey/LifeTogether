@@ -21,8 +21,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import java.util.Date
 import javax.inject.Inject
 
@@ -34,9 +32,7 @@ class GuideStepPlayerViewModel @Inject constructor(
     private companion object {
         const val TAG = "GuideStepPlayerVM"
         const val ALERT_DISMISS_DELAY_MS = 3000L
-        const val NAVIGATION_PERSIST_DEBOUNCE_MS = 250L
-        const val STEP_PROGRESS_PERSIST_DEBOUNCE_MS = 250L
-        const val MIN_REMOTE_PERSIST_INTERVAL_MS = 1500L
+        const val GUIDE_PERSIST_DEBOUNCE_MS = 250L
     }
 
     private enum class CompletionMode {
@@ -48,16 +44,10 @@ class GuideStepPlayerViewModel @Inject constructor(
     private var guideId: String? = null
     private var guideJob: Job? = null
     private var dismissAlertJob: Job? = null
-    private var navigationPersistJob: Job? = null
-    private var stepProgressPersistJob: Job? = null
-    private var pendingNavigationGuide: Guide? = null
-    private var pendingStepProgressGuide: Guide? = null
-    private var lastRemotePersistStartedAtMs: Long = 0L
+    private var guidePersistJob: Job? = null
+    private var pendingGuide: Guide? = null
 
     private var currentPointerIndex: Int = -1
-    private var lastSyncedGuide: Guide? = null
-    private var latestPersistRequestVersion: Long = 0L
-    private val persistMutex = Mutex()
 
     private val _uiState = MutableStateFlow(GuideStepPlayerUiState())
     val uiState: StateFlow<GuideStepPlayerUiState> = _uiState.asStateFlow()
@@ -86,10 +76,8 @@ class GuideStepPlayerViewModel @Inject constructor(
 
         if (isNewGuideContext) {
             currentPointerIndex = -1
-            lastSyncedGuide = null
-            cancelPendingNavigationPersistence()
-            cancelPendingStepProgressPersistence()
-            Log.d(TAG, "setUpGuide reset pointer and cached synced guide for new context")
+            cancelPendingGuidePersistence()
+            Log.d(TAG, "setUpGuide reset pointer and pending guide persistence for new context")
         }
 
         this.familyId = familyId
@@ -117,7 +105,6 @@ class GuideStepPlayerViewModel @Inject constructor(
                             TAG,
                             "Observed guide emission id=${guide.id} started=${guide.started} resume=${guide.resume} lastUpdated=${guide.lastUpdated.time}",
                         )
-                        lastSyncedGuide = guide
                         applyGuideUpdate(
                             uiGuide = guide,
                             forcePointerRecompute = currentPointerIndex < 0,
@@ -196,7 +183,6 @@ class GuideStepPlayerViewModel @Inject constructor(
         val hasMovedToNext = if (moveToNext) movePointerToNextLeaf(updatedSections) else false
         if (!shouldApplyCompletion && !hasMovedToNext) return
 
-        cancelPendingNavigationPersistence()
         val updatedGuide = buildGuideForPersistence(
             guide = currentGuide,
             sections = updatedSections,
@@ -256,164 +242,92 @@ class GuideStepPlayerViewModel @Inject constructor(
     }
 
     private fun scheduleNavigationPersistence(guide: Guide) {
-        cancelPendingNavigationPersistence()
-        cancelPendingStepProgressPersistence()
-        pendingNavigationGuide = guide
-        Log.d(
-            TAG,
-            "scheduleNavigationPersistence guideId=${guide.id} pointerIndex=$currentPointerIndex debounceMs=$NAVIGATION_PERSIST_DEBOUNCE_MS",
+        val pointerResumeGuide = buildGuideForPersistence(
+            guide = guide,
+            sections = guide.sections,
+            resumePointer = currentPointer(guide),
         )
-        navigationPersistJob = viewModelScope.launch {
-            delay(NAVIGATION_PERSIST_DEBOUNCE_MS)
-            val pointerResumeGuide = buildGuideForPersistence(
-                guide = guide,
-                sections = guide.sections,
-                resumePointer = currentPointer(guide),
-            )
-            Log.d(
-                TAG,
-                "scheduleNavigationPersistence firing persist guideId=${pointerResumeGuide.id} resume=${pointerResumeGuide.resume}",
-            )
-            persistGuide(pointerResumeGuide)
-        }
-    }
-
-    private fun cancelPendingNavigationPersistence() {
-        navigationPersistJob?.cancel()
-        navigationPersistJob = null
-        pendingNavigationGuide = null
+        scheduleGuidePersistence(pointerResumeGuide)
     }
 
     private fun scheduleStepProgressPersistence(guide: Guide) {
-        cancelPendingStepProgressPersistence()
-        pendingStepProgressGuide = guide
-        Log.d(
-            TAG,
-            "scheduleStepProgressPersistence cached guideId=${guide.id} debounceMs=$STEP_PROGRESS_PERSIST_DEBOUNCE_MS",
-        )
-        stepProgressPersistJob = viewModelScope.launch {
-            delay(STEP_PROGRESS_PERSIST_DEBOUNCE_MS)
-            flushPendingStepProgressPersistence()
-        }
+        scheduleGuidePersistence(guide)
     }
 
-    private fun flushPendingStepProgressPersistence() {
-        val latestGuide = pendingStepProgressGuide ?: return
-        val now = System.currentTimeMillis()
-        val elapsed = now - lastRemotePersistStartedAtMs
-        if (elapsed < MIN_REMOTE_PERSIST_INTERVAL_MS) {
-            val waitMs = MIN_REMOTE_PERSIST_INTERVAL_MS - elapsed
-            Log.d(
-                TAG,
-                "scheduleStepProgressPersistence throttled guideId=${latestGuide.id} waitMs=$waitMs minIntervalMs=$MIN_REMOTE_PERSIST_INTERVAL_MS",
-            )
-            stepProgressPersistJob = viewModelScope.launch {
-                delay(waitMs)
-                flushPendingStepProgressPersistence()
-            }
-            return
-        }
-
-        pendingStepProgressGuide = null
-        lastRemotePersistStartedAtMs = now
+    private fun scheduleGuidePersistence(guide: Guide) {
+        val normalizedGuide = normalizeGuideForPersistence(guide) ?: return
+        pendingGuide = normalizedGuide
+        guidePersistJob?.cancel()
         Log.d(
             TAG,
-            "scheduleStepProgressPersistence firing latest cached persist guideId=${latestGuide.id} resume=${latestGuide.resume}",
+            "scheduleGuidePersistence cached guideId=${normalizedGuide.id} debounceMs=$GUIDE_PERSIST_DEBOUNCE_MS",
         )
-        persistGuide(latestGuide)
-    }
-
-    private fun cancelPendingStepProgressPersistence() {
-        stepProgressPersistJob?.cancel()
-        stepProgressPersistJob = null
-        pendingStepProgressGuide = null
+        guidePersistJob = viewModelScope.launch {
+            delay(GUIDE_PERSIST_DEBOUNCE_MS)
+            flushPendingGuidePersistence()
+        }
     }
 
     fun flushPendingChanges() {
-        val latestStepGuide = pendingStepProgressGuide
-        if (latestStepGuide != null) {
-            Log.d(TAG, "flushPendingChanges persisting cached step progress guideId=${latestStepGuide.id}")
-            cancelPendingStepProgressPersistence()
-            persistGuide(latestStepGuide)
-            return
-        }
+        flushPendingGuidePersistence(immediate = true)
+    }
 
-        val latestNavigationGuide = pendingNavigationGuide
-        if (latestNavigationGuide != null) {
-            Log.d(TAG, "flushPendingChanges persisting cached navigation guideId=${latestNavigationGuide.id}")
-            cancelPendingNavigationPersistence()
-            val pointerResumeGuide = buildGuideForPersistence(
-                guide = latestNavigationGuide,
-                sections = latestNavigationGuide.sections,
-                resumePointer = currentPointer(latestNavigationGuide),
-            )
-            persistGuide(pointerResumeGuide)
+    private fun flushPendingGuidePersistence(immediate: Boolean = false) {
+        val latestGuide = pendingGuide ?: return
+        if (immediate) {
+            guidePersistJob?.cancel()
+            guidePersistJob = null
         }
+        pendingGuide = null
+        Log.d(TAG, "flushPendingGuidePersistence persisting cached guideId=${latestGuide.id}")
+        persistGuide(latestGuide)
+    }
+
+    private fun cancelPendingGuidePersistence() {
+        guidePersistJob?.cancel()
+        guidePersistJob = null
+        pendingGuide = null
     }
 
     private fun persistGuide(guide: Guide) {
-        val resolvedGuideId = resolveGuideId(guide) ?: run {
-            Log.e(TAG, "persistGuide failed: missing guide id in guide=${guide.id} cachedGuideId=$guideId")
-            showError("Unable to save guide progress. Missing guide id.")
-            return
-        }
-        val normalizedGuide = if (guide.id == resolvedGuideId) {
-            guide
-        } else {
-            guide.copy(id = resolvedGuideId)
-        }
-        val requestVersion = ++latestPersistRequestVersion
+        val normalizedGuide = normalizeGuideForPersistence(guide) ?: return
         Log.d(
             TAG,
-            "persistGuide queued requestVersion=$requestVersion guideId=${normalizedGuide.id} started=${normalizedGuide.started} resume=${normalizedGuide.resume} lastUpdated=${normalizedGuide.lastUpdated.time}",
+            "persistGuide uploading guideId=${normalizedGuide.id} started=${normalizedGuide.started} resume=${normalizedGuide.resume} lastUpdated=${normalizedGuide.lastUpdated.time}",
         )
 
         viewModelScope.launch {
-            persistMutex.withLock {
-                if (requestVersion < latestPersistRequestVersion) {
+            val result = updateItemUseCase(normalizedGuide, Constants.GUIDES_TABLE)
+
+            when (result) {
+                is ResultListener.Success -> {
                     Log.d(
                         TAG,
-                        "persistGuide skipping stale requestVersion=$requestVersion latestRequestVersion=$latestPersistRequestVersion guideId=${normalizedGuide.id}",
+                        "persistGuide upload success guideId=${normalizedGuide.id}",
                     )
-                    return@withLock
                 }
-                Log.d(
-                    TAG,
-                    "persistGuide uploading requestVersion=$requestVersion guideId=${normalizedGuide.id}",
-                )
-                val result = updateItemUseCase(normalizedGuide, Constants.GUIDES_TABLE)
 
-                when (result) {
-                    is ResultListener.Success -> {
-                        Log.d(
-                            TAG,
-                            "persistGuide upload success requestVersion=$requestVersion guideId=${normalizedGuide.id}",
-                        )
-                        lastSyncedGuide = normalizedGuide
-                    }
-
-                    is ResultListener.Failure -> {
-                        Log.e(
-                            TAG,
-                            "persistGuide upload failure requestVersion=$requestVersion latestRequestVersion=$latestPersistRequestVersion message=${result.message}",
-                        )
-                        if (requestVersion == latestPersistRequestVersion) {
-                            val fallbackGuide = lastSyncedGuide
-                            if (fallbackGuide != null) {
-                                Log.d(
-                                    TAG,
-                                    "persistGuide restoring fallback guideId=${fallbackGuide.id} after failure",
-                                )
-                                applyGuideUpdate(
-                                    uiGuide = fallbackGuide,
-                                    forcePointerRecompute = true,
-                                )
-                            }
-                        }
-                        showError(result.message)
-                    }
+                is ResultListener.Failure -> {
+                    Log.e(
+                        TAG,
+                        "persistGuide upload failure guideId=${normalizedGuide.id} message=${result.message}",
+                    )
+                    showError(result.message)
                 }
             }
+        }
+    }
+
+    private fun normalizeGuideForPersistence(guide: Guide): Guide? {
+        val resolvedGuideId = resolveGuideId(guide) ?: run {
+            Log.e(TAG, "persistGuide failed: missing guide id in guide=${guide.id} cachedGuideId=$guideId")
+            showError("Unable to save guide progress. Missing guide id.")
+            return null
+        }
+        return if (guide.id == resolvedGuideId) {
+            guide
+        } else {
+            guide.copy(id = resolvedGuideId)
         }
     }
 
