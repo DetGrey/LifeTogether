@@ -23,16 +23,16 @@ import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
+import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 
 @Composable
 fun TipStatisticsScreen(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
+    appSessionViewModel: AppSessionViewModel,
     tipTrackerViewModel: TipTrackerViewModel,
 ) {
 
-    val userInformationState by firebaseViewModel?.userInformation!!.collectAsState()
+    val userInformationState by appSessionViewModel.userInformation.collectAsState()
     val uiState by tipTrackerViewModel.uiState.collectAsState()
 
     LaunchedEffect(key1 = userInformationState?.familyId) {
@@ -99,7 +99,7 @@ fun TipStatisticsScreen(
             // TODO check if the item is still there if highest tip is null because I don't want the spacedBy to be there always
             item {
                 uiState.stats.highestTip?.let { tip ->
-                    TextSubHeadingMedium("Highest tip", MaterialTheme.colorScheme.primary)
+                    TextSubHeadingMedium("Highest tip", color = MaterialTheme.colorScheme.primary)
                     TextDefault(
                         text = "Tip amount: ${tip.amount}",
                         color = MaterialTheme.colorScheme.secondary,
@@ -114,7 +114,7 @@ fun TipStatisticsScreen(
             }
             item {
                 uiState.stats.bestMonth?.let { bestMonth ->
-                    TextSubHeadingMedium("Best month", MaterialTheme.colorScheme.primary)
+                    TextSubHeadingMedium("Best month", color = MaterialTheme.colorScheme.primary)
                     TextDefault(
                         text = "Tip amount: ${bestMonth.second}",
                         color = MaterialTheme.colorScheme.secondary,

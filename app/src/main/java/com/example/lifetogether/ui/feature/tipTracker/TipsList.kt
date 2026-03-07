@@ -39,7 +39,7 @@ fun TipsList(
     groupedTips.forEach { (dateString, tipsForDate) ->
         Spacer(modifier = Modifier.height(20.dp))
 
-        TextSubHeadingMedium(dateString, MaterialTheme.colorScheme.primary) // Show the date heading
+        TextSubHeadingMedium(dateString, color = MaterialTheme.colorScheme.primary) // Show the date heading
 
         Spacer(modifier = Modifier.height(10.dp))
 

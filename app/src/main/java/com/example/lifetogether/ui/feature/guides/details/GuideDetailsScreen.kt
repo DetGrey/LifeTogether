@@ -50,12 +50,12 @@ import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.list.CompletableBox
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
+import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 
 @Composable
 fun GuideDetailsRoute(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
+    appSessionViewModel: AppSessionViewModel,
     guideId: String,
     viewModelStoreOwner: ViewModelStoreOwner? = null,
 ) {
@@ -67,7 +67,7 @@ fun GuideDetailsRoute(
 
     GuideDetailsScreen(
         appNavigator = appNavigator,
-        firebaseViewModel = firebaseViewModel,
+        appSessionViewModel = appSessionViewModel,
         guideId = guideId,
         guideDetailsViewModel = guideDetailsViewModel,
     )
@@ -76,11 +76,11 @@ fun GuideDetailsRoute(
 @Composable
 fun GuideDetailsScreen(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
+    appSessionViewModel: AppSessionViewModel,
     guideId: String,
     guideDetailsViewModel: GuideDetailsViewModel,
 ) {
-    val userInformation by firebaseViewModel?.userInformation!!.collectAsState()
+    val userInformation by appSessionViewModel.userInformation.collectAsState()
     val uiState by guideDetailsViewModel.uiState.collectAsState()
     val guide = uiState.guide
 

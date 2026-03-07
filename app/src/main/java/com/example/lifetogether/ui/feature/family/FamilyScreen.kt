@@ -40,19 +40,19 @@ import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.feature.profile.ProfileDetails
 import com.example.lifetogether.ui.feature.settings.SettingsItem
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
+import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 import com.example.lifetogether.ui.viewmodel.ImageViewModel
 
 @Composable
 fun FamilyScreen(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
+    appSessionViewModel: AppSessionViewModel,
 ) {
     val context = LocalContext.current
     val familyViewModel: FamilyViewModel = hiltViewModel()
     val imageViewModel: ImageViewModel = hiltViewModel()
 
-    val userInformationState by firebaseViewModel?.userInformation!!.collectAsState()
+    val userInformationState by appSessionViewModel.userInformation.collectAsState()
     val familyInformationState by familyViewModel.familyInformation.collectAsState()
     val bitmap by imageViewModel.bitmap.collectAsState()
 

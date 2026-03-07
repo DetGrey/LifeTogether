@@ -22,7 +22,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withTimeoutOrNull
 import java.util.Date
 import javax.inject.Inject
 
@@ -43,13 +42,11 @@ class GuideDetailsViewModel @Inject constructor(
 ) : ViewModel() {
     private companion object {
         const val ALERT_DISMISS_DELAY_MS = 3000L
-        const val REMOTE_PERSIST_TIMEOUT_MS = 15000L
         const val ERROR_MISSING_GUIDE_ID_FOR_VISIBILITY = "Unable to update visibility. Missing guide id."
         const val ERROR_MISSING_GUIDE_ID_FOR_DELETE = "Unable to delete this guide. Missing guide id."
         const val ERROR_MISSING_GUIDE_ID_FOR_STEP_UPDATE = "Unable to update this step. Missing guide id."
         const val ERROR_MISSING_GUIDE_ID_FOR_OPEN = "Unable to open this guide. Missing guide id."
         const val ERROR_MISSING_GUIDE_ID_FOR_SAVE = "Unable to save guide changes. Missing guide id."
-        const val ERROR_TIMEOUT_SAVING_GUIDE = "Timed out while saving guide changes. Please try again."
         const val ERROR_ONLY_OWNER_CAN_CHANGE_VISIBILITY = "Only the owner can change visibility"
         const val ERROR_ONLY_OWNER_CAN_DELETE = "Only the owner can delete this guide"
     }
@@ -321,9 +318,7 @@ class GuideDetailsViewModel @Inject constructor(
 
         viewModelScope.launch {
             persistMutex.withLock {
-                val result = withTimeoutOrNull(REMOTE_PERSIST_TIMEOUT_MS) {
-                    updateItemUseCase(normalizedGuide, Constants.GUIDES_TABLE)
-                } ?: ResultListener.Failure(ERROR_TIMEOUT_SAVING_GUIDE)
+                val result = updateItemUseCase(normalizedGuide, Constants.GUIDES_TABLE)
 
                 when (result) {
                     is ResultListener.Success -> {

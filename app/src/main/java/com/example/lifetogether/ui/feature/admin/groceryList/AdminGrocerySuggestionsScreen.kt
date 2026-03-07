@@ -25,15 +25,17 @@ import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.add.AddNewListItem
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
+import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
+import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
+import com.example.lifetogether.domain.observer.ObserverKey
 
 @Composable
 fun AdminGrocerySuggestionsScreen(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
+    appSessionViewModel: AppSessionViewModel,
 ) {
     val grocerySuggestionsViewModel: AdminGrocerySuggestionsViewModel = hiltViewModel()
 
@@ -67,7 +69,12 @@ fun AdminGrocerySuggestionsScreen(
                 text = "Edit grocery list",
             )
 
-            Spacer(modifier = Modifier.height(30.dp))
+            ObserverUpdatingText(
+                appSessionViewModel = appSessionViewModel,
+                keys = setOf(ObserverKey.GROCERY_CATEGORIES, ObserverKey.GROCERY_SUGGESTIONS),
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 modifier = Modifier.padding(horizontal = 5.dp),
@@ -137,6 +144,6 @@ fun AdminGrocerySuggestionsScreen(
 @Composable
 fun AdminGrocerySuggestionsScreenPreview() {
     LifeTogetherTheme {
-        AdminGrocerySuggestionsScreen()
+        Text("Preview requires AppSessionViewModel")
     }
 }

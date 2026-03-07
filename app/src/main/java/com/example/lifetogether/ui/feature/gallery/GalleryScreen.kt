@@ -2,6 +2,7 @@ package com.example.lifetogether.ui.feature.gallery
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,18 +25,20 @@ import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
+import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
+import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
+import com.example.lifetogether.domain.observer.ObserverKey
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun GalleryScreen(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
+    appSessionViewModel: AppSessionViewModel,
 ) {
     val galleryViewModel: GalleryViewModel = hiltViewModel()
 
-    val userInformation by firebaseViewModel?.userInformation!!.collectAsState()
+    val userInformation by appSessionViewModel.userInformation.collectAsState()
     val uiState by galleryViewModel.uiState.collectAsState()
 
     LaunchedEffect(key1 = userInformation?.familyId) {
@@ -66,23 +69,30 @@ fun GalleryScreen(
             }
 
             item {
-                if (uiState.albums.isEmpty()) {
-                    Text(text = "No albums created. Press + to create one.")
-                } else {
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        maxItemsInEachRow = 2,
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        for (album in uiState.albums) {
-                            AlbumContainer(
-                                album.name,
-                                album.mediaCount,
-                                album.thumbnail?.toBitmap(),
-                                onClick = {
-                                    appNavigator?.navigateToAlbumMedia(album.id)
-                                },
-                            )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ObserverUpdatingText(
+                        appSessionViewModel = appSessionViewModel,
+                        keys = setOf(ObserverKey.GALLERY_ALBUMS, ObserverKey.GALLERY_MEDIA),
+                    )
+
+                    if (uiState.albums.isEmpty()) {
+                        Text(text = "No albums created. Press + to create one.")
+                    } else {
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            maxItemsInEachRow = 2,
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            for (album in uiState.albums) {
+                                AlbumContainer(
+                                    album.name,
+                                    album.mediaCount,
+                                    album.thumbnail?.toBitmap(),
+                                    onClick = {
+                                        appNavigator?.navigateToAlbumMedia(album.id)
+                                    },
+                                )
+                            }
                         }
                     }
                 }

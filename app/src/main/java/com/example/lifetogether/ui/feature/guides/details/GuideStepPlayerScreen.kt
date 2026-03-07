@@ -37,12 +37,12 @@ import com.example.lifetogether.domain.model.guides.GuideStepType
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
+import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 
 @Composable
 fun GuideStepPlayerRoute(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
+    appSessionViewModel: AppSessionViewModel,
     guideId: String,
     viewModelStoreOwner: ViewModelStoreOwner? = null,
 ) {
@@ -54,7 +54,7 @@ fun GuideStepPlayerRoute(
 
     GuideStepPlayerScreen(
         appNavigator = appNavigator,
-        firebaseViewModel = firebaseViewModel,
+        appSessionViewModel = appSessionViewModel,
         guideId = guideId,
         guideStepPlayerViewModel = guideStepPlayerViewModel,
     )
@@ -63,11 +63,11 @@ fun GuideStepPlayerRoute(
 @Composable
 fun GuideStepPlayerScreen(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
+    appSessionViewModel: AppSessionViewModel,
     guideId: String,
     guideStepPlayerViewModel: GuideStepPlayerViewModel,
 ) {
-    val userInformation by firebaseViewModel?.userInformation!!.collectAsState()
+    val userInformation by appSessionViewModel.userInformation.collectAsState()
     val uiState by guideStepPlayerViewModel.uiState.collectAsState()
 
     BackHandler(enabled = appNavigator != null) {

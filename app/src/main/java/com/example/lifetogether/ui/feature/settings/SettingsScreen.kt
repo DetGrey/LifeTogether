@@ -22,15 +22,15 @@ import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
+import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 
 @Composable
 fun SettingsScreen(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
+    appSessionViewModel: AppSessionViewModel,
 ) {
     val settingsViewModel: SettingsViewModel = hiltViewModel()
-    val userInformationState by firebaseViewModel?.userInformation!!.collectAsState()
+    val userInformationState by appSessionViewModel.userInformation.collectAsState()
 
     Box(
         modifier = Modifier
@@ -152,7 +152,5 @@ fun SettingsScreen(
 @Preview(showBackground = true)
 @Composable
 fun SettingsScreenPreview() {
-    LifeTogetherTheme {
-        SettingsScreen()
-    }
+    LifeTogetherTheme {}
 }

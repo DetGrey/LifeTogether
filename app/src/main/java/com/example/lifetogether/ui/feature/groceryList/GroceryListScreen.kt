@@ -2,6 +2,7 @@ package com.example.lifetogether.ui.feature.groceryList
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,17 +25,19 @@ import com.example.lifetogether.ui.common.add.AddNewListItem
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.list.ItemCategoryList
+import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
+import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
+import com.example.lifetogether.domain.observer.ObserverKey
 
 @Composable
 fun GroceryListScreen(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
+    appSessionViewModel: AppSessionViewModel,
 ) {
     val groceryListViewModel: GroceryListViewModel = hiltViewModel()
 
-    val userInformationState by firebaseViewModel?.userInformation!!.collectAsState()
+    val userInformationState by appSessionViewModel.userInformation.collectAsState()
 
     LaunchedEffect(key1 = true) {
         // Perform any one-time initialization or side effect here
@@ -74,57 +77,68 @@ fun GroceryListScreen(
             }
 
             item {
-                if (groceryList.isEmpty()) {
-                    Text(text = "No items on the list yet")
-                } else {
-                    categorizedItems.forEach { (category, groceryItems) ->
-                        if (groceryItems.isNotEmpty()) {
-                            categoryExpandedStates[category.name]?.let { expanded ->
-                                ItemCategoryList(
-                                    category = category,
-                                    itemList = groceryItems,
-                                    expanded = expanded,
-                                    onClick = {
-                                        println("before: $expanded")
-                                        groceryListViewModel.toggleCategoryExpanded(category.name)
-                                        println("after: $expanded")
-                                    },
-                                    onCompleteToggle = { item ->
-                                        if (item is GroceryItem) {
-                                            groceryListViewModel.toggleItemCompleted(item)
-                                        }
-                                    },
-                                )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ObserverUpdatingText(
+                        appSessionViewModel = appSessionViewModel,
+                        keys = setOf(
+                            ObserverKey.GROCERY_LIST,
+                            ObserverKey.GROCERY_CATEGORIES,
+                            ObserverKey.GROCERY_SUGGESTIONS,
+                        ),
+                    )
+
+                    if (groceryList.isEmpty()) {
+                        Text(text = "No items on the list yet")
+                    } else {
+                        categorizedItems.forEach { (category, groceryItems) ->
+                            if (groceryItems.isNotEmpty()) {
+                                categoryExpandedStates[category.name]?.let { expanded ->
+                                    ItemCategoryList(
+                                        category = category,
+                                        itemList = groceryItems,
+                                        expanded = expanded,
+                                        onClick = {
+                                            println("before: $expanded")
+                                            groceryListViewModel.toggleCategoryExpanded(category.name)
+                                            println("after: $expanded")
+                                        },
+                                        onCompleteToggle = { item ->
+                                            if (item is GroceryItem) {
+                                                groceryListViewModel.toggleItemCompleted(item)
+                                            }
+                                        },
+                                    )
+                                }
                             }
                         }
-                    }
 
-                    if (completedItems.isNotEmpty()) {
-                        ItemCategoryList(
-                            category = Category(
-                                emoji = "✔️",
-                                name = "Completed",
-                            ),
-                            itemList = completedItems,
-                            expanded = groceryListViewModel.completedSectionExpanded,
-                            onClick = {
-                                groceryListViewModel.completedSectionExpanded =
-                                    !groceryListViewModel.completedSectionExpanded
-                            },
-                            onCompleteToggle = { item ->
-                                if (item is GroceryItem) {
-                                    groceryListViewModel.toggleItemCompleted(item)
-                                }
-                                if (!item.completed) { // if it was not completed, but now will be
-                                    firebaseViewModel.updateItemCount("grocery-list", UpdateType.SUBTRACT)
-                                } else {
-                                    firebaseViewModel.updateItemCount("grocery-list", UpdateType.ADD)
-                                }
-                            },
-                            onDelete = {
-                                groceryListViewModel.showConfirmationDialog = true
-                            },
-                        )
+                        if (completedItems.isNotEmpty()) {
+                            ItemCategoryList(
+                                category = Category(
+                                    emoji = "✔️",
+                                    name = "Completed",
+                                ),
+                                itemList = completedItems,
+                                expanded = groceryListViewModel.completedSectionExpanded,
+                                onClick = {
+                                    groceryListViewModel.completedSectionExpanded =
+                                        !groceryListViewModel.completedSectionExpanded
+                                },
+                                onCompleteToggle = { item ->
+                                    if (item is GroceryItem) {
+                                        groceryListViewModel.toggleItemCompleted(item)
+                                    }
+                                    if (!item.completed) { // if it was not completed, but now will be
+                                        appSessionViewModel.updateItemCount("grocery-list", UpdateType.SUBTRACT)
+                                    } else {
+                                        appSessionViewModel.updateItemCount("grocery-list", UpdateType.ADD)
+                                    }
+                                },
+                                onDelete = {
+                                    groceryListViewModel.showConfirmationDialog = true
+                                },
+                            )
+                        }
                     }
                 }
             }
@@ -146,7 +160,7 @@ fun GroceryListScreen(
                     groceryListViewModel.newItemText = it.suggestionName
                     groceryListViewModel.newItemCategory = it.category!!
                     groceryListViewModel.addItemToList(onSuccess = {
-                        firebaseViewModel.updateItemCount("grocery-list", UpdateType.ADD)
+                        appSessionViewModel.updateItemCount("grocery-list", UpdateType.ADD)
                     })
                 },
             )
@@ -165,7 +179,7 @@ fun GroceryListScreen(
             onTextChange = { groceryListViewModel.newItemText = it },
             onAddClick = {
                 groceryListViewModel.addItemToList(onSuccess = {
-                    firebaseViewModel.updateItemCount("grocery-list", UpdateType.ADD)
+                    appSessionViewModel.updateItemCount("grocery-list", UpdateType.ADD)
                 })
             },
             categoryList = groceryCategories,

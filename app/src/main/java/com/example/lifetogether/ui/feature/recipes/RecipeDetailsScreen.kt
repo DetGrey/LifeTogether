@@ -47,19 +47,19 @@ import com.example.lifetogether.ui.common.tagOptionRow.TagOption
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.textfield.EditableTextField
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
+import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 import com.example.lifetogether.ui.viewmodel.ImageViewModel
 
 @Composable
 fun RecipeDetailsScreen(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
+    appSessionViewModel: AppSessionViewModel,
     recipeId: String? = null,
 ) {
     val recipeDetailsViewModel: RecipeDetailsViewModel = hiltViewModel()
     val imageViewModel: ImageViewModel = hiltViewModel()
 
-    val userInformation by firebaseViewModel?.userInformation!!.collectAsState()
+    val userInformation by appSessionViewModel.userInformation.collectAsState()
     val recipe by recipeDetailsViewModel.recipe.collectAsState()
     val bitmap by imageViewModel.bitmap.collectAsState()
 

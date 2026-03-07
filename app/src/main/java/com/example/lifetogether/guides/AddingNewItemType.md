@@ -28,7 +28,7 @@
    - Add snapshot listener for new item
 6. /domain/usecase/observers
    - Create new observe use case with snapshotlistener and update function
-7. /ui/viewmodel/FirebaseViewModel
+7. /ui/viewmodel/AppSessionViewModel
    - update observeFirestoreFamilyData to include observe use case
 8. /ui/viewmodel
    - Create a new viewmodel

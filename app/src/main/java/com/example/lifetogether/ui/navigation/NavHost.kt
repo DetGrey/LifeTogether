@@ -1,74 +1,76 @@
 package com.example.lifetogether.ui.navigation
 
-import android.net.Uri
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
-import com.example.lifetogether.ui.feature.admin.groceryList.AdminGroceryCategoriesScreen
-import com.example.lifetogether.ui.feature.admin.groceryList.AdminGrocerySuggestionsScreen
+import com.example.lifetogether.ui.feature.admin.groceryList.AdminGroceryCategoriesRoute
+import com.example.lifetogether.ui.feature.admin.groceryList.AdminGrocerySuggestionsRoute
 import com.example.lifetogether.ui.feature.family.FamilyScreen
-import com.example.lifetogether.ui.feature.gallery.AlbumDetailsScreen
-import com.example.lifetogether.ui.feature.gallery.MediaDetailsScreen
-import com.example.lifetogether.ui.feature.gallery.GalleryScreen
+import com.example.lifetogether.ui.feature.gallery.AlbumDetailsRoute
+import com.example.lifetogether.ui.feature.gallery.GalleryGraphObserverRoute
+import com.example.lifetogether.ui.feature.gallery.GalleryScreenRoute
+import com.example.lifetogether.ui.feature.gallery.MediaDetailsRoute
+import com.example.lifetogether.ui.feature.guides.GuidesRoute
 import com.example.lifetogether.ui.feature.guides.create.GuideCreateScreen
-import com.example.lifetogether.ui.feature.guides.details.GuideDetailsRoute
-import com.example.lifetogether.ui.feature.guides.details.GuideStepPlayerRoute
-import com.example.lifetogether.ui.feature.guides.GuidesScreen
-import com.example.lifetogether.ui.feature.groceryList.GroceryListScreen
+import com.example.lifetogether.ui.feature.guides.details.GuideDetailsDestinationRoute
+import com.example.lifetogether.ui.feature.guides.details.GuideStepPlayerDestinationRoute
+import com.example.lifetogether.ui.feature.groceryList.GroceryListRoute
 import com.example.lifetogether.ui.feature.home.HomeScreen
 import com.example.lifetogether.ui.feature.loading.LoadingScreen
 import com.example.lifetogether.ui.feature.login.LoginScreen
 import com.example.lifetogether.ui.feature.profile.ProfileScreen
-import com.example.lifetogether.ui.feature.recipes.RecipeDetailsScreen
-import com.example.lifetogether.ui.feature.recipes.RecipesScreen
+import com.example.lifetogether.ui.feature.recipes.CreateRecipeRoute
+import com.example.lifetogether.ui.feature.recipes.RecipeDetailsRoute
+import com.example.lifetogether.ui.feature.recipes.RecipesRoute
 import com.example.lifetogether.ui.feature.settings.SettingsScreen
 import com.example.lifetogether.ui.feature.signup.SignupScreen
-import com.example.lifetogether.ui.feature.tipTracker.TipStatisticsScreen
-import com.example.lifetogether.ui.feature.tipTracker.TipTrackerScreen
-import com.example.lifetogether.ui.feature.tipTracker.TipTrackerViewModel
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
+import com.example.lifetogether.ui.feature.tipTracker.TipStatisticsRoute
+import com.example.lifetogether.ui.feature.tipTracker.TipTrackerRoute
+import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 
 @Composable
 fun NavHost(
     navController: NavHostController,
-    firebaseViewModel: FirebaseViewModel,
+    appSessionViewModel: AppSessionViewModel,
 ) {
     val appNavigator = AppNavigator(navController)
+    GalleryGraphObserverRoute(
+        navController = navController,
+        appSessionViewModel = appSessionViewModel,
+    )
 
     androidx.navigation.compose.NavHost(
         navController = navController,
         startDestination = AppRoutes.LOADING_SCREEN,
     ) {
         composable(AppRoutes.ADMIN_GROCERY_CATEGORIES_SCREEN) {
-            AdminGroceryCategoriesScreen(appNavigator, firebaseViewModel)
+            AdminGroceryCategoriesRoute(appNavigator, appSessionViewModel)
         }
         composable(AppRoutes.ADMIN_GROCERY_SUGGESTIONS_SCREEN) {
-            AdminGrocerySuggestionsScreen(appNavigator, firebaseViewModel)
+            AdminGrocerySuggestionsRoute(appNavigator, appSessionViewModel)
         }
 
         composable(AppRoutes.LOADING_SCREEN) {
-            LoadingScreen(appNavigator, firebaseViewModel)
+            LoadingScreen(appNavigator, appSessionViewModel)
         }
 
         composable(AppRoutes.HOME_SCREEN) {
-            HomeScreen(appNavigator, firebaseViewModel)
+            HomeScreen(appNavigator, appSessionViewModel)
         }
 
         composable(AppRoutes.PROFILE_SCREEN) {
-            ProfileScreen(appNavigator, firebaseViewModel)
+            ProfileScreen(appNavigator, appSessionViewModel)
         }
 
         composable(AppRoutes.FAMILY_SCREEN) {
-            FamilyScreen(appNavigator, firebaseViewModel)
+            FamilyScreen(appNavigator, appSessionViewModel)
         }
 
         composable(AppRoutes.SETTINGS_SCREEN) {
-            SettingsScreen(appNavigator, firebaseViewModel)
+            SettingsScreen(appNavigator, appSessionViewModel)
         }
 
         composable(AppRoutes.LOGIN_SCREEN) {
@@ -79,19 +81,19 @@ fun NavHost(
         }
 
         composable(AppRoutes.GROCERY_LIST_SCREEN) {
-            GroceryListScreen(appNavigator, firebaseViewModel)
+            GroceryListRoute(appNavigator, appSessionViewModel)
         }
 
         composable(AppRoutes.RECIPES_SCREEN) {
-            RecipesScreen(appNavigator, firebaseViewModel)
+            RecipesRoute(appNavigator, appSessionViewModel)
         }
 
         composable(AppRoutes.GUIDES_SCREEN) {
-            GuidesScreen(appNavigator, firebaseViewModel)
+            GuidesRoute(appNavigator, appSessionViewModel)
         }
 
         composable(AppRoutes.GUIDE_CREATE_SCREEN) {
-            GuideCreateScreen(appNavigator, firebaseViewModel)
+            GuideCreateScreen(appNavigator, appSessionViewModel)
         }
 
         navigation(
@@ -100,96 +102,86 @@ fun NavHost(
             startDestination = AppRoutes.GUIDE_DETAILS_SCREEN,
         ) {
             composable(AppRoutes.GUIDE_DETAILS_SCREEN) { backStackEntry ->
-                val guideGraphEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry(AppRoutes.GUIDE_GRAPH_ROUTE)
-                }
-                val guideId = guideGraphEntry.arguments?.getString(AppRoutes.GUIDE_ID_ARG)
-                    ?.let(Uri::decode)
-                    ?: return@composable
-                GuideDetailsRoute(
+                GuideDetailsDestinationRoute(
+                    navController = navController,
+                    backStackEntry = backStackEntry,
                     appNavigator = appNavigator,
-                    firebaseViewModel = firebaseViewModel,
-                    guideId = guideId,
-                    viewModelStoreOwner = guideGraphEntry,
+                    appSessionViewModel = appSessionViewModel,
                 )
             }
 
             composable(AppRoutes.GUIDE_STEP_PLAYER_SCREEN) { backStackEntry ->
-                val guideGraphEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry(AppRoutes.GUIDE_GRAPH_ROUTE)
-                }
-                val guideId = guideGraphEntry.arguments?.getString(AppRoutes.GUIDE_ID_ARG)
-                    ?.let(Uri::decode)
-                    ?: return@composable
-                GuideStepPlayerRoute(
+                GuideStepPlayerDestinationRoute(
+                    navController = navController,
+                    backStackEntry = backStackEntry,
                     appNavigator = appNavigator,
-                    firebaseViewModel = firebaseViewModel,
-                    guideId = guideId,
-                    viewModelStoreOwner = guideGraphEntry,
+                    appSessionViewModel = appSessionViewModel,
                 )
             }
         }
 
         composable(AppRoutes.CREATE_RECIPE_SCREEN) {
-            RecipeDetailsScreen(appNavigator, firebaseViewModel, null)
+            CreateRecipeRoute(appNavigator, appSessionViewModel)
         }
 
         composable(
             route = "${AppRoutes.RECIPE_DETAILS_SCREEN}/{${AppRoutes.RECIPE_ID_ARG}}",
             arguments = listOf(navArgument(AppRoutes.RECIPE_ID_ARG) { type = NavType.StringType }),
         ) { backStackEntry ->
-            val recipeId = backStackEntry.arguments?.getString(AppRoutes.RECIPE_ID_ARG)
-            RecipeDetailsScreen(appNavigator, firebaseViewModel, recipeId)
+            RecipeDetailsRoute(backStackEntry, appNavigator, appSessionViewModel)
         }
 
-        composable(AppRoutes.GALLERY_SCREEN) {
-            GalleryScreen(appNavigator, firebaseViewModel)
-        }
+        navigation(
+            route = AppRoutes.GALLERY_GRAPH,
+            startDestination = AppRoutes.GALLERY_SCREEN,
+        ) {
+            composable(AppRoutes.GALLERY_SCREEN) {
+                GalleryScreenRoute(appNavigator, appSessionViewModel)
+            }
 
-        composable(
-            route = "${AppRoutes.ALBUM_MEDIA_SCREEN}/{${AppRoutes.ALBUM_MEDIA_ID_ARG}}",
-            arguments = listOf(navArgument(AppRoutes.ALBUM_MEDIA_ID_ARG) { type = NavType.StringType }),
-        ) { backStackEntry ->
-            val albumId = backStackEntry.arguments?.getString(AppRoutes.ALBUM_MEDIA_ID_ARG)
-                ?: return@composable
-            AlbumDetailsScreen(appNavigator, firebaseViewModel, albumId)
-        }
+            composable(
+                route = "${AppRoutes.ALBUM_MEDIA_SCREEN}/{${AppRoutes.ALBUM_MEDIA_ID_ARG}}",
+                arguments = listOf(navArgument(AppRoutes.ALBUM_MEDIA_ID_ARG) { type = NavType.StringType }),
+            ) { backStackEntry ->
+                val albumId = backStackEntry.arguments?.getString(AppRoutes.ALBUM_MEDIA_ID_ARG)
+                    ?: return@composable
+                AlbumDetailsRoute(appNavigator, appSessionViewModel, albumId)
+            }
 
-        composable(
-            route = "${AppRoutes.GALLERY_MEDIA_SCREEN}/{${AppRoutes.GALLERY_MEDIA_ALBUM_ARG}}/{${AppRoutes.GALLERY_MEDIA_INDEX_ARG}}",
-            arguments = listOf(
-                navArgument(AppRoutes.GALLERY_MEDIA_ALBUM_ARG) { type = NavType.StringType },
-                navArgument(AppRoutes.GALLERY_MEDIA_INDEX_ARG) { type = NavType.IntType }
-            ),
-        ) { backStackEntry ->
-            val albumId = backStackEntry.arguments?.getString(AppRoutes.GALLERY_MEDIA_ALBUM_ARG)
-                ?: return@composable
-            val initialIndex = backStackEntry.arguments?.getInt(AppRoutes.GALLERY_MEDIA_INDEX_ARG)
-                ?: 0
-            MediaDetailsScreen(appNavigator, firebaseViewModel, albumId, initialIndex)
+            composable(
+                route = "${AppRoutes.GALLERY_MEDIA_SCREEN}/{${AppRoutes.GALLERY_MEDIA_ALBUM_ARG}}/{${AppRoutes.GALLERY_MEDIA_INDEX_ARG}}",
+                arguments = listOf(
+                    navArgument(AppRoutes.GALLERY_MEDIA_ALBUM_ARG) { type = NavType.StringType },
+                    navArgument(AppRoutes.GALLERY_MEDIA_INDEX_ARG) { type = NavType.IntType },
+                ),
+            ) { backStackEntry ->
+                val albumId = backStackEntry.arguments?.getString(AppRoutes.GALLERY_MEDIA_ALBUM_ARG)
+                    ?: return@composable
+                val initialIndex = backStackEntry.arguments?.getInt(AppRoutes.GALLERY_MEDIA_INDEX_ARG)
+                    ?: 0
+                MediaDetailsRoute(appNavigator, appSessionViewModel, albumId, initialIndex)
+            }
         }
 
         // Nested graph
         navigation(startDestination = AppRoutes.TIP_TRACKER_SCREEN, route = AppRoutes.TIP_TRACKER_GRAPH) {
 
             composable(AppRoutes.TIP_TRACKER_SCREEN) { backStackEntry ->
-                // Get the ViewModel scoped to "AppRoutes.TIP_TRACKER_GRAPH"
-                val sharedEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry(AppRoutes.TIP_TRACKER_GRAPH)
-                }
-                val viewModel: TipTrackerViewModel = hiltViewModel(sharedEntry)
-
-                TipTrackerScreen(appNavigator, firebaseViewModel, viewModel)
+                TipTrackerRoute(
+                    navController = navController,
+                    backStackEntry = backStackEntry,
+                    appNavigator = appNavigator,
+                    appSessionViewModel = appSessionViewModel,
+                )
             }
 
             composable(AppRoutes.TIP_STATISTICS_SCREEN) { backStackEntry ->
-                // Get the SAME ViewModel scoped to "AppRoutes.TIP_TRACKER_GRAPH"
-                val sharedEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry(AppRoutes.TIP_TRACKER_GRAPH)
-                }
-                val viewModel: TipTrackerViewModel = hiltViewModel(sharedEntry)
-
-                TipStatisticsScreen(appNavigator, firebaseViewModel, viewModel)
+                TipStatisticsRoute(
+                    navController = navController,
+                    backStackEntry = backStackEntry,
+                    appNavigator = appNavigator,
+                    appSessionViewModel = appSessionViewModel,
+                )
             }
         }
     }

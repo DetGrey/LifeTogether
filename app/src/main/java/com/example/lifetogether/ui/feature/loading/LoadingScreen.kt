@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -16,16 +17,18 @@ import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.ui.common.text.TextDisplayLarge
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
+import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 
 @Composable
 fun LoadingScreen(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
+    appSessionViewModel: AppSessionViewModel,
 ) {
-    when (firebaseViewModel?.loading) {
+    val userInformation by appSessionViewModel.userInformation.collectAsState()
+
+    when (appSessionViewModel.loading) {
         false -> {
-            firebaseViewModel.userInformation.collectAsState().value?.let {
+            userInformation?.let {
                 appNavigator?.navigateToHome()
             } ?: run {
                 appNavigator?.navigateToLogin()
@@ -33,7 +36,6 @@ fun LoadingScreen(
         }
 
         true -> {}
-        null -> {}
     }
 
     Column(

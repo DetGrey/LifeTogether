@@ -27,7 +27,7 @@ import com.example.lifetogether.ui.feature.notification.NotificationService
 import com.example.lifetogether.ui.navigation.NavHost
 import com.example.lifetogether.ui.theme.AppTypography
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
+import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
@@ -70,7 +70,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    val firebaseViewModel: FirebaseViewModel = hiltViewModel()
+                    val appSessionViewModel: AppSessionViewModel = hiltViewModel()
                     val navControllerState = rememberNavController()
                     navController = navControllerState
 
@@ -80,13 +80,19 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    val userInformation by firebaseViewModel.userInformation.collectAsState()
-                    when (val familyId = userInformation?.familyId) {
-                        is String -> {
-                            userInformation?.uid?.let { uid ->
-                                firebaseViewModel.observeFirestoreFamilyData(uid, familyId)
-                                firebaseViewModel.storeFcmToken(uid, familyId)
-                            }
+                    val userInformation by appSessionViewModel.userInformation.collectAsState()
+                    val uid = userInformation?.uid
+                    val familyId = userInformation?.familyId
+
+                    LaunchedEffect(uid, familyId) {
+                        if (!uid.isNullOrBlank()) {
+                            appSessionViewModel.syncGlobalObserverContext(uid, familyId)
+                        }
+                    }
+
+                    LaunchedEffect(uid, familyId) {
+                        if (!uid.isNullOrBlank() && !familyId.isNullOrBlank()) {
+                            appSessionViewModel.storeFcmToken(uid, familyId)
                         }
                     }
 
@@ -97,7 +103,7 @@ class MainActivity : ComponentActivity() {
 
                     // Makes the default Text style bodyMedium instead of bodyLarge
                     ProvideTextStyle(value = AppTypography.bodyMedium) {
-                        NavHost(navController = navControllerState, firebaseViewModel = firebaseViewModel)
+                        NavHost(navController = navControllerState, appSessionViewModel = appSessionViewModel)
                     }
                 }
             }

@@ -75,7 +75,7 @@ class AppNavigator(private val navController: NavController) : Navigator {
     }
 
     override fun navigateToGallery() {
-        navController.navigate(AppRoutes.GALLERY_SCREEN) {
+        navController.navigate(AppRoutes.GALLERY_GRAPH) {
             launchSingleTop = true
             // Clear any album or media screens when returning to gallery
             popUpTo(AppRoutes.GALLERY_SCREEN) {

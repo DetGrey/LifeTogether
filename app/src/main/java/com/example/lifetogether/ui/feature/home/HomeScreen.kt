@@ -39,19 +39,19 @@ import com.example.lifetogether.ui.common.button.LoveButton
 import com.example.lifetogether.ui.common.text.TextDisplayLarge
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
+import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 import com.example.lifetogether.ui.viewmodel.ImageViewModel
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HomeScreen(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
+    appSessionViewModel: AppSessionViewModel,
 ) {
     val imageViewModel: ImageViewModel = hiltViewModel()
     val bitmap by imageViewModel.bitmap.collectAsState()
 
-    val userInformationState by firebaseViewModel?.userInformation!!.collectAsState()
+    val userInformationState by appSessionViewModel.userInformation.collectAsState()
 
     LaunchedEffect(key1 = true) {
         // Perform any one-time initialization or side effect here
@@ -83,7 +83,7 @@ fun HomeScreen(
                         description = "profile picture icon",
                     ),
                     onLeftClick = {
-                        if (firebaseViewModel.userInformation.value != null) {
+                        if (appSessionViewModel.userInformation.value != null) {
                             appNavigator?.navigateToProfile()
                         } else {
                             appNavigator?.navigateToLogin()
@@ -285,7 +285,6 @@ fun HomeScreen(
                                 }
                             },
                             icon = Icon(R.drawable.ic_groceries, "groceries basket icon"),
-                            fullWidth = true,
                         )
                         FeatureOverview(
                             "Grocery suggestions",
@@ -297,7 +296,6 @@ fun HomeScreen(
                                 }
                             },
                             icon = Icon(R.drawable.ic_groceries, "groceries basket icon"),
-                            fullWidth = true,
                         )
                     }
                 }
@@ -316,6 +314,6 @@ fun HomeScreen(
 @Composable
 fun HomeScreenPreview() {
     LifeTogetherTheme {
-        HomeScreen()
+        Text("Preview requires AppSessionViewModel")
     }
 }

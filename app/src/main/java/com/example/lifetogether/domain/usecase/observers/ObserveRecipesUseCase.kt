@@ -5,6 +5,9 @@ import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.repository.StorageRepository
 import com.example.lifetogether.domain.listener.ByteArrayResultListener
 import com.example.lifetogether.domain.listener.ListItemsResultListener
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class ObserveRecipesUseCase @Inject constructor(
@@ -12,49 +15,58 @@ class ObserveRecipesUseCase @Inject constructor(
     private val storageRepository: StorageRepository,
     private val localDataSource: LocalDataSource,
 ) {
-    suspend operator fun invoke(
+    fun start(
+        scope: CoroutineScope,
         familyId: String,
-    ) {
-        println("ObserveRecipesUseCase invoked")
-        firestoreDataSource.recipeSnapshotListener(familyId).collect { result ->
-            println("recipeSnapshotListener().collect result: $result")
-            when (result) {
-                is ListItemsResultListener.Success -> {
-                    if (result.listItems.isEmpty()) {
-                        println("recipeSnapshotListener().collect result: is empty")
-                        localDataSource.deleteFamilyRecipes(familyId)
-                    } else {
-                        // println("recipeSnapshotListener().collect result: ${result.listItems.map { listOf(it.itemName, it.tags) }}")
+    ): ObserverStartHandle {
+        val firstSuccess = CompletableDeferred<Result<Unit>>()
+        val job = scope.launch {
+            println("ObserveRecipesUseCase invoked")
+            firestoreDataSource.recipeSnapshotListener(familyId).collect { result ->
+                println("recipeSnapshotListener().collect result: $result")
+                when (result) {
+                    is ListItemsResultListener.Success -> {
+                        runCatching {
+                            if (result.listItems.isEmpty()) {
+                                println("recipeSnapshotListener().collect result: is empty")
+                                localDataSource.deleteFamilyRecipes(familyId)
+                            } else {
+                                // Get existing recipe IDs that already have images to avoid re-downloading
+                                val existingRecipeIdsWithImages = localDataSource.getRecipeIdsWithImages(familyId)
 
-                        // Get existing recipe IDs that already have images to avoid re-downloading
-                        val existingRecipeIdsWithImages = localDataSource.getRecipeIdsWithImages(familyId)
+                                val byteArrays: MutableMap<String, ByteArray> = mutableMapOf()
+                                for (recipe in result.listItems) {
+                                    // Skip download if this recipe already has an image stored locally
+                                    if (recipe.id != null && existingRecipeIdsWithImages.contains(recipe.id)) {
+                                        println("ObserveRecipesUseCase: Skipping download for ${recipe.itemName} - image already exists locally")
+                                        continue
+                                    }
 
-                        val byteArrays: MutableMap<String, ByteArray> = mutableMapOf()
-                        for (recipe in result.listItems) {
-                            // Skip download if this recipe already has an image stored locally
-                            if (recipe.id != null && existingRecipeIdsWithImages.contains(recipe.id)) {
-                                println("ObserveRecipesUseCase: Skipping download for ${recipe.itemName} - image already exists locally")
-                                continue
-                            }
+                                    val byteArrayResult: ByteArrayResultListener? =
+                                        recipe.imageUrl?.let { url ->
+                                            storageRepository.fetchImageByteArray(url)
+                                        }
 
-                            val byteArrayResult: ByteArrayResultListener? =
-                                recipe.imageUrl?.let { url ->
-                                    storageRepository.fetchImageByteArray(url)
+                                    if (byteArrayResult is ByteArrayResultListener.Success) {
+                                        recipe.id?.let { byteArrays.put(it, byteArrayResult.byteArray) }
+                                    }
                                 }
 
-                            if (byteArrayResult is ByteArrayResultListener.Success) {
-                                recipe.id?.let { byteArrays.put(it, byteArrayResult.byteArray) }
+                                localDataSource.updateRecipes(result.listItems, byteArrays)
                             }
+                        }.onSuccess {
+                            firstSuccess.completeFirstSuccessIfNeeded()
+                        }.onFailure { error ->
+                            println("ObserveRecipesUseCase local update failure: ${error.message}")
                         }
-
-                        localDataSource.updateRecipes(result.listItems, byteArrays)
                     }
-                }
-                is ListItemsResultListener.Failure -> {
-                    // Handle failure
-                    println("ObserveRecipesUseCase failure: ${result.message}")
+                    is ListItemsResultListener.Failure -> {
+                        // Keep listener alive; firstSuccess is one-shot and only completes on success.
+                        println("ObserveRecipesUseCase failure: ${result.message}")
+                    }
                 }
             }
         }
+        return ObserverStartHandle(firstSuccess = firstSuccess, job = job)
     }
 }

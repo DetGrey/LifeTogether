@@ -64,10 +64,10 @@ class FamilyViewModel @Inject constructor(
 
     // ---------------------------------------------------------------- FUNCTIONS
     private fun fetchFamilyInformation(familyId: String) {
-        println("FirebaseViewModel before calling fetchFamilyInformationUseCase")
+        println("AppSessionViewModel before calling fetchFamilyInformationUseCase")
         viewModelScope.launch {
             fetchFamilyInformationUseCase.invoke(familyId = familyId).collect { result ->
-                println("FirebaseViewModel fetchFamilyInformationUseCase result: $result")
+                println("AppSessionViewModel fetchFamilyInformationUseCase result: $result")
                 when (result) {
                     is FamilyInformationResultListener.Success -> {
                         _familyInformation.value = result.familyInformation

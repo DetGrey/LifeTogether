@@ -28,6 +28,7 @@ import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.util.Constants
 import com.google.firebase.Firebase
+import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.SetOptions
@@ -44,6 +45,28 @@ class FirestoreDataSource @Inject constructor() {
         private const val TAG = "FirestoreDataSource"
     }
     private val db = Firebase.firestore
+
+    private fun Throwable.toFirestoreFailureMessage(
+        operation: String,
+        listName: String? = null,
+        documentId: String? = null,
+    ): String {
+        val code = (this as? FirebaseFirestoreException)?.code?.name
+        val location = buildString {
+            if (!listName.isNullOrBlank()) append("list=$listName")
+            if (!documentId.isNullOrBlank()) {
+                if (isNotEmpty()) append(", ")
+                append("id=$documentId")
+            }
+        }
+        val context = if (location.isBlank()) "" else " ($location)"
+        val details = message ?: "Unknown error"
+        return if (code == null) {
+            "$operation failed$context: $details"
+        } else {
+            "$operation failed$context [Firestore:$code]: $details"
+        }
+    }
 
     // ------------------------------------------------------------------------------- USERS
     fun userInformationSnapshotListener(uid: String) = callbackFlow {
@@ -295,7 +318,13 @@ class FirestoreDataSource @Inject constructor() {
 
             if (snapshot != null) {
                 // Process the changes and update Room database
-                val items = snapshot.toObjects(GroceryItem::class.java)
+                val items = snapshot.documents.mapNotNull { document ->
+                    runCatching {
+                        document.toObject(GroceryItem::class.java)?.copy(id = document.id)
+                    }.onFailure { parseError ->
+                        Log.e(TAG, "Failed parsing grocery item ${document.id}", parseError)
+                    }.getOrNull()
+                }
                 Log.d(TAG, "Snapshot items to GroceryItem: loaded")
                 trySend(ListItemsResultListener.Success(items)).isSuccess
             } else {
@@ -321,7 +350,13 @@ class FirestoreDataSource @Inject constructor() {
 
             if (snapshot != null) {
                 // Process the changes and update Room database
-                val items = snapshot.toObjects(Recipe::class.java)
+                val items = snapshot.documents.mapNotNull { document ->
+                    runCatching {
+                        document.toObject(Recipe::class.java)?.copy(id = document.id)
+                    }.onFailure { parseError ->
+                        Log.e(TAG, "Failed parsing recipe ${document.id}", parseError)
+                    }.getOrNull()
+                }
                 Log.d(TAG, "Snapshot items to Recipe: loaded")
                 trySend(ListItemsResultListener.Success(items)).isSuccess
             } else {
@@ -441,7 +476,13 @@ class FirestoreDataSource @Inject constructor() {
 
             if (snapshot != null) {
                 // Process the changes and update Room database
-                val items = snapshot.toObjects(Album::class.java)
+                val items = snapshot.documents.mapNotNull { document ->
+                    runCatching {
+                        document.toObject(Album::class.java)?.copy(id = document.id)
+                    }.onFailure { parseError ->
+                        Log.e(TAG, "Failed parsing album ${document.id}", parseError)
+                    }.getOrNull()
+                }
                 Log.d(TAG, "Snapshot items to Album: loaded")
                 trySend(ListItemsResultListener.Success(items)).isSuccess
             } else {
@@ -545,13 +586,19 @@ class FirestoreDataSource @Inject constructor() {
         item: Item,
         listName: String,
     ): StringResultListener {
+        val startedAt = System.currentTimeMillis()
         try {
             val uploadItem = if (item is Guide) GuideParser.guideToFirestoreMap(item) else item
             val documentReference = db.collection(listName).add(uploadItem).await()
+            Log.d(
+                TAG,
+                "saveItem success list=$listName id=${documentReference.id} durationMs=${System.currentTimeMillis() - startedAt}",
+            )
             return StringResultListener.Success(documentReference.id)
         } catch (e: Exception) {
-            Log.e(TAG, "Error", e)
-            return StringResultListener.Failure("Error: ${e.message}")
+            val message = e.toFirestoreFailureMessage(operation = "saveItem", listName = listName)
+            Log.e(TAG, message, e)
+            return StringResultListener.Failure(message)
         }
     }
 
@@ -559,9 +606,10 @@ class FirestoreDataSource @Inject constructor() {
         item: Item,
         listName: String,
     ): ResultListener {
-        Log.d(TAG, "updateItem with id: ${item.id}")
+        val startedAt = System.currentTimeMillis()
+        Log.d(TAG, "updateItem start list=$listName id=${item.id} type=${item::class.simpleName}")
         try {
-            if (item.id != null) {
+            if (!item.id.isNullOrBlank()) {
                 val uploadItem = if (item is Guide) GuideParser.guideToFirestoreMap(item) else item
 
                 db.collection(listName)
@@ -569,13 +617,22 @@ class FirestoreDataSource @Inject constructor() {
                     .set(uploadItem, SetOptions.merge())
                     .await()
 
+                Log.d(
+                    TAG,
+                    "updateItem success list=$listName id=${item.id} durationMs=${System.currentTimeMillis() - startedAt}",
+                )
                 return ResultListener.Success
             } else {
-                return ResultListener.Failure("Error: No document id")
+                return ResultListener.Failure("updateItem failed (list=$listName): missing document id")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error", e)
-            return ResultListener.Failure("Error: ${e.message}")
+            val message = e.toFirestoreFailureMessage(
+                operation = "updateItem",
+                listName = listName,
+                documentId = item.id,
+            )
+            Log.e(TAG, message, e)
+            return ResultListener.Failure(message)
         }
     }
 
@@ -583,21 +640,31 @@ class FirestoreDataSource @Inject constructor() {
         item: CompletableItem,
         listName: String,
     ): ResultListener {
+        val startedAt = System.currentTimeMillis()
         try {
-            if (item.id is String) {
+            if (!item.id.isNullOrBlank()) {
                 db.collection(listName).document(item.id!!).update(
                     mapOf(
                         "completed" to item.completed,
                         "lastUpdated" to Date(System.currentTimeMillis()), // Set to current time
                     ),
                 ).await()
+                Log.d(
+                    TAG,
+                    "toggleCompletableItemCompletion success list=$listName id=${item.id} completed=${item.completed} durationMs=${System.currentTimeMillis() - startedAt}",
+                )
                 return ResultListener.Success
             } else {
-                return ResultListener.Failure("Document not found")
+                return ResultListener.Failure("toggleCompletableItemCompletion failed (list=$listName): missing document id")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error", e)
-            return ResultListener.Failure("Error: ${e.message}")
+            val message = e.toFirestoreFailureMessage(
+                operation = "toggleCompletableItemCompletion",
+                listName = listName,
+                documentId = item.id,
+            )
+            Log.e(TAG, message, e)
+            return ResultListener.Failure(message)
         }
     }
 
@@ -710,7 +777,13 @@ class FirestoreDataSource @Inject constructor() {
 
             if (snapshot != null) {
                 // Process the changes and update Room database
-                val grocerySuggestions = snapshot.toObjects(GrocerySuggestion::class.java)
+                val grocerySuggestions = snapshot.documents.mapNotNull { document ->
+                    runCatching {
+                        document.toObject(GrocerySuggestion::class.java)?.copy(id = document.id)
+                    }.onFailure { parseError ->
+                        Log.e(TAG, "Failed parsing grocery suggestion ${document.id}", parseError)
+                    }.getOrNull()
+                }
 
                 Log.d(TAG, "Snapshot items to GrocerySuggestions: loaded")
                 trySend(GrocerySuggestionsListener.Success(grocerySuggestions)).isSuccess
@@ -861,7 +934,13 @@ class FirestoreDataSource @Inject constructor() {
 
             if (snapshot != null) {
                 // Process the changes and update Room database
-                val tips = snapshot.toObjects(TipItem::class.java)
+                val tips = snapshot.documents.mapNotNull { document ->
+                    runCatching {
+                        document.toObject(TipItem::class.java)?.copy(id = document.id)
+                    }.onFailure { parseError ->
+                        Log.e(TAG, "Failed parsing tip item ${document.id}", parseError)
+                    }.getOrNull()
+                }
 
                 Log.d(TAG, "Snapshot items to TipItems: loaded")
                 trySend(ListItemsResultListener.Success(tips)).isSuccess

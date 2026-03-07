@@ -21,17 +21,19 @@ import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
+import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
+import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
+import com.example.lifetogether.domain.observer.ObserverKey
 
 @Composable
 fun RecipesScreen(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
+    appSessionViewModel: AppSessionViewModel,
 ) {
     val recipesViewModel: RecipesViewModel = hiltViewModel()
-    val userInformation by firebaseViewModel?.userInformation!!.collectAsState()
+    val userInformation by appSessionViewModel.userInformation.collectAsState()
     val recipes by recipesViewModel.filteredRecipes.collectAsState()
 
     LaunchedEffect(key1 = true) {
@@ -64,13 +66,20 @@ fun RecipesScreen(
             }
 
             item {
-                TagOptionRow(
-                    options = recipesViewModel.tagsList,
-                    selectedOption = recipesViewModel.selectedTag,
-                    onSelectedOptionChange = {
-                        recipesViewModel.selectedTag = it
-                    },
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ObserverUpdatingText(
+                        appSessionViewModel = appSessionViewModel,
+                        keys = setOf(ObserverKey.RECIPES),
+                    )
+
+                    TagOptionRow(
+                        options = recipesViewModel.tagsList,
+                        selectedOption = recipesViewModel.selectedTag,
+                        onSelectedOptionChange = {
+                            recipesViewModel.selectedTag = it
+                        },
+                    )
+                }
             }
 
             item {

@@ -9,12 +9,15 @@ import com.example.lifetogether.domain.repository.StorageRepository
 import com.example.lifetogether.domain.listener.TempFileDownloadResult
 import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import java.io.File
 import javax.inject.Inject
@@ -41,15 +44,18 @@ class ObserveGalleryMediaUseCase @Inject constructor(
         private const val ROUND_RETRY_DELAY = 2000L
     }
 
-    suspend operator fun invoke(
+    fun start(
+        scope: CoroutineScope,
         familyId: String,
         context: Context,
-    ) {
-        Log.d(TAG, "invoked")
-        firestoreDataSource.galleryMediaSnapshotListener(familyId).collect { result ->
-            Log.d(TAG, "galleryMediaSnapshotListener().collect result: $result")
-            when (result) {
-                is ListItemsResultListener.Success -> {
+    ): ObserverStartHandle {
+        val firstSuccess = CompletableDeferred<Result<Unit>>()
+        val job = scope.launch {
+            Log.d(TAG, "invoked")
+            firestoreDataSource.galleryMediaSnapshotListener(familyId).collect { result ->
+                Log.d(TAG, "galleryMediaSnapshotListener().collect result: $result")
+                when (result) {
+                    is ListItemsResultListener.Success -> {
                     // Only allow empty list to delete local files if data is from server (not cache)
                     // This prevents offline/cached empty responses from deleting local data
                     // But allows legitimate deletions when confirmed by the server
@@ -81,6 +87,7 @@ class ObserveGalleryMediaUseCase @Inject constructor(
                             items = emptyList(), // No new items to download
                             completeSourceList = result.listItems // Pass complete list for deletion detection
                         )
+                        firstSuccess.completeFirstSuccessIfNeeded()
                         return@collect
                     }
 
@@ -243,6 +250,7 @@ class ObserveGalleryMediaUseCase @Inject constructor(
                     if (actualCount < expectedCount) {
                         Log.w(TAG, "Partial media load - Expected $expectedCount items, got $actualCount (${failedItems.size} failed, ${existingMediaMap.size} already cached)")
                     }
+                    firstSuccess.completeFirstSuccessIfNeeded()
                 }
 
                 is ListItemsResultListener.Failure -> {
@@ -251,5 +259,7 @@ class ObserveGalleryMediaUseCase @Inject constructor(
                 }
             }
         }
+        }
+        return ObserverStartHandle(firstSuccess = firstSuccess, job = job)
     }
 }

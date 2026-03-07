@@ -159,15 +159,17 @@ dependencies {
     implementation(libs.aws.config)
     implementation(libs.http.client.engine.okhttp)
     constraints {
-        // Force compatible gRPC version for Firebase Firestore 26.1.0
-        // Using 1.65.1 which is tested and compatible
-        val grpcVersion = "1.65.1"
+        // Keep gRPC modules aligned to one version to avoid mixed-runtime behavior.
+        // Firestore, DataConnect, and google-http/google-auth can otherwise resolve different grpc-* versions.
+        val grpcVersion = "1.70.0"
         implementation("io.grpc:grpc-okhttp:$grpcVersion")
         implementation("io.grpc:grpc-android:$grpcVersion")
         implementation("io.grpc:grpc-protobuf-lite:$grpcVersion")
         implementation("io.grpc:grpc-stub:$grpcVersion")
         implementation("io.grpc:grpc-api:$grpcVersion")
         implementation("io.grpc:grpc-core:$grpcVersion")
+        implementation("io.grpc:grpc-context:$grpcVersion")
+        implementation("io.grpc:grpc-util:$grpcVersion")
     }
 }
 

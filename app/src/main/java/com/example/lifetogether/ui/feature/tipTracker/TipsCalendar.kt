@@ -63,7 +63,12 @@ fun TipsCalendar(
         )
     }
 
-    TextSubHeadingMedium(viewModel.getCurrentMonthYearDisplay(), MaterialTheme.colorScheme.primary)
+    TextSubHeadingMedium(
+        viewModel.getCurrentMonthYearDisplay(),
+        Modifier.fillMaxWidth(),
+        MaterialTheme.colorScheme.primary,
+        alignCenter = true
+    )
 
     Row(
         modifier = Modifier

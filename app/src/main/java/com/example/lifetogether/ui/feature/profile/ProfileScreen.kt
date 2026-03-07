@@ -43,18 +43,18 @@ import com.example.lifetogether.ui.common.text.TextHeadingLarge
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
+import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 import com.example.lifetogether.ui.viewmodel.ImageViewModel
 
 @Composable
 fun ProfileScreen(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
+    appSessionViewModel: AppSessionViewModel,
 ) {
     val profileViewModel: ProfileViewModel = hiltViewModel()
     val imageViewModel: ImageViewModel = hiltViewModel()
 
-    val userInformation by firebaseViewModel?.userInformation!!.collectAsState()
+    val userInformation by appSessionViewModel.userInformation.collectAsState()
     val bitmap by imageViewModel.bitmap.collectAsState()
 
     LaunchedEffect(key1 = true) {
@@ -239,7 +239,7 @@ fun ProfileScreen(
                             uid,
                             userInformation!!.familyId,
                             onSuccess = {
-                                firebaseViewModel.onSignOut()
+                                appSessionViewModel.onSignOut()
                                 profileViewModel.closeConfirmationDialog()
                                 appNavigator?.navigateToHome()
                             },
@@ -304,7 +304,5 @@ fun ProfileScreen(
 @Preview(showBackground = true)
 @Composable
 fun ProfileScreenPreview() {
-    LifeTogetherTheme {
-        ProfileScreen()
-    }
+    LifeTogetherTheme {}
 }

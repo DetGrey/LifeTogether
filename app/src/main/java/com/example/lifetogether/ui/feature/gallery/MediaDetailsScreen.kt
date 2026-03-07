@@ -43,20 +43,22 @@ import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.image.DisplayImageFromUri
 import com.example.lifetogether.ui.common.image.DisplayVideoFromUri
 import com.example.lifetogether.ui.common.image.MediaInfoPanel
+import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
 import com.example.lifetogether.ui.model.MenuAction
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
+import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
+import com.example.lifetogether.domain.observer.ObserverKey
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun MediaDetailsScreen(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
+    appSessionViewModel: AppSessionViewModel,
     albumId: String,
     initialIndex: Int,
 ) {
     val mediaDetailsViewModel: MediaDetailsViewModel = hiltViewModel()
-    val userInformation by firebaseViewModel?.userInformation!!.collectAsState()
+    val userInformation by appSessionViewModel.userInformation.collectAsState()
     val uiState by mediaDetailsViewModel.uiState.collectAsState()
 
     LaunchedEffect(albumId) {
@@ -125,6 +127,11 @@ fun MediaDetailsScreen(
                     description = "overflow menu",
                 ),
                 onRightClick = { mediaDetailsViewModel.toggleOverflowMenu() },
+            )
+
+            ObserverUpdatingText(
+                appSessionViewModel = appSessionViewModel,
+                keys = setOf(ObserverKey.GALLERY_ALBUMS, ObserverKey.GALLERY_MEDIA),
             )
 
             HorizontalPager(

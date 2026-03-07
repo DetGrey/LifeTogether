@@ -34,15 +34,15 @@ import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.dropdown.Dropdown
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
+import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 
 @Composable
 fun GuideCreateScreen(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
+    appSessionViewModel: AppSessionViewModel,
 ) {
     val guideCreateViewModel: GuideCreateViewModel = hiltViewModel()
-    val userInformation by firebaseViewModel?.userInformation!!.collectAsState()
+    val userInformation by appSessionViewModel.userInformation.collectAsState()
     val sections by guideCreateViewModel.sections.collectAsState()
 
     var visibilityExpanded by remember { mutableStateOf(false) }

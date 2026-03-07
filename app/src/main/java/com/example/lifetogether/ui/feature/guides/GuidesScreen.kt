@@ -45,16 +45,18 @@ import com.example.lifetogether.domain.model.guides.GuideVisibility
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
+import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
+import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
+import com.example.lifetogether.domain.observer.ObserverKey
 
 @Composable
 fun GuidesScreen(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
+    appSessionViewModel: AppSessionViewModel,
 ) {
     val guidesViewModel: GuidesViewModel = hiltViewModel()
-    val userInformation by firebaseViewModel?.userInformation!!.collectAsState()
+    val userInformation by appSessionViewModel.userInformation.collectAsState()
     val guides by guidesViewModel.guides.collectAsState()
 
     val context = LocalContext.current
@@ -102,16 +104,26 @@ fun GuidesScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item {
-                TopBar(
-                    leftIcon = Icon(
-                        resId = R.drawable.ic_back_arrow,
-                        description = "back arrow icon",
-                    ),
-                    onLeftClick = {
-                        appNavigator?.navigateBack()
-                    },
-                    text = "Guides",
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    TopBar(
+                        leftIcon = Icon(
+                            resId = R.drawable.ic_back_arrow,
+                            description = "back arrow icon",
+                        ),
+                        onLeftClick = {
+                            appNavigator?.navigateBack()
+                        },
+                        text = "Guides",
+                    )
+
+                    ObserverUpdatingText(
+                        appSessionViewModel = appSessionViewModel,
+                        keys = setOf(ObserverKey.GUIDES),
+                    )
+                }
             }
 
             if (guides.isEmpty()) {

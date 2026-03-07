@@ -23,7 +23,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withTimeoutOrNull
 import java.util.Date
 import javax.inject.Inject
 
@@ -35,11 +34,9 @@ class GuideStepPlayerViewModel @Inject constructor(
     private companion object {
         const val TAG = "GuideStepPlayerVM"
         const val ALERT_DISMISS_DELAY_MS = 3000L
-        const val REMOTE_PERSIST_TIMEOUT_MS = 15000L
         const val NAVIGATION_PERSIST_DEBOUNCE_MS = 250L
         const val STEP_PROGRESS_PERSIST_DEBOUNCE_MS = 250L
         const val MIN_REMOTE_PERSIST_INTERVAL_MS = 1500L
-        const val ERROR_TIMEOUT_SAVING_GUIDE = "Timed out while saving guide progress. Please try again."
     }
 
     private enum class CompletionMode {
@@ -384,9 +381,7 @@ class GuideStepPlayerViewModel @Inject constructor(
                     TAG,
                     "persistGuide uploading requestVersion=$requestVersion guideId=${normalizedGuide.id}",
                 )
-                val result = withTimeoutOrNull(REMOTE_PERSIST_TIMEOUT_MS) {
-                    updateItemUseCase(normalizedGuide, Constants.GUIDES_TABLE)
-                } ?: ResultListener.Failure(ERROR_TIMEOUT_SAVING_GUIDE)
+                val result = updateItemUseCase(normalizedGuide, Constants.GUIDES_TABLE)
 
                 when (result) {
                     is ResultListener.Success -> {

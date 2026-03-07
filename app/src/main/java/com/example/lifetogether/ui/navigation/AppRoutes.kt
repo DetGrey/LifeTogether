@@ -22,6 +22,7 @@ object AppRoutes {
     const val GUIDE_STEP_PLAYER_SCREEN = "guide_step_player"
     const val GUIDE_CREATE_SCREEN = "guide_create"
     const val GUIDE_ID_ARG = "guideId"
+    const val GALLERY_GRAPH = "gallery_graph"
     const val GALLERY_SCREEN = "gallery"
     const val ALBUM_MEDIA_SCREEN = "album_media"
     const val ALBUM_MEDIA_ID_ARG = "albumId"

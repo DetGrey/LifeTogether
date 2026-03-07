@@ -35,15 +35,17 @@ import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
+import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
+import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
+import com.example.lifetogether.domain.observer.ObserverKey
 
 @Composable
 fun AdminGroceryCategoriesScreen(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
+    appSessionViewModel: AppSessionViewModel,
 ) {
     val groceryCategoriesViewModel: AdminGroceryCategoriesViewModel = hiltViewModel()
 
@@ -79,6 +81,13 @@ fun AdminGroceryCategoriesScreen(
             }
 
             item {
+                ObserverUpdatingText(
+                    appSessionViewModel = appSessionViewModel,
+                    keys = setOf(ObserverKey.GROCERY_CATEGORIES),
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
                 Text(
                     modifier = Modifier.padding(horizontal = 5.dp),
                     text = "Add new category as a string with an emoji and a name with whitespace between e.g. \"\uD83C\uDF5E Bakery\"",
