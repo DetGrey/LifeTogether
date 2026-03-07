@@ -15,9 +15,10 @@ class FetchListItemsUseCase @Inject constructor(
         familyId: String,
         listName: String,
         itemType: KClass<T>,
+        uid: String? = null,
     ): Flow<ListItemsResultListener<Item>> {
         Log.d("FetchListItemsUseCase", "invoke")
         // Return a flow that emits updates to the list items
-        return localListRepository.fetchListItems(listName, familyId, itemType)
+        return localListRepository.fetchListItems(listName, familyId, itemType, uid)
     }
 }

@@ -23,6 +23,8 @@ data class GuideEntity(
     val visibility: GuideVisibility = GuideVisibility.PRIVATE,
     @ColumnInfo(name = "owner_uid")
     val ownerUid: String = "",
+    @ColumnInfo(name = "content_version")
+    val contentVersion: Long = 1,
     val started: Boolean = false,
     val sections: List<GuideSection> = emptyList(),
     val resume: GuideResume? = null,

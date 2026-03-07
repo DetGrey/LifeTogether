@@ -3,6 +3,7 @@ package com.example.lifetogether.domain.usecase.observers
 import android.util.Log
 import com.example.lifetogether.data.local.LocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
+import com.example.lifetogether.domain.listener.GuideProgressResultListener
 import com.example.lifetogether.domain.listener.ListItemsResultListener
 import com.example.lifetogether.domain.model.guides.Guide
 import kotlinx.coroutines.CompletableDeferred
@@ -27,6 +28,28 @@ class ObserveGuidesUseCase @Inject constructor(
         val firstSuccess = CompletableDeferred<Result<Unit>>()
         val job = scope.launch {
             Log.d(TAG, "invoke uid=$uid familyId=$familyId")
+            launch {
+                firestoreDataSource.guideProgressSnapshotListener(familyId, uid).collect { progressResult ->
+                    when (progressResult) {
+                        is GuideProgressResultListener.Success -> {
+                            runCatching {
+                                localDataSource.updateGuideProgressFromRemote(
+                                    familyId = familyId,
+                                    uid = uid,
+                                    items = progressResult.listItems,
+                                )
+                            }.onFailure { error ->
+                                Log.e(TAG, "Guide progress local update failure: ${error.message}", error)
+                            }
+                        }
+
+                        is GuideProgressResultListener.Failure -> {
+                            Log.e(TAG, "guide progress listener failure: ${progressResult.message}")
+                        }
+                    }
+                }
+            }
+
             var lastSharedGuides: List<Guide> = emptyList()
             var lastPrivateGuides: List<Guide> = emptyList()
             var sharedHasSuccessfulSync = false

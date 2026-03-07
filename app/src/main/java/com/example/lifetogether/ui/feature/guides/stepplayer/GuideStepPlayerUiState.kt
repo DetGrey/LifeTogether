@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.feature.guides.details
+package com.example.lifetogether.ui.feature.guides.stepplayer
 
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.guides.GuideStep

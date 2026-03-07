@@ -1,6 +1,7 @@
 package com.example.lifetogether.domain.logic
 
 import com.example.lifetogether.domain.model.guides.Guide
+import com.example.lifetogether.domain.model.guides.GuideProgressState
 import com.example.lifetogether.domain.model.guides.GuideResume
 import com.example.lifetogether.domain.model.guides.GuideSection
 import com.example.lifetogether.domain.model.guides.GuideStep
@@ -55,6 +56,7 @@ object GuideParser {
             lastUpdated = parseDate(rawMap["lastUpdated"]),
             visibility = GuideVisibility.fromValue(readString(rawMap, "visibility").ifBlank { defaultVisibility.value }),
             ownerUid = ownerUid,
+            contentVersion = readLong(rawMap, "contentVersion") ?: 1L,
             started = readBoolean(rawMap, "started"),
             sections = sections,
             resume = parseResume(rawMap["resume"]),
@@ -98,11 +100,54 @@ object GuideParser {
             "visibility" to guide.visibility.value,
             "name" to guide.itemName,
             "description" to guide.description,
-            "started" to guide.started,
+            "contentVersion" to guide.contentVersion,
             "lastUpdated" to guide.lastUpdated,
             "sections" to guide.sections.map { sectionToFirestoreMap(it) },
-            "resume" to resumeToFirestoreMap(guide.resume),
         )
+    }
+
+    fun parseGuideProgressMap(
+        documentId: String,
+        data: Map<String, Any?>,
+    ): GuideProgressState? {
+        val familyId = readString(data, "familyId")
+        val uid = readString(data, "uid")
+        val guideId = readString(data, "guideId")
+        if (familyId.isBlank() || uid.isBlank() || guideId.isBlank()) return null
+
+        val completedPointerKeys = asList(data["completedPointerKeys"])
+            .mapNotNull { value -> readNullableString(value) }
+            .filter { it.isNotBlank() }
+
+        return GuideProgressState(
+            id = documentId,
+            familyId = familyId,
+            uid = uid,
+            guideId = guideId,
+            contentVersion = readLong(data, "contentVersion") ?: 1L,
+            started = readBoolean(data, "started"),
+            completedPointerKeys = completedPointerKeys,
+            resume = parseResume(data["resume"]),
+            lastUpdated = parseDate(data["lastUpdated"]),
+            pendingSync = false,
+            localUpdatedAt = parseDate(data["localUpdatedAt"]),
+            lastUploadedAt = parseDateOrNull(data["lastUploadedAt"]),
+        )
+    }
+
+    fun guideProgressToFirestoreMap(progress: GuideProgressState): Map<String, Any?> {
+        return mutableMapOf(
+            "familyId" to progress.familyId,
+            "uid" to progress.uid,
+            "guideId" to progress.guideId,
+            "contentVersion" to progress.contentVersion,
+            "started" to progress.started,
+            "completedPointerKeys" to progress.completedPointerKeys,
+            "resume" to resumeToFirestoreMap(progress.resume),
+            "lastUpdated" to progress.lastUpdated,
+            "localUpdatedAt" to progress.localUpdatedAt,
+            "lastUploadedAt" to progress.lastUploadedAt,
+        ).filterValues { value -> value != null }
     }
 
     private fun parseSection(
@@ -352,6 +397,17 @@ object GuideParser {
         }
     }
 
+    private fun parseDateOrNull(rawValue: Any?): Date? {
+        if (rawValue == null) return null
+        return when (rawValue) {
+            is Date -> rawValue
+            is Timestamp -> rawValue.toDate()
+            is Number -> Date(rawValue.toLong())
+            is String -> rawValue.toLongOrNull()?.let(::Date)
+            else -> null
+        }
+    }
+
     private fun asMap(value: Any?): Map<String, Any?>? {
         if (value !is Map<*, *>) return null
         return value.entries.associate { (key, item) ->
@@ -411,6 +467,14 @@ object GuideParser {
         return when (val value = rawMap[key]) {
             is Number -> value.toInt()
             is String -> value.toIntOrNull()
+            else -> null
+        }
+    }
+
+    private fun readLong(rawMap: Map<String, Any?>, key: String): Long? {
+        return when (val value = rawMap[key]) {
+            is Number -> value.toLong()
+            is String -> value.toLongOrNull()
             else -> null
         }
     }

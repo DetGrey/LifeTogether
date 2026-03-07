@@ -3,6 +3,7 @@ package com.example.lifetogether.data.remote
 import android.util.Log
 import com.example.lifetogether.domain.listener.CategoriesListener
 import com.example.lifetogether.domain.listener.FamilyInformationResultListener
+import com.example.lifetogether.domain.listener.GuideProgressResultListener
 import com.example.lifetogether.domain.listener.GrocerySuggestionsListener
 import com.example.lifetogether.domain.listener.ListItemsResultListener
 import com.example.lifetogether.domain.listener.StringResultListener
@@ -23,6 +24,7 @@ import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.model.guides.Guide
+import com.example.lifetogether.domain.model.guides.GuideProgressState
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.util.Constants
@@ -459,6 +461,49 @@ class FirestoreDataSource @Inject constructor() {
         awaitClose { listenerRegistration.remove() }
     }
 
+    fun guideProgressSnapshotListener(
+        familyId: String,
+        uid: String,
+    ) = callbackFlow {
+        Log.d(TAG, "Firestore guideProgressSnapshotListener init")
+        val progressRef = db.collection(Constants.GUIDE_PROGRESS_TABLE)
+            .whereEqualTo("familyId", familyId)
+            .whereEqualTo("uid", uid)
+
+        val listenerRegistration = progressRef.addSnapshotListener { snapshot, e ->
+            if (e != null) {
+                Log.e(TAG, "guideProgressSnapshotListener error", e)
+                trySend(GuideProgressResultListener.Failure("Error: ${e.message}")).isSuccess
+                return@addSnapshotListener
+            }
+
+            if (snapshot == null) {
+                trySend(GuideProgressResultListener.Failure("Error: Empty snapshot")).isSuccess
+                return@addSnapshotListener
+            }
+
+            val parsedProgress = snapshot.documents.mapNotNull { document ->
+                val data = document.data ?: return@mapNotNull null
+                runCatching {
+                    GuideParser.parseGuideProgressMap(
+                        documentId = document.id,
+                        data = data,
+                    )
+                }.onFailure { parseError ->
+                    Log.e(TAG, "Failed parsing guide progress ${document.id}", parseError)
+                }.getOrNull()
+            }
+
+            Log.d(
+                TAG,
+                "guideProgressSnapshotListener parsedCount=${parsedProgress.size} familyId=$familyId uid=$uid",
+            )
+            trySend(GuideProgressResultListener.Success(parsedProgress)).isSuccess
+        }
+
+        awaitClose { listenerRegistration.remove() }
+    }
+
     // ------------------------------------------------------------------------------- ALBUMS
     fun albumsSnapshotListener(familyId: String) = callbackFlow {
         Log.d(TAG, "Firestore albumSnapshotListener init")
@@ -580,6 +625,29 @@ class FirestoreDataSource @Inject constructor() {
     }
 
     // ------------------------------------------------------------------------------- ITEMS
+    suspend fun updateGuideProgress(progress: GuideProgressState): ResultListener {
+        val startedAt = System.currentTimeMillis()
+        return try {
+            db.collection(Constants.GUIDE_PROGRESS_TABLE)
+                .document(progress.id)
+                .set(GuideParser.guideProgressToFirestoreMap(progress), SetOptions.merge())
+                .await()
+            Log.d(
+                TAG,
+                "updateGuideProgress success id=${progress.id} durationMs=${System.currentTimeMillis() - startedAt}",
+            )
+            ResultListener.Success
+        } catch (e: Exception) {
+            val message = e.toFirestoreFailureMessage(
+                operation = "updateGuideProgress",
+                listName = Constants.GUIDE_PROGRESS_TABLE,
+                documentId = progress.id,
+            )
+            Log.e(TAG, message, e)
+            ResultListener.Failure(message)
+        }
+    }
+
     suspend fun saveItem(
         item: Item,
         listName: String,

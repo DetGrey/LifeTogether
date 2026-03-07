@@ -141,9 +141,10 @@ class LocalListRepositoryImpl @Inject constructor(
         listName: String,
         familyId: String,
         itemType: KClass<T>,
+        uid: String? = null,
     ): Flow<ListItemsResultListener<Item>> {
-        Log.d(TAG, "fetchListItems init listName=$listName familyId=$familyId itemType=${itemType.simpleName}")
-        return localDataSource.getListItems(listName, familyId)
+        Log.d(TAG, "fetchListItems init listName=$listName familyId=$familyId uid=$uid itemType=${itemType.simpleName}")
+        return localDataSource.getListItems(listName, familyId, uid)
             .map { entities ->
                 try {
                     Log.d(TAG, "fetchListItems entitiesCount=${entities.size} listName=$listName")
@@ -163,9 +164,10 @@ class LocalListRepositoryImpl @Inject constructor(
         familyId: String,
         id: String,
         itemType: KClass<out Item>,
+        uid: String? = null,
     ): Flow<ItemResultListener<Item>> {
-        Log.d(TAG, "fetchItemById listName=$listName familyId=$familyId id=$id itemType=${itemType.simpleName}")
-        return localDataSource.getItemById(listName, familyId, id)
+        Log.d(TAG, "fetchItemById listName=$listName familyId=$familyId uid=$uid id=$id itemType=${itemType.simpleName}")
+        return localDataSource.getItemById(listName, familyId, id, uid)
             .map { entity ->
                 try {
                     val entityLabel = when (entity) {
@@ -288,6 +290,7 @@ class LocalListRepositoryImpl @Inject constructor(
                     description = this.entity.description,
                     visibility = this.entity.visibility,
                     ownerUid = this.entity.ownerUid,
+                    contentVersion = this.entity.contentVersion,
                     started = this.entity.started,
                     sections = this.entity.sections,
                     resume = this.entity.resume,

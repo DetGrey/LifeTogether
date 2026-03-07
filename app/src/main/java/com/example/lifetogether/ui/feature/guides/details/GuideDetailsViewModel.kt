@@ -8,6 +8,8 @@ import com.example.lifetogether.domain.logic.GuideLeafPointer
 import com.example.lifetogether.domain.logic.GuideProgress
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.guides.GuideVisibility
+import com.example.lifetogether.domain.usecase.guides.MarkGuideProgressDirtyUseCase
+import com.example.lifetogether.domain.usecase.guides.SyncPendingGuideProgressUseCase
 import com.example.lifetogether.domain.usecase.item.DeleteItemUseCase
 import com.example.lifetogether.domain.usecase.item.FetchItemByIdUseCase
 import com.example.lifetogether.domain.usecase.item.UpdateItemUseCase
@@ -20,8 +22,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import java.util.Date
 import javax.inject.Inject
 
@@ -39,6 +39,8 @@ class GuideDetailsViewModel @Inject constructor(
     private val fetchItemByIdUseCase: FetchItemByIdUseCase,
     private val updateItemUseCase: UpdateItemUseCase,
     private val deleteItemUseCase: DeleteItemUseCase,
+    private val markGuideProgressDirtyUseCase: MarkGuideProgressDirtyUseCase,
+    private val syncPendingGuideProgressUseCase: SyncPendingGuideProgressUseCase,
 ) : ViewModel() {
     private companion object {
         const val ALERT_DISMISS_DELAY_MS = 3000L
@@ -56,10 +58,6 @@ class GuideDetailsViewModel @Inject constructor(
     private var guideId: String? = null
     private var guideJob: Job? = null
     private var dismissAlertJob: Job? = null
-
-    private var lastSyncedGuide: Guide? = null
-    private var latestPersistRequestVersion: Long = 0L
-    private val persistMutex = Mutex()
 
     private var pointerCacheGuide: Guide? = null
     private var pointerCacheByStepId: Map<String, GuideLeafPointer> = emptyMap()
@@ -88,7 +86,6 @@ class GuideDetailsViewModel @Inject constructor(
 
         if (isNewGuideContext) {
             invalidatePointerCache()
-            lastSyncedGuide = null
             _uiState.update { state ->
                 state.copy(
                     guide = null,
@@ -110,6 +107,7 @@ class GuideDetailsViewModel @Inject constructor(
                 id = guideId,
                 listName = Constants.GUIDES_TABLE,
                 itemType = Guide::class,
+                uid = uid,
             ).collect { result ->
                 when (result) {
                     is ItemResultListener.Success -> {
@@ -118,7 +116,6 @@ class GuideDetailsViewModel @Inject constructor(
                             guide = fetchedGuide,
                             fallbackGuideId = guideId,
                         )
-                        lastSyncedGuide = normalizedGuide
                         applyGuideUpdate(
                             uiGuide = normalizedGuide,
                         )
@@ -239,10 +236,8 @@ class GuideDetailsViewModel @Inject constructor(
             lastUpdated = now(),
         )
 
-        applyGuideUpdate(
-            uiGuide = updatedGuide,
-            persistedGuide = updatedGuide,
-        )
+        applyGuideUpdate(uiGuide = updatedGuide)
+        persistGuideProgress(updatedGuide)
     }
 
     fun onStartOrContinue(onNavigate: (String) -> Unit) {
@@ -267,13 +262,12 @@ class GuideDetailsViewModel @Inject constructor(
             lastUpdated = now(),
         )
 
-        applyGuideUpdate(
-            uiGuide = updatedGuide,
-            persistedGuide = updatedGuide,
-            beforePersist = { updateLoadingState(isStartingGuide = true) },
-            afterPersist = { updateLoadingState(isStartingGuide = false) },
-            onPersistSuccess = { onNavigate(currentGuideId) },
-        )
+        updateLoadingState(isStartingGuide = true)
+        applyGuideUpdate(uiGuide = updatedGuide)
+        persistGuideProgress(updatedGuide) {
+            updateLoadingState(isStartingGuide = false)
+            onNavigate(currentGuideId)
+        }
     }
 
     private fun applyGuideUpdate(
@@ -309,32 +303,56 @@ class GuideDetailsViewModel @Inject constructor(
             onFailure()
             return
         }
-        val normalizedGuide = if (guide.id == resolvedGuideId) {
-            guide
-        } else {
-            guide.copy(id = resolvedGuideId)
-        }
-        val requestVersion = ++latestPersistRequestVersion
+        val normalizedGuide = if (guide.id == resolvedGuideId) guide else guide.copy(id = resolvedGuideId)
 
         viewModelScope.launch {
-            persistMutex.withLock {
-                val result = updateItemUseCase(normalizedGuide, Constants.GUIDES_TABLE)
-
-                when (result) {
-                    is ResultListener.Success -> {
-                        lastSyncedGuide = normalizedGuide
-                        onSuccess()
-                    }
-
-                    is ResultListener.Failure -> {
-                        if (requestVersion == latestPersistRequestVersion) {
-                            lastSyncedGuide?.let(::updateGuideState)
-                        }
-                        showError(result.message)
-                        onFailure()
-                    }
+            when (val result = updateItemUseCase(normalizedGuide, Constants.GUIDES_TABLE)) {
+                is ResultListener.Success -> onSuccess()
+                is ResultListener.Failure -> {
+                    showError(result.message)
+                    onFailure()
                 }
             }
+        }
+    }
+
+    fun flushPendingChanges() {
+        val activeFamilyId = familyId ?: return
+        val activeUid = uid ?: return
+        val activeGuideId = guideId
+        viewModelScope.launch {
+            syncPendingGuideProgressUseCase(
+                familyId = activeFamilyId,
+                uid = activeUid,
+                force = true,
+                guideId = activeGuideId,
+            )
+        }
+    }
+
+    private fun persistGuideProgress(
+        guide: Guide,
+        onComplete: (() -> Unit)? = null,
+    ) {
+        val activeUid = uid ?: run {
+            onComplete?.invoke()
+            return
+        }
+        val activeFamilyId = familyId ?: run {
+            onComplete?.invoke()
+            return
+        }
+        viewModelScope.launch {
+            val marked = markGuideProgressDirtyUseCase(guide, activeUid)
+            if (marked) {
+                syncPendingGuideProgressUseCase(
+                    familyId = activeFamilyId,
+                    uid = activeUid,
+                    force = false,
+                    guideId = guide.id,
+                )
+            }
+            onComplete?.invoke()
         }
     }
 

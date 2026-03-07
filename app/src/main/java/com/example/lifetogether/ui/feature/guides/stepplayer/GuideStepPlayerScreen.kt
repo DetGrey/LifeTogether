@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.feature.guides.details
+package com.example.lifetogether.ui.feature.guides.stepplayer
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -28,8 +28,6 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModelStoreOwner
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.guides.GuideStep
@@ -38,27 +36,6 @@ import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
-
-@Composable
-fun GuideStepPlayerRoute(
-    appNavigator: AppNavigator? = null,
-    appSessionViewModel: AppSessionViewModel,
-    guideId: String,
-    viewModelStoreOwner: ViewModelStoreOwner? = null,
-) {
-    val guideStepPlayerViewModel: GuideStepPlayerViewModel = if (viewModelStoreOwner != null) {
-        hiltViewModel(viewModelStoreOwner)
-    } else {
-        hiltViewModel()
-    }
-
-    GuideStepPlayerScreen(
-        appNavigator = appNavigator,
-        appSessionViewModel = appSessionViewModel,
-        guideId = guideId,
-        guideStepPlayerViewModel = guideStepPlayerViewModel,
-    )
-}
 
 @Composable
 fun GuideStepPlayerScreen(
@@ -75,10 +52,11 @@ fun GuideStepPlayerScreen(
         appNavigator?.navigateBack()
     }
 
-    LaunchedEffect(userInformation?.familyId, guideId) {
+    LaunchedEffect(userInformation?.familyId, userInformation?.uid, guideId) {
         val familyId = userInformation?.familyId
-        if (!familyId.isNullOrBlank()) {
-            guideStepPlayerViewModel.setUpGuide(familyId, guideId)
+        val uid = userInformation?.uid
+        if (!familyId.isNullOrBlank() && !uid.isNullOrBlank()) {
+            guideStepPlayerViewModel.setUpGuide(familyId, uid, guideId)
         }
     }
 

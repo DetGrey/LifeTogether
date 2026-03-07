@@ -7,6 +7,7 @@ import com.example.lifetogether.data.local.dao.AlbumsDao
 import com.example.lifetogether.data.local.dao.CategoriesDao
 import com.example.lifetogether.data.local.dao.FamilyInformationDao
 import com.example.lifetogether.data.local.dao.GalleryMediaDao
+import com.example.lifetogether.data.local.dao.GuideProgressDao
 import com.example.lifetogether.data.local.dao.GuidesDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
@@ -32,6 +33,7 @@ object DatabaseModule {
             AppDatabase::class.java,
             "life_together_database",
         )
+            .allowMainThreadQueries()
             .fallbackToDestructiveMigration(false)
             .build()
     }
@@ -94,5 +96,11 @@ object DatabaseModule {
     @Singleton
     fun provideGuidesDao(db: AppDatabase): GuidesDao {
         return db.guidesDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideGuideProgressDao(db: AppDatabase): GuideProgressDao {
+        return db.guideProgressDao()
     }
 }

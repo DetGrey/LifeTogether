@@ -10,6 +10,7 @@ import com.example.lifetogether.data.local.dao.AlbumsDao
 import com.example.lifetogether.data.local.dao.CategoriesDao
 import com.example.lifetogether.data.local.dao.FamilyInformationDao
 import com.example.lifetogether.data.local.dao.GalleryMediaDao
+import com.example.lifetogether.data.local.dao.GuideProgressDao
 import com.example.lifetogether.data.local.dao.GuidesDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
@@ -24,6 +25,7 @@ import com.example.lifetogether.data.model.Entity
 import com.example.lifetogether.data.model.FamilyEntity
 import com.example.lifetogether.data.model.FamilyMemberEntity
 import com.example.lifetogether.data.model.GalleryMediaEntity
+import com.example.lifetogether.data.model.GuideProgressEntity
 import com.example.lifetogether.data.model.GuideEntity
 import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.model.GrocerySuggestionEntity
@@ -31,6 +33,7 @@ import com.example.lifetogether.data.model.RecipeEntity
 import com.example.lifetogether.data.model.TipEntity
 import com.example.lifetogether.data.model.UserEntity
 import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.logic.GuideProgressSnapshot
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.domain.model.UserInformation
@@ -41,6 +44,7 @@ import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.domain.model.guides.Guide
+import com.example.lifetogether.domain.model.guides.GuideProgressState
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.model.recipe.Recipe
@@ -48,6 +52,7 @@ import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.util.Constants
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
@@ -56,6 +61,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import java.io.File
+import java.util.Date
 import javax.inject.Inject
 
 class LocalDataSource @Inject constructor(
@@ -70,6 +76,7 @@ class LocalDataSource @Inject constructor(
     private val albumsDao: AlbumsDao,
     private val tipTrackerDao: TipTrackerDao,
     private val guidesDao: GuidesDao,
+    private val guideProgressDao: GuideProgressDao,
 ) {
     companion object {
         private const val TAG = "LocalDataSource"
@@ -104,6 +111,7 @@ class LocalDataSource @Inject constructor(
     fun getListItems(
         listName: String,
         familyId: String,
+        uid: String? = null,
     ): Flow<List<Entity>> {
         Log.d(TAG, "getListItems listName: $listName")
         val items: Flow<List<Entity>> = when (listName) {
@@ -122,8 +130,27 @@ class LocalDataSource @Inject constructor(
             Constants.TIP_TRACKER_TABLE -> tipTrackerDao.getItems(familyId).map { list ->
                 list.map { Entity.Tip(it) }
             }
-            Constants.GUIDES_TABLE -> guidesDao.getItems(familyId).map { list ->
-                list.map { Entity.Guide(it) }
+            Constants.GUIDES_TABLE -> {
+                if (uid.isNullOrBlank()) {
+                    guidesDao.getItems(familyId).map { list ->
+                        list.map { Entity.Guide(it) }
+                    }
+                } else {
+                    combine(
+                        guidesDao.getItems(familyId),
+                        guideProgressDao.getItems(familyId, uid),
+                    ) { guides, progressItems ->
+                        val progressByGuideId = progressItems.associateBy { it.guideId }
+                        guides.map { guide ->
+                            Entity.Guide(
+                                applyProgressToGuideEntity(
+                                    guide = guide,
+                                    progress = progressByGuideId[guide.id],
+                                ),
+                            )
+                        }
+                    }
+                }
             }
             else -> flowOf(emptyList()) // Handle the case where the listName doesn't match any known entity
         }
@@ -134,6 +161,7 @@ class LocalDataSource @Inject constructor(
         listName: String,
         familyId: String,
         id: String,
+        uid: String? = null,
     ): Flow<Entity> {
         Log.d(TAG, "getItemById listName=$listName familyId=$familyId id=$id")
         return when (listName) {
@@ -157,17 +185,35 @@ class LocalDataSource @Inject constructor(
             }
             Constants.GUIDES_TABLE -> flow {
                 Log.d(TAG, "getItemById guide flow init familyId=$familyId id=$id")
+                val guideFlow = guidesDao.getItemByIdFlow(familyId, id)
+                val mergedFlow = if (uid.isNullOrBlank()) {
+                    guideFlow.map { guide ->
+                        guide?.let {
+                            Entity.Guide(it)
+                        }
+                    }
+                } else {
+                    combine(
+                        guideFlow,
+                        guideProgressDao.getItemByGuideIdFlow(familyId, uid, id),
+                    ) { guide, progress ->
+                        guide?.let {
+                            Entity.Guide(applyProgressToGuideEntity(it, progress))
+                        }
+                    }
+                }
                 emitAll(
-                    guidesDao.getItemByIdFlow(familyId, id).mapNotNull { guide ->
-                        if (guide == null) {
+                    mergedFlow.mapNotNull { guideEntity ->
+                        if (guideEntity == null) {
                             Log.w(TAG, "getItemById guide emission=null familyId=$familyId id=$id")
                             null
                         } else {
+                            val guide = guideEntity.entity
                             Log.d(
                                 TAG,
                                 "getItemById guide emission id=${guide.id} started=${guide.started} resume=${guide.resume} lastUpdated=${guide.lastUpdated.time}",
                             )
-                            Entity.Guide(guide)
+                            guideEntity
                         }
                     },
                 )
@@ -856,6 +902,7 @@ class LocalDataSource @Inject constructor(
                 description = item.description,
                 visibility = item.visibility,
                 ownerUid = item.ownerUid,
+                contentVersion = item.contentVersion,
                 started = item.started,
                 sections = item.sections,
                 resume = item.resume,
@@ -887,6 +934,7 @@ class LocalDataSource @Inject constructor(
                 description = item.description,
                 visibility = item.visibility,
                 ownerUid = item.ownerUid,
+                contentVersion = item.contentVersion,
                 started = item.started,
                 sections = item.sections,
                 resume = item.resume,
@@ -918,6 +966,143 @@ class LocalDataSource @Inject constructor(
             Log.d(TAG, "deleteFamilyGuides familyId=$familyId count=${currentFamilyItems.size}")
             guidesDao.deleteItems(currentFamilyItems.map { it.id })
         }
+    }
+
+    suspend fun upsertGuideProgress(progress: GuideProgressState) {
+        val existing = guideProgressDao.getItemById(progress.id)
+        val entity = GuideProgressEntity(
+            id = progress.id,
+            familyId = progress.familyId,
+            uid = progress.uid,
+            guideId = progress.guideId,
+            contentVersion = progress.contentVersion,
+            started = progress.started,
+            completedPointerKeys = progress.completedPointerKeys,
+            resume = progress.resume,
+            lastUpdated = progress.lastUpdated,
+            pendingSync = true,
+            localUpdatedAt = progress.localUpdatedAt,
+            lastUploadedAt = existing?.lastUploadedAt,
+        )
+        guideProgressDao.upsertItem(entity)
+    }
+
+    suspend fun updateGuideProgressFromRemote(
+        familyId: String,
+        uid: String,
+        items: List<GuideProgressState>,
+    ) {
+        val entityList = mutableListOf<GuideProgressEntity>()
+        val protectedGuideIds = mutableSetOf<String>()
+        items.forEach { item ->
+            val existing = guideProgressDao.getItemById(item.id)
+            if (existing?.pendingSync == true) {
+                protectedGuideIds += existing.guideId
+                return@forEach
+            }
+            entityList += GuideProgressEntity(
+                id = item.id,
+                familyId = item.familyId,
+                uid = item.uid,
+                guideId = item.guideId,
+                contentVersion = item.contentVersion,
+                started = item.started,
+                completedPointerKeys = item.completedPointerKeys,
+                resume = item.resume,
+                lastUpdated = item.lastUpdated,
+                pendingSync = false,
+                localUpdatedAt = item.localUpdatedAt,
+                lastUploadedAt = item.lastUploadedAt ?: item.lastUpdated,
+            )
+        }
+
+        if (entityList.isNotEmpty()) {
+            guideProgressDao.upsertItems(entityList)
+        }
+
+        val localPendingGuideIds = guideProgressDao.getPendingItems(familyId, uid)
+            .map { it.guideId }
+            .toSet()
+        val keepGuideIds = items.map { it.guideId }.toSet() + localPendingGuideIds + protectedGuideIds
+
+        if (keepGuideIds.isEmpty()) {
+            guideProgressDao.deleteFamilyUserItems(familyId, uid)
+            return
+        }
+        guideProgressDao.deleteMissingGuides(familyId, uid, keepGuideIds.toList())
+    }
+
+    suspend fun getPendingGuideProgresses(
+        familyId: String,
+        uid: String,
+        guideId: String? = null,
+    ): List<GuideProgressState> {
+        val allPending = guideProgressDao.getPendingItems(familyId, uid)
+        val filtered = if (guideId.isNullOrBlank()) {
+            allPending
+        } else {
+            allPending.filter { it.guideId == guideId }
+        }
+        return filtered.map { entity ->
+            GuideProgressState(
+                id = entity.id,
+                familyId = entity.familyId,
+                uid = entity.uid,
+                guideId = entity.guideId,
+                contentVersion = entity.contentVersion,
+                started = entity.started,
+                completedPointerKeys = entity.completedPointerKeys,
+                resume = entity.resume,
+                lastUpdated = entity.lastUpdated,
+                pendingSync = entity.pendingSync,
+                localUpdatedAt = entity.localUpdatedAt,
+                lastUploadedAt = entity.lastUploadedAt,
+            )
+        }
+    }
+
+    suspend fun markGuideProgressSynced(
+        progressId: String,
+        uploadedAt: Date,
+    ) {
+        val existing = guideProgressDao.getItemById(progressId) ?: return
+        guideProgressDao.upsertItem(
+            existing.copy(
+                pendingSync = false,
+                lastUploadedAt = uploadedAt,
+            ),
+        )
+    }
+
+    private fun applyProgressToGuideEntity(
+        guide: GuideEntity,
+        progress: GuideProgressEntity?,
+    ): GuideEntity {
+        if (progress == null) return guide
+        if (progress.contentVersion != guide.contentVersion) {
+            return guide.copy(
+                started = false,
+                resume = null,
+                sections = GuideProgressSnapshot.applyCompletedPointerKeys(
+                    sections = guide.sections,
+                    completedPointerKeys = emptySet(),
+                ),
+            )
+        }
+        val mergedLastUpdated = if (progress.lastUpdated.after(guide.lastUpdated)) {
+            progress.lastUpdated
+        } else {
+            guide.lastUpdated
+        }
+        return guide.copy(
+            started = progress.started,
+            sections = GuideProgressSnapshot.applyCompletedPointerKeys(
+                sections = guide.sections,
+                completedPointerKeys = progress.completedPointerKeys.toSet(),
+            ),
+            resume = progress.resume,
+            lastUpdated = mergedLastUpdated,
+        )
     }
 
     // -------------------------------------------------------------- IMAGES

@@ -16,6 +16,7 @@ data class Guide(
     val description: String = "",
     val visibility: GuideVisibility = GuideVisibility.PRIVATE,
     val ownerUid: String = "",
+    val contentVersion: Long = 1,
     val started: Boolean = false,
     val sections: List<GuideSection> = emptyList(),
     val resume: GuideResume? = null,

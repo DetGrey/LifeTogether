@@ -11,6 +11,7 @@ import com.example.lifetogether.domain.observer.ObserverSyncState
 import com.example.lifetogether.domain.listener.AuthResultListener
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.enums.UpdateType
+import com.example.lifetogether.domain.usecase.guides.SyncPendingGuideProgressUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveAuthStateUseCase
 import com.example.lifetogether.domain.usecase.user.FetchUserInformationUseCase
 import com.example.lifetogether.domain.usecase.user.RemoveSavedUserInformationUseCase
@@ -21,6 +22,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -31,6 +33,7 @@ class AppSessionViewModel @Inject constructor(
     private val removeSavedUserInformationUseCase: RemoveSavedUserInformationUseCase,
     private val storeFcmTokenUseCase: StoreFcmTokenUseCase,
     private val observerCoordinator: ObserverCoordinator,
+    private val syncPendingGuideProgressUseCase: SyncPendingGuideProgressUseCase,
 ) : ViewModel() {
     private val _userInformation = MutableStateFlow<UserInformation?>(null)
     val userInformation: StateFlow<UserInformation?> = _userInformation.asStateFlow()
@@ -40,6 +43,9 @@ class AppSessionViewModel @Inject constructor(
         get() = _loading
 
     private var fetchUserInfoJob: Job? = null
+    private var guideProgressSyncJob: Job? = null
+    private var guideProgressSyncUid: String? = null
+    private var guideProgressSyncFamilyId: String? = null
 
     val observerSyncStates: StateFlow<Map<ObserverKey, ObserverSyncState>> =
         observerCoordinator.observerSyncStates
@@ -62,6 +68,9 @@ class AppSessionViewModel @Inject constructor(
 
                     is AuthResultListener.Failure -> {
                         _userInformation.value = null
+                        guideProgressSyncJob?.cancel()
+                        guideProgressSyncUid = null
+                        guideProgressSyncFamilyId = null
                         observerCoordinator.cancelAllNonAuthObservers()
                     }
                 }
@@ -107,8 +116,13 @@ class AppSessionViewModel @Inject constructor(
                     is AuthResultListener.Success -> {
                         _userInformation.value = result.userInformation
                         val latestUid = result.userInformation.uid
+                        val latestFamilyId = result.userInformation.familyId
                         if (!latestUid.isNullOrBlank()) {
-                            syncGlobalObserverContext(latestUid, result.userInformation.familyId)
+                            syncGlobalObserverContext(latestUid, latestFamilyId)
+                            startGuideProgressSync(
+                                uid = latestUid,
+                                familyId = latestFamilyId,
+                            )
                         }
                     }
 
@@ -124,8 +138,49 @@ class AppSessionViewModel @Inject constructor(
         viewModelScope.launch {
             removeSavedUserInformationUseCase.invoke()
         }
+        guideProgressSyncJob?.cancel()
+        guideProgressSyncUid = null
+        guideProgressSyncFamilyId = null
         observerCoordinator.cancelAllNonAuthObservers()
         _userInformation.value = null
+    }
+
+    private fun startGuideProgressSync(
+        uid: String,
+        familyId: String?,
+    ) {
+        if (familyId.isNullOrBlank()) {
+            guideProgressSyncJob?.cancel()
+            guideProgressSyncUid = null
+            guideProgressSyncFamilyId = null
+            return
+        }
+
+        val contextUnchanged =
+            guideProgressSyncJob?.isActive == true &&
+                guideProgressSyncUid == uid &&
+                guideProgressSyncFamilyId == familyId
+        if (contextUnchanged) return
+
+        guideProgressSyncJob?.cancel()
+        guideProgressSyncUid = uid
+        guideProgressSyncFamilyId = familyId
+
+        guideProgressSyncJob = viewModelScope.launch {
+            syncPendingGuideProgressUseCase(
+                familyId = familyId,
+                uid = uid,
+                force = true,
+            )
+            while (isActive) {
+                delay(30_000)
+                syncPendingGuideProgressUseCase(
+                    familyId = familyId,
+                    uid = uid,
+                    force = false,
+                )
+            }
+        }
     }
 
     var itemCount: Map<String, Int> by mutableStateOf(mapOf())

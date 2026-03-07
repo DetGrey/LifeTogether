@@ -20,11 +20,12 @@ class FetchItemByIdUseCase @Inject constructor(
         id: String,
         listName: String,
         itemType: KClass<T>,
+        uid: String? = null,
     ): Flow<ItemResultListener<Item>> {
         Log.d(
             TAG,
             "invoke listName=$listName familyId=$familyId id=$id itemType=${itemType.simpleName}",
         )
-        return localListRepository.fetchItemById(listName, familyId, id, itemType)
+        return localListRepository.fetchItemById(listName, familyId, id, itemType, uid)
     }
 }

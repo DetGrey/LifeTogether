@@ -7,6 +7,7 @@ import com.example.lifetogether.data.local.dao.AlbumsDao
 import com.example.lifetogether.data.local.dao.CategoriesDao
 import com.example.lifetogether.data.local.dao.FamilyInformationDao
 import com.example.lifetogether.data.local.dao.GalleryMediaDao
+import com.example.lifetogether.data.local.dao.GuideProgressDao
 import com.example.lifetogether.data.local.dao.GuidesDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
@@ -18,6 +19,7 @@ import com.example.lifetogether.data.model.CategoryEntity
 import com.example.lifetogether.data.model.FamilyEntity
 import com.example.lifetogether.data.model.FamilyMemberEntity
 import com.example.lifetogether.data.model.GalleryMediaEntity
+import com.example.lifetogether.data.model.GuideProgressEntity
 import com.example.lifetogether.data.model.GuideEntity
 import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.model.GrocerySuggestionEntity
@@ -40,8 +42,9 @@ import com.example.lifetogether.data.model.UserEntity
         GalleryMediaEntity::class,
         TipEntity::class,
         GuideEntity::class,
+        GuideProgressEntity::class,
     ],
-    version = 20,
+    version = 22,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -57,5 +60,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun galleryMediaDao(): GalleryMediaDao
     abstract fun tipTrackerDao(): TipTrackerDao
     abstract fun guidesDao(): GuidesDao
+    abstract fun guideProgressDao(): GuideProgressDao
     // Add other DAOs here
 }

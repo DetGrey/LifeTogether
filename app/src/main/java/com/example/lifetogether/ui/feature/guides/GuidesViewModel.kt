@@ -60,7 +60,12 @@ class GuidesViewModel @Inject constructor(
 
         guidesJob?.cancel()
         guidesJob = viewModelScope.launch {
-            fetchListItemsUseCase(addedFamilyId, Constants.GUIDES_TABLE, Guide::class).collect { result ->
+            fetchListItemsUseCase(
+                familyId = addedFamilyId,
+                listName = Constants.GUIDES_TABLE,
+                itemType = Guide::class,
+                uid = addedUid,
+            ).collect { result ->
                 when (result) {
                     is ListItemsResultListener.Success -> {
                         _guides.value = result.listItems

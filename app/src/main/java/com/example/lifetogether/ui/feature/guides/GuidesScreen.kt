@@ -61,9 +61,11 @@ fun GuidesScreen(
 
     val context = LocalContext.current
     var guideTemplate by remember { mutableStateOf("") }
+    var guideProgressTemplate by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
-        guideTemplate = loadGuideTemplate(context)
+        guideTemplate = loadTemplateAsset(context, "guide_template.json")
+        guideProgressTemplate = loadTemplateAsset(context, "guide_progress_template.json")
     }
 
     LaunchedEffect(userInformation?.familyId, userInformation?.uid) {
@@ -74,11 +76,19 @@ fun GuidesScreen(
         }
     }
 
-    val createTemplateLauncher = rememberLauncherForActivityResult(
+    val createGuideTemplateLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json"),
     ) { uri ->
         if (uri != null) {
             writeTemplateToUri(context, uri, guideTemplate)
+        }
+    }
+
+    val createGuideProgressTemplateLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json"),
+    ) { uri ->
+        if (uri != null) {
+            writeTemplateToUri(context, uri, guideProgressTemplate)
         }
     }
 
@@ -215,10 +225,19 @@ fun GuidesScreen(
                     Button(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
-                            createTemplateLauncher.launch("guide_template.json")
+                            createGuideTemplateLauncher.launch("guide_template.json")
                         },
                     ) {
-                        Text("Download example JSON")
+                        Text("Download guide template")
+                    }
+
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            createGuideProgressTemplateLauncher.launch("guide_progress_template.json")
+                        },
+                    ) {
+                        Text("Download guide progress template")
                     }
 
                     Button(
@@ -342,9 +361,12 @@ private fun RowWithCenteredLoader() {
     }
 }
 
-private fun loadGuideTemplate(context: Context): String {
+private fun loadTemplateAsset(
+    context: Context,
+    assetName: String,
+): String {
     return runCatching {
-        context.assets.open("guide_template.json").bufferedReader().use { it.readText() }
+        context.assets.open(assetName).bufferedReader().use { it.readText() }
     }.getOrDefault("")
 }
 
