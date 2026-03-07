@@ -263,8 +263,6 @@ fun HomeScreen(
 
             if (userInformationState?.uid in BuildConfig.ADMIN_LIST.split(",")) {
                 item {
-                    Spacer(modifier = Modifier.height(250.dp))
-
                     TextDisplayLarge("Admin features")
 
                     FlowRow(

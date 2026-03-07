@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -45,6 +47,30 @@ fun NavHost(
     androidx.navigation.compose.NavHost(
         navController = navController,
         startDestination = AppRoutes.LOADING_SCREEN,
+        enterTransition = {
+            slideIntoContainer(
+                AnimatedContentTransitionScope.SlideDirection.Left,
+                animationSpec = tween(200)
+            )
+        },
+        exitTransition = {
+            slideOutOfContainer(
+                AnimatedContentTransitionScope.SlideDirection.Left,
+                animationSpec = tween(200)
+            )
+        },
+        popEnterTransition = {
+            slideIntoContainer(
+                AnimatedContentTransitionScope.SlideDirection.Right,
+                animationSpec = tween(200)
+            )
+        },
+        popExitTransition = {
+            slideOutOfContainer(
+                AnimatedContentTransitionScope.SlideDirection.Right,
+                animationSpec = tween(200)
+            )
+        },
     ) {
         composable(AppRoutes.ADMIN_GROCERY_CATEGORIES_SCREEN) {
             AdminGroceryCategoriesRoute(appNavigator, appSessionViewModel)
