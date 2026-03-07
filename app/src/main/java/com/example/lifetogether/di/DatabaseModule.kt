@@ -32,7 +32,6 @@ object DatabaseModule {
             AppDatabase::class.java,
             "life_together_database",
         )
-            .allowMainThreadQueries()
             .fallbackToDestructiveMigration(false)
             .build()
     }

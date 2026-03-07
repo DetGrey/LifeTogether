@@ -29,6 +29,8 @@ class ObserveGuidesUseCase @Inject constructor(
             Log.d(TAG, "invoke uid=$uid familyId=$familyId")
             var lastSharedGuides: List<Guide> = emptyList()
             var lastPrivateGuides: List<Guide> = emptyList()
+            var sharedHasSuccessfulSync = false
+            var privateHasSuccessfulSync = false
 
             combine(
                 firestoreDataSource.familySharedGuidesSnapshotListener(familyId),
@@ -39,6 +41,7 @@ class ObserveGuidesUseCase @Inject constructor(
                 val sharedGuides: List<Guide> = when (sharedResult) {
                     is ListItemsResultListener.Success -> {
                         Log.d(TAG, "shared snapshot success count=${sharedResult.listItems.size}")
+                        sharedHasSuccessfulSync = true
                         sharedResult.listItems.also { lastSharedGuides = it }
                     }
                     is ListItemsResultListener.Failure -> {
@@ -50,6 +53,7 @@ class ObserveGuidesUseCase @Inject constructor(
                 val privateGuides: List<Guide> = when (privateResult) {
                     is ListItemsResultListener.Success -> {
                         Log.d(TAG, "private snapshot success count=${privateResult.listItems.size}")
+                        privateHasSuccessfulSync = true
                         privateResult.listItems.also { lastPrivateGuides = it }
                     }
                     is ListItemsResultListener.Failure -> {
@@ -58,9 +62,10 @@ class ObserveGuidesUseCase @Inject constructor(
                     }
                 }
 
-                val hadAnySuccess = sharedResult is ListItemsResultListener.Success ||
+                val hadAnySuccessInThisEmission = sharedResult is ListItemsResultListener.Success ||
                     privateResult is ListItemsResultListener.Success
-                if (!hadAnySuccess && sharedGuides.isEmpty() && privateGuides.isEmpty()) {
+                val hasAnySuccessfulSync = sharedHasSuccessfulSync || privateHasSuccessfulSync
+                if (!hadAnySuccessInThisEmission && !hasAnySuccessfulSync && sharedGuides.isEmpty() && privateGuides.isEmpty()) {
                     Log.w(TAG, "both guides listeners failed and no cached fallback exists; skipping local update")
                     return@collect
                 }
@@ -69,17 +74,36 @@ class ObserveGuidesUseCase @Inject constructor(
                     .associateBy { it.id ?: "" }
                     .values
                     .filter { !it.id.isNullOrBlank() }
+                val hasFullSnapshotCoverage = sharedHasSuccessfulSync && privateHasSuccessfulSync
 
                 runCatching {
                     if (mergedGuides.isEmpty()) {
-                        Log.d(TAG, "merged guides empty -> deleteFamilyGuides familyId=$familyId")
-                        localDataSource.deleteFamilyGuides(familyId)
+                        if (hasFullSnapshotCoverage) {
+                            Log.d(TAG, "merged guides empty with full coverage -> deleteFamilyGuides familyId=$familyId")
+                            localDataSource.deleteFamilyGuides(familyId)
+                        } else {
+                            Log.d(
+                                TAG,
+                                "merged guides empty without full coverage -> skipping delete familyId=$familyId sharedReady=$sharedHasSuccessfulSync privateReady=$privateHasSuccessfulSync",
+                            )
+                        }
                     } else {
-                        Log.d(TAG, "merged guides count=${mergedGuides.size} -> updateGuides familyId=$familyId")
-                        localDataSource.updateGuides(mergedGuides.toList())
+                        if (hasFullSnapshotCoverage) {
+                            Log.d(
+                                TAG,
+                                "merged guides count=${mergedGuides.size} with full coverage -> updateGuides familyId=$familyId",
+                            )
+                            localDataSource.updateGuides(mergedGuides.toList())
+                        } else {
+                            Log.d(
+                                TAG,
+                                "merged guides count=${mergedGuides.size} without full coverage -> upsertGuides familyId=$familyId sharedReady=$sharedHasSuccessfulSync privateReady=$privateHasSuccessfulSync",
+                            )
+                            localDataSource.upsertGuides(mergedGuides.toList())
+                        }
                     }
                 }.onSuccess {
-                    if (hadAnySuccess) {
+                    if (hasAnySuccessfulSync) {
                         firstSuccess.completeFirstSuccessIfNeeded()
                     }
                 }.onFailure { error ->

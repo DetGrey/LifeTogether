@@ -840,6 +840,37 @@ class LocalDataSource @Inject constructor(
     }
 
     // -------------------------------------------------------------- GUIDES
+    suspend fun upsertGuides(items: List<Guide>) {
+        Log.d(TAG, "upsertGuides incomingCount=${items.size}")
+        if (items.isEmpty()) {
+            Log.d(TAG, "upsertGuides skipped because incoming list is empty")
+            return
+        }
+
+        val entityList = items.map { item ->
+            GuideEntity(
+                id = item.id ?: "",
+                familyId = item.familyId,
+                itemName = item.itemName,
+                lastUpdated = item.lastUpdated,
+                description = item.description,
+                visibility = item.visibility,
+                ownerUid = item.ownerUid,
+                started = item.started,
+                sections = item.sections,
+                resume = item.resume,
+            )
+        }
+
+        val currentItems = guidesDao.getItems(items.first().familyId).first()
+        val itemsToUpdate = entityList.filter { newItem ->
+            currentItems.none { currentItem -> newItem.id == currentItem.id && newItem == currentItem }
+        }
+
+        Log.d(TAG, "upsertGuides itemsToUpdate=${itemsToUpdate.size}")
+        guidesDao.updateItems(itemsToUpdate)
+    }
+
     suspend fun updateGuides(items: List<Guide>) {
         Log.d(TAG, "updateGuides incomingCount=${items.size}")
         if (items.isEmpty()) {

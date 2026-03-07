@@ -23,14 +23,12 @@ import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.model.guides.Guide
-import com.example.lifetogether.domain.model.guides.GuideVisibility
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.util.Constants
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.firestore
 import com.google.firebase.messaging.FirebaseMessaging
@@ -373,8 +371,9 @@ class FirestoreDataSource @Inject constructor() {
         Log.d(TAG, "Firestore familySharedGuidesSnapshotListener init")
         val guidesRef = db.collection(Constants.GUIDES_TABLE)
             .whereEqualTo("familyId", familyId)
+            .whereEqualTo("visibility", Constants.GUIDE_VISIBILITY_FAMILY)
 
-        val listenerRegistration = guidesRef.addSnapshotListener(MetadataChanges.INCLUDE) { snapshot, e ->
+        val listenerRegistration = guidesRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 Log.e(TAG, "familySharedGuidesSnapshotListener error", e)
                 trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess
@@ -401,13 +400,12 @@ class FirestoreDataSource @Inject constructor() {
                     Log.e(TAG, "Failed parsing family guide ${document.id}", parseError)
                 }.getOrNull()
             }
-            val guides = parsedGuides.filter { it.visibility == GuideVisibility.FAMILY }
             Log.d(
                 TAG,
-                "familySharedGuidesSnapshotListener parsedCount=${parsedGuides.size} filteredFamilyCount=${guides.size} ids=${guides.mapNotNull { it.id }.take(5)}",
+                "familySharedGuidesSnapshotListener parsedCount=${parsedGuides.size} ids=${parsedGuides.mapNotNull { it.id }.take(5)}",
             )
 
-            trySend(ListItemsResultListener.Success(guides)).isSuccess
+            trySend(ListItemsResultListener.Success(parsedGuides)).isSuccess
         }
 
         awaitClose { listenerRegistration.remove() }
@@ -420,9 +418,10 @@ class FirestoreDataSource @Inject constructor() {
         Log.d(TAG, "Firestore privateGuidesSnapshotListener init")
         val guidesRef = db.collection(Constants.GUIDES_TABLE)
             .whereEqualTo("familyId", familyId)
+            .whereEqualTo("visibility", Constants.GUIDE_VISIBILITY_PRIVATE)
             .whereEqualTo("ownerUid", uid)
 
-        val listenerRegistration = guidesRef.addSnapshotListener(MetadataChanges.INCLUDE) { snapshot, e ->
+        val listenerRegistration = guidesRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 Log.e(TAG, "privateGuidesSnapshotListener error", e)
                 trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess
@@ -449,13 +448,12 @@ class FirestoreDataSource @Inject constructor() {
                     Log.e(TAG, "Failed parsing private guide ${document.id}", parseError)
                 }.getOrNull()
             }
-            val guides = parsedGuides.filter { it.visibility == GuideVisibility.PRIVATE }
             Log.d(
                 TAG,
-                "privateGuidesSnapshotListener parsedCount=${parsedGuides.size} filteredPrivateCount=${guides.size} ids=${guides.mapNotNull { it.id }.take(5)}",
+                "privateGuidesSnapshotListener parsedCount=${parsedGuides.size} ids=${parsedGuides.mapNotNull { it.id }.take(5)}",
             )
 
-            trySend(ListItemsResultListener.Success(guides)).isSuccess
+            trySend(ListItemsResultListener.Success(parsedGuides)).isSuccess
         }
 
         awaitClose { listenerRegistration.remove() }
@@ -643,6 +641,10 @@ class FirestoreDataSource @Inject constructor() {
         val startedAt = System.currentTimeMillis()
         try {
             if (!item.id.isNullOrBlank()) {
+                Log.d(
+                    TAG,
+                    "toggleCompletableItemCompletion ready to upload list=$listName id=${item.id} completed=${item.completed}",
+                )
                 db.collection(listName).document(item.id!!).update(
                     mapOf(
                         "completed" to item.completed,
