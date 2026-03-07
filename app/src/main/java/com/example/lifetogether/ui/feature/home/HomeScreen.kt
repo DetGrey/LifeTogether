@@ -171,8 +171,8 @@ fun HomeScreen(
 
             item {
                 FlowRow(
-                    maxItemsInEachRow = 2,
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    maxItemsInEachRow = 3,
+                    verticalArrangement = Arrangement.spacedBy(5.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     FeatureOverview(
@@ -197,6 +197,11 @@ fun HomeScreen(
                         },
                         icon = Icon(R.drawable.ic_recipes, "recipes chef hat icon"),
                     )
+                    Spacer( // This makes it a two-item row
+                        Modifier
+                            .fillMaxWidth()
+                            .height(0.dp)
+                    )
 //                    FeatureOverview(
 //                        "Memory lane",
 //                        fullWidth = true,
@@ -208,6 +213,17 @@ fun HomeScreen(
 //                            }
 //                        },
 //                    )
+                    FeatureOverview(
+                        "Guides",
+                        onClick = {
+                            if (userInformationState?.familyId == null) {
+                                // TODO add popup asking to join a family
+                            } else {
+                                appNavigator?.navigateToGuides()
+                            }
+                        },
+                        icon = Icon(R.drawable.ic_bookmark, "guides icon"),
+                    )
                     FeatureOverview(
                         "Gallery",
                         onClick = {

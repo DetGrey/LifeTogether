@@ -1,0 +1,131 @@
+{
+  "id": "uuid",
+  "type": "guide",
+  "name": "some name",
+  "description": "something",
+  "started": true,
+  "sections": [
+    {
+      "id": "uuid",
+      "orderNumber": 1,
+      "title": "Head",
+      "subtitle": null,
+      "completed": false,
+      "completedAmount": 0,
+      "comment": "String",
+      "amount": 1,
+      "steps": [
+        {
+          "id": "uuid",
+          "name": "R1",
+          "type": "round",
+          "content": "sc 3, inc 3 (9 sts)",
+          "completed": true
+        },
+        {
+          "id": "uuid",
+          "name": "R2",
+          "type": "round",
+          "content": "sc 4, inc 3 (10 sts)",
+          "completed": false
+        },
+        {
+          "id": "uuid",
+          "type": "comment",
+          "content": "Fasten off",
+          "completed": false
+        }
+      ]
+    },
+    {
+      "id": "uuid",
+      "orderNumber": 2,
+      "title": "Ears",
+      "subtitle": "Make 2",
+      "completed": false,
+      "completedAmount": 1,
+      "comment": null,
+      "amount": 2,
+      "steps": [
+        {
+          "id": "uuid",
+          "name": "R1",
+          "type": "round",
+          "content": "sc 3, inc 3 (9 sts)",
+          "completed": true
+        },
+        {
+          "id": "uuid",
+          "name": "R2",
+          "type": "round",
+          "content": "sc 4, inc 3 (10 sts)",
+          "completed": false
+        },
+        {
+          "id": "uuid",
+          "type": "comment",
+          "content": "Fasten off",
+          "completed": false
+        }
+      ]
+    },
+    {
+      "orderNumber": 3,
+      "title": "Assembly",
+      "subtitle": null,
+      "completed": false,
+      "completedAmount": 0,
+      "comment": "String",
+      "amount": 1,
+      "steps": [
+        {
+          "id": "uuid",
+          "type": "numbered",
+          "content": "Fasten off and blal bla bla",
+          "completed": false
+        },
+        {
+          "id": "uuid",
+          "type": "numbered",
+          "content": "Second step is blal bla bla",
+          "completed": false
+        }
+      ]
+    },
+    {
+      "orderNumber": 4,
+      "title": "Facial features",
+      "subtitle": null,
+      "completed": false,
+      "completedAmount": 0,
+      "comment": "String",
+      "amount": 1,
+      "steps": [
+        {
+          "id": "uuid",
+          "type": "subsection",
+          "title": "Nose",
+          "completed": false,
+          "steps": {
+            "id": "uuid",
+            "type": "numbered",
+            "content": "To make the nose...",
+            "completed": false
+          }
+        },
+        {
+          "id": "uuid",
+          "type": "subsection",
+          "title": "Nose",
+          "completed": false,
+          "steps": {
+            "id": "uuid",
+            "type": "numbered",
+            "content": "To make the nose...",
+            "completed": false
+          }
+        }
+      ]
+    }
+  ]
+}

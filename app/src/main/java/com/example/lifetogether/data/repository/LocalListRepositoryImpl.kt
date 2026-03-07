@@ -1,5 +1,6 @@
 package com.example.lifetogether.data.repository
 
+import android.util.Log
 import androidx.core.net.toUri
 import com.example.lifetogether.data.local.LocalDataSource
 import com.example.lifetogether.data.model.Entity
@@ -17,6 +18,7 @@ import com.example.lifetogether.domain.model.gallery.Album
 import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
+import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.model.recipe.Recipe
@@ -29,6 +31,9 @@ import kotlin.reflect.KClass
 class LocalListRepositoryImpl @Inject constructor(
     private val localDataSource: LocalDataSource,
 ) : ListRepository {
+    private companion object {
+        const val TAG = "LocalListRepository"
+    }
 
     override suspend fun saveItem(
         item: Item,
@@ -87,11 +92,11 @@ class LocalListRepositoryImpl @Inject constructor(
         familyId: String,
         albumId: String,
     ): Flow<ListItemsResultListener<GalleryMedia>> {
-        println("LocalListRepoImpl fetchAlbumMedia init")
+        Log.d(TAG, "fetchAlbumMedia init familyId=$familyId albumId=$albumId")
         return localDataSource.getAlbumMedia(familyId, albumId)
             .map { entities ->
                 try {
-                    println("LocalListRepoImpl fetchAlbumMedia entities: ${ entities.map { it.entity.copy(mediaUri = null, thumbnail = null) } }")
+                    Log.d(TAG, "fetchAlbumMedia entitiesCount=${entities.size}")
                     // Convert entities to items
                     val itemsList = entities.map { entityWrapper ->
                         val entity = entityWrapper.entity
@@ -123,11 +128,10 @@ class LocalListRepositoryImpl @Inject constructor(
                             )
                         }
                     }
-                    println("LocalListRepoImpl after getting items from local data source")
-                    println("fetchAlbumMedia of specified itemType: $itemsList")
+                    Log.d(TAG, "fetchAlbumMedia mappedItemsCount=${itemsList.size}")
                     ListItemsResultListener.Success(itemsList)
                 } catch (e: Exception) {
-                    println("Error: ${e.message}")
+                    Log.e(TAG, "fetchAlbumMedia mapping error", e)
                     ListItemsResultListener.Failure(e.message ?: "Unknown error")
                 }
             }
@@ -138,18 +142,17 @@ class LocalListRepositoryImpl @Inject constructor(
         familyId: String,
         itemType: KClass<T>,
     ): Flow<ListItemsResultListener<Item>> {
-        println("LocalListRepoImpl fetchListItems init")
+        Log.d(TAG, "fetchListItems init listName=$listName familyId=$familyId itemType=${itemType.simpleName}")
         return localDataSource.getListItems(listName, familyId)
             .map { entities ->
                 try {
-                    println("LocalListRepoImpl fetchListItems entities: $entities")
+                    Log.d(TAG, "fetchListItems entitiesCount=${entities.size} listName=$listName")
                     // Convert entities to items
                     val itemsList = entities.map { it.toItem(itemType) }.sortedBy { it.itemName }
-                    println("LocalListRepoImpl after getting items from local data source")
-                    println("fetchListItems of specified itemType: $itemsList")
+                    Log.d(TAG, "fetchListItems mappedItemsCount=${itemsList.size} listName=$listName")
                     ListItemsResultListener.Success(itemsList)
                 } catch (e: Exception) {
-                    println("Error: ${e.message}")
+                    Log.e(TAG, "fetchListItems mapping error listName=$listName", e)
                     ListItemsResultListener.Failure(e.message ?: "Unknown error")
                 }
             }
@@ -161,14 +164,24 @@ class LocalListRepositoryImpl @Inject constructor(
         id: String,
         itemType: KClass<out Item>,
     ): Flow<ItemResultListener<Item>> {
+        Log.d(TAG, "fetchItemById listName=$listName familyId=$familyId id=$id itemType=${itemType.simpleName}")
         return localDataSource.getItemById(listName, familyId, id)
             .map { entity ->
                 try {
-                    println("LocalListRepoImpl fetchItemById entity: $entity")
+                    val entityLabel = when (entity) {
+                        is Entity.GroceryList -> "GroceryList(${entity.entity.id})"
+                        is Entity.Recipe -> "Recipe(${entity.entity.id})"
+                        is Entity.Album -> "Album(${entity.entity.id})"
+                        is Entity.GalleryMedia -> "GalleryMedia(${entity.entity.id})"
+                        is Entity.Tip -> "Tip(${entity.entity.id})"
+                        is Entity.Guide -> "Guide(${entity.entity.id}, started=${entity.entity.started}, resume=${entity.entity.resume})"
+                    }
+                    Log.d(TAG, "fetchItemById entity=$entityLabel")
                     val item = entity.toItem(itemType)
-                    println("fetchItemById of specified itemType: $item")
+                    Log.d(TAG, "fetchItemById mapped item id=${item.id} itemType=${item::class.simpleName}")
                     ItemResultListener.Success(item)
                 } catch (e: Exception) {
+                    Log.e(TAG, "fetchItemById mapping failure listName=$listName id=$id", e)
                     ItemResultListener.Failure(e.message ?: "Unknown error")
                 }
             }
@@ -261,6 +274,23 @@ class LocalListRepositoryImpl @Inject constructor(
                     amount = this.entity.amount,
                     currency = this.entity.currency,
                     date = this.entity.date,
+                )
+
+                else -> throw IllegalArgumentException("Unsupported item type: $itemType")
+            }
+
+            is Entity.Guide -> when (itemType) {
+                Guide::class -> Guide(
+                    id = this.entity.id,
+                    familyId = this.entity.familyId,
+                    itemName = this.entity.itemName,
+                    lastUpdated = this.entity.lastUpdated,
+                    description = this.entity.description,
+                    visibility = this.entity.visibility,
+                    ownerUid = this.entity.ownerUid,
+                    started = this.entity.started,
+                    sections = this.entity.sections,
+                    resume = this.entity.resume,
                 )
 
                 else -> throw IllegalArgumentException("Unsupported item type: $itemType")

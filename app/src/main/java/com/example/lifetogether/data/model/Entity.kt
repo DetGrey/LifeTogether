@@ -6,4 +6,5 @@ sealed class Entity {
     data class Album(val entity: AlbumEntity) : Entity()
     data class GalleryMedia(val entity: GalleryMediaEntity) : Entity()
     data class Tip(val entity: TipEntity) : Entity()
+    data class Guide(val entity: GuideEntity) : Entity()
 }

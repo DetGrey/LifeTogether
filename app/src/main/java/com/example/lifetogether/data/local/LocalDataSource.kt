@@ -10,6 +10,7 @@ import com.example.lifetogether.data.local.dao.AlbumsDao
 import com.example.lifetogether.data.local.dao.CategoriesDao
 import com.example.lifetogether.data.local.dao.FamilyInformationDao
 import com.example.lifetogether.data.local.dao.GalleryMediaDao
+import com.example.lifetogether.data.local.dao.GuidesDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
 import com.example.lifetogether.data.local.dao.RecipesDao
@@ -23,6 +24,7 @@ import com.example.lifetogether.data.model.Entity
 import com.example.lifetogether.data.model.FamilyEntity
 import com.example.lifetogether.data.model.FamilyMemberEntity
 import com.example.lifetogether.data.model.GalleryMediaEntity
+import com.example.lifetogether.data.model.GuideEntity
 import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.model.GrocerySuggestionEntity
 import com.example.lifetogether.data.model.RecipeEntity
@@ -38,6 +40,7 @@ import com.example.lifetogether.domain.model.gallery.Album
 import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
+import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.model.recipe.Recipe
@@ -45,11 +48,13 @@ import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.util.Constants
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 import java.io.File
 import javax.inject.Inject
 
@@ -64,6 +69,7 @@ class LocalDataSource @Inject constructor(
     private val galleryMediaDao: GalleryMediaDao,
     private val albumsDao: AlbumsDao,
     private val tipTrackerDao: TipTrackerDao,
+    private val guidesDao: GuidesDao,
 ) {
     companion object {
         private const val TAG = "LocalDataSource"
@@ -116,6 +122,9 @@ class LocalDataSource @Inject constructor(
             Constants.TIP_TRACKER_TABLE -> tipTrackerDao.getItems(familyId).map { list ->
                 list.map { Entity.Tip(it) }
             }
+            Constants.GUIDES_TABLE -> guidesDao.getItems(familyId).map { list ->
+                list.map { Entity.Guide(it) }
+            }
             else -> flowOf(emptyList()) // Handle the case where the listName doesn't match any known entity
         }
         return items
@@ -126,6 +135,7 @@ class LocalDataSource @Inject constructor(
         familyId: String,
         id: String,
     ): Flow<Entity> {
+        Log.d(TAG, "getItemById listName=$listName familyId=$familyId id=$id")
         return when (listName) {
             Constants.RECIPES_TABLE -> flow {
                 val recipe = recipesDao.getItemById(familyId, id)
@@ -144,6 +154,23 @@ class LocalDataSource @Inject constructor(
                 if (galleryMedia != null) {
                     emit(Entity.GalleryMedia(galleryMedia))
                 }
+            }
+            Constants.GUIDES_TABLE -> flow {
+                Log.d(TAG, "getItemById guide flow init familyId=$familyId id=$id")
+                emitAll(
+                    guidesDao.getItemByIdFlow(familyId, id).mapNotNull { guide ->
+                        if (guide == null) {
+                            Log.w(TAG, "getItemById guide emission=null familyId=$familyId id=$id")
+                            null
+                        } else {
+                            Log.d(
+                                TAG,
+                                "getItemById guide emission id=${guide.id} started=${guide.started} resume=${guide.resume} lastUpdated=${guide.lastUpdated.time}",
+                            )
+                            Entity.Guide(guide)
+                        }
+                    },
+                )
             }
             else -> flowOf() // Handle the case where the listName doesn't match any known entity
         }
@@ -349,6 +376,7 @@ class LocalDataSource @Inject constructor(
 
             galleryMediaDao.deleteTable()
             albumsDao.deleteTable()
+            guidesDao.deleteTable()
 
             return ResultListener.Success
         } catch (e: Exception) {
@@ -808,6 +836,56 @@ class LocalDataSource @Inject constructor(
         val currentFamilyItems = tipTrackerDao.getItems(familyId).firstOrNull()
         if (currentFamilyItems != null) {
             tipTrackerDao.deleteItems(currentFamilyItems.map { it.id })
+        }
+    }
+
+    // -------------------------------------------------------------- GUIDES
+    suspend fun updateGuides(items: List<Guide>) {
+        Log.d(TAG, "updateGuides incomingCount=${items.size}")
+        if (items.isEmpty()) {
+            Log.d(TAG, "updateGuides skipped because incoming list is empty")
+            return
+        }
+
+        val entityList = items.map { item ->
+            GuideEntity(
+                id = item.id ?: "",
+                familyId = item.familyId,
+                itemName = item.itemName,
+                lastUpdated = item.lastUpdated,
+                description = item.description,
+                visibility = item.visibility,
+                ownerUid = item.ownerUid,
+                started = item.started,
+                sections = item.sections,
+                resume = item.resume,
+            )
+        }
+
+        val currentItems = guidesDao.getItems(items.first().familyId).first()
+        Log.d(TAG, "updateGuides currentRoomCount=${currentItems.size}")
+
+        val itemsToUpdate = entityList.filter { newItem ->
+            currentItems.none { currentItem -> newItem.id == currentItem.id && newItem == currentItem }
+        }
+
+        val itemsToDelete = currentItems.filter { currentItem ->
+            entityList.none { newItem -> newItem.id == currentItem.id }
+        }
+
+        Log.d(
+            TAG,
+            "updateGuides itemsToUpdate=${itemsToUpdate.size} itemsToDelete=${itemsToDelete.size}",
+        )
+        guidesDao.updateItems(itemsToUpdate)
+        guidesDao.deleteItems(itemsToDelete.map { it.id })
+    }
+
+    suspend fun deleteFamilyGuides(familyId: String) {
+        val currentFamilyItems = guidesDao.getItems(familyId).firstOrNull()
+        if (currentFamilyItems != null) {
+            Log.d(TAG, "deleteFamilyGuides familyId=$familyId count=${currentFamilyItems.size}")
+            guidesDao.deleteItems(currentFamilyItems.map { it.id })
         }
     }
 

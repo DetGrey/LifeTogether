@@ -7,6 +7,7 @@ import com.example.lifetogether.data.local.dao.AlbumsDao
 import com.example.lifetogether.data.local.dao.CategoriesDao
 import com.example.lifetogether.data.local.dao.FamilyInformationDao
 import com.example.lifetogether.data.local.dao.GalleryMediaDao
+import com.example.lifetogether.data.local.dao.GuidesDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
 import com.example.lifetogether.data.local.dao.RecipesDao
@@ -88,5 +89,11 @@ object DatabaseModule {
     @Singleton
     fun provideTipTrackerDao(db: AppDatabase): TipTrackerDao {
         return db.tipTrackerDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideGuidesDao(db: AppDatabase): GuidesDao {
+        return db.guidesDao()
     }
 }

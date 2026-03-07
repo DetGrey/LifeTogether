@@ -14,6 +14,7 @@ import com.example.lifetogether.domain.usecase.observers.ObserveAuthStateUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveCategoriesUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveFamilyInformationUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveGalleryMediaUseCase
+import com.example.lifetogether.domain.usecase.observers.ObserveGuidesUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveGroceryListUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveGrocerySuggestionsUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveRecipesUseCase
@@ -44,6 +45,7 @@ class FirebaseViewModel @Inject constructor(
     private val observeAlbumsUseCase: ObserveAlbumsUseCase,
     private val observeGalleryMediaUseCase: ObserveGalleryMediaUseCase,
     private val observeTipTrackerUseCase: ObserveTipTrackerUseCase,
+    private val observeGuidesUseCase: ObserveGuidesUseCase,
     private val removeSavedUserInformationUseCase: RemoveSavedUserInformationUseCase,
     private val storeFcmTokenUseCase: StoreFcmTokenUseCase,
 ) : ViewModel() {
@@ -55,6 +57,9 @@ class FirebaseViewModel @Inject constructor(
     private var _loading by mutableStateOf(true)
     val loading: Boolean
         get() = _loading
+
+    private var observedFamilyId: String? = null
+    private var observedUid: String? = null
 
     init {
         // Observe changes to user information
@@ -96,8 +101,13 @@ class FirebaseViewModel @Inject constructor(
     }
 
     fun observeFirestoreFamilyData(
+        uid: String,
         familyId: String,
     ) {
+        if (observedFamilyId == familyId && observedUid == uid) return
+        observedFamilyId = familyId
+        observedUid = uid
+
         println("FirebaseViewModel observeFirestoreFamilyData() familyId: $familyId")
 
         viewModelScope.launch {
@@ -128,6 +138,11 @@ class FirebaseViewModel @Inject constructor(
         viewModelScope.launch {
             println("observeFirestoreFamilyData() observeTipTrackerUseCase invoked")
             observeTipTrackerUseCase.invoke(familyId)
+        }
+
+        viewModelScope.launch {
+            println("observeFirestoreFamilyData() observeGuidesUseCase invoked")
+            observeGuidesUseCase.invoke(uid, familyId)
         }
     }
 

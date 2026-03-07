@@ -1,5 +1,8 @@
 package com.example.lifetogether.domain.model.enums
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class MeasureType(val unit: String) {
     GRAM("g"),
     KILOGRAM("kg"),

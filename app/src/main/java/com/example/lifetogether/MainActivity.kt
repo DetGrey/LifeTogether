@@ -83,9 +83,10 @@ class MainActivity : ComponentActivity() {
                     val userInformation by firebaseViewModel.userInformation.collectAsState()
                     when (val familyId = userInformation?.familyId) {
                         is String -> {
-                            firebaseViewModel.observeFirestoreFamilyData(familyId)
-
-                            userInformation?.uid?.let { firebaseViewModel.storeFcmToken(it, familyId) }
+                            userInformation?.uid?.let { uid ->
+                                firebaseViewModel.observeFirestoreFamilyData(uid, familyId)
+                                firebaseViewModel.storeFcmToken(uid, familyId)
+                            }
                         }
                     }
 

@@ -1,5 +1,6 @@
 package com.example.lifetogether.ui.navigation
 
+import android.net.Uri
 import androidx.navigation.NavController
 
 class AppNavigator(private val navController: NavController) : Navigator {
@@ -54,6 +55,23 @@ class AppNavigator(private val navController: NavController) : Navigator {
             "${AppRoutes.RECIPE_DETAILS_SCREEN}/$it"
         } ?: AppRoutes.CREATE_RECIPE_SCREEN
         navController.navigate(route)
+    }
+
+    override fun navigateToGuides() {
+        navController.navigate(AppRoutes.GUIDES_SCREEN)
+    }
+
+    override fun navigateToGuideDetails(guideId: String) {
+        val route = "${AppRoutes.GUIDE_GRAPH}/${Uri.encode(guideId)}"
+        navController.navigate(route)
+    }
+
+    override fun navigateToGuideStepPlayer() {
+        navController.navigate(AppRoutes.GUIDE_STEP_PLAYER_SCREEN)
+    }
+
+    override fun navigateToGuideCreate() {
+        navController.navigate(AppRoutes.GUIDE_CREATE_SCREEN)
     }
 
     override fun navigateToGallery() {

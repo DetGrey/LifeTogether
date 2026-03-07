@@ -1,5 +1,6 @@
 package com.example.lifetogether.domain.usecase.item
 
+import android.util.Log
 import com.example.lifetogether.data.repository.LocalListRepositoryImpl
 import com.example.lifetogether.domain.listener.ItemResultListener
 import com.example.lifetogether.domain.model.Item
@@ -10,14 +11,20 @@ import kotlin.reflect.KClass
 class FetchItemByIdUseCase @Inject constructor(
     private val localListRepository: LocalListRepositoryImpl,
 ) {
+    private companion object {
+        const val TAG = "FetchItemByIdUseCase"
+    }
+
     operator fun <T : Item> invoke(
         familyId: String,
         id: String,
         listName: String,
         itemType: KClass<T>,
     ): Flow<ItemResultListener<Item>> {
-        println("Inside FetchItemByIdUseCase and trying to fetch from local storage")
-        // Return a flow that emits updates to the list items
+        Log.d(
+            TAG,
+            "invoke listName=$listName familyId=$familyId id=$id itemType=${itemType.simpleName}",
+        )
         return localListRepository.fetchItemById(listName, familyId, id, itemType)
     }
 }

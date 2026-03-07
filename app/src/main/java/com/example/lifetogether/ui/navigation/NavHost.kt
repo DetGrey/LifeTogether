@@ -1,5 +1,6 @@
 package com.example.lifetogether.ui.navigation
 
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -14,6 +15,10 @@ import com.example.lifetogether.ui.feature.family.FamilyScreen
 import com.example.lifetogether.ui.feature.gallery.AlbumDetailsScreen
 import com.example.lifetogether.ui.feature.gallery.MediaDetailsScreen
 import com.example.lifetogether.ui.feature.gallery.GalleryScreen
+import com.example.lifetogether.ui.feature.guides.create.GuideCreateScreen
+import com.example.lifetogether.ui.feature.guides.details.GuideDetailsRoute
+import com.example.lifetogether.ui.feature.guides.details.GuideStepPlayerRoute
+import com.example.lifetogether.ui.feature.guides.GuidesScreen
 import com.example.lifetogether.ui.feature.groceryList.GroceryListScreen
 import com.example.lifetogether.ui.feature.home.HomeScreen
 import com.example.lifetogether.ui.feature.loading.LoadingScreen
@@ -79,6 +84,50 @@ fun NavHost(
 
         composable(AppRoutes.RECIPES_SCREEN) {
             RecipesScreen(appNavigator, firebaseViewModel)
+        }
+
+        composable(AppRoutes.GUIDES_SCREEN) {
+            GuidesScreen(appNavigator, firebaseViewModel)
+        }
+
+        composable(AppRoutes.GUIDE_CREATE_SCREEN) {
+            GuideCreateScreen(appNavigator, firebaseViewModel)
+        }
+
+        navigation(
+            route = AppRoutes.GUIDE_GRAPH_ROUTE,
+            arguments = listOf(navArgument(AppRoutes.GUIDE_ID_ARG) { type = NavType.StringType }),
+            startDestination = AppRoutes.GUIDE_DETAILS_SCREEN,
+        ) {
+            composable(AppRoutes.GUIDE_DETAILS_SCREEN) { backStackEntry ->
+                val guideGraphEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry(AppRoutes.GUIDE_GRAPH_ROUTE)
+                }
+                val guideId = guideGraphEntry.arguments?.getString(AppRoutes.GUIDE_ID_ARG)
+                    ?.let(Uri::decode)
+                    ?: return@composable
+                GuideDetailsRoute(
+                    appNavigator = appNavigator,
+                    firebaseViewModel = firebaseViewModel,
+                    guideId = guideId,
+                    viewModelStoreOwner = guideGraphEntry,
+                )
+            }
+
+            composable(AppRoutes.GUIDE_STEP_PLAYER_SCREEN) { backStackEntry ->
+                val guideGraphEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry(AppRoutes.GUIDE_GRAPH_ROUTE)
+                }
+                val guideId = guideGraphEntry.arguments?.getString(AppRoutes.GUIDE_ID_ARG)
+                    ?.let(Uri::decode)
+                    ?: return@composable
+                GuideStepPlayerRoute(
+                    appNavigator = appNavigator,
+                    firebaseViewModel = firebaseViewModel,
+                    guideId = guideId,
+                    viewModelStoreOwner = guideGraphEntry,
+                )
+            }
         }
 
         composable(AppRoutes.CREATE_RECIPE_SCREEN) {

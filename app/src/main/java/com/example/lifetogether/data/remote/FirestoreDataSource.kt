@@ -8,6 +8,7 @@ import com.example.lifetogether.domain.listener.ListItemsResultListener
 import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.listener.AuthResultListener
 import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.logic.GuideParser
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.CompletableItem
 import com.example.lifetogether.domain.model.Item
@@ -21,11 +22,14 @@ import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
+import com.example.lifetogether.domain.model.guides.Guide
+import com.example.lifetogether.domain.model.guides.GuideVisibility
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.util.Constants
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.firestore
 import com.google.firebase.messaging.FirebaseMessaging
@@ -328,6 +332,100 @@ class FirestoreDataSource @Inject constructor() {
         awaitClose { listenerRegistration.remove() }
     }
 
+
+    // ------------------------------------------------------------------------------- GUIDES
+    fun familySharedGuidesSnapshotListener(familyId: String) = callbackFlow {
+        Log.d(TAG, "Firestore familySharedGuidesSnapshotListener init")
+        val guidesRef = db.collection(Constants.GUIDES_TABLE)
+            .whereEqualTo("familyId", familyId)
+
+        val listenerRegistration = guidesRef.addSnapshotListener(MetadataChanges.INCLUDE) { snapshot, e ->
+            if (e != null) {
+                Log.e(TAG, "familySharedGuidesSnapshotListener error", e)
+                trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess
+                return@addSnapshotListener
+            }
+
+            if (snapshot == null) {
+                trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess
+                return@addSnapshotListener
+            }
+            Log.d(
+                TAG,
+                "familySharedGuidesSnapshotListener snapshot familyId=$familyId size=${snapshot.size()} pendingWrites=${snapshot.metadata.hasPendingWrites()} fromCache=${snapshot.metadata.isFromCache}",
+            )
+
+            val parsedGuides = snapshot.documents.mapNotNull { document ->
+                val data = document.data ?: return@mapNotNull null
+                runCatching {
+                    GuideParser.parseFirestoreGuide(
+                        documentId = document.id,
+                        data = data,
+                    )
+                }.onFailure { parseError ->
+                    Log.e(TAG, "Failed parsing family guide ${document.id}", parseError)
+                }.getOrNull()
+            }
+            val guides = parsedGuides.filter { it.visibility == GuideVisibility.FAMILY }
+            Log.d(
+                TAG,
+                "familySharedGuidesSnapshotListener parsedCount=${parsedGuides.size} filteredFamilyCount=${guides.size} ids=${guides.mapNotNull { it.id }.take(5)}",
+            )
+
+            trySend(ListItemsResultListener.Success(guides)).isSuccess
+        }
+
+        awaitClose { listenerRegistration.remove() }
+    }
+
+    fun privateGuidesSnapshotListener(
+        familyId: String,
+        uid: String,
+    ) = callbackFlow {
+        Log.d(TAG, "Firestore privateGuidesSnapshotListener init")
+        val guidesRef = db.collection(Constants.GUIDES_TABLE)
+            .whereEqualTo("familyId", familyId)
+            .whereEqualTo("ownerUid", uid)
+
+        val listenerRegistration = guidesRef.addSnapshotListener(MetadataChanges.INCLUDE) { snapshot, e ->
+            if (e != null) {
+                Log.e(TAG, "privateGuidesSnapshotListener error", e)
+                trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess
+                return@addSnapshotListener
+            }
+
+            if (snapshot == null) {
+                trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess
+                return@addSnapshotListener
+            }
+            Log.d(
+                TAG,
+                "privateGuidesSnapshotListener snapshot familyId=$familyId uid=$uid size=${snapshot.size()} pendingWrites=${snapshot.metadata.hasPendingWrites()} fromCache=${snapshot.metadata.isFromCache}",
+            )
+
+            val parsedGuides = snapshot.documents.mapNotNull { document ->
+                val data = document.data ?: return@mapNotNull null
+                runCatching {
+                    GuideParser.parseFirestoreGuide(
+                        documentId = document.id,
+                        data = data,
+                    )
+                }.onFailure { parseError ->
+                    Log.e(TAG, "Failed parsing private guide ${document.id}", parseError)
+                }.getOrNull()
+            }
+            val guides = parsedGuides.filter { it.visibility == GuideVisibility.PRIVATE }
+            Log.d(
+                TAG,
+                "privateGuidesSnapshotListener parsedCount=${parsedGuides.size} filteredPrivateCount=${guides.size} ids=${guides.mapNotNull { it.id }.take(5)}",
+            )
+
+            trySend(ListItemsResultListener.Success(guides)).isSuccess
+        }
+
+        awaitClose { listenerRegistration.remove() }
+    }
+
     // ------------------------------------------------------------------------------- ALBUMS
     fun albumsSnapshotListener(familyId: String) = callbackFlow {
         Log.d(TAG, "Firestore albumSnapshotListener init")
@@ -448,7 +546,8 @@ class FirestoreDataSource @Inject constructor() {
         listName: String,
     ): StringResultListener {
         try {
-            val documentReference = db.collection(listName).add(item).await()
+            val uploadItem = if (item is Guide) GuideParser.guideToFirestoreMap(item) else item
+            val documentReference = db.collection(listName).add(uploadItem).await()
             return StringResultListener.Success(documentReference.id)
         } catch (e: Exception) {
             Log.e(TAG, "Error", e)
@@ -463,8 +562,11 @@ class FirestoreDataSource @Inject constructor() {
         Log.d(TAG, "updateItem with id: ${item.id}")
         try {
             if (item.id != null) {
-                db.collection(listName).document(item.id!!)
-                    .set(item, SetOptions.merge()) // Use set with merge for update behavior
+                val uploadItem = if (item is Guide) GuideParser.guideToFirestoreMap(item) else item
+
+                db.collection(listName)
+                    .document(item.id!!)
+                    .set(uploadItem, SetOptions.merge())
                     .await()
 
                 return ResultListener.Success

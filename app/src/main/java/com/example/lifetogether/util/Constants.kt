@@ -3,6 +3,7 @@ package com.example.lifetogether.util
 object Constants {
     const val GROCERY_TABLE = "grocery_list"
     const val GROCERY_SUGGESTIONS_TABLE = "grocery_suggestions"
+    const val GUIDES_TABLE = "guides"
     const val USER_TABLE = "users"
     const val FAMILIES_TABLE = "families"
     const val FAMILY_MEMBERS_TABLE = "family_members"
@@ -11,6 +12,8 @@ object Constants {
     const val ALBUMS_TABLE = "albums"
     const val GALLERY_MEDIA_TABLE = "gallery_media"
     const val TIP_TRACKER_TABLE = "tip_tracker"
+    const val GUIDE_VISIBILITY_FAMILY = "family"
+    const val GUIDE_VISIBILITY_PRIVATE = "private"
 
     const val GROCERY_LIST_CHANNEL = "grocery_list_notification_channel"
     const val DEFAULT_CHANNEL = "default_channel"
