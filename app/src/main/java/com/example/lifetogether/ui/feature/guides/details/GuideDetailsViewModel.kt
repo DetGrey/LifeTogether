@@ -7,6 +7,7 @@ import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.logic.GuideLeafPointer
 import com.example.lifetogether.domain.logic.GuideProgress
 import com.example.lifetogether.domain.model.guides.Guide
+import com.example.lifetogether.domain.model.guides.GuideSection
 import com.example.lifetogether.domain.model.guides.GuideVisibility
 import com.example.lifetogether.domain.usecase.guides.MarkGuideProgressDirtyUseCase
 import com.example.lifetogether.domain.usecase.guides.SyncPendingGuideProgressUseCase
@@ -27,12 +28,54 @@ import javax.inject.Inject
 
 data class GuideDetailsUiState(
     val guide: Guide? = null,
+    val sectionExpandedState: Map<String, Boolean> = emptyMap(),
+    val selectedSectionAmountState: Map<String, Int> = emptyMap(),
     val isUpdatingVisibility: Boolean = false,
     val isStartingGuide: Boolean = false,
     val isDeletingGuide: Boolean = false,
     val showAlertDialog: Boolean = false,
     val error: String = "",
 )
+
+internal fun guideSectionKey(
+    section: GuideSection,
+    sectionIndex: Int,
+): String = section.id.ifBlank { "section-$sectionIndex" }
+
+internal fun reconcileSectionExpandedState(
+    sections: List<GuideSection>,
+    existingState: Map<String, Boolean>,
+): Map<String, Boolean> {
+    return buildMap {
+        sections.forEachIndexed { sectionIndex, section ->
+            val sectionKey = guideSectionKey(section, sectionIndex)
+            put(sectionKey, existingState[sectionKey] ?: !section.completed)
+        }
+    }
+}
+
+internal fun defaultSectionAmountIndex(section: GuideSection): Int {
+    val amount = section.amount.coerceAtLeast(1)
+    val completedAmount = section.completedAmount.coerceIn(0, amount)
+    return if (completedAmount >= amount) amount - 1 else completedAmount
+}
+
+internal fun reconcileSelectedSectionAmountState(
+    sections: List<GuideSection>,
+    existingState: Map<String, Int>,
+): Map<String, Int> {
+    return buildMap {
+        sections.forEachIndexed { sectionIndex, section ->
+            val sectionKey = guideSectionKey(section, sectionIndex)
+            val amount = section.amount.coerceAtLeast(1)
+            val fallbackIndex = defaultSectionAmountIndex(section)
+            val selectedIndex = existingState[sectionKey]
+                ?.coerceIn(0, amount - 1)
+                ?: fallbackIndex
+            put(sectionKey, selectedIndex)
+        }
+    }
+}
 
 @HiltViewModel
 class GuideDetailsViewModel @Inject constructor(
@@ -48,6 +91,7 @@ class GuideDetailsViewModel @Inject constructor(
         const val ERROR_MISSING_GUIDE_ID_FOR_DELETE = "Unable to delete this guide. Missing guide id."
         const val ERROR_MISSING_GUIDE_ID_FOR_STEP_UPDATE = "Unable to update this step. Missing guide id."
         const val ERROR_MISSING_GUIDE_ID_FOR_OPEN = "Unable to open this guide. Missing guide id."
+        const val ERROR_MISSING_GUIDE_ID_FOR_RESET = "Unable to reset progress. Missing guide id."
         const val ERROR_MISSING_GUIDE_ID_FOR_SAVE = "Unable to save guide changes. Missing guide id."
         const val ERROR_ONLY_OWNER_CAN_CHANGE_VISIBILITY = "Only the owner can change visibility"
         const val ERROR_ONLY_OWNER_CAN_DELETE = "Only the owner can delete this guide"
@@ -89,6 +133,8 @@ class GuideDetailsViewModel @Inject constructor(
             _uiState.update { state ->
                 state.copy(
                     guide = null,
+                    sectionExpandedState = emptyMap(),
+                    selectedSectionAmountState = emptyMap(),
                     isUpdatingVisibility = false,
                     isStartingGuide = false,
                     isDeletingGuide = false,
@@ -202,15 +248,25 @@ class GuideDetailsViewModel @Inject constructor(
         }
     }
 
-    fun canToggleStep(stepId: String): Boolean {
+    fun canToggleStep(
+        stepId: String,
+        amountIndex: Int,
+    ): Boolean {
         if (stepId.isBlank()) return false
 
         val currentGuide = _uiState.value.guide ?: return false
-        val pointer = pointerForStepId(currentGuide, stepId) ?: return false
+        val pointer = pointerForStepId(
+            guide = currentGuide,
+            stepId = stepId,
+            amountIndex = amountIndex,
+        ) ?: return false
         return GuideProgress.canTogglePointer(currentGuide.sections, pointer)
     }
 
-    fun toggleStepCompletion(stepId: String) {
+    fun toggleStepCompletion(
+        stepId: String,
+        amountIndex: Int,
+    ) {
         if (stepId.isBlank()) return
 
         val currentGuide = _uiState.value.guide ?: return
@@ -219,7 +275,11 @@ class GuideDetailsViewModel @Inject constructor(
             return
         }
 
-        val pointer = pointerForStepId(currentGuide, stepId) ?: return
+        val pointer = pointerForStepId(
+            guide = currentGuide,
+            stepId = stepId,
+            amountIndex = amountIndex,
+        ) ?: return
         if (!GuideProgress.canTogglePointer(currentGuide.sections, pointer)) return
 
         val updatedSections = GuideProgress.applyLeafCompletion(
@@ -267,6 +327,57 @@ class GuideDetailsViewModel @Inject constructor(
         persistGuideProgress(updatedGuide) {
             updateLoadingState(isStartingGuide = false)
             onNavigate(currentGuideId)
+        }
+    }
+
+    fun resetAllProgress() {
+        val currentGuide = _uiState.value.guide ?: return
+        val currentGuideId = resolveGuideId(currentGuide) ?: run {
+            showError(ERROR_MISSING_GUIDE_ID_FOR_RESET)
+            return
+        }
+
+        val updatedGuide = currentGuide.copy(
+            id = currentGuideId,
+            started = false,
+            sections = GuideProgress.resetSectionsProgress(currentGuide.sections),
+            resume = null,
+            lastUpdated = now(),
+        )
+
+        applyGuideUpdate(uiGuide = updatedGuide)
+        persistGuideProgress(updatedGuide)
+    }
+
+    fun toggleSectionExpanded(sectionKey: String) {
+        if (sectionKey.isBlank()) return
+
+        _uiState.update { state ->
+            val isExpanded = state.sectionExpandedState[sectionKey] ?: true
+            state.copy(
+                sectionExpandedState = state.sectionExpandedState + (sectionKey to !isExpanded),
+            )
+        }
+    }
+
+    fun selectSectionAmount(
+        sectionKey: String,
+        amountIndex: Int,
+    ) {
+        if (sectionKey.isBlank() || amountIndex < 0) return
+        val guide = _uiState.value.guide ?: return
+        val section = guide.sections
+            .withIndex()
+            .firstOrNull { (index, section) -> guideSectionKey(section, index) == sectionKey }
+            ?.value
+            ?: return
+        val maxIndex = section.amount.coerceAtLeast(1) - 1
+        val normalizedAmountIndex = amountIndex.coerceIn(0, maxIndex)
+
+        _uiState.update { state ->
+            state.copy(
+                selectedSectionAmountState = state.selectedSectionAmountState + (sectionKey to normalizedAmountIndex),
+            )
         }
     }
 
@@ -359,8 +470,10 @@ class GuideDetailsViewModel @Inject constructor(
     private fun pointerForStepId(
         guide: Guide,
         stepId: String,
+        amountIndex: Int,
     ): GuideLeafPointer? {
-        return stepPointerIndex(guide)[stepId]
+        val normalizedAmountIndex = amountIndex.coerceAtLeast(0)
+        return stepPointerIndex(guide)[pointerIndexKey(stepId, normalizedAmountIndex)]
     }
 
     private fun stepPointerIndex(guide: Guide): Map<String, GuideLeafPointer> {
@@ -371,8 +484,11 @@ class GuideDetailsViewModel @Inject constructor(
         val rebuiltIndex = mutableMapOf<String, GuideLeafPointer>()
         GuideProgress.buildLeafPointers(guide.sections).forEach { pointer ->
             val stepId = GuideProgress.getStepAtPointer(guide.sections, pointer)?.id
-            if (!stepId.isNullOrBlank() && rebuiltIndex[stepId] == null) {
-                rebuiltIndex[stepId] = pointer
+            if (!stepId.isNullOrBlank()) {
+                val key = pointerIndexKey(stepId, pointer.sectionAmountIndex)
+                if (rebuiltIndex[key] == null) {
+                    rebuiltIndex[key] = pointer
+                }
             }
         }
 
@@ -403,9 +519,24 @@ class GuideDetailsViewModel @Inject constructor(
     private fun updateGuideState(guide: Guide) {
         invalidatePointerCache()
         _uiState.update { state ->
-            state.copy(guide = guide)
+            state.copy(
+                guide = guide,
+                sectionExpandedState = reconcileSectionExpandedState(
+                    sections = guide.sections,
+                    existingState = state.sectionExpandedState,
+                ),
+                selectedSectionAmountState = reconcileSelectedSectionAmountState(
+                    sections = guide.sections,
+                    existingState = state.selectedSectionAmountState,
+                ),
+            )
         }
     }
+
+    private fun pointerIndexKey(
+        stepId: String,
+        amountIndex: Int,
+    ): String = "${amountIndex.coerceAtLeast(0)}:$stepId"
 
     private fun invalidatePointerCache() {
         pointerCacheGuide = null

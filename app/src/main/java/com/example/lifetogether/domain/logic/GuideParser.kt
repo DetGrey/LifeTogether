@@ -24,7 +24,11 @@ object GuideParser {
     private val json = Json
 
     fun parseFirestoreGuide(documentId: String, data: Map<String, Any?>): Guide {
-        return parseGuideMap(rawMap = data, idOverride = documentId)
+        return parseGuideMap(
+            rawMap = data,
+            idOverride = documentId,
+            preserveProgressHints = false,
+        )
     }
 
     fun parseGuideMap(
@@ -34,6 +38,7 @@ object GuideParser {
         ownerUidOverride: String? = null,
         regenerateIds: Boolean = false,
         defaultVisibility: GuideVisibility = GuideVisibility.PRIVATE,
+        preserveProgressHints: Boolean = true,
     ): Guide {
         val normalizedId = idOverride?.takeIf { it.isNotBlank() }
         val familyId = familyIdOverride ?: readString(rawMap, "familyId")
@@ -45,7 +50,14 @@ object GuideParser {
 
         val rawSections = asList(rawMap["sections"])
         val sections = rawSections.mapIndexedNotNull { index, value ->
-            asMap(value)?.let { parseSection(it, index, regenerateIds) }
+            asMap(value)?.let {
+                parseSection(
+                    rawSection = it,
+                    sectionIndex = index,
+                    regenerateIds = regenerateIds,
+                    preserveProgressHints = preserveProgressHints,
+                )
+            }
         }
 
         return Guide(
@@ -57,9 +69,9 @@ object GuideParser {
             visibility = GuideVisibility.fromValue(readString(rawMap, "visibility").ifBlank { defaultVisibility.value }),
             ownerUid = ownerUid,
             contentVersion = readLong(rawMap, "contentVersion") ?: 1L,
-            started = readBoolean(rawMap, "started"),
+            started = if (preserveProgressHints) readBoolean(rawMap, "started") else false,
             sections = sections,
-            resume = parseResume(rawMap["resume"]),
+            resume = if (preserveProgressHints) parseResume(rawMap["resume"]) else null,
         )
     }
 
@@ -88,6 +100,7 @@ object GuideParser {
                     ownerUidOverride = ownerUid,
                     regenerateIds = true,
                     defaultVisibility = defaultVisibility,
+                    preserveProgressHints = false,
                 )
             }.getOrNull()
         }
@@ -154,38 +167,56 @@ object GuideParser {
         rawSection: Map<String, Any?>,
         sectionIndex: Int,
         regenerateIds: Boolean,
+        preserveProgressHints: Boolean,
     ): GuideSection {
         val steps = parseSteps(
             rawSteps = parseStepSource(rawSection["steps"]),
             regenerateIds = regenerateIds,
+            preserveProgressHints = preserveProgressHints,
         )
         val amount = (readInt(rawSection, "amount") ?: 1).coerceAtLeast(1)
-        val sectionMarkedCompleted = readBoolean(rawSection, "completed", "isCompleted")
+        val sectionMarkedCompleted = preserveProgressHints && readBoolean(rawSection, "completed", "isCompleted")
         val allLeafStepsCompleted = areAllLeafStepsCompleted(steps)
         val inferredCompletedAmount = when {
             sectionMarkedCompleted -> amount
             allLeafStepsCompleted -> 1.coerceAtMost(amount)
             else -> 0
         }
-        val completedAmount = (readInt(rawSection, "completedAmount") ?: inferredCompletedAmount)
-            .coerceIn(0, amount)
+        val completedAmount = if (preserveProgressHints) {
+            (readInt(rawSection, "completedAmount") ?: inferredCompletedAmount).coerceIn(0, amount)
+        } else {
+            0
+        }
+        val parsedProgressByAmount = if (preserveProgressHints) {
+            parseStepProgressByAmount(
+                rawSection = rawSection,
+                regenerateIds = regenerateIds,
+                preserveProgressHints = preserveProgressHints,
+            )
+        } else {
+            emptyList()
+        }
 
-        return GuideSection(
-            id = resolveNestedId(readString(rawSection, "id"), regenerateIds),
-            orderNumber = readInt(rawSection, "orderNumber") ?: (sectionIndex + 1),
-            title = readString(rawSection, "title"),
-            subtitle = readNullableString(rawSection["subtitle"]),
-            amount = amount,
-            completedAmount = completedAmount,
-            completed = completedAmount >= amount,
-            comment = readNullableString(rawSection["comment"]),
-            steps = steps,
+        return GuideProgress.updateSectionCompletion(
+            GuideSection(
+                id = resolveNestedId(readString(rawSection, "id"), regenerateIds),
+                orderNumber = readInt(rawSection, "orderNumber") ?: (sectionIndex + 1),
+                title = readString(rawSection, "title"),
+                subtitle = readNullableString(rawSection["subtitle"]),
+                amount = amount,
+                completedAmount = completedAmount,
+                completed = completedAmount >= amount,
+                comment = readNullableString(rawSection["comment"]),
+                steps = steps,
+                stepsProgressByAmount = parsedProgressByAmount,
+            ),
         )
     }
 
     private fun parseStep(
         rawStep: Map<String, Any?>,
         regenerateIds: Boolean,
+        preserveProgressHints: Boolean,
     ): List<GuideStep> {
         val nestedSource = when {
             rawStep.containsKey("subSteps") -> rawStep["subSteps"]
@@ -196,6 +227,7 @@ object GuideParser {
         val subSteps = parseSteps(
             rawSteps = parseStepSource(nestedSource),
             regenerateIds = regenerateIds,
+            preserveProgressHints = preserveProgressHints,
         )
 
         val step = GuideStep(
@@ -204,7 +236,7 @@ object GuideParser {
             type = GuideStepType.fromValue(readString(rawStep, "type")),
             title = readString(rawStep, "title"),
             content = readString(rawStep, "content"),
-            completed = readBoolean(rawStep, "completed", "isCompleted"),
+            completed = if (preserveProgressHints) readBoolean(rawStep, "completed", "isCompleted") else false,
             subSteps = subSteps,
         )
 
@@ -214,10 +246,15 @@ object GuideParser {
     private fun parseSteps(
         rawSteps: List<Any?>,
         regenerateIds: Boolean,
+        preserveProgressHints: Boolean,
     ): List<GuideStep> {
         return rawSteps.flatMap { value ->
             val rawStep = asMap(value) ?: return@flatMap emptyList()
-            parseStep(rawStep, regenerateIds)
+            parseStep(
+                rawStep = rawStep,
+                regenerateIds = regenerateIds,
+                preserveProgressHints = preserveProgressHints,
+            )
         }
     }
 
@@ -303,20 +340,76 @@ object GuideParser {
         }
     }
 
+    private fun parseStepProgressByAmount(
+        rawSection: Map<String, Any?>,
+        regenerateIds: Boolean,
+        preserveProgressHints: Boolean,
+    ): List<List<GuideStep>> {
+        val rawValue = rawSection["stepsProgressByAmount"]
+            ?: rawSection["stepProgressByAmount"]
+
+        return when (rawValue) {
+            is List<*> -> asList(rawValue).map { amountStepsRaw ->
+                parseSteps(
+                    rawSteps = parseStepSource(amountStepsRaw),
+                    regenerateIds = regenerateIds,
+                    preserveProgressHints = preserveProgressHints,
+                )
+            }
+
+            is Map<*, *> -> {
+                asMap(rawValue)
+                    .orEmpty()
+                    .entries
+                    .sortedWith(
+                        compareBy<Map.Entry<String, Any?>>(
+                            { it.key.toIntOrNull() ?: Int.MAX_VALUE },
+                            { it.key },
+                        ),
+                    )
+                    .map { (_, amountStepsRaw) ->
+                        parseSteps(
+                            rawSteps = parseStepSource(amountStepsRaw),
+                            regenerateIds = regenerateIds,
+                            preserveProgressHints = preserveProgressHints,
+                        )
+                    }
+            }
+
+            else -> emptyList()
+        }
+    }
+
     private fun sectionToFirestoreMap(section: GuideSection): Map<String, Any?> {
         val normalizedAmount = section.amount.coerceAtLeast(1)
-        val normalizedCompletedAmount = section.completedAmount.coerceIn(0, normalizedAmount)
+        val contentSteps = contentStepsForSection(section)
         return mutableMapOf(
             "id" to section.id,
             "orderNumber" to section.orderNumber,
             "title" to section.title,
             "subtitle" to section.subtitle,
             "amount" to normalizedAmount,
-            "completedAmount" to normalizedCompletedAmount,
-            "completed" to (normalizedCompletedAmount >= normalizedAmount),
             "comment" to section.comment,
-            "steps" to section.steps.map { stepToFirestoreMap(it) },
+            "steps" to contentSteps.map(::stepToFirestoreMap),
         ).filterValues { value -> value != null }
+    }
+
+    private fun contentStepsForSection(section: GuideSection): List<GuideStep> {
+        val sourceSteps = when {
+            section.steps.isNotEmpty() -> section.steps
+            section.stepsProgressByAmount.isNotEmpty() -> section.stepsProgressByAmount.first()
+            else -> emptyList()
+        }
+        return clearStepCompletion(sourceSteps)
+    }
+
+    private fun clearStepCompletion(steps: List<GuideStep>): List<GuideStep> {
+        return steps.map { step ->
+            step.copy(
+                completed = false,
+                subSteps = clearStepCompletion(step.subSteps),
+            )
+        }
     }
 
     private fun stepToFirestoreMap(step: GuideStep): Map<String, Any?> {
@@ -326,7 +419,6 @@ object GuideParser {
             "type" to step.type.value,
             "title" to step.title.takeIf { it.isNotBlank() },
             "content" to step.content.takeIf { it.isNotBlank() },
-            "completed" to step.completed,
             "steps" to step.subSteps.takeIf { it.isNotEmpty() }?.map { subStep ->
                 stepToFirestoreMap(subStep)
             },

@@ -956,15 +956,21 @@ class LocalDataSource @Inject constructor(
             TAG,
             "updateGuides itemsToUpdate=${itemsToUpdate.size} itemsToDelete=${itemsToDelete.size}",
         )
+        val deletedGuideIds = itemsToDelete.map { it.id }
         guidesDao.updateItems(itemsToUpdate)
-        guidesDao.deleteItems(itemsToDelete.map { it.id })
+        if (deletedGuideIds.isNotEmpty()) {
+            guideProgressDao.deleteByGuideIds(items.first().familyId, deletedGuideIds)
+            guidesDao.deleteItems(deletedGuideIds)
+        }
     }
 
     suspend fun deleteFamilyGuides(familyId: String) {
-        val currentFamilyItems = guidesDao.getItems(familyId).firstOrNull()
-        if (currentFamilyItems != null) {
+        val currentFamilyItems = guidesDao.getItems(familyId).first()
+        if (currentFamilyItems.isNotEmpty()) {
             Log.d(TAG, "deleteFamilyGuides familyId=$familyId count=${currentFamilyItems.size}")
-            guidesDao.deleteItems(currentFamilyItems.map { it.id })
+            val deletedGuideIds = currentFamilyItems.map { it.id }
+            guideProgressDao.deleteByGuideIds(familyId, deletedGuideIds)
+            guidesDao.deleteItems(deletedGuideIds)
         }
     }
 

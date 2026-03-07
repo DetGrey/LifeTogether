@@ -23,18 +23,34 @@ import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.GuideProgress
 import com.example.lifetogether.domain.model.guides.GuideSection
-import com.example.lifetogether.domain.model.guides.GuideStep
+import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 
 @Composable
 fun GuideSectionCard(
     section: GuideSection,
+    selectedAmountIndex: Int,
+    onSelectAmountIndex: (Int) -> Unit,
     expanded: Boolean,
     onToggleExpanded: () -> Unit,
-    canToggleStep: (String) -> Boolean,
-    onToggleStep: (String) -> Unit,
+    canToggleStep: (Int, String) -> Boolean,
+    onToggleStep: (Int, String) -> Unit,
 ) {
+    val normalizedAmount = section.amount.coerceAtLeast(1)
+    val normalizedSelectedAmountIndex = selectedAmountIndex.coerceIn(0, normalizedAmount - 1)
     val progress = GuideProgress.sectionProgress(section)
     val progressPercent = GuideProgress.progressPercent(section)
+    val selectedAmountProgress = GuideProgress.sectionAmountProgress(
+        section = section,
+        amountIndex = normalizedSelectedAmountIndex,
+    )
+    val selectedAmountSteps = GuideProgress.sectionStepsForAmount(
+        section = section,
+        amountIndex = normalizedSelectedAmountIndex,
+    )
+    val amountOptions = (0 until normalizedAmount).map { amountIndex ->
+        val amountProgress = GuideProgress.sectionAmountProgress(section, amountIndex)
+        "Part ${amountIndex + 1} (${amountProgress.first}/${amountProgress.second})"
+    }
 
     Box(
         modifier = Modifier
@@ -63,7 +79,7 @@ fun GuideSectionCard(
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        text = "${progress.first}/${progress.second} steps completed • ${countLeafSteps(section.steps)} steps",
+                        text = "${progress.first}/${progress.second} steps completed • ${selectedAmountProgress.first}/${selectedAmountProgress.second} in selected part",
                         color = MaterialTheme.colorScheme.background,
                         style = MaterialTheme.typography.bodySmall,
                     )
@@ -93,25 +109,32 @@ fun GuideSectionCard(
                 )
             }
 
-            if (expanded) {
-                GuideStepRows(
-                    steps = section.steps,
-                    textColor = MaterialTheme.colorScheme.background,
-                    indentLevel = 0,
-                    canToggleStep = canToggleStep,
-                    onToggleStep = onToggleStep,
+            if (normalizedAmount > 1) {
+                TagOptionRow(
+                    options = amountOptions,
+                    selectedOption = amountOptions[normalizedSelectedAmountIndex],
+                    onSelectedOptionChange = { selectedOption ->
+                        val selectedIndex = amountOptions.indexOf(selectedOption)
+                        if (selectedIndex != -1) {
+                            onSelectAmountIndex(selectedIndex)
+                        }
+                    },
                 )
             }
-        }
-    }
-}
 
-private fun countLeafSteps(steps: List<GuideStep>): Int {
-    return steps.sumOf { step ->
-        if (step.subSteps.isNotEmpty()) {
-            countLeafSteps(step.subSteps)
-        } else {
-            1
+            if (expanded) {
+                GuideStepRows(
+                    steps = selectedAmountSteps,
+                    textColor = MaterialTheme.colorScheme.background,
+                    indentLevel = 0,
+                    canToggleStep = { stepId ->
+                        canToggleStep(normalizedSelectedAmountIndex, stepId)
+                    },
+                    onToggleStep = { stepId ->
+                        onToggleStep(normalizedSelectedAmountIndex, stepId)
+                    },
+                )
+            }
         }
     }
 }

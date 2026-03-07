@@ -744,7 +744,11 @@ class FirestoreDataSource @Inject constructor() {
     ): ResultListener {
         Log.d(TAG, "deleteItem")
         try {
-            db.collection(listName).document(itemId).delete().await()
+            if (listName == Constants.GUIDES_TABLE) {
+                deleteGuideWithRelatedProgress(itemId)
+            } else {
+                db.collection(listName).document(itemId).delete().await()
+            }
             return ResultListener.Success
         } catch (e: Exception) {
             Log.e(TAG, "Error", e)
@@ -758,6 +762,13 @@ class FirestoreDataSource @Inject constructor() {
     ): ResultListener {
         Log.d(TAG, "deleteItems")
         try {
+            if (listName == Constants.GUIDES_TABLE) {
+                idsList.forEach { guideId ->
+                    deleteGuideWithRelatedProgress(guideId)
+                }
+                return ResultListener.Success
+            }
+
             val batch = db.batch()
 
             idsList.forEach { id ->
@@ -771,6 +782,34 @@ class FirestoreDataSource @Inject constructor() {
         } catch (e: Exception) {
             Log.e(TAG, "Error", e)
             return ResultListener.Failure("Error: ${e.message}")
+        }
+    }
+
+    private suspend fun deleteGuideWithRelatedProgress(guideId: String) {
+        val guideRef = db.collection(Constants.GUIDES_TABLE).document(guideId)
+        guideRef.delete().await()
+
+        runCatching {
+            val progressRefs = db.collection(Constants.GUIDE_PROGRESS_TABLE)
+                .whereEqualTo("guideId", guideId)
+                .get()
+                .await()
+                .documents
+                .map { it.reference }
+
+            progressRefs.chunked(450).forEach { chunk ->
+                val batch = db.batch()
+                chunk.forEach { reference ->
+                    batch.delete(reference)
+                }
+                batch.commit().await()
+            }
+        }.onFailure { cleanupError ->
+            Log.w(
+                TAG,
+                "Guide deleted but related guide_progress cleanup failed for guideId=$guideId: ${cleanupError.message}",
+                cleanupError,
+            )
         }
     }
 

@@ -13,4 +13,5 @@ data class GuideSection(
     val completed: Boolean = false,
     val comment: String? = null,
     val steps: List<GuideStep> = emptyList(),
+    val stepsProgressByAmount: List<List<GuideStep>> = emptyList(),
 )

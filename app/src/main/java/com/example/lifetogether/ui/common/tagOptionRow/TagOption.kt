@@ -23,14 +23,21 @@ fun TagOption(
     onClick: ((String) -> Unit)? = null,
 ) {
     val selected: Boolean = selectedTag == tag
+    val unselectedColor = MaterialTheme.colorScheme.onSurface
     Box(
         modifier = Modifier
             .height(30.dp)
             .clip(shape = RoundedCornerShape(50))
-            .background(color = if (selected) MaterialTheme.colorScheme.secondary else Color.Transparent)
+            .background(
+                color = if (selected) {
+                    MaterialTheme.colorScheme.secondary
+                } else {
+                    MaterialTheme.colorScheme.surface
+                },
+            )
             .border(
                 width = 2.dp,
-                color = if (selected) Color.Transparent else Color.Black,
+                color = if (selected) Color.Transparent else unselectedColor.copy(alpha = 0.65f),
                 shape = RoundedCornerShape(50),
             )
             .clickable(
@@ -46,7 +53,7 @@ fun TagOption(
     ) {
         Text(
             text = tag,
-            color = if (selected) Color.White else Color.Black,
+            color = if (selected) MaterialTheme.colorScheme.onSecondary else unselectedColor,
         )
     }
 }

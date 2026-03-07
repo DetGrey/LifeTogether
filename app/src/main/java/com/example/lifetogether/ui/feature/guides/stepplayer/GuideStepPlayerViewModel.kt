@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.listener.ItemResultListener
 import com.example.lifetogether.domain.logic.GuideLeafPointer
 import com.example.lifetogether.domain.logic.GuideProgress
-import com.example.lifetogether.domain.logic.GuideRoundGrouping
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.guides.GuideSection
 import com.example.lifetogether.domain.usecase.guides.MarkGuideProgressDirtyUseCase
@@ -423,36 +422,42 @@ class GuideStepPlayerViewModel @Inject constructor(
             ?.let { GuideProgress.getStepAtPointer(guide.sections, it) }
 
         val currentSection = guide.sections.getOrNull(pointer.sectionIndex)
-        val sectionProgress = currentSection?.let { GuideProgress.sectionProgress(it) } ?: (0 to 0)
-        val sectionAmountProgressText = buildSectionAmountProgressText(
+        val currentPartProgress = currentSection?.let {
+            GuideProgress.sectionAmountProgress(
+                section = it,
+                amountIndex = pointer.sectionAmountIndex,
+            )
+        } ?: (0 to 0)
+        val currentPartLabel = buildCurrentPartLabel(
             section = currentSection,
             pointer = pointer,
         )
-        val roundContext = resolveRoundContext(
-            section = currentSection,
-            pointer = pointer,
-        )
-
         return GuideStepPlayerUiState(
             guide = guide,
             currentStep = currentStep,
             nextStep = nextStep,
             currentStepCompleted = GuideProgress.isPointerCompleted(guide.sections, pointer),
             canToggleCurrentStep = GuideProgress.canTogglePointer(guide.sections, pointer),
-            currentRoundGroupLabel = roundContext?.label.orEmpty(),
-            currentRoundGroupMeta = roundContext?.meta.orEmpty(),
+            currentRoundGroupLabel = "",
+            currentRoundGroupMeta = "",
             currentStepNumber = currentPointerIndex + 1,
             totalSteps = leaves.size,
             sectionTitle = currentSection?.title.orEmpty(),
-            sectionAmountProgressText = sectionAmountProgressText,
-            sectionProgressPercent = currentSection?.let { GuideProgress.progressPercent(it) } ?: 0,
-            sectionProgressText = "${sectionProgress.first} / ${sectionProgress.second}",
+            sectionSubtitle = currentSection?.subtitle.orEmpty(),
+            currentPartLabel = currentPartLabel,
+            currentPartProgressPercent = currentSection?.let {
+                GuideProgress.sectionAmountProgressPercent(
+                    section = it,
+                    amountIndex = pointer.sectionAmountIndex,
+                )
+            } ?: 0,
+            currentPartProgressText = "${currentPartProgress.first} / ${currentPartProgress.second}",
             canGoPrevious = currentPointerIndex > 0,
             canGoNext = currentPointerIndex < leaves.lastIndex,
         )
     }
 
-    private fun buildSectionAmountProgressText(
+    private fun buildCurrentPartLabel(
         section: GuideSection?,
         pointer: GuideLeafPointer,
     ): String {
@@ -468,43 +473,4 @@ class GuideStepPlayerViewModel @Inject constructor(
         )
     }
 
-    private fun resolveRoundContext(
-        section: GuideSection?,
-        pointer: GuideLeafPointer,
-    ): RoundDisplayContext? {
-        val activeSection = section ?: return null
-        val (containerSteps, indexInContainer) = if (pointer.subStepIndex != null) {
-            val parentStep = activeSection.steps.getOrNull(pointer.stepIndex) ?: return null
-            parentStep.subSteps to pointer.subStepIndex
-        } else {
-            activeSection.steps to pointer.stepIndex
-        }
-
-        val roundGroup = GuideRoundGrouping.findRoundGroupContext(containerSteps, indexInContainer)
-            ?: return null
-
-        val groupLabel = GuideRoundGrouping.formatRoundLabel(roundGroup.range)
-        if (roundGroup.size <= 1) {
-            return RoundDisplayContext(
-                label = groupLabel,
-                meta = "",
-            )
-        }
-
-        val currentStep = containerSteps.getOrNull(indexInContainer) ?: return null
-        val currentRoundNumber = GuideRoundGrouping.parseRoundNumber(
-            currentStep.name.ifBlank { currentStep.title },
-        ) ?: roundGroup.range.first
-
-        val position = (currentRoundNumber - roundGroup.range.first) + 1
-        return RoundDisplayContext(
-            label = groupLabel,
-            meta = "Current: R$currentRoundNumber ($position/${roundGroup.size})",
-        )
-    }
-
-    private data class RoundDisplayContext(
-        val label: String,
-        val meta: String,
-    )
 }

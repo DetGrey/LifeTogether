@@ -17,7 +17,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -49,7 +48,7 @@ fun GuideDetailsScreen(
 
     var showOverflowMenu by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
-    val sectionExpandedState = remember(guide?.id) { mutableStateMapOf<String, Boolean>() }
+    var showResetProgressDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(userInformation?.familyId, userInformation?.uid, guideId) {
         val familyId = userInformation?.familyId
@@ -70,7 +69,7 @@ fun GuideDetailsScreen(
             .fillMaxSize()
             .padding(horizontal = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item {
             TopBar(
@@ -151,18 +150,37 @@ fun GuideDetailsScreen(
                 }
             } else {
                 guide.sections.forEachIndexed { sectionIndex, section ->
-                    val sectionKey = section.id.ifBlank { "section-$sectionIndex" }
-                    val isExpanded = sectionExpandedState.getOrPut(sectionKey) { true }
+                    val sectionKey = guideSectionKey(section, sectionIndex)
+                    val isExpanded = uiState.sectionExpandedState[sectionKey] ?: true
+                    val selectedAmountIndex = uiState.selectedSectionAmountState[sectionKey]
+                        ?: defaultSectionAmountIndex(section)
 
                     item(key = sectionKey) {
                         GuideSectionCard(
                             section = section,
+                            selectedAmountIndex = selectedAmountIndex,
+                            onSelectAmountIndex = { amountIndex ->
+                                guideDetailsViewModel.selectSectionAmount(
+                                    sectionKey = sectionKey,
+                                    amountIndex = amountIndex,
+                                )
+                            },
                             expanded = isExpanded,
                             onToggleExpanded = {
-                                sectionExpandedState[sectionKey] = !isExpanded
+                                guideDetailsViewModel.toggleSectionExpanded(sectionKey)
                             },
-                            canToggleStep = { stepId -> guideDetailsViewModel.canToggleStep(stepId) },
-                            onToggleStep = { stepId -> guideDetailsViewModel.toggleStepCompletion(stepId) },
+                            canToggleStep = { amountIndex, stepId ->
+                                guideDetailsViewModel.canToggleStep(
+                                    stepId = stepId,
+                                    amountIndex = amountIndex,
+                                )
+                            },
+                            onToggleStep = { amountIndex, stepId ->
+                                guideDetailsViewModel.toggleStepCompletion(
+                                    stepId = stepId,
+                                    amountIndex = amountIndex,
+                                )
+                            },
                         )
                     }
                 }
@@ -181,6 +199,10 @@ fun GuideDetailsScreen(
         OverflowMenu(
             onDismiss = { showOverflowMenu = false },
             actionsList = listOf(
+                mapOf("Reset all progress" to {
+                    showOverflowMenu = false
+                    showResetProgressDialog = true
+                }),
                 mapOf(visibilityActionLabel to {
                     showOverflowMenu = false
                     if (canModifyGuide) {
@@ -198,6 +220,20 @@ fun GuideDetailsScreen(
                     }
                 }),
             ),
+        )
+    }
+
+    if (showResetProgressDialog) {
+        ConfirmationDialog(
+            onDismiss = { showResetProgressDialog = false },
+            onConfirm = {
+                showResetProgressDialog = false
+                guideDetailsViewModel.resetAllProgress()
+            },
+            dialogTitle = "Reset all progress",
+            dialogMessage = "Are you sure you want to reset all progress for this guide?",
+            dismissButtonMessage = "Cancel",
+            confirmButtonMessage = "Reset progress",
         )
     }
 

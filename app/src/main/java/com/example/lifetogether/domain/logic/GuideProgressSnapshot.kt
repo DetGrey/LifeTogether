@@ -14,64 +14,35 @@ object GuideProgressSnapshot {
         val allLeaves = GuideProgress.buildLeafPointers(sections)
         if (allLeaves.isEmpty()) return emptySet()
 
-        val leavesBySectionAmount = allLeaves.groupBy { it.sectionIndex to it.sectionAmountIndex }
-        val completedKeys = mutableSetOf<String>()
-
-        sections.forEachIndexed { sectionIndex, section ->
-            val amount = section.amount.coerceAtLeast(1)
-            val completedAmount = section.completedAmount.coerceIn(0, amount)
-
-            (0 until completedAmount).forEach { amountIndex ->
-                leavesBySectionAmount[sectionIndex to amountIndex].orEmpty()
-                    .forEach { completedKeys += pointerKey(it) }
-            }
-
-            if (completedAmount < amount) {
-                leavesBySectionAmount[sectionIndex to completedAmount].orEmpty().forEach { pointer ->
-                    if (GuideProgress.getStepAtPointer(sections, pointer)?.completed == true) {
-                        completedKeys += pointerKey(pointer)
-                    }
-                }
-            }
-        }
-
-        return completedKeys
+        return allLeaves
+            .filter { pointer -> GuideProgress.isPointerCompleted(sections, pointer) }
+            .mapTo(mutableSetOf(), ::pointerKey)
     }
 
     fun applyCompletedPointerKeys(
         sections: List<GuideSection>,
         completedPointerKeys: Set<String>,
     ): List<GuideSection> {
-        if (sections.isEmpty()) return sections
-        val allLeaves = GuideProgress.buildLeafPointers(sections)
-        if (allLeaves.isEmpty()) return sections
-
-        val leavesBySectionAmount = allLeaves.groupBy { it.sectionIndex to it.sectionAmountIndex }
-
         return sections.mapIndexed { sectionIndex, section ->
             val amount = section.amount.coerceAtLeast(1)
-            var completedAmount = 0
-            while (completedAmount < amount) {
-                val leavesForAmount = leavesBySectionAmount[sectionIndex to completedAmount].orEmpty()
-                if (leavesForAmount.isEmpty()) break
-                val isComplete = leavesForAmount.all { pointerKey(it) in completedPointerKeys }
-                if (!isComplete) break
-                completedAmount += 1
+            val updatedByAmount = (0 until amount).map { amountIndex ->
+                val baseAmountSteps = GuideProgress.sectionStepsForAmount(section, amountIndex)
+                applyStepCompletionForAmount(
+                    sectionIndex = sectionIndex,
+                    amountIndex = amountIndex,
+                    steps = baseAmountSteps,
+                    completedPointerKeys = completedPointerKeys,
+                )
             }
 
-            val activeAmountIndex = if (completedAmount >= amount) amount - 1 else completedAmount
-            val updatedSteps = applyStepCompletionForAmount(
-                sectionIndex = sectionIndex,
-                amountIndex = activeAmountIndex.coerceAtLeast(0),
-                steps = section.steps,
-                completedPointerKeys = completedPointerKeys,
-            )
-
-            section.copy(
-                amount = amount,
-                completedAmount = completedAmount.coerceIn(0, amount),
-                completed = completedAmount >= amount,
-                steps = updatedSteps,
+            GuideProgress.updateSectionCompletion(
+                section.copy(
+                    amount = amount,
+                    completedAmount = 0,
+                    completed = false,
+                    steps = updatedByAmount.firstOrNull().orEmpty(),
+                    stepsProgressByAmount = updatedByAmount,
+                ),
             )
         }
     }

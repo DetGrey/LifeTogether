@@ -44,4 +44,10 @@ interface GuideProgressDao {
         familyId: String,
         uid: String,
     )
+
+    @Query("DELETE FROM $GUIDE_PROGRESS_TABLE WHERE family_id = :familyId AND guide_id IN (:guideIds)")
+    suspend fun deleteByGuideIds(
+        familyId: String,
+        guideIds: List<String>,
+    )
 }

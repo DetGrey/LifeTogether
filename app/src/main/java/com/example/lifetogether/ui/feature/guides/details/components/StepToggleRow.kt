@@ -5,25 +5,21 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.ui.common.list.CompletableBox
 
 @Composable
 fun StepToggleRow(
-    text: String,
     isCompleted: Boolean,
     enabled: Boolean,
-    textColor: Color,
     indentLevel: Int,
     onToggle: () -> Unit,
+    content: @Composable (modifier: Modifier, textDecoration: TextDecoration) -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -43,12 +39,9 @@ fun StepToggleRow(
             )
         }
 
-        Text(
-            text = text,
-            modifier = Modifier.weight(1f),
-            color = textColor,
-            style = MaterialTheme.typography.bodyMedium,
-            textDecoration = if (isCompleted) TextDecoration.LineThrough else TextDecoration.None,
+        content(
+            Modifier.weight(1f),
+            if (isCompleted) TextDecoration.LineThrough else TextDecoration.None,
         )
     }
 }

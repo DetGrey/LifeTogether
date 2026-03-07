@@ -62,7 +62,7 @@ class GuideParserTest {
         assertEquals(1, firstStep.subSteps.size)
         assertEquals("Build the nose", firstStep.subSteps.first().content)
         assertEquals(GuideStepType.NUMBERED, firstStep.subSteps.first().type)
-        assertFalse(firstStep.subSteps.first().completed)
+        assertTrue(firstStep.subSteps.first().completed)
     }
 
     @Test
@@ -209,11 +209,133 @@ class GuideParserTest {
         assertEquals(2, section.amount)
         assertEquals(1, section.completedAmount)
         assertFalse(section.completed)
+        assertEquals(2, section.stepsProgressByAmount.size)
+        assertTrue(section.stepsProgressByAmount[0].all { it.completed })
+        assertTrue(section.stepsProgressByAmount[1].all { !it.completed })
 
         val firestoreMap = GuideParser.guideToFirestoreMap(parsed)
         @Suppress("UNCHECKED_CAST")
         val sections = firestoreMap["sections"] as List<Map<String, Any?>>
         assertEquals(2, sections.first()["amount"])
-        assertEquals(1, sections.first()["completedAmount"])
+        assertFalse(sections.first().containsKey("completedAmount"))
+        assertFalse(sections.first().containsKey("completed"))
+        assertFalse(sections.first().containsKey("stepsProgressByAmount"))
+        @Suppress("UNCHECKED_CAST")
+        val storedSteps = sections.first()["steps"] as List<Map<String, Any?>>
+        assertFalse(storedSteps.first().containsKey("completed"))
+    }
+
+    @Test
+    fun `parseGuideMap accepts stepsProgressByAmount as indexed map`() {
+        val rawGuide = mapOf(
+            "name" to "Map progress guide",
+            "sections" to listOf(
+                mapOf(
+                    "title" to "Tail",
+                    "amount" to 2,
+                    "steps" to listOf(
+                        mapOf(
+                            "id" to "step-fallback",
+                            "type" to "round",
+                            "name" to "R1",
+                            "content" to "fallback",
+                        ),
+                    ),
+                    "stepsProgressByAmount" to mapOf(
+                        "0" to listOf(
+                            mapOf(
+                                "id" to "step-0",
+                                "type" to "round",
+                                "name" to "R1",
+                                "content" to "part0",
+                                "completed" to true,
+                            ),
+                        ),
+                        "1" to listOf(
+                            mapOf(
+                                "id" to "step-1",
+                                "type" to "round",
+                                "name" to "R1",
+                                "content" to "part1",
+                                "completed" to false,
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        val parsed = GuideParser.parseGuideMap(rawGuide)
+        val section = parsed.sections.first()
+
+        assertEquals(2, section.amount)
+        assertEquals(2, section.stepsProgressByAmount.size)
+        assertEquals("part0", section.stepsProgressByAmount[0].first().content)
+        assertEquals("part1", section.stepsProgressByAmount[1].first().content)
+        assertEquals(1, section.completedAmount)
+        assertFalse(section.completed)
+    }
+
+    @Test
+    fun `parseFirestoreGuide ignores embedded progress hints`() {
+        val rawGuide = mapOf(
+            "familyId" to "family-a",
+            "ownerUid" to "owner-a",
+            "name" to "Remote guide",
+            "started" to true,
+            "resume" to mapOf(
+                "sectionIndex" to 0,
+                "sectionAmountIndex" to 0,
+                "stepIndex" to 0,
+            ),
+            "sections" to listOf(
+                mapOf(
+                    "id" to "section-1",
+                    "title" to "Section",
+                    "amount" to 2,
+                    "completedAmount" to 1,
+                    "completed" to true,
+                    "steps" to listOf(
+                        mapOf(
+                            "id" to "step-1",
+                            "type" to "round",
+                            "content" to "sc around",
+                            "completed" to true,
+                        ),
+                    ),
+                    "stepsProgressByAmount" to mapOf(
+                        "0" to listOf(
+                            mapOf(
+                                "id" to "step-1",
+                                "type" to "round",
+                                "content" to "sc around",
+                                "completed" to true,
+                            ),
+                        ),
+                        "1" to listOf(
+                            mapOf(
+                                "id" to "step-2",
+                                "type" to "round",
+                                "content" to "sc around again",
+                                "completed" to true,
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        val parsed = GuideParser.parseFirestoreGuide("guide-1", rawGuide)
+        val section = parsed.sections.first()
+
+        assertFalse(parsed.started)
+        assertNull(parsed.resume)
+        assertEquals(0, section.completedAmount)
+        assertFalse(section.completed)
+        assertTrue(section.steps.all { !it.completed })
+        assertEquals(2, section.stepsProgressByAmount.size)
+        assertTrue(section.stepsProgressByAmount.all { amountSteps ->
+            amountSteps.all { !it.completed }
+        })
     }
 }
