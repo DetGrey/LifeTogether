@@ -144,7 +144,9 @@ fun TipTrackerScreen(
 
     // ---------------------------------------------------------------- SHOW ERROR ALERT
     if (uiState.showAlertDialog) {
+        LaunchedEffect(uiState.error) {
+            tipTrackerViewModel.dismissAlert()
+        }
         ErrorAlertDialog(uiState.error)
-        tipTrackerViewModel.dismissAlert()
     }
 }

@@ -236,7 +236,9 @@ fun MediaDetailsScreen(
     }
     // ---------------------------------------------------------------- SHOW ERROR ALERT
     if (uiState.showAlertDialog) {
+        LaunchedEffect(uiState.error) {
+            mediaDetailsViewModel.dismissAlert()
+        }
         ErrorAlertDialog(uiState.error)
-        mediaDetailsViewModel.dismissAlert()
     }
 }

@@ -185,8 +185,10 @@ fun GuideStepPlayerScreen(
     }
 
     if (uiState.showAlertDialog) {
+        LaunchedEffect(uiState.error) {
+            guideStepPlayerViewModel.dismissAlert()
+        }
         ErrorAlertDialog(uiState.error)
-        guideStepPlayerViewModel.dismissAlert()
     }
 }
 

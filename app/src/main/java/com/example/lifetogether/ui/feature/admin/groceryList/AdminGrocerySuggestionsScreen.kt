@@ -135,8 +135,10 @@ fun AdminGrocerySuggestionsScreen(
     }
 
     if (grocerySuggestionsViewModel.showAlertDialog) {
+        LaunchedEffect(grocerySuggestionsViewModel.error) {
+            grocerySuggestionsViewModel.toggleAlertDialog()
+        }
         ErrorAlertDialog(grocerySuggestionsViewModel.error)
-        grocerySuggestionsViewModel.toggleAlertDialog()
     }
 }
 

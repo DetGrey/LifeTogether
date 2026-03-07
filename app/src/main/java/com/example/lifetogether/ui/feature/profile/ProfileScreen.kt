@@ -296,8 +296,10 @@ fun ProfileScreen(
 
     // ---------------------------------------------------------------- SHOW ERROR ALERT
     if (profileViewModel.showAlertDialog) {
+        LaunchedEffect(profileViewModel.error) {
+            profileViewModel.toggleAlertDialog()
+        }
         ErrorAlertDialog(profileViewModel.error)
-        profileViewModel.toggleAlertDialog()
     }
 }
 

@@ -298,7 +298,9 @@ fun FamilyScreen(
 
     // ---------------------------------------------------------------- SHOW ERROR ALERT
     if (familyViewModel.showAlertDialog) {
+        LaunchedEffect(familyViewModel.error) {
+            familyViewModel.toggleAlertDialog()
+        }
         ErrorAlertDialog(familyViewModel.error)
-        familyViewModel.toggleAlertDialog()
     }
 }

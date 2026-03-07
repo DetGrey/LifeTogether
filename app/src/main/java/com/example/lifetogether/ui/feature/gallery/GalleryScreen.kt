@@ -128,7 +128,9 @@ fun GalleryScreen(
 
     // ---------------------------------------------------------------- SHOW ERROR ALERT
     if (uiState.showAlertDialog) {
+        LaunchedEffect(uiState.error) {
+            galleryViewModel.dismissAlert()
+        }
         ErrorAlertDialog(uiState.error)
-        galleryViewModel.dismissAlert()
     }
 }

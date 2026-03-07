@@ -254,8 +254,10 @@ fun GuideCreateScreen(
     }
 
     if (guideCreateViewModel.showAlertDialog) {
+        LaunchedEffect(guideCreateViewModel.error) {
+            guideCreateViewModel.dismissAlert()
+        }
         ErrorAlertDialog(guideCreateViewModel.error)
-        guideCreateViewModel.dismissAlert()
     }
 }
 

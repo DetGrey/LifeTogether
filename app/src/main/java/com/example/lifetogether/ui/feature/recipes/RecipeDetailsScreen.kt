@@ -423,7 +423,9 @@ fun RecipeDetailsScreen(
 
     // ---------------------------------------------------------------- SHOW ERROR ALERT
     if (recipeDetailsViewModel.showAlertDialog) {
+        LaunchedEffect(recipeDetailsViewModel.error) {
+            recipeDetailsViewModel.toggleAlertDialog()
+        }
         ErrorAlertDialog(recipeDetailsViewModel.error)
-        recipeDetailsViewModel.toggleAlertDialog()
     }
 }

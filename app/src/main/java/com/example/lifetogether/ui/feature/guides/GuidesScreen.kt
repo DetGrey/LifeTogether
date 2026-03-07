@@ -263,8 +263,10 @@ fun GuidesScreen(
     }
 
     if (guidesViewModel.showAlertDialog) {
+        LaunchedEffect(guidesViewModel.error) {
+            guidesViewModel.dismissAlert()
+        }
         ErrorAlertDialog(guidesViewModel.error)
-        guidesViewModel.dismissAlert()
     }
 }
 

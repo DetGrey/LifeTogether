@@ -247,8 +247,10 @@ fun GuideDetailsScreen(
     }
 
     if (uiState.showAlertDialog) {
+        LaunchedEffect(uiState.error) {
+            guideDetailsViewModel.dismissAlert()
+        }
         ErrorAlertDialog(uiState.error)
-        guideDetailsViewModel.dismissAlert()
     }
 }
 

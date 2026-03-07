@@ -182,7 +182,9 @@ fun AdminGroceryCategoriesScreen(
     }
 
     if (groceryCategoriesViewModel.showAlertDialog) {
+        LaunchedEffect(groceryCategoriesViewModel.error) {
+            groceryCategoriesViewModel.toggleAlertDialog()
+        }
         ErrorAlertDialog(groceryCategoriesViewModel.error)
-        groceryCategoriesViewModel.toggleAlertDialog()
     }
 }

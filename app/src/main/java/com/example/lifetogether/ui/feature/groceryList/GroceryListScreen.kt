@@ -206,7 +206,9 @@ fun GroceryListScreen(
 
     // ---------------------------------------------------------------- SHOW ERROR ALERT
     if (groceryListViewModel.showAlertDialog) {
+        LaunchedEffect(groceryListViewModel.error) {
+            groceryListViewModel.toggleAlertDialog()
+        }
         ErrorAlertDialog(groceryListViewModel.error)
-        groceryListViewModel.toggleAlertDialog()
     }
 }

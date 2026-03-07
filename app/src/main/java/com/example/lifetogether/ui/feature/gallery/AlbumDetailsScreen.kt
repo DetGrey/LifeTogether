@@ -361,7 +361,9 @@ fun AlbumDetailsScreen(
 
     // ---------------------------------------------------------------- SHOW ERROR ALERT
     if (uiState.showAlertDialog) {
+        LaunchedEffect(uiState.error) {
+            albumDetailsViewModel.dismissAlert()
+        }
         ErrorAlertDialog(error = uiState.error)
-        albumDetailsViewModel.dismissAlert()
     }
 }
