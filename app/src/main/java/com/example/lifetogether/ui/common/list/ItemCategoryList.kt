@@ -31,6 +31,7 @@ import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.bodyFontFamily
 import com.example.lifetogether.ui.viewmodel.NotificationViewModel
 import com.example.lifetogether.util.Constants
+import com.example.lifetogether.util.priceToString
 import java.util.Date
 
 @Composable
@@ -92,6 +93,9 @@ fun ItemCategoryList(
                     ListItem(
                         item = item,
                         onCompleteToggle = { onCompleteToggle(item) },
+                        trailingText = if (item is GroceryItem && item.approxPrice != null) {
+                            (item.approxPrice as Float).priceToString()
+                        } else null,
                         onBellClick = if (item is GroceryItem) {
                             {
                                 println("bell clicked")

@@ -27,7 +27,9 @@ fun CustomTextField(
     label: String?,
     keyboardType: KeyboardType,
     imeAction: ImeAction,
+    modifier: Modifier = Modifier,
     capitalization: Boolean = false,
+    smaller: Boolean = false,
 ) {
     var visualTransformation: VisualTransformation = VisualTransformation.None
     if (keyboardType == KeyboardType.Password) {
@@ -35,7 +37,7 @@ fun CustomTextField(
     }
 
     TextField(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(60.dp)
             .clip(shape = RoundedCornerShape(20)),
@@ -44,7 +46,13 @@ fun CustomTextField(
             onValueChange(it)
         },
         label = if (label != null) {
-            { Text(label) }
+            {
+                Text(
+                    label,
+                    style = if (smaller) MaterialTheme.typography.bodySmall
+                            else MaterialTheme.typography.bodyMedium
+                )
+            }
         } else {
             null
         },

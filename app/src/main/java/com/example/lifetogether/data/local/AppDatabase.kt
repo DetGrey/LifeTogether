@@ -44,7 +44,7 @@ import com.example.lifetogether.data.model.UserEntity
         GuideEntity::class,
         GuideProgressEntity::class,
     ],
-    version = 22,
+    version = 23,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)

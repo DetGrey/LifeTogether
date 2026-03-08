@@ -79,6 +79,7 @@ class LocalListRepositoryImpl @Inject constructor(
                             id = grocerySuggestion.id,
                             suggestionName = grocerySuggestion.suggestionName,
                             category = grocerySuggestion.category,
+                            approxPrice = grocerySuggestion.approxPrice,
                         )
                     },
                 )
@@ -199,6 +200,7 @@ class LocalListRepositoryImpl @Inject constructor(
                     lastUpdated = this.entity.lastUpdated,
                     completed = this.entity.completed,
                     category = this.entity.category,
+                    approxPrice = this.entity.approxPrice,
                 )
 
                 else -> throw IllegalArgumentException("Unsupported item type: $itemType")

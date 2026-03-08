@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.ui.common.text.TextDefault
+import com.example.lifetogether.util.priceToString
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -31,6 +32,7 @@ fun GrocerySuggestionsEditor(
     suggestions: List<GrocerySuggestion>,
     expandedCategories: Set<String>,
     onToggleExpand: (String) -> Unit,
+    onEditItem: (GrocerySuggestion) -> Unit,
     onDeleteItem: (GrocerySuggestion) -> Unit,
 ) {
     // 1. Group data logically
@@ -57,8 +59,9 @@ fun GrocerySuggestionsEditor(
             // --- ITEMS (Visible only if expanded) ---
             if (isExpanded) {
                 items(items, key = { it.id ?: it.suggestionName }) { suggestion ->
-                    ListItemRow(
-                        item = suggestion,
+                    GrocerySuggestionRow(
+                        suggestion = suggestion,
+                        onEdit = { onEditItem(suggestion) },
                         onDelete = { onDeleteItem(suggestion) },
                     )
                 }
@@ -110,8 +113,9 @@ fun CategoryHeader(
 }
 
 @Composable
-fun ListItemRow(
-    item: GrocerySuggestion,
+fun GrocerySuggestionRow(
+    suggestion: GrocerySuggestion,
+    onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
     Row(
@@ -122,9 +126,21 @@ fun ListItemRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         TextDefault(
-            text = item.suggestionName,
+            text = suggestion.suggestionName,
             modifier = Modifier.weight(1f),
             maxLines = 1,
+        )
+        suggestion.approxPrice?.let {
+            TextDefault(
+                text = suggestion.approxPrice.priceToString(),
+            )
+        }
+        Image(
+            painter = painterResource(id = R.drawable.ic_edit_black),
+            contentDescription = "edit icon",
+            modifier = Modifier
+                .fillMaxHeight(0.9f)
+                .clickable { onEdit() },
         )
         Image(
             painter = painterResource(id = R.drawable.ic_trashcan_black),

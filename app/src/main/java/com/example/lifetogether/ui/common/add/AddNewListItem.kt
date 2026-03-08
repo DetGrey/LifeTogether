@@ -36,13 +36,67 @@ import com.example.lifetogether.ui.common.textfield.CustomTextField
 fun AddNewListItem(
     textValue: String,
     onTextChange: (String) -> Unit,
+    priceValue: String,
+    onPriceChange: (String) -> Unit,
     onAddClick: () -> Unit,
     categoryList: List<Category>,
     selectedCategory: Category,
     onCategoryChange: (Category) -> Unit,
 ) {
+    ListItemInputBar(
+        textValue = textValue,
+        onTextChange = onTextChange,
+        priceValue = priceValue,
+        onPriceChange = onPriceChange,
+        onActionClick = onAddClick,
+        categoryList = categoryList,
+        selectedCategory = selectedCategory,
+        onCategoryChange = onCategoryChange,
+        textFieldLabel = "Add item...",
+        actionLabel = "Add",
+    )
+}
+
+@Composable
+fun EditListItem(
+    textValue: String,
+    onTextChange: (String) -> Unit,
+    priceValue: String,
+    onPriceChange: (String) -> Unit,
+    onSaveClick: () -> Unit,
+    categoryList: List<Category>,
+    selectedCategory: Category,
+    onCategoryChange: (Category) -> Unit,
+) {
+    ListItemInputBar(
+        textValue = textValue,
+        onTextChange = onTextChange,
+        priceValue = priceValue,
+        onPriceChange = onPriceChange,
+        onActionClick = onSaveClick,
+        categoryList = categoryList,
+        selectedCategory = selectedCategory,
+        onCategoryChange = onCategoryChange,
+        textFieldLabel = "Edit item...",
+        actionLabel = "Save",
+    )
+}
+
+@Composable
+private fun ListItemInputBar(
+    textValue: String,
+    onTextChange: (String) -> Unit,
+    priceValue: String,
+    onPriceChange: (String) -> Unit,
+    onActionClick: () -> Unit,
+    categoryList: List<Category>,
+    selectedCategory: Category,
+    onCategoryChange: (Category) -> Unit,
+    textFieldLabel: String,
+    actionLabel: String,
+) {
     val addNewListItemViewModel: AddNewListItemViewModel = hiltViewModel()
-    // Use LaunchedEffect to set the initial value once
+
     LaunchedEffect(key1 = "init") {
         addNewListItemViewModel.selectedCategory = "${selectedCategory.emoji} ${selectedCategory.name}"
     }
@@ -92,10 +146,20 @@ fun AddNewListItem(
                 CustomTextField(
                     value = textValue,
                     onValueChange = onTextChange,
-                    label = "Add an item...",
+                    label = textFieldLabel,
                     keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Done,
+                    imeAction = ImeAction.Next,
+                    modifier = Modifier.fillMaxWidth(0.6f),
                     capitalization = true,
+                )
+
+                CustomTextField(
+                    value = priceValue,
+                    onValueChange = onPriceChange,
+                    label = "Price",
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done,
+                    smaller = true,
                 )
             }
 
@@ -104,11 +168,11 @@ fun AddNewListItem(
                     .padding(10.dp)
                     .fillMaxHeight()
                     .clickable {
-                        onAddClick()
+                        onActionClick()
                     },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(text = "Add", color = Color.White)
+                Text(text = actionLabel, color = Color.White)
 
                 Spacer(modifier = Modifier.width(5.dp))
 

@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
@@ -32,6 +33,7 @@ import java.util.Date
 fun ListItem(
     item: Completable,
     onCompleteToggle: () -> Unit,
+    trailingText: String? = null,
     onBellClick: (() -> Unit)? = null,
 ) {
     var text = item.itemName
@@ -53,7 +55,9 @@ fun ListItem(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
+            modifier = Modifier.weight(1f),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             CompletableBox(
                 isCompleted = item.completed,
@@ -61,7 +65,18 @@ fun ListItem(
             )
 
             Text(
+                modifier = Modifier.weight(1f),
                 text = text,
+                style = MaterialTheme.typography.bodyLarge,
+                textDecoration = if (item.completed) TextDecoration.LineThrough else TextDecoration.None,
+                overflow = TextOverflow.Ellipsis
+            )
+
+        }
+
+        trailingText?.let {
+            Text(
+                text = it,
                 style = MaterialTheme.typography.bodyLarge,
                 textDecoration = if (item.completed) TextDecoration.LineThrough else TextDecoration.None,
             )
@@ -99,7 +114,9 @@ fun ListItemPreview() {
                 lastUpdated = Date(System.currentTimeMillis()),
                 completed = true,
             ),
+            trailingText = "9 kr.",
             onCompleteToggle = {},
+            onBellClick = {}
         )
     }
 }

@@ -23,6 +23,7 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.add.AddNewListItem
+import com.example.lifetogether.ui.common.add.EditListItem
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
@@ -38,13 +39,9 @@ fun AdminGrocerySuggestionsScreen(
     appSessionViewModel: AppSessionViewModel,
 ) {
     val grocerySuggestionsViewModel: AdminGrocerySuggestionsViewModel = hiltViewModel()
-
-    val groceryCategories by grocerySuggestionsViewModel.groceryCategories.collectAsState()
-    val categoryExpandedStates by grocerySuggestionsViewModel.categoryExpandedStates.collectAsState()
-    val grocerySuggestions by grocerySuggestionsViewModel.grocerySuggestions.collectAsState()
+    val uiState by grocerySuggestionsViewModel.uiState.collectAsState()
 
     LaunchedEffect(key1 = true) {
-        // Perform any one-time initialization or side effect here
         grocerySuggestionsViewModel.setUpGrocerySuggestions()
     }
 
@@ -87,14 +84,14 @@ fun AdminGrocerySuggestionsScreen(
             Spacer(modifier = Modifier.height(20.dp))
 
             TextHeadingMedium("Grocery suggestions")
-            if (grocerySuggestions.isNotEmpty()) {
+            if (uiState.grocerySuggestions.isNotEmpty()) {
                 GrocerySuggestionsEditor(
-                    grocerySuggestions,
-                    expandedCategories = categoryExpandedStates,
+                    uiState.grocerySuggestions,
+                    expandedCategories = uiState.categoryExpandedStates,
                     onToggleExpand = { grocerySuggestionsViewModel.toggleCategory(it) },
+                    onEditItem = { grocerySuggestionsViewModel.startEditingSuggestion(it) },
                     onDeleteItem = {
-                        grocerySuggestionsViewModel.selectedSuggestion = it
-                        grocerySuggestionsViewModel.showDeleteCategoryConfirmationDialog = true
+                        grocerySuggestionsViewModel.onDeleteSuggestionClick(it)
                     },
                 )
             }
@@ -107,38 +104,58 @@ fun AdminGrocerySuggestionsScreen(
             .padding(10.dp),
         contentAlignment = Alignment.BottomCenter,
     ) {
-        AddNewListItem(
-            textValue = grocerySuggestionsViewModel.newSuggestionText,
-            onTextChange = { grocerySuggestionsViewModel.newSuggestionText = it },
-            onAddClick = {
-                grocerySuggestionsViewModel.addNewGrocerySuggestion()
-            },
-            categoryList = groceryCategories,
-            selectedCategory = grocerySuggestionsViewModel.newSuggestionCategory,
-            onCategoryChange = { newCategory ->
-                grocerySuggestionsViewModel.updateNewSuggestionCategory(newCategory)
-            },
-        )
+        if (uiState.isEditMode) {
+            EditListItem(
+                textValue = uiState.newSuggestionText,
+                onTextChange = { grocerySuggestionsViewModel.onNewSuggestionTextChange(it) },
+                priceValue = uiState.newSuggestionPrice,
+                onPriceChange = { grocerySuggestionsViewModel.onNewSuggestionPriceChange(it) },
+                onSaveClick = {
+                    grocerySuggestionsViewModel.saveEditedGrocerySuggestion()
+                },
+                categoryList = uiState.groceryCategories,
+                selectedCategory = uiState.newSuggestionCategory,
+                onCategoryChange = { newCategory ->
+                    grocerySuggestionsViewModel.updateNewSuggestionCategory(newCategory)
+                },
+            )
+        } else {
+            AddNewListItem(
+                textValue = uiState.newSuggestionText,
+                onTextChange = { grocerySuggestionsViewModel.onNewSuggestionTextChange(it) },
+                priceValue = uiState.newSuggestionPrice,
+                onPriceChange = { grocerySuggestionsViewModel.onNewSuggestionPriceChange(it) },
+                onAddClick = {
+                    grocerySuggestionsViewModel.addNewGrocerySuggestion()
+                },
+                categoryList = uiState.groceryCategories,
+                selectedCategory = uiState.newSuggestionCategory,
+                onCategoryChange = { newCategory ->
+                    grocerySuggestionsViewModel.updateNewSuggestionCategory(newCategory)
+                },
+            )
+        }
     }
 
-    if (grocerySuggestionsViewModel.showDeleteCategoryConfirmationDialog && grocerySuggestionsViewModel.selectedSuggestion != null) {
+    val selectedSuggestion = uiState.selectedSuggestion
+    if (uiState.showDeleteCategoryConfirmationDialog && selectedSuggestion != null) {
         ConfirmationDialog(
-            onDismiss = { grocerySuggestionsViewModel.showDeleteCategoryConfirmationDialog = false },
+            onDismiss = { grocerySuggestionsViewModel.dismissDeleteSuggestionDialog() },
             onConfirm = {
                 grocerySuggestionsViewModel.deleteCategory()
             },
             dialogTitle = "Delete category?",
-            dialogMessage = "Are you sure you want to delete the category: \"${grocerySuggestionsViewModel.selectedSuggestion!!.category?.emoji} ${grocerySuggestionsViewModel.selectedSuggestion!!.category?.name} - ${grocerySuggestionsViewModel.selectedSuggestion!!.suggestionName}\"?",
+            dialogMessage = "Are you sure you want to delete the category: \"${selectedSuggestion.category?.emoji} ${selectedSuggestion.category?.name} - ${selectedSuggestion.suggestionName}\"?",
             dismissButtonMessage = "Cancel",
             confirmButtonMessage = "Delete",
         )
     }
 
-    if (grocerySuggestionsViewModel.showAlertDialog) {
-        LaunchedEffect(grocerySuggestionsViewModel.error) {
+    if (uiState.showAlertDialog) {
+        LaunchedEffect(uiState.error) {
             grocerySuggestionsViewModel.toggleAlertDialog()
         }
-        ErrorAlertDialog(grocerySuggestionsViewModel.error)
+        ErrorAlertDialog(uiState.error)
     }
 }
 

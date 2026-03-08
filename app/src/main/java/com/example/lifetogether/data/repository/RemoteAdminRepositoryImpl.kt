@@ -25,6 +25,11 @@ class RemoteAdminRepositoryImpl @Inject constructor(
     ): ResultListener {
         return firestoreDataSource.addGrocerySuggestion(grocerySuggestion)
     }
+    suspend fun updateGrocerySuggestion(
+        grocerySuggestion: GrocerySuggestion,
+    ): ResultListener {
+        return firestoreDataSource.updateGrocerySuggestion(grocerySuggestion)
+    }
     suspend fun deleteGrocerySuggestion(
         grocerySuggestion: GrocerySuggestion,
     ): ResultListener {

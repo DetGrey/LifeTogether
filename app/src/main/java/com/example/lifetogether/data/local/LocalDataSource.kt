@@ -51,6 +51,7 @@ import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.util.Constants
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emitAll
@@ -60,6 +61,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.Date
 import javax.inject.Inject
@@ -310,6 +312,7 @@ class LocalDataSource @Inject constructor(
                 lastUpdated = item.lastUpdated,
                 completed = item.completed,
                 category = item.category,
+                approxPrice = item.approxPrice,
             )
         }
 
@@ -353,6 +356,7 @@ class LocalDataSource @Inject constructor(
                     id = id,
                     suggestionName = grocerySuggestion.suggestionName,
                     category = grocerySuggestion.category,
+                    approxPrice = grocerySuggestion.approxPrice,
                 )
             }
         }
@@ -512,7 +516,9 @@ class LocalDataSource @Inject constructor(
         val mediaUri = entity.mediaUri?.toUri() ?: return null
 
         // Copy content to a temp file to reuse existing thumbnail generators
-        val tempFile = File.createTempFile("thumb_regen_", "tmp", context.cacheDir)
+        val tempFile = withContext(Dispatchers.IO) {
+            File.createTempFile("thumb_regen_", "tmp", context.cacheDir)
+        }
         try {
             context.contentResolver.openInputStream(mediaUri)?.use { input ->
                 tempFile.outputStream().use { output -> input.copyTo(output) }
@@ -1241,7 +1247,7 @@ class LocalDataSource @Inject constructor(
             mediaStoreUri?.let { uri ->
                 try {
                     resolver.delete(uri, null, null)
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     Log.w("LocalDataSource", "Failed to clean up partial file: $uri")
                 }
             }

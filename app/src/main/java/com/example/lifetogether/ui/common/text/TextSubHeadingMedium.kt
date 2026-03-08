@@ -19,6 +19,6 @@ fun TextSubHeadingMedium(
         text = text,
         style = MaterialTheme.typography.titleMedium,
         color = color,
-        textAlign = if (alignCenter) TextAlign.Center else TextAlign.Unspecified
+        textAlign = if (alignCenter) TextAlign.Center else null
     )
 }

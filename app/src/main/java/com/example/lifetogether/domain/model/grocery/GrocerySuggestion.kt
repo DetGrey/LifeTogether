@@ -8,4 +8,5 @@ data class GrocerySuggestion(
     val id: String? = null,
     val suggestionName: String = "",
     var category: Category? = null,
+    val approxPrice: Float? = null,
 )

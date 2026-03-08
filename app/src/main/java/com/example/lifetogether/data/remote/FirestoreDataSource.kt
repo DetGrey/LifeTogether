@@ -933,6 +933,24 @@ class FirestoreDataSource @Inject constructor() {
         }
     }
 
+    suspend fun updateGrocerySuggestion(
+        grocerySuggestion: GrocerySuggestion,
+    ): ResultListener {
+        val suggestionId = grocerySuggestion.id
+            ?: return ResultListener.Failure("Missing grocery suggestion id")
+
+        return try {
+            db.collection(Constants.GROCERY_SUGGESTIONS_TABLE)
+                .document(suggestionId)
+                .set(grocerySuggestion)
+                .await()
+            ResultListener.Success
+        } catch (e: Exception) {
+            Log.e(TAG, "Error", e)
+            ResultListener.Failure("Error: ${e.message}")
+        }
+    }
+
     // ------------------------------------------------------------------------------- IMAGES
     suspend fun getImageUrl(
         imageType: ImageType,

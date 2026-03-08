@@ -16,4 +16,6 @@ data class GrocerySuggestionEntity(
     val suggestionName: String = "",
     @Embedded(prefix = "category_")
     var category: Category? = null,
+    @ColumnInfo(name = "approx_price")
+    val approxPrice: Float? = null,
 )
