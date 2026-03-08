@@ -101,7 +101,6 @@ class GroceryListViewModel @Inject constructor(
                                 updateUiState { state ->
                                     state.copy(groceryList = groceryItems)
                                 }
-                                updateExpectedTotalPrice()
                                 updateExpandedStates()
                             } else {
                                 println("Error: No GroceryItem instances found in the result")
@@ -116,17 +115,6 @@ class GroceryListViewModel @Inject constructor(
                 }
             }
             familyIdIsSet = true
-        }
-    }
-
-    private fun updateExpectedTotalPrice() {
-        val totalApproxPriceOrNull: Float? = uiState.value.groceryList
-            .mapNotNull { it.approxPrice }
-            .takeIf { it.isNotEmpty() }
-            ?.sum()
-
-        updateUiState { state ->
-            state.copy(expectedTotalPrice = totalApproxPriceOrNull)
         }
     }
 
@@ -387,11 +375,17 @@ class GroceryListViewModel @Inject constructor(
         } else {
             emptyList()
         }
+        val expectedTotalPrice = state.groceryList
+            .filter { !it.completed }
+            .mapNotNull { it.approxPrice }
+            .takeIf { it.isNotEmpty() }
+            ?.sum()
 
         return state.copy(
             completedItems = completedItems,
             categorizedItems = categorizedItems,
             currentGrocerySuggestions = currentSuggestions,
+            expectedTotalPrice = expectedTotalPrice
         )
     }
 }
