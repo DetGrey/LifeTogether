@@ -60,7 +60,7 @@ fun TipTrackerScreen(
                     },
                     text = "Tip Tracker",
                     rightIcon = Icon(
-                        resId = R.drawable.ic_back_arrow, // TODO make statistics icon
+                        resId = R.drawable.ic_statistics,
                         description = "back arrow icon",
                     ),
                     onRightClick = {

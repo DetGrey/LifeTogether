@@ -222,7 +222,7 @@ fun HomeScreen(
                                 appNavigator?.navigateToGuides()
                             }
                         },
-                        icon = Icon(R.drawable.ic_bookmark, "guides icon"),
+                        icon = Icon(R.drawable.ic_guide, "guides icon"),
                     )
                     FeatureOverview(
                         "Gallery",
