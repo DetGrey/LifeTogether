@@ -12,7 +12,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
@@ -23,21 +22,16 @@ fun TagOption(
     onClick: ((String) -> Unit)? = null,
 ) {
     val selected: Boolean = selectedTag == tag
-    val unselectedColor = MaterialTheme.colorScheme.onSurface
     Box(
         modifier = Modifier
             .height(30.dp)
-            .clip(shape = RoundedCornerShape(50))
             .background(
-                color = if (selected) {
-                    MaterialTheme.colorScheme.secondary
-                } else {
-                    MaterialTheme.colorScheme.surface
-                },
+                color = if (selected) MaterialTheme.colorScheme.secondary else Color.Transparent,
+                shape = RoundedCornerShape(50)
             )
             .border(
                 width = 2.dp,
-                color = if (selected) Color.Transparent else unselectedColor.copy(alpha = 0.65f),
+                color = if (selected) Color.Transparent else Color.Black,
                 shape = RoundedCornerShape(50),
             )
             .clickable(
@@ -53,7 +47,7 @@ fun TagOption(
     ) {
         Text(
             text = tag,
-            color = if (selected) MaterialTheme.colorScheme.onSecondary else unselectedColor,
+            color = if (selected) Color.White else Color.Black,
         )
     }
 }
