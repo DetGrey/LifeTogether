@@ -6,6 +6,8 @@ import com.example.lifetogether.domain.usecase.observers.ObserveCategoriesUseCas
 import com.example.lifetogether.domain.usecase.observers.ObserveFamilyInformationUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveGalleryMediaUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveGuidesUseCase
+import com.example.lifetogether.domain.usecase.observers.ObserveRoutineListsUseCase
+import com.example.lifetogether.domain.usecase.observers.ObserveUserListsUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveGroceryListUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveGrocerySuggestionsUseCase
 import com.example.lifetogether.domain.usecase.observers.ObserveRecipesUseCase
@@ -36,6 +38,8 @@ class ObserverCoordinator @Inject constructor(
     private val observeGalleryMediaUseCase: ObserveGalleryMediaUseCase,
     private val observeTipTrackerUseCase: ObserveTipTrackerUseCase,
     private val observeGuidesUseCase: ObserveGuidesUseCase,
+    private val observeUserListsUseCase: ObserveUserListsUseCase,
+    private val observeRoutineListsUseCase: ObserveRoutineListsUseCase,
 ) {
     private val globalObserverKeys = setOf(
         ObserverKey.USER,
@@ -51,6 +55,8 @@ class ObserverCoordinator @Inject constructor(
         ObserverKey.TIP_TRACKER,
         ObserverKey.GALLERY_ALBUMS,
         ObserverKey.GALLERY_MEDIA,
+        ObserverKey.USER_LISTS,
+        ObserverKey.ROUTINE_LIST_ENTRIES,
     )
 
     private var observedUid: String? = null
@@ -235,6 +241,17 @@ class ObserverCoordinator @Inject constructor(
                     familyId = familyId,
                     context = application.applicationContext,
                 )
+            }
+
+            ObserverKey.USER_LISTS -> {
+                val uid = context.uid ?: return null
+                val familyId = context.familyId ?: return null
+                observeUserListsUseCase.start(scope, uid, familyId)
+            }
+
+            ObserverKey.ROUTINE_LIST_ENTRIES -> {
+                val familyId = context.familyId ?: return null
+                observeRoutineListsUseCase.start(scope, familyId)
             }
         }
     }

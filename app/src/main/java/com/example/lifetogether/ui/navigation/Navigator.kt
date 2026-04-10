@@ -22,4 +22,7 @@ interface Navigator {
     fun navigateToGalleryMedia(albumId: String, initialIndex: Int)
     fun navigateToTipTracker()
     fun navigateToTipStatistics()
+    fun navigateToLists()
+    fun navigateToListDetail(listId: String)
+    fun navigateToListEntryDetails(listId: String, entryId: String? = null)
 }

@@ -106,6 +106,23 @@ class AppNavigator(private val navController: NavController) : Navigator {
     override fun navigateToTipStatistics() {
         navController.navigate(AppRoutes.TIP_STATISTICS_SCREEN)
     }
+
+    override fun navigateToLists() {
+        navController.navigate(AppRoutes.LISTS_SCREEN)
+    }
+
+    override fun navigateToListDetail(listId: String) {
+        navController.navigate("${AppRoutes.LIST_DETAIL_SCREEN}/$listId")
+    }
+
+    override fun navigateToListEntryDetails(listId: String, entryId: String?) {
+        val route = if (entryId != null) {
+            "${AppRoutes.LIST_ENTRY_DETAILS_SCREEN}/$listId/$entryId"
+        } else {
+            "${AppRoutes.LIST_ENTRY_DETAILS_SCREEN}/$listId"
+        }
+        navController.navigate(route)
+    }
 }
 
 /*

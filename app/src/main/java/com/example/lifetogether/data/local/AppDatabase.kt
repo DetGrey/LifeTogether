@@ -3,6 +3,8 @@ package com.example.lifetogether.data.local
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.lifetogether.data.local.dao.AlbumsDao
 import com.example.lifetogether.data.local.dao.CategoriesDao
 import com.example.lifetogether.data.local.dao.FamilyInformationDao
@@ -11,6 +13,8 @@ import com.example.lifetogether.data.local.dao.GuideProgressDao
 import com.example.lifetogether.data.local.dao.GuidesDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
+import com.example.lifetogether.data.local.dao.RoutineListsDao
+import com.example.lifetogether.data.local.dao.UserListsDao
 import com.example.lifetogether.data.local.dao.RecipesDao
 import com.example.lifetogether.data.local.dao.TipTrackerDao
 import com.example.lifetogether.data.local.dao.UserInformationDao
@@ -24,6 +28,8 @@ import com.example.lifetogether.data.model.GuideEntity
 import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.model.GrocerySuggestionEntity
 import com.example.lifetogether.data.model.ListCountEntity
+import com.example.lifetogether.data.model.RoutineListEntryEntity
+import com.example.lifetogether.data.model.UserListEntity
 import com.example.lifetogether.data.model.RecipeEntity
 import com.example.lifetogether.data.model.TipEntity
 import com.example.lifetogether.data.model.UserEntity
@@ -43,8 +49,10 @@ import com.example.lifetogether.data.model.UserEntity
         TipEntity::class,
         GuideEntity::class,
         GuideProgressEntity::class,
+        UserListEntity::class,
+        RoutineListEntryEntity::class,
     ],
-    version = 23,
+    version = 24,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -61,5 +69,48 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun tipTrackerDao(): TipTrackerDao
     abstract fun guidesDao(): GuidesDao
     abstract fun guideProgressDao(): GuideProgressDao
-    // Add other DAOs here
+    abstract fun userListsDao(): UserListsDao
+    abstract fun routineListsDao(): RoutineListsDao
+
+    companion object {
+        val MIGRATION_23_24 = object : Migration(23, 24) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `user_lists` (
+                        `id` TEXT NOT NULL,
+                        `family_id` TEXT NOT NULL,
+                        `item_name` TEXT NOT NULL,
+                        `last_updated` INTEGER,
+                        `date_created` INTEGER,
+                        `type` TEXT NOT NULL,
+                        `visibility` TEXT NOT NULL,
+                        `owner_uid` TEXT NOT NULL,
+                        `image_url` TEXT,
+                        PRIMARY KEY(`id`)
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `list_entries_routine` (
+                        `id` TEXT NOT NULL,
+                        `family_id` TEXT NOT NULL,
+                        `list_id` TEXT NOT NULL,
+                        `item_name` TEXT NOT NULL,
+                        `last_updated` INTEGER,
+                        `date_created` INTEGER,
+                        `next_date` INTEGER,
+                        `last_completed_at` INTEGER,
+                        `completion_count` INTEGER NOT NULL,
+                        `recurrence_unit` TEXT NOT NULL,
+                        `interval` INTEGER NOT NULL,
+                        `weekdays` TEXT NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                    """.trimIndent(),
+                )
+            }
+        }
+    }
 }

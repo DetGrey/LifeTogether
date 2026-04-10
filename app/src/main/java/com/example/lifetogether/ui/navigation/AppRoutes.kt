@@ -32,5 +32,9 @@ object AppRoutes {
     const val TIP_TRACKER_GRAPH = "tip_tracker_graph"
     const val TIP_TRACKER_SCREEN = "tip_tracker"
     const val TIP_STATISTICS_SCREEN = "tip_statistics"
-    // ... other routes
+    const val LISTS_SCREEN = "lists"
+    const val LIST_DETAIL_SCREEN = "list_detail"
+    const val LIST_ID_ARG = "listId"
+    const val LIST_ENTRY_DETAILS_SCREEN = "list_entry_details"
+    const val LIST_ENTRY_ID_ARG = "listEntryId"
 }

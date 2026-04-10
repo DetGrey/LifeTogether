@@ -11,6 +11,8 @@ import com.example.lifetogether.data.local.dao.GuideProgressDao
 import com.example.lifetogether.data.local.dao.GuidesDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
+import com.example.lifetogether.data.local.dao.RoutineListsDao
+import com.example.lifetogether.data.local.dao.UserListsDao
 import com.example.lifetogether.data.local.dao.RecipesDao
 import com.example.lifetogether.data.local.dao.TipTrackerDao
 import com.example.lifetogether.data.local.dao.UserInformationDao
@@ -35,6 +37,7 @@ object DatabaseModule {
         )
             .allowMainThreadQueries()
             .fallbackToDestructiveMigration(false)
+            .addMigrations(AppDatabase.MIGRATION_23_24)
             .build()
     }
 
@@ -102,5 +105,17 @@ object DatabaseModule {
     @Singleton
     fun provideGuideProgressDao(db: AppDatabase): GuideProgressDao {
         return db.guideProgressDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserListsDao(db: AppDatabase): UserListsDao {
+        return db.userListsDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideRoutineListsDao(db: AppDatabase): RoutineListsDao {
+        return db.routineListsDao()
     }
 }

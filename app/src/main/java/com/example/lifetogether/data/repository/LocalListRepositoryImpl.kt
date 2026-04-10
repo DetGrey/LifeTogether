@@ -21,6 +21,8 @@ import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
+import com.example.lifetogether.domain.model.lists.RoutineListEntry
+import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.repository.ListRepository
 import kotlinx.coroutines.flow.Flow
@@ -178,6 +180,8 @@ class LocalListRepositoryImpl @Inject constructor(
                         is Entity.GalleryMedia -> "GalleryMedia(${entity.entity.id})"
                         is Entity.Tip -> "Tip(${entity.entity.id})"
                         is Entity.Guide -> "Guide(${entity.entity.id}, started=${entity.entity.started}, resume=${entity.entity.resume})"
+                        is Entity.UserList -> "UserList(${entity.entity.id})"
+                        is Entity.RoutineListEntry -> "RoutineListEntry(${entity.entity.id})"
                     }
                     Log.d(TAG, "fetchItemById entity=$entityLabel")
                     val item = entity.toItem(itemType)
@@ -296,6 +300,41 @@ class LocalListRepositoryImpl @Inject constructor(
                     started = this.entity.started,
                     sections = this.entity.sections,
                     resume = this.entity.resume,
+                )
+
+                else -> throw IllegalArgumentException("Unsupported item type: $itemType")
+            }
+
+            is Entity.UserList -> when (itemType) {
+                UserList::class -> UserList(
+                    id = this.entity.id,
+                    familyId = this.entity.familyId,
+                    itemName = this.entity.itemName,
+                    lastUpdated = this.entity.lastUpdated,
+                    dateCreated = this.entity.dateCreated,
+                    type = this.entity.type,
+                    visibility = this.entity.visibility,
+                    ownerUid = this.entity.ownerUid,
+                    imageUrl = this.entity.imageUrl,
+                )
+
+                else -> throw IllegalArgumentException("Unsupported item type: $itemType")
+            }
+
+            is Entity.RoutineListEntry -> when (itemType) {
+                RoutineListEntry::class -> RoutineListEntry(
+                    id = this.entity.id,
+                    familyId = this.entity.familyId,
+                    listId = this.entity.listId,
+                    itemName = this.entity.itemName,
+                    lastUpdated = this.entity.lastUpdated,
+                    dateCreated = this.entity.dateCreated,
+                    nextDate = this.entity.nextDate,
+                    lastCompletedAt = this.entity.lastCompletedAt,
+                    completionCount = this.entity.completionCount,
+                    recurrenceUnit = this.entity.recurrenceUnit,
+                    interval = this.entity.interval,
+                    weekdays = this.entity.weekdays,
                 )
 
                 else -> throw IllegalArgumentException("Unsupported item type: $itemType")

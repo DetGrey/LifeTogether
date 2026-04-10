@@ -16,6 +16,9 @@ import com.example.lifetogether.ui.feature.gallery.GalleryGraphObserverRoute
 import com.example.lifetogether.ui.feature.gallery.GalleryScreenRoute
 import com.example.lifetogether.ui.feature.gallery.MediaDetailsRoute
 import com.example.lifetogether.ui.feature.guides.GuidesRoute
+import com.example.lifetogether.ui.feature.lists.listDetails.ListDetailsRoute
+import com.example.lifetogether.ui.feature.lists.entryDetails.ListEntryDetailsRoute
+import com.example.lifetogether.ui.feature.lists.ListsRoute
 import com.example.lifetogether.ui.feature.guides.create.GuideCreateScreen
 import com.example.lifetogether.ui.feature.guides.details.GuideDetailsDestinationRoute
 import com.example.lifetogether.ui.feature.guides.details.GuideStepPlayerDestinationRoute
@@ -187,6 +190,52 @@ fun NavHost(
                     ?: 0
                 MediaDetailsRoute(appNavigator, appSessionViewModel, albumId, initialIndex)
             }
+        }
+
+        composable(AppRoutes.LISTS_SCREEN) {
+            ListsRoute(appNavigator, appSessionViewModel)
+        }
+
+        composable(
+            route = "${AppRoutes.LIST_DETAIL_SCREEN}/{${AppRoutes.LIST_ID_ARG}}",
+            arguments = listOf(navArgument(AppRoutes.LIST_ID_ARG) { type = NavType.StringType }),
+        ) { backStackEntry ->
+            val listId = backStackEntry.arguments?.getString(AppRoutes.LIST_ID_ARG) ?: return@composable
+            ListDetailsRoute(
+                listId = listId,
+                appNavigator = appNavigator,
+                appSessionViewModel = appSessionViewModel,
+            )
+        }
+
+        composable(
+            route = "${AppRoutes.LIST_ENTRY_DETAILS_SCREEN}/{${AppRoutes.LIST_ID_ARG}}",
+            arguments = listOf(navArgument(AppRoutes.LIST_ID_ARG) { type = NavType.StringType }),
+        ) { backStackEntry ->
+            val listId = backStackEntry.arguments?.getString(AppRoutes.LIST_ID_ARG) ?: return@composable
+            ListEntryDetailsRoute(
+                listId = listId,
+                entryId = null,
+                appNavigator = appNavigator,
+                appSessionViewModel = appSessionViewModel,
+            )
+        }
+
+        composable(
+            route = "${AppRoutes.LIST_ENTRY_DETAILS_SCREEN}/{${AppRoutes.LIST_ID_ARG}}/{${AppRoutes.LIST_ENTRY_ID_ARG}}",
+            arguments = listOf(
+                navArgument(AppRoutes.LIST_ID_ARG) { type = NavType.StringType },
+                navArgument(AppRoutes.LIST_ENTRY_ID_ARG) { type = NavType.StringType },
+            ),
+        ) { backStackEntry ->
+            val listId = backStackEntry.arguments?.getString(AppRoutes.LIST_ID_ARG) ?: return@composable
+            val entryId = backStackEntry.arguments?.getString(AppRoutes.LIST_ENTRY_ID_ARG)
+            ListEntryDetailsRoute(
+                listId = listId,
+                entryId = entryId,
+                appNavigator = appNavigator,
+                appSessionViewModel = appSessionViewModel,
+            )
         }
 
         // Nested graph

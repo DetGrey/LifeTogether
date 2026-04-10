@@ -1,6 +1,7 @@
 package com.example.lifetogether.util
 
 object Constants {
+    // Table constants
     const val GROCERY_TABLE = "grocery_list"
     const val GROCERY_SUGGESTIONS_TABLE = "grocery_suggestions"
     const val GUIDES_TABLE = "guides"
@@ -13,9 +14,14 @@ object Constants {
     const val ALBUMS_TABLE = "albums"
     const val GALLERY_MEDIA_TABLE = "gallery_media"
     const val TIP_TRACKER_TABLE = "tip_tracker"
-    const val GUIDE_VISIBILITY_FAMILY = "family"
-    const val GUIDE_VISIBILITY_PRIVATE = "private"
+    const val USER_LISTS_TABLE = "user_lists"
+    const val ROUTINE_LIST_ENTRIES_TABLE = "list_entries_routine"
 
+    // Generic visibility constants — shared across guides, lists, and future features
+    const val VISIBILITY_FAMILY = "family"
+    const val VISIBILITY_PRIVATE = "private"
+
+    // Notification constants
     const val GROCERY_LIST_CHANNEL = "grocery_list_notification_channel"
     const val DEFAULT_CHANNEL = "default_channel"
 }

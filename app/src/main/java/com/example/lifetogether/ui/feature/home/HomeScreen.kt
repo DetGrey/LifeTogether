@@ -248,6 +248,17 @@ fun HomeScreen(
                         },
                         icon = Icon(R.drawable.ic_tip, "money tip icon"),
                     )
+                    FeatureOverview(
+                        "Lists",
+                        onClick = {
+                            if (userInformationState?.familyId == null) {
+                                // TODO add popup asking to join a family
+                            } else {
+                                appNavigator?.navigateToLists()
+                            }
+                        },
+                        icon = Icon(R.drawable.ic_guide, "lists icon"),
+                    )
 //                    FeatureOverview(
 //                        "Note Corner",
 //                        onClick = {

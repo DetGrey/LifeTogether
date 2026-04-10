@@ -79,4 +79,15 @@ class Converters {
     fun fromGuideResumeToString(resume: GuideResume?): String? {
         return resume?.let { json.encodeToString(it) }
     }
+
+    @TypeConverter
+    fun fromIntList(value: String): List<Int> {
+        if (value.isBlank()) return emptyList()
+        return runCatching { json.decodeFromString<List<Int>>(value) }.getOrDefault(emptyList())
+    }
+
+    @TypeConverter
+    fun fromListInt(list: List<Int>): String {
+        return json.encodeToString(list)
+    }
 }

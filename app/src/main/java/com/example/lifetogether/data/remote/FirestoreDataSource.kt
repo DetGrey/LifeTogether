@@ -25,10 +25,16 @@ import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.guides.GuideProgressState
+import com.example.lifetogether.domain.model.enums.Visibility
+import com.example.lifetogether.domain.model.lists.RoutineListEntry
+import com.example.lifetogether.domain.model.lists.ListType
+import com.example.lifetogether.domain.model.lists.RecurrenceUnit
+import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.util.Constants
 import com.google.firebase.Firebase
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.SetOptions
@@ -373,7 +379,7 @@ class FirestoreDataSource @Inject constructor() {
         Log.d(TAG, "Firestore familySharedGuidesSnapshotListener init")
         val guidesRef = db.collection(Constants.GUIDES_TABLE)
             .whereEqualTo("familyId", familyId)
-            .whereEqualTo("visibility", Constants.GUIDE_VISIBILITY_FAMILY)
+            .whereEqualTo("visibility", Constants.VISIBILITY_FAMILY)
 
         val listenerRegistration = guidesRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
@@ -420,7 +426,7 @@ class FirestoreDataSource @Inject constructor() {
         Log.d(TAG, "Firestore privateGuidesSnapshotListener init")
         val guidesRef = db.collection(Constants.GUIDES_TABLE)
             .whereEqualTo("familyId", familyId)
-            .whereEqualTo("visibility", Constants.GUIDE_VISIBILITY_PRIVATE)
+            .whereEqualTo("visibility", Constants.VISIBILITY_PRIVATE)
             .whereEqualTo("ownerUid", uid)
 
         val listenerRegistration = guidesRef.addSnapshotListener { snapshot, e ->
@@ -503,6 +509,151 @@ class FirestoreDataSource @Inject constructor() {
 
         awaitClose { listenerRegistration.remove() }
     }
+
+    // ------------------------------------------------------------------------------- USER LISTS
+    fun familySharedUserListsSnapshotListener(familyId: String) = callbackFlow {
+        Log.d(TAG, "Firestore familySharedUserListsSnapshotListener init familyId=$familyId")
+        val ref = db.collection(Constants.USER_LISTS_TABLE)
+            .whereEqualTo("familyId", familyId)
+            .whereEqualTo("visibility", Constants.VISIBILITY_FAMILY)
+
+        val registration = ref.addSnapshotListener { snapshot, e ->
+            if (e != null) { trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess; return@addSnapshotListener }
+            if (snapshot == null) { trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess; return@addSnapshotListener }
+
+            Log.d(TAG, "familySharedUserListsSnapshotListener snapshot size=${snapshot.size()} fromCache=${snapshot.metadata.isFromCache}")
+            val items = snapshot.documents.mapNotNull { doc ->
+                val data = doc.data ?: return@mapNotNull null
+                runCatching { parseFirestoreUserList(doc.id, data) }
+                    .onFailure { Log.e(TAG, "Failed parsing family user list ${doc.id}", it) }
+                    .getOrNull()
+            }
+            trySend(ListItemsResultListener.Success(items)).isSuccess
+        }
+        awaitClose { registration.remove() }
+    }
+
+    fun privateUserListsSnapshotListener(familyId: String, uid: String) = callbackFlow {
+        Log.d(TAG, "Firestore privateUserListsSnapshotListener init familyId=$familyId uid=$uid")
+        val ref = db.collection(Constants.USER_LISTS_TABLE)
+            .whereEqualTo("familyId", familyId)
+            .whereEqualTo("visibility", Constants.VISIBILITY_PRIVATE)
+            .whereEqualTo("ownerUid", uid)
+
+        val registration = ref.addSnapshotListener { snapshot, e ->
+            if (e != null) { trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess; return@addSnapshotListener }
+            if (snapshot == null) { trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess; return@addSnapshotListener }
+
+            Log.d(TAG, "privateUserListsSnapshotListener snapshot size=${snapshot.size()} fromCache=${snapshot.metadata.isFromCache}")
+            val items = snapshot.documents.mapNotNull { doc ->
+                val data = doc.data ?: return@mapNotNull null
+                runCatching { parseFirestoreUserList(doc.id, data) }
+                    .onFailure { Log.e(TAG, "Failed parsing private user list ${doc.id}", it) }
+                    .getOrNull()
+            }
+            trySend(ListItemsResultListener.Success(items)).isSuccess
+        }
+        awaitClose { registration.remove() }
+    }
+
+    private fun parseFirestoreUserList(documentId: String, data: Map<String, Any?>): UserList {
+        fun str(key: String) = (data[key] as? String).orEmpty()
+        fun date(key: String): Date? = when (val v = data[key]) {
+            is Timestamp -> v.toDate()
+            is Long -> Date(v)
+            else -> null
+        }
+        return UserList(
+            id = documentId,
+            familyId = str("familyId"),
+            itemName = str("name").ifBlank { str("itemName") },
+            lastUpdated = date("lastUpdated") ?: Date(),
+            dateCreated = date("dateCreated") ?: Date(),
+            type = ListType.fromValue(str("type")),
+            visibility = Visibility.fromValue(str("visibility")),
+            ownerUid = str("ownerUid"),
+            imageUrl = data["imageUrl"] as? String,
+        )
+    }
+
+    fun userListToFirestoreMap(list: UserList): Map<String, Any?> = mapOf(
+        "familyId" to list.familyId,
+        "ownerUid" to list.ownerUid,
+        "visibility" to list.visibility.value,
+        "name" to list.itemName,
+        "type" to list.type.value,
+        "lastUpdated" to list.lastUpdated,
+        "dateCreated" to list.dateCreated,
+        "imageUrl" to list.imageUrl,
+    )
+
+    // ------------------------------------------------------------------------------- LIST ENTRIES
+    fun familyRoutineListEntriesSnapshotListener(familyId: String) = callbackFlow {
+        Log.d(TAG, "Firestore familyRoutineListEntriesSnapshotListener init familyId=$familyId")
+        val ref = db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE)
+            .whereEqualTo("familyId", familyId)
+        val registration = ref.addSnapshotListener { snapshot, e ->
+            if (e != null) { trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess; return@addSnapshotListener }
+            if (snapshot == null) { trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess; return@addSnapshotListener }
+
+            Log.d(TAG, "familyRoutineListEntriesSnapshotListener snapshot size=${snapshot.size()} fromCache=${snapshot.metadata.isFromCache}")
+            val items = snapshot.documents.mapNotNull { doc ->
+                val data = doc.data ?: return@mapNotNull null
+                runCatching { parseFirestoreRoutineListEntry(doc.id, data) }
+                    .onFailure { Log.e(TAG, "Failed parsing list entry ${doc.id}", it) }
+                    .getOrNull()
+            }
+            trySend(ListItemsResultListener.Success(items)).isSuccess
+        }
+        awaitClose { registration.remove() }
+    }
+
+    private fun parseFirestoreRoutineListEntry(documentId: String, data: Map<String, Any?>): RoutineListEntry {
+        fun str(key: String) = (data[key] as? String).orEmpty()
+        fun date(key: String): Date? = when (val v = data[key]) {
+            is Timestamp -> v.toDate()
+            is Long -> Date(v)
+            else -> null
+        }
+        fun intVal(key: String, default: Int = 0) = when (val v = data[key]) {
+            is Long -> v.toInt()
+            is Int -> v
+            else -> default
+        }
+        @Suppress("UNCHECKED_CAST")
+        val weekdaysRaw = (data["weekdays"] as? List<*>)?.mapNotNull {
+            when (it) { is Long -> it.toInt(); is Int -> it; else -> null }
+        } ?: emptyList()
+
+        return RoutineListEntry(
+            id = documentId,
+            familyId = str("familyId"),
+            listId = str("listId"),
+            itemName = str("name").ifBlank { str("itemName") },
+            lastUpdated = date("lastUpdated") ?: Date(),
+            dateCreated = date("dateCreated") ?: Date(),
+            nextDate = date("nextDate"),
+            lastCompletedAt = date("lastCompletedAt"),
+            completionCount = intVal("completionCount"),
+            recurrenceUnit = RecurrenceUnit.fromValue(str("recurrenceUnit")),
+            interval = intVal("interval", 1),
+            weekdays = weekdaysRaw,
+        )
+    }
+
+    fun listEntryToFirestoreMap(entry: RoutineListEntry): Map<String, Any?> = mapOf(
+        "familyId" to entry.familyId,
+        "listId" to entry.listId,
+        "name" to entry.itemName,
+        "lastUpdated" to entry.lastUpdated,
+        "dateCreated" to entry.dateCreated,
+        "nextDate" to entry.nextDate,
+        "lastCompletedAt" to entry.lastCompletedAt,
+        "completionCount" to entry.completionCount,
+        "recurrenceUnit" to entry.recurrenceUnit.value,
+        "interval" to entry.interval,
+        "weekdays" to entry.weekdays,
+    )
 
     // ------------------------------------------------------------------------------- ALBUMS
     fun albumsSnapshotListener(familyId: String) = callbackFlow {
@@ -654,7 +805,12 @@ class FirestoreDataSource @Inject constructor() {
     ): StringResultListener {
         val startedAt = System.currentTimeMillis()
         try {
-            val uploadItem = if (item is Guide) GuideParser.guideToFirestoreMap(item) else item
+            val uploadItem = when (item) {
+                is Guide -> GuideParser.guideToFirestoreMap(item)
+                is UserList -> userListToFirestoreMap(item)
+                is RoutineListEntry -> listEntryToFirestoreMap(item)
+                else -> item
+            }
             val documentReference = db.collection(listName).add(uploadItem).await()
             Log.d(
                 TAG,
@@ -676,7 +832,12 @@ class FirestoreDataSource @Inject constructor() {
         Log.d(TAG, "updateItem start list=$listName id=${item.id} type=${item::class.simpleName}")
         try {
             if (!item.id.isNullOrBlank()) {
-                val uploadItem = if (item is Guide) GuideParser.guideToFirestoreMap(item) else item
+                val uploadItem = when (item) {
+                    is Guide -> GuideParser.guideToFirestoreMap(item)
+                    is UserList -> userListToFirestoreMap(item)
+                    is RoutineListEntry -> listEntryToFirestoreMap(item)
+                    else -> item
+                }
 
                 db.collection(listName)
                     .document(item.id!!)

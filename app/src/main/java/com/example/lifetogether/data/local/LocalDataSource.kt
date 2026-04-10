@@ -14,6 +14,8 @@ import com.example.lifetogether.data.local.dao.GuideProgressDao
 import com.example.lifetogether.data.local.dao.GuidesDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
+import com.example.lifetogether.data.local.dao.RoutineListsDao
+import com.example.lifetogether.data.local.dao.UserListsDao
 import com.example.lifetogether.data.local.dao.RecipesDao
 import com.example.lifetogether.data.local.dao.TipTrackerDao
 import com.example.lifetogether.data.local.dao.UserInformationDao
@@ -29,6 +31,8 @@ import com.example.lifetogether.data.model.GuideProgressEntity
 import com.example.lifetogether.data.model.GuideEntity
 import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.model.GrocerySuggestionEntity
+import com.example.lifetogether.data.model.RoutineListEntryEntity
+import com.example.lifetogether.data.model.UserListEntity
 import com.example.lifetogether.data.model.RecipeEntity
 import com.example.lifetogether.data.model.TipEntity
 import com.example.lifetogether.data.model.UserEntity
@@ -47,6 +51,8 @@ import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.guides.GuideProgressState
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
+import com.example.lifetogether.domain.model.lists.RoutineListEntry
+import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.util.Constants
@@ -79,6 +85,8 @@ class LocalDataSource @Inject constructor(
     private val tipTrackerDao: TipTrackerDao,
     private val guidesDao: GuidesDao,
     private val guideProgressDao: GuideProgressDao,
+    private val userListsDao: UserListsDao,
+    private val routineListsDao: RoutineListsDao,
 ) {
     companion object {
         private const val TAG = "LocalDataSource"
@@ -152,6 +160,16 @@ class LocalDataSource @Inject constructor(
                             )
                         }
                     }
+                }
+            }
+            Constants.USER_LISTS_TABLE -> userListsDao.getItems(familyId).map { list ->
+                list.map { Entity.UserList(it) }
+            }
+            Constants.ROUTINE_LIST_ENTRIES_TABLE -> {
+                if (uid.isNullOrBlank()) {
+                    routineListsDao.getItems(familyId).map { list -> list.map { Entity.RoutineListEntry(it) } }
+                } else {
+                    routineListsDao.getItemsByListId(familyId, uid).map { list -> list.map { Entity.RoutineListEntry(it) } }
                 }
             }
             else -> flowOf(emptyList()) // Handle the case where the listName doesn't match any known entity
@@ -979,6 +997,98 @@ class LocalDataSource @Inject constructor(
             guidesDao.deleteItems(deletedGuideIds)
         }
     }
+
+    // -------------------------------------------------------------- USER LISTS
+    suspend fun upsertUserLists(items: List<UserList>) {
+        Log.d(TAG, "upsertUserLists incomingCount=${items.size}")
+        if (items.isEmpty()) return
+        val entityList = items.map { it.toEntity() }
+        val currentItems = userListsDao.getItems(items.first().familyId).first()
+        val itemsToUpdate = entityList.filter { newItem ->
+            currentItems.none { cur -> newItem.id == cur.id && newItem == cur }
+        }
+        Log.d(TAG, "upsertUserLists itemsToUpdate=${itemsToUpdate.size}")
+        userListsDao.updateItems(itemsToUpdate)
+    }
+
+    suspend fun updateUserLists(items: List<UserList>) {
+        Log.d(TAG, "updateUserLists incomingCount=${items.size}")
+        if (items.isEmpty()) return
+        val entityList = items.map { it.toEntity() }
+        val currentItems = userListsDao.getItems(items.first().familyId).first()
+        Log.d(TAG, "updateUserLists currentRoomCount=${currentItems.size}")
+        val itemsToUpdate = entityList.filter { newItem ->
+            currentItems.none { cur -> newItem.id == cur.id && newItem == cur }
+        }
+        val itemsToDelete = currentItems.filter { cur ->
+            entityList.none { newItem -> newItem.id == cur.id }
+        }
+        Log.d(TAG, "updateUserLists toUpdate=${itemsToUpdate.size} toDelete=${itemsToDelete.size}")
+        userListsDao.updateItems(itemsToUpdate)
+        if (itemsToDelete.isNotEmpty()) {
+            val deletedIds = itemsToDelete.map { it.id }
+            routineListsDao.deleteByListIds(deletedIds)
+            userListsDao.deleteItems(deletedIds)
+        }
+    }
+
+    fun deleteFamilyUserLists(familyId: String) {
+        Log.d(TAG, "deleteFamilyUserLists familyId=$familyId")
+        routineListsDao.deleteFamilyItems(familyId)
+        userListsDao.deleteFamilyItems(familyId)
+    }
+
+    private fun UserList.toEntity() = UserListEntity(
+        id = id ?: "",
+        familyId = familyId,
+        itemName = itemName,
+        lastUpdated = lastUpdated,
+        dateCreated = dateCreated,
+        type = type,
+        visibility = visibility,
+        ownerUid = ownerUid,
+        imageUrl = imageUrl,
+    )
+
+    // -------------------------------------------------------------- LIST ENTRIES
+    suspend fun updateRoutineListEntries(items: List<RoutineListEntry>) {
+        Log.d(TAG, "updateRoutineListEntries incomingCount=${items.size}")
+        if (items.isEmpty()) return
+        val entityList = items.map { it.toEntity() }
+        val currentItems = routineListsDao.getItems(items.first().familyId).first()
+        Log.d(TAG, "updateRoutineListEntries currentRoomCount=${currentItems.size}")
+        val itemsToUpdate = entityList.filter { newItem ->
+            currentItems.none { cur -> newItem.id == cur.id && newItem == cur }
+        }
+        val itemsToDelete = currentItems.filter { cur ->
+            entityList.none { newItem -> newItem.id == cur.id }
+        }
+        Log.d(TAG, "updateRoutineListEntries toUpdate=${itemsToUpdate.size} toDelete=${itemsToDelete.size}")
+        routineListsDao.updateItems(itemsToUpdate)
+        if (itemsToDelete.isNotEmpty()) {
+            routineListsDao.deleteItems(itemsToDelete.map { it.id })
+        }
+    }
+
+    fun deleteFamilyRoutineListEntries(familyId: String) {
+        Log.d(TAG, "deleteFamilyRoutineListEntries familyId=$familyId")
+        routineListsDao.deleteFamilyItems(familyId)
+    }
+
+    private fun RoutineListEntry.toEntity() = RoutineListEntryEntity(
+        id = id ?: "",
+        familyId = familyId,
+        listId = listId,
+        itemName = itemName,
+        lastUpdated = lastUpdated,
+        dateCreated = dateCreated,
+        nextDate = nextDate,
+        lastCompletedAt = lastCompletedAt,
+        completionCount = completionCount,
+        recurrenceUnit = recurrenceUnit,
+        interval = interval,
+        weekdays = weekdays,
+    )
 
     suspend fun upsertGuideProgress(progress: GuideProgressState) {
         val existing = guideProgressDao.getItemById(progress.id)

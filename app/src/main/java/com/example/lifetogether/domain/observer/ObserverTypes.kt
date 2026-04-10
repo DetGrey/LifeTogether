@@ -11,6 +11,8 @@ enum class ObserverKey {
     TIP_TRACKER,
     GALLERY_ALBUMS,
     GALLERY_MEDIA,
+    USER_LISTS,
+    ROUTINE_LIST_ENTRIES,
 }
 
 enum class ObserverSyncState {
