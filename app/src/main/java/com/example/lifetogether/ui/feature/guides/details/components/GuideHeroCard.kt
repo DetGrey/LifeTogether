@@ -12,7 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.model.guides.Guide
-import com.example.lifetogether.domain.model.guides.GuideVisibility
+import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 
 @Composable
@@ -37,7 +37,7 @@ fun GuideHeroCard(guide: Guide) {
 
             Text(
                 text = buildString {
-                    append(if (guide.visibility == GuideVisibility.FAMILY) "Family shared" else "Private")
+                    append(if (guide.visibility == Visibility.FAMILY) "Family shared" else "Private")
                     append("  •  ")
                     append("Sections: $completedSections/${guide.sections.size}")
                 },

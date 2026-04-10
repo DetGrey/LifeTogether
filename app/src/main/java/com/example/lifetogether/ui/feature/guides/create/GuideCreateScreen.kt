@@ -29,7 +29,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.guides.GuideStepType
-import com.example.lifetogether.domain.model.guides.GuideVisibility
+import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.dropdown.Dropdown
@@ -97,7 +97,7 @@ fun GuideCreateScreen(
 
         item {
             Dropdown(
-                selectedValue = if (guideCreateViewModel.visibility == GuideVisibility.FAMILY) {
+                selectedValue = if (guideCreateViewModel.visibility == Visibility.FAMILY) {
                     "Family shared"
                 } else {
                     "Private"
@@ -108,9 +108,9 @@ fun GuideCreateScreen(
                 label = "Visibility",
                 onValueChangedEvent = {
                     guideCreateViewModel.visibility = if (it == "Family shared") {
-                        GuideVisibility.FAMILY
+                        Visibility.FAMILY
                     } else {
-                        GuideVisibility.PRIVATE
+                        Visibility.PRIVATE
                     }
                 },
             )

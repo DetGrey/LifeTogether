@@ -5,7 +5,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.lifetogether.domain.model.guides.GuideResume
 import com.example.lifetogether.domain.model.guides.GuideSection
-import com.example.lifetogether.domain.model.guides.GuideVisibility
+import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.util.Constants
 import java.util.Date
 
@@ -20,7 +20,7 @@ data class GuideEntity(
     @ColumnInfo(name = "last_updated")
     val lastUpdated: Date = Date(),
     val description: String = "",
-    val visibility: GuideVisibility = GuideVisibility.PRIVATE,
+    val visibility: Visibility = Visibility.PRIVATE,
     @ColumnInfo(name = "owner_uid")
     val ownerUid: String = "",
     @ColumnInfo(name = "content_version")

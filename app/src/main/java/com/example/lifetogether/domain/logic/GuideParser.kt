@@ -6,7 +6,7 @@ import com.example.lifetogether.domain.model.guides.GuideResume
 import com.example.lifetogether.domain.model.guides.GuideSection
 import com.example.lifetogether.domain.model.guides.GuideStep
 import com.example.lifetogether.domain.model.guides.GuideStepType
-import com.example.lifetogether.domain.model.guides.GuideVisibility
+import com.example.lifetogether.domain.model.enums.Visibility
 import com.google.firebase.Timestamp
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -37,7 +37,7 @@ object GuideParser {
         familyIdOverride: String? = null,
         ownerUidOverride: String? = null,
         regenerateIds: Boolean = false,
-        defaultVisibility: GuideVisibility = GuideVisibility.PRIVATE,
+        defaultVisibility: Visibility = Visibility.PRIVATE,
         preserveProgressHints: Boolean = true,
     ): Guide {
         val normalizedId = idOverride?.takeIf { it.isNotBlank() }
@@ -66,7 +66,7 @@ object GuideParser {
             itemName = itemName,
             description = readString(rawMap, "description"),
             lastUpdated = parseDate(rawMap["lastUpdated"]),
-            visibility = GuideVisibility.fromValue(readString(rawMap, "visibility").ifBlank { defaultVisibility.value }),
+            visibility = Visibility.fromValue(readString(rawMap, "visibility").ifBlank { defaultVisibility.value }),
             ownerUid = ownerUid,
             contentVersion = readLong(rawMap, "contentVersion") ?: 1L,
             started = if (preserveProgressHints) readBoolean(rawMap, "started") else false,
@@ -79,7 +79,7 @@ object GuideParser {
         json: String,
         familyId: String,
         ownerUid: String,
-        defaultVisibility: GuideVisibility = GuideVisibility.PRIVATE,
+        defaultVisibility: Visibility = Visibility.PRIVATE,
     ): List<Guide> {
         val root = GuideParser.json.parseToJsonElement(json)
         val maps = when {

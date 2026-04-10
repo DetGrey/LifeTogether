@@ -8,7 +8,7 @@ import com.example.lifetogether.domain.logic.GuideLeafPointer
 import com.example.lifetogether.domain.logic.GuideProgress
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.guides.GuideSection
-import com.example.lifetogether.domain.model.guides.GuideVisibility
+import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.usecase.guides.MarkGuideProgressDirtyUseCase
 import com.example.lifetogether.domain.usecase.guides.SyncPendingGuideProgressUseCase
 import com.example.lifetogether.domain.usecase.item.DeleteItemUseCase
@@ -208,10 +208,10 @@ class GuideDetailsViewModel @Inject constructor(
             return
         }
 
-        val newVisibility = if (currentGuide.visibility == GuideVisibility.FAMILY) {
-            GuideVisibility.PRIVATE
+        val newVisibility = if (currentGuide.visibility == Visibility.FAMILY) {
+            Visibility.PRIVATE
         } else {
-            GuideVisibility.FAMILY
+            Visibility.FAMILY
         }
 
         val updatedGuide = currentGuide.copy(

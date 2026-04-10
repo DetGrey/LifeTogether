@@ -41,7 +41,7 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.GuideProgress
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.guides.Guide
-import com.example.lifetogether.domain.model.guides.GuideVisibility
+import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
@@ -313,7 +313,7 @@ private fun GuideOverviewCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = if (guide.visibility == GuideVisibility.FAMILY) "Family shared" else "Private",
+                    text = if (guide.visibility == Visibility.FAMILY) "Family shared" else "Private",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.background,
                 )

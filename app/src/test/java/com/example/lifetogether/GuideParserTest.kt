@@ -5,7 +5,7 @@ import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.guides.GuideSection
 import com.example.lifetogether.domain.model.guides.GuideStep
 import com.example.lifetogether.domain.model.guides.GuideStepType
-import com.example.lifetogether.domain.model.guides.GuideVisibility
+import com.example.lifetogether.domain.model.enums.Visibility
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -101,7 +101,7 @@ class GuideParserTest {
         assertNull(importedGuide.id)
         assertEquals("family-import", importedGuide.familyId)
         assertEquals("user-import", importedGuide.ownerUid)
-        assertEquals(GuideVisibility.PRIVATE, importedGuide.visibility)
+        assertEquals(Visibility.PRIVATE, importedGuide.visibility)
 
         val importedSection = importedGuide.sections.first()
         assertNotEquals("original-section-id", importedSection.id)

@@ -12,7 +12,7 @@ import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.guides.GuideSection
 import com.example.lifetogether.domain.model.guides.GuideStep
 import com.example.lifetogether.domain.model.guides.GuideStepType
-import com.example.lifetogether.domain.model.guides.GuideVisibility
+import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
 import com.example.lifetogether.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,7 +34,7 @@ class GuideCreateViewModel @Inject constructor(
 
     var title: String by mutableStateOf("")
     var description: String by mutableStateOf("")
-    var visibility: GuideVisibility by mutableStateOf(GuideVisibility.PRIVATE)
+    var visibility: Visibility by mutableStateOf(Visibility.PRIVATE)
 
     private val _sections = MutableStateFlow<List<GuideSection>>(emptyList())
     val sections: StateFlow<List<GuideSection>> = _sections.asStateFlow()

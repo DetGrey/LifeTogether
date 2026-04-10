@@ -25,7 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon as AppIcon
-import com.example.lifetogether.domain.model.guides.GuideVisibility
+import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.ui.common.OverflowMenu
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
@@ -190,7 +190,7 @@ fun GuideDetailsScreen(
 
     if (showOverflowMenu && guide != null) {
         val canModifyGuide = guideDetailsViewModel.canToggleVisibility()
-        val visibilityActionLabel = if (guide.visibility == GuideVisibility.FAMILY) {
+        val visibilityActionLabel = if (guide.visibility == Visibility.FAMILY) {
             "Make private"
         } else {
             "Share with family"
