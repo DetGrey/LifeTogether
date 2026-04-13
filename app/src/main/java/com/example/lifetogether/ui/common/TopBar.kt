@@ -46,7 +46,7 @@ fun TopBar(
                 .fillMaxWidth()
                 .height(50.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.Bottom,
         ) {
             Box(
                 modifier = Modifier

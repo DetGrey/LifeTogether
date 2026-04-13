@@ -19,9 +19,14 @@ fun TagOptionRow(
     selectedOption: String,
     onSelectedOptionChange: (String) -> Unit,
     center: Boolean = false,
+    showDividers: Boolean = true,
 ) {
-    Column {
-        HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.primary)
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        if (showDividers) {
+            HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.primary)
+        }
         Spacer(modifier = Modifier.height(10.dp))
 
         if (center) {
@@ -60,6 +65,8 @@ fun TagOptionRow(
         }
 
         Spacer(modifier = Modifier.height(10.dp))
-        HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.primary)
+        if (showDividers) {
+            HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.primary)
+        }
     }
 }

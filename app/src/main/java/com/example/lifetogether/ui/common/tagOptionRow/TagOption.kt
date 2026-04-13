@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,7 +14,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @Composable
 fun TagOption(
@@ -41,7 +44,7 @@ fun TagOption(
                     onClick(tag)
                 }
             }
-            .padding(vertical = 5.dp)
+            .padding(top = 2.dp, bottom = 5.dp)
             .padding(horizontal = if (tag.length < 5) 20.dp else 15.dp),
         contentAlignment = Alignment.CenterStart,
     ) {
@@ -49,5 +52,22 @@ fun TagOption(
             text = tag,
             color = if (selected) Color.White else Color.Black,
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ListEntryDetailsScreenPreview() {
+    LifeTogetherTheme {
+        Column {
+            TagOption(
+                tag = "Mon",
+                selectedTag = ""
+            )
+            TagOption(
+                tag = "Tag",
+                selectedTag = "Tag"
+            )
+        }
     }
 }

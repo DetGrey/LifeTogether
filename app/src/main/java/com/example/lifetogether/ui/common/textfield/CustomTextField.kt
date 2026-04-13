@@ -30,6 +30,7 @@ fun CustomTextField(
     modifier: Modifier = Modifier,
     capitalization: Boolean = false,
     smaller: Boolean = false,
+    enabled: Boolean = true,
 ) {
     var visualTransformation: VisualTransformation = VisualTransformation.None
     if (keyboardType == KeyboardType.Password) {
@@ -45,6 +46,7 @@ fun CustomTextField(
         onValueChange = {
             onValueChange(it)
         },
+        enabled = enabled,
         label = if (label != null) {
             {
                 Text(

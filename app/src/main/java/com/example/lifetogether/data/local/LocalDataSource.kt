@@ -238,6 +238,13 @@ class LocalDataSource @Inject constructor(
                     },
                 )
             }
+
+            Constants.ROUTINE_LIST_ENTRIES_TABLE -> flow {
+                val entry = routineListsDao.getItemById(id)
+                if (entry != null) {
+                    emit(Entity.RoutineListEntry(entry))
+                }
+            }
             else -> flowOf() // Handle the case where the listName doesn't match any known entity
         }
     }

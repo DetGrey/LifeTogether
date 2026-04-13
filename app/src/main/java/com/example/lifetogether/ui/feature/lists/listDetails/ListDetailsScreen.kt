@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,7 +21,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
@@ -33,6 +34,9 @@ import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
+import com.example.lifetogether.ui.common.list.CompletableBox
+import com.example.lifetogether.ui.common.text.TextDefault
+import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
@@ -138,47 +142,49 @@ private fun ListEntryCard(
             .clickable { onClick() }
             .padding(14.dp),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(
-                text = entry.itemName,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.background,
-                fontWeight = FontWeight.Bold,
-            )
-
-            val recurrenceLabel = "Every ${entry.interval} ${entry.recurrenceUnit.value}"
-            Text(
-                text = recurrenceLabel,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.background,
-            )
-
-            entry.nextDate?.let { next ->
-                Text(
-                    text = "Next: ${dateFormat.format(next)}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.background,
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                CompletableBox(
+                    isCompleted = false,
+                    onCompleteToggle = onComplete,
+                )
+                TextHeadingMedium(
+                    text = entry.itemName,
+                    maxLines = 1,
                 )
             }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = "Completions: ${entry.completionCount}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.background,
-                )
-                Text(
-                    text = "Mark done",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
+                Column(modifier = Modifier.padding(top = 6.dp)) {
+                    val recurrenceLabel = "Every ${entry.interval} ${entry.recurrenceUnit.value}"
+                    TextDefault(
+                        text = recurrenceLabel,
+                        color = Color.White,
+                    )
+
+                    entry.nextDate?.let { next ->
+                        TextDefault(
+                            text = "Next: ${dateFormat.format(next)}",
+                            color = Color.White,
+                        )
+                    }
+                }
+                Box(
                     modifier = Modifier
-                        .clickable { onComplete() }
-                        .padding(4.dp),
-                )
+                        .size(60.dp)
+                        .background(
+                            color =MaterialTheme.colorScheme.tertiary,
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                ) {
+                    //todo add image
+                }
             }
         }
     }
@@ -213,7 +219,7 @@ fun ListEntryCardDailyPreview() {
             )
             ListEntryCard(
                 entry = RoutineListEntry(
-                    itemName = "Change bedsheets",
+                    itemName = "Change bedsheets very long",
                     recurrenceUnit = RecurrenceUnit.WEEKS,
                     interval = 2,
                     weekdays = listOf(1, 4),
