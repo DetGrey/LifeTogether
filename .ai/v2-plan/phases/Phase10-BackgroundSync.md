@@ -1,6 +1,6 @@
 # Phase 10 — Background Sync Layer
 
-**Status:** Not started
+**Status:** Not started _(Not started → Grill-me in progress → Implementing → Complete)_
 
 ## Goal
 
@@ -40,6 +40,16 @@ _To be defined during the pre-implementation grill-me session._
 
 ### Test cases
 _To be defined during the pre-implementation grill-me session._
+
+## GitHub Issues
+
+Create milestone `Phase 10: Background Sync Layer` and the following issues assigned to it:
+
+- `[Phase 10] Implement sync infrastructure and Hilt wiring`
+- `[Phase 10] Sync workers — <domain>` _(one per feature domain, same domains as Phase 2 — confirm during grill-me)_
+- `[Phase 10] Integrate sync triggers and verify end-to-end`
+
+> Pattern: one issue per feature domain for the sync worker implementation. Update the domain list after the pre-implementation grill-me session.
 
 ## Open Questions
 

@@ -1,6 +1,6 @@
 # Phase 3 — Route/Screen Split
 
-**Status:** Not started
+**Status:** Not started _(Not started → Grill-me in progress → Implementing → Complete)_
 
 ## Goal
 
@@ -47,6 +47,17 @@ _To be defined during the pre-implementation grill-me session._
 
 ### Test cases
 _To be defined during the pre-implementation grill-me session._
+
+## GitHub Issues
+
+Create milestone `Phase 3: Route/Screen Split` and the following issues assigned to it:
+
+- `[Phase 3] Setup: shared SnackbarHost and UiEvent infrastructure`
+- `[Phase 3] Pilot: AdminGrocerySuggestionsScreen`
+- `[Phase 3] Route/screen split — <feature>` _(one per feature group — confirm full list during grill-me)_
+- `[Phase 3] ErrorAlertDialog migration`
+
+> Pattern: one issue per feature group for the screen splitting work. Update the feature group list after the pre-implementation grill-me session.
 
 ## Open Questions
 

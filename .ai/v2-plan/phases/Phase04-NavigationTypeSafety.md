@@ -1,6 +1,6 @@
 # Phase 4 — Navigation Type-Safety
 
-**Status:** Not started
+**Status:** Not started _(Not started → Grill-me in progress → Implementing → Complete)_
 
 ## Goal
 
@@ -39,6 +39,13 @@ _To be defined during the pre-implementation grill-me session._
 
 ### Test cases
 _To be defined during the pre-implementation grill-me session._
+
+## GitHub Issues
+
+Create milestone `Phase 4: Navigation Type-Safety` and the following issues assigned to it:
+
+- `[Phase 4] Define typed route objects and migrate NavHost`
+- `[Phase 4] Migrate all navigate() call sites and remove string routes`
 
 ## Open Questions
 

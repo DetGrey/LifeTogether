@@ -1,6 +1,6 @@
 # Phase 1 — Session Boundary Cleanup
 
-**Status:** Not started
+**Status:** Not started _(Not started → Grill-me in progress → Implementing → Complete)_
 
 ## Goal
 
@@ -46,6 +46,13 @@ _To be defined during the pre-implementation grill-me session._
 
 ### Test cases
 _To be defined during the pre-implementation grill-me session._
+
+## GitHub Issues
+
+Create milestone `Phase 1: Session Boundary Cleanup` and the following issues assigned to it:
+
+- `[Phase 1] Create SessionRepository and root coordinator`
+- `[Phase 1] Migrate AppSessionViewModel references`
 
 ## Open Questions
 

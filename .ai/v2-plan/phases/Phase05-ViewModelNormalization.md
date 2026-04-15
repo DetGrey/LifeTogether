@@ -1,6 +1,6 @@
 # Phase 5 — ViewModel Normalization
 
-**Status:** Not started
+**Status:** Not started _(Not started → Grill-me in progress → Implementing → Complete)_
 
 ## Goal
 
@@ -46,6 +46,17 @@ _To be defined during the pre-implementation grill-me session._
 
 ### Test cases
 _To be defined during the pre-implementation grill-me session._
+
+## GitHub Issues
+
+Create milestone `Phase 5: ViewModel Normalization` and the following issues assigned to it:
+
+- `[Phase 5] Normalise RecipesViewModel and RecipeDetailsViewModel`
+- `[Phase 5] Normalise FamilyViewModel`
+- `[Phase 5] Normalise ProfileViewModel`
+- `[Phase 5] Normalise GuidesViewModel`
+- `[Phase 5] Normalise remaining feature ViewModels`
+- `[Phase 5] Logging cleanup — ViewModels and screens`
 
 ## Open Questions
 

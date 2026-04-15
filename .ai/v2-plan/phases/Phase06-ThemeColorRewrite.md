@@ -1,6 +1,6 @@
 # Phase 6 — Theme & Color System Rewrite
 
-**Status:** Not started
+**Status:** Not started _(Not started → Grill-me in progress → Implementing → Complete)_
 
 ## Goal
 
@@ -36,7 +36,7 @@ _To be finalised during the pre-implementation grill-me session._
 - [ ] 6.2 Define and apply shape tokens in `Shape.kt`
 - [ ] 6.3 Define and apply typography scale in `Type.kt`
 - [ ] 6.4 Define app-specific token layer (spacing, sizing)
-- [ ] 6.5 Sweep `ui/common/` components for magic numbers and direct color references; fix
+- [ ] 6.5 Sweep all composables (feature screens and `ui/common/`) for magic numbers and direct color references; fix
 
 ## Before Starting This Phase
 
@@ -49,6 +49,13 @@ _To be defined during the pre-implementation grill-me session._
 
 ### Test cases
 _To be defined during the pre-implementation grill-me session._
+
+## GitHub Issues
+
+Create milestone `Phase 6: Theme & Color System Rewrite` and the following issues assigned to it:
+
+- `[Phase 6] Rewrite theme system — colors, shapes, typography, and token layer`
+- `[Phase 6] Sweep all composables for magic numbers and raw color references`
 
 ## Open Questions
 

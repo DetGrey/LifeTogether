@@ -1,6 +1,6 @@
 # Phase 11 — Test Suite Implementation
 
-**Status:** Not started
+**Status:** Not started _(Not started → Grill-me in progress → Implementing → Complete)_
 
 ## Goal
 
@@ -16,8 +16,8 @@ Write the test suites that the fully restructured codebase now makes possible. F
 
 - **Repository boundary tests** use real local stand-ins (e.g. in-memory Room database) — not mocked DAOs or internal persistence seams. This is the primary test layer for correctness of data logic.
 - **ViewModel tests** focus on state transitions and business interactions — given an action, assert the resulting `UiState` and emitted `UiEvent`.
-- **Composable tests** do not require app session plumbing — screens are plain composables by this point.
-- All composables must be previewable (enforced since Phase 3); this phase writes the actual test assertions.
+- **Composable tests** are `@Preview`-only — no automated UI interaction tests. Screens are plain composables by this point; previews allow quick manual visual inspection without test infrastructure overhead.
+- All composables must be previewable (enforced since Phase 3); this phase adds the actual `@Preview` declarations.
 - Writing test suites was intentionally deferred to this phase so the restructured seams are stable before investing in tests.
 
 ## Subphases
@@ -27,7 +27,7 @@ _To be finalised during the pre-implementation grill-me session._
 - [ ] 11.1 Set up test infrastructure: in-memory database, fake `SessionRepository`, fake repositories
 - [ ] 11.2 Write repository boundary tests (data/domain layer)
 - [ ] 11.3 Write ViewModel unit tests (state transition and event coverage)
-- [ ] 11.4 Write composable preview and interaction tests
+- [ ] 11.4 Write composable `@Preview` tests for manual visual inspection
 - [ ] 11.5 Audit coverage gaps; add missing tests for critical paths
 
 ## Before Starting This Phase
@@ -41,6 +41,16 @@ _To be defined during the pre-implementation grill-me session._
 
 ### Test cases
 _To be defined during the pre-implementation grill-me session._
+
+## GitHub Issues
+
+Create milestone `Phase 11: Test Suite Implementation` and the following issues assigned to it:
+
+- `[Phase 11] Set up test infrastructure`
+- `[Phase 11] Repository boundary tests`
+- `[Phase 11] ViewModel unit tests`
+- `[Phase 11] Composable @Preview tests`
+- `[Phase 11] Coverage audit and gap filling`
 
 ## Open Questions
 

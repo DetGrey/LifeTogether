@@ -1,6 +1,6 @@
 # Phase 9 — Motion, Loading & Interaction Patterns
 
-**Status:** Not started
+**Status:** Not started _(Not started → Grill-me in progress → Implementing → Complete)_
 
 ## Goal
 
@@ -42,6 +42,16 @@ _To be defined during the pre-implementation grill-me session._
 
 ### Test cases
 _To be defined during the pre-implementation grill-me session._
+
+## GitHub Issues
+
+Create milestone `Phase 9: Motion, Loading & Interaction Patterns` and the following issues assigned to it:
+
+- `[Phase 9] Implement global navigation transition`
+- `[Phase 9] Build skeleton loader component`
+- `[Phase 9] Migrate all loading screens to skeleton loaders`
+- `[Phase 9] Fix AnimatedVisibility and animateContentSize gaps`
+- `[Phase 9] Define and implement standardised UX interaction patterns`
 
 ## Open Questions
 

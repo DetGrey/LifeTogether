@@ -1,6 +1,6 @@
 # Phase 2 — Data Layer Deepening
 
-**Status:** Not started
+**Status:** Not started _(Not started → Grill-me in progress → Implementing → Complete)_
 
 ## Goal
 
@@ -45,6 +45,17 @@ _To be defined during the pre-implementation grill-me session._
 
 ### Test cases
 _To be defined during the pre-implementation grill-me session._
+
+## GitHub Issues
+
+Create milestone `Phase 2: Data Layer Deepening` and the following issues assigned to it:
+
+- `[Phase 2] Define Result wrapper and error hierarchy`
+- `[Phase 2] Data layer — <domain>` _(one per feature domain — confirm full list during grill-me)_
+- `[Phase 2] Remove passthrough use cases`
+- `[Phase 2] Logging cleanup — data and domain layers`
+
+> Pattern: one issue per feature domain for the repository deepening work. Update the domain list after the pre-implementation grill-me session.
 
 ## Open Questions
 

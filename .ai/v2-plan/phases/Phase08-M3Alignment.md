@@ -1,6 +1,6 @@
 # Phase 8 — Native Material 3 Alignment
 
-**Status:** Not started
+**Status:** Not started _(Not started → Grill-me in progress → Implementing → Complete)_
 
 ## Goal
 
@@ -46,6 +46,18 @@ _To be defined during the pre-implementation grill-me session._
 
 ### Test cases
 _To be defined during the pre-implementation grill-me session._
+
+## GitHub Issues
+
+Create milestone `Phase 8: Native Material 3 Alignment` and the following issues assigned to it:
+
+- `[Phase 8] Replace TopBar with CenterAlignedTopAppBar`
+- `[Phase 8] Replace CustomAlertDialog with AlertDialog / BasicAlertDialog`
+- `[Phase 8] Migrate ErrorAlertDialog residuals to snackbar pattern`
+- `[Phase 8] Replace CustomDatePickerDialog shell with DatePickerDialog`
+- `[Phase 8] Review and replace AddButton`
+
+> Pattern: one issue per component. Additional components may be identified during grill-me — update this list before creating issues.
 
 ## Open Questions
 

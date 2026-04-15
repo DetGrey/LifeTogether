@@ -1,6 +1,6 @@
 # Phase 7 — Shared Component Consolidation
 
-**Status:** Not started
+**Status:** Not started _(Not started → Grill-me in progress → Implementing → Complete)_
 
 ## Goal
 
@@ -45,6 +45,17 @@ _To be defined during the pre-implementation grill-me session._
 
 ### Test cases
 _To be defined during the pre-implementation grill-me session._
+
+## GitHub Issues
+
+Create milestone `Phase 7: Shared Component Consolidation` and the following issues assigned to it:
+
+- `[Phase 7] Consolidate text field components`
+- `[Phase 7] Consolidate dropdown components`
+- `[Phase 7] Consolidate date picker text field components`
+- `[Phase 7] Remove ViewModel from CustomDatePickerDialog`
+
+> Pattern: one issue per component type. Additional components may be identified during grill-me — update this list before creating issues.
 
 ## Open Questions
 
