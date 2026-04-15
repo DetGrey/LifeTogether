@@ -1,13 +1,11 @@
 package com.example.lifetogether.domain.usecase.user
 
-import com.example.lifetogether.data.repository.RemoteUserRepositoryImpl
 import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.repository.SessionRepository
 import javax.inject.Inject
 
 class LogoutUseCase @Inject constructor(
-    private val remoteUserRepositoryImpl: RemoteUserRepositoryImpl,
+    private val sessionRepository: SessionRepository,
 ) {
-    suspend operator fun invoke(uid: String, familyId: String?): ResultListener {
-        return remoteUserRepositoryImpl.logout(uid, familyId)
-    }
+    suspend operator fun invoke(): ResultListener = sessionRepository.signOut()
 }

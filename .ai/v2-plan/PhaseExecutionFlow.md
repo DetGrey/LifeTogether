@@ -82,11 +82,13 @@ Required issue rule:
 Only after the phase file, milestone, and issues are ready:
 
 - pick the first issue
+- move that issue to `In Progress` on the **LifeTogether Board** immediately before doing implementation work
 - create a branch from `architecture-improvement` using the branch format from [GitHubWorkflow.md](GitHubWorkflow.md)
 - begin coding from the issue content that was already agreed and written down
 
 Required outcome:
 
+- implementation never starts on an issue that is still in `Todo`/not started on the board
 - coding starts from an issue branch, not directly from `architecture-improvement`
 - the issue already contains the implementation context agreed during the grill-me phase
 
@@ -100,7 +102,7 @@ For each phase, the flow is:
 2. create the milestone and represent the phase on the project board
 3. grill-me the final issue breakdown
 4. create the issues from the phase file and connect them to the milestone and project
-5. create the first issue branch and start coding
+5. move the active issue to `In Progress`, create the issue branch, and start coding
 
 ---
 

@@ -7,13 +7,15 @@ import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
+import com.example.lifetogether.domain.repository.SessionRemoteUserRepository
 import com.example.lifetogether.domain.repository.UserRepository
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class RemoteUserRepositoryImpl @Inject constructor(
     private val firebaseAuthDataSource: FirebaseAuthDataSource,
     private val firestoreDataSource: FirestoreDataSource,
-) : UserRepository {
+) : UserRepository, SessionRemoteUserRepository {
     suspend fun login(
         user: User,
     ): AuthResultListener {
@@ -48,11 +50,19 @@ class RemoteUserRepositoryImpl @Inject constructor(
         }
     }
 
-    suspend fun logout(
+    override suspend fun logout(
         uid: String,
         familyId: String?,
     ): ResultListener {
         return firebaseAuthDataSource.logout(uid, familyId)
+    }
+
+    override suspend fun fetchUserInformation(uid: String): AuthResultListener {
+        return firestoreDataSource.fetchUserInformation(uid)
+    }
+
+    override fun observeUserInformation(uid: String): Flow<AuthResultListener> {
+        return firestoreDataSource.userInformationSnapshotListener(uid)
     }
 
     suspend fun changeName(

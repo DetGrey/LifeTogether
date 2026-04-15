@@ -46,12 +46,10 @@ class ProfileViewModel @Inject constructor(
 
     // ---------------------------------------------------------------- LOGOUT
     fun logout(
-        uid: String,
-        familyId: String?,
         onSuccess: () -> Unit,
     ) {
         viewModelScope.launch {
-            val result = logoutUseCase.invoke(uid, familyId)
+            val result = logoutUseCase.invoke()
             if (result is ResultListener.Success) {
                 println("ProfileViewModel: Logout successful")
                 onSuccess()

@@ -90,11 +90,30 @@ class FirestoreDataSource @Inject constructor() {
                 Log.d(TAG, "Snapshot of userInformation: loaded")
                 if (userInformation != null) {
                     trySend(AuthResultListener.Success(userInformation)).isSuccess
+                } else {
+                    trySend(AuthResultListener.Failure("User not found")).isSuccess
                 }
+            } else {
+                trySend(AuthResultListener.Failure("User not found")).isSuccess
             }
         }
         // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.
         awaitClose { listenerRegistration.remove() }
+    }
+
+    suspend fun fetchUserInformation(uid: String): AuthResultListener {
+        return try {
+            val snapshot = db.collection(Constants.USER_TABLE).document(uid).get().await()
+            val userInformation = snapshot.toObject(UserInformation::class.java)
+            if (userInformation != null) {
+                AuthResultListener.Success(userInformation)
+            } else {
+                AuthResultListener.Failure("User not found")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "fetchUserInformation failed for uid=$uid", e)
+            AuthResultListener.Failure("Error: ${e.message}")
+        }
     }
 
     suspend fun uploadUserInformation(userInformation: UserInformation): ResultListener {
