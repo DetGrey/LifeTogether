@@ -57,7 +57,7 @@ Change-control rule:
 - before replacing a custom component, first check whether the desired size, color, shape, spacing, or typography can be moved into shared theme tokens or centralized styling instead
 - if a native Material 3 component can match the desired result through shared theme or design-token configuration, that should usually be preferred long term
 
-Decision made on 2026-04-15:
+Decision made:
 
 - prefer solving visual consistency at the theme or design-token level before creating, keeping, or replacing custom wrappers
 - component policy order should be:
@@ -118,11 +118,11 @@ Current responsibilities inside `app/src/main/java/com/example/lifetogether/ui/v
 
 This is a sign that the class is acting as a mixed app session holder, app coordinator, observer manager, and shared UI convenience object.
 
-Decision made on 2026-04-15:
+Decision made:
 
-- app-wide convenience state such as `itemCount` should be reviewed and moved out of the session boundary unless it is truly durable global app state
-- feature-local or screen-local counts should live with the feature that owns them
-- shared state should have a clearly named owner with a narrow responsibility
+- `AppSessionViewModel` (and ViewModels in general) must NEVER be passed as parameters to other screens or composables.
+- App-wide state (like Auth, Family ID, User Info) must live in a Singleton `SessionRepository`.
+- Feature ViewModels that need this data must inject the `SessionRepository` via Hilt, completely decoupling the UI tree from session management.
 
 ### 2. Screen previews are blocked by ViewModel coupling
 
@@ -164,7 +164,7 @@ Examples to review first:
 
 These are not automatically wrong, but each should justify why native Material 3 behavior is not enough.
 
-Decision made on 2026-04-15:
+Decision made:
 
 - date-picker dialog UI state should not use a `ViewModel` by default when the state is only ephemeral UI element state
 - the default preference is remembered local UI state or a plain UI state holder close to the composable
@@ -193,7 +193,7 @@ There are also examples that should be migrated later:
 
 The codebase currently uses many `collectAsState()` calls in Android UI. We should consider standardizing Android-specific screen collection to `collectAsStateWithLifecycle()` where appropriate, while keeping platform-agnostic composables free of Android-only requirements.
 
-Decision made on 2026-04-15:
+Decision made:
 
 - Android screen and route layers should prefer `collectAsStateWithLifecycle()` by default
 - plain reusable composables should stay free of Android-only collection APIs
@@ -207,11 +207,33 @@ There are many `println(...)` calls across screens and ViewModels. They should b
 - kept useful for future debugging, but standardized
 - reduced when they are noisy or low-value
 
-Decision made on 2026-04-15:
+Decision made:
 
 - `println(...)` should generally be replaced with `Log.d(...)`
 - useful debug logging should not be removed completely
 - logging should stay available for future troubleshooting, but follow a consistent Android logging style
+
+### 8. The Data/Domain layer is shallow and tightly coupled
+
+Observed example:
+- `LocalListRepositoryImpl` acts primarily as a passthrough to `LocalDataSource`.
+- `LocalDataSource` contains a massive `toItem` mapping function that handles every single entity type in the app (Groceries, Recipes, Albums, Guides, etc.).
+
+This creates high coupling, makes the data source a god-object, and makes the core logic very hard to test without mocking internal database implementations.
+
+Decision made:
+- Move toward a "Ports and Adapters" architecture.
+- Repositories must become "deep modules" that encapsulate their mapping logic and data source orchestration.
+- Split data sources and mapping logic by feature domain rather than keeping one centralized `LocalDataSource`.
+
+### 9. Lack of reliable background synchronization
+
+Observed example:
+- Currently, ViewModels or Data Sources handle network calls directly. If a user makes a change offline or closes the app before a network save completes, that data might not reliably reach Firestore.
+
+Decision made on 2026-04-15:
+- Introduce a dedicated "Sync Layer" (e.g., using `WorkManager` or a centralized background service).
+- The UI should never be responsible for orchestrating remote data pushes or pulling background updates.
 
 ## Recommendation: What To Do With `AppSessionViewModel`
 
@@ -252,7 +274,7 @@ Chosen implementation:
 
 - an activity-scoped root `ViewModel`
 
-Decision made on 2026-04-15:
+Decision made:
 
 - observer coordination should live in a thin app-level coordinator implemented as an activity-scoped root `ViewModel`
 - it should not live inside feature screens
@@ -269,11 +291,10 @@ Examples:
 - route composables can read session state once and pass primitives or trigger setup functions
 - some feature ViewModels may inject a session repository directly if that reduces parameter threading and keeps the dependency explicit
 
-Decision made on 2026-04-15:
+Decision made:
 
-- default rule: route composables read shared session state and pass only the needed values such as `uid` or `familyId`
-- exception rule: a feature `ViewModel` may inject the session repository directly when it genuinely needs to observe or react to ongoing session changes itself
-- avoid replacing explicit inputs with hidden global dependencies by default
+- Feature ViewModels must inject the `SessionRepository` directly via Hilt to read or observe session state (like `familyId` or `uid`).
+- Route composables and Screen composables should no longer have any knowledge of session state orchestration.
 
 #### D. UI composables
 
@@ -309,14 +330,27 @@ Responsibility split agreed on 2026-04-15:
   - guide progress sync orchestration
   - app-start reactions driven by session changes, such as token sync triggers
 
-Decision made on 2026-04-15:
+Decision made:
 
 - FCM token syncing should sit behind a dedicated service or use case boundary
 - the root coordinator should trigger it, not own the full syncing logic itself
 - guide progress syncing should also sit behind a dedicated sync boundary
 - the root coordinator should trigger guide progress sync behavior rather than own the sync implementation details
 - auth observation and current session state should be exposed directly by the session repository or manager
-- the root coordinator should react to session changes rather than act as the primary source of truth for session state
+- the root coordinator should react to session changes rather than act as the primary source of truth for xsession state
+
+## Data-to-UI Communication Direction
+
+Currently, data flows up to the UI using a mix of custom listener interfaces (`ResultListener`, `ListItemsResultListener`), Kotlin `Flow`, and raw `try/catch` blocks. As we deepen the repository layer, we need a safer, more predictable way to hand data to the ViewModels.
+
+Industry Standard Context:
+Modern Kotlin/Android architecture favors "Functional Error Handling." Throwing exceptions for expected business failures (like a network timeout) creates hidden control flows and brittle `try/catch` blocks in the UI layer. Instead, expected failures should be caught in the data layer and returned as safe, explicitly typed data objects.
+
+Decision made:
+- Standardize on a functional `Result` wrapper (e.g., a sealed class like `Result<T, Error>`) for all data/domain operations.
+- The Data/Domain layer must never throw raw exceptions for expected failures. It must catch them and return a clean `Result.Failure`.
+- ViewModels will consume these `Result` types, ensuring that the UI explicitly handles both success and failure states safely and consistently.
+- mandate a strict "Single Source of Truth" (Offline-First) pattern for data reads. The UI must only ever observe the local database (via `Flow`). When the UI requests a data refresh, the repository fetches from the network, saves to the local database, and finishes. The UI will automatically update via its ongoing observation of the local database. ViewModels must never consume network data directly.
 
 ## Native Android / Material 3 Audit Candidates
 
@@ -334,12 +368,30 @@ These are the first places to discuss replacement or simplification:
 
 ## Top App Bar Direction
 
-Decision made on 2026-04-15:
+Decision made:
 
 - `CenterAlignedTopAppBar` should be the default Material 3 replacement target for current `TopBar` usage
 - exceptions are allowed when a screen genuinely needs a different top app bar pattern
 - current `subText` should by default move into screen content below the app bar instead of being forced into the app bar itself
 - current left and right `TopBar` icons should by default map to native `navigationIcon` and `actions` slots
+
+## Navigation Direction
+
+Current Compose navigation often relies on string-based routes and string concatenation for arguments, which is brittle and prone to runtime crashes if a typo occurs or an argument is missing.
+
+Decision made on 2026-04-15:
+- All refactored features must migrate to the official Compose Type-Safe Navigation using Kotlin Serialization.
+- Routes must be defined as data classes or objects (e.g., `data class RecipeDetailsRoute(val recipeId: String)`).
+- String-based routes are considered legacy and should not be used for new or refactored navigation graphs.
+
+## Motion, Loading, and Transitions Direction
+
+Without standard guidelines, Compose UI elements can either instantly "pop" into existence (which feels cheap) or rely on full-screen blocking spinners for every network call (which feels slow).
+
+Decision made on 2026-04-15:
+- **No Harsh Popping:** UI elements that appear/disappear (e.g., dropdowns, inline error messages, expanding cards) must use `AnimatedVisibility` or `animateContentSize` by default.
+- **Standardized Loading:** Blocking, full-screen loading spinners are banned except for critical/unrecoverable paths. The app will default to Skeleton Loaders (shimmer effects) for fetching data, and inline progress indicators for saving data.
+- **Universal Navigation Transition:** The app will use one standard, global navigation transition (e.g., a subtle slide + crossfade using Material 3 easing curves) rather than ad-hoc animations per screen. Shared Element Transitions are explicitly avoided to keep maintenance simple.
 
 ## ViewModel Cleanup Direction
 
@@ -352,8 +404,10 @@ We should gradually normalize ViewModels around these rules:
 - avoid screen code mutating ViewModel fields directly
 - keep Android framework types out of reusable logic unless truly needed
 - move business logic into repositories or use cases only when it is genuinely reusable or complex
+- delete "passthrough" Use Cases that do nothing but call a single repository method. ViewModels should call the deepened repositories directly for simple data fetching/saving. Use Cases should be strictly reserved for complex business logic, combining multiple repositories, or logic that is heavily reused across multiple ViewModels.
+- separate durable screen state from one-off UI events. ViewModels should expose a `StateFlow<UiState>` for persistent data (like lists and loading spinners) and a separate `Channel<UiEvent>` (exposed as a `Flow`) for fire-and-forget actions (like navigation triggers or showing a Snackbar) to avoid state-clearing boilerplate and rotation bugs.
 
-Decision made on 2026-04-15:
+Decision made:
 
 - refactored ViewModels should expose one main screen state object by default
 - public mutable fields such as dialog flags, raw error strings, ad hoc IDs, and filter selections should be reduced significantly
@@ -387,6 +441,8 @@ Desired end state:
 - ViewModel tests focus on state transitions and business interactions
 - reusable UI tests do not require app session plumbing
 - all composables should be previewable unless there is a strong documented reason they cannot be
+- data/domain layer tests verify behavior at the public repository boundary using local stand-ins (like an in-memory database), rather than brittle unit tests that mock internal DAOs. 
+  - (Note: Restructuring the code to support this boundary testing is the immediate priority; writing the actual test suites will happen in a later phase).
 
 Current blockers to remove later:
 
@@ -396,7 +452,7 @@ Current blockers to remove later:
 
 ## Default Error Handling Direction
 
-Decision made on 2026-04-15:
+Decision made:
 
 - validation and missing-input problems should default to inline error presentation near the relevant field or form
 - non-blocking operation failures should default to a snackbar or banner-style message instead of a blocking dialog
@@ -419,9 +475,18 @@ Important constraint:
 - avoid replacing repeated screen code with a hidden global mutable dependency by default
 - a dedicated app-wide message bus is possible, but the default preference is a shared root snackbar host plus a reusable collection helper so the wiring stays explicit
 
+## UI Interaction Patterns Direction
+
+While visual consistency is handled by Material 3 and shared theme tokens, we also need to ensure interaction UX is consistent. 
+Common actions (such as saving, deleting, or loading) should feel and behave identically across all features so the user experience is predictable.
+
+Decision made:
+- We will standardize interaction patterns across the app.
+- The specific rules for each interaction (e.g., whether to use swipe-to-delete vs. an overflow menu, or skeleton loaders vs. spinners) are intentionally deferred. We will define these step-by-step in future UX discussions.
+
 ## Shared Theme And Token Direction
 
-Decision made on 2026-04-15:
+Decision made:
 
 - the plan should add a small app-specific token layer on top of `MaterialTheme`
 - that token layer should be the default place for shared sizing, spacing, shape, and similar visual defaults that do not justify a custom wrapper on their own
@@ -429,10 +494,11 @@ Decision made on 2026-04-15:
 - the first token layer should stay intentionally small and focus on the defaults already causing wrapper duplication
 - initial token candidates include spacing, corner radius or shape, common field height, and shared app-bar or content padding values
 - colors should continue to come primarily from `MaterialTheme.colorScheme` unless a strong reason appears to introduce additional custom color tokens later
+- adopt a strict "No Magic Numbers" policy for Compose styling. Hardcoded `.dp` values for sizing/spacing and raw `Color` objects inside feature screens are prohibited. All spacing, sizing, and colors must be explicitly pulled from the `MaterialTheme` or the shared app token layer to guarantee reusability and visual consistency.
 
 ## Proposed Workstreams
 
-Decision made on 2026-04-15:
+Decision made:
 
 - first implementation phase should be session and observer boundary cleanup
 - second phase should be route and screen split for previewability and testability
@@ -448,12 +514,16 @@ Use this checklist later when a specific screen is selected for refactor.
 - screen composable accepts plain state and callbacks
 - screen composable has real preview support unless a strong documented exception exists
 - Android route or screen-entry layer prefers `collectAsStateWithLifecycle()`
-- screen no longer takes `AppSessionViewModel` as a parameter
+- screen no longer takes `AppSessionViewModel` (or any other ViewModel) as a parameter.
+- feature ViewModel injects `SessionRepository` directly if it needs session context.
 - feature `ViewModel` exposes one main screen state object by default
 - transient events are handled explicitly instead of many scattered mutable flags
 - shared UI uses native Material 3 plus theme tokens first, then one canonical wrapper if needed
 - custom UI is only kept, replaced, or removed with explicit user approval
 - logging uses consistent Android logging style such as `Log.d(...)` instead of scattered `println(...)`
+- route navigation is fully type-safe using Kotlin Serialization (no string-based navigation)
+- screen uses Skeleton Loaders or inline progress indicators instead of blocking full-screen spinners.
+- appearing/disappearing UI elements use `AnimatedVisibility` or `animateContentSize` (no harsh popping).
 
 ## Initial Pilot Targets
 
@@ -566,7 +636,7 @@ Target:
 - one canonical date picker path
 - clear naming and folder structure
 
-Decision made on 2026-04-15:
+Decision made:
 
 - duplicated shared UI components should be merged into one canonical component or removed
 - parallel shared variants should not remain unless they have a clearly different responsibility
@@ -617,11 +687,14 @@ Deferred intentionally:
 - no additional feature-family priority is being locked yet
 - this should be decided much later, after the rules and first pilots have proved themselves
 
+### 4. Specific UX Interaction Rules
+
+Deferred intentionally:
+- We have agreed to standardize interaction patterns (deleting, saving, loading), but the exact UX rules and flows for each action will be decided step-by-step at a later date.
+
 ## Decisions Made
 
 ### Decision 1. Session architecture
-
-Decision made on 2026-04-15:
 
 - use a hybrid model:
   - repository or manager for durable session state
@@ -629,8 +702,6 @@ Decision made on 2026-04-15:
   - feature ViewModels consume only the smallest needed session input
 
 ### Decision 2. Native UI strictness
-
-Decision made on 2026-04-15:
 
 - use a moderate native-first standard
 - prefer native Material 3 by default
@@ -646,12 +717,59 @@ Possible modes:
 
 ### Decision 3. Preview standard
 
-Decision made on 2026-04-15:
-
 - previewability is a hard rule for refactored screens and composables unless there is a very strong documented exception
 - route composables may remain Android-specific and non-previewable
 - screen composables should accept plain state and callbacks and should have real previews
 - removing `AppSessionViewModel` from screen parameters is part of achieving this goal
+
+### Decision 4. Data/Domain Architecture
+
+- Repositories must act as "deep modules" using the Ports & Adapters pattern, hiding mapping complexity and local/remote arbitration from the rest of the app. The monolithic `LocalDataSource` will be split by feature domain.
+
+### Decision 5. Core Logic Testing Strategy
+
+- Data layer testing will occur at the repository boundary using real local stand-ins (e.g., in-memory databases) instead of mocking DAOs.
+
+### Decision 6. Interaction Pattern Consistency
+
+- UX interaction patterns for common actions will be standardized across all features. Specific rules are deferred to a later phase.
+
+### Decision 7. Functional Error Handling
+
+- All domain/data layer operations will return explicit `Result` wrappers (e.g., `Result<T, DomainError>`) rather than throwing exceptions for expected failures, eliminating `try/catch` blocks in ViewModels.
+
+### Decision 8. The Role of Use Cases
+
+- Simple "passthrough" Use Cases will be deleted. The Domain Use Case layer is optional and reserved strictly for complex or reused business logic. ViewModels are permitted to consume deepened repositories directly.
+
+### Decision 9. ViewModel State and Event Separation
+
+- Adopt the "Community Standard" for UI state. ViewModels will use a two-pipe system: `StateFlow` for persistent UI state and a `Channel`/`Flow` for one-off events. One-off events will *not* be folded into the `UiState` object.
+
+### Decision 10. Strict "No Magic Numbers" UI Policy
+
+- Feature screens and reusable components must pull all visual styling (spacing, sizing, colors) from the theme or token layer. Hardcoded `.dp` and raw `Color` values are banned in feature code to ensure UI reusability.
+
+### Decision 11. Single Source of Truth (Offline-First)
+
+- The local database is the single source of truth for the UI. Network calls only update the local database, and the UI reacts exclusively to local database changes. This guarantees offline support and instant UI loading times when cached data exists.
+
+### Decision 12. Dedicated Sync Manager
+
+- Remote data synchronization (pushing local changes to Firestore and pulling remote updates) will be handled by a dedicated background Sync Manager. ViewModels will only request data from the local repository, completely decoupling the UI lifecycle from network reliability.
+
+### Decision 13. Type-Safe Navigation
+
+- String-based navigation routes are deprecated for refactored code. All feature navigation must use Type-Safe Navigation with Kotlin Serialization to ensure compile-time safety for route arguments.
+
+### Decision 14. Standardized Motion and Loading
+
+- The app will use a standard global navigation transition. Full-screen blocking spinners are banned in favor of skeleton loaders and inline progress. UI changes must use basic Compose visibility animations to prevent harsh popping. Shared element transitions are explicitly excluded.
+
+### Decision 15. Strict Session Dependency Injection
+
+- Passing ViewModels between screens is banned to fix Compose Previews and reduce coupling. Session state will be provided exclusively by injecting a global `SessionRepository` into feature ViewModels.
+
 
 ## Initial Recommendation
 
