@@ -17,6 +17,28 @@ The full plan lives in `.ai/v2-plan/`:
 
 All v2 work lives on the `architecture-improvement` branch. **Do not target `master` for any v2 PRs.** Phase issue branches are created from `architecture-improvement` and merged back into it. `master` is only touched when the entire v2 arc is complete.
 
+## Mandatory Checklist — Before Writing Any Code For an Issue
+
+**Every item below is required before the first line of implementation code is written. No exceptions.**
+
+- [ ] The issue exists on GitHub and is assigned to the correct milestone
+- [ ] The issue is moved to **In Progress** on the LifeTogether Board
+- [ ] The issue branch is created and checked out locally (not just mentally planned)
+- [ ] The phase file in `.ai/v2-plan/phases/` has been read and the relevant subphase is understood
+
+## Mandatory Checklist — After the Last Commit on an Issue
+
+**Every item below is required after implementation is complete. Do not wait to be asked.**
+
+- [ ] Build passes — never commit uncompiled code
+- [ ] Phase file updated if any implementation decisions diverged from what was written there
+- [ ] All completed **Subphase Checklist** and **Acceptance Criteria** items are checked in the issue body (`- [x]`). Test / Verification items are left unchecked — those are for the user.
+- [ ] Issue moved to **In Review** on the LifeTogether Board
+- [ ] Branch pushed to remote
+- [ ] PR opened targeting `architecture-improvement` with `Relates to #N`
+
+See [GitHubWorkflow.md](.ai/v2-plan/GitHubWorkflow.md) and [PhaseExecutionFlow.md](.ai/v2-plan/PhaseExecutionFlow.md) for full detail and exact commands.
+
 ## Before Starting Any Phase
 
 1. Open the phase file in `.ai/v2-plan/phases/`
