@@ -70,14 +70,16 @@ A phase is complete when **all** of the following are true — none can happen w
 ## Daily Execution Workflow
 
 1. **Pick up an issue:** Go to the LifeTogether Board, pick an issue from the current milestone, and move it to **In Progress**.
-2. **Branch:** Create a branch from `architecture-improvement` using the format `<issue-id>-<short-description>` — e.g. `git checkout -b 15-session-setup`
+2. **Branch + issue connection:** Connect the issue to its branch before coding.
+   - Preferred: create the branch from the issue so GitHub tracks it in Development (`gh issue develop <issue-number> --base architecture-improvement --name <branch-name>`)
+   - If the branch already exists or linking cannot be created, add explicit branch and PR references in the issue body and keep them updated.
 3. **Micro-commits:** Write code and commit using the convention `[Phase N] Short description`.
 4. **Pull Request:** Open a PR targeting `architecture-improvement`.
    - Do not write `Closes #N` unless the PR completes the *entire* issue.
    - Instead write: `Relates to #N` or `Completes SessionRepository setup for #N`.
    - **Never merge a PR without explicit user approval first.**
-5. **Tick checkboxes:** As PRs are merged, manually tick the checkboxes in the issue body.
-6. **Close:** Once all checkboxes are ticked, close the issue.
+5. **Tick checkboxes:** When an issue is completed, edit the issue body so completed checklist items are checked (`- [x]`) before closing.
+6. **Close:** Once all relevant checkboxes are ticked, close the issue.
    - **Never close an issue or milestone without explicit user approval first.**
    - A phase is only complete when all issues are closed, all PRs are merged, and the milestone is closed — see Definition of Complete above.
 
@@ -136,8 +138,12 @@ gh project item-create 2 --owner DetGrey --title "V2 Phase 1: Session Boundary C
 # See what is open
 gh issue list
 
-# Create your branch from architecture-improvement — use the issue ID (e.g. issue #15)
-git checkout -b 15-session-setup
+# Preferred: create and link the issue branch from GitHub issue development
+gh issue develop 15 --base architecture-improvement --name V2/15-session-setup
+git checkout V2/15-session-setup
+
+# Fallback: if needed, create branch manually and then record the branch in issue body
+git checkout -b V2/15-session-setup
 
 # Commit using the convention
 git commit -m "[Phase 1] Add SessionRepository interface and Hilt singleton"
@@ -146,7 +152,7 @@ git commit -m "[Phase 1] Add SessionRepository interface and Hilt singleton"
 ### 4. Update Issue Checkboxes
 
 ```bash
-# Opens the issue in your terminal editor
+# Opens the issue in your terminal editor (mark completed checklist items as - [x])
 gh issue edit 15
 ```
 
