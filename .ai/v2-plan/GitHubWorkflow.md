@@ -18,7 +18,7 @@ Before using the workflow below for any active phase, follow the required startu
 
 3. **Issues (fit the granularity to the nature of the phase):** Each milestone contains multiple issues. The right number and granularity varies by phase — some phases call for one issue per feature domain, others for one per screen, others for one per component. A single pattern forced across all phases creates either too many micro-issues or too few meaningful ones.
    - The specific issue list for each phase is defined in that phase's `## GitHub Issues` section, confirmed and updated after the pre-implementation grill-me session.
-   - Naming convention: `[Phase N] <Title>` — e.g. `[Phase 1] Create SessionRepository and root coordinator`
+   - Naming convention: `[Phase N] [N.X–N.Y] <Title>` — e.g. `[Phase 1] [1.1] Create SessionRepository and root coordinator` or `[Phase 1] [1.2–1.5] Create root coordinator and observer lifecycle migration`. Include the subphase ID(s) so the intended implementation order is visible directly from the issue title.
    - Issue body: paste the relevant subphase checklist from the phase file as Markdown checkboxes (`- [ ]`)
 
 4. **GitHub Project Board:** Execution tracking must be connected to the **LifeTogether Board** project (`DetGrey/projects/2`). This provides the kanban view across all active work.
@@ -70,9 +70,11 @@ A phase is complete when **all** of the following are true — none can happen w
 ## Daily Execution Workflow
 
 1. **Pick up an issue:** Go to the LifeTogether Board, pick an issue from the current milestone, and move it to **In Progress**.
-2. **Branch + issue connection:** Connect the issue to its branch before coding.
+2. **Branch + issue connection — MUST happen before any code is written.**
    - Preferred: create the branch from the issue so GitHub tracks it in Development (`gh issue develop <issue-number> --base architecture-improvement --name <branch-name>`)
+   - If the issue depends on a previous branch that is not yet merged into `architecture-improvement`, use that branch as the base instead and note the dependency explicitly in the issue body.
    - If the branch already exists or linking cannot be created, add explicit branch and PR references in the issue body and keep them updated.
+   - **Do not write a single line of implementation code until the issue branch exists and is checked out.**
 3. **Micro-commits:** Write code and commit using the convention `[Phase N] Short description`.
 4. **Pull Request:** Open a PR targeting `architecture-improvement`.
    - Do not write `Closes #N` unless the PR completes the *entire* issue.

@@ -85,13 +85,15 @@ Only after the phase file, milestone, and issues are ready:
 - move that issue to `In Progress` on the **LifeTogether Board** immediately before doing implementation work
 - connect the issue to its implementation branch (prefer GitHub-linked issue branch flow before coding; otherwise add explicit branch + PR references in the issue body)
 - create a branch from `architecture-improvement` using the branch format from [GitHubWorkflow.md](GitHubWorkflow.md)
-- begin coding from the issue content that was already agreed and written down
+  - if the issue depends on a previous issue branch not yet merged into `architecture-improvement`, use that branch as the base and note the dependency in the issue body
+- **create the branch and check it out BEFORE writing any implementation code** — not after
 
 Required outcome:
 
 - implementation never starts on an issue that is still in `Todo`/not started on the board
 - the active issue has an explicit branch connection for traceability
 - coding starts from an issue branch, not directly from `architecture-improvement`
+- **no implementation code is written before the issue branch exists** — this rule has no exceptions
 - the issue already contains the implementation context agreed during the grill-me phase
 
 ---
