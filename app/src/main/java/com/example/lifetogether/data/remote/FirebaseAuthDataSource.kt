@@ -74,6 +74,8 @@ class FirebaseAuthDataSource@Inject constructor(
         }
     }
 
+    fun currentUserUid(): String? = FirebaseAuth.getInstance().currentUser?.uid
+
     suspend fun logout(
         uid: String,
         familyId: String?,

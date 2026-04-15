@@ -13,7 +13,7 @@ Before using the workflow below for any active phase, follow the required startu
 1. **Source of truth (`.ai/v2-plan/` files):** All architectural decisions, phase scope, and subphase checklists live here. If anything changes, update these files first.
 
 2. **Milestones (one per phase):** Each phase file maps directly to a GitHub Milestone.
-   - Naming: `Phase N: <Phase Name>` — e.g. `Phase 1: Session Boundary Cleanup`
+   - Naming: `V2 Phase N: <Phase Name>` — e.g. `V2 Phase 1: Session Boundary Cleanup`
    - Full phase list: see [ImplementationPlan.md](ImplementationPlan.md)
 
 3. **Issues (fit the granularity to the nature of the phase):** Each milestone contains multiple issues. The right number and granularity varies by phase — some phases call for one issue per feature domain, others for one per screen, others for one per component. A single pattern forced across all phases creates either too many micro-issues or too few meaningful ones.
@@ -59,6 +59,7 @@ A phase is complete when **all** of the following are true — none can happen w
 
 - [ ] All subphase checkboxes in the phase file are ticked
 - [ ] All acceptance criteria are met
+- [ ] `Architecture.md` or another current-state explainer is updated when the phase changed the project's actual architecture or implementation reality
 - [ ] All PRs for this phase are merged into `architecture-improvement`
 - [ ] All issues in the milestone are closed
 - [ ] The milestone is closed
@@ -69,14 +70,16 @@ A phase is complete when **all** of the following are true — none can happen w
 ## Daily Execution Workflow
 
 1. **Pick up an issue:** Go to the LifeTogether Board, pick an issue from the current milestone, and move it to **In Progress**.
-2. **Branch:** Create a branch from `architecture-improvement` using the format `<issue-id>-<short-description>` — e.g. `git checkout -b 15-session-setup`
+2. **Branch + issue connection:** Connect the issue to its branch before coding.
+   - Preferred: create the branch from the issue so GitHub tracks it in Development (`gh issue develop <issue-number> --base architecture-improvement --name <branch-name>`)
+   - If the branch already exists or linking cannot be created, add explicit branch and PR references in the issue body and keep them updated.
 3. **Micro-commits:** Write code and commit using the convention `[Phase N] Short description`.
 4. **Pull Request:** Open a PR targeting `architecture-improvement`.
    - Do not write `Closes #N` unless the PR completes the *entire* issue.
    - Instead write: `Relates to #N` or `Completes SessionRepository setup for #N`.
    - **Never merge a PR without explicit user approval first.**
-5. **Tick checkboxes:** As PRs are merged, manually tick the checkboxes in the issue body.
-6. **Close:** Once all checkboxes are ticked, close the issue.
+5. **Tick checkboxes:** When an issue is completed, edit the issue body so completed checklist items are checked (`- [x]`) before closing.
+6. **Close:** Once all relevant checkboxes are ticked, close the issue.
    - **Never close an issue or milestone without explicit user approval first.**
    - A phase is only complete when all issues are closed, all PRs are merged, and the milestone is closed — see Definition of Complete above.
 
@@ -104,7 +107,7 @@ For every phase, use this order before writing code:
 The `gh-milestone` extension is already installed:
 
 ```bash
-gh milestone create --title "Phase 1: Session Boundary Cleanup"
+gh milestone create --title "V2 Phase 1: Session Boundary Cleanup"
 ```
 
 Create milestones one at a time as you are ready to start each phase — no need to create all upfront.
@@ -113,7 +116,7 @@ Create milestones one at a time as you are ready to start each phase — no need
 
 ```bash
 # Create the issue
-gh issue create --title "[Phase 1] Create SessionRepository and root coordinator" --milestone "Phase 1: Session Boundary Cleanup"
+gh issue create --title "[Phase 1] Create SessionRepository and root coordinator" --milestone "V2 Phase 1: Session Boundary Cleanup"
 
 # Add it to the LifeTogether Board (project number 2)
 gh project item-add 2 --owner DetGrey --url "https://github.com/DetGrey/LifeTogether/issues/<issue-number>"
@@ -126,7 +129,7 @@ The CLI will prompt for a body when creating the issue — paste the relevant su
 Use this when the milestone must be visible on the project board before the real issues exist:
 
 ```bash
-gh project item-create 2 --owner DetGrey --title "Phase 1: Session Boundary Cleanup" --body "Milestone placeholder for Phase 1. Replace draft visibility with real milestone issues as they are created."
+gh project item-create 2 --owner DetGrey --title "V2 Phase 1: Session Boundary Cleanup" --body "Milestone placeholder for Phase 1. Replace draft visibility with real milestone issues as they are created."
 ```
 
 ### 3. Branch and Commit
@@ -135,8 +138,12 @@ gh project item-create 2 --owner DetGrey --title "Phase 1: Session Boundary Clea
 # See what is open
 gh issue list
 
-# Create your branch from architecture-improvement — use the issue ID (e.g. issue #15)
-git checkout -b 15-session-setup
+# Preferred: create and link the issue branch from GitHub issue development
+gh issue develop 15 --base architecture-improvement --name V2/15-session-setup
+git checkout V2/15-session-setup
+
+# Fallback: if needed, create branch manually and then record the branch in issue body
+git checkout -b V2/15-session-setup
 
 # Commit using the convention
 git commit -m "[Phase 1] Add SessionRepository interface and Hilt singleton"
@@ -145,7 +152,7 @@ git commit -m "[Phase 1] Add SessionRepository interface and Hilt singleton"
 ### 4. Update Issue Checkboxes
 
 ```bash
-# Opens the issue in your terminal editor
+# Opens the issue in your terminal editor (mark completed checklist items as - [x])
 gh issue edit 15
 ```
 

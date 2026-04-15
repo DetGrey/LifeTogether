@@ -234,17 +234,12 @@ fun ProfileScreen(
             ProfileViewModel.ProfileConfirmationType.LOGOUT -> ConfirmationDialog(
                 onDismiss = { profileViewModel.closeConfirmationDialog() },
                 onConfirm = {
-                    userInformation?.uid?.let { uid ->
-                        profileViewModel.logout(
-                            uid,
-                            userInformation!!.familyId,
-                            onSuccess = {
-                                appSessionViewModel.onSignOut()
-                                profileViewModel.closeConfirmationDialog()
-                                appNavigator?.navigateToHome()
-                            },
-                        )
-                    }
+                    profileViewModel.logout(
+                        onSuccess = {
+                            profileViewModel.closeConfirmationDialog()
+                            appNavigator?.navigateToHome()
+                        },
+                    )
                 },
                 dialogTitle = "Logout",
                 dialogMessage = "Are you sure you want to logout?",

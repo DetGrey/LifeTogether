@@ -7,6 +7,7 @@ import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.model.family.FamilyMember
+import com.example.lifetogether.domain.repository.SessionLocalUserRepository
 import com.example.lifetogether.domain.repository.UserRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -15,7 +16,7 @@ import javax.inject.Inject
 
 class LocalUserRepositoryImpl @Inject constructor(
     private val localDataSource: LocalDataSource,
-) : UserRepository {
+) : UserRepository, SessionLocalUserRepository {
     fun getUserInformation(uid: String): Flow<AuthResultListener> {
         return localDataSource.getUserInformation(uid).map { user ->
             try {
@@ -88,7 +89,7 @@ class LocalUserRepositoryImpl @Inject constructor(
         }
     }
 
-    fun removeSavedUserInformation(): ResultListener {
+    override fun removeSavedUserInformation(): ResultListener {
         return localDataSource.clearUserInformationTables()
     }
 }
