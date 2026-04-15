@@ -72,7 +72,6 @@ fun TipTrackerScreen(
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     ObserverUpdatingText(
-                        appSessionViewModel = appSessionViewModel,
                         keys = setOf(ObserverKey.TIP_TRACKER),
                     )
 

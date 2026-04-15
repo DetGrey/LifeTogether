@@ -130,7 +130,6 @@ fun MediaDetailsScreen(
             )
 
             ObserverUpdatingText(
-                appSessionViewModel = appSessionViewModel,
                 keys = setOf(ObserverKey.GALLERY_ALBUMS, ObserverKey.GALLERY_MEDIA),
             )
 

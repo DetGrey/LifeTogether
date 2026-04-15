@@ -15,8 +15,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
@@ -27,7 +25,7 @@ import com.example.lifetogether.ui.feature.notification.NotificationService
 import com.example.lifetogether.ui.navigation.NavHost
 import com.example.lifetogether.ui.theme.AppTypography
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
+import com.example.lifetogether.ui.viewmodel.RootCoordinatorViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
@@ -70,29 +68,17 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    val appSessionViewModel: AppSessionViewModel = hiltViewModel()
+                    // Eagerly create activity-scoped root coordinator.
+                    // Session observation, observer orchestration, guide sync, and FCM sync
+                    // are all owned internally by the root coordinator.
+                    hiltViewModel<RootCoordinatorViewModel>()
+
                     val navControllerState = rememberNavController()
                     navController = navControllerState
 
                     LaunchedEffect(destination, navControllerState) {
                         if (destination != null) {
                             navControllerState.navigate(destination)
-                        }
-                    }
-
-                    val userInformation by appSessionViewModel.userInformation.collectAsState()
-                    val uid = userInformation?.uid
-                    val familyId = userInformation?.familyId
-
-                    LaunchedEffect(uid, familyId) {
-                        if (!uid.isNullOrBlank()) {
-                            appSessionViewModel.syncGlobalObserverContext(uid, familyId)
-                        }
-                    }
-
-                    LaunchedEffect(uid, familyId) {
-                        if (!uid.isNullOrBlank() && !familyId.isNullOrBlank()) {
-                            appSessionViewModel.storeFcmToken(uid, familyId)
                         }
                     }
 
@@ -103,7 +89,7 @@ class MainActivity : ComponentActivity() {
 
                     // Makes the default Text style bodyMedium instead of bodyLarge
                     ProvideTextStyle(value = AppTypography.bodyMedium) {
-                        NavHost(navController = navControllerState, appSessionViewModel = appSessionViewModel)
+                        NavHost(navController = navControllerState)
                     }
                 }
             }

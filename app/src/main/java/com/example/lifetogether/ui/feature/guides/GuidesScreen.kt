@@ -130,7 +130,6 @@ fun GuidesScreen(
                     )
 
                     ObserverUpdatingText(
-                        appSessionViewModel = appSessionViewModel,
                         keys = setOf(ObserverKey.GUIDES),
                     )
                 }

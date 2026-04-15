@@ -3,6 +3,7 @@ package com.example.lifetogether.ui.navigation
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
@@ -39,13 +40,9 @@ import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 @Composable
 fun NavHost(
     navController: NavHostController,
-    appSessionViewModel: AppSessionViewModel,
 ) {
     val appNavigator = AppNavigator(navController)
-    GalleryGraphObserverRoute(
-        navController = navController,
-        appSessionViewModel = appSessionViewModel,
-    )
+    GalleryGraphObserverRoute(navController = navController)
 
     androidx.navigation.compose.NavHost(
         navController = navController,
@@ -76,29 +73,39 @@ fun NavHost(
         },
     ) {
         composable(AppRoutes.ADMIN_GROCERY_CATEGORIES_SCREEN) {
-            AdminGroceryCategoriesRoute(appNavigator, appSessionViewModel)
+            AdminGroceryCategoriesRoute(appNavigator)
         }
         composable(AppRoutes.ADMIN_GROCERY_SUGGESTIONS_SCREEN) {
-            AdminGrocerySuggestionsRoute(appNavigator, appSessionViewModel)
+            AdminGrocerySuggestionsRoute(appNavigator)
         }
 
         composable(AppRoutes.LOADING_SCREEN) {
+            // TODO [Issue #3]: remove bridge after LoadingScreen migrates off AppSessionViewModel
+            val appSessionViewModel: AppSessionViewModel = hiltViewModel()
             LoadingScreen(appNavigator, appSessionViewModel)
         }
 
         composable(AppRoutes.HOME_SCREEN) {
+            // TODO [Issue #3]: remove bridge after HomeScreen migrates off AppSessionViewModel
+            val appSessionViewModel: AppSessionViewModel = hiltViewModel()
             HomeScreen(appNavigator, appSessionViewModel)
         }
 
         composable(AppRoutes.PROFILE_SCREEN) {
+            // TODO [Issue #3]: remove bridge after ProfileScreen migrates off AppSessionViewModel
+            val appSessionViewModel: AppSessionViewModel = hiltViewModel()
             ProfileScreen(appNavigator, appSessionViewModel)
         }
 
         composable(AppRoutes.FAMILY_SCREEN) {
+            // TODO [Issue #3]: remove bridge after FamilyScreen migrates off AppSessionViewModel
+            val appSessionViewModel: AppSessionViewModel = hiltViewModel()
             FamilyScreen(appNavigator, appSessionViewModel)
         }
 
         composable(AppRoutes.SETTINGS_SCREEN) {
+            // TODO [Issue #3]: remove bridge after SettingsScreen migrates off AppSessionViewModel
+            val appSessionViewModel: AppSessionViewModel = hiltViewModel()
             SettingsScreen(appNavigator, appSessionViewModel)
         }
 
@@ -110,18 +117,20 @@ fun NavHost(
         }
 
         composable(AppRoutes.GROCERY_LIST_SCREEN) {
-            GroceryListRoute(appNavigator, appSessionViewModel)
+            GroceryListRoute(appNavigator)
         }
 
         composable(AppRoutes.RECIPES_SCREEN) {
-            RecipesRoute(appNavigator, appSessionViewModel)
+            RecipesRoute(appNavigator)
         }
 
         composable(AppRoutes.GUIDES_SCREEN) {
-            GuidesRoute(appNavigator, appSessionViewModel)
+            GuidesRoute(appNavigator)
         }
 
         composable(AppRoutes.GUIDE_CREATE_SCREEN) {
+            // TODO [Issue #3]: remove bridge after GuideCreateScreen migrates off AppSessionViewModel
+            val appSessionViewModel: AppSessionViewModel = hiltViewModel()
             GuideCreateScreen(appNavigator, appSessionViewModel)
         }
 
@@ -135,7 +144,6 @@ fun NavHost(
                     navController = navController,
                     backStackEntry = backStackEntry,
                     appNavigator = appNavigator,
-                    appSessionViewModel = appSessionViewModel,
                 )
             }
 
@@ -144,20 +152,19 @@ fun NavHost(
                     navController = navController,
                     backStackEntry = backStackEntry,
                     appNavigator = appNavigator,
-                    appSessionViewModel = appSessionViewModel,
                 )
             }
         }
 
         composable(AppRoutes.CREATE_RECIPE_SCREEN) {
-            CreateRecipeRoute(appNavigator, appSessionViewModel)
+            CreateRecipeRoute(appNavigator)
         }
 
         composable(
             route = "${AppRoutes.RECIPE_DETAILS_SCREEN}/{${AppRoutes.RECIPE_ID_ARG}}",
             arguments = listOf(navArgument(AppRoutes.RECIPE_ID_ARG) { type = NavType.StringType }),
         ) { backStackEntry ->
-            RecipeDetailsRoute(backStackEntry, appNavigator, appSessionViewModel)
+            RecipeDetailsRoute(backStackEntry, appNavigator)
         }
 
         navigation(
@@ -165,7 +172,7 @@ fun NavHost(
             startDestination = AppRoutes.GALLERY_SCREEN,
         ) {
             composable(AppRoutes.GALLERY_SCREEN) {
-                GalleryScreenRoute(appNavigator, appSessionViewModel)
+                GalleryScreenRoute(appNavigator)
             }
 
             composable(
@@ -174,7 +181,7 @@ fun NavHost(
             ) { backStackEntry ->
                 val albumId = backStackEntry.arguments?.getString(AppRoutes.ALBUM_MEDIA_ID_ARG)
                     ?: return@composable
-                AlbumDetailsRoute(appNavigator, appSessionViewModel, albumId)
+                AlbumDetailsRoute(appNavigator, albumId)
             }
 
             composable(
@@ -188,12 +195,12 @@ fun NavHost(
                     ?: return@composable
                 val initialIndex = backStackEntry.arguments?.getInt(AppRoutes.GALLERY_MEDIA_INDEX_ARG)
                     ?: 0
-                MediaDetailsRoute(appNavigator, appSessionViewModel, albumId, initialIndex)
+                MediaDetailsRoute(appNavigator, albumId, initialIndex)
             }
         }
 
         composable(AppRoutes.LISTS_SCREEN) {
-            ListsRoute(appNavigator, appSessionViewModel)
+            ListsRoute(appNavigator)
         }
 
         composable(
@@ -204,7 +211,6 @@ fun NavHost(
             ListDetailsRoute(
                 listId = listId,
                 appNavigator = appNavigator,
-                appSessionViewModel = appSessionViewModel,
             )
         }
 
@@ -217,7 +223,6 @@ fun NavHost(
                 listId = listId,
                 entryId = null,
                 appNavigator = appNavigator,
-                appSessionViewModel = appSessionViewModel,
             )
         }
 
@@ -234,7 +239,6 @@ fun NavHost(
                 listId = listId,
                 entryId = entryId,
                 appNavigator = appNavigator,
-                appSessionViewModel = appSessionViewModel,
             )
         }
 
@@ -246,7 +250,6 @@ fun NavHost(
                     navController = navController,
                     backStackEntry = backStackEntry,
                     appNavigator = appNavigator,
-                    appSessionViewModel = appSessionViewModel,
                 )
             }
 
@@ -255,7 +258,6 @@ fun NavHost(
                     navController = navController,
                     backStackEntry = backStackEntry,
                     appNavigator = appNavigator,
-                    appSessionViewModel = appSessionViewModel,
                 )
             }
         }

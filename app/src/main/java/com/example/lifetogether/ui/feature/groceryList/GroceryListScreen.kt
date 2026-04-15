@@ -75,7 +75,6 @@ fun GroceryListScreen(
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     ObserverUpdatingText(
-                        appSessionViewModel = appSessionViewModel,
                         keys = setOf(
                             ObserverKey.GROCERY_LIST,
                             ObserverKey.GROCERY_CATEGORIES,

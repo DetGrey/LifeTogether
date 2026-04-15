@@ -86,7 +86,6 @@ fun ListsScreen(
                     )
 
                     ObserverUpdatingText(
-                        appSessionViewModel = appSessionViewModel,
                         keys = setOf(ObserverKey.USER_LISTS, ObserverKey.ROUTINE_LIST_ENTRIES),
                     )
                 }

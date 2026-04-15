@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.common.observer
 
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -9,39 +11,27 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.lifetogether.domain.observer.ObserverKey
 import com.example.lifetogether.domain.observer.ObserverSyncState
-import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
+import com.example.lifetogether.ui.viewmodel.RootCoordinatorViewModel
 
 @Composable
 fun FeatureObserverLifecycleBinding(
-    appSessionViewModel: AppSessionViewModel,
     keys: Set<ObserverKey>,
-    uid: String? = null,
-    familyId: String? = null,
 ) {
     if (keys.isEmpty()) return
 
+    val activity = LocalActivity.current as? ComponentActivity ?: return
+    val rootCoordinator: RootCoordinatorViewModel = hiltViewModel(activity)
     val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner, appSessionViewModel, keys, uid, familyId) {
-        fun acquireAll() {
-            keys.forEach { key ->
-                appSessionViewModel.acquireObserver(
-                    key = key,
-                    uid = uid,
-                    familyId = familyId,
-                )
-            }
-        }
 
-        fun releaseAll() {
-            keys.forEach { key ->
-                appSessionViewModel.releaseObserver(key)
-            }
-        }
+    DisposableEffect(lifecycleOwner, rootCoordinator, keys) {
+        fun acquireAll() = keys.forEach { rootCoordinator.acquireObserver(it) }
+        fun releaseAll() = keys.forEach { rootCoordinator.releaseObserver(it) }
 
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
@@ -65,13 +55,15 @@ fun FeatureObserverLifecycleBinding(
 
 @Composable
 fun ObserverUpdatingText(
-    appSessionViewModel: AppSessionViewModel,
     keys: Set<ObserverKey>,
     modifier: Modifier = Modifier,
 ) {
-    val syncStates by appSessionViewModel.observerSyncStates.collectAsState()
-    val activeKeys by appSessionViewModel.activeObserverKeys.collectAsState()
-    val hasSyncedOnce by appSessionViewModel.observerHasSyncedOnce.collectAsState()
+    val activity = LocalActivity.current as? ComponentActivity ?: return
+    val rootCoordinator: RootCoordinatorViewModel = hiltViewModel(activity)
+
+    val syncStates by rootCoordinator.observerSyncStates.collectAsState()
+    val activeKeys by rootCoordinator.activeObserverKeys.collectAsState()
+    val hasSyncedOnce by rootCoordinator.observerHasSyncedOnce.collectAsState()
 
     val activeKeysAwaitingFirstSuccess = keys.filter { key ->
         key in activeKeys &&
