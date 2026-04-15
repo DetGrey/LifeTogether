@@ -15,4 +15,5 @@ data class RoutineListEntry(
     val recurrenceUnit: RecurrenceUnit = RecurrenceUnit.DAYS,
     val interval: Int = 1,
     val weekdays: List<Int> = emptyList(),
+    val imageUrl: String? = null,
 ) : ListEntry

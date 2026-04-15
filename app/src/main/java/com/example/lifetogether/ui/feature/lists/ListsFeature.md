@@ -25,25 +25,26 @@ Stored in the `user_lists` Firestore collection and Room table.
 | `ownerUid`    | UID of the user who created it              |
 | `dateCreated` | Creation timestamp                          |
 | `lastUpdated` | Last write timestamp                        |
-| `imageUrl`    | Optional cover image                        |
 
-### `ListEntry` — an item inside a list
-Stored in the `list_entries` Firestore collection and Room table.
+### `RoutineListEntry` — an item inside a list
+Stored in the `list_entries_routine` Firestore collection and Room table.
 
-| Field             | Purpose                                                       |
-|-------------------|---------------------------------------------------------------|
-| `id`              | Firestore document ID                                         |
-| `familyId`        | Inherited from the parent list                                |
-| `listId`          | FK pointing to the parent `UserList.id`                       |
-| `itemName`        | What needs doing ("Water the cactus")                         |
-| `recurrenceUnit`  | `DAYS` or `WEEKS`                                             |
-| `interval`        | N (repeat every N days/weeks)                                 |
-| `weekdays`        | List of weekday numbers (1=Mon…7=Sun), used only when `WEEKS` |
-| `nextDate`        | Next calculated due date                                      |
-| `lastCompletedAt` | When it was last marked done                                  |
-| `completionCount` | Running total of completions                                  |
-| `dateCreated`     | Creation timestamp                                            |
-| `lastUpdated`     | Last write timestamp                                          |
+| Field             | Layer          | Purpose                                                         |
+|-------------------|----------------|-----------------------------------------------------------------|
+| `id`              | Both           | Firestore document ID                                           |
+| `familyId`        | Both           | Inherited from the parent list                                  |
+| `listId`          | Both           | FK pointing to the parent `UserList.id`                         |
+| `itemName`        | Both           | What needs doing ("Water the cactus")                           |
+| `recurrenceUnit`  | Both           | `DAYS` or `WEEKS`                                               |
+| `interval`        | Both           | N (repeat every N days/weeks)                                   |
+| `weekdays`        | Both           | List of weekday numbers (1=Mon…7=Sun), used only when `WEEKS`   |
+| `nextDate`        | Both           | Next calculated due date                                        |
+| `lastCompletedAt` | Both           | When it was last marked done                                    |
+| `completionCount` | Both           | Running total of completions                                    |
+| `dateCreated`     | Both           | Creation timestamp                                              |
+| `lastUpdated`     | Both           | Last write timestamp                                            |
+| `imageUrl`        | Firestore only | Download URL of the entry's image (written on upload)           |
+| `imageData`       | Room only      | Image stored as `ByteArray`; downloaded from `imageUrl` on sync |
 
 Entries have **no** visibility, type, or ownerUid — those live on the parent `UserList`.
 
@@ -81,7 +82,52 @@ Controlled by the `Visibility` enum (`domain/model/enums/Visibility.kt`), backed
 - **FAMILY** — all family members see the list.
 - **PRIVATE** — only the `ownerUid` user sees the list.
 
-Entries are always synced at the family scope — the observer queries the entire family's `list_entries` collection. Per-entry visibility is not needed because the parent list already controls access.
+Entries are always synced at the family scope — the observer queries the entire family's `list_entries_routine` collection. Per-entry visibility is not needed because the parent list already controls access.
+
+---
+
+## Entry images
+
+Images on entries follow the same pattern as recipe images.
+
+### Storage layout
+- **Firebase Storage** — the image file lives at `list_entries_routine/<uuid>-<timestamp>.jpeg`
+- **Firestore** — the document gains an `imageUrl` string field after upload
+- **Room** — `RoutineListEntryEntity.imageData: ByteArray?` holds the downloaded bytes locally
+
+### Upload flow (existing entry only)
+Image upload is only available once an entry has an ID:
+
+```
+User taps image area in edit mode
+        │
+        ▼
+ImageUploadDialog  (ImageUploadViewModel)
+        │  user picks image from gallery
+        ▼
+FirebaseStorageDataSource.uploadPhoto(uri, RoutineListEntryImage(familyId, entryId))
+        │  ImageProcessor resizes/compresses → uploads to Storage
+        ▼
+FirestoreDataSource.saveImageDownloadUrl(url, RoutineListEntryImage)
+        │  updates list_entries_routine/<entryId>.imageUrl
+        ▼
+Firestore snapshot fires → ObserveRoutineListsUseCase downloads bytes
+        │
+        ▼
+LocalDataSource.updateRoutineListEntries(items, byteArrays)
+        │  stores imageData in Room
+        ▼
+RoutineListsDao.getImageByteArray(entryId) → Flow<ByteArray?>
+        │
+        ▼
+ImageViewModel.collectImageFlow / ListDetailsViewModel.updateImageJobs → Bitmap in UI
+```
+
+### Download / cache flow (on sync)
+`ObserveRoutineListsUseCase` calls `getRoutineEntryIdsWithImages(familyId)` before each sync. Entries already cached in Room are skipped. Only new or changed entries with an `imageUrl` are downloaded, avoiding redundant network calls.
+
+### ImageType
+`ImageType.RoutineListEntryImage(familyId, entryId)` — used throughout the image pipeline (ImageProcessor, FirebaseStorageDataSource, FirestoreDataSource, LocalDataSource, ImageViewModel).
 
 ---
 
@@ -98,7 +144,7 @@ Firestore (user_lists)
   ObserveUserListsUseCase  (merges both streams, deduplicates by id)
         │
         ▼
-  LocalDataSource.upsertUserLists / updateUserLists / deleteFamilyUserLists
+  LocalDataSource.updateUserLists / deleteFamilyUserLists
         │
         ▼
   Room  user_lists  (UserListEntity)
@@ -110,33 +156,44 @@ Firestore (user_lists)
   LocalListRepositoryImpl.fetchListItems  →  Flow<ListItemsResultListener<UserList>>
         │
         ▼
-  ListsViewModel / ListDetailViewModel  →  StateFlow<List<UserList>>
+  ListsViewModel / ListDetailsViewModel  →  StateFlow<List<UserList>>
         │
         ▼
-  ListsScreen / ListDetailScreen  (Compose)
+  ListsScreen / ListDetailsScreen  (Compose)
 ```
 
 ```
-Firestore (list_entries)
-  └── familyListEntriesSnapshotListener  (familyId = familyId, no visibility split)
+Firestore (list_entries_routine)
+  └── familyRoutineListEntriesSnapshotListener  (familyId = familyId)
         │
         ▼
-  ObserveListsUseCase  (upsert / delete in Room)
-        │
+  ObserveRoutineListsUseCase
+        │  for each entry with imageUrl not yet cached:
+        │      StorageRepository.fetchImageByteArray(url) → ByteArray
         ▼
-  Room  list_entries  (ListEntryEntity)
-        │
+  LocalDataSource.updateRoutineListEntries(items, byteArrays)
+        │  preserves existing imageData for already-cached entries
         ▼
-  listsDao.getItemsByListId(familyId, listId)  →  Flow<List<ListEntryEntity>>
+  Room  list_entries_routine  (RoutineListEntryEntity)
         │
-        ▼
-  LocalListRepositoryImpl.fetchListItems (uid param = listId)  →  Flow<ListItemsResultListener<ListEntry>>
+        ├── routineListsDao.getItemsByListId(familyId, listId)  →  Flow<List<RoutineListEntryEntity>>
+        │         │
+        │         ▼
+        │   LocalListRepositoryImpl.fetchListItems  →  Flow<ListItemsResultListener<RoutineListEntry>>
+        │         │
+        │         ▼
+        │   ListDetailsViewModel.entries + imageBitmaps  →  StateFlow
+        │         │
+        │         ▼
+        │   ListDetailsScreen / ListEntryCard  (shows bitmap thumbnail)
         │
-        ▼
-  ListDetailViewModel.entries  →  StateFlow<List<RoutineListEntry>>
-        │
-        ▼
-  ListDetailScreen  (Compose)
+        └── routineListsDao.getImageByteArray(entryId)  →  Flow<ByteArray?>
+                  │
+                  ▼
+            ImageViewModel.collectImageFlow  →  Bitmap
+                  │
+                  ▼
+            ListEntryDetailsScreen  (shows full image)
 ```
 
 ### UI → Firestore (write path)
@@ -153,7 +210,7 @@ User taps Create / Save
         ▼
   FirestoreDataSource.saveItem / updateItem
      (UserList → userListToFirestoreMap)
-     (ListEntry → listEntryToFirestoreMap)
+     (RoutineListEntry → listEntryToFirestoreMap — includes imageUrl)
         │
         ▼
   Firestore  (triggers snapshot listener → Room sync → UI update)
@@ -182,11 +239,11 @@ HomeScreen
                               │
                     Tap a list  →  ListDetailRoute
                                         │
-                              ListDetailScreen  (entries for one list)
+                              ListDetailsScreen  (entries for one list)
                                         │
                               Tap entry  →  ListEntryDetailsRoute
                                                   │
-                                        ListEntryDetailsScreen  (edit entry)
+                                        ListEntryDetailsScreen  (view/edit entry)
                               Tap +     →  ListEntryDetailsRoute
                                                   │
                                         ListEntryDetailsScreen  (create entry)
@@ -195,35 +252,39 @@ HomeScreen
 
 ### ListsScreen
 - Shows one card per `UserList` with name, type badge, and family/private label.
-- FAB opens `CreateListDialog` (name, type, visibility). On successful save, navigates straight to the new list's `ListDetailScreen`.
+- FAB opens `CreateListDialog` (name, type, visibility). On successful save, navigates straight to the new list's `ListDetailsScreen`.
 
-### ListDetailScreen
+### ListDetailsScreen
 - TopBar title = `UserList.itemName` (resolved from Room).
 - Entries sorted by `nextDate` ascending (nulls last).
-- Each entry card: name, recurrence description ("Every 3 days"), next due date, completion count, and a "Mark done" tap target.
+- Each entry card: name, recurrence description ("Every 3 days"), next due date, and a 60×60dp image thumbnail (shows entry image if available, tertiary background otherwise).
 - Tapping the card body navigates to `ListEntryDetailsScreen` for editing.
 - FAB navigates to `ListEntryDetailsScreen` for creating a new entry in this list.
+- `ListDetailsViewModel` maintains `imageBitmaps: Map<String, Bitmap>` — one Room-observing coroutine per entry, started/cancelled as entries come and go.
 
 ### ListEntryDetailsScreen
-- Create or edit a single `ListEntry`.
-- Fields: name, recurrence unit (DAYS / WEEKS), interval (N), weekday picker (shown only in WEEKS mode).
+- Create or edit a single `RoutineListEntry`.
+- Fields: image area (180dp), name, recurrence unit (DAYS / WEEKS), interval (N), weekday picker (shown only in WEEKS mode).
+- **Image area**: shows the entry's bitmap if available, or a tinted placeholder. In edit mode on an existing entry, tapping it opens `ImageUploadDialog`. Image upload is not available on new entries (no ID yet).
 - On save, `nextDate` is calculated immediately from the anchor (creation time).
-- Navigates back to `ListDetailScreen` on success.
+- Navigates back on success.
 
 ---
 
 ## Key files
 
-| Layer             | File                                                                                       |
-|-------------------|--------------------------------------------------------------------------------------------|
-| Domain models     | `domain/model/lists/UserList.kt`, `ListEntry.kt`, `ListType.kt`, `RecurrenceUnit.kt`       |
-| Visibility        | `domain/model/enums/Visibility.kt`                                                         |
-| Recurrence logic  | `domain/logic/RecurrenceCalculator.kt`                                                     |
-| Room entities     | `data/model/UserListEntity.kt`, `RoutineListEntryEntity.kt`                                        |
-| DAOs              | `data/local/dao/UserListsDao.kt`, `RoutineListsDao.kt`                                             |
-| DB migration      | `data/local/AppDatabase.kt` — `MIGRATION_23_24`                                                    |
-| Firestore parsing | `data/remote/FirestoreDataSource.kt` — `parseFirestoreUserList`, `parseFirestoreRoutineListEntry`  |
-| Observers         | `domain/usecase/observers/ObserveUserListsUseCase.kt`, `ObserveRoutineListsUseCase.kt`             |
-| ViewModels        | `ListsViewModel.kt`, `ListDetailViewModel.kt`, `ListEntryDetailsViewModel.kt`              |
-| Screens           | `ListsScreen.kt`, `ListDetailScreen.kt`, `ListEntryDetailsScreen.kt`                       |
-| Routes            | `ListsRoute.kt`, `ListDetailRoute.kt`, `ListEntryDetailsRoute.kt`                          |
+| Layer             | File                                                                                                                                                                             |
+|-------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Domain models     | `domain/model/lists/UserList.kt`, `RoutineListEntry.kt`, `ListType.kt`, `RecurrenceUnit.kt`                                                                                      |
+| Image type        | `domain/model/sealed/ImageType.kt` — `RoutineListEntryImage(familyId, entryId)`                                                                                                  |
+| Visibility        | `domain/model/enums/Visibility.kt`                                                                                                                                               |
+| Recurrence logic  | `domain/logic/RecurrenceCalculator.kt`                                                                                                                                           |
+| Room entities     | `data/model/UserListEntity.kt`, `RoutineListEntryEntity.kt` (has `imageData: ByteArray?`)                                                                                        |
+| DAOs              | `data/local/dao/UserListsDao.kt`, `RoutineListsDao.kt` (has `getImageByteArray`, `getEntryIdsWithImages`)                                                                        |
+| DB migrations     | `data/local/AppDatabase.kt` — v26; `MIGRATION_23_24` creates tables, `MIGRATION_24_25` adds `image_data`, `MIGRATION_25_26` drops `image_url` from `user_lists`                  |
+| Image processing  | `data/logic/ImageProcessor.kt` — `RoutineListEntryImage` config                                                                                                                  |
+| Firestore parsing | `data/remote/FirestoreDataSource.kt` — `parseFirestoreRoutineListEntry` (reads `imageUrl`), `listEntryToFirestoreMap` (writes `imageUrl`), `getImageUrl`, `saveImageDownloadUrl` |
+| Observers         | `domain/usecase/observers/ObserveUserListsUseCase.kt`, `ObserveRoutineListsUseCase.kt` (downloads images on sync)                                                                |
+| ViewModels        | `ListsViewModel.kt`, `ListDetailsViewModel.kt` (has `imageBitmaps`), `ListEntryDetailsViewModel.kt`                                                                              |
+| Screens           | `ListsScreen.kt`, `ListDetailsScreen.kt`, `ListEntryDetailsScreen.kt`                                                                                                            |
+| Routes            | `ListsRoute.kt`, `ListDetailRoute.kt`, `ListEntryDetailsRoute.kt`                                                                                                                |

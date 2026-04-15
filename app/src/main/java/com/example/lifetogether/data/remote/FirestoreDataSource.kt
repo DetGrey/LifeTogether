@@ -572,7 +572,6 @@ class FirestoreDataSource @Inject constructor() {
             type = ListType.fromValue(str("type")),
             visibility = Visibility.fromValue(str("visibility")),
             ownerUid = str("ownerUid"),
-            imageUrl = data["imageUrl"] as? String,
         )
     }
 
@@ -584,7 +583,6 @@ class FirestoreDataSource @Inject constructor() {
         "type" to list.type.value,
         "lastUpdated" to list.lastUpdated,
         "dateCreated" to list.dateCreated,
-        "imageUrl" to list.imageUrl,
     )
 
     // ------------------------------------------------------------------------------- LIST ENTRIES
@@ -638,6 +636,7 @@ class FirestoreDataSource @Inject constructor() {
             recurrenceUnit = RecurrenceUnit.fromValue(str("recurrenceUnit")),
             interval = intVal("interval", 1),
             weekdays = weekdaysRaw,
+            imageUrl = data["imageUrl"] as? String,
         )
     }
 
@@ -653,6 +652,7 @@ class FirestoreDataSource @Inject constructor() {
         "recurrenceUnit" to entry.recurrenceUnit.value,
         "interval" to entry.interval,
         "weekdays" to entry.weekdays,
+        "imageUrl" to entry.imageUrl,
     )
 
     // ------------------------------------------------------------------------------- ALBUMS
@@ -1140,6 +1140,13 @@ class FirestoreDataSource @Inject constructor() {
                         ?.let { StringResultListener.Success(it) }
                 }
 
+                is ImageType.RoutineListEntryImage -> {
+                    val documentReference =
+                        db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE).document(imageType.entryId).get().await()
+                    return documentReference.getString("imageUrl")
+                        ?.let { StringResultListener.Success(it) }
+                }
+
                 is ImageType.GalleryMedia -> return StringResultListener.Failure("Image type GalleryImage is not connected to one specific document")
             }
         } catch (e: Exception) {
@@ -1171,6 +1178,10 @@ class FirestoreDataSource @Inject constructor() {
 
                 is ImageType.RecipeImage -> {
                     db.collection(Constants.RECIPES_TABLE).document(imageType.recipeId).update(photo).await()
+                }
+
+                is ImageType.RoutineListEntryImage -> {
+                    db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE).document(imageType.entryId).update(photo).await()
                 }
 
                 else -> {

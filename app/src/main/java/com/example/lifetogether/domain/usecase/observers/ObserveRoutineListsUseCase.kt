@@ -3,7 +3,9 @@ package com.example.lifetogether.domain.usecase.observers
 import android.util.Log
 import com.example.lifetogether.data.local.LocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
+import com.example.lifetogether.domain.listener.ByteArrayResultListener
 import com.example.lifetogether.domain.listener.ListItemsResultListener
+import com.example.lifetogether.domain.repository.StorageRepository
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -11,6 +13,7 @@ import javax.inject.Inject
 
 class ObserveRoutineListsUseCase @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
+    private val storageRepository: StorageRepository,
     private val localDataSource: LocalDataSource,
 ) {
     private companion object {
@@ -32,7 +35,24 @@ class ObserveRoutineListsUseCase @Inject constructor(
                             if (result.listItems.isEmpty()) {
                                 localDataSource.deleteFamilyRoutineListEntries(familyId)
                             } else {
-                                localDataSource.updateRoutineListEntries(result.listItems)
+                                val existingIdsWithImages = localDataSource.getRoutineEntryIdsWithImages(familyId)
+
+                                val byteArrays: MutableMap<String, ByteArray> = mutableMapOf()
+                                for (entry in result.listItems) {
+                                    if (entry.id != null && existingIdsWithImages.contains(entry.id)) {
+                                        Log.d(TAG, "Skipping download for ${entry.itemName} — image already cached")
+                                        continue
+                                    }
+                                    val byteArrayResult: ByteArrayResultListener? =
+                                        entry.imageUrl?.let { url ->
+                                            storageRepository.fetchImageByteArray(url)
+                                        }
+                                    if (byteArrayResult is ByteArrayResultListener.Success) {
+                                        entry.id?.let { byteArrays[it] = byteArrayResult.byteArray }
+                                    }
+                                }
+
+                                localDataSource.updateRoutineListEntries(result.listItems, byteArrays)
                             }
                         }.onSuccess {
                             firstSuccess.completeFirstSuccessIfNeeded()

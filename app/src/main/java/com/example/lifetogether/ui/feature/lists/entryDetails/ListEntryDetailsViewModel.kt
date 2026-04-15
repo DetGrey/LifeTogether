@@ -1,5 +1,9 @@
 package com.example.lifetogether.ui.feature.lists.entryDetails
 
+import android.content.ContentResolver
+import android.content.Context
+import android.graphics.Bitmap
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -7,13 +11,17 @@ import com.example.lifetogether.domain.listener.ItemResultListener
 import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.logic.RecurrenceCalculator
+import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
+import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.domain.usecase.image.UploadImageUseCase
 import com.example.lifetogether.domain.usecase.item.FetchItemByIdUseCase
 import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
 import com.example.lifetogether.domain.usecase.item.UpdateItemUseCase
 import com.example.lifetogether.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -30,6 +38,8 @@ class ListEntryDetailsViewModel @Inject constructor(
     private val saveItemUseCase: SaveItemUseCase,
     private val updateItemUseCase: UpdateItemUseCase,
     private val fetchItemByIdUseCase: FetchItemByIdUseCase,
+    private val uploadImageUseCase: UploadImageUseCase,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     companion object {
@@ -42,6 +52,8 @@ class ListEntryDetailsViewModel @Inject constructor(
         val recurrenceUnit: RecurrenceUnit = RecurrenceUnit.DAYS,
         val interval: String = "1",
         val selectedWeekdays: Set<Int> = emptySet(),
+        val pendingImageUri: Uri? = null,
+        val pendingImageBitmap: Bitmap? = null,
     )
 
     data class EntryDetailsScreenState(
@@ -179,28 +191,43 @@ class ListEntryDetailsViewModel @Inject constructor(
 
         _uiState.update { if (it is EntryDetailsUiState.Content) it.copy(isSaving = true) else it }
         viewModelScope.launch {
-            val result = if (entryId == null) {
+            if (entryId == null) {
                 when (val r = saveItemUseCase(draft, Constants.ROUTINE_LIST_ENTRIES_TABLE)) {
-                    is StringResultListener.Success -> ResultListener.Success
-                    is StringResultListener.Failure -> ResultListener.Failure(r.message)
+                    is StringResultListener.Success -> {
+                        val pendingUri = form.pendingImageUri
+                        if (pendingUri != null) {
+                            uploadImageUseCase(
+                                pendingUri,
+                                ImageType.RoutineListEntryImage(activeFamilyId, r.string),
+                                context,
+                            )
+                            // Result ignored — entry is already saved; image syncs via observer
+                        }
+                        _uiState.update { if (it is EntryDetailsUiState.Content) it.copy(isSaving = false) else it }
+                        onDone()
+                    }
+                    is StringResultListener.Failure -> {
+                        _uiState.update { if (it is EntryDetailsUiState.Content) it.copy(isSaving = false) else it }
+                        showError(r.message)
+                    }
                 }
             } else {
-                updateItemUseCase(draft, Constants.ROUTINE_LIST_ENTRIES_TABLE)
-            }
-
-            _uiState.update { if (it is EntryDetailsUiState.Content) it.copy(isSaving = false) else it }
-            when (result) {
-                is ResultListener.Success -> {
-                    if (entryId == null) {
-                        onDone()
-                    } else {
+                val result = updateItemUseCase(draft, Constants.ROUTINE_LIST_ENTRIES_TABLE)
+                _uiState.update { if (it is EntryDetailsUiState.Content) it.copy(isSaving = false) else it }
+                when (result) {
+                    is ResultListener.Success -> {
                         originalFormState = _formState.value
                         _uiState.update { if (it is EntryDetailsUiState.Content) it.copy(isEditing = false) else it }
                     }
+                    is ResultListener.Failure -> showError(result.message)
                 }
-                is ResultListener.Failure -> showError(result.message)
             }
         }
+    }
+
+    fun onImageSelected(uri: Uri, contentResolver: ContentResolver) {
+        val bitmap = uri.toBitmap(contentResolver)
+        _formState.update { it.copy(pendingImageUri = uri, pendingImageBitmap = bitmap) }
     }
 
     fun onNameChange(value: String) {

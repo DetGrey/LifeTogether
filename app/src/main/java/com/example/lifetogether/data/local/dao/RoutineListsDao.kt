@@ -28,6 +28,12 @@ interface RoutineListsDao {
     @Query("DELETE FROM $ROUTINE_LIST_ENTRIES_TABLE WHERE list_id IN (:listIds)")
     fun deleteByListIds(listIds: List<String>)
 
+    @Query("SELECT image_data FROM $ROUTINE_LIST_ENTRIES_TABLE WHERE id = :entryId LIMIT 1")
+    fun getImageByteArray(entryId: String): Flow<ByteArray?>
+
+    @Query("SELECT id FROM $ROUTINE_LIST_ENTRIES_TABLE WHERE family_id = :familyId AND image_data IS NOT NULL")
+    suspend fun getEntryIdsWithImages(familyId: String): List<String>
+
     @Query("DELETE FROM $ROUTINE_LIST_ENTRIES_TABLE WHERE family_id = :familyId")
     fun deleteFamilyItems(familyId: String)
 }

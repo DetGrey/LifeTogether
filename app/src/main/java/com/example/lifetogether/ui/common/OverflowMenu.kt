@@ -9,18 +9,26 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.ui.common.text.TextDefault
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
+
+data class ActionSheetItem(
+    val label: String,
+    val onClick: () -> Unit,
+    val isDestructive: Boolean = false,
+    val isEnabled: Boolean = true,
+)
 
 @Composable
 fun OverflowMenu(
@@ -40,29 +48,20 @@ fun OverflowMenu(
             modifier = Modifier
                 .width(125.dp)
                 .align(Alignment.TopEnd)
-//                .clip(RoundedCornerShape(16.dp))
                 .background(MaterialTheme.colorScheme.onBackground)
                 .padding(10.dp),
         ) {
-            var currentlyClickedItemName: String? by remember { mutableStateOf(null) }
-
             Column {
                 actionsList.forEachIndexed { index, actionMap ->
                     actionMap.forEach { (name, onActionClick) ->
-                        val isThisItemSelected = currentlyClickedItemName == name
-                        val textColor = if (isThisItemSelected) MaterialTheme.colorScheme.tertiary else Color.White
-
                         TextDefault(
                             text = name,
-                            color = textColor,
-                            modifier = Modifier
-                                .clickable {
-                                    currentlyClickedItemName = name
-                                    onActionClick()
-                                },
+                            color = Color.White,
+                            modifier = Modifier.clickable {
+                                onActionClick()
+                            },
                         )
-                        // Add a Spacer or Divider if you have multiple items and want separation
-                        if (index < actionsList.size - 1) {
+                        if (index < actionsList.lastIndex) {
                             HorizontalDivider(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -73,6 +72,86 @@ fun OverflowMenu(
                     }
                 }
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ActionSheet(
+    onDismiss: () -> Unit,
+    actionsList: List<ActionSheetItem>,
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.onBackground,
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .padding(bottom = 30.dp),
+        ) {
+            actionsList.forEachIndexed { index, action ->
+                val textColor = when {
+                    action.isDestructive -> MaterialTheme.colorScheme.error
+                    else -> Color.White
+                }
+
+                TextDefault(
+                    text = action.label,
+                    color = textColor,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            alpha = if (action.isEnabled) 1f else 0.45f
+                        }
+                        .clickable(enabled = action.isEnabled) {
+                            action.onClick()
+                        }
+                        .padding(vertical = 12.dp),
+                )
+
+                if (index < actionsList.lastIndex) {
+                    HorizontalDivider(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            .height(1.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun OverflowMenuPreview() {
+    LifeTogetherTheme {
+        Box {
+            OverflowMenu(
+                onDismiss = {},
+                actionsList = listOf(
+                    mapOf("Rename" to {}),
+                    mapOf("Delete" to {}),
+                ),
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ActionSheetPreview() {
+    LifeTogetherTheme {
+        Box {
+            ActionSheet(
+                onDismiss = {},
+                actionsList = listOf(
+                    ActionSheetItem(label = "Select entries", onClick = {}),
+                    ActionSheetItem(label = "Delete selected", onClick = {}, isDestructive = true),
+                ),
+            )
         }
     }
 }

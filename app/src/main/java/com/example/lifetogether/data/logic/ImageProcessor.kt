@@ -188,6 +188,14 @@ class ImageProcessor @Inject constructor() {
                     )
                 }
             }
+
+            is ImageType.RoutineListEntryImage -> ImageConfig(
+                path = Constants.ROUTINE_LIST_ENTRIES_TABLE,
+                maxWidth = LARGE_IMAGE_WIDTH,
+                maxHeight = DEFAULT_MAX_HEIGHT,
+                needsResize = true,
+                extension = ".jpeg"
+            )
         }
     }
 

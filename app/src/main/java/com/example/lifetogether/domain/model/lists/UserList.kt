@@ -13,5 +13,4 @@ data class UserList(
     val type: ListType = ListType.ROUTINE,
     val visibility: Visibility = Visibility.PRIVATE,
     val ownerUid: String = "",
-    val imageUrl: String? = null,
 ) : Item

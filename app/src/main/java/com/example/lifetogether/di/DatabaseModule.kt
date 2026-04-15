@@ -37,7 +37,7 @@ object DatabaseModule {
         )
             .allowMainThreadQueries()
             .fallbackToDestructiveMigration(false)
-            .addMigrations(AppDatabase.MIGRATION_23_24)
+            .addMigrations(AppDatabase.MIGRATION_23_24, AppDatabase.MIGRATION_24_25, AppDatabase.MIGRATION_25_26)
             .build()
     }
 

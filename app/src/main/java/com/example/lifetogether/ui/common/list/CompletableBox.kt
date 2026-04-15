@@ -21,6 +21,7 @@ import com.example.lifetogether.R
 fun CompletableBox(
     isCompleted: Boolean,
     onCompleteToggle: () -> Unit,
+    isEnabled: Boolean = true,
 ) {
     Box(
         modifier = Modifier
@@ -32,7 +33,7 @@ fun CompletableBox(
                 color = MaterialTheme.colorScheme.secondary,
                 shape = CircleShape,
             )
-            .clickable { onCompleteToggle() }
+            .clickable(enabled = isEnabled) { onCompleteToggle() }
             .then(
                 if (isCompleted) {
                     Modifier.background(color = MaterialTheme.colorScheme.secondary)

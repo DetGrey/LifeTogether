@@ -24,6 +24,4 @@ data class UserListEntity(
     val visibility: Visibility = Visibility.PRIVATE,
     @ColumnInfo(name = "owner_uid")
     val ownerUid: String = "",
-    @ColumnInfo(name = "image_url")
-    val imageUrl: String? = null,
 )

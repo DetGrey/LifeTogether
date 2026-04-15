@@ -1054,16 +1054,27 @@ class LocalDataSource @Inject constructor(
         type = type,
         visibility = visibility,
         ownerUid = ownerUid,
-        imageUrl = imageUrl,
     )
 
     // -------------------------------------------------------------- LIST ENTRIES
-    suspend fun updateRoutineListEntries(items: List<RoutineListEntry>) {
+    suspend fun updateRoutineListEntries(
+        items: List<RoutineListEntry>,
+        byteArrays: Map<String, ByteArray> = emptyMap(),
+    ) {
         Log.d(TAG, "updateRoutineListEntries incomingCount=${items.size}")
         if (items.isEmpty()) return
-        val entityList = items.map { it.toEntity() }
         val currentItems = routineListsDao.getItems(items.first().familyId).first()
         Log.d(TAG, "updateRoutineListEntries currentRoomCount=${currentItems.size}")
+
+        var entityList = items.map { it.toEntity() }
+
+        // Preserve existing imageData for entries not being re-downloaded
+        entityList = entityList.map { entity ->
+            val existingImage = currentItems.find { it.id == entity.id }?.imageData
+            val newImage = byteArrays[entity.id]
+            entity.copy(imageData = newImage ?: existingImage)
+        }
+
         val itemsToUpdate = entityList.filter { newItem ->
             currentItems.none { cur -> newItem.id == cur.id && newItem == cur }
         }
@@ -1076,6 +1087,9 @@ class LocalDataSource @Inject constructor(
             routineListsDao.deleteItems(itemsToDelete.map { it.id })
         }
     }
+
+    suspend fun getRoutineEntryIdsWithImages(familyId: String): List<String> =
+        routineListsDao.getEntryIdsWithImages(familyId)
 
     fun deleteFamilyRoutineListEntries(familyId: String) {
         Log.d(TAG, "deleteFamilyRoutineListEntries familyId=$familyId")
@@ -1095,6 +1109,7 @@ class LocalDataSource @Inject constructor(
         recurrenceUnit = recurrenceUnit,
         interval = interval,
         weekdays = weekdays,
+        imageData = null,
     )
 
     suspend fun upsertGuideProgress(progress: GuideProgressState) {
@@ -1248,6 +1263,8 @@ class LocalDataSource @Inject constructor(
             )
 
             is ImageType.GalleryMedia -> flowOf(null)
+
+            is ImageType.RoutineListEntryImage -> routineListsDao.getImageByteArray(imageType.entryId)
         }
     }
 

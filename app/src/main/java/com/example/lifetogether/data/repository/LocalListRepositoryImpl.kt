@@ -315,7 +315,6 @@ class LocalListRepositoryImpl @Inject constructor(
                     type = this.entity.type,
                     visibility = this.entity.visibility,
                     ownerUid = this.entity.ownerUid,
-                    imageUrl = this.entity.imageUrl,
                 )
 
                 else -> throw IllegalArgumentException("Unsupported item type: $itemType")
