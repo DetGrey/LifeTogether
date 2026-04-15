@@ -380,7 +380,7 @@ Decision made:
 
 Current Compose navigation often relies on string-based routes and string concatenation for arguments, which is brittle and prone to runtime crashes if a typo occurs or an argument is missing.
 
-Decision made on 2026-04-15:
+Decision made:
 - All refactored features must migrate to the official Compose Type-Safe Navigation using Kotlin Serialization.
 - Routes must be defined as data classes or objects (e.g., `data class RecipeDetailsRoute(val recipeId: String)`).
 - String-based routes are considered legacy and should not be used for new or refactored navigation graphs.
@@ -389,10 +389,67 @@ Decision made on 2026-04-15:
 
 Without standard guidelines, Compose UI elements can either instantly "pop" into existence (which feels cheap) or rely on full-screen blocking spinners for every network call (which feels slow).
 
-Decision made on 2026-04-15:
+Decision made:
 - **No Harsh Popping:** UI elements that appear/disappear (e.g., dropdowns, inline error messages, expanding cards) must use `AnimatedVisibility` or `animateContentSize` by default.
 - **Standardized Loading:** Blocking, full-screen loading spinners are banned except for critical/unrecoverable paths. The app will default to Skeleton Loaders (shimmer effects) for fetching data, and inline progress indicators for saving data.
 - **Universal Navigation Transition:** The app will use one standard, global navigation transition (e.g., a subtle slide + crossfade using Material 3 easing curves) rather than ad-hoc animations per screen. Shared Element Transitions are explicitly avoided to keep maintenance simple.
+
+## Dark Mode Color & Premium UI Direction
+
+A premium dark mode experience avoids pure blacks and heavily saturated colors, which cause eye strain, optical vibration, and OLED smearing. Because the app defaults to dark mode and uses a vibrant Purple brand color, strict saturation rules are required.
+
+Decision made:
+- **Tinted Surfaces (No Pure Black):** Pure black (`#000000`) is banned for backgrounds. The foundational background must be a deep, desaturated charcoal with a subtle tint of the primary brand purple (e.g., `#120E15`). Elevated elements (cards, bottom sheets) will use progressively lighter shades of this tinted gray to indicate depth.
+- **The 10% Vibrancy Rule:** The highly saturated brand primary color (e.g., `#7E1E80`) is restricted to a maximum of 10% of the screen real estate. It should be used strictly for primary Call-To-Action buttons, active toggles, or primary Floating Action Buttons.
+- **Muted Containers:** Larger UI elements (like selected cards, bottom nav backgrounds, or secondary buttons) must use generated "Muted/Desaturated" variants of the brand purple (e.g., a soft, dark lavender) to maintain brand identity without causing optical strain.
+- **Dark-Mode Optimized Semantic Colors:** Pure red (`#FF0000`) and pure green are banned for error and success states. To maintain WCAG contrast ratios and prevent visual vibration, semantic colors must use desaturated, pastel variants (e.g., a "dusty" rose/red for destructive actions and errors, and a muted mint for success).
+- **Strict Shape Tokens:** Ad-hoc corner rounding (e.g., `.clip(RoundedCornerShape(8.dp))`) is prohibited in feature screens. All components must use standardized `MaterialTheme.shapes`. Primary action buttons must use fully rounded "pill" shapes (`shapes.extraLarge` or `CircleShape`), while informational cards and containers should use a consistent, softer rounding (e.g., `shapes.medium` or `shapes.large`) across the entire app.
+- **Semantic Typography Scale:** The use of arbitrary `fontSize`, `fontWeight`, or `fontFamily` modifiers is entirely banned inside feature composables. Developers must strictly use `MaterialTheme.typography` styles (e.g., `titleLarge`, `bodyMedium`). Visual hierarchy must be established using color contrast (e.g., `onSurfaceVariant` for secondary text) rather than varying font weights or custom sizes.
+- **Strict 8dp Baseline Grid:** All spacing, padding, margins, and component dimensions must strictly adhere to an 8dp baseline grid (e.g., 8, 16, 24, 32, 48, 64) with half-steps (4dp) permitted only for tight internal component spacing. Arbitrary padding values (like `10.dp` or `15.dp`) are banned to guarantee pixel-perfect alignment and rhythm across all screens.
+
+- **Semantic Color Architecture (No Paint Buckets):** The `Color.kt` file must be completely rewritten to follow Material 3 Semantic Roles. Naming colors by their hue (e.g., `val Teal200`, `val PurpleMain`) and using them directly in UI components (e.g., `Text(color = Teal200)`) is strictly banned.
+    - Raw hex colors must be marked `private` in `Color.kt`.
+    - UI components must ONLY access colors through `MaterialTheme.colorScheme` (e.g., `color = MaterialTheme.colorScheme.primary`).
+    - Text and headings must use neutral `onSurface` or `onSurfaceVariant` colors, never vibrant brand colors.
+
+**Code Example Blueprint for Future Implementation:**
+
+
+```kotlin
+//*BAD (Legacy Paint Bucket approach - DO NOT USE):*
+// Color.kt
+val PurpleMain = Color(0xFF7E1E80)
+val DarkGray = Color(0xFF121212)
+
+// Inside FeatureScreen.kt
+Text(text = "Hello", color = PurpleMain) // Banned: Direct color reference
+
+//*GOOD (Modern Semantic approach):*
+// Color.kt - Keep raw colors private. Notice the "Tinted Surface" and desaturated Error colors.
+private val brand_purple_primary = Color(0xFF7E1E80) 
+private val brand_purple_muted_container = Color(0xFF381E38) 
+private val surface_tinted_dark = Color(0xFF120E15) 
+private val error_desaturated = Color(0xFFCF6679)
+private val on_surface = Color(0xFFE6E1E6)
+private val on_surface_variant = Color(0xFFCAC4D0)
+
+// Theme.kt - Map to semantic roles
+val DarkColorScheme = darkColorScheme(
+    primary = brand_purple_primary,           // Use for the 10% high-emphasis accents
+    primaryContainer = brand_purple_muted_container, // Use for large active areas
+    surface = surface_tinted_dark,            // Replaces pure black
+    background = surface_tinted_dark,
+    error = error_desaturated,                // Replaces pure red
+    onSurface = on_surface,                   // High emphasis text (Headings)
+    onSurfaceVariant = on_surface_variant     // Medium emphasis text (Subtitles)
+)
+
+// Inside FeatureScreen.kt
+Text(
+    text = "Hello", 
+    color = MaterialTheme.colorScheme.onSurface // Correct: Semantic usage
+)
+```
 
 ## ViewModel Cleanup Direction
 
@@ -525,6 +582,7 @@ Use this checklist later when a specific screen is selected for refactor.
 - route navigation is fully type-safe using Kotlin Serialization (no string-based navigation)
 - screen uses Skeleton Loaders or inline progress indicators instead of blocking full-screen spinners.
 - appearing/disappearing UI elements use `AnimatedVisibility` or `animateContentSize` (no harsh popping).
+- UI component colors are completely semantic (`MaterialTheme.colorScheme`); all direct references to raw colors (e.g., `Color.Gray`, `Purple500`) are removed.
 
 ## Initial Pilot Targets
 
