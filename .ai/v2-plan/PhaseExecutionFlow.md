@@ -6,6 +6,8 @@ The phase markdown file remains the source of truth for that phase's scope, subp
 
 No implementation work starts until this flow is completed for the active phase.
 
+This flow also defines the minimum level of detail required in the phase file before implementation starts. The grill-me session must not stop at high-level agreement. It must drive the phase file to concrete implementation detail for each subphase, capture important design decisions made during the conversation, and keep the phase markdown aligned with those decisions as they are made.
+
 ---
 
 ## Required Order For Each Phase
@@ -17,10 +19,20 @@ Use the `grill-me` skill with the active phase file and finish the pre-implement
 This step must:
 
 - finalise the subphases
-- finalise the acceptance criteria
-- finalise the test cases
+- add implementation detail for how each subphase is expected to be implemented
+- finalise the acceptance criteria as Markdown checkboxes (`- [ ]`)
+- finalise the test cases as Markdown checkboxes (`- [ ]`)
 - answer all open questions in the phase file
 - update the phase file with the agreed decisions before proceeding
+
+Required detail level:
+
+- each subphase should say not only what will be done, but how it should be implemented where that detail is already known
+- important boundary decisions, ownership decisions, lifecycle decisions, migration strategy decisions, and deletion decisions must be written into the phase file during grill-me rather than left implicit in chat history
+- if the conversation creates or changes a standing rule for future phase prep, update the relevant source-of-truth markdown file in `.ai/v2-plan/` during the same session
+- if a phase changes the current architecture or current implementation reality of the project, the implementation work for that phase must also update `Architecture.md` or another current-state project explainer so it reflects the new reality
+- historical implementation/phase/plan files must keep their historical references; do not remove old decisions or references from phase files just to make the current-state docs cleaner
+- do not add catch-all sections such as `Resolved during grill-me` that dump unrelated decisions together; decisions must be incorporated into the relevant existing sections, or into a new well-named section when they do not fit anywhere else
 
 The phase file should be moved from `Not started` to `Grill-me in progress` during this process when appropriate.
 
@@ -49,6 +61,7 @@ Required outcome:
 - the issue list for the phase is confirmed
 - the phase file's `## GitHub Issues` section matches the agreed breakdown
 - issue granularity fits the actual nature of the phase rather than forcing a fixed pattern
+- the issue bodies can be created directly from the phase file without losing implementation detail agreed during grill-me
 
 ### 4. Create the issues from the phase file and connect them properly
 
@@ -100,3 +113,4 @@ This flow exists to prevent:
 - issue lists being decided too early or too loosely
 - GitHub issues losing the detailed information already agreed in the phase file
 - implementation starting without project tracking in place
+- grill-me sessions ending with only high-level intent instead of implementation-ready phase detail

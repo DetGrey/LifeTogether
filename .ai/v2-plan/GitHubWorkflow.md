@@ -13,7 +13,7 @@ Before using the workflow below for any active phase, follow the required startu
 1. **Source of truth (`.ai/v2-plan/` files):** All architectural decisions, phase scope, and subphase checklists live here. If anything changes, update these files first.
 
 2. **Milestones (one per phase):** Each phase file maps directly to a GitHub Milestone.
-   - Naming: `Phase N: <Phase Name>` — e.g. `Phase 1: Session Boundary Cleanup`
+   - Naming: `V2 Phase N: <Phase Name>` — e.g. `V2 Phase 1: Session Boundary Cleanup`
    - Full phase list: see [ImplementationPlan.md](ImplementationPlan.md)
 
 3. **Issues (fit the granularity to the nature of the phase):** Each milestone contains multiple issues. The right number and granularity varies by phase — some phases call for one issue per feature domain, others for one per screen, others for one per component. A single pattern forced across all phases creates either too many micro-issues or too few meaningful ones.
@@ -59,6 +59,7 @@ A phase is complete when **all** of the following are true — none can happen w
 
 - [ ] All subphase checkboxes in the phase file are ticked
 - [ ] All acceptance criteria are met
+- [ ] `Architecture.md` or another current-state explainer is updated when the phase changed the project's actual architecture or implementation reality
 - [ ] All PRs for this phase are merged into `architecture-improvement`
 - [ ] All issues in the milestone are closed
 - [ ] The milestone is closed
@@ -104,7 +105,7 @@ For every phase, use this order before writing code:
 The `gh-milestone` extension is already installed:
 
 ```bash
-gh milestone create --title "Phase 1: Session Boundary Cleanup"
+gh milestone create --title "V2 Phase 1: Session Boundary Cleanup"
 ```
 
 Create milestones one at a time as you are ready to start each phase — no need to create all upfront.
@@ -113,7 +114,7 @@ Create milestones one at a time as you are ready to start each phase — no need
 
 ```bash
 # Create the issue
-gh issue create --title "[Phase 1] Create SessionRepository and root coordinator" --milestone "Phase 1: Session Boundary Cleanup"
+gh issue create --title "[Phase 1] Create SessionRepository and root coordinator" --milestone "V2 Phase 1: Session Boundary Cleanup"
 
 # Add it to the LifeTogether Board (project number 2)
 gh project item-add 2 --owner DetGrey --url "https://github.com/DetGrey/LifeTogether/issues/<issue-number>"
@@ -126,7 +127,7 @@ The CLI will prompt for a body when creating the issue — paste the relevant su
 Use this when the milestone must be visible on the project board before the real issues exist:
 
 ```bash
-gh project item-create 2 --owner DetGrey --title "Phase 1: Session Boundary Cleanup" --body "Milestone placeholder for Phase 1. Replace draft visibility with real milestone issues as they are created."
+gh project item-create 2 --owner DetGrey --title "V2 Phase 1: Session Boundary Cleanup" --body "Milestone placeholder for Phase 1. Replace draft visibility with real milestone issues as they are created."
 ```
 
 ### 3. Branch and Commit
