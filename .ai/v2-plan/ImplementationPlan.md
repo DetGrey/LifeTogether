@@ -5,7 +5,7 @@ All decisions and principles are captured in [ProjectImprovementPlan.md](Project
 
 Each phase has its own detail file linked in the table below.
 
-**Rule: complete each phase fully before starting the next. Before starting any phase, read the phase file and [run `/grill-me`](../skills/grill-me/grill-me.md) to finalise subphases, acceptance criteria, and test cases — no code before that session is complete.**
+**Rule: complete each phase fully before starting the next. Before starting any phase, follow the mandatory [PhaseExecutionFlow.md](PhaseExecutionFlow.md), read the phase file, and [run `/grill-me`](../skills/grill-me/grill-me.md) to finalise subphases, acceptance criteria, test cases, milestone setup, and issue breakdown — no code before that flow is complete.**
 
 ---
 

@@ -4,6 +4,8 @@ This document describes how to track v2 implementation work in [DetGrey/LifeToge
 
 The `.ai/v2-plan/` markdown files are the source of truth for *what* to build and *why*. GitHub tracks *execution progress*.
 
+Before using the workflow below for any active phase, follow the required startup order in [PhaseExecutionFlow.md](PhaseExecutionFlow.md).
+
 ---
 
 ## The Tracking Hierarchy
@@ -19,9 +21,10 @@ The `.ai/v2-plan/` markdown files are the source of truth for *what* to build an
    - Naming convention: `[Phase N] <Title>` — e.g. `[Phase 1] Create SessionRepository and root coordinator`
    - Issue body: paste the relevant subphase checklist from the phase file as Markdown checkboxes (`- [ ]`)
 
-4. **GitHub Project Board:** All milestones and issues must be connected to the **LifeTogether Board** project (`DetGrey/projects/2`). This provides the kanban view across all active work.
+4. **GitHub Project Board:** Execution tracking must be connected to the **LifeTogether Board** project (`DetGrey/projects/2`). This provides the kanban view across all active work.
    - Project number: **2**
    - Add each issue to the board after creating it (see terminal commands below)
+   - Milestones themselves cannot be added with `gh project item-add`; if you want the phase visible on the board before issues exist, create a draft item representing the phase milestone
    - Requires the `project` OAuth scope — run `gh auth refresh -s project` once to enable it, then verify with `gh auth status`
 
 ---
@@ -79,6 +82,21 @@ A phase is complete when **all** of the following are true — none can happen w
 
 ---
 
+## Phase Startup Workflow
+
+For every phase, use this order before writing code:
+
+1. Finish the pre-implementation `grill-me` session using the phase file.
+2. Create the milestone for that phase.
+3. Represent the phase on the project board:
+   - either by creating the phase issues immediately and adding them to the board
+   - or, if issues are not created yet, by creating a draft project item for the phase milestone
+4. Grill-me the final issue breakdown until the issue count and granularity are agreed.
+5. Create the issues from the final phase-file content and connect them to the milestone and project.
+6. Only then create the first issue branch from `architecture-improvement` and start coding.
+
+---
+
 ## Terminal Commands
 
 ### 1. Create a Milestone
@@ -102,6 +120,14 @@ gh project item-add 2 --owner DetGrey --url "https://github.com/DetGrey/LifeToge
 ```
 
 The CLI will prompt for a body when creating the issue — paste the relevant subphase checklist from the phase file.
+
+### 2b. Create a Draft Project Item for the Phase Milestone
+
+Use this when the milestone must be visible on the project board before the real issues exist:
+
+```bash
+gh project item-create 2 --owner DetGrey --title "Phase 1: Session Boundary Cleanup" --body "Milestone placeholder for Phase 1. Replace draft visibility with real milestone issues as they are created."
+```
 
 ### 3. Branch and Commit
 
