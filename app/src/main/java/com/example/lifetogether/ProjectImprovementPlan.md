@@ -225,6 +225,7 @@ Decision made:
 - Move toward a "Ports and Adapters" architecture.
 - Repositories must become "deep modules" that encapsulate their mapping logic and data source orchestration.
 - Split data sources and mapping logic by feature domain rather than keeping one centralized `LocalDataSource`.
+- Data layer testing should happen at the repository boundary using real local stand-ins where possible instead of mocking DAOs or internal persistence seams.
 
 ### 9. Lack of reliable background synchronization
 
@@ -691,85 +692,6 @@ Deferred intentionally:
 
 Deferred intentionally:
 - We have agreed to standardize interaction patterns (deleting, saving, loading), but the exact UX rules and flows for each action will be decided step-by-step at a later date.
-
-## Decisions Made
-
-### Decision 1. Session architecture
-
-- use a hybrid model:
-  - repository or manager for durable session state
-  - activity-scoped root `ViewModel` for orchestration
-  - feature ViewModels consume only the smallest needed session input
-
-### Decision 2. Native UI strictness
-
-- use a moderate native-first standard
-- prefer native Material 3 by default
-- keep custom components only when they have a clear product, accessibility, or reuse advantage
-- require explicit justification for custom replacements of stock Material 3 patterns
-- do not delete or replace custom UI without explicit user consent first
-
-Possible modes:
-
-- conservative: replace only clearly redundant custom UI
-- moderate: prefer native by default and justify exceptions
-- strict: migrate almost every replaceable custom surface to Material 3 patterns
-
-### Decision 3. Preview standard
-
-- previewability is a hard rule for refactored screens and composables unless there is a very strong documented exception
-- route composables may remain Android-specific and non-previewable
-- screen composables should accept plain state and callbacks and should have real previews
-- removing `AppSessionViewModel` from screen parameters is part of achieving this goal
-
-### Decision 4. Data/Domain Architecture
-
-- Repositories must act as "deep modules" using the Ports & Adapters pattern, hiding mapping complexity and local/remote arbitration from the rest of the app. The monolithic `LocalDataSource` will be split by feature domain.
-
-### Decision 5. Core Logic Testing Strategy
-
-- Data layer testing will occur at the repository boundary using real local stand-ins (e.g., in-memory databases) instead of mocking DAOs.
-
-### Decision 6. Interaction Pattern Consistency
-
-- UX interaction patterns for common actions will be standardized across all features. Specific rules are deferred to a later phase.
-
-### Decision 7. Functional Error Handling
-
-- All domain/data layer operations will return explicit `Result` wrappers (e.g., `Result<T, DomainError>`) rather than throwing exceptions for expected failures, eliminating `try/catch` blocks in ViewModels.
-
-### Decision 8. The Role of Use Cases
-
-- Simple "passthrough" Use Cases will be deleted. The Domain Use Case layer is optional and reserved strictly for complex or reused business logic. ViewModels are permitted to consume deepened repositories directly.
-
-### Decision 9. ViewModel State and Event Separation
-
-- Adopt the "Community Standard" for UI state. ViewModels will use a two-pipe system: `StateFlow` for persistent UI state and a `Channel`/`Flow` for one-off events. One-off events will *not* be folded into the `UiState` object.
-
-### Decision 10. Strict "No Magic Numbers" UI Policy
-
-- Feature screens and reusable components must pull all visual styling (spacing, sizing, colors) from the theme or token layer. Hardcoded `.dp` and raw `Color` values are banned in feature code to ensure UI reusability.
-
-### Decision 11. Single Source of Truth (Offline-First)
-
-- The local database is the single source of truth for the UI. Network calls only update the local database, and the UI reacts exclusively to local database changes. This guarantees offline support and instant UI loading times when cached data exists.
-
-### Decision 12. Dedicated Sync Manager
-
-- Remote data synchronization (pushing local changes to Firestore and pulling remote updates) will be handled by a dedicated background Sync Manager. ViewModels will only request data from the local repository, completely decoupling the UI lifecycle from network reliability.
-
-### Decision 13. Type-Safe Navigation
-
-- String-based navigation routes are deprecated for refactored code. All feature navigation must use Type-Safe Navigation with Kotlin Serialization to ensure compile-time safety for route arguments.
-
-### Decision 14. Standardized Motion and Loading
-
-- The app will use a standard global navigation transition. Full-screen blocking spinners are banned in favor of skeleton loaders and inline progress. UI changes must use basic Compose visibility animations to prevent harsh popping. Shared element transitions are explicitly excluded.
-
-### Decision 15. Strict Session Dependency Injection
-
-- Passing ViewModels between screens is banned to fix Compose Previews and reduce coupling. Session state will be provided exclusively by injecting a global `SessionRepository` into feature ViewModels.
-
 
 ## Initial Recommendation
 
