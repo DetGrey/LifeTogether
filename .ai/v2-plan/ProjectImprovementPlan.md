@@ -725,28 +725,21 @@ Primary references for the future implementation phase:
 
 These are important questions, but we are not locking them yet. They should stay visible so we can refine the plan over time without mixing unresolved ideas with confirmed decisions.
 
-### 1. Session repository usage inside feature ViewModels
-
-Still open:
-
-- which current or future feature ViewModels truly need to observe session changes directly
-- which ones should stay route-input only
-
-### 2. Theme depth after the initial token layer
+### 1. Theme depth after the initial token layer
 
 Still open:
 
 - whether the first small token layer will be enough for the project long term
 - whether the theme structure should be deepened later after the first cleanup waves
 
-### 3. Implementation order after the agreed initial pilots
+### 2. Implementation order after the agreed initial pilots
 
 Deferred intentionally:
 
 - no additional feature-family priority is being locked yet
 - this should be decided much later, after the rules and first pilots have proved themselves
 
-### 4. Specific UX Interaction Rules
+### 3. Specific UX Interaction Rules
 
 Deferred intentionally:
 - We have agreed to standardize interaction patterns (deleting, saving, loading), but the exact UX rules and flows for each action will be decided step-by-step at a later date.
