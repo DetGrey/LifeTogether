@@ -23,6 +23,8 @@ Normalise all feature ViewModels to expose a single `UiState` object for persist
 - Blocking confirmation state (e.g. delete confirmation dialogs currently rendered) may stay in `UiState` — it is part of the rendered UI.
 - Delete any remaining passthrough use cases encountered during this phase.
 - Logging cleanup: all `println(...)` in ViewModels and screens replaced with `Log.d(...)`.
+- We have some shared ViewModels like observer, notification and session which we should see if can be done in a better way
+- When making subphases and discussing the details for each subphase, we have to go through every ViewModel one for one to make sure we don't forget to refactor and normalise something
 
 ## Subphases
 

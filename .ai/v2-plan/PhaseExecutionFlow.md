@@ -24,11 +24,13 @@ This step must:
 - finalise the test cases as Markdown checkboxes (`- [ ]`)
 - answer all open questions in the phase file
 - update the phase file with the agreed decisions before proceeding
+- get explicit user approval for each important design decision branch; do not unilaterally finalise decision points in the phase file
 
 Required detail level:
 
 - each subphase should say not only what will be done, but how it should be implemented where that detail is already known
 - important boundary decisions, ownership decisions, lifecycle decisions, migration strategy decisions, and deletion decisions must be written into the phase file during grill-me rather than left implicit in chat history
+- when a decision is still under discussion, keep it clearly marked as pending/proposed in the phase file; only move it to final wording after explicit user agreement
 - if the conversation creates or changes a standing rule for future phase prep, update the relevant source-of-truth markdown file in `.ai/v2-plan/` during the same session
 - if a phase changes the current architecture or current implementation reality of the project, the implementation work for that phase must also update `Architecture.md` or another current-state project explainer so it reflects the new reality
 - historical implementation/phase/plan files must keep their historical references; do not remove old decisions or references from phase files just to make the current-state docs cleaner
