@@ -81,18 +81,51 @@ Required issue rule:
 
 Only after the phase file, milestone, and issues are ready:
 
-- pick the first issue
-- move that issue to `In Progress` on the **LifeTogether Board** immediately before doing implementation work
+- **Move the issue to `In Progress` on the LifeTogether Board before touching any code.** An issue in `Backlog` or `Ready` while code is being written means this step was skipped.
 - connect the issue to its implementation branch (prefer GitHub-linked issue branch flow before coding; otherwise add explicit branch + PR references in the issue body)
 - create a branch from `architecture-improvement` using the branch format from [GitHubWorkflow.md](GitHubWorkflow.md)
-- begin coding from the issue content that was already agreed and written down
+  - if the issue depends on a previous issue branch not yet merged into `architecture-improvement`, use that branch as the base and note the dependency in the issue body
+- **create the branch and check it out BEFORE writing any implementation code** — not after
 
 Required outcome:
 
-- implementation never starts on an issue that is still in `Todo`/not started on the board
+- implementation never starts on an issue that is still in `Backlog`/`Ready` on the board — move it to `In Progress` first
 - the active issue has an explicit branch connection for traceability
 - coding starts from an issue branch, not directly from `architecture-improvement`
+- **no implementation code is written before the issue branch exists** — this rule has no exceptions
 - the issue already contains the implementation context agreed during the grill-me phase
+
+### 5b. Keep the phase file current during implementation
+
+The phase file is not just a planning artefact — it must stay accurate throughout implementation.
+
+- if a design decision is made during implementation that differs from what the phase file says, **update the phase file in the same commit or the next one**
+- if the agreed approach for a subphase changes, rewrite that subphase section rather than leaving the old text in place
+- if an out-of-scope decision is recognised during implementation (something that should be deferred), add it to the `## Out of Scope` section of the phase file so it is tracked
+- the phase file's `Status` field must reflect the current real state (e.g. `In Progress` once coding starts)
+
+Required outcome:
+
+- the phase file always matches what was actually built, not just what was planned
+- a future reader can rely on the phase file as an accurate record of decisions made
+
+### 6. Complete the issue after the last commit
+
+When implementation is done and all commits are made, the following steps are **mandatory** — do not wait to be asked:
+
+1. **Tick completed checkboxes** in the issue body: mark every completed item in the Subphase Checklist and Acceptance Criteria sections as `- [x]`. Never tick Test / Verification items — those are for the user.
+2. **Move the issue to `In Review`** on the LifeTogether Board.
+3. **Push the branch** to the remote.
+4. **Open a PR** targeting `architecture-improvement` with `Relates to #N` (not `Closes #N` unless the PR completes the whole issue).
+
+See [GitHubWorkflow.md](GitHubWorkflow.md) for exact terminal commands for each step.
+
+Required outcome:
+
+- the issue is in `In Review` on the board — not still `In Progress` — by the time the PR is open
+- the issue body reflects what was actually implemented, with accurate checkboxes
+- the PR is open and awaiting user review before any further action
+- nothing is merged or closed without explicit user approval
 
 ---
 
@@ -105,7 +138,11 @@ For each phase, the flow is:
 3. grill-me the final issue breakdown
 4. create the issues from the phase file and connect them to the milestone and project
 5. move the active issue to `In Progress`, create the issue branch, and start coding
-6. when the issue is complete, update the issue body so all completed checkboxes are checked before closing
+6. build and verify before every commit — never commit uncompiled code
+7. when implementation is done: tick all completed non-test checkboxes in the issue body, move the issue to `In Review` on the board, push the branch, and open a PR targeting `architecture-improvement`
+8. wait for explicit user approval before merging the PR or closing the issue
+
+Steps 7 and 8 are mandatory after every issue — do not wait to be asked. See [GitHubWorkflow.md](GitHubWorkflow.md) for exact commands.
 
 ---
 
@@ -117,5 +154,7 @@ This flow exists to prevent:
 - milestones being skipped
 - issue lists being decided too early or too loosely
 - GitHub issues losing the detailed information already agreed in the phase file
-- implementation starting without project tracking in place
+- implementation starting without project tracking in place — issue left in Backlog while code is written
 - grill-me sessions ending with only high-level intent instead of implementation-ready phase detail
+- phase files going stale during implementation while the actual code diverges from them
+- implementation finishing without a PR being opened, checkboxes being ticked, or the board being updated

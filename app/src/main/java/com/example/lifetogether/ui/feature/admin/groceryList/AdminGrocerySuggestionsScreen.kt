@@ -67,7 +67,6 @@ fun AdminGrocerySuggestionsScreen(
             )
 
             ObserverUpdatingText(
-                appSessionViewModel = appSessionViewModel,
                 keys = setOf(ObserverKey.GROCERY_CATEGORIES, ObserverKey.GROCERY_SUGGESTIONS),
             )
 

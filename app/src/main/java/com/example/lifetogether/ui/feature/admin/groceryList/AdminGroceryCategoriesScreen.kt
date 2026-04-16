@@ -82,7 +82,6 @@ fun AdminGroceryCategoriesScreen(
 
             item {
                 ObserverUpdatingText(
-                    appSessionViewModel = appSessionViewModel,
                     keys = setOf(ObserverKey.GROCERY_CATEGORIES),
                 )
 

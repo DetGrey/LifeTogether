@@ -106,7 +106,6 @@ fun AlbumDetailsScreen(
             )
 
             ObserverUpdatingText(
-                appSessionViewModel = appSessionViewModel,
                 keys = setOf(ObserverKey.GALLERY_ALBUMS, ObserverKey.GALLERY_MEDIA),
             )
             when (uiState.isSelectionModeActive) {

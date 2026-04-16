@@ -1,8 +1,6 @@
 package com.example.lifetogether.ui.feature.tipTracker
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavBackStackEntry
@@ -18,23 +16,17 @@ fun TipTrackerRoute(
     navController: NavHostController,
     backStackEntry: NavBackStackEntry,
     appNavigator: AppNavigator,
-    appSessionViewModel: AppSessionViewModel,
 ) {
     val sharedEntry = remember(backStackEntry) {
         navController.getBackStackEntry(AppRoutes.TIP_TRACKER_GRAPH)
     }
     val viewModel: TipTrackerViewModel = hiltViewModel(sharedEntry)
 
-    val userInformation by appSessionViewModel.userInformation.collectAsState()
-    if (!userInformation?.familyId.isNullOrBlank()) {
-        FeatureObserverLifecycleBinding(
-            appSessionViewModel = appSessionViewModel,
-            keys = setOf(ObserverKey.TIP_TRACKER),
-            uid = userInformation?.uid,
-            familyId = userInformation?.familyId,
-        )
-    }
-
+    // TODO [Issue #3]: remove bridge after TipTrackerScreen migrates off AppSessionViewModel
+    val appSessionViewModel: AppSessionViewModel = hiltViewModel()
+    FeatureObserverLifecycleBinding(
+        keys = setOf(ObserverKey.TIP_TRACKER),
+    )
     TipTrackerScreen(appNavigator, appSessionViewModel, viewModel)
 }
 
@@ -43,12 +35,13 @@ fun TipStatisticsRoute(
     navController: NavHostController,
     backStackEntry: NavBackStackEntry,
     appNavigator: AppNavigator,
-    appSessionViewModel: AppSessionViewModel,
 ) {
     val sharedEntry = remember(backStackEntry) {
         navController.getBackStackEntry(AppRoutes.TIP_TRACKER_GRAPH)
     }
     val viewModel: TipTrackerViewModel = hiltViewModel(sharedEntry)
 
+    // TODO [Issue #3]: remove bridge after TipStatisticsScreen migrates off AppSessionViewModel
+    val appSessionViewModel: AppSessionViewModel = hiltViewModel()
     TipStatisticsScreen(appNavigator, appSessionViewModel, viewModel)
 }

@@ -1,6 +1,6 @@
 # Phase 1 — Session Boundary Cleanup
 
-**Status:** Grill-me in progress _(Not started → Grill-me in progress → Implementing → Complete)_
+**Status:** Implementing _(Not started → Grill-me in progress → Implementing → Complete)_
 
 ## Goal
 
@@ -26,7 +26,7 @@ Extract durable app session state into a dedicated `SessionRepository`, move obs
 
 ## Subphases
 
-- [ ] 1.1 Define `SessionState` as an explicit session model and implement `SessionRepository` as a Hilt singleton
+- [x] 1.1 Define `SessionState` as an explicit session model and implement `SessionRepository` as a Hilt singleton
   - Recommended file placement: `SessionRepository` in `domain/repository/`, `SessionState` in `domain/model/`, `SessionRepositoryImpl` in `data/repository/`
   - Prefer `SessionState` as a sealed interface with `data object` / `data class` variants if supported cleanly by the project Kotlin version; fallback to sealed class or plain `object` variants only if necessary
   - `SessionState` shape: `Loading`, `Unauthenticated`, `Authenticated(user: UserInformation)`
@@ -39,7 +39,7 @@ Extract durable app session state into a dedicated `SessionRepository`, move obs
   - Internal transition rule: `Loading` while auth/user state is being resolved; `Authenticated(user)` only after full `UserInformation` load succeeds; if Firebase auth is signed in but user-info lookup fails, log it and transition to `Unauthenticated`
   - Provide `SessionRepository` and the application-level coroutine scope from a dedicated Hilt module installed in `SingletonComponent`
   - If an application-level `CoroutineScope` is added, qualify it explicitly to avoid ambiguous scope injection later
-- [ ] 1.2 Define and implement the activity-scoped root coordinator ViewModel
+- [x] 1.2 Define and implement the activity-scoped root coordinator ViewModel
   - Recommended file placement: root coordinator ViewModel in `ui/viewmodel/`
   - Root coordinator reacts to `SessionState`
   - Owns observer coordination, guide progress sync scheduling, and FCM token sync triggering
@@ -48,18 +48,18 @@ Extract durable app session state into a dedicated `SessionRepository`, move obs
   - Track last-applied identity context separately for observers, guide sync, and FCM sync so reactions stay idempotent
   - On `Unauthenticated`, cancel guide sync, clear remembered contexts, and cancel all non-auth observers
   - On `Authenticated(user)`, sync observer context if changed, start/restart guide sync when `familyId` is valid and context changed, and trigger FCM sync only when both `uid` and `familyId` are valid and changed
-- [ ] 1.3 Update `MainActivity` to use the root coordinator + `SessionRepository`
+- [x] 1.3 Update `MainActivity` to use the root coordinator + `SessionRepository`
   - Remove `AppSessionViewModel` usage
   - Move app-start session reactions out of composable side effects tied directly to `AppSessionViewModel`
   - Keep `MainActivity` focused on app-root setup and root-scoped dependencies rather than session-driven navigation branching
-- [ ] 1.4 Update `NavHost` and route composables to remove all `AppSessionViewModel` parameter threading
+- [x] 1.4 Update `NavHost` and route composables to remove all `AppSessionViewModel` parameter threading
   - `NavHost` must not accept `AppSessionViewModel`
   - Route composables must not know about session orchestration
   - `LoadingScreen` may keep ownership of login-vs-home routing in phase 1, but it should depend on plain session state input rather than an app-scoped session ViewModel
   - Prefer direct plain session-state collection for startup loading flow rather than introducing a dedicated `LoadingViewModel` unless implementation friction clearly requires one
   - Graph-aware observer helpers such as the gallery graph may keep route-level navigation-condition logic, but they must only decide when to bind observer keys and must not pass session context
   - Preserve existing route files in phase 1 even when they become thinner; route/screen structural cleanup belongs to a later phase unless a route becomes impossible to keep
-- [ ] 1.5 Update `ObserverLifecycle` to align with root coordinator ownership
+- [x] 1.5 Update `ObserverLifecycle` to align with root coordinator ownership
   - `FeatureObserverLifecycleBinding` takes observer keys only
   - No `uid` / `familyId` / `AppSessionViewModel` parameters
   - `FeatureObserverLifecycleBinding` and `ObserverUpdatingText` should resolve the activity-scoped root coordinator internally instead of receiving it through route/screen parameter threading
@@ -88,13 +88,13 @@ Extract durable app session state into a dedicated `SessionRepository`, move obs
 
 ### Recommended Implementation Order
 
-- [ ] Step A: Add singleton DI + application coroutine scope + `SessionState` + `SessionRepository`
-- [ ] Verify compilation after Step A / the first issue slice
-- [ ] Step B: Add the activity-scoped root coordinator and wire its session reaction loop
-- [ ] Verify compilation after Step B / the second issue slice
-- [ ] Step C: Switch `MainActivity` to the root coordinator and remove app-start `AppSessionViewModel` side effects
-- [ ] Step D: Migrate observer lifecycle infrastructure to root coordinator ownership
-- [ ] Step E: Remove `NavHost` parameter threading and clean route observer bindings
+- [x] Step A: Add singleton DI + application coroutine scope + `SessionState` + `SessionRepository`
+- [x] Verify compilation after Step A / the first issue slice
+- [x] Step B: Add the activity-scoped root coordinator and wire its session reaction loop
+- [x] Verify compilation after Step B / the second issue slice
+- [x] Step C: Switch `MainActivity` to the root coordinator and remove app-start `AppSessionViewModel` side effects
+- [x] Step D: Migrate observer lifecycle infrastructure to root coordinator ownership
+- [x] Step E: Remove `NavHost` parameter threading and clean route observer bindings
 - [ ] Step F: Migrate feature/session consumers screen-by-screen through their own ViewModels
 - [ ] Step G: Delete `AppSessionViewModel`, delete `itemCount`, and sweep remaining references
 - [ ] Verify final compilation after Step G / the final issue slice
@@ -110,20 +110,20 @@ Extract durable app session state into a dedicated `SessionRepository`, move obs
 
 ### Acceptance criteria
 
-- [ ] `SessionRepository` exists as the single durable session boundary and exposes `StateFlow<SessionState>`
-- [ ] `SessionState` is explicit and no screen depends on the old `loading + nullable userInformation` contract
-- [ ] The root coordinator ViewModel is activity-scoped and owns observer coordination, guide sync orchestration, and FCM token sync triggering
-- [ ] `MainActivity` no longer creates or depends on `AppSessionViewModel`
-- [ ] `NavHost` and all route/screen composables no longer accept or thread `AppSessionViewModel`
-- [ ] `FeatureObserverLifecycleBinding` no longer accepts `uid`, `familyId`, or `AppSessionViewModel`
-- [ ] Feature ViewModels that need session data depend on `SessionRepository` directly via Hilt
-- [ ] Sign-out flows go through `SessionRepository.signOut()` and result in clean transition to `SessionState.Unauthenticated`
-- [ ] Remote logout/device-token removal behavior remains intact after the sign-out refactor
-- [ ] FCM token sync triggers only when authenticated `uid` and `familyId` are both available, and does not retrigger unnecessarily when identity context is unchanged
-- [ ] `AppSessionViewModel` is deleted by the end of the phase
-- [ ] `itemCount` is fully removed from the codebase and not relocated into `SessionRepository` or the root coordinator
-- [ ] Preview-blocking `"Preview requires AppSessionViewModel"` placeholders touched by this migration are removed
-- [ ] `Architecture.md` or another current-state explainer is updated to reflect the new session boundary and root coordinator ownership without removing historical references from the v2 planning files
+- [x] `SessionRepository` exists as the single durable session boundary and exposes `StateFlow<SessionState>`
+- [ ] `SessionState` is explicit and no screen depends on the old `loading + nullable userInformation` contract _(issue #3)_
+- [x] The root coordinator ViewModel is activity-scoped and owns observer coordination, guide sync orchestration, and FCM token sync triggering
+- [x] `MainActivity` no longer creates or depends on `AppSessionViewModel`
+- [x] `NavHost` and all route/screen composables no longer accept or thread `AppSessionViewModel`
+- [x] `FeatureObserverLifecycleBinding` no longer accepts `uid`, `familyId`, or `AppSessionViewModel`
+- [ ] Feature ViewModels that need session data depend on `SessionRepository` directly via Hilt _(issue #3)_
+- [x] Sign-out flows go through `SessionRepository.signOut()` and result in clean transition to `SessionState.Unauthenticated`
+- [x] Remote logout/device-token removal behavior remains intact after the sign-out refactor
+- [x] FCM token sync triggers only when authenticated `uid` and `familyId` are both available, and does not retrigger unnecessarily when identity context is unchanged
+- [ ] `AppSessionViewModel` is deleted by the end of the phase _(issue #3)_
+- [ ] `itemCount` is fully removed from the codebase and not relocated into `SessionRepository` or the root coordinator _(issue #3)_
+- [ ] Preview-blocking `"Preview requires AppSessionViewModel"` placeholders touched by this migration are removed _(issue #3)_
+- [ ] `Architecture.md` or another current-state explainer is updated to reflect the new session boundary and root coordinator ownership without removing historical references from the v2 planning files _(issue #3)_
 
 ### Test cases
 
@@ -141,19 +141,21 @@ Extract durable app session state into a dedicated `SessionRepository`, move obs
 
 ## GitHub Issues
 
-Create milestone `V2 Phase 1: Session Boundary Cleanup` and the following issues assigned to it:
+Milestone: `V2 Phase 1: Session Boundary Cleanup` (created)
 
-- `[Phase 1] Create SessionRepository and SessionState`
-- `[Phase 1] Create root coordinator and observer lifecycle migration`
-- `[Phase 1] Remove AppSessionViewModel and itemCount references`
+Issues (all created and assigned to milestone):
+
+- `[Phase 1] [1.1] Create SessionRepository and SessionState` — GitHub issue #2 ✅ implemented
+- `[Phase 1] [1.2-1.5] Create root coordinator and observer lifecycle migration` — GitHub issue #4 ✅ implemented, PR #6 open
+- `[Phase 1] [1.6-1.7] Remove AppSessionViewModel and itemCount references` — GitHub issue #3 🔲 pending
 
 Issue ownership expectations:
 
-- `[Phase 1] Create SessionRepository and SessionState`
+- `[Phase 1] [1.1] Create SessionRepository and SessionState`
   - Owns singleton DI additions, application coroutine scope, `SessionState`, `SessionRepository`, `SessionRepositoryImpl`, sign-out boundary migration, and any small `SessionState` helper needed by feature ViewModels
-- `[Phase 1] Create root coordinator and observer lifecycle migration`
+- `[Phase 1] [1.2-1.5] Create root coordinator and observer lifecycle migration`
   - Owns root coordinator ViewModel, `MainActivity` root wiring, observer lifecycle helpers, graph observer migration, and route observer cleanup that removes session/context plumbing from UI-facing observer code
-- `[Phase 1] Remove AppSessionViewModel and itemCount references`
+- `[Phase 1] [1.6-1.7] Remove AppSessionViewModel and itemCount references`
   - Owns feature ViewModel/session-consumer migration, removal of direct session reads from screens/routes, deletion of `AppSessionViewModel`, deletion of `itemCount`, final reference sweep, and `Architecture.md` or equivalent current-state documentation update
 
 Issue body expectations:

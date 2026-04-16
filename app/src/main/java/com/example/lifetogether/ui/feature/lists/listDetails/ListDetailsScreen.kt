@@ -123,7 +123,6 @@ fun ListDetailsScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     ObserverUpdatingText(
-                        appSessionViewModel = appSessionViewModel,
                         keys = setOf(ObserverKey.ROUTINE_LIST_ENTRIES),
                     )
 

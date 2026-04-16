@@ -18,7 +18,7 @@ Before using the workflow below for any active phase, follow the required startu
 
 3. **Issues (fit the granularity to the nature of the phase):** Each milestone contains multiple issues. The right number and granularity varies by phase — some phases call for one issue per feature domain, others for one per screen, others for one per component. A single pattern forced across all phases creates either too many micro-issues or too few meaningful ones.
    - The specific issue list for each phase is defined in that phase's `## GitHub Issues` section, confirmed and updated after the pre-implementation grill-me session.
-   - Naming convention: `[Phase N] <Title>` — e.g. `[Phase 1] Create SessionRepository and root coordinator`
+   - Naming convention: `[Phase N] [N.X–N.Y] <Title>` — e.g. `[Phase 1] [1.1] Create SessionRepository and root coordinator` or `[Phase 1] [1.2–1.5] Create root coordinator and observer lifecycle migration`. Include the subphase ID(s) so the intended implementation order is visible directly from the issue title.
    - Issue body: paste the relevant subphase checklist from the phase file as Markdown checkboxes (`- [ ]`)
 
 4. **GitHub Project Board:** Execution tracking must be connected to the **LifeTogether Board** project (`DetGrey/projects/2`). This provides the kanban view across all active work.
@@ -69,17 +69,47 @@ A phase is complete when **all** of the following are true — none can happen w
 
 ## Daily Execution Workflow
 
-1. **Pick up an issue:** Go to the LifeTogether Board, pick an issue from the current milestone, and move it to **In Progress**.
-2. **Branch + issue connection:** Connect the issue to its branch before coding.
+These steps are **mandatory for every issue** — all of them, every time, in order. Do not skip any step.
+
+### Starting an issue
+
+1. **Move to In Progress first — before any code is written.** Go to the LifeTogether Board, pick the issue, and move it to **In Progress** before doing anything else. An issue left in Backlog or Ready while code exists on its branch is a tracking failure.
+2. **Branch + issue connection — MUST happen before any code is written.**
    - Preferred: create the branch from the issue so GitHub tracks it in Development (`gh issue develop <issue-number> --base architecture-improvement --name <branch-name>`)
+   - If the issue depends on a previous branch that is not yet merged into `architecture-improvement`, use that branch as the base instead and note the dependency explicitly in the issue body.
    - If the branch already exists or linking cannot be created, add explicit branch and PR references in the issue body and keep them updated.
-3. **Micro-commits:** Write code and commit using the convention `[Phase N] Short description`.
-4. **Pull Request:** Open a PR targeting `architecture-improvement`.
+   - **Do not write a single line of implementation code until the issue branch exists and is checked out.**
+3. **Micro-commits:** Write code and commit using the convention `[Phase N] [N.X–N.Y] Short description`. Always build and verify before committing — never commit code that has not been compiled.
+
+### After implementation is complete
+
+These steps must be done after the last commit, before considering the issue done. Do not wait to be asked — they are part of completing every issue.
+
+4. **Update the phase file** if any implementation decisions changed from what was written in `.ai/v2-plan/phases/`. The phase file must reflect what was actually built, not just the original plan. Update `Status` to `In Progress` if it has not been updated yet.
+6. **Tick checkboxes:** Edit the issue body to mark every completed checklist item as `- [x]`.
+   - Tick items in the **Subphase Checklist** and **Acceptance Criteria** sections.
+   - **Never tick items in the Test / Verification section** — those are for the user to verify manually.
+   - Use `gh issue edit <number> --body "..."` with the full updated body. Verify the result on GitHub.
+7. **Move to In Review:** Move the issue to **In Review** on the LifeTogether Board.
+   ```bash
+   # Get the project item ID and field/option IDs (one-time lookup per project)
+   gh project item-list 2 --owner DetGrey --format json
+   gh project field-list 2 --owner DetGrey --format json
+   # Then update the Status field
+   gh project item-edit --project-id PVT_kwHOBHZIlc4BUuB3 --id <item-id> --field-id PVTSSF_lAHOBHZIlc4BUuB3zhCXx6k --single-select-option-id df73e18b
+   ```
+   Board Status field IDs (LifeTogether Board, project 2):
+   - Status field: `PVTSSF_lAHOBHZIlc4BUuB3zhCXx6k`
+   - Backlog: `f75ad846` | Ready: `61e4505c` | In progress: `47fc9ee4` | In review: `df73e18b` | Done: `98236657`
+8. **Push the branch:** `git push origin <branch-name>`
+9. **Pull Request:** Open a PR targeting `architecture-improvement`.
    - Do not write `Closes #N` unless the PR completes the *entire* issue.
-   - Instead write: `Relates to #N` or `Completes SessionRepository setup for #N`.
+   - Instead write: `Relates to #N`.
    - **Never merge a PR without explicit user approval first.**
-5. **Tick checkboxes:** When an issue is completed, edit the issue body so completed checklist items are checked (`- [x]`) before closing.
-6. **Close:** Once all relevant checkboxes are ticked, close the issue.
+
+### After user approval
+
+10. **Close:** Once the user approves and the PR is merged, close the issue.
    - **Never close an issue or milestone without explicit user approval first.**
    - A phase is only complete when all issues are closed, all PRs are merged, and the milestone is closed — see Definition of Complete above.
 
