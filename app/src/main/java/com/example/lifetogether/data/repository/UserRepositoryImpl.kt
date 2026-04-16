@@ -1,21 +1,85 @@
 package com.example.lifetogether.data.repository
 
+import com.example.lifetogether.data.local.source.SessionCleanupLocalDataSource
+import com.example.lifetogether.data.local.source.UserLocalDataSource
 import com.example.lifetogether.data.remote.FirebaseAuthDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.listener.AuthResultListener
+import com.example.lifetogether.domain.listener.FamilyInformationResultListener
 import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
-import com.example.lifetogether.domain.repository.SessionRemoteUserRepository
+import com.example.lifetogether.domain.model.family.FamilyInformation
+import com.example.lifetogether.domain.model.family.FamilyMember
+import com.example.lifetogether.domain.repository.SessionUserRepository
 import com.example.lifetogether.domain.repository.UserRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
-class RemoteUserRepositoryImpl @Inject constructor(
+class UserRepositoryImpl @Inject constructor(
+    private val userLocalDataSource: UserLocalDataSource,
+    private val sessionCleanupLocalDataSource: SessionCleanupLocalDataSource,
     private val firebaseAuthDataSource: FirebaseAuthDataSource,
     private val firestoreDataSource: FirestoreDataSource,
-) : UserRepository, SessionRemoteUserRepository {
+) : UserRepository, SessionUserRepository {
+
+    fun getFamilyInformation(familyId: String): Flow<FamilyInformationResultListener> {
+        // Get family information (without members)
+        val familyInformationFlow: Flow<FamilyInformationResultListener> = userLocalDataSource.getFamilyInformation(familyId).map { user ->
+            try {
+                println("LocalUserRepositoryImpl getFamilyInformation user: $user")
+
+                // Initial FamilyInformation without members
+                FamilyInformationResultListener.Success(
+                    FamilyInformation(
+                        familyId = user.familyId,
+                    ),
+                )
+            } catch (e: Exception) {
+                FamilyInformationResultListener.Failure(e.message ?: "Unknown error")
+            }
+        }
+
+        // Get family members
+        val familyMembersFlow = userLocalDataSource.getFamilyMembers(familyId).map { list ->
+            list.map { familyMember ->
+                try {
+                    println("LocalUserRepositoryImpl getFamilyInformation familyMember: $familyMember")
+
+                    FamilyMember(
+                        uid = familyMember.uid,
+                        name = familyMember.name,
+                    )
+                } catch (e: Exception) {
+                    println("Error fetching family members: ${e.message}")
+                    emptyList<FamilyMember>()
+                }
+            }
+        }
+
+        // Combine both flows
+        return familyInformationFlow.combine(familyMembersFlow) { familyInfo, familyMembers ->
+            when (familyInfo) {
+                is FamilyInformationResultListener.Success -> {
+                    // Add the family members to the family information
+                    val validMembers = familyMembers.filterIsInstance<FamilyMember>()
+                    val updatedFamilyInfo = familyInfo.familyInformation.copy(members = validMembers)
+                    FamilyInformationResultListener.Success(updatedFamilyInfo)
+                }
+                is FamilyInformationResultListener.Failure -> {
+                    familyInfo
+                }
+            }
+        }
+    }
+
+    override fun removeSavedUserInformation(): ResultListener {
+        return sessionCleanupLocalDataSource.clearSessionTables()
+    }
+    // ---------- REMOTE
     suspend fun login(
         user: User,
     ): AuthResultListener {

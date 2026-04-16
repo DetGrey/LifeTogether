@@ -31,6 +31,8 @@ import java.io.File
 import java.util.UUID
 import javax.inject.Inject
 import androidx.core.net.toUri
+import com.example.lifetogether.domain.result.Result
+
 class CloudflareR2StorageDataSource @Inject constructor(
     private val application: Application,
     private val imageProcessor: ImageProcessor,
@@ -139,11 +141,11 @@ class CloudflareR2StorageDataSource @Inject constructor(
         }
     }
 
-    override suspend fun deleteImages(urlList: List<String>): ResultListener =
+    override suspend fun deleteImages(urlList: List<String>): Result<Unit, String> =
         coroutineScope {
             if (urlList.isEmpty()) {
                 Log.i(TAG, "deleteImages: URL list is empty. Nothing to delete.")
-                return@coroutineScope ResultListener.Success
+                return@coroutineScope Result.Success(Unit)
             }
 
             val deferredResults = urlList.map { url ->
@@ -158,13 +160,13 @@ class CloudflareR2StorageDataSource @Inject constructor(
 
             if (allSucceeded) {
                 Log.i(TAG, "Successfully deleted all ${urlList.size} images.")
-                ResultListener.Success
+                Result.Success(Unit)
             } else {
                 val failedCount = results.count { it is ResultListener.Failure }
                 val firstErrorMessage = (results.firstOrNull { it is ResultListener.Failure } as? ResultListener.Failure)?.message
                     ?: "One or more images failed to delete."
                 Log.e(TAG, "$failedCount image(s) failed to delete. First error: $firstErrorMessage")
-                ResultListener.Failure("$failedCount image(s) failed to delete. First error: $firstErrorMessage")
+                Result.Failure("$failedCount image(s) failed to delete. First error: $firstErrorMessage")
             }
         }
 
@@ -246,7 +248,7 @@ class CloudflareR2StorageDataSource @Inject constructor(
             val uri = url.toUri()
             // Remove leading slash from path to get the object key
             uri.path?.removePrefix("/") ?: url
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Log.w(TAG, "Failed to parse URL: $url, using as-is")
             url
         }

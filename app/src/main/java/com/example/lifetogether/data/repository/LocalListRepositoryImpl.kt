@@ -3,20 +3,14 @@ package com.example.lifetogether.data.repository
 import android.util.Log
 import androidx.core.net.toUri
 import com.example.lifetogether.data.local.source.AlbumLocalDataSource
-import com.example.lifetogether.data.local.source.CategoryLocalDataSource
 import com.example.lifetogether.data.local.source.GroceryLocalDataSource
 import com.example.lifetogether.data.local.source.ListQueryLocalDataSource
 import com.example.lifetogether.data.local.source.RoutineListEntryLocalDataSource
 import com.example.lifetogether.data.local.source.query.ListQueryType
 import com.example.lifetogether.data.local.source.query.ListQueryTypeMapper
 import com.example.lifetogether.data.model.Entity
-import com.example.lifetogether.domain.listener.CategoriesListener
-import com.example.lifetogether.domain.listener.GrocerySuggestionsListener
 import com.example.lifetogether.domain.listener.ItemResultListener
 import com.example.lifetogether.domain.listener.ListItemsResultListener
-import com.example.lifetogether.domain.listener.ResultListener
-import com.example.lifetogether.domain.listener.StringResultListener
-import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Item
 import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.domain.model.enums.MediaType
@@ -26,11 +20,11 @@ import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.grocery.GroceryItem
-import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.repository.ListRepository
+import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -40,7 +34,6 @@ import kotlin.reflect.KClass
 
 class LocalListRepositoryImpl @Inject constructor(
     private val listQueryLocalDataSource: ListQueryLocalDataSource,
-    private val categoryLocalDataSource: CategoryLocalDataSource,
     private val groceryLocalDataSource: GroceryLocalDataSource,
     private val albumLocalDataSource: AlbumLocalDataSource,
     private val routineListEntryLocalDataSource: RoutineListEntryLocalDataSource,
@@ -49,78 +42,14 @@ class LocalListRepositoryImpl @Inject constructor(
         const val TAG = "LocalListRepository"
     }
 
-    override suspend fun saveItem(
-        item: Item,
-        listName: String,
-    ): StringResultListener {
-        TODO("Not yet implemented")
-    }
-
     fun deleteItems(
         queryType: ListQueryType,
         itemIds: List<String>,
-    ): ResultListener {
+    ): Result<Unit, String> {
         return when (queryType) {
             ListQueryType.Grocery -> groceryLocalDataSource.deleteItems(itemIds)
             ListQueryType.RoutineListEntries -> routineListEntryLocalDataSource.deleteItems(itemIds)
-            else -> ResultListener.Failure("Unsupported delete type: $queryType")
-        }
-    }
-
-    @Deprecated(
-        message = "Use typed deleteItems(ListQueryType, itemIds).",
-        replaceWith = ReplaceWith(
-            expression = "deleteItems(queryType, itemIds)",
-            imports = ["com.example.lifetogether.data.local.source.query.ListQueryType"],
-        ),
-        level = DeprecationLevel.WARNING,
-    )
-    fun deleteItems(
-        listName: String,
-        itemIds: List<String>,
-    ): ResultListener {
-        // TODO(v2-phase2-cleanup): remove temporary String-based API once call sites use ListQueryType directly.
-        val queryType = ListQueryTypeMapper.fromTableNameOrNull(listName)
-            ?: return ResultListener.Success
-        return deleteItems(queryType, itemIds)
-    }
-
-    fun getCategories(): Flow<CategoriesListener> {
-        println("LocalListRepositoryImpl getCategories()")
-        return categoryLocalDataSource.getCategories().map { list ->
-            try {
-                CategoriesListener.Success(
-                    list.map { category ->
-                        Category(
-                            emoji = category.emoji,
-                            name = category.name,
-                        )
-                    },
-                )
-            } catch (e: Exception) {
-                CategoriesListener.Failure(e.message ?: "Unknown error")
-            }
-        }
-    }
-
-    fun getGrocerySuggestions(): Flow<GrocerySuggestionsListener> {
-        println("LocalListRepositoryImpl getGrocerySuggestions()")
-        return groceryLocalDataSource.getGrocerySuggestions().map { list ->
-            println("Grocery suggestions: $list")
-            try {
-                GrocerySuggestionsListener.Success(
-                    list.map { grocerySuggestion ->
-                        GrocerySuggestion(
-                            id = grocerySuggestion.id,
-                            suggestionName = grocerySuggestion.suggestionName,
-                            category = grocerySuggestion.category,
-                            approxPrice = grocerySuggestion.approxPrice,
-                        )
-                    },
-                )
-            } catch (e: Exception) {
-                GrocerySuggestionsListener.Failure(e.message ?: "Unknown error")
-            }
+            else -> Result.Failure("Unsupported delete type: $queryType")
         }
     }
 
@@ -173,23 +102,25 @@ class LocalListRepositoryImpl @Inject constructor(
             }
     }
 
-    fun <T : Item> fetchListItems(
+    fun <T : Item> getListItemsFlow(
         queryType: ListQueryType,
         familyId: String,
         itemType: KClass<T>,
         uid: String? = null,
-    ): Flow<ListItemsResultListener<Item>> {
-        Log.d(TAG, "fetchListItems init queryType=$queryType familyId=$familyId uid=$uid itemType=${itemType.simpleName}")
+    ): Flow<Result<List<T>, String>> {
+        Log.d(TAG, "getListItemsFlow init queryType=$queryType familyId=$familyId uid=$uid itemType=${itemType.simpleName}")
         return listQueryLocalDataSource.getListItems(queryType, familyId, uid)
             .map { entities ->
                 try {
-                    Log.d(TAG, "fetchListItems entitiesCount=${entities.size} queryType=$queryType")
-                    val itemsList = entities.map { it.toItem(itemType) }.sortedBy { it.itemName }
-                    Log.d(TAG, "fetchListItems mappedItemsCount=${itemsList.size} queryType=$queryType")
-                    ListItemsResultListener.Success(itemsList)
+                    Log.d(TAG, "getListItemsFlow entitiesCount=${entities.size} queryType=$queryType")
+                    val itemsList = entities.map { it.toItem(itemType) }
+                        .filterIsInstance(itemType.java)
+                        .sortedBy { it.itemName }
+                    Log.d(TAG, "getListItemsFlow mappedItemsCount=${itemsList.size} queryType=$queryType")
+                    Result.Success(itemsList)
                 } catch (e: Exception) {
-                    Log.e(TAG, "fetchListItems mapping error queryType=$queryType", e)
-                    ListItemsResultListener.Failure(e.message ?: "Unknown error")
+                    Log.e(TAG, "getListItemsFlow mapping error queryType=$queryType", e)
+                    Result.Failure(e.message ?: "Unknown mapping error")
                 }
             }
     }
@@ -213,16 +144,21 @@ class LocalListRepositoryImpl @Inject constructor(
             ?: return flowOf(
                 ListItemsResultListener.Success(emptyList()),
             )
-        return fetchListItems(queryType, familyId, itemType, uid)
+        return getListItemsFlow(queryType, familyId, itemType, uid).map {
+            when (it) {
+                is Result.Success -> ListItemsResultListener.Success(it.data)
+                is Result.Failure -> ListItemsResultListener.Failure(it.error)
+            }
+        }
     }
 
-    fun fetchItemById(
+    fun getItemByIdFlow(
         queryType: ListQueryType,
         familyId: String,
         id: String,
         itemType: KClass<out Item>,
         uid: String? = null,
-    ): Flow<ItemResultListener<Item>> {
+    ): Flow<Result<Item, String>> {
         Log.d(TAG, "fetchItemById queryType=$queryType familyId=$familyId uid=$uid id=$id itemType=${itemType.simpleName}")
         return listQueryLocalDataSource.getItemById(queryType, familyId, id, uid)
             .map { entity ->
@@ -240,10 +176,10 @@ class LocalListRepositoryImpl @Inject constructor(
                     Log.d(TAG, "fetchItemById entity=$entityLabel")
                     val item = entity.toItem(itemType)
                     Log.d(TAG, "fetchItemById mapped item id=${item.id} itemType=${item::class.simpleName}")
-                    ItemResultListener.Success(item)
+                    Result.Success(item)
                 } catch (e: Exception) {
                     Log.e(TAG, "fetchItemById mapping failure queryType=$queryType id=$id", e)
-                    ItemResultListener.Failure(e.message ?: "Unknown error")
+                    Result.Failure(e.message ?: "Unknown error")
                 }
             }
     }
@@ -266,10 +202,15 @@ class LocalListRepositoryImpl @Inject constructor(
         // TODO(v2-phase2-cleanup): remove temporary String-based API once call sites use ListQueryType directly.
         val queryType = ListQueryTypeMapper.fromTableNameOrNull(listName)
             ?: return emptyFlow()
-        return fetchItemById(queryType, familyId, id, itemType, uid)
+        return getItemByIdFlow(queryType, familyId, id, itemType, uid).map {
+            when (it) {
+                is Result.Success -> ItemResultListener.Success(it.data)
+                is Result.Failure -> ItemResultListener.Failure(it.error)
+            }
+        }
     }
 
-    private fun Entity.toItem(itemType: KClass<out Item>): Item {
+    private fun Entity.toItem(itemType: KClass<out Item>): Item { //todo can this be done in a better way or is it okay?
         return when (this) {
             is Entity.GroceryList -> when (itemType) {
                 GroceryItem::class -> GroceryItem(

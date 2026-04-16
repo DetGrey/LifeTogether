@@ -1,10 +1,8 @@
 package com.example.lifetogether.di
 
 import com.example.lifetogether.data.repository.SessionRepositoryImpl
-import com.example.lifetogether.data.repository.LocalUserRepositoryImpl
-import com.example.lifetogether.data.repository.RemoteUserRepositoryImpl
-import com.example.lifetogether.domain.repository.SessionLocalUserRepository
-import com.example.lifetogether.domain.repository.SessionRemoteUserRepository
+import com.example.lifetogether.data.repository.UserRepositoryImpl
+import com.example.lifetogether.domain.repository.SessionUserRepository
 import com.example.lifetogether.domain.repository.SessionRepository
 import dagger.Binds
 import dagger.Module
@@ -36,13 +34,7 @@ abstract class SessionModule {
 
     @Binds
     @Singleton
-    abstract fun bindSessionRemoteUserRepository(
-        remoteUserRepositoryImpl: RemoteUserRepositoryImpl,
-    ): SessionRemoteUserRepository
-
-    @Binds
-    @Singleton
-    abstract fun bindSessionLocalUserRepository(
-        localUserRepositoryImpl: LocalUserRepositoryImpl,
-    ): SessionLocalUserRepository
+    abstract fun bindSessionUserRepository(
+        userRepositoryImpl: UserRepositoryImpl,
+    ): SessionUserRepository
 }

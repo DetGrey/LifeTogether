@@ -1,11 +1,11 @@
 package com.example.lifetogether.domain.usecase.family
 
-import com.example.lifetogether.data.repository.RemoteUserRepositoryImpl
+import com.example.lifetogether.data.repository.UserRepositoryImpl
 import com.example.lifetogether.domain.listener.ResultListener
 import javax.inject.Inject
 
 data class JoinFamilyUseCase @Inject constructor(
-    private val remoteUserRepositoryImpl: RemoteUserRepositoryImpl,
+    private val userRepositoryImpl: UserRepositoryImpl
 ) {
     suspend operator fun invoke(
         familyId: String,
@@ -13,6 +13,6 @@ data class JoinFamilyUseCase @Inject constructor(
         name: String,
     ): ResultListener {
         println("JoinFamilyUseCase invoked")
-        return remoteUserRepositoryImpl.joinFamily(familyId, uid, name)
+        return userRepositoryImpl.joinFamily(familyId, uid, name)
     }
 }

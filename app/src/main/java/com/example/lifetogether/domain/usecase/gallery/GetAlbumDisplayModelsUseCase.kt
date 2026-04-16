@@ -1,7 +1,7 @@
 package com.example.lifetogether.domain.usecase.gallery
 
 import android.util.Log
-import com.example.lifetogether.data.repository.LocalImageRepositoryImpl
+import com.example.lifetogether.data.repository.ImageRepositoryImpl
 import com.example.lifetogether.domain.listener.AlbumUiModelResultListener
 import com.example.lifetogether.domain.listener.ListItemsResultListener
 import com.example.lifetogether.domain.model.gallery.Album
@@ -16,7 +16,7 @@ import javax.inject.Inject
 
 class GetAlbumDisplayModelsUseCase @Inject constructor(
     private val fetchListItemsUseCase: FetchListItemsUseCase,
-    private val localImageRepositoryImpl: LocalImageRepositoryImpl,
+    private val imageRepositoryImpl: ImageRepositoryImpl,
 ) {
     @OptIn(FlowPreview::class)
     operator fun invoke(familyId: String): Flow<AlbumUiModelResultListener> {
@@ -24,7 +24,7 @@ class GetAlbumDisplayModelsUseCase @Inject constructor(
 
         return combine(
             fetchListItemsUseCase(familyId, Constants.ALBUMS_TABLE, Album::class),
-            localImageRepositoryImpl.thumbnailCache
+            imageRepositoryImpl.thumbnailCache
         ) { listResult, thumbnailCache ->
 
             if (listResult is ListItemsResultListener.Success) {

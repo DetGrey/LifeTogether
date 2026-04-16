@@ -1,11 +1,14 @@
 package com.example.lifetogether.di
 
+import com.example.lifetogether.data.repository.CategoryRepositoryImpl
+import com.example.lifetogether.data.repository.GroceryRepositoryImpl
 import com.example.lifetogether.data.repository.LocalListRepositoryImpl
-import com.example.lifetogether.data.repository.LocalUserRepositoryImpl
+import com.example.lifetogether.data.repository.UserRepositoryImpl
 import com.example.lifetogether.data.repository.RemoteAdminRepositoryImpl
 import com.example.lifetogether.data.repository.RemoteListRepositoryImpl
-import com.example.lifetogether.data.repository.RemoteUserRepositoryImpl
 import com.example.lifetogether.domain.repository.AdminRepository
+import com.example.lifetogether.domain.repository.CategoryRepository
+import com.example.lifetogether.domain.repository.GroceryRepository
 import com.example.lifetogether.domain.repository.ListRepository
 import com.example.lifetogether.domain.repository.UserRepository
 import dagger.Binds
@@ -33,12 +36,17 @@ abstract class RepositoryModule {
     ): ListRepository
 
     @Binds
-    abstract fun bindRemoteUserRepository(
-        remoteUserRepositoryImpl: RemoteUserRepositoryImpl,
+    abstract fun bindUserRepository(
+        userRepositoryImpl: UserRepositoryImpl,
     ): UserRepository
 
     @Binds
-    abstract fun bindLocalUserRepository(
-        localUserRepositoryImpl: LocalUserRepositoryImpl,
-    ): UserRepository
+    abstract fun bindCategoryRepository(
+        categoryRepositoryImpl: CategoryRepositoryImpl,
+    ): CategoryRepository
+
+    @Binds
+    abstract fun bindGroceryRepository(
+        groceryRepositoryImpl: GroceryRepositoryImpl
+    ): GroceryRepository
 }

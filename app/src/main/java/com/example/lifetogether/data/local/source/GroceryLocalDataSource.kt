@@ -6,9 +6,7 @@ import com.example.lifetogether.data.local.source.internal.computeItemsToDelete
 import com.example.lifetogether.data.local.source.internal.computeItemsToUpdate
 import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.model.GrocerySuggestionEntity
-import com.example.lifetogether.domain.listener.ResultListener
-import com.example.lifetogether.domain.model.grocery.GroceryItem
-import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
+import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
@@ -22,18 +20,7 @@ class GroceryLocalDataSource @Inject constructor(
 ) {
     fun getGrocerySuggestions(): Flow<List<GrocerySuggestionEntity>> = grocerySuggestionsDao.getItems()
 
-    suspend fun updateGrocerySuggestions(items: List<GrocerySuggestion>) {
-        val entities = items.mapNotNull { suggestion ->
-            suggestion.id?.let { id ->
-                GrocerySuggestionEntity(
-                    id = id,
-                    suggestionName = suggestion.suggestionName,
-                    category = suggestion.category,
-                    approxPrice = suggestion.approxPrice,
-                )
-            }
-        }
-
+    suspend fun updateGrocerySuggestions(entities: List<GrocerySuggestionEntity>) {
         val currentItems = grocerySuggestionsDao.getItems().first()
         val itemsToUpdate = computeItemsToUpdate(
             currentItems = currentItems,
@@ -50,19 +37,10 @@ class GroceryLocalDataSource @Inject constructor(
         grocerySuggestionsDao.deleteItems(itemsToDelete)
     }
 
-    suspend fun updateGroceryList(items: List<GroceryItem>) {
-        val familyId = items.firstOrNull()?.familyId ?: return
-        val entities = items.map { item ->
-            GroceryListEntity(
-                id = item.id ?: "",
-                familyId = item.familyId,
-                name = item.itemName,
-                lastUpdated = item.lastUpdated,
-                completed = item.completed,
-                category = item.category,
-                approxPrice = item.approxPrice,
-            )
-        }
+    suspend fun updateGroceryList(
+        familyId: String,
+        entities: List<GroceryListEntity>
+    ) {
         val currentItems = groceryListDao.getItems(familyId).first()
         val itemsToUpdate = computeItemsToUpdate(
             currentItems = currentItems,
@@ -84,11 +62,11 @@ class GroceryLocalDataSource @Inject constructor(
         }
     }
 
-    fun deleteItems(itemIds: List<String>): ResultListener =
+    fun deleteItems(itemIds: List<String>): Result<Unit, String> =
         try {
             groceryListDao.deleteItems(itemIds)
-            ResultListener.Success
+            Result.Success(Unit)
         } catch (e: Exception) {
-            ResultListener.Failure("Error: ${e.message}")
+            Result.Failure("Error: ${e.message}")
         }
 }

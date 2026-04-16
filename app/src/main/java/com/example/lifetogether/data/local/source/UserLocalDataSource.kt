@@ -16,8 +16,6 @@ class UserLocalDataSource @Inject constructor(
     private val userInformationDao: UserInformationDao,
     private val familyInformationDao: FamilyInformationDao,
 ) {
-    fun getUserInformation(uid: String): Flow<UserEntity?> = userInformationDao.getItems(uid)
-
     suspend fun updateUserInformation(
         userInformation: UserInformation,
         byteArray: ByteArray? = null,

@@ -1,15 +1,16 @@
 package com.example.lifetogether.domain.usecase.gallery
 
-import com.example.lifetogether.data.repository.RemoteImageRepositoryImpl
+import com.example.lifetogether.data.repository.ImageRepositoryImpl
 import com.example.lifetogether.data.repository.RemoteListRepositoryImpl
 import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.util.Constants
 import javax.inject.Inject
 
 class DeleteMediaUseCase @Inject constructor(
     private val remoteListRepository: RemoteListRepositoryImpl,
-    private val remoteImageRepositoryImpl: RemoteImageRepositoryImpl,
+    private val imageRepositoryImpl: ImageRepositoryImpl,
 ) {
     suspend operator fun invoke(
         albumId: String,
@@ -21,18 +22,18 @@ class DeleteMediaUseCase @Inject constructor(
         return try {
             // Attempt to delete media files
             val urlList = mediaList.mapNotNull { it.mediaUrl }
-            val fileDeleteResult = remoteImageRepositoryImpl.deleteMediaFiles(urlList)
+            val fileDeleteResult = imageRepositoryImpl.deleteMediaFiles(urlList)
 
-            if (fileDeleteResult !is ResultListener.Success) {
-                return fileDeleteResult
+            if (fileDeleteResult is Result.Failure) {
+                return ResultListener.Failure(fileDeleteResult.error)
             }
 
             // Attempt to delete associated media metadata
             val idsList = mediaList.mapNotNull { it.id }
             val dbDeleteResult = remoteListRepository.deleteItems(Constants.GALLERY_MEDIA_TABLE, idsList)
 
-            if (dbDeleteResult !is ResultListener.Success) {
-                return dbDeleteResult
+            if (dbDeleteResult is Result.Failure) {
+                return ResultListener.Failure(dbDeleteResult.error)
             }
 
             // Update album count (if necessary)

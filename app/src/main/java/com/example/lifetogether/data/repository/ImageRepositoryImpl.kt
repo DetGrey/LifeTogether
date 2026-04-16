@@ -1,12 +1,20 @@
 package com.example.lifetogether.data.repository
 
+import android.content.Context
+import android.net.Uri
 import android.util.Log
 import com.example.lifetogether.data.local.source.MediaLocalDataSource
 import com.example.lifetogether.data.local.source.RecipeLocalDataSource
 import com.example.lifetogether.data.local.source.RoutineListEntryLocalDataSource
 import com.example.lifetogether.data.local.source.UserLocalDataSource
+import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.listener.ByteArrayResultListener
+import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.listener.StringResultListener
+import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.domain.repository.StorageRepository
+import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,16 +26,18 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class LocalImageRepositoryImpl @Inject constructor(
+class ImageRepositoryImpl @Inject constructor(
     private val userLocalDataSource: UserLocalDataSource,
     private val recipeLocalDataSource: RecipeLocalDataSource,
     private val routineListEntryLocalDataSource: RoutineListEntryLocalDataSource,
     private val mediaLocalDataSource: MediaLocalDataSource,
+    private val storageRepository: StorageRepository,
+    private val firestoreDataSource: FirestoreDataSource,
 ) {
     companion object {
         private const val TAG = "LocalImageRepositoryImpl"
     }
-    fun getImageByteArray(imageType: ImageType): Flow<ByteArrayResultListener> {
+    fun getImageByteArray(imageType: ImageType): Flow<Result<ByteArray, String>> {
         Log.d(TAG, "getImageByteArray")
         val byteArrayFlow = when (imageType) {
             is ImageType.ProfileImage -> userLocalDataSource.getProfileImageByteArray(imageType.uid)
@@ -42,12 +52,12 @@ class LocalImageRepositoryImpl @Inject constructor(
         return byteArrayFlow.map { byteArray ->
             try {
                 if (byteArray != null) {
-                    ByteArrayResultListener.Success(byteArray)
+                    Result.Success(byteArray)
                 } else {
-                    ByteArrayResultListener.Failure("No ByteArray found")
+                    Result.Failure("No ByteArray found")
                 }
             } catch (e: Exception) {
-                ByteArrayResultListener.Failure(e.message ?: "Unknown error")
+                Result.Failure(e.message ?: "Unknown error")
             }
         }
     }
@@ -78,5 +88,57 @@ class LocalImageRepositoryImpl @Inject constructor(
             }
             Log.d(TAG, "Cache updated for album: $albumId. New size: ${_thumbnailCache.value.size}")
         }
+    }
+    // ------------------- REMOTE
+    suspend fun uploadImage(
+        uri: Uri,
+        imageType: ImageType,
+        context: Context,
+    ): StringResultListener {
+        return storageRepository.uploadPhoto(uri, imageType, context)
+    }
+
+    suspend fun deleteImage(
+        imageType: ImageType,
+    ): ResultListener {
+        return when (val urlResult = firestoreDataSource.getImageUrl(imageType)) {
+            is StringResultListener.Success -> {
+                storageRepository.deleteImage(urlResult.string)
+            }
+
+            is StringResultListener.Failure -> {
+                ResultListener.Failure(urlResult.message)
+            }
+
+            null -> ResultListener.Success // Means that there is no image to delete
+        }
+    }
+
+    suspend fun deleteMediaFiles(
+        urlList: List<String>,
+    ): Result<Unit, String> {
+        return storageRepository.deleteImages(urlList)
+    }
+
+    suspend fun saveImageDownloadUrl(
+        url: String,
+        imageType: ImageType,
+    ): ResultListener {
+        return firestoreDataSource.saveImageDownloadUrl(url, imageType)
+    }
+
+    suspend fun saveGalleryMediaMetaData(
+        galleryMedia: List<GalleryMedia>,
+    ): ResultListener {
+        return firestoreDataSource.saveGalleryMediaMetaData(galleryMedia)
+    }
+
+    // ------------------------------------------------------------------------------- VIDEOS
+    suspend fun uploadVideo(
+        uri: Uri,
+        path: String,
+        extension: String,
+    ): StringResultListener {
+        return storageRepository.uploadVideo(uri, path, extension)
     }
 }

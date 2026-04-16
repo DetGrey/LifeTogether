@@ -4,7 +4,7 @@ import android.content.ContentValues.TAG
 import android.content.Context
 import android.provider.MediaStore
 import android.util.Log
-import com.example.lifetogether.data.repository.RemoteImageRepositoryImpl
+import com.example.lifetogether.data.repository.ImageRepositoryImpl
 import com.example.lifetogether.data.repository.RemoteListRepositoryImpl
 import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.listener.StringResultListener
@@ -23,7 +23,7 @@ import kotlinx.coroutines.sync.Semaphore
 import javax.inject.Inject
 
 class UploadGalleryMediaItemsUseCase @Inject constructor(
-    private val remoteImageRepository: RemoteImageRepositoryImpl,
+    private val imageRepositoryImpl: ImageRepositoryImpl,
     private val remoteListRepository: RemoteListRepositoryImpl,
 ) {
     companion object {
@@ -96,7 +96,7 @@ class UploadGalleryMediaItemsUseCase @Inject constructor(
                                     ),
                                 )
 
-                                val fileUploadResult = remoteImageRepository.uploadImage(
+                                val fileUploadResult = imageRepositoryImpl.uploadImage(
                                     uri,
                                     imageType,
                                     context,
@@ -118,7 +118,7 @@ class UploadGalleryMediaItemsUseCase @Inject constructor(
                             is MediaUploadData.VideoUpload -> {
                                 Log.d(TAG, "Uploading video: $uri for item: $itemName")
 
-                                val fileUploadResult = remoteImageRepository.uploadVideo(
+                                val fileUploadResult = imageRepositoryImpl.uploadVideo(
                                     uri,
                                     Constants.GALLERY_MEDIA_TABLE,
                                     extension,
@@ -163,7 +163,7 @@ class UploadGalleryMediaItemsUseCase @Inject constructor(
 
         if (successfullyUploadedMedia.isNotEmpty()) {
             Log.d(TAG, "Saving metadata for ${successfullyUploadedMedia.size} items.")
-            val saveMetaDataResult = remoteImageRepository.saveGalleryMediaMetaData(successfullyUploadedMedia)
+            val saveMetaDataResult = imageRepositoryImpl.saveGalleryMediaMetaData(successfullyUploadedMedia)
 
             return if (saveMetaDataResult is ResultListener.Success) {
                 Log.d(TAG, "Metadata saved successfully. Updating album count.")

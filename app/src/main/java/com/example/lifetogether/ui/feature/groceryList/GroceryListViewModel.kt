@@ -2,22 +2,17 @@ package com.example.lifetogether.ui.feature.groceryList
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.listener.CategoriesListener
-import com.example.lifetogether.domain.listener.GrocerySuggestionsListener
-import com.example.lifetogether.domain.listener.ListItemsResultListener
-import com.example.lifetogether.domain.listener.ResultListener
-import com.example.lifetogether.domain.listener.StringResultListener
+import com.example.lifetogether.data.local.source.query.ListQueryType
+import com.example.lifetogether.data.repository.LocalListRepositoryImpl
+import com.example.lifetogether.data.repository.RemoteListRepositoryImpl
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
-import com.example.lifetogether.domain.usecase.item.DeleteCompletedItemsUseCase
-import com.example.lifetogether.domain.usecase.item.FetchCategoriesUseCase
-import com.example.lifetogether.domain.usecase.item.FetchGrocerySuggestionsUseCase
-import com.example.lifetogether.domain.usecase.item.FetchListItemsUseCase
-import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
-import com.example.lifetogether.domain.usecase.item.ToggleCompletableItemCompletionUseCase
 import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.repository.CategoryRepository
+import com.example.lifetogether.domain.repository.GroceryRepository
 import com.example.lifetogether.domain.repository.SessionRepository
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -58,12 +53,10 @@ data class GroceryListUiState(
 @HiltViewModel
 class GroceryListViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
-    private val saveItemUseCase: SaveItemUseCase,
-    private val toggleCompletableItemCompletionUseCase: ToggleCompletableItemCompletionUseCase,
-    private val fetchListItemsUseCase: FetchListItemsUseCase,
-    private val fetchCategoriesUseCase: FetchCategoriesUseCase,
-    private val deleteCompletedItemsUseCase: DeleteCompletedItemsUseCase,
-    private val fetchGrocerySuggestionsUseCase: FetchGrocerySuggestionsUseCase,
+    private val localListRepository: LocalListRepositoryImpl,
+    private val categoryRepository: CategoryRepository,
+    private val groceryRepository: GroceryRepository,
+    private val remoteListRepository: RemoteListRepositoryImpl,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(GroceryListUiState())
     val uiState: StateFlow<GroceryListUiState> = _uiState.asStateFlow()
@@ -101,13 +94,18 @@ class GroceryListViewModel @Inject constructor(
         fetchCategories()
         fetchGrocerySuggestions()
 
+        val familyId = familyId ?: return //todo maybe not the best way
+
         viewModelScope.launch {
-            fetchListItemsUseCase(familyId!!, Constants.GROCERY_TABLE, GroceryItem::class).collect { result ->
-                println("fetchListItemsUseCase result: $result")
+            localListRepository.getListItemsFlow(
+                queryType = ListQueryType.Grocery,
+                familyId = familyId,
+                itemType = GroceryItem::class,
+            ).collect { result ->
                 when (result) {
-                    is ListItemsResultListener.Success -> {
-                        println("Items found: ${result.listItems}")
-                        val groceryItems = result.listItems.filterIsInstance<GroceryItem>()
+                    is Result.Success -> {
+                        println("Items found: ${result.data}")
+                        val groceryItems = result.data
                         if (groceryItems.isNotEmpty()) {
                             updateUiState { state ->
                                 state.copy(groceryList = groceryItems)
@@ -118,9 +116,9 @@ class GroceryListViewModel @Inject constructor(
                         }
                     }
 
-                    is ListItemsResultListener.Failure -> {
-                        println("Error: ${result.message}")
-                        showError(result.message)
+                    is Result.Failure -> {
+                        println("Error: ${result.error}")
+                        showError(result.error)
                     }
                 }
             }
@@ -145,14 +143,14 @@ class GroceryListViewModel @Inject constructor(
 
     // ---------------------------------------------------------------- CATEGORIES
     private fun fetchCategories() {
-        println("GroceryListViewModel before calling fetchCategoriesUseCase")
+        println("GroceryListViewModel before calling getCategories")
         viewModelScope.launch {
-            fetchCategoriesUseCase().collect { result ->
-                println("GroceryListViewModel fetchCategoriesUseCase result: $result")
+            categoryRepository.getCategories().collect { result ->
+                println("GroceryListViewModel getCategories result: $result")
                 when (result) {
-                    is CategoriesListener.Success -> {
-                        println("GroceryListViewModel categories updated: ${result.listItems}")
-                        val categories = result.listItems
+                    is Result.Success -> {
+                        println("GroceryListViewModel categories updated: ${result.data}")
+                        val categories = result.data
                             .filterNot { it.name == "Uncategorized" }
                             .sortedBy { it.name }
                             .let { listOf(UNCATEGORIZED_CATEGORY) + it }
@@ -162,11 +160,11 @@ class GroceryListViewModel @Inject constructor(
                         updateExpandedStates()
                     }
 
-                    is CategoriesListener.Failure -> {
+                    is Result.Failure -> {
                         updateUiState { state ->
                             state.copy(groceryCategories = emptyList())
                         }
-                        showError(result.message)
+                        showError(result.error)
                     }
                 }
             }
@@ -175,26 +173,26 @@ class GroceryListViewModel @Inject constructor(
 
     // ---------------------------------------------------------------- GROCERY SUGGESTIONS
     private fun fetchGrocerySuggestions() {
-        println("GroceryListViewModel before calling fetchGrocerySuggestionsUseCase")
+        println("GroceryListViewModel before calling getGrocerySuggestions")
         viewModelScope.launch {
-            fetchGrocerySuggestionsUseCase().collect { result ->
-                println("GroceryListViewModel fetchGrocerySuggestionsUseCase result: $result")
+            groceryRepository.getGrocerySuggestions().collect { result ->
+                println("GroceryListViewModel getGrocerySuggestions result: $result")
                 when (result) {
-                    is GrocerySuggestionsListener.Success -> {
-                        println("GroceryListViewModel categories updated: ${result.listItems}")
+                    is Result.Success -> {
+                        println("GroceryListViewModel categories updated: ${result.data}")
                         updateUiState { state ->
                             state.copy(
-                                allGrocerySuggestions = result.listItems
+                                allGrocerySuggestions = result.data
                                     .sortedBy { it.suggestionName }
                             )
                         }
                     }
 
-                    is GrocerySuggestionsListener.Failure -> {
+                    is Result.Failure -> {
                         updateUiState { state ->
                             state.copy(allGrocerySuggestions = emptyList())
                         }
-                        showError(result.message)
+                        showError(result.error)
                     }
                 }
             }
@@ -296,18 +294,21 @@ class GroceryListViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            val result: StringResultListener = saveItemUseCase.invoke(groceryItem, Constants.GROCERY_TABLE)
-            if (result is StringResultListener.Success) {
-                updateUiState { currentState ->
-                    currentState.copy(
-                        newItemCategory = UNCATEGORIZED_CATEGORY,
-                        newItemText = "",
-                        newItemPrice = "",
-                    )
+            val result = remoteListRepository.saveItem(groceryItem, Constants.GROCERY_TABLE)
+            when (result) {
+                is Result.Success -> {
+                    updateUiState { currentState ->
+                        currentState.copy(
+                            newItemCategory = UNCATEGORIZED_CATEGORY,
+                            newItemText = "",
+                            newItemPrice = "",
+                        )
+                    }
                 }
-            } else if (result is StringResultListener.Failure) {
-                println("Error: ${result.message}")
-                showError(result.message)
+                is Result.Failure -> {
+                    println("Error: ${result.error}")
+                    showError(result.error)
+                }
             }
         }
     }
@@ -322,16 +323,18 @@ class GroceryListViewModel @Inject constructor(
         val newItem = oldItem.copy(completed = !oldItem.completed, lastUpdated = Date(System.currentTimeMillis()))
 
         viewModelScope.launch {
-            val result: ResultListener = toggleCompletableItemCompletionUseCase.invoke(newItem, Constants.GROCERY_TABLE)
-            if (result is ResultListener.Success) {
-                updateUiState { state ->
-                    state.copy(isLoading = false)
+            when (val result = groceryRepository.toggleGroceryItemBought(newItem)) {
+                is Result.Success -> {
+                    updateUiState { state ->
+                        state.copy(isLoading = false)
+                    }
                 }
-            } else if (result is ResultListener.Failure) {
-                println("Error: ${result.message}")
-                showError(result.message)
-                updateUiState { state ->
-                    state.copy(isLoading = false)
+                is Result.Failure -> {
+                    println("Error: ${result.error}")
+                    showError(result.error)
+                    updateUiState { state ->
+                        state.copy(isLoading = false)
+                    }
                 }
             }
         }
@@ -346,10 +349,8 @@ class GroceryListViewModel @Inject constructor(
         val idsToDelete = completedItems.mapNotNull { it.id }
 
         viewModelScope.launch {
-            deleteCompletedItemsUseCase.invoke(
-                Constants.GROCERY_TABLE,
-                idsList = idsToDelete,
-            )
+            groceryRepository.deleteGroceryItems(itemIds = idsToDelete)
+            //todo handle errors
             dismissDeleteCompletedConfirmation()
         }
     }

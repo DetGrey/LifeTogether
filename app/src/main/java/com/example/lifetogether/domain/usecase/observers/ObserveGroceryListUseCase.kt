@@ -1,6 +1,7 @@
 package com.example.lifetogether.domain.usecase.observers
 
 import com.example.lifetogether.data.local.source.GroceryLocalDataSource
+import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.listener.ListItemsResultListener
 import kotlinx.coroutines.CompletableDeferred
@@ -28,7 +29,21 @@ class ObserveGroceryListUseCase @Inject constructor(
                                 println("grocerySnapshotListener().collect result: is empty")
                                 groceryLocalDataSource.deleteFamilyGroceryItems(familyId)
                             } else {
-                                groceryLocalDataSource.updateGroceryList(result.listItems)
+                                val entities = result.listItems.map { item ->
+                                    GroceryListEntity(
+                                        id = item.id ?: "",
+                                        familyId = item.familyId,
+                                        name = item.itemName,
+                                        lastUpdated = item.lastUpdated,
+                                        completed = item.completed,
+                                        category = item.category,
+                                        approxPrice = item.approxPrice,
+                                    )
+                                }
+                                groceryLocalDataSource.updateGroceryList(
+                                    familyId,
+                                    entities
+                                )
                             }
                         }.onSuccess {
                             firstSuccess.completeFirstSuccessIfNeeded()

@@ -4,8 +4,8 @@ import com.example.lifetogether.data.local.dao.RoutineListsDao
 import com.example.lifetogether.data.local.source.internal.computeItemsToDelete
 import com.example.lifetogether.data.local.source.internal.computeItemsToUpdate
 import com.example.lifetogether.data.model.RoutineListEntryEntity
-import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
+import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -49,12 +49,12 @@ class RoutineListEntryLocalDataSource @Inject constructor(
         routineListsDao.deleteFamilyItems(familyId)
     }
 
-    fun deleteItems(itemIds: List<String>): ResultListener =
+    fun deleteItems(itemIds: List<String>): Result<Unit, String> =
         try {
             routineListsDao.deleteItems(itemIds)
-            ResultListener.Success
+            Result.Success(Unit)
         } catch (e: Exception) {
-            ResultListener.Failure("Error: ${e.message}")
+            Result.Failure("Error: ${e.message}")
         }
 
     fun getImageByteArray(entryId: String) = routineListsDao.getImageByteArray(entryId)

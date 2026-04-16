@@ -1,14 +1,14 @@
 package com.example.lifetogether.domain.usecase.image
 
-import com.example.lifetogether.data.repository.LocalImageRepositoryImpl
+import com.example.lifetogether.data.repository.ImageRepositoryImpl
 import javax.inject.Inject
 
 class FetchAlbumThumbnailUseCase @Inject constructor(
-    private val localImageRepositoryImpl: LocalImageRepositoryImpl,
+    private val imageRepositoryImpl: ImageRepositoryImpl,
 ) {
     suspend operator fun invoke(
         albumId: String,
     ) {
-        localImageRepositoryImpl.getAlbumThumbnail(albumId)
+        imageRepositoryImpl.getAlbumThumbnail(albumId)
     }
 }

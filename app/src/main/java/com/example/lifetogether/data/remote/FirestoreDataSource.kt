@@ -32,6 +32,7 @@ import com.example.lifetogether.domain.model.lists.RecurrenceUnit
 import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.util.Constants
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
@@ -821,7 +822,7 @@ class FirestoreDataSource @Inject constructor() {
     suspend fun saveItem(
         item: Item,
         listName: String,
-    ): StringResultListener {
+    ): Result<String, String> {
         val startedAt = System.currentTimeMillis()
         try {
             val uploadItem = when (item) {
@@ -835,18 +836,18 @@ class FirestoreDataSource @Inject constructor() {
                 TAG,
                 "saveItem success list=$listName id=${documentReference.id} durationMs=${System.currentTimeMillis() - startedAt}",
             )
-            return StringResultListener.Success(documentReference.id)
+            return Result.Success(documentReference.id)
         } catch (e: Exception) {
             val message = e.toFirestoreFailureMessage(operation = "saveItem", listName = listName)
             Log.e(TAG, message, e)
-            return StringResultListener.Failure(message)
+            return Result.Failure(message)
         }
     }
 
     suspend fun updateItem(
         item: Item,
         listName: String,
-    ): ResultListener {
+    ): Result<Unit, String> {
         val startedAt = System.currentTimeMillis()
         Log.d(TAG, "updateItem start list=$listName id=${item.id} type=${item::class.simpleName}")
         try {
@@ -867,9 +868,9 @@ class FirestoreDataSource @Inject constructor() {
                     TAG,
                     "updateItem success list=$listName id=${item.id} durationMs=${System.currentTimeMillis() - startedAt}",
                 )
-                return ResultListener.Success
+                return Result.Success(Unit)
             } else {
-                return ResultListener.Failure("updateItem failed (list=$listName): missing document id")
+                return Result.Failure("updateItem failed (list=$listName): missing document id")
             }
         } catch (e: Exception) {
             val message = e.toFirestoreFailureMessage(
@@ -878,14 +879,14 @@ class FirestoreDataSource @Inject constructor() {
                 documentId = item.id,
             )
             Log.e(TAG, message, e)
-            return ResultListener.Failure(message)
+            return Result.Failure(message)
         }
     }
 
     suspend fun toggleCompletableItemCompletion(
         item: CompletableItem,
         listName: String,
-    ): ResultListener {
+    ): Result<Unit, String> {
         val startedAt = System.currentTimeMillis()
         try {
             if (!item.id.isNullOrBlank()) {
@@ -903,9 +904,9 @@ class FirestoreDataSource @Inject constructor() {
                     TAG,
                     "toggleCompletableItemCompletion success list=$listName id=${item.id} completed=${item.completed} durationMs=${System.currentTimeMillis() - startedAt}",
                 )
-                return ResultListener.Success
+                return Result.Success(Unit)
             } else {
-                return ResultListener.Failure("toggleCompletableItemCompletion failed (list=$listName): missing document id")
+                return Result.Failure("toggleCompletableItemCompletion failed (list=$listName): missing document id")
             }
         } catch (e: Exception) {
             val message = e.toFirestoreFailureMessage(
@@ -914,7 +915,7 @@ class FirestoreDataSource @Inject constructor() {
                 documentId = item.id,
             )
             Log.e(TAG, message, e)
-            return ResultListener.Failure(message)
+            return Result.Failure(message)
         }
     }
 
@@ -939,14 +940,14 @@ class FirestoreDataSource @Inject constructor() {
     suspend fun deleteItems(
         listName: String,
         idsList: List<String>,
-    ): ResultListener {
+    ): Result<Unit, String> {
         Log.d(TAG, "deleteItems")
         try {
             if (listName == Constants.GUIDES_TABLE) {
                 idsList.forEach { guideId ->
                     deleteGuideWithRelatedProgress(guideId)
                 }
-                return ResultListener.Success
+                return Result.Success(Unit)
             }
 
             val batch = db.batch()
@@ -958,10 +959,10 @@ class FirestoreDataSource @Inject constructor() {
             }
 
             batch.commit().await()
-            return ResultListener.Success
+            return Result.Success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error", e)
-            return ResultListener.Failure("Error: ${e.message}")
+            return Result.Failure("Error: ${e.message}")
         }
     }
 
