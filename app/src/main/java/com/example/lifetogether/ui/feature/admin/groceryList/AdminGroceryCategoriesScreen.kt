@@ -39,13 +39,11 @@ import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 import com.example.lifetogether.domain.observer.ObserverKey
 
 @Composable
 fun AdminGroceryCategoriesScreen(
     appNavigator: AppNavigator? = null,
-    appSessionViewModel: AppSessionViewModel,
 ) {
     val groceryCategoriesViewModel: AdminGroceryCategoriesViewModel = hiltViewModel()
 

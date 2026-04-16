@@ -43,24 +43,13 @@ import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 
 @Composable
 fun ListsScreen(
     appNavigator: AppNavigator? = null,
-    appSessionViewModel: AppSessionViewModel,
 ) {
     val viewModel: ListsViewModel = hiltViewModel()
-    val userInformation by appSessionViewModel.userInformation.collectAsState()
     val userLists by viewModel.userLists.collectAsState()
-
-    LaunchedEffect(userInformation?.familyId, userInformation?.uid) {
-        val familyId = userInformation?.familyId
-        val uid = userInformation?.uid
-        if (!familyId.isNullOrBlank() && !uid.isNullOrBlank()) {
-            viewModel.setUp(familyId, uid)
-        }
-    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
@@ -254,14 +243,6 @@ private fun CreateListDialog(
             OutlinedButton(onClick = onDismiss) { Text("Cancel") }
         },
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun ListsScreenPreview() {
-    LifeTogetherTheme {
-        Text("Preview requires AppSessionViewModel")
-    }
 }
 
 @Preview(showBackground = true)

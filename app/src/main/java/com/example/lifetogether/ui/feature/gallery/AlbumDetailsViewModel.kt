@@ -23,6 +23,8 @@ import com.example.lifetogether.domain.usecase.item.MoveMediaToAlbumUseCase
 import com.example.lifetogether.domain.usecase.item.UpdateItemUseCase
 import com.example.lifetogether.ui.model.AlbumUiModel
 import com.example.lifetogether.ui.model.MenuAction
+import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -46,7 +48,6 @@ data class AlbumDetailsUiState(
     val actionDialogText: String = "",
     val showAlertDialog: Boolean = false,
     val error: String = "",
-    val isInitialized: Boolean = false,
     val isPartialLoad: Boolean = false, // True when some media failed to load
     val isRefreshing: Boolean = false, // User-triggered refresh
     val isSelectionModeActive: Boolean = false,
@@ -55,10 +56,12 @@ data class AlbumDetailsUiState(
     val albums: List<AlbumUiModel> = emptyList(),
     val isDownloading: Boolean = false,
     val downloadMessage: String? = null,
+    val familyId: String? = null,
 )
 
 @HiltViewModel
 class AlbumDetailsViewModel @Inject constructor(
+    private val sessionRepository: SessionRepository,
     private val fetchAlbumMediaUseCase: FetchAlbumMediaUseCase,
     private val updateItemUseCase: UpdateItemUseCase,
     private val moveMediaToAlbumUseCase: MoveMediaToAlbumUseCase,
@@ -79,14 +82,34 @@ class AlbumDetailsViewModel @Inject constructor(
     private var syncRetryAttempts = 0
     private val maxSyncRetryAttempts = 3
 
-    fun setUpAlbumMedia(addedFamilyId: String, addedAlbumId: String) {
-        if (_uiState.value.isInitialized && albumId == addedAlbumId) return
+    init {
+        viewModelScope.launch {
+            sessionRepository.sessionState.collect { state ->
+                val newFamilyId = (state as? SessionState.Authenticated)?.user?.familyId
+                if (newFamilyId != null && newFamilyId != familyId) {
+                    familyId = newFamilyId
+                    _uiState.update { it.copy(familyId = familyId) }
+                    albumId?.let { startFetch() }
+                } else if (state is SessionState.Unauthenticated) {
+                    familyId = null
+                }
+            }
+        }
+    }
 
-        familyId = addedFamilyId
+    fun setUp(addedAlbumId: String) {
+        if (albumId == addedAlbumId && familyId != null) return
+
         albumId = addedAlbumId
         syncRetryAttempts = 0
 
-        _uiState.update { it.copy(isInitialized = true, isSyncing = false) }
+        if (familyId != null) {
+            _uiState.update { it.copy(isSyncing = false) }
+            startFetch()
+        }
+    }
+
+    private fun startFetch() {
         fetchAlbum()
         fetchAlbumMedia()
     }

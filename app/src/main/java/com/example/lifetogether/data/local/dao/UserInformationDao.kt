@@ -25,16 +25,4 @@ interface UserInformationDao {
 
     @Query("DELETE FROM $USER_TABLE")
     fun deleteTable()
-//
-//    @Insert(onConflict = OnConflictStrategy.REPLACE)
-//    suspend fun insertListCount(listCount: ListCountEntity)
-//
-//    @Query("UPDATE list_counts SET itemCount = itemCount + 1 WHERE listName = :listName")
-//    suspend fun incrementItemCount(listName: String)
-//
-//    @Query("UPDATE list_counts SET itemCount = itemCount - 1 WHERE listName = :listName")
-//    suspend fun decrementItemCount(listName: String)
-//
-//    @Query("SELECT * from items ORDER BY name ASC")
-//    fun getAllItems(): Flow<List<Item>>
 }

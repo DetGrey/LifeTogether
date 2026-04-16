@@ -23,21 +23,14 @@ import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 
 @Composable
 fun TipStatisticsScreen(
     appNavigator: AppNavigator? = null,
-    appSessionViewModel: AppSessionViewModel,
     tipTrackerViewModel: TipTrackerViewModel,
 ) {
 
-    val userInformationState by appSessionViewModel.userInformation.collectAsState()
     val uiState by tipTrackerViewModel.uiState.collectAsState()
-
-    LaunchedEffect(key1 = userInformationState?.familyId) {
-        userInformationState?.familyId?.let { tipTrackerViewModel.setUpTipTracker(it) }
-    }
 
     Box(
         modifier = Modifier

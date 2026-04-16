@@ -6,18 +6,33 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.model.UserInformation
+import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.usecase.user.ChangeNameUseCase
-import com.example.lifetogether.domain.usecase.user.LogoutUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val logoutUseCase: LogoutUseCase,
+    private val sessionRepository: SessionRepository,
     private val changeNameUseCase: ChangeNameUseCase,
 ) : ViewModel() {
+    private val _userInformation = MutableStateFlow<UserInformation?>(null)
+    val userInformation: StateFlow<UserInformation?> = _userInformation.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            sessionRepository.sessionState.collect { state ->
+                _userInformation.value = (state as? SessionState.Authenticated)?.user
+            }
+        }
+    }
 
     // ---------------------------------------------------------------- ERROR
     var showAlertDialog: Boolean by mutableStateOf(false)
@@ -49,7 +64,7 @@ class ProfileViewModel @Inject constructor(
         onSuccess: () -> Unit,
     ) {
         viewModelScope.launch {
-            val result = logoutUseCase.invoke()
+            val result = sessionRepository.signOut()
             if (result is ResultListener.Success) {
                 println("ProfileViewModel: Logout successful")
                 onSuccess()
@@ -63,14 +78,12 @@ class ProfileViewModel @Inject constructor(
     // ---------------------------------------------------------------- CHANGE NAME
     var newName: String by mutableStateOf("")
 
-    fun changeName(
-        uid: String,
-        familyId: String?,
-    ) {
+    fun changeName() {
         val name = newName
-        if (name.isEmpty()) {
-            return
-        }
+        if (name.isEmpty()) return
+
+        val uid = _userInformation.value?.uid ?: return
+        val familyId = _userInformation.value?.familyId
 
         viewModelScope.launch {
             val result = changeNameUseCase.invoke(uid, familyId, name)

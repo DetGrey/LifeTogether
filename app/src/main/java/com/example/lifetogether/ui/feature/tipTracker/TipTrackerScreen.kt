@@ -21,22 +21,15 @@ import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 import com.example.lifetogether.domain.observer.ObserverKey
 
 @Composable
 fun TipTrackerScreen(
     appNavigator: AppNavigator? = null,
-    appSessionViewModel: AppSessionViewModel,
     tipTrackerViewModel: TipTrackerViewModel,
 ) {
 
-    val userInformationState by appSessionViewModel.userInformation.collectAsState()
     val uiState by tipTrackerViewModel.uiState.collectAsState()
-
-    LaunchedEffect(key1 = userInformationState?.familyId) {
-        userInformationState?.familyId?.let { tipTrackerViewModel.setUpTipTracker(it) }
-    }
 
     Box(
         modifier = Modifier

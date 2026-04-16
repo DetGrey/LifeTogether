@@ -9,7 +9,6 @@ import com.example.lifetogether.domain.observer.ObserverKey
 import com.example.lifetogether.ui.common.observer.FeatureObserverLifecycleBinding
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.navigation.AppRoutes
-import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 
 @Composable
 fun TipTrackerRoute(
@@ -22,12 +21,10 @@ fun TipTrackerRoute(
     }
     val viewModel: TipTrackerViewModel = hiltViewModel(sharedEntry)
 
-    // TODO [Issue #3]: remove bridge after TipTrackerScreen migrates off AppSessionViewModel
-    val appSessionViewModel: AppSessionViewModel = hiltViewModel()
     FeatureObserverLifecycleBinding(
         keys = setOf(ObserverKey.TIP_TRACKER),
     )
-    TipTrackerScreen(appNavigator, appSessionViewModel, viewModel)
+    TipTrackerScreen(appNavigator, viewModel)
 }
 
 @Composable
@@ -41,7 +38,5 @@ fun TipStatisticsRoute(
     }
     val viewModel: TipTrackerViewModel = hiltViewModel(sharedEntry)
 
-    // TODO [Issue #3]: remove bridge after TipStatisticsScreen migrates off AppSessionViewModel
-    val appSessionViewModel: AppSessionViewModel = hiltViewModel()
-    TipStatisticsScreen(appNavigator, appSessionViewModel, viewModel)
+    TipStatisticsScreen(appNavigator, viewModel)
 }

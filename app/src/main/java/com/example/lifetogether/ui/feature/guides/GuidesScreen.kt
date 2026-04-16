@@ -47,16 +47,13 @@ import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 import com.example.lifetogether.domain.observer.ObserverKey
 
 @Composable
 fun GuidesScreen(
     appNavigator: AppNavigator? = null,
-    appSessionViewModel: AppSessionViewModel,
 ) {
     val guidesViewModel: GuidesViewModel = hiltViewModel()
-    val userInformation by appSessionViewModel.userInformation.collectAsState()
     val guides by guidesViewModel.guides.collectAsState()
 
     val context = LocalContext.current
@@ -66,14 +63,6 @@ fun GuidesScreen(
     LaunchedEffect(Unit) {
         guideTemplate = loadTemplateAsset(context, "guide_template.json")
         guideProgressTemplate = loadTemplateAsset(context, "guide_progress_template.json")
-    }
-
-    LaunchedEffect(userInformation?.familyId, userInformation?.uid) {
-        val familyId = userInformation?.familyId
-        val uid = userInformation?.uid
-        if (!familyId.isNullOrBlank() && !uid.isNullOrBlank()) {
-            guidesViewModel.setUpGuides(familyId, uid)
-        }
     }
 
     val createGuideTemplateLauncher = rememberLauncherForActivityResult(

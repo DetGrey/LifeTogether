@@ -52,7 +52,6 @@ import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -62,21 +61,17 @@ import java.util.Locale
 fun ListDetailsScreen(
     listId: String,
     appNavigator: AppNavigator? = null,
-    appSessionViewModel: AppSessionViewModel,
 ) {
     val vm: ListDetailsViewModel = hiltViewModel()
-    val userInformation by appSessionViewModel.userInformation.collectAsState()
     val screenState by vm.screenState.collectAsState()
     val uiState = screenState.uiState
     val entries = screenState.entries
     val imageBitmaps = screenState.imageBitmaps
     val contentState = uiState as? ListDetailsUiState.Content
 
-    LaunchedEffect(userInformation?.familyId, userInformation?.uid, listId) {
-        val familyId = userInformation?.familyId
-        val uid = userInformation?.uid
-        if (!familyId.isNullOrBlank() && !uid.isNullOrBlank() && listId.isNotBlank()) {
-            vm.setUp(familyId, uid, listId)
+    LaunchedEffect(listId) {
+        if (listId.isNotBlank()) {
+            vm.setUp(listId)
         }
     }
 
@@ -349,14 +344,6 @@ private fun ListEntryCard(
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun ListDetailScreenPreview() {
-    LifeTogetherTheme {
-        Text("Preview requires AppSessionViewModel")
     }
 }
 

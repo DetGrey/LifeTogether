@@ -8,6 +8,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.listener.ListItemsResultListener
 import com.example.lifetogether.domain.model.recipe.Recipe
+import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.usecase.item.FetchListItemsUseCase
 import com.example.lifetogether.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,6 +23,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class RecipesViewModel @Inject constructor(
+    private val sessionRepository: SessionRepository,
     private val fetchListItemsUseCase: FetchListItemsUseCase,
 ) : ViewModel() {
     // ---------------------------------------------------------------- ERROR
@@ -34,9 +37,7 @@ class RecipesViewModel @Inject constructor(
         }
     }
 
-    // ---------------------------------------------------------------- FAMILY ID
-    private var familyIdIsSet = false
-    var familyId: String? = null
+    private var familyId: String? = null
 
     // ---------------------------------------------------------------- SETUP/FETCH LIST
     private val _recipes = MutableStateFlow<List<Recipe>>(emptyList())
@@ -45,24 +46,35 @@ class RecipesViewModel @Inject constructor(
     private val _filteredRecipes = MutableStateFlow<List<Recipe>>(emptyList())
     val filteredRecipes: StateFlow<List<Recipe>> = _filteredRecipes
 
-    fun setUpRecipes(addedFamilyId: String) {
-        if (!familyIdIsSet) {
-            println("RecipesViewModel setting familyId")
-            familyId = addedFamilyId
-            familyIdIsSet = true
-        }
+    // ---------------------------------------------------------------- TAGS AND FILTERS
+    private val _tagsList: MutableList<String> = mutableListOf("All", "Simple", "Dinner", "Breakfast", "Dessert", "Pasta", "Rice")
+    var tagsList: List<String> by mutableStateOf(_tagsList)
+    var selectedTag: String by mutableStateOf("All")
 
+    init {
         viewModelScope.launch {
-            fetchListItemsUseCase(familyId!!, Constants.RECIPES_TABLE, Recipe::class).collect { result ->
+            sessionRepository.sessionState.collect { state ->
+                val newFamilyId = (state as? SessionState.Authenticated)?.user?.familyId
+                if (newFamilyId != null && newFamilyId != familyId) {
+                    familyId = newFamilyId
+                    setUpRecipes()
+                } else if (state is SessionState.Unauthenticated) {
+                    familyId = null
+                }
+            }
+        }
+    }
+
+    private fun setUpRecipes() {
+        val familyId = familyId ?: return
+        viewModelScope.launch {
+            fetchListItemsUseCase(familyId, Constants.RECIPES_TABLE, Recipe::class).collect { result ->
                 println("fetchListItemsUseCase result: $result")
                 when (result) {
                     is ListItemsResultListener.Success -> {
-                        // Filter and map the result.listItems to only include GroceryItem instances
                         val foundRecipes = result.listItems.filterIsInstance<Recipe>()
                         if (foundRecipes.isNotEmpty()) {
-                            println("_recipe old value: ${_recipes.value}")
                             _recipes.value = foundRecipes
-                            println("recipe new value: ${this@RecipesViewModel.recipes.value}")
                             updateTagsList(foundRecipes.map { it.tags })
                         } else {
                             println("Error: No Recipe instances found in the result")
@@ -72,7 +84,6 @@ class RecipesViewModel @Inject constructor(
                     }
 
                     is ListItemsResultListener.Failure -> {
-                        // Handle failure, e.g., show an error message
                         println("Error: ${result.message}")
                         error = result.message
                         showAlertDialog = true
@@ -96,11 +107,6 @@ class RecipesViewModel @Inject constructor(
             }
         }
     }
-
-    // ---------------------------------------------------------------- TAGS AND FILTERS
-    private val _tagsList: MutableList<String> = mutableListOf("All", "Simple", "Dinner", "Breakfast", "Dessert", "Pasta", "Rice")
-    var tagsList: List<String> by mutableStateOf(_tagsList)
-    var selectedTag: String by mutableStateOf("All")
 
     private fun updateTagsList(
         list: List<List<String>>,

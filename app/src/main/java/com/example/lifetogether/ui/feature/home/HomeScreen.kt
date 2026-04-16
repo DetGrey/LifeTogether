@@ -18,7 +18,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,37 +25,33 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.BuildConfig
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.domain.model.session.authenticatedUserOrNull
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.LoveButton
 import com.example.lifetogether.ui.common.text.TextDisplayLarge
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 import com.example.lifetogether.ui.viewmodel.ImageViewModel
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HomeScreen(
     appNavigator: AppNavigator? = null,
-    appSessionViewModel: AppSessionViewModel,
 ) {
+    val homeViewModel: HomeViewModel = hiltViewModel()
     val imageViewModel: ImageViewModel = hiltViewModel()
-    val bitmap by imageViewModel.bitmap.collectAsState()
+    val bitmap by imageViewModel.bitmap.collectAsStateWithLifecycle()
 
-    val userInformationState by appSessionViewModel.userInformation.collectAsState()
-
-    LaunchedEffect(key1 = true) {
-        // Perform any one-time initialization or side effect here
-        println("HomeScreen familyId: ${userInformationState?.familyId}")
-
+    val sessionState by homeViewModel.sessionState.collectAsStateWithLifecycle()
+    val userInformationState = sessionState.authenticatedUserOrNull
+    LaunchedEffect(userInformationState?.familyId) {
         userInformationState?.familyId?.let { familyId ->
             imageViewModel.collectImageFlow(
                 imageType = ImageType.FamilyImage(familyId),
@@ -83,7 +78,7 @@ fun HomeScreen(
                         description = "profile picture icon",
                     ),
                     onLeftClick = {
-                        if (appSessionViewModel.userInformation.value != null) {
+                        if (userInformationState != null) {
                             appNavigator?.navigateToProfile()
                         } else {
                             appNavigator?.navigateToLogin()
@@ -124,7 +119,7 @@ fun HomeScreen(
             item {
                 when (userInformationState) {
                     is UserInformation -> {
-                        if (userInformationState?.familyId == null) {
+                        if (userInformationState.familyId == null) {
                             Box(
                                 modifier = Modifier
                                     .padding(bottom = 15.dp)
@@ -317,12 +312,4 @@ fun HomeScreen(
     }
 
     LoveButton()
-}
-
-@Preview(showBackground = true)
-@Composable
-fun HomeScreenPreview() {
-    LifeTogetherTheme {
-        Text("Preview requires AppSessionViewModel")
-    }
 }

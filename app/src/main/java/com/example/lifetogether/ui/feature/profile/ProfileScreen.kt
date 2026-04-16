@@ -43,23 +43,19 @@ import com.example.lifetogether.ui.common.text.TextHeadingLarge
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 import com.example.lifetogether.ui.viewmodel.ImageViewModel
 
 @Composable
 fun ProfileScreen(
     appNavigator: AppNavigator? = null,
-    appSessionViewModel: AppSessionViewModel,
 ) {
     val profileViewModel: ProfileViewModel = hiltViewModel()
     val imageViewModel: ImageViewModel = hiltViewModel()
 
-    val userInformation by appSessionViewModel.userInformation.collectAsState()
+    val userInformation by profileViewModel.userInformation.collectAsState()
     val bitmap by imageViewModel.bitmap.collectAsState()
 
-    LaunchedEffect(key1 = true) {
-        // Perform any one-time initialization or side effect here
-        println("ProfileScreen uid: ${userInformation?.uid}")
+    LaunchedEffect(userInformation?.uid) {
         userInformation?.uid?.let { uid ->
             imageViewModel.collectImageFlow(
                 imageType = ImageType.ProfileImage(uid),
@@ -249,11 +245,7 @@ fun ProfileScreen(
 
             ProfileViewModel.ProfileConfirmationType.NAME -> ConfirmationDialogWithTextField(
                 onDismiss = { profileViewModel.closeConfirmationDialog() },
-                onConfirm = {
-                    userInformation?.uid?.let {
-                        profileViewModel.changeName(it, userInformation?.familyId)
-                    }
-                },
+                onConfirm = { profileViewModel.changeName() },
                 dialogTitle = "Change name",
                 dialogMessage = "Please enter your new name",
                 dismissButtonMessage = "Cancel",
@@ -275,14 +267,14 @@ fun ProfileScreen(
     }
 
     // ---------------------------------------------------------------- IMAGE UPLOAD DIALOG
-    if (imageViewModel.showImageUploadDialog && userInformation != null) {
-        userInformation!!.uid?.let {
+    if (imageViewModel.showImageUploadDialog) {
+        userInformation?.uid?.let { uid ->
             ImageUploadDialog(
                 onDismiss = { imageViewModel.showImageUploadDialog = false },
                 onConfirm = { imageViewModel.showImageUploadDialog = false },
                 dialogTitle = "Upload profile photo",
                 dialogMessage = "Select your new profile photo",
-                imageType = ImageType.ProfileImage(it),
+                imageType = ImageType.ProfileImage(uid),
                 dismissButtonMessage = "Cancel",
                 confirmButtonMessage = "Upload photo",
             )

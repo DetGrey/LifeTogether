@@ -14,7 +14,6 @@ import com.example.lifetogether.domain.observer.ObserverKey
 import com.example.lifetogether.ui.common.observer.FeatureObserverLifecycleBinding
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.navigation.AppRoutes
-import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 import com.example.lifetogether.ui.viewmodel.RootCoordinatorViewModel
 
 @Composable
@@ -43,9 +42,7 @@ fun GalleryGraphObserverRoute(
 fun GalleryScreenRoute(
     appNavigator: AppNavigator,
 ) {
-    // TODO [Issue #3]: remove bridge after GalleryScreen migrates off AppSessionViewModel
-    val appSessionViewModel: AppSessionViewModel = hiltViewModel()
-    GalleryScreen(appNavigator, appSessionViewModel)
+    GalleryScreen(appNavigator)
 }
 
 @Composable
@@ -53,9 +50,7 @@ fun AlbumDetailsRoute(
     appNavigator: AppNavigator,
     albumId: String,
 ) {
-    // TODO [Issue #3]: remove bridge after AlbumDetailsScreen migrates off AppSessionViewModel
-    val appSessionViewModel: AppSessionViewModel = hiltViewModel()
-    AlbumDetailsScreen(appNavigator, appSessionViewModel, albumId)
+    AlbumDetailsScreen(appNavigator, albumId)
 }
 
 @Composable
@@ -64,7 +59,5 @@ fun MediaDetailsRoute(
     albumId: String,
     initialIndex: Int,
 ) {
-    // TODO [Issue #3]: remove bridge after MediaDetailsScreen migrates off AppSessionViewModel
-    val appSessionViewModel: AppSessionViewModel = hiltViewModel()
-    MediaDetailsScreen(appNavigator, appSessionViewModel, albumId, initialIndex)
+    MediaDetailsScreen(appNavigator, albumId, initialIndex)
 }

@@ -9,6 +9,8 @@ import com.example.lifetogether.domain.usecase.gallery.GetAlbumDisplayModelsUseC
 import com.example.lifetogether.domain.usecase.image.FetchAlbumThumbnailUseCase
 import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
 import com.example.lifetogether.ui.model.AlbumUiModel
+import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -25,11 +27,11 @@ data class GalleryUiState(
     val newAlbumName: String = "",
     val showAlertDialog: Boolean = false,
     val error: String = "",
-    val isInitialized: Boolean = false,
 )
 
 @HiltViewModel
 class GalleryViewModel @Inject constructor(
+    private val sessionRepository: SessionRepository,
     private val getAlbumDisplayModelsUseCase: GetAlbumDisplayModelsUseCase,
     private val fetchAlbumThumbnailUseCase: FetchAlbumThumbnailUseCase,
     private val saveItemUseCase: SaveItemUseCase,
@@ -40,11 +42,18 @@ class GalleryViewModel @Inject constructor(
     private val requestedThumbnails = mutableSetOf<String>()
     private var familyId: String? = null
 
-    fun setUpGallery(addedFamilyId: String) {
-        if (_uiState.value.isInitialized) return
-
-        familyId = addedFamilyId
-        fetchAlbums()
+    init {
+        viewModelScope.launch {
+            sessionRepository.sessionState.collect { state ->
+                val newFamilyId = (state as? SessionState.Authenticated)?.user?.familyId
+                if (newFamilyId != null && newFamilyId != familyId) {
+                    familyId = newFamilyId
+                    fetchAlbums()
+                } else if (state is SessionState.Unauthenticated) {
+                    familyId = null
+                }
+            }
+        }
     }
 
     fun openNewAlbumDialog() {
@@ -93,7 +102,7 @@ class GalleryViewModel @Inject constructor(
             getAlbumDisplayModelsUseCase.invoke(familyIdValue).collect { result ->
                 when (result) {
                     is AlbumUiModelResultListener.Success -> {
-                        _uiState.update { it.copy(albums = result.albums, isInitialized = true) }
+                        _uiState.update { it.copy(albums = result.albums) }
 
                         result.albums.forEach { album ->
                             if (album.thumbnail == null && !requestedThumbnails.contains(album.id)) {

@@ -30,13 +30,11 @@ import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 import com.example.lifetogether.domain.observer.ObserverKey
 
 @Composable
 fun AdminGrocerySuggestionsScreen(
     appNavigator: AppNavigator? = null,
-    appSessionViewModel: AppSessionViewModel,
 ) {
     val grocerySuggestionsViewModel: AdminGrocerySuggestionsViewModel = hiltViewModel()
     val uiState by grocerySuggestionsViewModel.uiState.collectAsState()
@@ -162,6 +160,6 @@ fun AdminGrocerySuggestionsScreen(
 @Composable
 fun AdminGrocerySuggestionsScreenPreview() {
     LifeTogetherTheme {
-        Text("Preview requires AppSessionViewModel")
+        AdminGrocerySuggestionsScreen()
     }
 }

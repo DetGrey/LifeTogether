@@ -9,6 +9,8 @@ import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.usecase.gallery.DeleteMediaUseCase
 import com.example.lifetogether.domain.usecase.gallery.FetchAlbumMediaUseCase
 import com.example.lifetogether.domain.usecase.image.DownloadMediaUseCase
+import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.ui.model.MenuAction
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -26,7 +28,6 @@ data class MediaDetailsUiState(
     val downloadMessage: String? = null,
     val showAlertDialog: Boolean = false,
     val error: String = "",
-    val isInitialized: Boolean = false,
     val showOverflowMenu: Boolean = false,
     val showOverflowMenuActionDialog: Boolean = false,
     val overflowMenuAction: MenuAction.MediaDetailsActions? = null,
@@ -36,6 +37,7 @@ data class MediaDetailsUiState(
 
 @HiltViewModel
 class MediaDetailsViewModel @Inject constructor(
+    private val sessionRepository: SessionRepository,
     private val downloadMediaUseCase: DownloadMediaUseCase,
     private val fetchAlbumMediaUseCase: FetchAlbumMediaUseCase,
     private val deleteMediaUseCase: DeleteMediaUseCase,
@@ -47,12 +49,27 @@ class MediaDetailsViewModel @Inject constructor(
     private var albumId: String? = null
     private var initialIndex: Int = 0
 
-    fun setUpMediaData(addedFamilyId: String, addedAlbumId: String, addedInitialIndex: Int) {
-        familyId = addedFamilyId
+    init {
+        viewModelScope.launch {
+            sessionRepository.sessionState.collect { state ->
+                val newFamilyId = (state as? SessionState.Authenticated)?.user?.familyId
+                if (newFamilyId != null && newFamilyId != familyId) {
+                    familyId = newFamilyId
+                    albumId?.let { loadAlbumMedia() }
+                } else if (state is SessionState.Unauthenticated) {
+                    familyId = null
+                }
+            }
+        }
+    }
+
+    fun setUp(addedAlbumId: String, addedInitialIndex: Int) {
         albumId = addedAlbumId
         initialIndex = addedInitialIndex
-        _uiState.update { it.copy(isInitialized = true, currentIndex = addedInitialIndex) }
-        loadAlbumMedia()
+        _uiState.update { it.copy(currentIndex = addedInitialIndex) }
+        if (familyId != null) {
+            loadAlbumMedia()
+        }
     }
 
     fun loadAlbumMedia() {
