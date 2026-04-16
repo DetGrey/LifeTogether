@@ -30,7 +30,16 @@ Historical phase decisions remain in `.ai/v2-plan/` and are not duplicated here.
 
 - Legacy count state and related persistence artifacts were removed as part of this cleanup.
 
+## Local Data Sources (Phase 2)
+
+- `data/local/LocalDataSource.kt` has been removed.
+- Local persistence logic is split into focused data sources under `data/local/source/`:
+  - `ListLocalDataSource`
+  - `UserLocalDataSource`
+  - `MediaLocalDataSource`
+  - `GuideProgressLocalDataSource`
+- Repositories and observer/sync use cases now depend on these focused sources directly.
+
 ## Current Focus
 
-- Phase 1 final verification and review closure.
-- Phase 2 planning/setup completed in `.ai/v2-plan/phases/Phase02-DataLayer.md` and GitHub issues.
+- Phase 2 implementation and review closure.

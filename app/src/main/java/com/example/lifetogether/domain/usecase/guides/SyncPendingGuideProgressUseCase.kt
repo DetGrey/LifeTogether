@@ -1,14 +1,14 @@
 package com.example.lifetogether.domain.usecase.guides
 
 import android.util.Log
-import com.example.lifetogether.data.local.LocalDataSource
+import com.example.lifetogether.data.local.source.GuideProgressLocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.listener.ResultListener
 import java.util.Date
 import javax.inject.Inject
 
 class SyncPendingGuideProgressUseCase @Inject constructor(
-    private val localDataSource: LocalDataSource,
+    private val guideProgressLocalDataSource: GuideProgressLocalDataSource,
     private val firestoreDataSource: FirestoreDataSource,
 ) {
     private companion object {
@@ -22,7 +22,7 @@ class SyncPendingGuideProgressUseCase @Inject constructor(
         force: Boolean = false,
         guideId: String? = null,
     ) {
-        val pendingItems = localDataSource.getPendingGuideProgresses(
+        val pendingItems = guideProgressLocalDataSource.getPendingGuideProgresses(
             familyId = familyId,
             uid = uid,
             guideId = guideId,
@@ -39,7 +39,7 @@ class SyncPendingGuideProgressUseCase @Inject constructor(
             val uploadCandidate = progress.copy(lastUploadedAt = now)
             when (val result = firestoreDataSource.updateGuideProgress(uploadCandidate)) {
                 is ResultListener.Success -> {
-                    localDataSource.markGuideProgressSynced(progress.id, now)
+                    guideProgressLocalDataSource.markGuideProgressSynced(progress.id, now)
                 }
 
                 is ResultListener.Failure -> {

@@ -1,7 +1,7 @@
 package com.example.lifetogether.domain.usecase.observers
 
 import android.util.Log
-import com.example.lifetogether.data.local.LocalDataSource
+import com.example.lifetogether.data.local.source.UserListLocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.listener.ListItemsResultListener
 import com.example.lifetogether.domain.model.lists.UserList
@@ -13,7 +13,7 @@ import javax.inject.Inject
 
 class ObserveUserListsUseCase @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
-    private val localDataSource: LocalDataSource,
+    private val userListLocalDataSource: UserListLocalDataSource,
 ) {
     private companion object {
         const val TAG = "ObserveUserListsUseCase"
@@ -70,10 +70,10 @@ class ObserveUserListsUseCase @Inject constructor(
 
                 runCatching {
                     if (merged.isEmpty()) {
-                        if (fullCoverage) localDataSource.deleteFamilyUserLists(familyId)
+                        if (fullCoverage) userListLocalDataSource.deleteFamilyUserLists(familyId)
                     } else {
-                        if (fullCoverage) localDataSource.updateUserLists(merged.toList())
-                        else localDataSource.upsertUserLists(merged.toList())
+                        if (fullCoverage) userListLocalDataSource.updateUserLists(merged.toList())
+                        else userListLocalDataSource.upsertUserLists(merged.toList())
                     }
                 }.onSuccess {
                     if (anySynced) firstSuccess.completeFirstSuccessIfNeeded()

@@ -1,6 +1,7 @@
 package com.example.lifetogether.data.repository
 
-import com.example.lifetogether.data.local.LocalDataSource
+import com.example.lifetogether.data.local.source.SessionCleanupLocalDataSource
+import com.example.lifetogether.data.local.source.UserLocalDataSource
 import com.example.lifetogether.domain.listener.AuthResultListener
 import com.example.lifetogether.domain.listener.FamilyInformationResultListener
 import com.example.lifetogether.domain.listener.ResultListener
@@ -15,10 +16,11 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class LocalUserRepositoryImpl @Inject constructor(
-    private val localDataSource: LocalDataSource,
+    private val userLocalDataSource: UserLocalDataSource,
+    private val sessionCleanupLocalDataSource: SessionCleanupLocalDataSource,
 ) : UserRepository, SessionLocalUserRepository {
     fun getUserInformation(uid: String): Flow<AuthResultListener> {
-        return localDataSource.getUserInformation(uid).map { user ->
+        return userLocalDataSource.getUserInformation(uid).map { user ->
             try {
                 println("LocalUserRepositoryImpl getUserInformation user: $user")
                 if (user == null) {
@@ -41,7 +43,7 @@ class LocalUserRepositoryImpl @Inject constructor(
 
     fun getFamilyInformation(familyId: String): Flow<FamilyInformationResultListener> {
         // Get family information (without members)
-        val familyInformationFlow: Flow<FamilyInformationResultListener> = localDataSource.getFamilyInformation(familyId).map { user ->
+        val familyInformationFlow: Flow<FamilyInformationResultListener> = userLocalDataSource.getFamilyInformation(familyId).map { user ->
             try {
                 println("LocalUserRepositoryImpl getFamilyInformation user: $user")
 
@@ -57,7 +59,7 @@ class LocalUserRepositoryImpl @Inject constructor(
         }
 
         // Get family members
-        val familyMembersFlow = localDataSource.getFamilyMembers(familyId).map { list ->
+        val familyMembersFlow = userLocalDataSource.getFamilyMembers(familyId).map { list ->
             list.map { familyMember ->
                 try {
                     println("LocalUserRepositoryImpl getFamilyInformation familyMember: $familyMember")
@@ -90,6 +92,6 @@ class LocalUserRepositoryImpl @Inject constructor(
     }
 
     override fun removeSavedUserInformation(): ResultListener {
-        return localDataSource.clearUserInformationTables()
+        return sessionCleanupLocalDataSource.clearSessionTables()
     }
 }

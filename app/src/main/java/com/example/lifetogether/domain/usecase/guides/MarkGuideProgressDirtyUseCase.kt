@@ -1,13 +1,13 @@
 package com.example.lifetogether.domain.usecase.guides
 
-import com.example.lifetogether.data.local.LocalDataSource
+import com.example.lifetogether.data.local.source.GuideProgressLocalDataSource
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.guides.GuideProgressState
 import java.util.Date
 import javax.inject.Inject
 
 class MarkGuideProgressDirtyUseCase @Inject constructor(
-    private val localDataSource: LocalDataSource,
+    private val guideProgressLocalDataSource: GuideProgressLocalDataSource,
 ) {
     suspend operator fun invoke(
         guide: Guide,
@@ -19,7 +19,7 @@ class MarkGuideProgressDirtyUseCase @Inject constructor(
             pendingSync = true,
             localUpdatedAt = Date(),
         ) ?: return false
-        localDataSource.upsertGuideProgress(progress)
+        guideProgressLocalDataSource.upsertGuideProgress(progress)
         return true
     }
 }

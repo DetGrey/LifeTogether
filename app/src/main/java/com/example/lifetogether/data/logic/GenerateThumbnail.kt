@@ -10,6 +10,8 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 
+private const val TAG = "GenerateThumbnail"
+
 fun generateImageThumbnailFromFile(imageFile: File): ByteArray? {
     return try {
         // First, decode bounds to avoid loading the full image initially if it's huge
@@ -27,7 +29,7 @@ fun generateImageThumbnailFromFile(imageFile: File): ByteArray? {
         val originalBitmap = BitmapFactory.decodeFile(imageFile.absolutePath, options)
 
         if (originalBitmap == null) {
-            Log.e("LocalDataSource", "Failed to decode original bitmap from file: ${imageFile.path}")
+            Log.e(TAG, "Failed to decode original bitmap from file: ${imageFile.path}")
             return null
         }
 
@@ -47,7 +49,7 @@ fun generateImageThumbnailFromFile(imageFile: File): ByteArray? {
 
         // Ensure scaled dimensions are positive
         if (scaledWidth <= 0 || scaledHeight <= 0) {
-            Log.w("LocalDataSource", "Calculated invalid scaled dimensions ($scaledWidth x $scaledHeight) for ${imageFile.name}. Skipping thumbnail generation.")
+            Log.w(TAG, "Calculated invalid scaled dimensions ($scaledWidth x $scaledHeight) for ${imageFile.name}. Skipping thumbnail generation.")
             // Don't try to load the entire file as a fallback - this can cause OOM
             return null
         }
@@ -61,7 +63,7 @@ fun generateImageThumbnailFromFile(imageFile: File): ByteArray? {
             outputStream.toByteArray()
         }
     } catch (e: Exception) {
-        Log.e("LocalDataSource", "Error generating image thumbnail from file ${imageFile.name}: ${e.message}", e)
+        Log.e(TAG, "Error generating image thumbnail from file ${imageFile.name}: ${e.message}", e)
         null // Return null on error instead of the original file bytes
     }
 }
@@ -93,7 +95,7 @@ fun generateVideoThumbnailFromFile(videoFile: File): ByteArray? {
         originalFrame = retriever.getFrameAtTime(1_000_000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
 
         if (originalFrame == null) {
-            Log.w("LocalDataSource", "Could not retrieve frame from video: ${videoFile.name}")
+            Log.w(TAG, "Could not retrieve frame from video: ${videoFile.name}")
             return null
         }
 
@@ -115,7 +117,7 @@ fun generateVideoThumbnailFromFile(videoFile: File): ByteArray? {
         }
 
         if (scaledWidth <= 0 || scaledHeight <= 0) {
-            Log.w("LocalDataSource", "Calculated invalid scaled dimensions for video frame ${videoFile.name}. Skipping thumbnail.")
+            Log.w(TAG, "Calculated invalid scaled dimensions for video frame ${videoFile.name}. Skipping thumbnail.")
             return null
         }
 
@@ -127,7 +129,7 @@ fun generateVideoThumbnailFromFile(videoFile: File): ByteArray? {
             outputStream.toByteArray()
         }
     } catch (e: Exception) {
-        Log.e("LocalDataSource", "Error generating video thumbnail from file ${videoFile.name}: ${e.message}", e)
+        Log.e(TAG, "Error generating video thumbnail from file ${videoFile.name}: ${e.message}", e)
         null
     } finally {
         try {
@@ -135,7 +137,7 @@ fun generateVideoThumbnailFromFile(videoFile: File): ByteArray? {
             scaledThumbnailBitmap?.recycle()
             retriever?.release() // Release the retriever
         } catch (ioe: IOException) {
-            Log.e("LocalDataSource", "Exception while releasing MediaMetadataRetriever or recycling bitmaps: ${ioe.message}")
+            Log.e(TAG, "Exception while releasing MediaMetadataRetriever or recycling bitmaps: ${ioe.message}")
         }
     }
 }

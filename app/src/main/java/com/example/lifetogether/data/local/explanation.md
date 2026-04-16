@@ -1,5 +1,7 @@
 # Package structure for local storage (Room)
 
+> Note: `LocalDataSource` has been removed. The current implementation uses focused local sources in `data/local/source/`.
+
 ## Model:
 data/model: This is where you’d place your data models or entities.
 domain/model: This is where you’d place your domain models, which are often used across different layers of the app.

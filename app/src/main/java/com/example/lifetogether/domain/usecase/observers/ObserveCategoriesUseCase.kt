@@ -1,6 +1,6 @@
 package com.example.lifetogether.domain.usecase.observers
 
-import com.example.lifetogether.data.local.LocalDataSource
+import com.example.lifetogether.data.local.source.CategoryLocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.listener.CategoriesListener
 import kotlinx.coroutines.CompletableDeferred
@@ -10,7 +10,7 @@ import javax.inject.Inject
 
 class ObserveCategoriesUseCase @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
-    private val localDataSource: LocalDataSource,
+    private val categoryLocalDataSource: CategoryLocalDataSource,
 ) {
     fun start(scope: CoroutineScope): ObserverStartHandle {
         val firstSuccess = CompletableDeferred<Result<Unit>>()
@@ -21,7 +21,7 @@ class ObserveCategoriesUseCase @Inject constructor(
                 when (result) {
                     is CategoriesListener.Success -> {
                         runCatching {
-                            localDataSource.updateCategories(result.listItems)
+                            categoryLocalDataSource.updateCategories(result.listItems)
                         }.onSuccess {
                             firstSuccess.completeFirstSuccessIfNeeded()
                         }.onFailure { error ->

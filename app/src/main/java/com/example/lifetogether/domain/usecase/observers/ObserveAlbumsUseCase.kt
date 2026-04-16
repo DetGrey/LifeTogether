@@ -1,6 +1,6 @@
 package com.example.lifetogether.domain.usecase.observers
 
-import com.example.lifetogether.data.local.LocalDataSource
+import com.example.lifetogether.data.local.source.AlbumLocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.listener.ListItemsResultListener
 import kotlinx.coroutines.CompletableDeferred
@@ -10,7 +10,7 @@ import javax.inject.Inject
 
 class ObserveAlbumsUseCase @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
-    private val localDataSource: LocalDataSource,
+    private val albumLocalDataSource: AlbumLocalDataSource,
 ) {
     fun start(
         scope: CoroutineScope,
@@ -26,9 +26,9 @@ class ObserveAlbumsUseCase @Inject constructor(
                         runCatching {
                             if (result.listItems.isEmpty()) {
                                 println("albumsSnapshotListener().collect result: is empty")
-                                localDataSource.deleteFamilyAlbums(familyId)
+                                albumLocalDataSource.deleteFamilyAlbums(familyId)
                             } else {
-                                localDataSource.updateAlbums(result.listItems)
+                                albumLocalDataSource.updateAlbums(result.listItems)
                             }
                         }.onSuccess {
                             firstSuccess.completeFirstSuccessIfNeeded()

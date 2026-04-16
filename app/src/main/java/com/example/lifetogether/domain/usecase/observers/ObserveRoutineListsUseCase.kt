@@ -1,7 +1,7 @@
 package com.example.lifetogether.domain.usecase.observers
 
 import android.util.Log
-import com.example.lifetogether.data.local.LocalDataSource
+import com.example.lifetogether.data.local.source.RoutineListEntryLocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.listener.ByteArrayResultListener
 import com.example.lifetogether.domain.listener.ListItemsResultListener
@@ -14,7 +14,7 @@ import javax.inject.Inject
 class ObserveRoutineListsUseCase @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
     private val storageRepository: StorageRepository,
-    private val localDataSource: LocalDataSource,
+    private val routineListEntryLocalDataSource: RoutineListEntryLocalDataSource,
 ) {
     private companion object {
         const val TAG = "ObserveRoutineListsUseCase"
@@ -33,9 +33,9 @@ class ObserveRoutineListsUseCase @Inject constructor(
                         Log.d(TAG, "snapshot count=${result.listItems.size}")
                         runCatching {
                             if (result.listItems.isEmpty()) {
-                                localDataSource.deleteFamilyRoutineListEntries(familyId)
+                                routineListEntryLocalDataSource.deleteFamilyRoutineListEntries(familyId)
                             } else {
-                                val existingIdsWithImages = localDataSource.getRoutineEntryIdsWithImages(familyId)
+                                val existingIdsWithImages = routineListEntryLocalDataSource.getRoutineEntryIdsWithImages(familyId)
 
                                 val byteArrays: MutableMap<String, ByteArray> = mutableMapOf()
                                 for (entry in result.listItems) {
@@ -52,7 +52,7 @@ class ObserveRoutineListsUseCase @Inject constructor(
                                     }
                                 }
 
-                                localDataSource.updateRoutineListEntries(result.listItems, byteArrays)
+                                routineListEntryLocalDataSource.updateRoutineListEntries(result.listItems, byteArrays)
                             }
                         }.onSuccess {
                             firstSuccess.completeFirstSuccessIfNeeded()
