@@ -66,7 +66,7 @@ Extract durable app session state into a dedicated `SessionRepository`, move obs
   - Route composables may still decide which observer keys to bind and under what route-specific conditions, but they must not pass session context into observer plumbing
   - UI-facing observer ownership should be fully cleaned up in phase 1, but internal `ObserverCoordinator` API changes should stay modest unless they are required to unblock the migration
   - It is acceptable for the root coordinator to remain the layer that translates `SessionState` into calls on `ObserverCoordinator`
-- [ ] 1.6 Migrate remaining feature code off `AppSessionViewModel`
+- [x] 1.6 Migrate remaining feature code off `AppSessionViewModel`
   - Feature ViewModels inject `SessionRepository` directly when they need reactive session access
   - Screens stop reading `uid` / `familyId` from an app-scoped ViewModel
   - Even screens with heavy current-user rendering requirements should get session-backed data from their own feature ViewModel rather than reading session directly in the composable
@@ -82,7 +82,7 @@ Extract durable app session state into a dedicated `SessionRepository`, move obs
   - ViewModels that always need session context may observe `SessionRepository` in `init`; ViewModels that also require true screen-specific input should combine that input with session context internally rather than pushing session composition back to routes
   - ID-based screens should pass only true navigation input from routes; the ViewModel must own composition of screen-specific IDs plus session context and must reset or restart correctly when either side of that keyed context changes
   - When required session context becomes invalid, migrated feature ViewModels should reset or clear state without inventing new feature-specific error UI; app/session routing should handle the broader transition
-- [ ] 1.7 Delete `AppSessionViewModel` and remove `itemCount` completely
+- [x] 1.7 Delete `AppSessionViewModel` and remove `itemCount` completely
   - No compatibility wrapper kept after migration
   - Remove all `itemCount` state and update calls, even if partially wired to local or remote persistence
 
@@ -95,10 +95,10 @@ Extract durable app session state into a dedicated `SessionRepository`, move obs
 - [x] Step C: Switch `MainActivity` to the root coordinator and remove app-start `AppSessionViewModel` side effects
 - [x] Step D: Migrate observer lifecycle infrastructure to root coordinator ownership
 - [x] Step E: Remove `NavHost` parameter threading and clean route observer bindings
-- [ ] Step F: Migrate feature/session consumers screen-by-screen through their own ViewModels
-- [ ] Step G: Delete `AppSessionViewModel`, delete `itemCount`, and sweep remaining references
-- [ ] Verify final compilation after Step G / the final issue slice
-- [ ] Step H: Update `Architecture.md` or another current-state explainer to reflect the finished phase
+- [x] Step F: Migrate feature/session consumers screen-by-screen through their own ViewModels
+- [x] Step G: Delete `AppSessionViewModel`, delete `itemCount`, and sweep remaining references
+- [x] Verify final compilation after Step G / the final issue slice
+- [x] Step H: Update `Architecture.md` or another current-state explainer to reflect the finished phase
 
 ## Before Starting This Phase
 
@@ -111,19 +111,19 @@ Extract durable app session state into a dedicated `SessionRepository`, move obs
 ### Acceptance criteria
 
 - [x] `SessionRepository` exists as the single durable session boundary and exposes `StateFlow<SessionState>`
-- [ ] `SessionState` is explicit and no screen depends on the old `loading + nullable userInformation` contract _(issue #3)_
+- [x] `SessionState` is explicit and no screen depends on the old `loading + nullable userInformation` contract _(issue #3)_
 - [x] The root coordinator ViewModel is activity-scoped and owns observer coordination, guide sync orchestration, and FCM token sync triggering
 - [x] `MainActivity` no longer creates or depends on `AppSessionViewModel`
 - [x] `NavHost` and all route/screen composables no longer accept or thread `AppSessionViewModel`
 - [x] `FeatureObserverLifecycleBinding` no longer accepts `uid`, `familyId`, or `AppSessionViewModel`
-- [ ] Feature ViewModels that need session data depend on `SessionRepository` directly via Hilt _(issue #3)_
+- [x] Feature ViewModels that need session data depend on `SessionRepository` directly via Hilt _(issue #3)_
 - [x] Sign-out flows go through `SessionRepository.signOut()` and result in clean transition to `SessionState.Unauthenticated`
 - [x] Remote logout/device-token removal behavior remains intact after the sign-out refactor
 - [x] FCM token sync triggers only when authenticated `uid` and `familyId` are both available, and does not retrigger unnecessarily when identity context is unchanged
-- [ ] `AppSessionViewModel` is deleted by the end of the phase _(issue #3)_
-- [ ] `itemCount` is fully removed from the codebase and not relocated into `SessionRepository` or the root coordinator _(issue #3)_
-- [ ] Preview-blocking `"Preview requires AppSessionViewModel"` placeholders touched by this migration are removed _(issue #3)_
-- [ ] `Architecture.md` or another current-state explainer is updated to reflect the new session boundary and root coordinator ownership without removing historical references from the v2 planning files _(issue #3)_
+- [x] `AppSessionViewModel` is deleted by the end of the phase _(issue #3)_
+- [x] `itemCount` is fully removed from the codebase and not relocated into `SessionRepository` or the root coordinator _(issue #3)_
+- [x] Preview-blocking `"Preview requires AppSessionViewModel"` placeholders touched by this migration are removed _(issue #3)_
+- [x] `Architecture.md` or another current-state explainer is updated to reflect the new session boundary and root coordinator ownership without removing historical references from the v2 planning files _(issue #3)_
 
 ### Test cases
 

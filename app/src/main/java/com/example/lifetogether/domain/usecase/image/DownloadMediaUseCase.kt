@@ -1,7 +1,7 @@
 package com.example.lifetogether.domain.usecase.image
 
 import android.util.Log
-import com.example.lifetogether.data.local.LocalDataSource
+import com.example.lifetogether.data.local.source.MediaLocalDataSource
 import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.model.SaveProgress
 import kotlinx.coroutines.flow.Flow
@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 class DownloadMediaUseCase @Inject constructor(
-    private val localDataSource: LocalDataSource,
+    private val mediaLocalDataSource: MediaLocalDataSource,
 ) {
     operator fun invoke(
         mediaIds: List<String>,
@@ -23,7 +23,7 @@ class DownloadMediaUseCase @Inject constructor(
         }
 
         try {
-            val items = localDataSource.getMediaFilesForDownload(mediaIds, familyId)
+            val items = mediaLocalDataSource.getMediaFilesForDownload(mediaIds, familyId)
 
             if (items.isNullOrEmpty()) {
                 emit(SaveProgress.Error("No media items found"))
@@ -41,7 +41,7 @@ class DownloadMediaUseCase @Inject constructor(
                     return@forEachIndexed
                 }
 
-                val result = localDataSource.copyMediaToGalleryFolder(file, mediaItem)
+                val result = mediaLocalDataSource.copyMediaToGalleryFolder(file, mediaItem)
 
                 if (result is ResultListener.Success) {
                     successCount++
@@ -58,4 +58,3 @@ class DownloadMediaUseCase @Inject constructor(
         }
     }
 }
-

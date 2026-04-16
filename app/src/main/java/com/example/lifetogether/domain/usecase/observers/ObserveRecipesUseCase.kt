@@ -1,6 +1,6 @@
 package com.example.lifetogether.domain.usecase.observers
 
-import com.example.lifetogether.data.local.LocalDataSource
+import com.example.lifetogether.data.local.source.RecipeLocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.repository.StorageRepository
 import com.example.lifetogether.domain.listener.ByteArrayResultListener
@@ -13,7 +13,7 @@ import javax.inject.Inject
 class ObserveRecipesUseCase @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
     private val storageRepository: StorageRepository,
-    private val localDataSource: LocalDataSource,
+    private val recipeLocalDataSource: RecipeLocalDataSource,
 ) {
     fun start(
         scope: CoroutineScope,
@@ -29,10 +29,10 @@ class ObserveRecipesUseCase @Inject constructor(
                         runCatching {
                             if (result.listItems.isEmpty()) {
                                 println("recipeSnapshotListener().collect result: is empty")
-                                localDataSource.deleteFamilyRecipes(familyId)
+                                recipeLocalDataSource.deleteFamilyRecipes(familyId)
                             } else {
                                 // Get existing recipe IDs that already have images to avoid re-downloading
-                                val existingRecipeIdsWithImages = localDataSource.getRecipeIdsWithImages(familyId)
+                                val existingRecipeIdsWithImages = recipeLocalDataSource.getRecipeIdsWithImages(familyId)
 
                                 val byteArrays: MutableMap<String, ByteArray> = mutableMapOf()
                                 for (recipe in result.listItems) {
@@ -52,7 +52,7 @@ class ObserveRecipesUseCase @Inject constructor(
                                     }
                                 }
 
-                                localDataSource.updateRecipes(result.listItems, byteArrays)
+                                recipeLocalDataSource.updateRecipes(result.listItems, byteArrays)
                             }
                         }.onSuccess {
                             firstSuccess.completeFirstSuccessIfNeeded()

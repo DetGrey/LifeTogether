@@ -2,7 +2,13 @@ package com.example.lifetogether.data.repository
 
 import android.util.Log
 import androidx.core.net.toUri
-import com.example.lifetogether.data.local.LocalDataSource
+import com.example.lifetogether.data.local.source.AlbumLocalDataSource
+import com.example.lifetogether.data.local.source.CategoryLocalDataSource
+import com.example.lifetogether.data.local.source.GroceryLocalDataSource
+import com.example.lifetogether.data.local.source.ListQueryLocalDataSource
+import com.example.lifetogether.data.local.source.RoutineListEntryLocalDataSource
+import com.example.lifetogether.data.local.source.query.ListQueryType
+import com.example.lifetogether.data.local.source.query.ListQueryTypeMapper
 import com.example.lifetogether.data.model.Entity
 import com.example.lifetogether.domain.listener.CategoriesListener
 import com.example.lifetogether.domain.listener.GrocerySuggestionsListener
@@ -25,13 +31,19 @@ import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.repository.ListRepository
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import kotlin.reflect.KClass
 
 class LocalListRepositoryImpl @Inject constructor(
-    private val localDataSource: LocalDataSource,
+    private val listQueryLocalDataSource: ListQueryLocalDataSource,
+    private val categoryLocalDataSource: CategoryLocalDataSource,
+    private val groceryLocalDataSource: GroceryLocalDataSource,
+    private val albumLocalDataSource: AlbumLocalDataSource,
+    private val routineListEntryLocalDataSource: RoutineListEntryLocalDataSource,
 ) : ListRepository {
     private companion object {
         const val TAG = "LocalListRepository"
@@ -45,16 +57,37 @@ class LocalListRepositoryImpl @Inject constructor(
     }
 
     fun deleteItems(
+        queryType: ListQueryType,
+        itemIds: List<String>,
+    ): ResultListener {
+        return when (queryType) {
+            ListQueryType.Grocery -> groceryLocalDataSource.deleteItems(itemIds)
+            ListQueryType.RoutineListEntries -> routineListEntryLocalDataSource.deleteItems(itemIds)
+            else -> ResultListener.Failure("Unsupported delete type: $queryType")
+        }
+    }
+
+    @Deprecated(
+        message = "Use typed deleteItems(ListQueryType, itemIds).",
+        replaceWith = ReplaceWith(
+            expression = "deleteItems(queryType, itemIds)",
+            imports = ["com.example.lifetogether.data.local.source.query.ListQueryType"],
+        ),
+        level = DeprecationLevel.WARNING,
+    )
+    fun deleteItems(
         listName: String,
         itemIds: List<String>,
     ): ResultListener {
-        println("LocalListRepositoryImpl deleteItems()")
-        return localDataSource.deleteItems(listName, itemIds)
+        // TODO(v2-phase2-cleanup): remove temporary String-based API once call sites use ListQueryType directly.
+        val queryType = ListQueryTypeMapper.fromTableNameOrNull(listName)
+            ?: return ResultListener.Success
+        return deleteItems(queryType, itemIds)
     }
 
     fun getCategories(): Flow<CategoriesListener> {
         println("LocalListRepositoryImpl getCategories()")
-        return localDataSource.getCategories().map { list ->
+        return categoryLocalDataSource.getCategories().map { list ->
             try {
                 CategoriesListener.Success(
                     list.map { category ->
@@ -72,7 +105,7 @@ class LocalListRepositoryImpl @Inject constructor(
 
     fun getGrocerySuggestions(): Flow<GrocerySuggestionsListener> {
         println("LocalListRepositoryImpl getGrocerySuggestions()")
-        return localDataSource.getGrocerySuggestions().map { list ->
+        return groceryLocalDataSource.getGrocerySuggestions().map { list ->
             println("Grocery suggestions: $list")
             try {
                 GrocerySuggestionsListener.Success(
@@ -96,7 +129,7 @@ class LocalListRepositoryImpl @Inject constructor(
         albumId: String,
     ): Flow<ListItemsResultListener<GalleryMedia>> {
         Log.d(TAG, "fetchAlbumMedia init familyId=$familyId albumId=$albumId")
-        return localDataSource.getAlbumMedia(familyId, albumId)
+        return albumLocalDataSource.getAlbumMedia(familyId, albumId)
             .map { entities ->
                 try {
                     Log.d(TAG, "fetchAlbumMedia entitiesCount=${entities.size}")
@@ -141,36 +174,57 @@ class LocalListRepositoryImpl @Inject constructor(
     }
 
     fun <T : Item> fetchListItems(
-        listName: String,
+        queryType: ListQueryType,
         familyId: String,
         itemType: KClass<T>,
         uid: String? = null,
     ): Flow<ListItemsResultListener<Item>> {
-        Log.d(TAG, "fetchListItems init listName=$listName familyId=$familyId uid=$uid itemType=${itemType.simpleName}")
-        return localDataSource.getListItems(listName, familyId, uid)
+        Log.d(TAG, "fetchListItems init queryType=$queryType familyId=$familyId uid=$uid itemType=${itemType.simpleName}")
+        return listQueryLocalDataSource.getListItems(queryType, familyId, uid)
             .map { entities ->
                 try {
-                    Log.d(TAG, "fetchListItems entitiesCount=${entities.size} listName=$listName")
-                    // Convert entities to items
+                    Log.d(TAG, "fetchListItems entitiesCount=${entities.size} queryType=$queryType")
                     val itemsList = entities.map { it.toItem(itemType) }.sortedBy { it.itemName }
-                    Log.d(TAG, "fetchListItems mappedItemsCount=${itemsList.size} listName=$listName")
+                    Log.d(TAG, "fetchListItems mappedItemsCount=${itemsList.size} queryType=$queryType")
                     ListItemsResultListener.Success(itemsList)
                 } catch (e: Exception) {
-                    Log.e(TAG, "fetchListItems mapping error listName=$listName", e)
+                    Log.e(TAG, "fetchListItems mapping error queryType=$queryType", e)
                     ListItemsResultListener.Failure(e.message ?: "Unknown error")
                 }
             }
     }
 
-    fun fetchItemById(
+    @Deprecated(
+        message = "Use typed fetchListItems(ListQueryType, familyId, itemType, uid).",
+        replaceWith = ReplaceWith(
+            expression = "fetchListItems(queryType, familyId, itemType, uid)",
+            imports = ["com.example.lifetogether.data.local.source.query.ListQueryType"],
+        ),
+        level = DeprecationLevel.WARNING,
+    )
+    fun <T : Item> fetchListItems(
         listName: String,
+        familyId: String,
+        itemType: KClass<T>,
+        uid: String? = null,
+    ): Flow<ListItemsResultListener<Item>> {
+        // TODO(v2-phase2-cleanup): remove temporary String-based API once call sites use ListQueryType directly.
+        val queryType = ListQueryTypeMapper.fromTableNameOrNull(listName)
+            ?: return flowOf(
+                ListItemsResultListener.Success(emptyList()),
+            )
+        return fetchListItems(queryType, familyId, itemType, uid)
+    }
+
+    fun fetchItemById(
+        queryType: ListQueryType,
         familyId: String,
         id: String,
         itemType: KClass<out Item>,
         uid: String? = null,
     ): Flow<ItemResultListener<Item>> {
-        Log.d(TAG, "fetchItemById listName=$listName familyId=$familyId uid=$uid id=$id itemType=${itemType.simpleName}")
-        return localDataSource.getItemById(listName, familyId, id, uid)
+        Log.d(TAG, "fetchItemById queryType=$queryType familyId=$familyId uid=$uid id=$id itemType=${itemType.simpleName}")
+        return listQueryLocalDataSource.getItemById(queryType, familyId, id, uid)
             .map { entity ->
                 try {
                     val entityLabel = when (entity) {
@@ -188,10 +242,31 @@ class LocalListRepositoryImpl @Inject constructor(
                     Log.d(TAG, "fetchItemById mapped item id=${item.id} itemType=${item::class.simpleName}")
                     ItemResultListener.Success(item)
                 } catch (e: Exception) {
-                    Log.e(TAG, "fetchItemById mapping failure listName=$listName id=$id", e)
+                    Log.e(TAG, "fetchItemById mapping failure queryType=$queryType id=$id", e)
                     ItemResultListener.Failure(e.message ?: "Unknown error")
                 }
             }
+    }
+
+    @Deprecated(
+        message = "Use typed fetchItemById(ListQueryType, familyId, id, itemType, uid).",
+        replaceWith = ReplaceWith(
+            expression = "fetchItemById(queryType, familyId, id, itemType, uid)",
+            imports = ["com.example.lifetogether.data.local.source.query.ListQueryType"],
+        ),
+        level = DeprecationLevel.WARNING,
+    )
+    fun fetchItemById(
+        listName: String,
+        familyId: String,
+        id: String,
+        itemType: KClass<out Item>,
+        uid: String? = null,
+    ): Flow<ItemResultListener<Item>> {
+        // TODO(v2-phase2-cleanup): remove temporary String-based API once call sites use ListQueryType directly.
+        val queryType = ListQueryTypeMapper.fromTableNameOrNull(listName)
+            ?: return emptyFlow()
+        return fetchItemById(queryType, familyId, id, itemType, uid)
     }
 
     private fun Entity.toItem(itemType: KClass<out Item>): Item {

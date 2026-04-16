@@ -2,7 +2,7 @@ package com.example.lifetogether.domain.usecase.observers
 
 import android.content.Context
 import android.util.Log
-import com.example.lifetogether.data.local.LocalDataSource
+import com.example.lifetogether.data.local.source.MediaLocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.listener.ListItemsResultListener
 import com.example.lifetogether.domain.repository.StorageRepository
@@ -26,7 +26,7 @@ import kotlin.let
 class ObserveGalleryMediaUseCase @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
     private val storageRepository: StorageRepository,
-    private val localDataSource: LocalDataSource,
+    private val mediaLocalDataSource: MediaLocalDataSource,
 ) {
     companion object {
         private const val TAG = "ObserveGalleryMedia"
@@ -70,7 +70,7 @@ class ObserveGalleryMediaUseCase @Inject constructor(
                     }
 
                     // Get existing media from local database to avoid re-downloading
-                    val existingMediaMap = localDataSource.getExistingGalleryMediaInfo(familyId)
+                    val existingMediaMap = mediaLocalDataSource.getExistingGalleryMediaInfo(familyId)
 
                     // Filter items that need downloading (not already in local storage)
                     val itemsToDownload = result.listItems.filter { galleryMedia ->
@@ -82,7 +82,7 @@ class ObserveGalleryMediaUseCase @Inject constructor(
                     if (itemsToDownload.isEmpty()) {
                         Log.d(TAG, "All ${result.listItems.size} items already exist locally")
                         // Still need to call updateGalleryMedia with completeSourceList to handle deletions
-                        localDataSource.updateGalleryMedia(
+                        mediaLocalDataSource.updateGalleryMedia(
                             familyId = familyId,
                             items = emptyList(), // No new items to download
                             completeSourceList = result.listItems // Pass complete list for deletion detection
@@ -196,7 +196,7 @@ class ObserveGalleryMediaUseCase @Inject constructor(
                             if (batchResults.isNotEmpty()) {
                                 Log.d(TAG, "Saving batch ${batchIndex + 1} (round $round) with ${batchResults.size} items to database")
                                 // Don't pass completeSourceList here - we'll do it at the end to handle deletions once
-                                localDataSource.updateGalleryMedia(familyId, batchResults, completeSourceList = null)
+                                mediaLocalDataSource.updateGalleryMedia(familyId, batchResults, completeSourceList = null)
                                 allDownloadedItems.addAll(batchResults)
                             }
                         }
@@ -229,7 +229,7 @@ class ObserveGalleryMediaUseCase @Inject constructor(
                     // Final update with complete source list to handle deletions
                     // This ensures items deleted from Firestore are also deleted locally
                     Log.d(TAG, "Performing final sync to detect and remove deleted items")
-                    localDataSource.updateGalleryMedia(
+                    mediaLocalDataSource.updateGalleryMedia(
                         familyId = familyId,
                         items = emptyList(), // No new items to add
                         completeSourceList = result.listItems // Pass complete list for deletion detection

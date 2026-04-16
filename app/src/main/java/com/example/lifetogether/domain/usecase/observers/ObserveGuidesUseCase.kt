@@ -1,7 +1,8 @@
 package com.example.lifetogether.domain.usecase.observers
 
 import android.util.Log
-import com.example.lifetogether.data.local.LocalDataSource
+import com.example.lifetogether.data.local.source.GuideLocalDataSource
+import com.example.lifetogether.data.local.source.GuideProgressLocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.listener.GuideProgressResultListener
 import com.example.lifetogether.domain.listener.ListItemsResultListener
@@ -14,7 +15,8 @@ import javax.inject.Inject
 
 class ObserveGuidesUseCase @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
-    private val localDataSource: LocalDataSource,
+    private val guideLocalDataSource: GuideLocalDataSource,
+    private val guideProgressLocalDataSource: GuideProgressLocalDataSource,
 ) {
     private companion object {
         const val TAG = "ObserveGuidesUseCase"
@@ -33,7 +35,7 @@ class ObserveGuidesUseCase @Inject constructor(
                     when (progressResult) {
                         is GuideProgressResultListener.Success -> {
                             runCatching {
-                                localDataSource.updateGuideProgressFromRemote(
+                                guideProgressLocalDataSource.updateGuideProgressFromRemote(
                                     familyId = familyId,
                                     uid = uid,
                                     items = progressResult.listItems,
@@ -103,7 +105,7 @@ class ObserveGuidesUseCase @Inject constructor(
                     if (mergedGuides.isEmpty()) {
                         if (hasFullSnapshotCoverage) {
                             Log.d(TAG, "merged guides empty with full coverage -> deleteFamilyGuides familyId=$familyId")
-                            localDataSource.deleteFamilyGuides(familyId)
+                            guideLocalDataSource.deleteFamilyGuides(familyId)
                         } else {
                             Log.d(
                                 TAG,
@@ -116,13 +118,13 @@ class ObserveGuidesUseCase @Inject constructor(
                                 TAG,
                                 "merged guides count=${mergedGuides.size} with full coverage -> updateGuides familyId=$familyId",
                             )
-                            localDataSource.updateGuides(mergedGuides.toList())
+                            guideLocalDataSource.updateGuides(mergedGuides.toList())
                         } else {
                             Log.d(
                                 TAG,
                                 "merged guides count=${mergedGuides.size} without full coverage -> upsertGuides familyId=$familyId sharedReady=$sharedHasSuccessfulSync privateReady=$privateHasSuccessfulSync",
                             )
-                            localDataSource.upsertGuides(mergedGuides.toList())
+                            guideLocalDataSource.upsertGuides(mergedGuides.toList())
                         }
                     }
                 }.onSuccess {
