@@ -18,6 +18,11 @@ class GroceryLocalDataSource @Inject constructor(
     private val groceryListDao: GroceryListDao,
     private val grocerySuggestionsDao: GrocerySuggestionsDao,
 ) {
+
+    fun observeGroceryItems(familyId: String): Flow<List<GroceryListEntity>> {
+        return groceryListDao.getItems(familyId)
+    }
+
     fun getGrocerySuggestions(): Flow<List<GrocerySuggestionEntity>> = grocerySuggestionsDao.getItems()
 
     suspend fun updateGrocerySuggestions(entities: List<GrocerySuggestionEntity>) {

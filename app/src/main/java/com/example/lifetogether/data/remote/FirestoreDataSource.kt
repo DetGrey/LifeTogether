@@ -42,6 +42,7 @@ import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.firestore
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import java.util.Date
@@ -331,33 +332,22 @@ class FirestoreDataSource @Inject constructor() {
     }
 
     // ------------------------------------------------------------------------------- GROCERY LIST
-    fun grocerySnapshotListener(familyId: String) = callbackFlow {
-        Log.d(TAG, "Firestore grocerySnapshotListener init")
-        val groceryItemsRef =
-            db.collection(Constants.GROCERY_TABLE).whereEqualTo("familyId", familyId)
-        val listenerRegistration = groceryItemsRef.addSnapshotListener { snapshot, e ->
-            if (e != null) {
-                // Handle error
-                trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess
-                return@addSnapshotListener
-            }
-
-            if (snapshot != null) {
-                // Process the changes and update Room database
-                val items = snapshot.documents.mapNotNull { document ->
-                    runCatching {
-                        document.toObject(GroceryItem::class.java)?.copy(id = document.id)
-                    }.onFailure { parseError ->
-                        Log.e(TAG, "Failed parsing grocery item ${document.id}", parseError)
-                    }.getOrNull()
+    fun grocerySnapshotListener(familyId: String): Flow<Result<List<GroceryItem>, String>> = callbackFlow {
+        val listenerRegistration = db.collection(Constants.GROCERY_TABLE)
+            .whereEqualTo("familyId", familyId)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    trySend(Result.Failure("Firestore Error: ${e.message}"))
+                    return@addSnapshotListener
                 }
-                Log.d(TAG, "Snapshot items to GroceryItem: loaded")
-                trySend(ListItemsResultListener.Success(items)).isSuccess
-            } else {
-                trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess
+
+                snapshot?.let { querySnapshot ->
+                    val items = querySnapshot.documents.mapNotNull { document ->
+                        document.toObject(GroceryItem::class.java)?.copy(id = document.id)
+                    }
+                    trySend(Result.Success(items))
+                }
             }
-        }
-        // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.
         awaitClose { listenerRegistration.remove() }
     }
 

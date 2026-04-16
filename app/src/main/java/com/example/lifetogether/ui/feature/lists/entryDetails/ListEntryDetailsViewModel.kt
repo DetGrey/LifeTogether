@@ -7,9 +7,6 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.data.local.source.query.ListQueryType
-import com.example.lifetogether.data.repository.LocalListRepositoryImpl
-import com.example.lifetogether.data.repository.RemoteListRepositoryImpl
 import com.example.lifetogether.domain.logic.RecurrenceCalculator
 import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
@@ -17,9 +14,9 @@ import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.SessionRepository
+import com.example.lifetogether.domain.repository.UserListRepository
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.usecase.image.UploadImageUseCase
-import com.example.lifetogether.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
@@ -37,8 +34,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ListEntryDetailsViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
-    private val localListRepository: LocalListRepositoryImpl,
-    private val remoteListRepository: RemoteListRepositoryImpl,
+    private val userListRepository: UserListRepository,
     private val uploadImageUseCase: UploadImageUseCase,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
@@ -107,30 +103,20 @@ class ListEntryDetailsViewModel @Inject constructor(
         val familyIdValue = _familyId.value ?: run { onLoadFailed(); return }
         Log.d("ListEntryDetailsVM", "Loading Entry. familyId: $familyIdValue, listId: $listId, entryId: $entryId")
         viewModelScope.launch {
-            localListRepository.getItemByIdFlow(
-                queryType = ListQueryType.RoutineListEntries,
-                familyId = familyIdValue,
-                id = entryId,
-                itemType = RoutineListEntry::class,
-                uid = listId,
-            ).collect { result ->
+            userListRepository.observeRoutineListEntry(entryId).collect { result ->
                 Log.d("ListEntryDetailsScreen", "Result: $result")
                 when (result) {
                     is Result.Success -> {
-                        val entry = result.data as? RoutineListEntry
-                        if (entry != null) {
-                            val loaded = EntryFormState(
-                                name = entry.itemName,
-                                recurrenceUnit = entry.recurrenceUnit,
-                                interval = entry.interval.toString(),
-                                selectedWeekdays = entry.weekdays.toSet(),
-                            )
-                            originalFormState = loaded
-                            _formState.value = loaded
-                            _uiState.value = EntryDetailsUiState.Content()
-                        } else {
-                            onLoadFailed()
-                        }
+                        val entry = result.data
+                        val loaded = EntryFormState(
+                            name = entry.itemName,
+                            recurrenceUnit = entry.recurrenceUnit,
+                            interval = entry.interval.toString(),
+                            selectedWeekdays = entry.weekdays.toSet(),
+                        )
+                        originalFormState = loaded
+                        _formState.value = loaded
+                        _uiState.value = EntryDetailsUiState.Content()
                     }
                     is Result.Failure -> onLoadFailed()
                 }
@@ -203,7 +189,7 @@ class ListEntryDetailsViewModel @Inject constructor(
         _uiState.update { if (it is EntryDetailsUiState.Content) it.copy(isSaving = true) else it }
         viewModelScope.launch {
             if (entryId == null) {
-                when (val r = remoteListRepository.saveItem(draft, Constants.ROUTINE_LIST_ENTRIES_TABLE)) {
+                when (val r = userListRepository.saveRoutineListEntry(draft)) {
                     is Result.Success -> {
                         val pendingUri = form.pendingImageUri
                         if (pendingUri != null) {
@@ -223,7 +209,7 @@ class ListEntryDetailsViewModel @Inject constructor(
                     }
                 }
             } else {
-                val result = remoteListRepository.updateItem(draft, Constants.ROUTINE_LIST_ENTRIES_TABLE)
+                val result = userListRepository.updateRoutineListEntry(draft)
                 _uiState.update { if (it is EntryDetailsUiState.Content) it.copy(isSaving = false) else it }
                 when (result) {
                     is Result.Success -> {

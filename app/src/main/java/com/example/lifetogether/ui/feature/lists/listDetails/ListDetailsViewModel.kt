@@ -3,20 +3,14 @@ package com.example.lifetogether.ui.feature.lists.listDetails
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.data.local.source.query.ListQueryType
-import com.example.lifetogether.data.repository.ImageRepositoryImpl
-import com.example.lifetogether.data.repository.LocalListRepositoryImpl
-import com.example.lifetogether.data.repository.RemoteListRepositoryImpl
 import com.example.lifetogether.domain.logic.RecurrenceCalculator
 import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
-import com.example.lifetogether.domain.model.lists.UserList
-import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.SessionRepository
+import com.example.lifetogether.domain.repository.UserListRepository
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.usecase.item.DeleteRoutineListEntriesUseCase
-import com.example.lifetogether.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -33,9 +27,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ListDetailsViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
-    private val localListRepository: LocalListRepositoryImpl,
-    private val localImageRepository: ImageRepositoryImpl,
-    private val remoteListRepository: RemoteListRepositoryImpl,
+    private val userListRepository: UserListRepository,
     private val deleteRoutineListEntriesUseCase: DeleteRoutineListEntriesUseCase,
 ) : ViewModel() {
 
@@ -113,16 +105,10 @@ class ListDetailsViewModel @Inject constructor(
 
     private fun startFetch(listId: String) {
         val familyIdValue = familyId ?: return
-        val uidValue = uid ?: return
 
         listsJob?.cancel()
         listsJob = viewModelScope.launch {
-            localListRepository.getListItemsFlow(
-                queryType = ListQueryType.UserLists,
-                familyId = familyIdValue,
-                itemType = UserList::class,
-                uid = uidValue,
-            ).collect { result ->
+            userListRepository.observeUserLists(familyId = familyIdValue).collect { result ->
                 when (result) {
                     is Result.Success -> {
                         val foundList = result.data.firstOrNull { it.id == listId }
@@ -146,19 +132,14 @@ class ListDetailsViewModel @Inject constructor(
 
         entriesJob?.cancel()
         entriesJob = viewModelScope.launch {
-            localListRepository.getListItemsFlow(
-                queryType = ListQueryType.RoutineListEntries,
-                familyId = familyIdValue,
-                itemType = RoutineListEntry::class,
-                uid = listId,
-            ).collect { result ->
+            userListRepository.observeRoutineListEntries(familyIdValue).collect { result ->
                 when (result) {
                     is Result.Success -> {
                         val sortedEntries = result.data
                             .sortedWith(compareBy(nullsLast()) { it.nextDate })
 
                         _entries.value = sortedEntries
-                        updateImageJobs(sortedEntries, familyIdValue)
+                        updateImageJobs(sortedEntries)
 
                         if (_uiState.value is ListDetailsUiState.Loading) {
                             _uiState.value = ListDetailsUiState.Content()
@@ -305,18 +286,14 @@ class ListDetailsViewModel @Inject constructor(
     fun completeEntry(entry: RoutineListEntry) {
         val updatedEntry = RecurrenceCalculator.applyCompletion(entry, completedAt = Date())
         viewModelScope.launch {
-            val result = remoteListRepository.updateItem(
-                updatedEntry,
-                Constants.ROUTINE_LIST_ENTRIES_TABLE
-            )
-            when (result) {
+            when (val result = userListRepository.updateRoutineListEntry(updatedEntry)) {
                 is Result.Success -> Unit
                 is Result.Failure -> showError(result.error)
             }
         }
     }
 
-    private fun updateImageJobs(entries: List<RoutineListEntry>, familyId: String) {
+    private fun updateImageJobs(entries: List<RoutineListEntry>) {
         val newIds = entries.mapNotNull { it.id }.toSet()
         val currentIds = imageJobs.keys.toSet()
 
@@ -329,9 +306,7 @@ class ListDetailsViewModel @Inject constructor(
 
         (newIds - currentIds).forEach { entryId ->
             imageJobs[entryId] = viewModelScope.launch {
-                localImageRepository.getImageByteArray(
-                    ImageType.RoutineListEntryImage(familyId, entryId),
-                ).collect { result ->
+                userListRepository.observeRoutineImageByteArray(entryId).collect { result ->
                     when (result) {
                         is Result.Success -> {
                             _imageBitmaps.update { currentBitmaps ->

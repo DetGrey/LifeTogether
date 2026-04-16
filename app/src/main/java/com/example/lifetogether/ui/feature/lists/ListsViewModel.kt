@@ -5,16 +5,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.data.local.source.query.ListQueryType
-import com.example.lifetogether.data.repository.LocalListRepositoryImpl
-import com.example.lifetogether.data.repository.RemoteListRepositoryImpl
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.lists.ListType
 import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.SessionRepository
+import com.example.lifetogether.domain.repository.UserListRepository
 import com.example.lifetogether.domain.result.Result
-import com.example.lifetogether.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -28,8 +25,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ListsViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
-    private val localListRepository: LocalListRepositoryImpl,
-    private val remoteListRepository: RemoteListRepositoryImpl,
+    private val userListRepository: UserListRepository,
 ) : ViewModel() {
     private var familyId: String? = null
     private var uid: String? = null
@@ -78,16 +74,10 @@ class ListsViewModel @Inject constructor(
 
     private fun setUpLists() {
         val familyIdValue = familyId ?: return
-        val uidValue = uid ?: return
 
         listsJob?.cancel()
         listsJob = viewModelScope.launch {
-            localListRepository.getListItemsFlow(
-                queryType = ListQueryType.UserLists,
-                familyId = familyIdValue,
-                itemType = UserList::class,
-                uid = uidValue,
-            ).collect { result ->
+            userListRepository.observeUserLists(familyId = familyIdValue).collect { result ->
                 when (result) {
                     is Result.Success -> {
                         _userLists.value = result.data.sortedBy { it.itemName.lowercase() }
@@ -128,7 +118,7 @@ class ListsViewModel @Inject constructor(
                 visibility = newListVisibility,
                 ownerUid = activeUid,
             )
-            when (val result = remoteListRepository.saveItem(list, Constants.USER_LISTS_TABLE)) {
+            when (val result = userListRepository.saveUserList(list)) {
                 is Result.Success -> {
                     showCreateDialog = false
                     onCreated(result.data)

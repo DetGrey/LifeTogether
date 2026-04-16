@@ -6,10 +6,12 @@ import com.example.lifetogether.data.repository.LocalListRepositoryImpl
 import com.example.lifetogether.data.repository.UserRepositoryImpl
 import com.example.lifetogether.data.repository.RemoteAdminRepositoryImpl
 import com.example.lifetogether.data.repository.RemoteListRepositoryImpl
+import com.example.lifetogether.data.repository.UserListRepositoryImpl
 import com.example.lifetogether.domain.repository.AdminRepository
 import com.example.lifetogether.domain.repository.CategoryRepository
 import com.example.lifetogether.domain.repository.GroceryRepository
-import com.example.lifetogether.domain.repository.ListRepository
+import com.example.lifetogether.domain.repository.LegacyListRepository
+import com.example.lifetogether.domain.repository.UserListRepository
 import com.example.lifetogether.domain.repository.UserRepository
 import dagger.Binds
 import dagger.Module
@@ -28,12 +30,12 @@ abstract class RepositoryModule {
     @Binds
     abstract fun bindRemoteListRepository(
         remoteListRepositoryImpl: RemoteListRepositoryImpl,
-    ): ListRepository
+    ): LegacyListRepository
 
     @Binds
     abstract fun bindLocalListRepository(
         localListRepositoryImpl: LocalListRepositoryImpl,
-    ): ListRepository
+    ): LegacyListRepository
 
     @Binds
     abstract fun bindUserRepository(
@@ -49,4 +51,9 @@ abstract class RepositoryModule {
     abstract fun bindGroceryRepository(
         groceryRepositoryImpl: GroceryRepositoryImpl
     ): GroceryRepository
+
+    @Binds
+    abstract fun bindUserListRepository(
+        userListRepositoryImpl: UserListRepositoryImpl
+    ): UserListRepository
 }

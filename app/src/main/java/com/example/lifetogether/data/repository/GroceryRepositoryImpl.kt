@@ -1,7 +1,9 @@
 package com.example.lifetogether.data.repository
 
 import com.example.lifetogether.data.local.source.GroceryLocalDataSource
+import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.remote.FirestoreDataSource
+import com.example.lifetogether.domain.model.Item
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.repository.GroceryRepository
@@ -16,13 +18,34 @@ class GroceryRepositoryImpl @Inject constructor(
     private val groceryLocalDataSource: GroceryLocalDataSource,
     private val firestoreDataSource: FirestoreDataSource,
 ): GroceryRepository {
+
+    override fun observeGroceryItems(familyId: String): Flow<Result<List<GroceryItem>, String>> {
+        return groceryLocalDataSource.observeGroceryItems(familyId)
+            .map { entities ->
+                try {
+                    val groceryItems = entities
+                        .map { it.toModel() }
+                        .sortedBy { it.itemName }
+                    Result.Success(groceryItems)
+                } catch (e: Exception) {
+                    Result.Failure(e.message ?: "Unknown mapping error")
+                }
+            }
+    }
+
+    override suspend fun saveItem(item: Item): Result<String, String> {
+        return firestoreDataSource.saveItem(item, Constants.GROCERY_TABLE)
+    }
+
     //todo do not use listName. Maybe use ListQueryType or somthing
     override suspend fun toggleGroceryItemBought(item: GroceryItem): Result<Unit, String> {
         return firestoreDataSource.toggleCompletableItemCompletion(item, Constants.GROCERY_TABLE)
     }
+
     override suspend fun deleteGroceryItems(itemIds: List<String>): Result<Unit, String> {
         return firestoreDataSource.deleteItems(Constants.GROCERY_TABLE, itemIds)
     }
+
     override fun getGrocerySuggestions(): Flow<Result<List<GrocerySuggestion>, String>> {
         return groceryLocalDataSource.getGrocerySuggestions().map { list ->
             try {
@@ -41,4 +64,14 @@ class GroceryRepositoryImpl @Inject constructor(
             }
         }
     }
+    
+    private fun GroceryListEntity.toModel() = GroceryItem(
+        id = id,
+        familyId = familyId,
+        itemName = name,
+        lastUpdated = lastUpdated,
+        completed = completed,
+        category = category,
+        approxPrice = approxPrice,
+    )
 }

@@ -2,9 +2,6 @@ package com.example.lifetogether.ui.feature.groceryList
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.data.local.source.query.ListQueryType
-import com.example.lifetogether.data.repository.LocalListRepositoryImpl
-import com.example.lifetogether.data.repository.RemoteListRepositoryImpl
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
@@ -13,7 +10,6 @@ import com.example.lifetogether.domain.repository.CategoryRepository
 import com.example.lifetogether.domain.repository.GroceryRepository
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.result.Result
-import com.example.lifetogether.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -53,10 +49,8 @@ data class GroceryListUiState(
 @HiltViewModel
 class GroceryListViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
-    private val localListRepository: LocalListRepositoryImpl,
     private val categoryRepository: CategoryRepository,
     private val groceryRepository: GroceryRepository,
-    private val remoteListRepository: RemoteListRepositoryImpl,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(GroceryListUiState())
     val uiState: StateFlow<GroceryListUiState> = _uiState.asStateFlow()
@@ -97,11 +91,7 @@ class GroceryListViewModel @Inject constructor(
         val familyId = familyId ?: return //todo maybe not the best way
 
         viewModelScope.launch {
-            localListRepository.getListItemsFlow(
-                queryType = ListQueryType.Grocery,
-                familyId = familyId,
-                itemType = GroceryItem::class,
-            ).collect { result ->
+            groceryRepository.observeGroceryItems(familyId).collect { result ->
                 when (result) {
                     is Result.Success -> {
                         println("Items found: ${result.data}")
@@ -294,8 +284,7 @@ class GroceryListViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            val result = remoteListRepository.saveItem(groceryItem, Constants.GROCERY_TABLE)
-            when (result) {
+            when (val result = groceryRepository.saveItem(groceryItem)) {
                 is Result.Success -> {
                     updateUiState { currentState ->
                         currentState.copy(

@@ -5,7 +5,7 @@ import android.net.Uri
 import android.util.Log
 import com.example.lifetogether.data.local.source.MediaLocalDataSource
 import com.example.lifetogether.data.local.source.RecipeLocalDataSource
-import com.example.lifetogether.data.local.source.RoutineListEntryLocalDataSource
+import com.example.lifetogether.data.local.source.UserListLocalDataSource
 import com.example.lifetogether.data.local.source.UserLocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.listener.ByteArrayResultListener
@@ -29,7 +29,7 @@ import javax.inject.Singleton
 class ImageRepositoryImpl @Inject constructor(
     private val userLocalDataSource: UserLocalDataSource,
     private val recipeLocalDataSource: RecipeLocalDataSource,
-    private val routineListEntryLocalDataSource: RoutineListEntryLocalDataSource,
+    private val userListLocalDataSource: UserListLocalDataSource,
     private val mediaLocalDataSource: MediaLocalDataSource,
     private val storageRepository: StorageRepository,
     private val firestoreDataSource: FirestoreDataSource,
@@ -46,7 +46,7 @@ class ImageRepositoryImpl @Inject constructor(
                 familyId = imageType.familyId,
                 recipeId = imageType.recipeId,
             )
-            is ImageType.RoutineListEntryImage -> routineListEntryLocalDataSource.getImageByteArray(imageType.entryId)
+            is ImageType.RoutineListEntryImage -> userListLocalDataSource.observeRoutineImageByteArray(imageType.entryId)
             is ImageType.GalleryMedia -> flowOf(null)
         }
         return byteArrayFlow.map { byteArray ->

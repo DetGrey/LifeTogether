@@ -4,13 +4,13 @@ import android.util.Log
 import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.model.Item
-import com.example.lifetogether.domain.repository.ListRepository
+import com.example.lifetogether.domain.repository.LegacyListRepository
 import com.example.lifetogether.domain.result.Result
 import javax.inject.Inject
 
 class RemoteListRepositoryImpl @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
-) : ListRepository {
+) : LegacyListRepository {
     private companion object {
         const val TAG = "RemoteListRepo"
     }

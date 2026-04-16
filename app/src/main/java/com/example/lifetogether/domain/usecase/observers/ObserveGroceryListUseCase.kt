@@ -3,7 +3,6 @@ package com.example.lifetogether.domain.usecase.observers
 import com.example.lifetogether.data.local.source.GroceryLocalDataSource
 import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.listener.ListItemsResultListener
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -23,13 +22,13 @@ class ObserveGroceryListUseCase @Inject constructor(
             firestoreDataSource.grocerySnapshotListener(familyId).collect { result ->
                 println("grocerySnapshotListener().collect result: $result")
                 when (result) {
-                    is ListItemsResultListener.Success -> {
+                    is com.example.lifetogether.domain.result.Result.Success -> {
                         runCatching {
-                            if (result.listItems.isEmpty()) {
+                            if (result.data.isEmpty()) {
                                 println("grocerySnapshotListener().collect result: is empty")
                                 groceryLocalDataSource.deleteFamilyGroceryItems(familyId)
                             } else {
-                                val entities = result.listItems.map { item ->
+                                val entities = result.data.map { item ->
                                     GroceryListEntity(
                                         id = item.id ?: "",
                                         familyId = item.familyId,
@@ -51,9 +50,9 @@ class ObserveGroceryListUseCase @Inject constructor(
                             println("ObserveGroceryListUseCase local update failure: ${error.message}")
                         }
                     }
-                    is ListItemsResultListener.Failure -> {
+                    is com.example.lifetogether.domain.result.Result.Failure -> {
                         // Keep listener alive; firstSuccess is one-shot and only completes on success.
-                        println("ObserveFirestoreUseCase failure: ${result.message}")
+                        println("ObserveFirestoreUseCase failure: ${result.error}")
                     }
                 }
             }

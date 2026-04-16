@@ -5,7 +5,7 @@ import androidx.core.net.toUri
 import com.example.lifetogether.data.local.source.AlbumLocalDataSource
 import com.example.lifetogether.data.local.source.GroceryLocalDataSource
 import com.example.lifetogether.data.local.source.ListQueryLocalDataSource
-import com.example.lifetogether.data.local.source.RoutineListEntryLocalDataSource
+import com.example.lifetogether.data.local.source.UserListLocalDataSource
 import com.example.lifetogether.data.local.source.query.ListQueryType
 import com.example.lifetogether.data.local.source.query.ListQueryTypeMapper
 import com.example.lifetogether.data.model.Entity
@@ -23,7 +23,7 @@ import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.model.recipe.Recipe
-import com.example.lifetogether.domain.repository.ListRepository
+import com.example.lifetogether.domain.repository.LegacyListRepository
 import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.Flow
@@ -36,8 +36,8 @@ class LocalListRepositoryImpl @Inject constructor(
     private val listQueryLocalDataSource: ListQueryLocalDataSource,
     private val groceryLocalDataSource: GroceryLocalDataSource,
     private val albumLocalDataSource: AlbumLocalDataSource,
-    private val routineListEntryLocalDataSource: RoutineListEntryLocalDataSource,
-) : ListRepository {
+    private val userListLocalDataSource: UserListLocalDataSource,
+) : LegacyListRepository {
     private companion object {
         const val TAG = "LocalListRepository"
     }
@@ -48,7 +48,7 @@ class LocalListRepositoryImpl @Inject constructor(
     ): Result<Unit, String> {
         return when (queryType) {
             ListQueryType.Grocery -> groceryLocalDataSource.deleteItems(itemIds)
-            ListQueryType.RoutineListEntries -> routineListEntryLocalDataSource.deleteItems(itemIds)
+            ListQueryType.RoutineListEntries -> userListLocalDataSource.deleteRoutineListEntries(itemIds)
             else -> Result.Failure("Unsupported delete type: $queryType")
         }
     }
@@ -102,7 +102,7 @@ class LocalListRepositoryImpl @Inject constructor(
             }
     }
 
-    fun <T : Item> getListItemsFlow(
+    fun <T : Item> getListsFlow(
         queryType: ListQueryType,
         familyId: String,
         itemType: KClass<T>,
@@ -144,7 +144,7 @@ class LocalListRepositoryImpl @Inject constructor(
             ?: return flowOf(
                 ListItemsResultListener.Success(emptyList()),
             )
-        return getListItemsFlow(queryType, familyId, itemType, uid).map {
+        return getListsFlow(queryType, familyId, itemType, uid).map {
             when (it) {
                 is Result.Success -> ListItemsResultListener.Success(it.data)
                 is Result.Failure -> ListItemsResultListener.Failure(it.error)
