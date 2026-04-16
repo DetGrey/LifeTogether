@@ -9,6 +9,8 @@ import com.example.lifetogether.domain.listener.ListItemsResultListener
 import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.logic.GuideParser
 import com.example.lifetogether.domain.model.guides.Guide
+import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.usecase.item.FetchListItemsUseCase
 import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
 import com.example.lifetogether.util.Constants
@@ -23,12 +25,33 @@ import javax.inject.Inject
 
 @HiltViewModel
 class GuidesViewModel @Inject constructor(
+    private val sessionRepository: SessionRepository,
     private val fetchListItemsUseCase: FetchListItemsUseCase,
     private val saveItemUseCase: SaveItemUseCase,
 ) : ViewModel() {
     private var familyId: String? = null
     private var uid: String? = null
     private var guidesJob: Job? = null
+
+    init {
+        viewModelScope.launch {
+            sessionRepository.sessionState.collect { state ->
+                val authenticated = state as? SessionState.Authenticated
+                val newFamilyId = authenticated?.user?.familyId
+                val newUid = authenticated?.user?.uid
+                if (newFamilyId != null && newUid != null &&
+                    (newFamilyId != familyId || newUid != uid)
+                ) {
+                    familyId = newFamilyId
+                    uid = newUid
+                    setUpGuides()
+                } else if (state is SessionState.Unauthenticated) {
+                    familyId = null
+                    uid = null
+                }
+            }
+        }
+    }
 
     private val _guides = MutableStateFlow<List<Guide>>(emptyList())
     val guides: StateFlow<List<Guide>> = _guides.asStateFlow()
@@ -49,22 +72,17 @@ class GuidesViewModel @Inject constructor(
         }
     }
 
-    fun setUpGuides(
-        addedFamilyId: String,
-        addedUid: String,
-    ) {
-        if (familyId == addedFamilyId && uid == addedUid && guidesJob != null) return
-
-        familyId = addedFamilyId
-        uid = addedUid
+    private fun setUpGuides() {
+        val familyIdValue = familyId ?: return
+        val uidValue = uid ?: return
 
         guidesJob?.cancel()
         guidesJob = viewModelScope.launch {
             fetchListItemsUseCase(
-                familyId = addedFamilyId,
+                familyId = familyIdValue,
                 listName = Constants.GUIDES_TABLE,
                 itemType = Guide::class,
-                uid = addedUid,
+                uid = uidValue,
             ).collect { result ->
                 when (result) {
                     is ListItemsResultListener.Success -> {

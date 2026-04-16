@@ -27,7 +27,6 @@ import com.example.lifetogether.data.model.GuideProgressEntity
 import com.example.lifetogether.data.model.GuideEntity
 import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.model.GrocerySuggestionEntity
-import com.example.lifetogether.data.model.ListCountEntity
 import com.example.lifetogether.data.model.RoutineListEntryEntity
 import com.example.lifetogether.data.model.UserListEntity
 import com.example.lifetogether.data.model.RecipeEntity
@@ -38,7 +37,6 @@ import com.example.lifetogether.data.model.UserEntity
     entities = [
         GroceryListEntity::class,
         GrocerySuggestionEntity::class,
-        ListCountEntity::class,
         CategoryEntity::class,
         UserEntity::class,
         FamilyEntity::class,
@@ -52,7 +50,7 @@ import com.example.lifetogether.data.model.UserEntity
         UserListEntity::class,
         RoutineListEntryEntity::class,
     ],
-    version = 26,
+    version = 27,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)

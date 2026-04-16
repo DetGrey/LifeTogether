@@ -11,6 +11,8 @@ import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.usecase.image.FetchImageByteArrayUseCase
 import com.example.lifetogether.domain.usecase.item.DeleteRoutineListEntriesUseCase
 import com.example.lifetogether.domain.usecase.item.FetchListItemsUseCase
@@ -31,6 +33,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ListDetailsViewModel @Inject constructor(
+    private val sessionRepository: SessionRepository,
     private val fetchListItemsUseCase: FetchListItemsUseCase,
     private val updateItemUseCase: UpdateItemUseCase,
     private val fetchImageByteArrayUseCase: FetchImageByteArrayUseCase,
@@ -70,6 +73,26 @@ class ListDetailsViewModel @Inject constructor(
         initialValue = ListDetailsScreenState(),
     )
 
+    init {
+        viewModelScope.launch {
+            sessionRepository.sessionState.collect { state ->
+                val authenticated = state as? SessionState.Authenticated
+                val newFamilyId = authenticated?.user?.familyId
+                val newUid = authenticated?.user?.uid
+                if (newFamilyId != null && newUid != null &&
+                    (newFamilyId != familyId || newUid != uid)
+                ) {
+                    familyId = newFamilyId
+                    uid = newUid
+                    currentListId?.let { startFetch(it) }
+                } else if (state is SessionState.Unauthenticated) {
+                    familyId = null
+                    uid = null
+                }
+            }
+        }
+    }
+
     fun dismissAlert() {
         viewModelScope.launch {
             delay(3000)
@@ -82,21 +105,24 @@ class ListDetailsViewModel @Inject constructor(
         }
     }
 
-    fun setUp(addedFamilyId: String, addedUid: String, listId: String) {
-        if (familyId == addedFamilyId && uid == addedUid && currentListId == listId && entriesJob != null) return
-
-        familyId = addedFamilyId
-        uid = addedUid
+    fun setUp(listId: String) {
+        if (currentListId == listId && entriesJob != null) return
         currentListId = listId
         _uiState.value = ListDetailsUiState.Loading
+        startFetch(listId)
+    }
+
+    private fun startFetch(listId: String) {
+        val familyIdValue = familyId ?: return
+        val uidValue = uid ?: return
 
         listsJob?.cancel()
         listsJob = viewModelScope.launch {
             fetchListItemsUseCase(
-                familyId = addedFamilyId,
+                familyId = familyIdValue,
                 listName = Constants.USER_LISTS_TABLE,
                 itemType = UserList::class,
-                uid = addedUid,
+                uid = uidValue,
             ).collect { result ->
                 if (result is ListItemsResultListener.Success) {
                     val foundList = result.listItems
@@ -121,7 +147,7 @@ class ListDetailsViewModel @Inject constructor(
         entriesJob?.cancel()
         entriesJob = viewModelScope.launch {
             fetchListItemsUseCase(
-                familyId = addedFamilyId,
+                familyId = familyIdValue,
                 listName = Constants.ROUTINE_LIST_ENTRIES_TABLE,
                 itemType = RoutineListEntry::class,
                 uid = listId,
@@ -133,7 +159,7 @@ class ListDetailsViewModel @Inject constructor(
                             .sortedWith(compareBy(nullsLast()) { it.nextDate })
 
                         _entries.value = sortedEntries
-                        updateImageJobs(sortedEntries, addedFamilyId)
+                        updateImageJobs(sortedEntries, familyIdValue)
 
                         if (_uiState.value is ListDetailsUiState.Loading) {
                             _uiState.value = ListDetailsUiState.Content()

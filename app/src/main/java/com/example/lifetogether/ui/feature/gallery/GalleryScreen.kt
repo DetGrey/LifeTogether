@@ -27,23 +27,16 @@ import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 import com.example.lifetogether.domain.observer.ObserverKey
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun GalleryScreen(
     appNavigator: AppNavigator? = null,
-    appSessionViewModel: AppSessionViewModel,
 ) {
     val galleryViewModel: GalleryViewModel = hiltViewModel()
 
-    val userInformation by appSessionViewModel.userInformation.collectAsState()
     val uiState by galleryViewModel.uiState.collectAsState()
-
-    LaunchedEffect(key1 = userInformation?.familyId) {
-        userInformation?.familyId?.let { galleryViewModel.setUpGallery(it) }
-    }
 
     Box(
         modifier = Modifier

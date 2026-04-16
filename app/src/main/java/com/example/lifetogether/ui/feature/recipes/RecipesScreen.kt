@@ -24,23 +24,14 @@ import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 import com.example.lifetogether.domain.observer.ObserverKey
 
 @Composable
 fun RecipesScreen(
     appNavigator: AppNavigator? = null,
-    appSessionViewModel: AppSessionViewModel,
 ) {
     val recipesViewModel: RecipesViewModel = hiltViewModel()
-    val userInformation by appSessionViewModel.userInformation.collectAsState()
     val recipes by recipesViewModel.filteredRecipes.collectAsState()
-
-    LaunchedEffect(key1 = true) {
-        // Perform any one-time initialization or side effect here
-        println("Recipes familyId: ${userInformation?.familyId}")
-        userInformation?.familyId?.let { recipesViewModel.setUpRecipes(it) }
-    }
 
     Box(
         modifier = Modifier

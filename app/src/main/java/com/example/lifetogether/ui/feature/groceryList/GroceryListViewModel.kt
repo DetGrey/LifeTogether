@@ -16,6 +16,8 @@ import com.example.lifetogether.domain.usecase.item.FetchGrocerySuggestionsUseCa
 import com.example.lifetogether.domain.usecase.item.FetchListItemsUseCase
 import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
 import com.example.lifetogether.domain.usecase.item.ToggleCompletableItemCompletionUseCase
+import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -55,6 +57,7 @@ data class GroceryListUiState(
 
 @HiltViewModel
 class GroceryListViewModel @Inject constructor(
+    private val sessionRepository: SessionRepository,
     private val saveItemUseCase: SaveItemUseCase,
     private val toggleCompletableItemCompletionUseCase: ToggleCompletableItemCompletionUseCase,
     private val fetchListItemsUseCase: FetchListItemsUseCase,
@@ -65,9 +68,21 @@ class GroceryListViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(GroceryListUiState())
     val uiState: StateFlow<GroceryListUiState> = _uiState.asStateFlow()
 
-    // ---------------------------------------------------------------- SETUP
-    private var familyIdIsSet = false
     private var familyId: String? = null
+
+    init {
+        viewModelScope.launch {
+            sessionRepository.sessionState.collect { state ->
+                val newFamilyId = (state as? SessionState.Authenticated)?.user?.familyId
+                if (newFamilyId != null && newFamilyId != familyId) {
+                    familyId = newFamilyId
+                    setUpGroceryList()
+                } else if (state is SessionState.Unauthenticated) {
+                    familyId = null
+                }
+            }
+        }
+    }
 
     fun toggleAlertDialog() {
         viewModelScope.launch {
@@ -82,39 +97,33 @@ class GroceryListViewModel @Inject constructor(
     }
 
     // ---------------------------------------------------------------- SETUP/FETCH LIST
-    fun setUpGroceryList(addedFamilyId: String) {
+    private fun setUpGroceryList() {
         fetchCategories()
         fetchGrocerySuggestions()
 
-        if (!familyIdIsSet) {
-            println("GroceryListViewModel setting familyId")
-            familyId = addedFamilyId
-            // Use the UID here (e.g., fetch grocery list items)
-            viewModelScope.launch {
-                fetchListItemsUseCase(familyId!!, Constants.GROCERY_TABLE, GroceryItem::class).collect { result ->
-                    println("fetchListItemsUseCase result: $result")
-                    when (result) {
-                        is ListItemsResultListener.Success -> {
-                            println("Items found: ${result.listItems}")
-                            val groceryItems = result.listItems.filterIsInstance<GroceryItem>()
-                            if (groceryItems.isNotEmpty()) {
-                                updateUiState { state ->
-                                    state.copy(groceryList = groceryItems)
-                                }
-                                updateExpandedStates()
-                            } else {
-                                println("Error: No GroceryItem instances found in the result")
+        viewModelScope.launch {
+            fetchListItemsUseCase(familyId!!, Constants.GROCERY_TABLE, GroceryItem::class).collect { result ->
+                println("fetchListItemsUseCase result: $result")
+                when (result) {
+                    is ListItemsResultListener.Success -> {
+                        println("Items found: ${result.listItems}")
+                        val groceryItems = result.listItems.filterIsInstance<GroceryItem>()
+                        if (groceryItems.isNotEmpty()) {
+                            updateUiState { state ->
+                                state.copy(groceryList = groceryItems)
                             }
+                            updateExpandedStates()
+                        } else {
+                            println("Error: No GroceryItem instances found in the result")
                         }
+                    }
 
-                        is ListItemsResultListener.Failure -> {
-                            println("Error: ${result.message}")
-                            showError(result.message)
-                        }
+                    is ListItemsResultListener.Failure -> {
+                        println("Error: ${result.message}")
+                        showError(result.message)
                     }
                 }
             }
-            familyIdIsSet = true
         }
     }
 
@@ -260,9 +269,7 @@ class GroceryListViewModel @Inject constructor(
     }
 
     // ---------------------------------------------------------------- ADD NEW ITEM
-    fun addItemToList(
-        onSuccess: () -> Unit,
-    ) {
+    fun addItemToList() {
         println("GroceryListViewModel addItemToList()")
         val state = _uiState.value
 
@@ -298,7 +305,6 @@ class GroceryListViewModel @Inject constructor(
                         newItemPrice = "",
                     )
                 }
-                onSuccess()
             } else if (result is StringResultListener.Failure) {
                 println("Error: ${result.message}")
                 showError(result.message)

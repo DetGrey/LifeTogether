@@ -19,7 +19,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Icon
-import com.example.lifetogether.domain.model.enums.UpdateType
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.add.AddNewListItem
@@ -28,7 +27,6 @@ import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.list.ItemCategoryList
 import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 import com.example.lifetogether.domain.observer.ObserverKey
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.util.priceToString
@@ -36,17 +34,10 @@ import com.example.lifetogether.util.priceToString
 @Composable
 fun GroceryListScreen(
     appNavigator: AppNavigator? = null,
-    appSessionViewModel: AppSessionViewModel,
 ) {
     val groceryListViewModel: GroceryListViewModel = hiltViewModel()
 
-    val userInformationState by appSessionViewModel.userInformation.collectAsState()
     val uiState by groceryListViewModel.uiState.collectAsState()
-
-    LaunchedEffect(key1 = userInformationState?.familyId) {
-        println("GroceryList familyId: ${userInformationState?.familyId}")
-        userInformationState?.familyId?.let { groceryListViewModel.setUpGroceryList(it) }
-    }
 
     Box(
         modifier = Modifier
@@ -137,11 +128,6 @@ fun GroceryListScreen(
                                     if (item is GroceryItem) {
                                         groceryListViewModel.toggleItemCompleted(item)
                                     }
-                                    if (!item.completed) { // if it was not completed, but now will be
-                                        appSessionViewModel.updateItemCount("grocery-list", UpdateType.SUBTRACT)
-                                    } else {
-                                        appSessionViewModel.updateItemCount("grocery-list", UpdateType.ADD)
-                                    }
                                 },
                                 onDelete = {
                                     groceryListViewModel.showDeleteCompletedConfirmation()
@@ -167,9 +153,7 @@ fun GroceryListScreen(
                 suggestions = uiState.currentGrocerySuggestions,
                 onClick = {
                     groceryListViewModel.applySuggestion(it)
-                    groceryListViewModel.addItemToList(onSuccess = {
-                        appSessionViewModel.updateItemCount("grocery-list", UpdateType.ADD)
-                    })
+                    groceryListViewModel.addItemToList()
                 },
             )
         }
@@ -187,11 +171,7 @@ fun GroceryListScreen(
             onTextChange = { groceryListViewModel.onNewItemTextChange(it) },
             priceValue = uiState.newItemPrice,
             onPriceChange = { groceryListViewModel.onNewItemPriceChange(it) },
-            onAddClick = {
-                groceryListViewModel.addItemToList(onSuccess = {
-                    appSessionViewModel.updateItemCount("grocery-list", UpdateType.ADD)
-                })
-            },
+            onAddClick = { groceryListViewModel.addItemToList() },
             categoryList = uiState.groceryCategories,
             selectedCategory = uiState.newItemCategory,
             onCategoryChange = { newCategory ->

@@ -16,6 +16,8 @@ import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.domain.model.recipe.Instruction
 import com.example.lifetogether.domain.model.recipe.MutableRecipe
 import com.example.lifetogether.domain.model.recipe.Recipe
+import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.usecase.item.DeleteItemUseCase
 import com.example.lifetogether.domain.usecase.item.FetchItemByIdUseCase
 import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
@@ -33,6 +35,7 @@ import javax.inject.Inject
 @SuppressLint("MutableCollectionMutableState")
 @HiltViewModel
 class RecipeDetailsViewModel @Inject constructor(
+    private val sessionRepository: SessionRepository,
     private val saveItemUseCase: SaveItemUseCase,
     private val deleteItemUseCase: DeleteItemUseCase,
     private val updateItemUseCase: UpdateItemUseCase,
@@ -62,17 +65,19 @@ class RecipeDetailsViewModel @Inject constructor(
     }
 
     // ---------------------------------------------------------------- Family Id
-    private var familyIdIsSet = false
-    var familyId: String? = null
+    private val _familyId = MutableStateFlow<String?>(null)
+    val familyId: StateFlow<String?> = _familyId.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            sessionRepository.sessionState.collect { state ->
+                _familyId.value = (state as? SessionState.Authenticated)?.user?.familyId
+            }
+        }
+    }
 
     // ---------------------------------------------------------------- SETUP/FETCH LIST
-    fun setUpRecipeDetails(addedFamilyId: String, recipeId: String?) {
-        if (!familyIdIsSet) {
-            println("RecipeDetailsViewModel setting familyId")
-            familyId = addedFamilyId
-            familyIdIsSet = true
-        }
-
+    fun setUp(recipeId: String?) {
         if (recipeId is String) {
             fetchRecipe(recipeId)
         } else {
@@ -107,8 +112,13 @@ class RecipeDetailsViewModel @Inject constructor(
     private fun fetchRecipe(
         recipeId: String,
     ) {
+        val familyIdValue = _familyId.value ?: run {
+            error = "Not connected to a family"
+            showAlertDialog = true
+            return
+        }
         viewModelScope.launch {
-            fetchItemByIdUseCase.invoke(familyId!!, recipeId, Constants.RECIPES_TABLE, Recipe::class).collect { result ->
+            fetchItemByIdUseCase.invoke(familyIdValue, recipeId, Constants.RECIPES_TABLE, Recipe::class).collect { result ->
                 println("fetchItemByIdUseCase result: $result")
                 when (result) {
                     is ItemResultListener.Success -> {
@@ -188,10 +198,10 @@ class RecipeDetailsViewModel @Inject constructor(
             return
         }
 
-        val newRecipe = familyId?.let {
+        val newRecipe = _familyId.value?.let {
             Recipe(
                 id = recipeId,
-                familyId = familyId!!,
+                familyId = it,
                 itemName = recipe.value.itemName,
                 lastUpdated = Date(),
                 description = recipe.value.description,

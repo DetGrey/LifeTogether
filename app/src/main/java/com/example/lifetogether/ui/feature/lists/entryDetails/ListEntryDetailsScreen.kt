@@ -51,7 +51,6 @@ import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 import com.example.lifetogether.ui.viewmodel.ImageViewModel
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -60,12 +59,11 @@ fun ListEntryDetailsScreen(
     listId: String,
     entryId: String? = null,
     appNavigator: AppNavigator? = null,
-    appSessionViewModel: AppSessionViewModel,
 ) {
     val vm: ListEntryDetailsViewModel = hiltViewModel()
     val imageViewModel: ImageViewModel = hiltViewModel()
-    val userInformation by appSessionViewModel.userInformation.collectAsState()
     val screenState by vm.screenState.collectAsState()
+    val familyId by vm.familyId.collectAsState()
     val uiState = screenState.uiState
     val formState = screenState.formState
     val bitmap by imageViewModel.bitmap.collectAsState()
@@ -77,18 +75,19 @@ fun ListEntryDetailsScreen(
         uri?.let { vm.onImageSelected(it, context.contentResolver) }
     }
 
-    LaunchedEffect(userInformation?.familyId, listId, entryId) {
-        val familyId = userInformation?.familyId
-        Log.d("ListEntryDetailsScreen", "familyId: $familyId, listId: $listId, entryId: $entryId")
-        if (!familyId.isNullOrBlank() && listId.isNotBlank()) {
-            vm.setUp(familyId, listId, entryId) { appNavigator?.navigateBack() }
+    LaunchedEffect(listId, entryId) {
+        Log.d("ListEntryDetailsScreen", "listId: $listId, entryId: $entryId")
+        if (listId.isNotBlank()) {
+            vm.setUp(listId, entryId) { appNavigator?.navigateBack() }
+        }
+    }
 
-            if (entryId != null) {
-                imageViewModel.collectImageFlow(
-                    imageType = ImageType.RoutineListEntryImage(familyId, entryId),
-                    onError = { /* image load errors are non-fatal */ },
-                )
-            }
+    LaunchedEffect(familyId, entryId) {
+        if (!familyId.isNullOrBlank() && entryId != null) {
+            imageViewModel.collectImageFlow(
+                imageType = ImageType.RoutineListEntryImage(familyId!!, entryId),
+                onError = { /* image load errors are non-fatal */ },
+            )
         }
     }
 
@@ -145,7 +144,9 @@ fun ListEntryDetailsScreen(
                                     .then(
                                         if (uiState.isEditing) {
                                             if (isExistingEntry) {
-                                                Modifier.clickable { imageViewModel.showImageUploadDialog = true }
+                                                Modifier.clickable {
+                                                    imageViewModel.showImageUploadDialog = true
+                                                }
                                             } else {
                                                 Modifier.clickable { imagePickerLauncher.launch("image/*") }
                                             }
@@ -283,17 +284,18 @@ fun ListEntryDetailsScreen(
         ErrorAlertDialog(uiState.error)
     }
 
-    val familyId = userInformation?.familyId
-    if (imageViewModel.showImageUploadDialog && familyId != null && entryId != null) {
-        ImageUploadDialog(
-            onDismiss = { imageViewModel.showImageUploadDialog = false },
-            onConfirm = { imageViewModel.showImageUploadDialog = false },
-            dialogTitle = "Upload entry image",
-            dialogMessage = "Select an image for this entry",
-            imageType = ImageType.RoutineListEntryImage(familyId, entryId),
-            dismissButtonMessage = "Cancel",
-            confirmButtonMessage = "Upload image",
-        )
+    if (imageViewModel.showImageUploadDialog && entryId != null) {
+        familyId?.let { familyId ->
+            ImageUploadDialog(
+                onDismiss = { imageViewModel.showImageUploadDialog = false },
+                onConfirm = { imageViewModel.showImageUploadDialog = false },
+                dialogTitle = "Upload entry image",
+                dialogMessage = "Select an image for this entry",
+                imageType = ImageType.RoutineListEntryImage(familyId, entryId),
+                dismissButtonMessage = "Cancel",
+                confirmButtonMessage = "Upload image",
+            )
+        }
     }
 }
 

@@ -15,6 +15,8 @@ import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.usecase.image.UploadImageUseCase
 import com.example.lifetogether.domain.usecase.item.FetchItemByIdUseCase
 import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
@@ -26,6 +28,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -35,6 +38,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ListEntryDetailsViewModel @Inject constructor(
+    private val sessionRepository: SessionRepository,
     private val saveItemUseCase: SaveItemUseCase,
     private val updateItemUseCase: UpdateItemUseCase,
     private val fetchItemByIdUseCase: FetchItemByIdUseCase,
@@ -61,7 +65,8 @@ class ListEntryDetailsViewModel @Inject constructor(
         val formState: EntryFormState = EntryFormState(),
     )
 
-    private var familyId: String? = null
+    private val _familyId = MutableStateFlow<String?>(null)
+    val familyId: StateFlow<String?> = _familyId.asStateFlow()
     private var listId: String? = null
     private var entryId: String? = null
     private var originalFormState: EntryFormState? = null
@@ -77,10 +82,18 @@ class ListEntryDetailsViewModel @Inject constructor(
         initialValue = EntryDetailsScreenState(),
     )
 
-    fun setUp(familyId: String, listId: String, entryId: String?, onLoadFailed: () -> Unit) {
-        Log.d("ListEntryDetailsVM", "familyId: $familyId, listId: $listId, entryId: $entryId")
-        if (this.familyId == familyId && this.listId == listId && this.entryId == entryId) return
-        this.familyId = familyId
+    init {
+        viewModelScope.launch {
+            sessionRepository.sessionState.collect { state ->
+                _familyId.value = (state as? SessionState.Authenticated)?.user?.familyId
+            }
+        }
+    }
+
+    fun setUp(listId: String, entryId: String?, onLoadFailed: () -> Unit) {
+        val familyIdValue = _familyId.value
+        Log.d("ListEntryDetailsVM", "familyId: $familyIdValue, listId: $listId, entryId: $entryId")
+        if (this.listId == listId && this.entryId == entryId) return
         this.listId = listId
         this.entryId = entryId
 
@@ -89,15 +102,16 @@ class ListEntryDetailsViewModel @Inject constructor(
             _uiState.value = EntryDetailsUiState.Content(isEditing = true)
         } else {
             _uiState.value = EntryDetailsUiState.Loading
-            loadEntry(familyId, entryId, onLoadFailed)
+            loadEntry(entryId, onLoadFailed)
         }
     }
 
-    private fun loadEntry(familyId: String, entryId: String, onLoadFailed: () -> Unit) {
-        Log.d("ListEntryDetailsVM", "Loading Entry. familyId: $familyId, listId: $listId, entryId: $entryId")
+    private fun loadEntry(entryId: String, onLoadFailed: () -> Unit) {
+        val familyIdValue = _familyId.value ?: run { onLoadFailed(); return }
+        Log.d("ListEntryDetailsVM", "Loading Entry. familyId: $familyIdValue, listId: $listId, entryId: $entryId")
         viewModelScope.launch {
             fetchItemByIdUseCase(
-                familyId = familyId,
+                familyId = familyIdValue,
                 id = entryId,
                 listName = Constants.ROUTINE_LIST_ENTRIES_TABLE,
                 itemType = RoutineListEntry::class,
@@ -168,7 +182,7 @@ class ListEntryDetailsViewModel @Inject constructor(
     }
 
     fun save(onDone: () -> Unit) {
-        val activeFamilyId = familyId ?: return showError("Missing family context")
+        val activeFamilyId = _familyId.value ?: return showError("Missing family context")
         val activeListId = listId ?: return showError("Missing list context")
 
         validate()?.let { return showError(it) }

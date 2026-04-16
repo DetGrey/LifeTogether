@@ -33,16 +33,13 @@ import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.feature.guides.details.components.GuideHeroCard
 import com.example.lifetogether.ui.feature.guides.details.components.GuideSectionCard
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 
 @Composable
 fun GuideDetailsScreen(
     appNavigator: AppNavigator? = null,
-    appSessionViewModel: AppSessionViewModel,
     guideId: String,
     guideDetailsViewModel: GuideDetailsViewModel,
 ) {
-    val userInformation by appSessionViewModel.userInformation.collectAsState()
     val uiState by guideDetailsViewModel.uiState.collectAsState()
     val guide = uiState.guide
 
@@ -50,12 +47,8 @@ fun GuideDetailsScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showResetProgressDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(userInformation?.familyId, userInformation?.uid, guideId) {
-        val familyId = userInformation?.familyId
-        val uid = userInformation?.uid
-        if (!familyId.isNullOrBlank() && !uid.isNullOrBlank()) {
-            guideDetailsViewModel.setUpGuide(familyId, uid, guideId)
-        }
+    LaunchedEffect(guideId) {
+        guideDetailsViewModel.setUp(guideId) //todo don't think this is the best way
     }
 
     DisposableEffect(Unit) {

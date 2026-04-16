@@ -13,6 +13,8 @@ import com.example.lifetogether.domain.model.guides.GuideSection
 import com.example.lifetogether.domain.model.guides.GuideStep
 import com.example.lifetogether.domain.model.guides.GuideStepType
 import com.example.lifetogether.domain.model.enums.Visibility
+import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
 import com.example.lifetogether.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,10 +29,21 @@ import javax.inject.Inject
 
 @HiltViewModel
 class GuideCreateViewModel @Inject constructor(
+    private val sessionRepository: SessionRepository,
     private val saveItemUseCase: SaveItemUseCase,
 ) : ViewModel() {
     private var familyId: String? = null
     private var uid: String? = null
+
+    init {
+        viewModelScope.launch {
+            sessionRepository.sessionState.collect { state ->
+                val authenticated = state as? SessionState.Authenticated
+                familyId = authenticated?.user?.familyId
+                uid = authenticated?.user?.uid
+            }
+        }
+    }
 
     var title: String by mutableStateOf("")
     var description: String by mutableStateOf("")
@@ -48,14 +61,6 @@ class GuideCreateViewModel @Inject constructor(
             showAlertDialog = false
             error = ""
         }
-    }
-
-    fun setContext(
-        familyId: String,
-        uid: String,
-    ) {
-        this.familyId = familyId
-        this.uid = uid
     }
 
     fun addSection(

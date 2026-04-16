@@ -7,6 +7,8 @@ import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.logic.toFullDateString
 import com.example.lifetogether.domain.model.TipItem
+import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.usecase.item.DeleteItemUseCase
 import com.example.lifetogether.domain.usecase.item.FetchListItemsUseCase
 import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
@@ -56,11 +58,11 @@ data class TipTrackerUiState(
     val showConfirmationDialog: Boolean = false,
     val showAlertDialog: Boolean = false,
     val error: String = "",
-    val isInitialized: Boolean = false,
 )
 
 @HiltViewModel
 class TipTrackerViewModel @Inject constructor(
+    private val sessionRepository: SessionRepository,
     private val saveItemUseCase: SaveItemUseCase,
     private val fetchListItemsUseCase: FetchListItemsUseCase,
     private val deleteItemUseCase: DeleteItemUseCase,
@@ -70,10 +72,21 @@ class TipTrackerViewModel @Inject constructor(
 
     private var familyId: String? = null
 
-    fun setUpTipTracker(addedFamilyId: String) {
-        if (_uiState.value.isInitialized) return
+    init {
+        viewModelScope.launch {
+            sessionRepository.sessionState.collect { state ->
+                val newFamilyId = (state as? SessionState.Authenticated)?.user?.familyId
+                if (newFamilyId != null && newFamilyId != familyId) {
+                    familyId = newFamilyId
+                    setUpTipTracker()
+                } else if (state is SessionState.Unauthenticated) {
+                    familyId = null
+                }
+            }
+        }
+    }
 
-        familyId = addedFamilyId
+    private fun setUpTipTracker() {
         viewModelScope.launch {
             fetchListItemsUseCase(
                 familyId!!,
@@ -105,7 +118,6 @@ class TipTrackerViewModel @Inject constructor(
                 tips = sortedTips,
                 stats = stats,
                 groupedTips = groupedTips,
-                isInitialized = true,
             )
         }
     }

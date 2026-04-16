@@ -98,7 +98,7 @@ Build a full Guides feature aligned with your current architecture:
 3. Add `ObserveGuidesUseCase`:
 - Combine the two flows, merge both guide sets, then update Room.
 - If merged set is empty, call `deleteFamilyGuides(familyId)`.
-4. Wire it in [AppSessionViewModel.kt](/Users/anenovruplarsen/Documents/Private/LifeTogether/app/src/main/java/com/example/lifetogether/ui/viewmodel/AppSessionViewModel.kt) from `observeFirestoreFamilyData`, passing both `uid` and `familyId`.
+4. Wire it in root observer coordination (session-driven observer setup) using authenticated `uid` and `familyId`.
 
 ## UI / UX Implementation
 

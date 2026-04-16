@@ -47,37 +47,33 @@ import com.example.lifetogether.ui.common.tagOptionRow.TagOption
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.textfield.EditableTextField
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 import com.example.lifetogether.ui.viewmodel.ImageViewModel
 
 @Composable
 fun RecipeDetailsScreen(
     appNavigator: AppNavigator? = null,
-    appSessionViewModel: AppSessionViewModel,
     recipeId: String? = null,
 ) {
     val recipeDetailsViewModel: RecipeDetailsViewModel = hiltViewModel()
     val imageViewModel: ImageViewModel = hiltViewModel()
 
-    val userInformation by appSessionViewModel.userInformation.collectAsState()
     val recipe by recipeDetailsViewModel.recipe.collectAsState()
+    val familyId by recipeDetailsViewModel.familyId.collectAsState()
     val bitmap by imageViewModel.bitmap.collectAsState()
 
-    LaunchedEffect(key1 = true) {
-        // Perform any one-time initialization or side effect here
-        println("recipeDetails screen familyId: ${userInformation?.familyId}")
-        userInformation?.familyId?.let { familyId ->
-            recipeDetailsViewModel.setUpRecipeDetails(familyId, recipeId)
+    LaunchedEffect(recipeId) {
+        recipeDetailsViewModel.setUp(recipeId)
+    }
 
-            recipeId?.let { recipeId ->
-                imageViewModel.collectImageFlow(
-                    imageType = ImageType.RecipeImage(familyId, recipeId),
-                    onError = {
-                        recipeDetailsViewModel.error = it
-                        recipeDetailsViewModel.showAlertDialog = true
-                    },
-                )
-            }
+    LaunchedEffect(familyId, recipeId) {
+        if (!familyId.isNullOrBlank() && recipeId != null) {
+            imageViewModel.collectImageFlow(
+                imageType = ImageType.RecipeImage(familyId!!, recipeId),
+                onError = {
+                    recipeDetailsViewModel.error = it
+                    recipeDetailsViewModel.showAlertDialog = true
+                },
+            )
         }
     }
 
@@ -405,8 +401,8 @@ fun RecipeDetailsScreen(
     }
 
     // ---------------------------------------------------------------- IMAGE UPLOAD DIALOG
-    if (imageViewModel.showImageUploadDialog && userInformation != null) {
-        userInformation!!.familyId?.let { familyId ->
+    if (imageViewModel.showImageUploadDialog) {
+        familyId?.let { familyId ->
             recipeId?.let { recipeId ->
                 ImageUploadDialog(
                     onDismiss = { imageViewModel.showImageUploadDialog = false },

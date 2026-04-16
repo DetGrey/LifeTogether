@@ -49,7 +49,6 @@ import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
 import com.example.lifetogether.ui.model.MenuAction
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 import com.example.lifetogether.ui.viewmodel.ImageViewModel
 import com.example.lifetogether.domain.observer.ObserverKey
 
@@ -57,19 +56,15 @@ import com.example.lifetogether.domain.observer.ObserverKey
 @Composable
 fun AlbumDetailsScreen(
     appNavigator: AppNavigator? = null,
-    appSessionViewModel: AppSessionViewModel,
     albumId: String,
 ) {
     val albumDetailsViewModel: AlbumDetailsViewModel = hiltViewModel()
     val imageViewModel: ImageViewModel = hiltViewModel()
 
-    val userInformation by appSessionViewModel.userInformation.collectAsState()
     val uiState by albumDetailsViewModel.uiState.collectAsState()
 
     LaunchedEffect(key1 = albumId) {
-        userInformation?.familyId?.let {
-            albumDetailsViewModel.setUpAlbumMedia(it, albumId)
-        }
+        albumDetailsViewModel.setUp(albumId)
     }
 
     // Material3 pull-to-refresh state
@@ -247,8 +242,8 @@ fun AlbumDetailsScreen(
     }
 
     // ---------------------------------------------------------------- IMAGE UPLOAD DIALOG
-    if (imageViewModel.showImageUploadDialog && userInformation != null) {
-        userInformation!!.familyId?.let { familyId ->
+    if (imageViewModel.showImageUploadDialog) {
+        uiState.familyId?.let { familyId ->
             MediaUploadMultipleDialog(
                 onDismiss = { imageViewModel.showImageUploadDialog = false },
                 onConfirm = { imageViewModel.showImageUploadDialog = false },

@@ -3,7 +3,6 @@ package com.example.lifetogether.ui.navigation
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
@@ -35,7 +34,6 @@ import com.example.lifetogether.ui.feature.settings.SettingsScreen
 import com.example.lifetogether.ui.feature.signup.SignupScreen
 import com.example.lifetogether.ui.feature.tipTracker.TipStatisticsRoute
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerRoute
-import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 
 @Composable
 fun NavHost(
@@ -80,33 +78,23 @@ fun NavHost(
         }
 
         composable(AppRoutes.LOADING_SCREEN) {
-            // TODO [Issue #3]: remove bridge after LoadingScreen migrates off AppSessionViewModel
-            val appSessionViewModel: AppSessionViewModel = hiltViewModel()
-            LoadingScreen(appNavigator, appSessionViewModel)
+            LoadingScreen(appNavigator)
         }
 
         composable(AppRoutes.HOME_SCREEN) {
-            // TODO [Issue #3]: remove bridge after HomeScreen migrates off AppSessionViewModel
-            val appSessionViewModel: AppSessionViewModel = hiltViewModel()
-            HomeScreen(appNavigator, appSessionViewModel)
+            HomeScreen(appNavigator)
         }
 
         composable(AppRoutes.PROFILE_SCREEN) {
-            // TODO [Issue #3]: remove bridge after ProfileScreen migrates off AppSessionViewModel
-            val appSessionViewModel: AppSessionViewModel = hiltViewModel()
-            ProfileScreen(appNavigator, appSessionViewModel)
+            ProfileScreen(appNavigator)
         }
 
         composable(AppRoutes.FAMILY_SCREEN) {
-            // TODO [Issue #3]: remove bridge after FamilyScreen migrates off AppSessionViewModel
-            val appSessionViewModel: AppSessionViewModel = hiltViewModel()
-            FamilyScreen(appNavigator, appSessionViewModel)
+            FamilyScreen(appNavigator)
         }
 
         composable(AppRoutes.SETTINGS_SCREEN) {
-            // TODO [Issue #3]: remove bridge after SettingsScreen migrates off AppSessionViewModel
-            val appSessionViewModel: AppSessionViewModel = hiltViewModel()
-            SettingsScreen(appNavigator, appSessionViewModel)
+            SettingsScreen(appNavigator)
         }
 
         composable(AppRoutes.LOGIN_SCREEN) {
@@ -129,9 +117,7 @@ fun NavHost(
         }
 
         composable(AppRoutes.GUIDE_CREATE_SCREEN) {
-            // TODO [Issue #3]: remove bridge after GuideCreateScreen migrates off AppSessionViewModel
-            val appSessionViewModel: AppSessionViewModel = hiltViewModel()
-            GuideCreateScreen(appNavigator, appSessionViewModel)
+            GuideCreateScreen(appNavigator)
         }
 
         navigation(

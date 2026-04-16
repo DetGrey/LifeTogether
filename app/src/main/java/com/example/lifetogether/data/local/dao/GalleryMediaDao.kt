@@ -32,9 +32,6 @@ interface GalleryMediaDao {
     @Query("SELECT id, media_uri FROM $GALLERY_MEDIA_TABLE WHERE family_id = :familyId")
     suspend fun getExistingMediaIdsWithUris(familyId: String): List<GalleryMediaIdWithUri>
 
-    @Query("SELECT COUNT(*) FROM $GALLERY_MEDIA_TABLE WHERE family_id = :familyId AND album_id = :albumId")
-    fun getItemCountByAlbumId(familyId: String, albumId: String): Int
-
     @Query("SELECT id FROM $GALLERY_MEDIA_TABLE WHERE album_id = :albumId ORDER BY date_created DESC LIMIT 1")
     suspend fun getLatestMediaIdForAlbum(albumId: String): String?
 

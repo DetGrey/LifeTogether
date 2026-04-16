@@ -46,25 +46,20 @@ import com.example.lifetogether.ui.common.image.MediaInfoPanel
 import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
 import com.example.lifetogether.ui.model.MenuAction
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.AppSessionViewModel
 import com.example.lifetogether.domain.observer.ObserverKey
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun MediaDetailsScreen(
     appNavigator: AppNavigator? = null,
-    appSessionViewModel: AppSessionViewModel,
     albumId: String,
     initialIndex: Int,
 ) {
     val mediaDetailsViewModel: MediaDetailsViewModel = hiltViewModel()
-    val userInformation by appSessionViewModel.userInformation.collectAsState()
     val uiState by mediaDetailsViewModel.uiState.collectAsState()
 
     LaunchedEffect(albumId) {
-        userInformation?.familyId?.let {
-            mediaDetailsViewModel.setUpMediaData(it, albumId, initialIndex)
-        }
+        mediaDetailsViewModel.setUp(albumId, initialIndex)
     }
 
     val mediaList = uiState.mediaList

@@ -8,6 +8,8 @@ import com.example.lifetogether.domain.logic.GuideLeafPointer
 import com.example.lifetogether.domain.logic.GuideProgress
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.guides.GuideSection
+import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.usecase.guides.MarkGuideProgressDirtyUseCase
 import com.example.lifetogether.domain.usecase.guides.SyncPendingGuideProgressUseCase
 import com.example.lifetogether.domain.usecase.item.FetchItemByIdUseCase
@@ -25,6 +27,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class GuideStepPlayerViewModel @Inject constructor(
+    private val sessionRepository: SessionRepository,
     private val fetchItemByIdUseCase: FetchItemByIdUseCase,
     private val markGuideProgressDirtyUseCase: MarkGuideProgressDirtyUseCase,
     private val syncPendingGuideProgressUseCase: SyncPendingGuideProgressUseCase,
@@ -53,6 +56,26 @@ class GuideStepPlayerViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(GuideStepPlayerUiState())
     val uiState: StateFlow<GuideStepPlayerUiState> = _uiState.asStateFlow()
 
+    init {
+        viewModelScope.launch {
+            sessionRepository.sessionState.collect { state ->
+                val authenticated = state as? SessionState.Authenticated
+                val newFamilyId = authenticated?.user?.familyId
+                val newUid = authenticated?.user?.uid
+                if ((newFamilyId != null && newUid != null) &&
+                    (newFamilyId != familyId || newUid != uid)
+                ) {
+                    familyId = newFamilyId
+                    uid = newUid
+                    guideId?.let { startGuideJob(it) }
+                } else if (state is SessionState.Unauthenticated) {
+                    familyId = null
+                    uid = null
+                }
+            }
+        }
+    }
+
     fun dismissAlert() {
         dismissAlertJob?.cancel()
         dismissAlertJob = viewModelScope.launch {
@@ -61,40 +84,37 @@ class GuideStepPlayerViewModel @Inject constructor(
         }
     }
 
-    fun setUpGuide(
-        familyId: String,
-        uid: String,
-        guideId: String,
-    ) {
-        val isNewGuideContext = this.familyId != familyId || this.uid != uid || this.guideId != guideId
-        Log.d(
-            TAG,
-            "setUpGuide familyId=$familyId guideId=$guideId isNewGuideContext=$isNewGuideContext activeJob=${guideJob?.isActive == true}",
-        )
-        if (!isNewGuideContext && guideJob?.isActive == true) {
-            Log.d(TAG, "setUpGuide skipped because existing observer is active for same context")
+    fun setUp(guideId: String) {
+        val isNewGuide = this.guideId != guideId
+        if (isNewGuide) {
+            this.guideId = guideId
+            currentPointerIndex = -1
+            cancelPendingGuidePersistence()
+        }
+        if (familyId != null && uid != null) {
+            startGuideJob(guideId)
+        }
+    }
+
+    private fun startGuideJob(guideId: String) {
+        val familyIdValue = familyId ?: return
+        val uidValue = uid ?: return
+
+        if (this.guideId == guideId && guideJob?.isActive == true) {
+            Log.d(TAG, "startGuideJob skipped: active job for same context")
             return
         }
 
-        if (isNewGuideContext) {
-            currentPointerIndex = -1
-            cancelPendingGuidePersistence()
-            Log.d(TAG, "setUpGuide reset pointer and pending guide persistence for new context")
-        }
-
-        this.familyId = familyId
-        this.uid = uid
-        this.guideId = guideId
-
+        Log.d(TAG, "startGuideJob familyId=$familyIdValue guideId=$guideId")
         guideJob?.cancel()
         guideJob = viewModelScope.launch {
-            Log.d(TAG, "setUpGuide subscribing to local guide flow for guideId=$guideId")
+            Log.d(TAG, "startGuideJob subscribing to local guide flow for guideId=$guideId")
             fetchItemByIdUseCase(
-                familyId = familyId,
+                familyId = familyIdValue,
                 id = guideId,
                 listName = Constants.GUIDES_TABLE,
                 itemType = Guide::class,
-                uid = uid,
+                uid = uidValue,
             ).collect { result ->
                 when (result) {
                     is ItemResultListener.Success -> {
