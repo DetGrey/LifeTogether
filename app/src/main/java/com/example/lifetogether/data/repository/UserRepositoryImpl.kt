@@ -4,6 +4,7 @@ import com.example.lifetogether.data.local.source.SessionCleanupLocalDataSource
 import com.example.lifetogether.data.local.source.UserLocalDataSource
 import com.example.lifetogether.data.remote.FirebaseAuthDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
+import com.example.lifetogether.domain.datasource.StorageDataSource
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
@@ -21,6 +22,7 @@ class UserRepositoryImpl @Inject constructor(
     private val sessionCleanupLocalDataSource: SessionCleanupLocalDataSource,
     private val firebaseAuthDataSource: FirebaseAuthDataSource,
     private val firestoreDataSource: FirestoreDataSource,
+    private val storageDataSource: StorageDataSource,
 ) : UserRepository, SessionUserRepository {
 
     fun getFamilyInformation(familyId: String): Flow<Result<FamilyInformation, String>> {
@@ -77,14 +79,14 @@ class UserRepositoryImpl @Inject constructor(
         return sessionCleanupLocalDataSource.clearSessionTables()
     }
     // ---------- REMOTE
-    suspend fun login(
+    override suspend fun login(
         user: User,
     ): Result<UserInformation, String> {
         println("RemoteUserRepositoryImpl login()")
         return firebaseAuthDataSource.login(user)
     }
 
-    suspend fun signUp(
+    override suspend fun signUp(
         user: User,
         userInformation: UserInformation,
     ): Result<UserInformation, String> {
@@ -134,6 +136,62 @@ class UserRepositoryImpl @Inject constructor(
         return when (val result = firestoreDataSource.changeName(uid, familyId, newName)) {
             is Result.Success -> Result.Success(Unit)
             is Result.Failure -> Result.Failure(result.error)
+        }
+    }
+
+    override fun syncUserInformationFromRemote(uid: String): Flow<Result<Unit, String>> {
+        return firestoreDataSource.userInformationSnapshotListener(uid).map { result ->
+            when (result) {
+                is Result.Success -> runCatching {
+                    val hasExistingImage = result.data.uid?.let { uidValue ->
+                        userLocalDataSource.userHasProfileImage(uidValue)
+                    } ?: false
+
+                    if (!hasExistingImage) {
+                        val byteArrayResult = result.data.imageUrl?.let { url ->
+                            storageDataSource.fetchImageByteArray(url)
+                        }
+                        when (byteArrayResult) {
+                            is Result.Success -> userLocalDataSource.updateUserInformation(result.data, byteArrayResult.data)
+                            is Result.Failure -> userLocalDataSource.updateUserInformation(result.data)
+                            null -> userLocalDataSource.updateUserInformation(result.data)
+                        }
+                    }
+                    Result.Success(Unit)
+                }.getOrElse { error ->
+                    Result.Failure(error.message ?: "Failed to sync user information")
+                }
+
+                is Result.Failure -> Result.Failure(result.error)
+            }
+        }
+    }
+
+    fun syncFamilyInformationFromRemote(familyId: String): Flow<Result<Unit, String>> {
+        return firestoreDataSource.familyInformationSnapshotListener(familyId).map { result ->
+            when (result) {
+                is Result.Success -> runCatching {
+                    val hasExistingImage = result.data.familyId?.let { familyIdValue ->
+                        userLocalDataSource.familyHasImage(familyIdValue)
+                    } ?: false
+
+                    if (!hasExistingImage) {
+                        val byteArrayResult = result.data.imageUrl?.let { url ->
+                            storageDataSource.fetchImageByteArray(url)
+                        }
+                        when (byteArrayResult) {
+                            is Result.Success -> userLocalDataSource.updateFamilyInformation(result.data, byteArrayResult.data)
+                            is Result.Failure -> userLocalDataSource.updateFamilyInformation(result.data)
+                            null -> userLocalDataSource.updateFamilyInformation(result.data)
+                        }
+                    }
+                    Result.Success(Unit)
+                }.getOrElse { error ->
+                    Result.Failure(error.message ?: "Failed to sync family information")
+                }
+
+                is Result.Failure -> Result.Failure(result.error)
+            }
         }
     }
 

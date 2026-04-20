@@ -26,6 +26,25 @@ class TipTrackerRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun syncTipsFromRemote(familyId: String): Flow<Result<Unit, String>> {
+        return firestoreDataSource.tipTrackerSnapshotListener(familyId).map { result ->
+            when (result) {
+                is Result.Success -> runCatching {
+                    if (result.data.items.isEmpty()) {
+                        tipTrackerLocalDataSource.deleteFamilyTipItems(familyId)
+                    } else {
+                        tipTrackerLocalDataSource.updateTipTracker(result.data.items)
+                    }
+                    Result.Success(Unit)
+                }.getOrElse { error ->
+                    Result.Failure(error.message ?: "Failed to sync tips")
+                }
+
+                is Result.Failure -> Result.Failure(result.error)
+            }
+        }
+    }
+
     override suspend fun saveTip(tip: TipItem): Result<String, String> {
         return firestoreDataSource.saveItem(tip, Constants.TIP_TRACKER_TABLE)
     }

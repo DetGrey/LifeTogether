@@ -6,4 +6,5 @@ import kotlinx.coroutines.flow.Flow
 
 interface CategoryRepository {
     fun getCategories(): Flow<Result<List<Category>, String>>
+    fun syncCategoriesFromRemote(): Flow<Result<Unit, String>>
 }

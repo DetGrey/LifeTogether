@@ -1,13 +1,12 @@
 package com.example.lifetogether.domain.usecase.gallery
 
-import com.example.lifetogether.data.repository.RemoteListRepositoryImpl
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
-import com.example.lifetogether.util.Constants
+import com.example.lifetogether.domain.repository.GalleryRepository
 import javax.inject.Inject
 
 class DeleteAlbumUseCase @Inject constructor(
-    private val remoteListRepository: RemoteListRepositoryImpl,
+    private val galleryRepository: GalleryRepository,
     private val deleteMediaUseCase: DeleteMediaUseCase,
 ) {
     suspend operator fun invoke(
@@ -32,7 +31,7 @@ class DeleteAlbumUseCase @Inject constructor(
         }
     }
     private suspend fun deleteAlbum(albumId: String): Result<Unit, String> {
-        return remoteListRepository.deleteItem(albumId, Constants.ALBUMS_TABLE)
+        return galleryRepository.deleteAlbum(albumId)
     }
 
 }

@@ -11,7 +11,6 @@ import com.example.lifetogether.domain.repository.GalleryRepository
 import com.example.lifetogether.domain.usecase.gallery.DeleteAlbumUseCase
 import com.example.lifetogether.domain.usecase.gallery.DeleteMediaUseCase
 import com.example.lifetogether.domain.usecase.gallery.GetAlbumDisplayModelsUseCase
-import com.example.lifetogether.domain.usecase.image.DownloadMediaUseCase
 import com.example.lifetogether.domain.usecase.item.MoveMediaToAlbumUseCase
 import com.example.lifetogether.ui.model.AlbumUiModel
 import com.example.lifetogether.ui.model.MenuAction
@@ -58,7 +57,6 @@ class AlbumDetailsViewModel @Inject constructor(
     private val deleteAlbumUseCase: DeleteAlbumUseCase,
     private val getAlbumDisplayModelsUseCase: GetAlbumDisplayModelsUseCase,
     private val deleteMediaUseCase: DeleteMediaUseCase,
-    private val downloadMediaUseCase: DownloadMediaUseCase,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(AlbumDetailsUiState())
     val uiState: StateFlow<AlbumDetailsUiState> = _uiState.asStateFlow()
@@ -271,7 +269,7 @@ class AlbumDetailsViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            downloadMediaUseCase(
+            galleryRepository.downloadMediaToGallery(
                 mediaIds = selectedMedia,
                 familyId = familyIdValue,
             ).collect { progress ->

@@ -2,13 +2,13 @@ package com.example.lifetogether.domain.usecase.image
 
 import android.content.Context
 import android.net.Uri
-import com.example.lifetogether.data.repository.ImageRepositoryImpl
-import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.domain.repository.ImageRepository
+import com.example.lifetogether.domain.result.Result
 import javax.inject.Inject
 
 class UploadImageUseCase @Inject constructor(
-    private val imageRepositoryImpl: ImageRepositoryImpl,
+    private val imageRepository: ImageRepository,
 ) {
     suspend operator fun invoke(
         uri: Uri,
@@ -16,15 +16,15 @@ class UploadImageUseCase @Inject constructor(
         context: Context,
     ): Result<Unit, String> {
         println("UploadImageUseCase uri: $uri")
-        val firebaseStorageResult = imageRepositoryImpl.uploadImage(uri, imageType, context)
+        val firebaseStorageResult = imageRepository.uploadImage(uri, imageType, context)
         println("UploadImageUseCase firebaseStorageResult: $firebaseStorageResult")
         when (firebaseStorageResult) {
             is Result.Success -> {
                 val url = firebaseStorageResult.data
                 println("UploadImageUseCase image download url: $url")
-                val firestoreDeleteOldImageResult = imageRepositoryImpl.deleteImage(imageType)
+                val firestoreDeleteOldImageResult = imageRepository.deleteImage(imageType)
 
-                val firestoreNewUrlResult = imageRepositoryImpl.saveImageDownloadUrl(url, imageType)
+                val firestoreNewUrlResult = imageRepository.saveImageDownloadUrl(url, imageType)
 
                 if (firestoreDeleteOldImageResult is Result.Failure && firestoreNewUrlResult is Result.Success) {
                     return firestoreDeleteOldImageResult

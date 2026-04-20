@@ -7,7 +7,6 @@ import com.example.lifetogether.domain.model.SaveProgress
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.repository.GalleryRepository
 import com.example.lifetogether.domain.usecase.gallery.DeleteMediaUseCase
-import com.example.lifetogether.domain.usecase.image.DownloadMediaUseCase
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.ui.model.MenuAction
@@ -38,7 +37,6 @@ data class MediaDetailsUiState(
 class MediaDetailsViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
     private val galleryRepository: GalleryRepository,
-    private val downloadMediaUseCase: DownloadMediaUseCase,
     private val deleteMediaUseCase: DeleteMediaUseCase,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(MediaDetailsUiState())
@@ -105,7 +103,7 @@ class MediaDetailsViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            downloadMediaUseCase(
+            galleryRepository.downloadMediaToGallery(
                 mediaIds = listOf(currentMediaId),
                 familyId = familyIdValue,
             ).collect { progress ->

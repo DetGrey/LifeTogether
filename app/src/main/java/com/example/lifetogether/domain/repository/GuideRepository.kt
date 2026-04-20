@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface GuideRepository {
     fun observeGuides(familyId: String, uid: String): Flow<Result<List<Guide>, String>>
+    fun syncGuidesFromRemote(uid: String, familyId: String): Flow<Result<Unit, String>>
     fun observeGuideById(familyId: String, id: String, uid: String): Flow<Result<Guide, String>>
     suspend fun saveGuide(guide: Guide): Result<String, String>
     suspend fun updateGuide(guide: Guide): Result<Unit, String>

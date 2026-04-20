@@ -3,6 +3,7 @@ package com.example.lifetogether.data.repository
 import com.example.lifetogether.data.local.source.RecipeLocalDataSource
 import com.example.lifetogether.data.model.RecipeEntity
 import com.example.lifetogether.data.remote.FirestoreDataSource
+import com.example.lifetogether.domain.datasource.StorageDataSource
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.repository.RecipeRepository
@@ -14,6 +15,7 @@ import javax.inject.Inject
 class RecipeRepositoryImpl @Inject constructor(
     private val recipeLocalDataSource: RecipeLocalDataSource,
     private val firestoreDataSource: FirestoreDataSource,
+    private val storageDataSource: StorageDataSource,
 ) : RecipeRepository {
 
     override fun observeRecipes(familyId: String): Flow<Result<List<Recipe>, String>> {
@@ -25,6 +27,38 @@ class RecipeRepositoryImpl @Inject constructor(
                     Result.Failure(e.message ?: "Unknown mapping error")
                 }
             }
+    }
+
+    override fun syncRecipesFromRemote(familyId: String): Flow<Result<Unit, String>> {
+        return firestoreDataSource.recipeSnapshotListener(familyId).map { result ->
+            when (result) {
+                is Result.Success -> runCatching {
+                    if (result.data.items.isEmpty()) {
+                        recipeLocalDataSource.deleteFamilyRecipes(familyId)
+                    } else {
+                        val existingRecipeIdsWithImages = recipeLocalDataSource.getRecipeIdsWithImages(familyId)
+                        val byteArrays: MutableMap<String, ByteArray> = mutableMapOf()
+                        for (recipe in result.data.items) {
+                            if (recipe.id != null && existingRecipeIdsWithImages.contains(recipe.id)) {
+                                continue
+                            }
+                            val byteArrayResult = recipe.imageUrl?.let { url ->
+                                storageDataSource.fetchImageByteArray(url)
+                            }
+                            if (byteArrayResult is Result.Success) {
+                                recipe.id?.let { byteArrays[it] = byteArrayResult.data }
+                            }
+                        }
+                        recipeLocalDataSource.updateRecipes(result.data.items, byteArrays)
+                    }
+                    Result.Success(Unit)
+                }.getOrElse { error ->
+                    Result.Failure(error.message ?: "Failed to sync recipes")
+                }
+
+                is Result.Failure -> Result.Failure(result.error)
+            }
+        }
     }
 
     override fun observeRecipeById(familyId: String, id: String): Flow<Result<Recipe, String>> {

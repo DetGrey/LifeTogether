@@ -11,7 +11,11 @@ import com.example.lifetogether.domain.model.guides.GuideProgressState
 import com.example.lifetogether.domain.repository.GuideRepository
 import com.example.lifetogether.util.Constants
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
 
@@ -38,6 +42,101 @@ class GuideRepositoryImpl @Inject constructor(
                     Result.Failure(e.message ?: "Unknown mapping error")
                 }
             }
+    }
+
+    override fun syncGuidesFromRemote(uid: String, familyId: String): Flow<Result<Unit, String>> = flow {
+        coroutineScope {
+            launch {
+                firestoreDataSource.guideProgressSnapshotListener(familyId, uid).collect { progressResult ->
+                    when (progressResult) {
+                        is Result.Success -> runCatching {
+                            guideProgressLocalDataSource.updateGuideProgressFromRemote(
+                                familyId = familyId,
+                                uid = uid,
+                                items = progressResult.data,
+                            )
+                        }.onFailure { error ->
+                            Log.e(TAG, "Guide progress local update failure: ${error.message}", error)
+                        }
+
+                        is Result.Failure -> {
+                            Log.e(TAG, "guide progress listener failure: ${progressResult.error}")
+                        }
+                    }
+                }
+            }
+
+            var lastSharedGuides: List<Guide> = emptyList()
+            var lastPrivateGuides: List<Guide> = emptyList()
+            var sharedHasSuccessfulSync = false
+            var privateHasSuccessfulSync = false
+
+            combine(
+                firestoreDataSource.familySharedGuidesSnapshotListener(familyId),
+                firestoreDataSource.privateGuidesSnapshotListener(familyId, uid),
+            ) { sharedResult, privateResult ->
+                sharedResult to privateResult
+            }.collect { (sharedResult, privateResult) ->
+                val sharedGuides: List<Guide> = when (sharedResult) {
+                    is Result.Success -> {
+                        sharedHasSuccessfulSync = true
+                        sharedResult.data.items.also { lastSharedGuides = it }
+                    }
+
+                    is Result.Failure -> {
+                        Log.e(TAG, "shared listener failure: ${sharedResult.error}")
+                        lastSharedGuides
+                    }
+                }
+
+                val privateGuides: List<Guide> = when (privateResult) {
+                    is Result.Success -> {
+                        privateHasSuccessfulSync = true
+                        privateResult.data.items.also { lastPrivateGuides = it }
+                    }
+
+                    is Result.Failure -> {
+                        Log.e(TAG, "private listener failure: ${privateResult.error}")
+                        lastPrivateGuides
+                    }
+                }
+
+                val hadAnySuccessInThisEmission = sharedResult is Result.Success || privateResult is Result.Success
+                val hasAnySuccessfulSync = sharedHasSuccessfulSync || privateHasSuccessfulSync
+                if (!hadAnySuccessInThisEmission && !hasAnySuccessfulSync && sharedGuides.isEmpty() && privateGuides.isEmpty()) {
+                    Log.w(TAG, "both guides listeners failed and no cached fallback exists; skipping local update")
+                    emit(Result.Failure("Guide listeners failed with no cached fallback"))
+                    return@collect
+                }
+
+                val mergedGuides = (sharedGuides + privateGuides)
+                    .associateBy { it.id ?: "" }
+                    .values
+                    .filter { !it.id.isNullOrBlank() }
+                val hasFullSnapshotCoverage = sharedHasSuccessfulSync && privateHasSuccessfulSync
+
+                runCatching {
+                    if (mergedGuides.isEmpty()) {
+                        if (hasFullSnapshotCoverage) {
+                            guideLocalDataSource.deleteFamilyGuides(familyId)
+                        }
+                    } else {
+                        if (hasFullSnapshotCoverage) {
+                            guideLocalDataSource.updateGuides(mergedGuides.toList())
+                        } else {
+                            guideLocalDataSource.upsertGuides(mergedGuides.toList())
+                        }
+                    }
+                }.onSuccess {
+                    if (hasAnySuccessfulSync) {
+                        emit(Result.Success(Unit))
+                    }
+                }.onFailure { error ->
+                    Log.e(TAG, "Guide local sync failure: ${error.message}", error)
+                    emit(Result.Failure(error.message ?: "Failed to sync guides"))
+                }
+            }
+        }
     }
 
     override fun observeGuideById(familyId: String, id: String, uid: String): Flow<Result<Guide, String>> {

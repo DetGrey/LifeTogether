@@ -1,13 +1,13 @@
 package com.example.lifetogether.domain.usecase.user
 
-import com.example.lifetogether.data.repository.UserRepositoryImpl
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
+import com.example.lifetogether.domain.repository.UserRepository
 import com.example.lifetogether.domain.result.Result
 import javax.inject.Inject
 
 class SignUpUseCase @Inject constructor(
-    private val userRepositoryImpl: UserRepositoryImpl,
+    private val userRepository: UserRepository,
 ) {
     suspend operator fun invoke(
         user: User,
@@ -35,6 +35,6 @@ class SignUpUseCase @Inject constructor(
 //            return
 //        }
         println("SignUpUseCase invoked")
-        return userRepositoryImpl.signUp(user, userInformation)
+        return userRepository.signUp(user, userInformation)
     }
 }

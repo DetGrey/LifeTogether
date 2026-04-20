@@ -14,6 +14,10 @@ class FamilyRepositoryImpl @Inject constructor(
         return userRepositoryImpl.getFamilyInformation(familyId)
     }
 
+    override fun syncFamilyInformationFromRemote(familyId: String): Flow<Result<Unit, String>> {
+        return userRepositoryImpl.syncFamilyInformationFromRemote(familyId)
+    }
+
     override suspend fun joinFamily(familyId: String, uid: String, name: String): Result<Unit, String> {
         return when (val result = userRepositoryImpl.joinFamily(familyId, uid, name)) {
             is Result.Success -> Result.Success(Unit)

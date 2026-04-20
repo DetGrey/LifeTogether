@@ -4,15 +4,14 @@ import android.content.ContentValues.TAG
 import android.content.Context
 import android.provider.MediaStore
 import android.util.Log
-import com.example.lifetogether.data.repository.ImageRepositoryImpl
-import com.example.lifetogether.data.repository.RemoteListRepositoryImpl
-import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.domain.model.gallery.MediaUploadData
 import com.example.lifetogether.domain.repository.GalleryRepository
+import com.example.lifetogether.domain.repository.ImageRepository
 import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.util.Constants
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -23,9 +22,8 @@ import kotlinx.coroutines.sync.Semaphore
 import javax.inject.Inject
 
 class UploadGalleryMediaItemsUseCase @Inject constructor(
-    private val imageRepositoryImpl: ImageRepositoryImpl,
+    private val imageRepository: ImageRepository,
     private val galleryRepository: GalleryRepository,
-    private val remoteListRepository: RemoteListRepositoryImpl,
 ) {
     companion object {
         // Limit to 1 concurrent upload - AWS SDK buffers request bodies for checksums
@@ -97,7 +95,7 @@ class UploadGalleryMediaItemsUseCase @Inject constructor(
                                     ),
                                 )
 
-                                val fileUploadResult = imageRepositoryImpl.uploadImage(
+                                val fileUploadResult = imageRepository.uploadImage(
                                     uri,
                                     imageType,
                                     context,
@@ -168,7 +166,7 @@ class UploadGalleryMediaItemsUseCase @Inject constructor(
 
             return if (saveMetaDataResult is Result.Success) {
                     Log.d(TAG, "Metadata saved successfully. Updating album count.")
-                    remoteListRepository.updateAlbumCount(albumId, successfullyUploadedMedia.size).let { countResult ->
+                    galleryRepository.updateAlbumCount(albumId, successfullyUploadedMedia.size).let { countResult ->
                         if (countResult is Result.Failure) {
                             Log.w(TAG, "Failed to update album count: ${countResult.error}")
                         }
