@@ -5,11 +5,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.SessionRepository
-import com.example.lifetogether.domain.usecase.user.ChangeNameUseCase
+import com.example.lifetogether.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,7 +21,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
-    private val changeNameUseCase: ChangeNameUseCase,
+    private val userRepository: UserRepository,
 ) : ViewModel() {
     private val _userInformation = MutableStateFlow<UserInformation?>(null)
     val userInformation: StateFlow<UserInformation?> = _userInformation.asStateFlow()
@@ -65,11 +65,11 @@ class ProfileViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             val result = sessionRepository.signOut()
-            if (result is ResultListener.Success) {
+            if (result is Result.Success) {
                 println("ProfileViewModel: Logout successful")
                 onSuccess()
-            } else if (result is ResultListener.Failure) {
-                error = result.message
+            } else if (result is Result.Failure) {
+                error = result.error
                 showAlertDialog = true
             }
         }
@@ -86,13 +86,15 @@ class ProfileViewModel @Inject constructor(
         val familyId = _userInformation.value?.familyId
 
         viewModelScope.launch {
-            val result = changeNameUseCase.invoke(uid, familyId, name)
-            if (result is ResultListener.Success) {
-                closeConfirmationDialog()
-            } else if (result is ResultListener.Failure) {
-                closeConfirmationDialog()
-                error = result.message
-                showAlertDialog = true
+            when (val result = userRepository.changeName(uid, familyId, name)) {
+                is Result.Success -> {
+                    closeConfirmationDialog()
+                }
+                is Result.Failure -> {
+                    closeConfirmationDialog()
+                    error = result.error
+                    showAlertDialog = true
+                }
             }
         }
     }

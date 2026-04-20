@@ -1,45 +1,25 @@
 package com.example.lifetogether.domain.usecase.observers
 
-import com.example.lifetogether.data.local.source.AlbumLocalDataSource
-import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.listener.ListItemsResultListener
+import com.example.lifetogether.domain.repository.GalleryRepository
+import com.example.lifetogether.domain.result.Result as AppResult
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class ObserveAlbumsUseCase @Inject constructor(
-    private val firestoreDataSource: FirestoreDataSource,
-    private val albumLocalDataSource: AlbumLocalDataSource,
+    private val galleryRepository: GalleryRepository,
 ) {
     fun start(
         scope: CoroutineScope,
         familyId: String,
     ): ObserverStartHandle {
-        val firstSuccess = CompletableDeferred<Result<Unit>>()
+        val firstSuccess = CompletableDeferred<kotlin.Result<Unit>>()
         val job = scope.launch {
-            println("ObserveAlbumsUseCase invoked")
-            firestoreDataSource.albumsSnapshotListener(familyId).collect { result ->
-                println("albumsSnapshotListener().collect result: $result")
+            galleryRepository.syncAlbumsFromRemote(familyId).collect { result ->
                 when (result) {
-                    is ListItemsResultListener.Success -> {
-                        runCatching {
-                            if (result.listItems.isEmpty()) {
-                                println("albumsSnapshotListener().collect result: is empty")
-                                albumLocalDataSource.deleteFamilyAlbums(familyId)
-                            } else {
-                                albumLocalDataSource.updateAlbums(result.listItems)
-                            }
-                        }.onSuccess {
-                            firstSuccess.completeFirstSuccessIfNeeded()
-                        }.onFailure { error ->
-                            println("ObserveAlbumsUseCase local update failure: ${error.message}")
-                        }
-                    }
-                    is ListItemsResultListener.Failure -> {
-                        // Keep listener alive; firstSuccess is one-shot and only completes on success.
-                        println("ObserveAlbumsUseCase failure: ${result.message}")
-                    }
+                    is AppResult.Success -> firstSuccess.completeFirstSuccessIfNeeded()
+                    is AppResult.Failure -> println("albums sync failure: ${result.error}")
                 }
             }
         }

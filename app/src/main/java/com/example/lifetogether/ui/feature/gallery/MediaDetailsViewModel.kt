@@ -2,13 +2,11 @@ package com.example.lifetogether.ui.feature.gallery
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.listener.ListItemsResultListener
-import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.SaveProgress
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
+import com.example.lifetogether.domain.repository.GalleryRepository
 import com.example.lifetogether.domain.usecase.gallery.DeleteMediaUseCase
-import com.example.lifetogether.domain.usecase.gallery.FetchAlbumMediaUseCase
-import com.example.lifetogether.domain.usecase.image.DownloadMediaUseCase
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.ui.model.MenuAction
@@ -38,8 +36,7 @@ data class MediaDetailsUiState(
 @HiltViewModel
 class MediaDetailsViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
-    private val downloadMediaUseCase: DownloadMediaUseCase,
-    private val fetchAlbumMediaUseCase: FetchAlbumMediaUseCase,
+    private val galleryRepository: GalleryRepository,
     private val deleteMediaUseCase: DeleteMediaUseCase,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(MediaDetailsUiState())
@@ -77,19 +74,18 @@ class MediaDetailsViewModel @Inject constructor(
         val albumIdValue = albumId ?: return
 
         viewModelScope.launch {
-            fetchAlbumMediaUseCase.invoke(familyIdValue, albumIdValue)
+            galleryRepository.observeAlbumMedia(familyIdValue, albumIdValue)
                 .collect { result ->
                     when (result) {
-                        is ListItemsResultListener.Success -> {
-                            val mediaList = result.listItems
-                            _uiState.update { 
+                        is Result.Success -> {
+                            _uiState.update {
                                 it.copy(
-                                    mediaList = mediaList,
-                                ) 
+                                    mediaList = result.data,
+                                )
                             }
                         }
-                        is ListItemsResultListener.Failure -> {
-                            showError(result.message)
+                        is Result.Failure -> {
+                            showError(result.error)
                         }
                     }
                 }
@@ -107,7 +103,7 @@ class MediaDetailsViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            downloadMediaUseCase(
+            galleryRepository.downloadMediaToGallery(
                 mediaIds = listOf(currentMediaId),
                 familyId = familyIdValue,
             ).collect { progress ->
@@ -144,10 +140,10 @@ class MediaDetailsViewModel @Inject constructor(
 
         viewModelScope.launch {
             when (val result = deleteMediaUseCase.invoke(currentMedia.albumId, listOf(currentMedia))) {
-                is ResultListener.Success -> {
+                is Result.Success -> {
                     dismissOverflowMenuActionDialog()
                 }
-                is ResultListener.Failure -> showError(result.message)
+                is Result.Failure -> showError(result.error)
             }
         }
     }
@@ -165,9 +161,6 @@ class MediaDetailsViewModel @Inject constructor(
                 showOverflowMenu = false,
             )
         }
-    }
-    fun setActionDialogText(text: String) {
-        _uiState.update { it.copy(actionDialogText = text) }
     }
     fun dismissOverflowMenuActionDialog() {
         _uiState.update {

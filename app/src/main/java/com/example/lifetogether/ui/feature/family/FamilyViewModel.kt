@@ -5,15 +5,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.listener.FamilyInformationResultListener
-import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.model.family.FamilyMember
 import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.repository.FamilyRepository
 import com.example.lifetogether.domain.repository.SessionRepository
-import com.example.lifetogether.domain.usecase.family.DeleteFamilyUseCase
-import com.example.lifetogether.domain.usecase.family.FetchFamilyInformationUseCase
-import com.example.lifetogether.domain.usecase.family.LeaveFamilyUseCase
+import com.example.lifetogether.domain.result.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,9 +22,7 @@ import javax.inject.Inject
 @HiltViewModel
 class FamilyViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
-    private val leaveFamilyUseCase: LeaveFamilyUseCase,
-    private val deleteFamilyUseCase: DeleteFamilyUseCase,
-    private val fetchFamilyInformationUseCase: FetchFamilyInformationUseCase,
+    private val familyRepository: FamilyRepository,
 ) : ViewModel() {
     // ---------------------------------------------------------------- SESSION
     private val _familyId = MutableStateFlow<String?>(null)
@@ -88,13 +83,13 @@ class FamilyViewModel @Inject constructor(
     // ---------------------------------------------------------------- FUNCTIONS
     private fun fetchFamilyInformation(familyId: String) {
         viewModelScope.launch {
-            fetchFamilyInformationUseCase.invoke(familyId = familyId).collect { result ->
+            familyRepository.observeFamilyInformation(familyId).collect { result ->
                 when (result) {
-                    is FamilyInformationResultListener.Success -> {
-                        _familyInformation.value = result.familyInformation
+                    is Result.Success -> {
+                        _familyInformation.value = result.data
                     }
 
-                    is FamilyInformationResultListener.Failure -> {
+                    is Result.Failure -> {
                         _familyInformation.value = null
                     }
                 }
@@ -109,14 +104,14 @@ class FamilyViewModel @Inject constructor(
         val familyIdValue = familyId.value ?: return
         val memberUid = memberUid ?: uid.value ?: return
         viewModelScope.launch {
-            when (val result = leaveFamilyUseCase.invoke(familyIdValue, memberUid)) {
-                is ResultListener.Success -> {
+            when (val result = familyRepository.leaveFamily(familyIdValue, memberUid)) {
+                is Result.Success -> {
                     closeConfirmationDialog()
                     onComplete()
                 }
-                is ResultListener.Failure -> {
+                is Result.Failure -> {
                     closeConfirmationDialog()
-                    error = result.message
+                    error = result.error
                     showAlertDialog = true
                     onComplete()
                 }
@@ -129,14 +124,14 @@ class FamilyViewModel @Inject constructor(
     ) {
         val familyIdValue = _familyId.value ?: return
         viewModelScope.launch {
-            when (val result = deleteFamilyUseCase.invoke(familyIdValue)) {
-                is ResultListener.Success -> {
+            when (val result = familyRepository.deleteFamily(familyIdValue)) {
+                is Result.Success -> {
                     closeConfirmationDialog()
                     onComplete()
                 }
-                is ResultListener.Failure -> {
+                is Result.Failure -> {
                     closeConfirmationDialog()
-                    error = result.message
+                    error = result.error
                     showAlertDialog = true
                     onComplete()
                 }

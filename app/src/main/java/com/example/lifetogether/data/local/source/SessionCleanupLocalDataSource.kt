@@ -9,7 +9,7 @@ import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GuidesDao
 import com.example.lifetogether.data.local.dao.RecipesDao
 import com.example.lifetogether.data.local.dao.UserInformationDao
-import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.result.Result
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -25,7 +25,7 @@ class SessionCleanupLocalDataSource @Inject constructor(
     private val albumsDao: AlbumsDao,
     private val guidesDao: GuidesDao,
 ) {
-    fun clearSessionTables(): ResultListener {
+    fun clearSessionTables(): Result<Unit, String> {
         return try {
             groceryListDao.deleteTable()
             recipesDao.deleteTable()
@@ -42,9 +42,9 @@ class SessionCleanupLocalDataSource @Inject constructor(
             galleryMediaDao.deleteTable()
             albumsDao.deleteTable()
             guidesDao.deleteTable()
-            ResultListener.Success
+            Result.Success(Unit)
         } catch (e: Exception) {
-            ResultListener.Failure("Error: $e")
+            Result.Failure("Error: $e")
         }
     }
 }

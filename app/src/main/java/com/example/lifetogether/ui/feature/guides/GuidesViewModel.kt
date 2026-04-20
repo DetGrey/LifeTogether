@@ -5,15 +5,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.listener.ListItemsResultListener
-import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.logic.GuideParser
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.repository.GuideRepository
 import com.example.lifetogether.domain.repository.SessionRepository
-import com.example.lifetogether.domain.usecase.item.FetchListItemsUseCase
-import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
-import com.example.lifetogether.util.Constants
+import com.example.lifetogether.domain.result.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -26,8 +23,7 @@ import javax.inject.Inject
 @HiltViewModel
 class GuidesViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
-    private val fetchListItemsUseCase: FetchListItemsUseCase,
-    private val saveItemUseCase: SaveItemUseCase,
+    private val guideRepository: GuideRepository,
 ) : ViewModel() {
     private var familyId: String? = null
     private var uid: String? = null
@@ -78,21 +74,11 @@ class GuidesViewModel @Inject constructor(
 
         guidesJob?.cancel()
         guidesJob = viewModelScope.launch {
-            fetchListItemsUseCase(
-                familyId = familyIdValue,
-                listName = Constants.GUIDES_TABLE,
-                itemType = Guide::class,
-                uid = uidValue,
-            ).collect { result ->
+            guideRepository.observeGuides(familyId = familyIdValue, uid = uidValue).collect { result ->
                 when (result) {
-                    is ListItemsResultListener.Success -> {
-                        _guides.value = result.listItems
-                            .filterIsInstance<Guide>()
-                            .sortedBy { it.itemName.lowercase() }
-                    }
-
-                    is ListItemsResultListener.Failure -> {
-                        error = result.message
+                    is Result.Success -> _guides.value = result.data
+                    is Result.Failure -> {
+                        error = result.error
                         showAlertDialog = true
                     }
                 }
@@ -100,13 +86,8 @@ class GuidesViewModel @Inject constructor(
         }
     }
 
-    fun openAddOptionsDialog() {
-        showAddOptionsDialog = true
-    }
-
-    fun closeAddOptionsDialog() {
-        showAddOptionsDialog = false
-    }
+    fun openAddOptionsDialog() { showAddOptionsDialog = true }
+    fun closeAddOptionsDialog() { showAddOptionsDialog = false }
 
     fun openImportDialog() {
         showImportDialog = true
@@ -114,9 +95,7 @@ class GuidesViewModel @Inject constructor(
         importSummary = ""
     }
 
-    fun closeImportDialog() {
-        showImportDialog = false
-    }
+    fun closeImportDialog() { showImportDialog = false }
 
     fun importGuidesFromJson(json: String) {
         val activeFamilyId = familyId
@@ -155,9 +134,9 @@ class GuidesViewModel @Inject constructor(
             var successCount = 0
             var failCount = 0
             parsedGuides.forEach { guide ->
-                when (saveItemUseCase.invoke(guide, Constants.GUIDES_TABLE)) {
-                    is StringResultListener.Success -> successCount += 1
-                    is StringResultListener.Failure -> failCount += 1
+                when (guideRepository.saveGuide(guide)) {
+                    is Result.Success -> successCount += 1
+                    is Result.Failure -> failCount += 1
                 }
             }
 

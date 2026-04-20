@@ -3,21 +3,14 @@ package com.example.lifetogether.ui.feature.lists.listDetails
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.listener.ByteArrayResultListener
-import com.example.lifetogether.domain.listener.ListItemsResultListener
-import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.logic.RecurrenceCalculator
 import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
-import com.example.lifetogether.domain.model.lists.UserList
-import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.SessionRepository
-import com.example.lifetogether.domain.usecase.image.FetchImageByteArrayUseCase
+import com.example.lifetogether.domain.repository.UserListRepository
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.usecase.item.DeleteRoutineListEntriesUseCase
-import com.example.lifetogether.domain.usecase.item.FetchListItemsUseCase
-import com.example.lifetogether.domain.usecase.item.UpdateItemUseCase
-import com.example.lifetogether.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -34,9 +27,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ListDetailsViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
-    private val fetchListItemsUseCase: FetchListItemsUseCase,
-    private val updateItemUseCase: UpdateItemUseCase,
-    private val fetchImageByteArrayUseCase: FetchImageByteArrayUseCase,
+    private val userListRepository: UserListRepository,
     private val deleteRoutineListEntriesUseCase: DeleteRoutineListEntriesUseCase,
 ) : ViewModel() {
 
@@ -114,52 +105,41 @@ class ListDetailsViewModel @Inject constructor(
 
     private fun startFetch(listId: String) {
         val familyIdValue = familyId ?: return
-        val uidValue = uid ?: return
 
         listsJob?.cancel()
         listsJob = viewModelScope.launch {
-            fetchListItemsUseCase(
-                familyId = familyIdValue,
-                listName = Constants.USER_LISTS_TABLE,
-                itemType = UserList::class,
-                uid = uidValue,
-            ).collect { result ->
-                if (result is ListItemsResultListener.Success) {
-                    val foundList = result.listItems
-                        .filterIsInstance<UserList>()
-                        .firstOrNull { it.id == listId }
+            userListRepository.observeUserLists(familyId = familyIdValue).collect { result ->
+                when (result) {
+                    is Result.Success -> {
+                        val foundList = result.data.firstOrNull { it.id == listId }
 
-                    if (foundList != null) {
-                        when (val currentState = _uiState.value) {
-                            is ListDetailsUiState.Loading -> {
-                                _uiState.value = ListDetailsUiState.Content(listName = foundList.itemName)
-                            }
+                        if (foundList != null) {
+                            when (val currentState = _uiState.value) {
+                                is ListDetailsUiState.Loading -> {
+                                    _uiState.value = ListDetailsUiState.Content(listName = foundList.itemName)
+                                }
 
-                            is ListDetailsUiState.Content -> {
-                                _uiState.value = currentState.copy(listName = foundList.itemName)
+                                is ListDetailsUiState.Content -> {
+                                    _uiState.value = currentState.copy(listName = foundList.itemName)
+                                }
                             }
                         }
                     }
+                    is Result.Failure -> showError(result.error)
                 }
             }
         }
 
         entriesJob?.cancel()
         entriesJob = viewModelScope.launch {
-            fetchListItemsUseCase(
-                familyId = familyIdValue,
-                listName = Constants.ROUTINE_LIST_ENTRIES_TABLE,
-                itemType = RoutineListEntry::class,
-                uid = listId,
-            ).collect { result ->
+            userListRepository.observeRoutineListEntries(familyIdValue).collect { result ->
                 when (result) {
-                    is ListItemsResultListener.Success -> {
-                        val sortedEntries = result.listItems
-                            .filterIsInstance<RoutineListEntry>()
+                    is Result.Success -> {
+                        val sortedEntries = result.data
                             .sortedWith(compareBy(nullsLast()) { it.nextDate })
 
                         _entries.value = sortedEntries
-                        updateImageJobs(sortedEntries, familyIdValue)
+                        updateImageJobs(sortedEntries)
 
                         if (_uiState.value is ListDetailsUiState.Loading) {
                             _uiState.value = ListDetailsUiState.Content()
@@ -168,7 +148,7 @@ class ListDetailsViewModel @Inject constructor(
                         syncSelectionState(sortedEntries)
                     }
 
-                    is ListItemsResultListener.Failure -> showError(result.message)
+                    is Result.Failure -> showError(result.error)
                 }
             }
         }
@@ -278,7 +258,7 @@ class ListDetailsViewModel @Inject constructor(
 
         viewModelScope.launch {
             when (val result = deleteRoutineListEntriesUseCase(selectedEntries)) {
-                is ResultListener.Success -> {
+                is Result.Success -> {
                     updateContentState { state ->
                         state.copy(
                             isSelectionModeActive = false,
@@ -290,14 +270,14 @@ class ListDetailsViewModel @Inject constructor(
                     }
                 }
 
-                is ResultListener.Failure -> {
+                is Result.Failure -> {
                     updateContentState { state ->
                         state.copy(
                             showActionSheet = false,
                             showDeleteSelectedDialog = false,
                         )
                     }
-                    showError(result.message)
+                    showError(result.error)
                 }
             }
         }
@@ -306,14 +286,14 @@ class ListDetailsViewModel @Inject constructor(
     fun completeEntry(entry: RoutineListEntry) {
         val updatedEntry = RecurrenceCalculator.applyCompletion(entry, completedAt = Date())
         viewModelScope.launch {
-            when (val result = updateItemUseCase(updatedEntry, Constants.ROUTINE_LIST_ENTRIES_TABLE)) {
-                is ResultListener.Success -> Unit
-                is ResultListener.Failure -> showError(result.message)
+            when (val result = userListRepository.updateRoutineListEntry(updatedEntry)) {
+                is Result.Success -> Unit
+                is Result.Failure -> showError(result.error)
             }
         }
     }
 
-    private fun updateImageJobs(entries: List<RoutineListEntry>, familyId: String) {
+    private fun updateImageJobs(entries: List<RoutineListEntry>) {
         val newIds = entries.mapNotNull { it.id }.toSet()
         val currentIds = imageJobs.keys.toSet()
 
@@ -326,17 +306,15 @@ class ListDetailsViewModel @Inject constructor(
 
         (newIds - currentIds).forEach { entryId ->
             imageJobs[entryId] = viewModelScope.launch {
-                fetchImageByteArrayUseCase(
-                    ImageType.RoutineListEntryImage(familyId, entryId),
-                ).collect { result ->
+                userListRepository.observeRoutineImageByteArray(entryId).collect { result ->
                     when (result) {
-                        is ByteArrayResultListener.Success -> {
+                        is Result.Success -> {
                             _imageBitmaps.update { currentBitmaps ->
-                                currentBitmaps + (entryId to result.byteArray.toBitmap())
+                                currentBitmaps + (entryId to result.data.toBitmap())
                             }
                         }
 
-                        is ByteArrayResultListener.Failure -> {
+                        is Result.Failure -> {
                             _imageBitmaps.update { currentBitmaps ->
                                 currentBitmaps - entryId
                             }

@@ -3,7 +3,7 @@ package com.example.lifetogether.ui.viewmodel
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.usecase.notification.FetchFcmTokensUseCase
+import com.example.lifetogether.domain.repository.UserRepository
 import com.example.lifetogether.ui.feature.notification.NotificationService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -11,7 +11,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class NotificationViewModel @Inject constructor(
-    private val fetchFcmTokensUseCase: FetchFcmTokensUseCase,
+    private val userRepository: UserRepository,
 ) : ViewModel() {
     fun sendNotification(
         context: Context,
@@ -24,7 +24,7 @@ class NotificationViewModel @Inject constructor(
         val notificationService = NotificationService(context)
 
         viewModelScope.launch {
-            val tokens: List<String>? = fetchFcmTokensUseCase(familyId)
+            val tokens: List<String>? = userRepository.fetchFcmTokens(familyId)
 
             println("Tokens: $tokens")
 

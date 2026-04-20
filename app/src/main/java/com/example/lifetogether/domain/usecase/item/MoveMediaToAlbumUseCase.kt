@@ -1,17 +1,17 @@
 package com.example.lifetogether.domain.usecase.item
 
-import com.example.lifetogether.data.repository.RemoteListRepositoryImpl
-import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.repository.GalleryRepository
+import com.example.lifetogether.domain.result.Result
 import javax.inject.Inject
 
 class MoveMediaToAlbumUseCase @Inject constructor(
-    private val remoteListRepository: RemoteListRepositoryImpl,
+    private val galleryRepository: GalleryRepository,
 ) {
     suspend operator fun invoke(
         mediaIdList: Set<String>,
         newAlbumId: String,
         oldAlbumId: String,
-    ): ResultListener {
-        return remoteListRepository.moveMediaToAlbum(mediaIdList, newAlbumId, oldAlbumId)
+    ): Result<Unit, String> {
+        return galleryRepository.moveMediaToAlbum(mediaIdList, newAlbumId, oldAlbumId)
     }
 }

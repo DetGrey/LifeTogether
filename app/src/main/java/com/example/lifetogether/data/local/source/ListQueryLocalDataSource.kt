@@ -11,6 +11,7 @@ import com.example.lifetogether.data.local.dao.UserListsDao
 import com.example.lifetogether.data.model.Entity
 import com.example.lifetogether.data.local.source.query.ListQueryType
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -102,7 +103,7 @@ class ListQueryLocalDataSource @Inject constructor(
             )
 
             ListQueryType.RoutineListEntries -> flow {
-                routineListsDao.getItemById(id)?.let { emit(Entity.RoutineListEntry(it)) }
+                emit(Entity.RoutineListEntry(routineListsDao.getItemById(id).first()))
             }
 
             else -> flowOf()

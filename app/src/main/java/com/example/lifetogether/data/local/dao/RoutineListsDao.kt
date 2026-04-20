@@ -17,7 +17,7 @@ interface RoutineListsDao {
     fun getItemsByListId(familyId: String, listId: String): Flow<List<RoutineListEntryEntity>>
 
     @Query("SELECT * FROM $ROUTINE_LIST_ENTRIES_TABLE WHERE id = :id")
-    fun getItemById(id: String,): RoutineListEntryEntity?
+    fun getItemById(id: String,): Flow<RoutineListEntryEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateItems(items: List<RoutineListEntryEntity>)

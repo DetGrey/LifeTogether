@@ -5,13 +5,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.enums.SettingsConfirmationTypes
 import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.repository.FamilyRepository
 import com.example.lifetogether.domain.repository.SessionRepository
-import com.example.lifetogether.domain.usecase.family.CreateNewFamilyUseCase
-import com.example.lifetogether.domain.usecase.family.JoinFamilyUseCase
+import com.example.lifetogether.domain.result.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,8 +21,7 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
-    private val createNewFamilyUseCase: CreateNewFamilyUseCase,
-    private val joinFamilyUseCase: JoinFamilyUseCase,
+    private val familyRepository: FamilyRepository,
 ) : ViewModel() {
     private val _userInformation = MutableStateFlow<UserInformation?>(null)
     val userInformation: StateFlow<UserInformation?> = _userInformation.asStateFlow()
@@ -52,11 +50,11 @@ class SettingsViewModel @Inject constructor(
         val name = _userInformation.value?.name ?: return
 
         viewModelScope.launch {
-            when (joinFamilyUseCase.invoke(addedFamilyId, uid, name)) {
-                is ResultListener.Success -> {
+            when (familyRepository.joinFamily(addedFamilyId, uid, name)) {
+                is Result.Success -> {
                     closeConfirmationDialog()
                 }
-                is ResultListener.Failure -> {
+                is Result.Failure -> {
                     // TODO popup
                 }
             }
@@ -68,11 +66,11 @@ class SettingsViewModel @Inject constructor(
         val name = _userInformation.value?.name ?: return
 
         viewModelScope.launch {
-            when (createNewFamilyUseCase.invoke(uid, name)) {
-                is ResultListener.Success -> {
+            when (familyRepository.createNewFamily(uid, name)) {
+                is Result.Success -> {
                     closeConfirmationDialog()
                 }
-                is ResultListener.Failure -> {
+                is Result.Failure -> {
                     // TODO popup
                 }
             }

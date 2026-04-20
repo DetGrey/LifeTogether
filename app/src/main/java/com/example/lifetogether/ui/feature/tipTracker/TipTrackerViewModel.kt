@@ -2,17 +2,12 @@ package com.example.lifetogether.ui.feature.tipTracker
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.listener.ListItemsResultListener
-import com.example.lifetogether.domain.listener.ResultListener
-import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.logic.toFullDateString
 import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.SessionRepository
-import com.example.lifetogether.domain.usecase.item.DeleteItemUseCase
-import com.example.lifetogether.domain.usecase.item.FetchListItemsUseCase
-import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
-import com.example.lifetogether.util.Constants
+import com.example.lifetogether.domain.repository.TipTrackerRepository
+import com.example.lifetogether.domain.result.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -63,9 +58,7 @@ data class TipTrackerUiState(
 @HiltViewModel
 class TipTrackerViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
-    private val saveItemUseCase: SaveItemUseCase,
-    private val fetchListItemsUseCase: FetchListItemsUseCase,
-    private val deleteItemUseCase: DeleteItemUseCase,
+    private val tipTrackerRepository: TipTrackerRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(TipTrackerUiState())
     val uiState: StateFlow<TipTrackerUiState> = _uiState.asStateFlow()
@@ -88,19 +81,10 @@ class TipTrackerViewModel @Inject constructor(
 
     private fun setUpTipTracker() {
         viewModelScope.launch {
-            fetchListItemsUseCase(
-                familyId!!,
-                Constants.TIP_TRACKER_TABLE,
-                TipItem::class,
-            ).collect { result ->
+            tipTrackerRepository.observeTips(familyId!!).collect { result ->
                 when (result) {
-                    is ListItemsResultListener.Success -> {
-                        handleTipsSuccess(result.listItems.filterIsInstance<TipItem>())
-                    }
-
-                    is ListItemsResultListener.Failure -> {
-                        handleTipsError(result.message)
-                    }
+                    is Result.Success -> handleTipsSuccess(result.data)
+                    is Result.Failure -> handleTipsError(result.error)
                 }
             }
         }
@@ -276,9 +260,8 @@ class TipTrackerViewModel @Inject constructor(
         )
 
         viewModelScope.launch {
-            val result = saveItemUseCase.invoke(tipItem, Constants.TIP_TRACKER_TABLE)
-            when (result) {
-                is StringResultListener.Success -> {
+            when (val result = tipTrackerRepository.saveTip(tipItem)) {
+                is Result.Success -> {
                     _uiState.update {
                         it.copy(
                             newItemAmount = "",
@@ -288,8 +271,8 @@ class TipTrackerViewModel @Inject constructor(
                     onSuccess()
                 }
 
-                is StringResultListener.Failure -> {
-                    showError(result.message)
+                is Result.Failure -> {
+                    showError(result.error)
                 }
             }
         }
@@ -299,19 +282,18 @@ class TipTrackerViewModel @Inject constructor(
         val tipId = _uiState.value.selectedTip?.id ?: return
 
         viewModelScope.launch {
-            val result = deleteItemUseCase.invoke(tipId, Constants.TIP_TRACKER_TABLE)
-            when (result) {
-                is ResultListener.Success -> {
+            when (val result = tipTrackerRepository.deleteTip(tipId)) {
+                is Result.Success -> {
                     _uiState.update {
                         it.copy(showConfirmationDialog = false)
                     }
                 }
 
-                is ResultListener.Failure -> {
+                is Result.Failure -> {
                     _uiState.update {
                         it.copy(showConfirmationDialog = false)
                     }
-                    showError(result.message)
+                    showError(result.error)
                 }
             }
         }

@@ -2,21 +2,15 @@ package com.example.lifetogether.ui.feature.guides.details
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.listener.ItemResultListener
-import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.logic.GuideLeafPointer
 import com.example.lifetogether.domain.logic.GuideProgress
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.guides.GuideSection
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.repository.GuideRepository
 import com.example.lifetogether.domain.repository.SessionRepository
-import com.example.lifetogether.domain.usecase.guides.MarkGuideProgressDirtyUseCase
-import com.example.lifetogether.domain.usecase.guides.SyncPendingGuideProgressUseCase
-import com.example.lifetogether.domain.usecase.item.DeleteItemUseCase
-import com.example.lifetogether.domain.usecase.item.FetchItemByIdUseCase
-import com.example.lifetogether.domain.usecase.item.UpdateItemUseCase
-import com.example.lifetogether.util.Constants
+import com.example.lifetogether.domain.result.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -82,11 +76,7 @@ internal fun reconcileSelectedSectionAmountState(
 @HiltViewModel
 class GuideDetailsViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
-    private val fetchItemByIdUseCase: FetchItemByIdUseCase,
-    private val updateItemUseCase: UpdateItemUseCase,
-    private val deleteItemUseCase: DeleteItemUseCase,
-    private val markGuideProgressDirtyUseCase: MarkGuideProgressDirtyUseCase,
-    private val syncPendingGuideProgressUseCase: SyncPendingGuideProgressUseCase,
+    private val guideRepository: GuideRepository,
 ) : ViewModel() {
     private companion object {
         const val ALERT_DISMISS_DELAY_MS = 3000L
@@ -172,28 +162,20 @@ class GuideDetailsViewModel @Inject constructor(
 
         guideJob?.cancel()
         guideJob = viewModelScope.launch {
-            fetchItemByIdUseCase(
+            guideRepository.observeGuideById(
                 familyId = familyIdValue,
                 id = guideId,
-                listName = Constants.GUIDES_TABLE,
-                itemType = Guide::class,
                 uid = uidValue,
             ).collect { result ->
                 when (result) {
-                    is ItemResultListener.Success -> {
-                        val fetchedGuide = result.item as? Guide ?: return@collect
+                    is Result.Success -> {
                         val normalizedGuide = normalizeFetchedGuide(
-                            guide = fetchedGuide,
+                            guide = result.data,
                             fallbackGuideId = guideId,
                         )
-                        applyGuideUpdate(
-                            uiGuide = normalizedGuide,
-                        )
+                        applyGuideUpdate(uiGuide = normalizedGuide)
                     }
-
-                    is ItemResultListener.Failure -> {
-                        showError(result.message)
-                    }
+                    is Result.Failure -> showError(result.error)
                 }
             }
         }
@@ -232,12 +214,8 @@ class GuideDetailsViewModel @Inject constructor(
             return
         }
 
-        val newVisibility = if (currentGuide.visibility == Visibility.FAMILY) {
-            Visibility.PRIVATE
-        } else {
-            Visibility.FAMILY
-        }
-
+        val newVisibility = if (currentGuide.visibility == Visibility.FAMILY)
+            Visibility.PRIVATE else Visibility.FAMILY
         val updatedGuide = currentGuide.copy(
             id = currentGuideId,
             visibility = newVisibility,
@@ -264,20 +242,16 @@ class GuideDetailsViewModel @Inject constructor(
 
         viewModelScope.launch {
             updateLoadingState(isDeletingGuide = true)
-            when (val result = deleteItemUseCase(currentGuideId, Constants.GUIDES_TABLE)) {
-                is ResultListener.Success -> onSuccess()
-                is ResultListener.Failure -> showError(result.message)
+            when (val result = guideRepository.deleteGuide(currentGuideId)) {
+                is Result.Success -> onSuccess()
+                is Result.Failure -> showError(result.error)
             }
             updateLoadingState(isDeletingGuide = false)
         }
     }
 
-    fun canToggleStep(
-        stepId: String,
-        amountIndex: Int,
-    ): Boolean {
+    fun canToggleStep(stepId: String, amountIndex: Int): Boolean {
         if (stepId.isBlank()) return false
-
         val currentGuide = _uiState.value.guide ?: return false
         val pointer = pointerForStepId(
             guide = currentGuide,
@@ -287,10 +261,7 @@ class GuideDetailsViewModel @Inject constructor(
         return GuideProgress.canTogglePointer(currentGuide.sections, pointer)
     }
 
-    fun toggleStepCompletion(
-        stepId: String,
-        amountIndex: Int,
-    ) {
+    fun toggleStepCompletion(stepId: String, amountIndex: Int) {
         if (stepId.isBlank()) return
 
         val currentGuide = _uiState.value.guide ?: return
@@ -375,7 +346,6 @@ class GuideDetailsViewModel @Inject constructor(
 
     fun toggleSectionExpanded(sectionKey: String) {
         if (sectionKey.isBlank()) return
-
         _uiState.update { state ->
             val isExpanded = state.sectionExpandedState[sectionKey] ?: true
             state.copy(
@@ -384,10 +354,7 @@ class GuideDetailsViewModel @Inject constructor(
         }
     }
 
-    fun selectSectionAmount(
-        sectionKey: String,
-        amountIndex: Int,
-    ) {
+    fun selectSectionAmount(sectionKey: String, amountIndex: Int) {
         if (sectionKey.isBlank() || amountIndex < 0) return
         val guide = _uiState.value.guide ?: return
         val section = guide.sections
@@ -397,7 +364,6 @@ class GuideDetailsViewModel @Inject constructor(
             ?: return
         val maxIndex = section.amount.coerceAtLeast(1) - 1
         val normalizedAmountIndex = amountIndex.coerceIn(0, maxIndex)
-
         _uiState.update { state ->
             state.copy(
                 selectedSectionAmountState = state.selectedSectionAmountState + (sectionKey to normalizedAmountIndex),
@@ -422,17 +388,11 @@ class GuideDetailsViewModel @Inject constructor(
                 afterPersist?.invoke()
                 onPersistSuccess?.invoke()
             },
-            onFailure = {
-                afterPersist?.invoke()
-            },
+            onFailure = { afterPersist?.invoke() },
         )
     }
 
-    private fun persistGuideUpdate(
-        guide: Guide,
-        onSuccess: () -> Unit,
-        onFailure: () -> Unit,
-    ) {
+    private fun persistGuideUpdate(guide: Guide, onSuccess: () -> Unit, onFailure: () -> Unit) {
         val resolvedGuideId = resolveGuideId(guide) ?: run {
             showError(ERROR_MISSING_GUIDE_ID_FOR_SAVE)
             onFailure()
@@ -441,10 +401,10 @@ class GuideDetailsViewModel @Inject constructor(
         val normalizedGuide = if (guide.id == resolvedGuideId) guide else guide.copy(id = resolvedGuideId)
 
         viewModelScope.launch {
-            when (val result = updateItemUseCase(normalizedGuide, Constants.GUIDES_TABLE)) {
-                is ResultListener.Success -> onSuccess()
-                is ResultListener.Failure -> {
-                    showError(result.message)
+            when (val result = guideRepository.updateGuide(normalizedGuide)) {
+                is Result.Success -> onSuccess()
+                is Result.Failure -> {
+                    showError(result.error)
                     onFailure()
                 }
             }
@@ -456,7 +416,7 @@ class GuideDetailsViewModel @Inject constructor(
         val activeUid = uid ?: return
         val activeGuideId = guideId
         viewModelScope.launch {
-            syncPendingGuideProgressUseCase(
+            guideRepository.syncPendingGuideProgress(
                 familyId = activeFamilyId,
                 uid = activeUid,
                 force = true,
@@ -465,22 +425,13 @@ class GuideDetailsViewModel @Inject constructor(
         }
     }
 
-    private fun persistGuideProgress(
-        guide: Guide,
-        onComplete: (() -> Unit)? = null,
-    ) {
-        val activeUid = uid ?: run {
-            onComplete?.invoke()
-            return
-        }
-        val activeFamilyId = familyId ?: run {
-            onComplete?.invoke()
-            return
-        }
+    private fun persistGuideProgress(guide: Guide, onComplete: (() -> Unit)? = null) {
+        val activeUid = uid ?: run { onComplete?.invoke(); return }
+        val activeFamilyId = familyId ?: run { onComplete?.invoke(); return }
         viewModelScope.launch {
-            val marked = markGuideProgressDirtyUseCase(guide, activeUid)
+            val marked = guideRepository.markGuideProgressDirty(guide, activeUid)
             if (marked) {
-                syncPendingGuideProgressUseCase(
+                guideRepository.syncPendingGuideProgress(
                     familyId = activeFamilyId,
                     uid = activeUid,
                     force = false,
@@ -501,18 +452,14 @@ class GuideDetailsViewModel @Inject constructor(
     }
 
     private fun stepPointerIndex(guide: Guide): Map<String, GuideLeafPointer> {
-        if (pointerCacheGuide === guide) {
-            return pointerCacheByStepId
-        }
+        if (pointerCacheGuide === guide) return pointerCacheByStepId
 
         val rebuiltIndex = mutableMapOf<String, GuideLeafPointer>()
         GuideProgress.buildLeafPointers(guide.sections).forEach { pointer ->
             val stepId = GuideProgress.getStepAtPointer(guide.sections, pointer)?.id
             if (!stepId.isNullOrBlank()) {
                 val key = pointerIndexKey(stepId, pointer.sectionAmountIndex)
-                if (rebuiltIndex[key] == null) {
-                    rebuiltIndex[key] = pointer
-                }
+                if (rebuiltIndex[key] == null) rebuiltIndex[key] = pointer
             }
         }
 
@@ -521,23 +468,13 @@ class GuideDetailsViewModel @Inject constructor(
         return rebuiltIndex
     }
 
-    private fun normalizeFetchedGuide(
-        guide: Guide,
-        fallbackGuideId: String,
-    ): Guide {
+    private fun normalizeFetchedGuide(guide: Guide, fallbackGuideId: String): Guide {
         val resolvedId = guide.id?.takeIf { it.isNotBlank() } ?: fallbackGuideId
-        return if (guide.id == resolvedId) {
-            guide
-        } else {
-            guide.copy(
-                id = resolvedId,
-            )
-        }
+        return if (guide.id == resolvedId) guide else guide.copy(id = resolvedId)
     }
 
     private fun resolveGuideId(guide: Guide?): String? {
-        return guide?.id?.takeIf { it.isNotBlank() }
-            ?: guideId?.takeIf { it.isNotBlank() }
+        return guide?.id?.takeIf { it.isNotBlank() } ?: guideId?.takeIf { it.isNotBlank() }
     }
 
     private fun updateGuideState(guide: Guide) {
@@ -584,19 +521,13 @@ class GuideDetailsViewModel @Inject constructor(
     private fun showError(message: String) {
         dismissAlertJob?.cancel()
         _uiState.update { state ->
-            state.copy(
-                showAlertDialog = true,
-                error = message,
-            )
+            state.copy(showAlertDialog = true, error = message)
         }
     }
 
     private fun clearError() {
         _uiState.update { state ->
-            state.copy(
-                showAlertDialog = false,
-                error = "",
-            )
+            state.copy(showAlertDialog = false, error = "")
         }
     }
 

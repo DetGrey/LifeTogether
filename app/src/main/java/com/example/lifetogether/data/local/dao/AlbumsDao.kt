@@ -10,14 +10,14 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AlbumsDao {
-    @Query("SELECT * FROM $ALBUMS_TABLE")
-    fun getAll(): List<AlbumEntity>
-
     @Query("SELECT * FROM $ALBUMS_TABLE WHERE family_id = :familyId")
     fun getItems(familyId: String): Flow<List<AlbumEntity>>
 
     @Query("SELECT * FROM $ALBUMS_TABLE WHERE family_id = :familyId AND id = :id LIMIT 1")
     fun getItemById(familyId: String, id: String): AlbumEntity?
+
+    @Query("SELECT * FROM $ALBUMS_TABLE WHERE family_id = :familyId AND id = :id LIMIT 1")
+    fun getItemByIdFlow(familyId: String, id: String): Flow<AlbumEntity?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateItems(items: List<AlbumEntity>)

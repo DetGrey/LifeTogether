@@ -1,45 +1,25 @@
 package com.example.lifetogether.domain.usecase.observers
 
-import com.example.lifetogether.data.local.source.GroceryLocalDataSource
-import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.listener.ListItemsResultListener
+import com.example.lifetogether.domain.repository.GroceryRepository
+import com.example.lifetogether.domain.result.Result as AppResult
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class ObserveGroceryListUseCase @Inject constructor(
-    private val firestoreDataSource: FirestoreDataSource,
-    private val groceryLocalDataSource: GroceryLocalDataSource,
+    private val groceryRepository: GroceryRepository,
 ) {
     fun start(
         scope: CoroutineScope,
         familyId: String,
     ): ObserverStartHandle {
-        val firstSuccess = CompletableDeferred<Result<Unit>>()
+        val firstSuccess = CompletableDeferred<kotlin.Result<Unit>>()
         val job = scope.launch {
-            println("ObserveGroceryListUseCase invoked")
-            firestoreDataSource.grocerySnapshotListener(familyId).collect { result ->
-                println("grocerySnapshotListener().collect result: $result")
+            groceryRepository.syncGroceryItemsFromRemote(familyId).collect { result ->
                 when (result) {
-                    is ListItemsResultListener.Success -> {
-                        runCatching {
-                            if (result.listItems.isEmpty()) {
-                                println("grocerySnapshotListener().collect result: is empty")
-                                groceryLocalDataSource.deleteFamilyGroceryItems(familyId)
-                            } else {
-                                groceryLocalDataSource.updateGroceryList(result.listItems)
-                            }
-                        }.onSuccess {
-                            firstSuccess.completeFirstSuccessIfNeeded()
-                        }.onFailure { error ->
-                            println("ObserveGroceryListUseCase local update failure: ${error.message}")
-                        }
-                    }
-                    is ListItemsResultListener.Failure -> {
-                        // Keep listener alive; firstSuccess is one-shot and only completes on success.
-                        println("ObserveFirestoreUseCase failure: ${result.message}")
-                    }
+                    is AppResult.Success -> firstSuccess.completeFirstSuccessIfNeeded()
+                    is AppResult.Failure -> println("grocery list sync failure: ${result.error}")
                 }
             }
         }

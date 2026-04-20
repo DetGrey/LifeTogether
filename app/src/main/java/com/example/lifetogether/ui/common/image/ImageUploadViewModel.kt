@@ -9,7 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.model.sealed.UploadState
@@ -58,10 +58,10 @@ class ImageUploadViewModel @Inject constructor(
         viewModelScope.launch {
             val result = uploadImageUseCase.invoke(uri, imageType, context)
             when (result) {
-                is ResultListener.Success -> {
+                is Result.Success -> {
                     _uploadState.value = UploadState.Success
                 }
-                is ResultListener.Failure -> _uploadState.value = UploadState.Failure(result.message)
+                is Result.Failure -> _uploadState.value = UploadState.Failure(result.error)
             }
         }
     }
