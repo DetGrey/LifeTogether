@@ -2,7 +2,7 @@ package com.example.lifetogether.domain.usecase.observers
 
 import com.example.lifetogether.data.local.source.UserLocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.repository.StorageRepository
+import com.example.lifetogether.domain.datasource.StorageDataSource
 import com.example.lifetogether.domain.listener.AuthResultListener
 import com.example.lifetogether.domain.listener.ByteArrayResultListener
 import kotlinx.coroutines.CompletableDeferred
@@ -12,7 +12,7 @@ import javax.inject.Inject
 
 class ObserveUserInformationUseCase @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
-    private val storageRepository: StorageRepository,
+    private val storageDataSource: StorageDataSource,
     private val userLocalDataSource: UserLocalDataSource,
 ) {
     fun start(
@@ -36,7 +36,7 @@ class ObserveUserInformationUseCase @Inject constructor(
                                 // Only download if image doesn't exist
                                 val byteArrayResult: ByteArrayResultListener? =
                                     result.userInformation.imageUrl?.let { url ->
-                                        storageRepository.fetchImageByteArray(url)
+                                        storageDataSource.fetchImageByteArray(url)
                                     }
 
                                 when (byteArrayResult) {

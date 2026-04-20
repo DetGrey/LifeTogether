@@ -1,4 +1,4 @@
-package com.example.lifetogether.domain.repository
+package com.example.lifetogether.domain.datasource
 
 import android.content.Context
 import android.net.Uri
@@ -9,7 +9,7 @@ import com.example.lifetogether.domain.listener.TempFileDownloadResult
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.result.Result
 
-interface StorageRepository {
+interface StorageDataSource {
     suspend fun uploadPhoto(
         uri: Uri,
         imageType: ImageType,

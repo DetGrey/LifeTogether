@@ -2,7 +2,7 @@ package com.example.lifetogether.domain.usecase.observers
 
 import com.example.lifetogether.data.local.source.RecipeLocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.repository.StorageRepository
+import com.example.lifetogether.domain.datasource.StorageDataSource
 import com.example.lifetogether.domain.listener.ByteArrayResultListener
 import com.example.lifetogether.domain.listener.ListItemsResultListener
 import kotlinx.coroutines.CompletableDeferred
@@ -12,7 +12,7 @@ import javax.inject.Inject
 
 class ObserveRecipesUseCase @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
-    private val storageRepository: StorageRepository,
+    private val storageDataSource: StorageDataSource,
     private val recipeLocalDataSource: RecipeLocalDataSource,
 ) {
     fun start(
@@ -44,7 +44,7 @@ class ObserveRecipesUseCase @Inject constructor(
 
                                     val byteArrayResult: ByteArrayResultListener? =
                                         recipe.imageUrl?.let { url ->
-                                            storageRepository.fetchImageByteArray(url)
+                                            storageDataSource.fetchImageByteArray(url)
                                         }
 
                                     if (byteArrayResult is ByteArrayResultListener.Success) {

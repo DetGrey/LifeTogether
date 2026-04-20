@@ -5,7 +5,7 @@ import android.util.Log
 import com.example.lifetogether.data.local.source.MediaLocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.listener.ListItemsResultListener
-import com.example.lifetogether.domain.repository.StorageRepository
+import com.example.lifetogether.domain.datasource.StorageDataSource
 import com.example.lifetogether.domain.listener.TempFileDownloadResult
 import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
@@ -25,7 +25,7 @@ import kotlin.let
 
 class ObserveGalleryMediaUseCase @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
-    private val storageRepository: StorageRepository,
+    private val storageDataSource: StorageDataSource,
     private val mediaLocalDataSource: MediaLocalDataSource,
 ) {
     companion object {
@@ -139,7 +139,7 @@ class ObserveGalleryMediaUseCase @Inject constructor(
                                                         }
 
                                                         try {
-                                                            downloadResult = storageRepository.downloadContentToTempFile(
+                                                            downloadResult = storageDataSource.downloadContentToTempFile(
                                                                 context,
                                                                 url,
                                                                 extension

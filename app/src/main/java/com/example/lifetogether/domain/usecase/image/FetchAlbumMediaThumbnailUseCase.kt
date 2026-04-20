@@ -1,15 +1,15 @@
 package com.example.lifetogether.domain.usecase.image
 
-import com.example.lifetogether.data.repository.ImageRepositoryImpl
 import com.example.lifetogether.domain.listener.ByteArrayResultListener
+import com.example.lifetogether.domain.repository.GalleryRepository
 import javax.inject.Inject
 
 class FetchAlbumMediaThumbnailUseCase @Inject constructor(
-    private val imageRepositoryImpl: ImageRepositoryImpl,
+    private val galleryRepository: GalleryRepository,
 ) {
     suspend operator fun invoke(
         mediaId: String,
     ): ByteArrayResultListener {
-        return imageRepositoryImpl.getAlbumMediaThumbnail(mediaId)
+        return galleryRepository.getAlbumMediaThumbnail(mediaId)
     }
 }

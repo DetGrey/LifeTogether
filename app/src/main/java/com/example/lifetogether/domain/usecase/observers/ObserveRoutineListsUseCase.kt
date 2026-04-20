@@ -5,7 +5,7 @@ import com.example.lifetogether.data.local.source.UserListLocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.listener.ByteArrayResultListener
 import com.example.lifetogether.domain.listener.ListItemsResultListener
-import com.example.lifetogether.domain.repository.StorageRepository
+import com.example.lifetogether.domain.datasource.StorageDataSource
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -13,7 +13,7 @@ import javax.inject.Inject
 
 class ObserveRoutineListsUseCase @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
-    private val storageRepository: StorageRepository,
+    private val storageDataSource: StorageDataSource,
     private val userListLocalDataSource: UserListLocalDataSource,
 ) {
     private companion object {
@@ -45,7 +45,7 @@ class ObserveRoutineListsUseCase @Inject constructor(
                                     }
                                     val byteArrayResult: ByteArrayResultListener? =
                                         entry.imageUrl?.let { url ->
-                                            storageRepository.fetchImageByteArray(url)
+                                            storageDataSource.fetchImageByteArray(url)
                                         }
                                     if (byteArrayResult is ByteArrayResultListener.Success) {
                                         entry.id?.let { byteArrays[it] = byteArrayResult.byteArray }

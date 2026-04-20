@@ -3,15 +3,13 @@ package com.example.lifetogether.ui.feature.gallery
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.listener.AlbumUiModelResultListener
-import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.model.gallery.Album
-import com.example.lifetogether.domain.usecase.gallery.GetAlbumDisplayModelsUseCase
-import com.example.lifetogether.domain.usecase.image.FetchAlbumThumbnailUseCase
-import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
-import com.example.lifetogether.ui.model.AlbumUiModel
 import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.repository.GalleryRepository
 import com.example.lifetogether.domain.repository.SessionRepository
-import com.example.lifetogether.util.Constants
+import com.example.lifetogether.domain.result.Result
+import com.example.lifetogether.domain.usecase.gallery.GetAlbumDisplayModelsUseCase
+import com.example.lifetogether.ui.model.AlbumUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,8 +31,7 @@ data class GalleryUiState(
 class GalleryViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
     private val getAlbumDisplayModelsUseCase: GetAlbumDisplayModelsUseCase,
-    private val fetchAlbumThumbnailUseCase: FetchAlbumThumbnailUseCase,
-    private val saveItemUseCase: SaveItemUseCase,
+    private val galleryRepository: GalleryRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(GalleryUiState())
     val uiState: StateFlow<GalleryUiState> = _uiState.asStateFlow()
@@ -88,9 +85,9 @@ class GalleryViewModel @Inject constructor(
         )
 
         viewModelScope.launch {
-            when (val result = saveItemUseCase(album, Constants.ALBUMS_TABLE)) {
-                is StringResultListener.Success -> closeNewAlbumDialog()
-                is StringResultListener.Failure -> showError(result.message)
+            when (val result = galleryRepository.saveAlbum(album)) {
+                is Result.Success -> closeNewAlbumDialog()
+                is Result.Failure -> showError(result.error)
             }
         }
     }
@@ -107,7 +104,7 @@ class GalleryViewModel @Inject constructor(
                         result.albums.forEach { album ->
                             if (album.thumbnail == null && !requestedThumbnails.contains(album.id)) {
                                 requestedThumbnails.add(album.id)
-                                fetchAlbumThumbnailUseCase(album.id)
+                                galleryRepository.fetchAlbumThumbnail(album.id)
                             }
                         }
                     }

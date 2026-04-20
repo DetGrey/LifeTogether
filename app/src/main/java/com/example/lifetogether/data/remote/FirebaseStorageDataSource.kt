@@ -9,7 +9,7 @@ import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.listener.TempFileDownloadResult
 import com.example.lifetogether.domain.model.sealed.ImageType
-import com.example.lifetogether.domain.repository.StorageRepository
+import com.example.lifetogether.domain.datasource.StorageDataSource
 import com.example.lifetogether.domain.result.Result
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.coroutineScope
@@ -20,7 +20,7 @@ import javax.inject.Inject
 
 class FirebaseStorageDataSource @Inject constructor(
     private val imageProcessor: ImageProcessor,
-) : StorageRepository {
+) : StorageDataSource {
     // ------------------------------------------------------------------------------- IMAGES
     override suspend fun uploadPhoto(
         uri: Uri,

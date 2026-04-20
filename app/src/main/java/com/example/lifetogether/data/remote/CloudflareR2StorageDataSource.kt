@@ -21,7 +21,7 @@ import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.listener.TempFileDownloadResult
 import com.example.lifetogether.domain.model.sealed.ImageType
-import com.example.lifetogether.domain.repository.StorageRepository
+import com.example.lifetogether.domain.datasource.StorageDataSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -36,7 +36,7 @@ import com.example.lifetogether.domain.result.Result
 class CloudflareR2StorageDataSource @Inject constructor(
     private val application: Application,
     private val imageProcessor: ImageProcessor,
-) : StorageRepository {
+) : StorageDataSource {
 
     companion object {
         // Configuration loaded from BuildConfig (which reads from local.properties)

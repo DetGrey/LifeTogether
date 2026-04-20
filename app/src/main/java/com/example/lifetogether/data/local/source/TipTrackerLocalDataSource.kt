@@ -5,6 +5,7 @@ import com.example.lifetogether.data.local.source.internal.computeItemsToDelete
 import com.example.lifetogether.data.local.source.internal.computeItemsToUpdate
 import com.example.lifetogether.data.model.TipEntity
 import com.example.lifetogether.domain.model.TipItem
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import javax.inject.Inject
@@ -14,6 +15,8 @@ import javax.inject.Singleton
 class TipTrackerLocalDataSource @Inject constructor(
     private val tipTrackerDao: TipTrackerDao,
 ) {
+    fun observeTips(familyId: String): Flow<List<TipEntity>> = tipTrackerDao.getItems(familyId)
+
     suspend fun updateTipTracker(items: List<TipItem>) {
         val familyId = items.firstOrNull()?.familyId ?: return
         val entities = items.map { item ->
