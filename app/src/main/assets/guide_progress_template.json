@@ -1,0 +1,23 @@
+{
+  "id": "familyId_uid_guideId",
+  "familyId": "family-id",
+  "uid": "user-id",
+  "guideId": "guide-id",
+  "contentVersion": 1,
+  "started": true,
+  "lastUpdated": 1735689600000,
+  "localUpdatedAt": 1735689600000,
+  "lastUploadedAt": 1735689600000,
+  "completedPointerKeys": [
+    "0:0:0:-1",
+    "0:0:1:-1",
+    "1:0:0:-1",
+    "1:1:0:-1"
+  ],
+  "resume": {
+    "sectionIndex": 1,
+    "sectionAmountIndex": 1,
+    "stepIndex": 0,
+    "subStepIndex": null
+  }
+}

@@ -6,9 +6,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.callback.ItemResultListener
-import com.example.lifetogether.domain.callback.ResultListener
-import com.example.lifetogether.domain.callback.StringResultListener
 import com.example.lifetogether.domain.logic.toMutableRecipe
 import com.example.lifetogether.domain.logic.toRecipe
 import com.example.lifetogether.domain.model.Completable
@@ -16,11 +13,10 @@ import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.domain.model.recipe.Instruction
 import com.example.lifetogether.domain.model.recipe.MutableRecipe
 import com.example.lifetogether.domain.model.recipe.Recipe
-import com.example.lifetogether.domain.usecase.item.DeleteItemUseCase
-import com.example.lifetogether.domain.usecase.item.FetchItemByIdUseCase
-import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
-import com.example.lifetogether.domain.usecase.item.UpdateItemUseCase
-import com.example.lifetogether.util.Constants
+import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.repository.RecipeRepository
+import com.example.lifetogether.domain.repository.SessionRepository
+import com.example.lifetogether.domain.result.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,14 +29,11 @@ import javax.inject.Inject
 @SuppressLint("MutableCollectionMutableState")
 @HiltViewModel
 class RecipeDetailsViewModel @Inject constructor(
-    private val saveItemUseCase: SaveItemUseCase,
-    private val deleteItemUseCase: DeleteItemUseCase,
-    private val updateItemUseCase: UpdateItemUseCase,
-    private val fetchItemByIdUseCase: FetchItemByIdUseCase,
+    private val sessionRepository: SessionRepository,
+    private val recipeRepository: RecipeRepository,
 ) : ViewModel() {
     var showConfirmationDialog: Boolean by mutableStateOf(false)
 
-    // ---------------------------------------------------------------- ERROR
     var showAlertDialog: Boolean by mutableStateOf(false)
     var error: String by mutableStateOf("")
     fun toggleAlertDialog() {
@@ -62,17 +55,19 @@ class RecipeDetailsViewModel @Inject constructor(
     }
 
     // ---------------------------------------------------------------- Family Id
-    private var familyIdIsSet = false
-    var familyId: String? = null
+    private val _familyId = MutableStateFlow<String?>(null)
+    val familyId: StateFlow<String?> = _familyId.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            sessionRepository.sessionState.collect { state ->
+                _familyId.value = (state as? SessionState.Authenticated)?.user?.familyId
+            }
+        }
+    }
 
     // ---------------------------------------------------------------- SETUP/FETCH LIST
-    fun setUpRecipeDetails(addedFamilyId: String, recipeId: String?) {
-        if (!familyIdIsSet) {
-            println("RecipeDetailsViewModel setting UID")
-            familyId = addedFamilyId
-            familyIdIsSet = true
-        }
-
+    fun setUp(recipeId: String?) {
         if (recipeId is String) {
             fetchRecipe(recipeId)
         } else {
@@ -89,42 +84,31 @@ class RecipeDetailsViewModel @Inject constructor(
     }
 
     // ---------------------------------------------------------------- RECIPE
-    private val _originalRecipe = MutableStateFlow<MutableRecipe>(MutableRecipe())
-    private val _recipe = MutableStateFlow<MutableRecipe>(MutableRecipe())
+    private val _originalRecipe = MutableStateFlow(MutableRecipe())
+    private val _recipe = MutableStateFlow(MutableRecipe())
     val recipe: StateFlow<MutableRecipe> = _recipe.asStateFlow()
 
     private fun updateRecipeFlow(recipe: Recipe) {
-        println("_recipe old value: ${_recipe.value}")
         _originalRecipe.value = recipe.toMutableRecipe()
         _recipe.value = recipe.toMutableRecipe()
-        println("recipe new value: ${this@RecipeDetailsViewModel.recipe.value}")
         preparationTimeMin = recipe.preparationTimeMin.toString()
         servings = recipe.servings.toString()
         tags = recipe.tags.joinToString(" ")
         ingredientsByServings()
     }
 
-    private fun fetchRecipe(
-        recipeId: String,
-    ) {
+    private fun fetchRecipe(recipeId: String) {
+        val familyIdValue = _familyId.value ?: run {
+            error = "Not connected to a family"
+            showAlertDialog = true
+            return
+        }
         viewModelScope.launch {
-            fetchItemByIdUseCase.invoke(familyId!!, recipeId, Constants.RECIPES_TABLE, Recipe::class).collect { result ->
-                println("fetchItemByIdUseCase result: $result")
+            recipeRepository.observeRecipeById(familyIdValue, recipeId).collect { result ->
                 when (result) {
-                    is ItemResultListener.Success -> {
-                        if (result.item is Recipe) {
-                            updateRecipeFlow(result.item)
-                        } else {
-                            println("Error: No recipe found")
-                            error = "No recipe found"
-                            showAlertDialog = true
-                        }
-                    }
-
-                    is ItemResultListener.Failure -> {
-                        // Handle failure, e.g., show an error message
-                        println("Error: ${result.message}")
-                        error = result.message
+                    is Result.Success -> updateRecipeFlow(result.data)
+                    is Result.Failure -> {
+                        error = result.error
                         showAlertDialog = true
                     }
                 }
@@ -133,7 +117,6 @@ class RecipeDetailsViewModel @Inject constructor(
     }
 
     fun recipeAddNewItemToList(item: Completable) {
-        println("Trying to add to list: $item")
         when (item) {
             is Ingredient -> {
                 val updatedIngredients = _recipe.value.ingredients.toMutableList()
@@ -159,28 +142,13 @@ class RecipeDetailsViewModel @Inject constructor(
 
     fun ingredientsByServings() {
         val multiplier = servings.toDouble() / recipe.value.servings.toDouble()
-        println("multiplier: $multiplier")
-        println("list: ${recipe.value.ingredients.map { it.copy(amount = it.amount * multiplier) }}")
         ingredientsByServings = recipe.value.ingredients.map { it.copy(amount = it.amount * multiplier) }
     }
 
-    // ---------------------------------------------------------------- USE CASES
-    // USE CASES
-    fun saveRecipe(
-        recipeId: String?,
-        onSuccess: () -> Unit,
-    ) {
-        println("RecipeDetailsViewModel saveRecipe()")
-
-        if (servings.isNotEmpty()) {
-            _recipe.value.servings = servings.toInt()
-        }
-        if (preparationTimeMin.isNotEmpty()) {
-            _recipe.value.preparationTimeMin = preparationTimeMin.toInt()
-        }
-        if (tags.isNotEmpty()) {
-            _recipe.value.tags = tags.lowercase().split(" ")
-        }
+    fun saveRecipe(recipeId: String?, onSuccess: () -> Unit) {
+        if (servings.isNotEmpty()) _recipe.value.servings = servings.toInt()
+        if (preparationTimeMin.isNotEmpty()) _recipe.value.preparationTimeMin = preparationTimeMin.toInt()
+        if (tags.isNotEmpty()) _recipe.value.tags = tags.lowercase().split(" ")
 
         if (recipe.value.itemName.isEmpty()) {
             error = "Please write some text first"
@@ -188,10 +156,10 @@ class RecipeDetailsViewModel @Inject constructor(
             return
         }
 
-        val newRecipe = familyId?.let {
+        val newRecipe = _familyId.value?.let {
             Recipe(
                 id = recipeId,
-                familyId = familyId!!,
+                familyId = it,
                 itemName = recipe.value.itemName,
                 lastUpdated = Date(),
                 description = recipe.value.description,
@@ -211,40 +179,27 @@ class RecipeDetailsViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            println("newRecipe id: ${newRecipe.id}")
             if (newRecipe.id.isNullOrEmpty()) {
-                println("Chosen use case: Recipe is saved as a new one")
-                val result: StringResultListener = saveItemUseCase.invoke(newRecipe, Constants.RECIPES_TABLE)
-
-                if (result is StringResultListener.Success) {
-                    onSuccess()
-                } else if (result is StringResultListener.Failure) {
-                    println("Error: ${result.message}")
-                    error = result.message
-                    showAlertDialog = true
+                when (val result = recipeRepository.saveRecipe(newRecipe)) {
+                    is Result.Success -> onSuccess()
+                    is Result.Failure -> {
+                        error = result.error
+                        showAlertDialog = true
+                    }
                 }
             } else {
-                println("Chosen use case: Recipe is updated in old")
-                val result: ResultListener = updateItemUseCase.invoke(newRecipe, Constants.RECIPES_TABLE)
-
-                if (result is ResultListener.Success) {
-                    onSuccess()
-                } else if (result is ResultListener.Failure) {
-                    println("Error: ${result.message}")
-                    error = result.message
-                    showAlertDialog = true
+                when (val result = recipeRepository.updateRecipe(newRecipe)) {
+                    is Result.Success -> onSuccess()
+                    is Result.Failure -> {
+                        error = result.error
+                        showAlertDialog = true
+                    }
                 }
             }
         }
     }
 
-    fun deleteRecipe(
-        recipeId: String,
-        onSuccess: () -> Unit,
-    ) {
-        println("RecipeDetailsViewModel deleteRecipe()")
-        println("recipeId: $recipeId")
-
+    fun deleteRecipe(recipeId: String, onSuccess: () -> Unit) {
         if (recipeId.isEmpty()) {
             error = "Recipe not saved - no id"
             showAlertDialog = true
@@ -252,14 +207,12 @@ class RecipeDetailsViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            val result: ResultListener = deleteItemUseCase.invoke(recipeId, Constants.RECIPES_TABLE)
-
-            if (result is ResultListener.Success) {
-                onSuccess()
-            } else if (result is ResultListener.Failure) {
-                println("Error: ${result.message}")
-                error = result.message
-                showAlertDialog = true
+            when (val result = recipeRepository.deleteRecipe(recipeId)) {
+                is Result.Success -> onSuccess()
+                is Result.Failure -> {
+                    error = result.error
+                    showAlertDialog = true
+                }
             }
             showConfirmationDialog = false
         }

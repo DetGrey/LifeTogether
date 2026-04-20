@@ -1,130 +1,216 @@
 package com.example.lifetogether.data.repository
 
-import com.example.lifetogether.data.local.LocalDataSource
+import android.util.Log
+import androidx.core.net.toUri
+import com.example.lifetogether.data.local.source.AlbumLocalDataSource
+import com.example.lifetogether.data.local.source.GroceryLocalDataSource
+import com.example.lifetogether.data.local.source.ListQueryLocalDataSource
+import com.example.lifetogether.data.local.source.UserListLocalDataSource
+import com.example.lifetogether.data.local.source.query.ListQueryType
+import com.example.lifetogether.data.local.source.query.ListQueryTypeMapper
 import com.example.lifetogether.data.model.Entity
-import com.example.lifetogether.domain.callback.CategoriesListener
-import com.example.lifetogether.domain.callback.GrocerySuggestionsListener
-import com.example.lifetogether.domain.callback.ItemResultListener
-import com.example.lifetogether.domain.callback.ListItemsResultListener
-import com.example.lifetogether.domain.callback.ResultListener
-import com.example.lifetogether.domain.callback.StringResultListener
-import com.example.lifetogether.domain.model.Category
+import com.example.lifetogether.domain.listener.ItemResultListener
+import com.example.lifetogether.domain.listener.ListItemsResultListener
 import com.example.lifetogether.domain.model.Item
+import com.example.lifetogether.domain.model.TipItem
+import com.example.lifetogether.domain.model.enums.MediaType
+import com.example.lifetogether.domain.model.gallery.Album
+import com.example.lifetogether.domain.model.gallery.GalleryImage
+import com.example.lifetogether.domain.model.gallery.GalleryMedia
+import com.example.lifetogether.domain.model.gallery.GalleryVideo
+import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.grocery.GroceryItem
-import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
+import com.example.lifetogether.domain.model.lists.RoutineListEntry
+import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.model.recipe.Recipe
-import com.example.lifetogether.domain.repository.ListRepository
+import com.example.lifetogether.domain.repository.LegacyListRepository
+import com.example.lifetogether.domain.result.Result
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import kotlin.reflect.KClass
 
 class LocalListRepositoryImpl @Inject constructor(
-    private val localDataSource: LocalDataSource,
-) : ListRepository {
-
-    override suspend fun saveItem(
-        item: Item,
-        listName: String,
-    ): StringResultListener {
-        TODO("Not yet implemented")
+    private val listQueryLocalDataSource: ListQueryLocalDataSource,
+    private val groceryLocalDataSource: GroceryLocalDataSource,
+    private val albumLocalDataSource: AlbumLocalDataSource,
+    private val userListLocalDataSource: UserListLocalDataSource,
+) : LegacyListRepository {
+    private companion object {
+        const val TAG = "LocalListRepository"
     }
 
     fun deleteItems(
-        listName: String,
+        queryType: ListQueryType,
         itemIds: List<String>,
-    ): ResultListener {
-        println("LocalListRepositoryImpl deleteItems()")
-        return localDataSource.deleteItems(listName, itemIds)
-    }
-
-    fun getCategories(): Flow<CategoriesListener> {
-        println("LocalListRepositoryImpl getCategories()")
-        return localDataSource.getCategories().map { list ->
-            try {
-                CategoriesListener.Success(
-                    list.map { category ->
-                        Category(
-                            emoji = category.emoji,
-                            name = category.name,
-                        )
-                    },
-                )
-            } catch (e: Exception) {
-                CategoriesListener.Failure(e.message ?: "Unknown error")
-            }
+    ): Result<Unit, String> {
+        return when (queryType) {
+            ListQueryType.Grocery -> groceryLocalDataSource.deleteItems(itemIds)
+            ListQueryType.RoutineListEntries -> userListLocalDataSource.deleteRoutineListEntries(itemIds)
+            else -> Result.Failure("Unsupported delete type: $queryType")
         }
     }
 
-    fun getGrocerySuggestions(): Flow<GrocerySuggestionsListener> {
-        println("LocalListRepositoryImpl getGrocerySuggestions()")
-        return localDataSource.getGrocerySuggestions().map { list ->
-            println("Grocery suggestions: $list")
-            try {
-                GrocerySuggestionsListener.Success(
-                    list.map { grocerySuggestion ->
-                        GrocerySuggestion(
-                            id = grocerySuggestion.id,
-                            suggestionName = grocerySuggestion.suggestionName,
-                            category = grocerySuggestion.category,
-                        )
-                    },
-                )
-            } catch (e: Exception) {
-                GrocerySuggestionsListener.Failure(e.message ?: "Unknown error")
-            }
-        }
-    }
-
-    fun <T : Item> fetchListItems(
-        listName: String,
+    fun fetchAlbumMedia(
         familyId: String,
-        itemType: KClass<T>,
-    ): Flow<ListItemsResultListener<Item>> {
-        println("LocalListRepoImpl fetchListItems init")
-        return localDataSource.getListItems(listName, familyId)
+        albumId: String,
+    ): Flow<ListItemsResultListener<GalleryMedia>> {
+        Log.d(TAG, "fetchAlbumMedia init familyId=$familyId albumId=$albumId")
+        return albumLocalDataSource.getAlbumMedia(familyId, albumId)
             .map { entities ->
                 try {
-                    println("LocalListRepoImpl fetchListItems entities: $entities")
+                    Log.d(TAG, "fetchAlbumMedia entitiesCount=${entities.size}")
                     // Convert entities to items
-                    val itemsList = entities.map { it.toItem(itemType) }
-                    println("LocalListRepoImpl after getting items from local data source")
-                    for (item in itemsList) {
-                        if (item.itemName == "Chicken burger") {
-                            println("chicken burger fetched: $item")
+                    val itemsList = entities.map { entityWrapper ->
+                        val entity = entityWrapper.entity
+
+                        when (entity.mediaType) {
+                            MediaType.IMAGE -> GalleryImage(
+                                id = entity.id,
+                                familyId = entity.familyId,
+                                itemName = entity.itemName,
+                                lastUpdated = entity.lastUpdated,
+                                albumId = entity.albumId,
+                                dateCreated = entity.dateCreated,
+                                mediaType = MediaType.IMAGE,
+                                mediaUrl = null,
+                                mediaUri = entity.mediaUri?.toUri(),
+                            )
+
+                            MediaType.VIDEO -> GalleryVideo(
+                                id = entity.id,
+                                familyId = entity.familyId,
+                                itemName = entity.itemName,
+                                lastUpdated = entity.lastUpdated,
+                                albumId = entity.albumId,
+                                dateCreated = entity.dateCreated,
+                                mediaType = MediaType.VIDEO,
+                                mediaUrl = null,
+                                mediaUri = entity.mediaUri?.toUri(),
+                                duration = entity.videoDuration,
+                            )
                         }
                     }
-                    println("fetchListItems of specified itemType: $itemsList")
+                    Log.d(TAG, "fetchAlbumMedia mappedItemsCount=${itemsList.size}")
                     ListItemsResultListener.Success(itemsList)
                 } catch (e: Exception) {
-                    println("Error: ${e.message}")
+                    Log.e(TAG, "fetchAlbumMedia mapping error", e)
                     ListItemsResultListener.Failure(e.message ?: "Unknown error")
                 }
             }
     }
 
+    fun <T : Item> getListsFlow(
+        queryType: ListQueryType,
+        familyId: String,
+        itemType: KClass<T>,
+        uid: String? = null,
+    ): Flow<Result<List<T>, String>> {
+        Log.d(TAG, "getListItemsFlow init queryType=$queryType familyId=$familyId uid=$uid itemType=${itemType.simpleName}")
+        return listQueryLocalDataSource.getListItems(queryType, familyId, uid)
+            .map { entities ->
+                try {
+                    Log.d(TAG, "getListItemsFlow entitiesCount=${entities.size} queryType=$queryType")
+                    val itemsList = entities.map { it.toItem(itemType) }
+                        .filterIsInstance(itemType.java)
+                        .sortedBy { it.itemName }
+                    Log.d(TAG, "getListItemsFlow mappedItemsCount=${itemsList.size} queryType=$queryType")
+                    Result.Success(itemsList)
+                } catch (e: Exception) {
+                    Log.e(TAG, "getListItemsFlow mapping error queryType=$queryType", e)
+                    Result.Failure(e.message ?: "Unknown mapping error")
+                }
+            }
+    }
+
+    @Deprecated(
+        message = "Use typed fetchListItems(ListQueryType, familyId, itemType, uid).",
+        replaceWith = ReplaceWith(
+            expression = "fetchListItems(queryType, familyId, itemType, uid)",
+            imports = ["com.example.lifetogether.data.local.source.query.ListQueryType"],
+        ),
+        level = DeprecationLevel.WARNING,
+    )
+    fun <T : Item> fetchListItems(
+        listName: String,
+        familyId: String,
+        itemType: KClass<T>,
+        uid: String? = null,
+    ): Flow<ListItemsResultListener<Item>> {
+        // TODO(v2-phase2-cleanup): remove temporary String-based API once call sites use ListQueryType directly.
+        val queryType = ListQueryTypeMapper.fromTableNameOrNull(listName)
+            ?: return flowOf(
+                ListItemsResultListener.Success(emptyList()),
+            )
+        return getListsFlow(queryType, familyId, itemType, uid).map {
+            when (it) {
+                is Result.Success -> ListItemsResultListener.Success(it.data)
+                is Result.Failure -> ListItemsResultListener.Failure(it.error)
+            }
+        }
+    }
+
+    fun getItemByIdFlow(
+        queryType: ListQueryType,
+        familyId: String,
+        id: String,
+        itemType: KClass<out Item>,
+        uid: String? = null,
+    ): Flow<Result<Item, String>> {
+        Log.d(TAG, "fetchItemById queryType=$queryType familyId=$familyId uid=$uid id=$id itemType=${itemType.simpleName}")
+        return listQueryLocalDataSource.getItemById(queryType, familyId, id, uid)
+            .map { entity ->
+                try {
+                    val entityLabel = when (entity) {
+                        is Entity.GroceryList -> "GroceryList(${entity.entity.id})"
+                        is Entity.Recipe -> "Recipe(${entity.entity.id})"
+                        is Entity.Album -> "Album(${entity.entity.id})"
+                        is Entity.GalleryMedia -> "GalleryMedia(${entity.entity.id})"
+                        is Entity.Tip -> "Tip(${entity.entity.id})"
+                        is Entity.Guide -> "Guide(${entity.entity.id}, started=${entity.entity.started}, resume=${entity.entity.resume})"
+                        is Entity.UserList -> "UserList(${entity.entity.id})"
+                        is Entity.RoutineListEntry -> "RoutineListEntry(${entity.entity.id})"
+                    }
+                    Log.d(TAG, "fetchItemById entity=$entityLabel")
+                    val item = entity.toItem(itemType)
+                    Log.d(TAG, "fetchItemById mapped item id=${item.id} itemType=${item::class.simpleName}")
+                    Result.Success(item)
+                } catch (e: Exception) {
+                    Log.e(TAG, "fetchItemById mapping failure queryType=$queryType id=$id", e)
+                    Result.Failure(e.message ?: "Unknown error")
+                }
+            }
+    }
+
+    @Deprecated(
+        message = "Use typed fetchItemById(ListQueryType, familyId, id, itemType, uid).",
+        replaceWith = ReplaceWith(
+            expression = "fetchItemById(queryType, familyId, id, itemType, uid)",
+            imports = ["com.example.lifetogether.data.local.source.query.ListQueryType"],
+        ),
+        level = DeprecationLevel.WARNING,
+    )
     fun fetchItemById(
         listName: String,
         familyId: String,
         id: String,
         itemType: KClass<out Item>,
+        uid: String? = null,
     ): Flow<ItemResultListener<Item>> {
-        return localDataSource.getItemById(listName, familyId, id)
-            .map { entity ->
-                try {
-                    println("LocalListRepoImpl fetchItemById entity: $entity")
-                    val item = entity.toItem(itemType)
-                    println("fetchItemById of specified itemType: $item")
-                    ItemResultListener.Success(item)
-                } catch (e: Exception) {
-                    ItemResultListener.Failure(e.message ?: "Unknown error")
-                }
+        // TODO(v2-phase2-cleanup): remove temporary String-based API once call sites use ListQueryType directly.
+        val queryType = ListQueryTypeMapper.fromTableNameOrNull(listName)
+            ?: return emptyFlow()
+        return getItemByIdFlow(queryType, familyId, id, itemType, uid).map {
+            when (it) {
+                is Result.Success -> ItemResultListener.Success(it.data)
+                is Result.Failure -> ItemResultListener.Failure(it.error)
             }
+        }
     }
 
-    // Assuming GroceryItem is a subclass of Item and has a matching constructor
-    // TODO ADD MORE ITEM CLASSES
-    private fun Entity.toItem(itemType: KClass<out Item>): Item {
+    private fun Entity.toItem(itemType: KClass<out Item>): Item { //todo can this be done in a better way or is it okay?
         return when (this) {
             is Entity.GroceryList -> when (itemType) {
                 GroceryItem::class -> GroceryItem(
@@ -134,9 +220,12 @@ class LocalListRepositoryImpl @Inject constructor(
                     lastUpdated = this.entity.lastUpdated,
                     completed = this.entity.completed,
                     category = this.entity.category,
+                    approxPrice = this.entity.approxPrice,
                 )
+
                 else -> throw IllegalArgumentException("Unsupported item type: $itemType")
             }
+
             is Entity.Recipe -> when (itemType) {
                 Recipe::class -> Recipe(
                     id = this.entity.id,
@@ -151,6 +240,118 @@ class LocalListRepositoryImpl @Inject constructor(
                     servings = this.entity.servings,
                     tags = this.entity.tags,
                 )
+
+                else -> throw IllegalArgumentException("Unsupported item type: $itemType")
+            }
+
+            is Entity.Album -> when (itemType) {
+                Album::class -> Album(
+                    id = this.entity.id,
+                    familyId = this.entity.familyId,
+                    itemName = this.entity.itemName,
+                    lastUpdated = this.entity.lastUpdated,
+                    count = this.entity.count,
+                )
+
+                else -> throw IllegalArgumentException("Unsupported item type: $itemType")
+            }
+
+            is Entity.GalleryMedia -> when (itemType) {
+                GalleryMedia::class -> {
+                    if (this.entity.mediaType == MediaType.IMAGE) {
+                        GalleryImage(
+                            id = this.entity.id,
+                            familyId = this.entity.familyId,
+                            itemName = this.entity.itemName,
+                            lastUpdated = this.entity.lastUpdated,
+                            albumId = this.entity.albumId,
+                            dateCreated = this.entity.dateCreated,
+                            mediaType = MediaType.IMAGE,
+                            mediaUri = this.entity.mediaUri?.toUri(),
+                        )
+                    } else if (this.entity.mediaType == MediaType.VIDEO) {
+                        GalleryVideo(
+                            id = this.entity.id,
+                            familyId = this.entity.familyId,
+                            itemName = this.entity.itemName,
+                            lastUpdated = this.entity.lastUpdated,
+                            albumId = this.entity.albumId,
+                            dateCreated = this.entity.dateCreated,
+                            mediaType = MediaType.VIDEO,
+                            mediaUri = this.entity.mediaUri?.toUri(),
+                            duration = this.entity.videoDuration,
+                        )
+                    } else {
+                        throw IllegalArgumentException("Unsupported media type: ${this.entity.mediaType}")
+                    }
+                }
+
+                else -> throw IllegalArgumentException("Unsupported item type: $itemType")
+            }
+
+            is Entity.Tip -> when (itemType) {
+                TipItem::class -> TipItem(
+                    id = this.entity.id,
+                    familyId = this.entity.familyId,
+                    itemName = this.entity.itemName,
+                    lastUpdated = this.entity.lastUpdated,
+                    amount = this.entity.amount,
+                    currency = this.entity.currency,
+                    date = this.entity.date,
+                )
+
+                else -> throw IllegalArgumentException("Unsupported item type: $itemType")
+            }
+
+            is Entity.Guide -> when (itemType) {
+                Guide::class -> Guide(
+                    id = this.entity.id,
+                    familyId = this.entity.familyId,
+                    itemName = this.entity.itemName,
+                    lastUpdated = this.entity.lastUpdated,
+                    description = this.entity.description,
+                    visibility = this.entity.visibility,
+                    ownerUid = this.entity.ownerUid,
+                    contentVersion = this.entity.contentVersion,
+                    started = this.entity.started,
+                    sections = this.entity.sections,
+                    resume = this.entity.resume,
+                )
+
+                else -> throw IllegalArgumentException("Unsupported item type: $itemType")
+            }
+
+            is Entity.UserList -> when (itemType) {
+                UserList::class -> UserList(
+                    id = this.entity.id,
+                    familyId = this.entity.familyId,
+                    itemName = this.entity.itemName,
+                    lastUpdated = this.entity.lastUpdated,
+                    dateCreated = this.entity.dateCreated,
+                    type = this.entity.type,
+                    visibility = this.entity.visibility,
+                    ownerUid = this.entity.ownerUid,
+                )
+
+                else -> throw IllegalArgumentException("Unsupported item type: $itemType")
+            }
+
+            is Entity.RoutineListEntry -> when (itemType) {
+                RoutineListEntry::class -> RoutineListEntry(
+                    id = this.entity.id,
+                    familyId = this.entity.familyId,
+                    listId = this.entity.listId,
+                    itemName = this.entity.itemName,
+                    lastUpdated = this.entity.lastUpdated,
+                    dateCreated = this.entity.dateCreated,
+                    nextDate = this.entity.nextDate,
+                    lastCompletedAt = this.entity.lastCompletedAt,
+                    completionCount = this.entity.completionCount,
+                    recurrenceUnit = this.entity.recurrenceUnit,
+                    interval = this.entity.interval,
+                    weekdays = this.entity.weekdays,
+                )
+
                 else -> throw IllegalArgumentException("Unsupported item type: $itemType")
             }
         }

@@ -3,11 +3,18 @@ package com.example.lifetogether.di
 import android.content.Context
 import androidx.room.Room
 import com.example.lifetogether.data.local.AppDatabase
+import com.example.lifetogether.data.local.dao.AlbumsDao
 import com.example.lifetogether.data.local.dao.CategoriesDao
 import com.example.lifetogether.data.local.dao.FamilyInformationDao
+import com.example.lifetogether.data.local.dao.GalleryMediaDao
+import com.example.lifetogether.data.local.dao.GuideProgressDao
+import com.example.lifetogether.data.local.dao.GuidesDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
+import com.example.lifetogether.data.local.dao.RoutineListsDao
+import com.example.lifetogether.data.local.dao.UserListsDao
 import com.example.lifetogether.data.local.dao.RecipesDao
+import com.example.lifetogether.data.local.dao.TipTrackerDao
 import com.example.lifetogether.data.local.dao.UserInformationDao
 import dagger.Module
 import dagger.Provides
@@ -29,7 +36,8 @@ object DatabaseModule {
             "life_together_database",
         )
             .allowMainThreadQueries()
-            .fallbackToDestructiveMigration()
+            .fallbackToDestructiveMigration(false)
+            .addMigrations(AppDatabase.MIGRATION_23_24, AppDatabase.MIGRATION_24_25, AppDatabase.MIGRATION_25_26)
             .build()
     }
 
@@ -67,5 +75,47 @@ object DatabaseModule {
     @Singleton
     fun provideRecipesDao(db: AppDatabase): RecipesDao {
         return db.recipesDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideAlbumsDao(db: AppDatabase): AlbumsDao {
+        return db.albumsDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideGalleryMediaDao(db: AppDatabase): GalleryMediaDao {
+        return db.galleryMediaDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideTipTrackerDao(db: AppDatabase): TipTrackerDao {
+        return db.tipTrackerDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideGuidesDao(db: AppDatabase): GuidesDao {
+        return db.guidesDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideGuideProgressDao(db: AppDatabase): GuideProgressDao {
+        return db.guideProgressDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserListsDao(db: AppDatabase): UserListsDao {
+        return db.userListsDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideRoutineListsDao(db: AppDatabase): RoutineListsDao {
+        return db.routineListsDao()
     }
 }

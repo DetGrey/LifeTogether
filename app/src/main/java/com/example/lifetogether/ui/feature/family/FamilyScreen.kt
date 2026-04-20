@@ -24,9 +24,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.copyToClipboard
 import com.example.lifetogether.domain.model.Icon
@@ -41,32 +40,25 @@ import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.feature.profile.ProfileDetails
 import com.example.lifetogether.ui.feature.settings.SettingsItem
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.FamilyViewModel
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 import com.example.lifetogether.ui.viewmodel.ImageViewModel
 
 @Composable
 fun FamilyScreen(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
 ) {
     val context = LocalContext.current
     val familyViewModel: FamilyViewModel = hiltViewModel()
     val imageViewModel: ImageViewModel = hiltViewModel()
 
-    val userInformationState by firebaseViewModel?.userInformation!!.collectAsState()
+    val familyId by familyViewModel.familyId.collectAsState()
+    val uid by familyViewModel.uid.collectAsState()
     val familyInformationState by familyViewModel.familyInformation.collectAsState()
     val bitmap by imageViewModel.bitmap.collectAsState()
 
-    LaunchedEffect(key1 = true) {
-        // Perform any one-time initialization or side effect here
-        println("FamilyScreen familyId: ${userInformationState?.familyId}")
-        userInformationState?.familyId?.let { familyViewModel.setUpFamilyInformation(it) }
-
-        userInformationState?.familyId?.let { familyId ->
+    LaunchedEffect(familyId) {
+        familyId?.let { fid ->
             imageViewModel.collectImageFlow(
-                imageType = ImageType.FamilyImage(familyId),
+                imageType = ImageType.FamilyImage(fid),
                 onError = {
                     familyViewModel.error = it
                     familyViewModel.showAlertDialog = true
@@ -151,8 +143,8 @@ fun FamilyScreen(
                                         description = "person icon",
                                     ),
                                     title = member.name ?: "Unknown Member",
-                                    value = if (member.uid == userInformationState?.uid) "(Myself)" else "Remove",
-                                    onClick = if (member.uid == userInformationState?.uid) {
+                                    value = if (member.uid == uid) "(Myself)" else "Remove",
+                                    onClick = if (member.uid == uid) {
                                         null
                                     } else {
                                         {
@@ -213,15 +205,9 @@ fun FamilyScreen(
                 FamilyViewModel.FamilyConfirmationTypes.LEAVE_FAMILY -> ConfirmationDialog(
                     onDismiss = { familyViewModel.closeConfirmationDialog() },
                     onConfirm = {
-                        userInformationState?.uid.let { uid ->
-                            userInformationState?.familyId.let { familyId ->
-                                if (uid != null && familyId != null) {
-                                    familyViewModel.leaveFamily(familyId, uid, onComplete = {
-                                        appNavigator?.navigateBack()
-                                    })
-                                }
-                            }
-                        }
+                        familyViewModel.leaveFamily(onComplete = {
+                            appNavigator?.navigateBack()
+                        })
                     },
                     dialogTitle = "Leave family",
                     dialogMessage = "Are you sure you want to leave the family?",
@@ -232,15 +218,13 @@ fun FamilyScreen(
                 FamilyViewModel.FamilyConfirmationTypes.ADD_MEMBER -> ConfirmationDialog(
                     onDismiss = { familyViewModel.closeConfirmationDialog() },
                     onConfirm = {
-                        userInformationState?.familyId.let { familyId ->
-                            if (familyId != null) {
-                                copyToClipboard(context, familyId)
-                                familyViewModel.closeConfirmationDialog()
-                            }
+                        familyId?.let { fid ->
+                            copyToClipboard(context, fid)
+                            familyViewModel.closeConfirmationDialog()
                         }
                     },
                     dialogTitle = "Share family ID",
-                    dialogMessage = "Family ID: ${userInformationState?.familyId}",
+                    dialogMessage = "Family ID: $familyId",
                     dismissButtonMessage = "Cancel",
                     confirmButtonMessage = "Copy",
                 )
@@ -248,12 +232,8 @@ fun FamilyScreen(
                 FamilyViewModel.FamilyConfirmationTypes.REMOVE_MEMBER -> ConfirmationDialog(
                     onDismiss = { familyViewModel.closeConfirmationDialog() },
                     onConfirm = {
-                        familyViewModel.memberToRemove.let { member ->
-                            userInformationState?.familyId.let { familyId ->
-                                if (member?.uid != null && familyId != null) {
-                                    familyViewModel.leaveFamily(familyId, member.uid, {})
-                                }
-                            }
+                        familyViewModel.memberToRemove?.uid.let { memberUid ->
+                            familyViewModel.leaveFamily(memberUid, {})
                         }
                     },
                     dialogTitle = "Remove member",
@@ -265,13 +245,9 @@ fun FamilyScreen(
                 FamilyViewModel.FamilyConfirmationTypes.DELETE_FAMILY -> ConfirmationDialog(
                     onDismiss = { familyViewModel.closeConfirmationDialog() },
                     onConfirm = {
-                        userInformationState?.familyId.let { familyId ->
-                            if (familyId != null) {
-                                familyViewModel.deleteFamily(familyId, onComplete = {
-                                    appNavigator?.navigateBack()
-                                })
-                            }
-                        }
+                        familyViewModel.deleteFamily(onComplete = {
+                            appNavigator?.navigateBack()
+                        })
                     },
                     dialogTitle = "Delete family",
                     dialogMessage = "Are you sure you want to delete the family?",
@@ -301,15 +277,9 @@ fun FamilyScreen(
 
     // ---------------------------------------------------------------- SHOW ERROR ALERT
     if (familyViewModel.showAlertDialog) {
+        LaunchedEffect(familyViewModel.error) {
+            familyViewModel.toggleAlertDialog()
+        }
         ErrorAlertDialog(familyViewModel.error)
-        familyViewModel.toggleAlertDialog()
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun FamilyScreenPreview() {
-    LifeTogetherTheme {
-        FamilyScreen()
     }
 }

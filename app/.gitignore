@@ -1,3 +1,6 @@
 /build
 google-services.json
-/src/main/assets
+/src/main/assets/*
+!/src/main/assets/guide_template.json
+!/src/main/assets/guide_progress_template.json
+/release

@@ -15,23 +15,14 @@ interface UserInformationDao {
     suspend fun updateItems(item: UserEntity)
 
     @Query("SELECT * FROM $USER_TABLE WHERE uid = :uid LIMIT 1")
-    fun getItems(uid: String): Flow<UserEntity>
+    fun getItems(uid: String): Flow<UserEntity?>
 
     @Query("SELECT image_data FROM $USER_TABLE WHERE uid = :uid LIMIT 1")
     fun getImageByteArray(uid: String): Flow<ByteArray?>
 
+    @Query("SELECT CASE WHEN image_data IS NOT NULL THEN 1 ELSE 0 END FROM $USER_TABLE WHERE uid = :uid LIMIT 1")
+    suspend fun hasImageData(uid: String): Int?
+
     @Query("DELETE FROM $USER_TABLE")
     fun deleteTable()
-//
-//    @Insert(onConflict = OnConflictStrategy.REPLACE)
-//    suspend fun insertListCount(listCount: ListCountEntity)
-//
-//    @Query("UPDATE list_counts SET itemCount = itemCount + 1 WHERE listName = :listName")
-//    suspend fun incrementItemCount(listName: String)
-//
-//    @Query("UPDATE list_counts SET itemCount = itemCount - 1 WHERE listName = :listName")
-//    suspend fun decrementItemCount(listName: String)
-//
-//    @Query("SELECT * from items ORDER BY name ASC")
-//    fun getAllItems(): Flow<List<Item>>
 }

@@ -1,11 +1,13 @@
 # Package structure for local storage (Room)
 
+> Note: `LocalDataSource` has been removed. The current implementation uses focused local sources in `data/local/source/`.
+
 ## Model:
-data/model: This is where you’d place your data models or entities like ListCountEntity.
+data/model: This is where you’d place your data models or entities.
 domain/model: This is where you’d place your domain models, which are often used across different layers of the app.
 
 ## Data Access Object (DAO):
-data/local: The DAO interfaces, such as ListCountDao, belong here since they are part of the local data source.
+data/local: The DAO interfaces belong here since they are part of the local data source.
 
 ## LocalDataSource:
 data/local: The LocalDataSource class would be located here as it’s part of the local data handling.
@@ -106,6 +108,6 @@ insert, update, or delete data.
 
 ## Here’s how they interact:
 The use case calls a method in ListRepositoryImpl.
-ListRepositoryImpl calls a method in LocalDataSource, like getAllListCounts().
-LocalDataSource uses listCountDao to perform the actual database operation.
-listCountDao interacts with the AppDatabase to perform CRUD operations on ListCountEntity.
+ListRepositoryImpl calls a method in LocalDataSource to perform a local database read.
+LocalDataSource uses the relevant DAO to perform the actual database operation.
+The DAO interacts with AppDatabase to perform CRUD operations on the entity type.

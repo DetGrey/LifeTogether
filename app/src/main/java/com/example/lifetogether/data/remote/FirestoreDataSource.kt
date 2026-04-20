@@ -1,44 +1,87 @@
 package com.example.lifetogether.data.remote
 
 import android.util.Log
-import com.example.lifetogether.domain.callback.AuthResultListener
-import com.example.lifetogether.domain.callback.CategoriesListener
-import com.example.lifetogether.domain.callback.FamilyInformationResultListener
-import com.example.lifetogether.domain.callback.GrocerySuggestionsListener
-import com.example.lifetogether.domain.callback.ListItemsResultListener
-import com.example.lifetogether.domain.callback.ResultListener
-import com.example.lifetogether.domain.callback.StringResultListener
-import com.example.lifetogether.domain.logic.itemToMap
+import com.example.lifetogether.domain.listener.CategoriesListener
+import com.example.lifetogether.domain.listener.FamilyInformationResultListener
+import com.example.lifetogether.domain.listener.GuideProgressResultListener
+import com.example.lifetogether.domain.listener.GrocerySuggestionsListener
+import com.example.lifetogether.domain.listener.ListItemsResultListener
+import com.example.lifetogether.domain.listener.StringResultListener
+import com.example.lifetogether.domain.listener.AuthResultListener
+import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.logic.GuideParser
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.CompletableItem
 import com.example.lifetogether.domain.model.Item
+import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.model.family.FamilyMember
+import com.example.lifetogether.domain.model.gallery.Album
+import com.example.lifetogether.domain.model.gallery.GalleryImage
+import com.example.lifetogether.domain.model.gallery.GalleryMedia
+import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
+import com.example.lifetogether.domain.model.guides.Guide
+import com.example.lifetogether.domain.model.guides.GuideProgressState
+import com.example.lifetogether.domain.model.enums.Visibility
+import com.example.lifetogether.domain.model.lists.RoutineListEntry
+import com.example.lifetogether.domain.model.lists.ListType
+import com.example.lifetogether.domain.model.lists.RecurrenceUnit
+import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.util.Constants
 import com.google.firebase.Firebase
+import com.google.firebase.Timestamp
+import com.google.firebase.firestore.FirebaseFirestoreException
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.firestore
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import java.util.Date
 import javax.inject.Inject
 
-class FirestoreDataSource@Inject constructor() {
+class FirestoreDataSource @Inject constructor() {
+    companion object {
+        private const val TAG = "FirestoreDataSource"
+    }
     private val db = Firebase.firestore
+
+    private fun Throwable.toFirestoreFailureMessage(
+        operation: String,
+        listName: String? = null,
+        documentId: String? = null,
+    ): String {
+        val code = (this as? FirebaseFirestoreException)?.code?.name
+        val location = buildString {
+            if (!listName.isNullOrBlank()) append("list=$listName")
+            if (!documentId.isNullOrBlank()) {
+                if (isNotEmpty()) append(", ")
+                append("id=$documentId")
+            }
+        }
+        val context = if (location.isBlank()) "" else " ($location)"
+        val details = message ?: "Unknown error"
+        return if (code == null) {
+            "$operation failed$context: $details"
+        } else {
+            "$operation failed$context [Firestore:$code]: $details"
+        }
+    }
 
     // ------------------------------------------------------------------------------- USERS
     fun userInformationSnapshotListener(uid: String) = callbackFlow {
-        println("Firestore userInformationSnapshotListener init")
+        Log.d(TAG, "userInformationSnapshotListener init")
         val userInformationRef = db.collection(Constants.USER_TABLE).document(uid)
         val listenerRegistration = userInformationRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
-                // Handle error
                 trySend(AuthResultListener.Failure("Error: ${e.message}")).isSuccess
                 return@addSnapshotListener
             }
@@ -46,25 +89,37 @@ class FirestoreDataSource@Inject constructor() {
             if (snapshot != null) {
                 // Process the changes and update Room database
                 val userInformation = snapshot.toObject(UserInformation::class.java)
-                println("Snapshot of userInformation: $userInformation")
-//                if (userInformation != null) {
-//                    userInformation.uid?.let { uid ->
-//                        userInformation.familyId?.let { familyId ->
-//                            storeDeviceToken(uid, familyId)
-//                        }
-//                    }
-//                }
+                Log.d(TAG, "Snapshot of userInformation: loaded")
                 if (userInformation != null) {
                     trySend(AuthResultListener.Success(userInformation)).isSuccess
+                } else {
+                    trySend(AuthResultListener.Failure("User not found")).isSuccess
                 }
+            } else {
+                trySend(AuthResultListener.Failure("User not found")).isSuccess
             }
         }
         // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.
         awaitClose { listenerRegistration.remove() }
     }
 
+    suspend fun fetchUserInformation(uid: String): AuthResultListener {
+        return try {
+            val snapshot = db.collection(Constants.USER_TABLE).document(uid).get().await()
+            val userInformation = snapshot.toObject(UserInformation::class.java)
+            if (userInformation != null) {
+                AuthResultListener.Success(userInformation)
+            } else {
+                AuthResultListener.Failure("User not found")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "fetchUserInformation failed for uid=$uid", e)
+            AuthResultListener.Failure("Error: ${e.message}")
+        }
+    }
+
     suspend fun uploadUserInformation(userInformation: UserInformation): ResultListener {
-        println("FirestoreDataSource uploadUserInformation getting uploaded")
+        Log.d(TAG, "uploadUserInformation getting uploaded")
         try {
             if (userInformation.uid != null) {
                 db.collection(Constants.USER_TABLE).document(userInformation.uid)
@@ -74,7 +129,7 @@ class FirestoreDataSource@Inject constructor() {
                 return ResultListener.Failure("Cannot upload without being logged in")
             }
         } catch (e: Exception) {
-            println("Error: ${e.message}")
+            Log.e(TAG, "Error", e)
             return ResultListener.Failure("Error: ${e.message}")
         }
     }
@@ -84,7 +139,7 @@ class FirestoreDataSource@Inject constructor() {
             db.collection(Constants.USER_TABLE).document(uid).update("familyId", familyId).await()
             return ResultListener.Success
         } catch (e: Exception) {
-            println("Error: ${e.message}")
+            Log.e(TAG, "Error", e)
             return ResultListener.Failure("Error: ${e.message}")
         }
     }
@@ -126,14 +181,14 @@ class FirestoreDataSource@Inject constructor() {
 
             return ResultListener.Success
         } catch (e: Exception) {
-            println("Error: ${e.message}")
+            Log.e(TAG, "Error", e)
             return ResultListener.Failure("Error: ${e.message}")
         }
     }
 
     // ------------------------------------------------------------------------------- FAMILY
     fun familyInformationSnapshotListener(familyId: String) = callbackFlow {
-        println("Firestore familyInformationSnapshotListener init")
+        Log.d(TAG, "Firestore familyInformationSnapshotListener init")
         val familyInformationRef = db.collection(Constants.FAMILIES_TABLE).document(familyId)
         val listenerRegistration = familyInformationRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
@@ -162,7 +217,7 @@ class FirestoreDataSource@Inject constructor() {
                     imageUrl = snapshot.getString("imageUrl"),
                 )
 
-                println("Snapshot of familyInformation: $familyInformation")
+                Log.d(TAG, "Snapshot of familyInformation: loaded")
                 trySend(FamilyInformationResultListener.Success(familyInformation)).isSuccess
             }
         }
@@ -175,7 +230,7 @@ class FirestoreDataSource@Inject constructor() {
         uid: String,
         name: String,
     ): ResultListener {
-        println("FirestoreDataSource joinFamily()")
+        Log.d(TAG, "joinFamily")
         try {
             val documentReference =
                 db.collection(Constants.FAMILIES_TABLE).document(familyId).get().await()
@@ -194,7 +249,7 @@ class FirestoreDataSource@Inject constructor() {
 
             return ResultListener.Success
         } catch (e: Exception) {
-            println("Error: ${e.message}")
+            Log.e(TAG, "Error", e)
             return ResultListener.Failure("Error: ${e.message}")
         }
     }
@@ -203,7 +258,7 @@ class FirestoreDataSource@Inject constructor() {
         uid: String,
         name: String,
     ): StringResultListener {
-        println("FirestoreDataSource createNewFamily getting uploaded")
+        Log.d(TAG, "createNewFamily getting uploaded")
         val map = mapOf(
             "members" to listOf(mapOf("uid" to uid, "name" to name)),
         )
@@ -212,7 +267,7 @@ class FirestoreDataSource@Inject constructor() {
             val documentReference = db.collection(Constants.FAMILIES_TABLE).add(map).await()
             return StringResultListener.Success(documentReference.id)
         } catch (e: Exception) {
-            println("Error: ${e.message}")
+            Log.e(TAG, "Error", e)
             return StringResultListener.Failure("Error: ${e.message}")
         }
     }
@@ -221,7 +276,7 @@ class FirestoreDataSource@Inject constructor() {
         familyId: String,
         uid: String,
     ): ResultListener {
-        println("FirestoreDataSource leaveFamily()")
+        Log.d(TAG, "leaveFamily")
         try {
             val documentReference =
                 db.collection(Constants.FAMILIES_TABLE).document(familyId).get().await()
@@ -239,7 +294,7 @@ class FirestoreDataSource@Inject constructor() {
 
             return ResultListener.Success
         } catch (e: Exception) {
-            println("Error: ${e.message}")
+            Log.e(TAG, "Error", e)
             return ResultListener.Failure("Error: ${e.message}")
         }
     }
@@ -247,7 +302,7 @@ class FirestoreDataSource@Inject constructor() {
     suspend fun deleteFamily(
         familyId: String,
     ): ResultListener {
-        println("FirestoreDataSource deleteFamily()")
+        Log.d(TAG, "deleteFamily")
         try {
             db.collection(Constants.FAMILIES_TABLE).document(familyId).delete().await()
 
@@ -271,53 +326,54 @@ class FirestoreDataSource@Inject constructor() {
 
             return ResultListener.Success
         } catch (e: Exception) {
-            println("Error: ${e.message}")
+            Log.e(TAG, "Error", e)
             return ResultListener.Failure("Error: ${e.message}")
         }
     }
 
     // ------------------------------------------------------------------------------- GROCERY LIST
-    fun grocerySnapshotListener(familyId: String) = callbackFlow {
-        println("Firestore grocerySnapshotListener init")
-        val groceryItemsRef =
-            db.collection(Constants.GROCERY_TABLE).whereEqualTo("familyId", familyId)
-        val listenerRegistration = groceryItemsRef.addSnapshotListener { snapshot, e ->
-            if (e != null) {
-                // Handle error
-                trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess
-                return@addSnapshotListener
-            }
+    fun grocerySnapshotListener(familyId: String): Flow<Result<List<GroceryItem>, String>> = callbackFlow {
+        val listenerRegistration = db.collection(Constants.GROCERY_TABLE)
+            .whereEqualTo("familyId", familyId)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    trySend(Result.Failure("Firestore Error: ${e.message}"))
+                    return@addSnapshotListener
+                }
 
-            if (snapshot != null) {
-                // Process the changes and update Room database
-                val items = snapshot.toObjects(GroceryItem::class.java)
-                println("Snapshot items to GroceryItem: $items")
-                trySend(ListItemsResultListener.Success(items)).isSuccess
-            } else {
-                trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess
+                snapshot?.let { querySnapshot ->
+                    val items = querySnapshot.documents.mapNotNull { document ->
+                        document.toObject(GroceryItem::class.java)?.copy(id = document.id)
+                    }
+                    trySend(Result.Success(items))
+                }
             }
-        }
-        // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.
         awaitClose { listenerRegistration.remove() }
     }
 
     // ------------------------------------------------------------------------------- RECIPES
     fun recipeSnapshotListener(familyId: String) = callbackFlow {
-        println("Firestore recipeSnapshotListener init")
+        Log.d(TAG, "Firestore recipeSnapshotListener init")
         val recipeItemsRef =
             db.collection(Constants.RECIPES_TABLE).whereEqualTo("familyId", familyId)
         val listenerRegistration = recipeItemsRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 // Handle error
-                println("Firestore recipeSnapshotListener error: ${e.message}")
+                Log.e(TAG, "Firestore recipeSnapshotListener", e)
                 trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess
                 return@addSnapshotListener
             }
 
             if (snapshot != null) {
                 // Process the changes and update Room database
-                val items = snapshot.toObjects(Recipe::class.java)
-                println("Snapshot items to Recipe: $items")
+                val items = snapshot.documents.mapNotNull { document ->
+                    runCatching {
+                        document.toObject(Recipe::class.java)?.copy(id = document.id)
+                    }.onFailure { parseError ->
+                        Log.e(TAG, "Failed parsing recipe ${document.id}", parseError)
+                    }.getOrNull()
+                }
+                Log.d(TAG, "Snapshot items to Recipe: loaded")
                 trySend(ListItemsResultListener.Success(items)).isSuccess
             } else {
                 trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess
@@ -327,96 +383,399 @@ class FirestoreDataSource@Inject constructor() {
         awaitClose { listenerRegistration.remove() }
     }
 
-    // ------------------------------------------------------------------------------- ITEMS
-    suspend fun saveItem(
-        item: Item,
-        listName: String,
-    ): StringResultListener {
-        try {
-            val documentReference = db.collection(listName).add(item).await()
-            return StringResultListener.Success(documentReference.id)
-        } catch (e: Exception) {
-            println("Error: ${e.message}")
-            return StringResultListener.Failure("Error: ${e.message}")
+
+    // ------------------------------------------------------------------------------- GUIDES
+    fun familySharedGuidesSnapshotListener(familyId: String) = callbackFlow {
+        Log.d(TAG, "Firestore familySharedGuidesSnapshotListener init")
+        val guidesRef = db.collection(Constants.GUIDES_TABLE)
+            .whereEqualTo("familyId", familyId)
+            .whereEqualTo("visibility", Constants.VISIBILITY_FAMILY)
+
+        val listenerRegistration = guidesRef.addSnapshotListener { snapshot, e ->
+            if (e != null) {
+                Log.e(TAG, "familySharedGuidesSnapshotListener error", e)
+                trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess
+                return@addSnapshotListener
+            }
+
+            if (snapshot == null) {
+                trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess
+                return@addSnapshotListener
+            }
+            Log.d(
+                TAG,
+                "familySharedGuidesSnapshotListener snapshot familyId=$familyId size=${snapshot.size()} pendingWrites=${snapshot.metadata.hasPendingWrites()} fromCache=${snapshot.metadata.isFromCache}",
+            )
+
+            val parsedGuides = snapshot.documents.mapNotNull { document ->
+                val data = document.data ?: return@mapNotNull null
+                runCatching {
+                    GuideParser.parseFirestoreGuide(
+                        documentId = document.id,
+                        data = data,
+                    )
+                }.onFailure { parseError ->
+                    Log.e(TAG, "Failed parsing family guide ${document.id}", parseError)
+                }.getOrNull()
+            }
+            Log.d(
+                TAG,
+                "familySharedGuidesSnapshotListener parsedCount=${parsedGuides.size} ids=${parsedGuides.mapNotNull { it.id }.take(5)}",
+            )
+
+            trySend(ListItemsResultListener.Success(parsedGuides)).isSuccess
         }
+
+        awaitClose { listenerRegistration.remove() }
     }
 
-    suspend fun updateItem(
-        item: Item,
-        listName: String,
-    ): ResultListener {
-        println("FirestoreDataSource updateItem()")
-        println("FirestoreDataSource updateItem() id: ${item.id}")
-        try {
-            if (item.id != null) {
-                val map = itemToMap(item)
-                println("updateItem map: $map")
-                if (map != null) {
-                    db.collection(listName).document(item.id!!).update(map).await()
+    fun privateGuidesSnapshotListener(
+        familyId: String,
+        uid: String,
+    ) = callbackFlow {
+        Log.d(TAG, "Firestore privateGuidesSnapshotListener init")
+        val guidesRef = db.collection(Constants.GUIDES_TABLE)
+            .whereEqualTo("familyId", familyId)
+            .whereEqualTo("visibility", Constants.VISIBILITY_PRIVATE)
+            .whereEqualTo("ownerUid", uid)
+
+        val listenerRegistration = guidesRef.addSnapshotListener { snapshot, e ->
+            if (e != null) {
+                Log.e(TAG, "privateGuidesSnapshotListener error", e)
+                trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess
+                return@addSnapshotListener
+            }
+
+            if (snapshot == null) {
+                trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess
+                return@addSnapshotListener
+            }
+            Log.d(
+                TAG,
+                "privateGuidesSnapshotListener snapshot familyId=$familyId uid=$uid size=${snapshot.size()} pendingWrites=${snapshot.metadata.hasPendingWrites()} fromCache=${snapshot.metadata.isFromCache}",
+            )
+
+            val parsedGuides = snapshot.documents.mapNotNull { document ->
+                val data = document.data ?: return@mapNotNull null
+                runCatching {
+                    GuideParser.parseFirestoreGuide(
+                        documentId = document.id,
+                        data = data,
+                    )
+                }.onFailure { parseError ->
+                    Log.e(TAG, "Failed parsing private guide ${document.id}", parseError)
+                }.getOrNull()
+            }
+            Log.d(
+                TAG,
+                "privateGuidesSnapshotListener parsedCount=${parsedGuides.size} ids=${parsedGuides.mapNotNull { it.id }.take(5)}",
+            )
+
+            trySend(ListItemsResultListener.Success(parsedGuides)).isSuccess
+        }
+
+        awaitClose { listenerRegistration.remove() }
+    }
+
+    fun guideProgressSnapshotListener(
+        familyId: String,
+        uid: String,
+    ) = callbackFlow {
+        Log.d(TAG, "Firestore guideProgressSnapshotListener init")
+        val progressRef = db.collection(Constants.GUIDE_PROGRESS_TABLE)
+            .whereEqualTo("familyId", familyId)
+            .whereEqualTo("uid", uid)
+
+        val listenerRegistration = progressRef.addSnapshotListener { snapshot, e ->
+            if (e != null) {
+                Log.e(TAG, "guideProgressSnapshotListener error", e)
+                trySend(GuideProgressResultListener.Failure("Error: ${e.message}")).isSuccess
+                return@addSnapshotListener
+            }
+
+            if (snapshot == null) {
+                trySend(GuideProgressResultListener.Failure("Error: Empty snapshot")).isSuccess
+                return@addSnapshotListener
+            }
+
+            val parsedProgress = snapshot.documents.mapNotNull { document ->
+                val data = document.data ?: return@mapNotNull null
+                runCatching {
+                    GuideParser.parseGuideProgressMap(
+                        documentId = document.id,
+                        data = data,
+                    )
+                }.onFailure { parseError ->
+                    Log.e(TAG, "Failed parsing guide progress ${document.id}", parseError)
+                }.getOrNull()
+            }
+
+            Log.d(
+                TAG,
+                "guideProgressSnapshotListener parsedCount=${parsedProgress.size} familyId=$familyId uid=$uid",
+            )
+            trySend(GuideProgressResultListener.Success(parsedProgress)).isSuccess
+        }
+
+        awaitClose { listenerRegistration.remove() }
+    }
+
+    // ------------------------------------------------------------------------------- USER LISTS
+    fun familySharedUserListsSnapshotListener(familyId: String) = callbackFlow {
+        Log.d(TAG, "Firestore familySharedUserListsSnapshotListener init familyId=$familyId")
+        val ref = db.collection(Constants.USER_LISTS_TABLE)
+            .whereEqualTo("familyId", familyId)
+            .whereEqualTo("visibility", Constants.VISIBILITY_FAMILY)
+
+        val registration = ref.addSnapshotListener { snapshot, e ->
+            if (e != null) { trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess; return@addSnapshotListener }
+            if (snapshot == null) { trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess; return@addSnapshotListener }
+
+            Log.d(TAG, "familySharedUserListsSnapshotListener snapshot size=${snapshot.size()} fromCache=${snapshot.metadata.isFromCache}")
+            val items = snapshot.documents.mapNotNull { doc ->
+                val data = doc.data ?: return@mapNotNull null
+                runCatching { parseFirestoreUserList(doc.id, data) }
+                    .onFailure { Log.e(TAG, "Failed parsing family user list ${doc.id}", it) }
+                    .getOrNull()
+            }
+            trySend(ListItemsResultListener.Success(items)).isSuccess
+        }
+        awaitClose { registration.remove() }
+    }
+
+    fun privateUserListsSnapshotListener(familyId: String, uid: String) = callbackFlow {
+        Log.d(TAG, "Firestore privateUserListsSnapshotListener init familyId=$familyId uid=$uid")
+        val ref = db.collection(Constants.USER_LISTS_TABLE)
+            .whereEqualTo("familyId", familyId)
+            .whereEqualTo("visibility", Constants.VISIBILITY_PRIVATE)
+            .whereEqualTo("ownerUid", uid)
+
+        val registration = ref.addSnapshotListener { snapshot, e ->
+            if (e != null) { trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess; return@addSnapshotListener }
+            if (snapshot == null) { trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess; return@addSnapshotListener }
+
+            Log.d(TAG, "privateUserListsSnapshotListener snapshot size=${snapshot.size()} fromCache=${snapshot.metadata.isFromCache}")
+            val items = snapshot.documents.mapNotNull { doc ->
+                val data = doc.data ?: return@mapNotNull null
+                runCatching { parseFirestoreUserList(doc.id, data) }
+                    .onFailure { Log.e(TAG, "Failed parsing private user list ${doc.id}", it) }
+                    .getOrNull()
+            }
+            trySend(ListItemsResultListener.Success(items)).isSuccess
+        }
+        awaitClose { registration.remove() }
+    }
+
+    private fun parseFirestoreUserList(documentId: String, data: Map<String, Any?>): UserList {
+        fun str(key: String) = (data[key] as? String).orEmpty()
+        fun date(key: String): Date? = when (val v = data[key]) {
+            is Timestamp -> v.toDate()
+            is Long -> Date(v)
+            else -> null
+        }
+        return UserList(
+            id = documentId,
+            familyId = str("familyId"),
+            itemName = str("name").ifBlank { str("itemName") },
+            lastUpdated = date("lastUpdated") ?: Date(),
+            dateCreated = date("dateCreated") ?: Date(),
+            type = ListType.fromValue(str("type")),
+            visibility = Visibility.fromValue(str("visibility")),
+            ownerUid = str("ownerUid"),
+        )
+    }
+
+    fun userListToFirestoreMap(list: UserList): Map<String, Any?> = mapOf(
+        "familyId" to list.familyId,
+        "ownerUid" to list.ownerUid,
+        "visibility" to list.visibility.value,
+        "name" to list.itemName,
+        "type" to list.type.value,
+        "lastUpdated" to list.lastUpdated,
+        "dateCreated" to list.dateCreated,
+    )
+
+    // ------------------------------------------------------------------------------- LIST ENTRIES
+    fun familyRoutineListEntriesSnapshotListener(familyId: String) = callbackFlow {
+        Log.d(TAG, "Firestore familyRoutineListEntriesSnapshotListener init familyId=$familyId")
+        val ref = db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE)
+            .whereEqualTo("familyId", familyId)
+        val registration = ref.addSnapshotListener { snapshot, e ->
+            if (e != null) { trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess; return@addSnapshotListener }
+            if (snapshot == null) { trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess; return@addSnapshotListener }
+
+            Log.d(TAG, "familyRoutineListEntriesSnapshotListener snapshot size=${snapshot.size()} fromCache=${snapshot.metadata.isFromCache}")
+            val items = snapshot.documents.mapNotNull { doc ->
+                val data = doc.data ?: return@mapNotNull null
+                runCatching { parseFirestoreRoutineListEntry(doc.id, data) }
+                    .onFailure { Log.e(TAG, "Failed parsing list entry ${doc.id}", it) }
+                    .getOrNull()
+            }
+            trySend(ListItemsResultListener.Success(items)).isSuccess
+        }
+        awaitClose { registration.remove() }
+    }
+
+    private fun parseFirestoreRoutineListEntry(documentId: String, data: Map<String, Any?>): RoutineListEntry {
+        fun str(key: String) = (data[key] as? String).orEmpty()
+        fun date(key: String): Date? = when (val v = data[key]) {
+            is Timestamp -> v.toDate()
+            is Long -> Date(v)
+            else -> null
+        }
+        fun intVal(key: String, default: Int = 0) = when (val v = data[key]) {
+            is Long -> v.toInt()
+            is Int -> v
+            else -> default
+        }
+        @Suppress("UNCHECKED_CAST")
+        val weekdaysRaw = (data["weekdays"] as? List<*>)?.mapNotNull {
+            when (it) { is Long -> it.toInt(); is Int -> it; else -> null }
+        } ?: emptyList()
+
+        return RoutineListEntry(
+            id = documentId,
+            familyId = str("familyId"),
+            listId = str("listId"),
+            itemName = str("name").ifBlank { str("itemName") },
+            lastUpdated = date("lastUpdated") ?: Date(),
+            dateCreated = date("dateCreated") ?: Date(),
+            nextDate = date("nextDate"),
+            lastCompletedAt = date("lastCompletedAt"),
+            completionCount = intVal("completionCount"),
+            recurrenceUnit = RecurrenceUnit.fromValue(str("recurrenceUnit")),
+            interval = intVal("interval", 1),
+            weekdays = weekdaysRaw,
+            imageUrl = data["imageUrl"] as? String,
+        )
+    }
+
+    fun listEntryToFirestoreMap(entry: RoutineListEntry): Map<String, Any?> = mapOf(
+        "familyId" to entry.familyId,
+        "listId" to entry.listId,
+        "name" to entry.itemName,
+        "lastUpdated" to entry.lastUpdated,
+        "dateCreated" to entry.dateCreated,
+        "nextDate" to entry.nextDate,
+        "lastCompletedAt" to entry.lastCompletedAt,
+        "completionCount" to entry.completionCount,
+        "recurrenceUnit" to entry.recurrenceUnit.value,
+        "interval" to entry.interval,
+        "weekdays" to entry.weekdays,
+        "imageUrl" to entry.imageUrl,
+    )
+
+    // ------------------------------------------------------------------------------- ALBUMS
+    fun albumsSnapshotListener(familyId: String) = callbackFlow {
+        Log.d(TAG, "Firestore albumSnapshotListener init")
+        val itemsRef =
+            db.collection(Constants.ALBUMS_TABLE).whereEqualTo("familyId", familyId)
+        val listenerRegistration = itemsRef.addSnapshotListener { snapshot, e ->
+            if (e != null) {
+                // Handle error
+                Log.e(TAG, "Firestore albumSnapshotListener", e)
+                trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess
+                return@addSnapshotListener
+            }
+
+            if (snapshot != null) {
+                // Process the changes and update Room database
+                val items = snapshot.documents.mapNotNull { document ->
+                    runCatching {
+                        document.toObject(Album::class.java)?.copy(id = document.id)
+                    }.onFailure { parseError ->
+                        Log.e(TAG, "Failed parsing album ${document.id}", parseError)
+                    }.getOrNull()
                 }
-                return ResultListener.Success
+                Log.d(TAG, "Snapshot items to Album: loaded")
+                trySend(ListItemsResultListener.Success(items)).isSuccess
             } else {
-                return ResultListener.Failure("Error: No document id")
+                trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess
             }
-        } catch (e: Exception) {
-            println("Error: ${e.message}")
-            return ResultListener.Failure("Error: ${e.message}")
         }
+        // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.
+        awaitClose { listenerRegistration.remove() }
     }
 
-    suspend fun toggleCompletableItemCompletion(
-        item: CompletableItem,
-        listName: String,
-    ): ResultListener {
+    suspend fun updateAlbumCount(albumId: String, increment: Int): ResultListener {
         try {
-            if (item.id is String) {
-                println("item: $item")
-                val result = db.collection(listName).document(item.id!!).update(
-                    mapOf(
-                        "completed" to item.completed,
-                        "lastUpdated" to Date(System.currentTimeMillis()), // Set to current time
-                    ),
-                ).await()
-                println("Update successful: $result")
-                return ResultListener.Success
-            } else {
-                return ResultListener.Failure("Document not found")
-            }
-        } catch (e: Exception) {
-            println("Error: ${e.message}")
-            return ResultListener.Failure("Error: ${e.message}")
-        }
-    }
-
-    fun deleteItem(
-        itemId: String,
-        listName: String,
-    ): ResultListener {
-        println("FirestoreDataSource deleteItem()")
-        try {
-            db.collection(listName).document(itemId).delete()
+            Log.d(TAG, "updateAlbumCount with increment: $increment")
+            val albumDocRef = db.collection(Constants.ALBUMS_TABLE).document(albumId)
+            albumDocRef.update("count", FieldValue.increment(increment.toDouble())).await()
+            Log.d(TAG, "updateAlbumCount successful")
             return ResultListener.Success
         } catch (e: Exception) {
-            println("Error: ${e.message}")
+            Log.e(TAG, "Error", e)
             return ResultListener.Failure("Error: ${e.message}")
         }
     }
 
-    suspend fun deleteItems(
-        listName: String,
-        items: List<Item>,
+    // ------------------------------------------------------------------------------- GALLERY MEDIA
+    fun galleryMediaSnapshotListener(familyId: String) = callbackFlow {
+        Log.d(TAG, "Firestore galleryMediaSnapshotListener init")
+        val itemsRef = db.collection(Constants.GALLERY_MEDIA_TABLE)
+            .whereEqualTo("familyId", familyId)
+        val listenerRegistration = itemsRef.addSnapshotListener { snapshot, e ->
+            if (e != null) {
+                // Handle error
+                Log.e(TAG, "Firestore galleryMediaSnapshotListener", e)
+                trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess
+                return@addSnapshotListener
+            }
+
+//            if (snapshot != null) {
+//                // Process the changes and update Room database
+//                val items = snapshot.toObjects(GalleryImage::class.java)
+//                Log.d(LOG_TAG, "Snapshot items to GalleryImage: loaded")
+//                trySend(ListItemsResultListener.Success(items)).isSuccess
+//            } else {
+//                trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess
+//            }
+            if (snapshot != null) {
+                val mediaItems = mutableListOf<GalleryMedia>()
+                for (document in snapshot.documents) {
+                    try {
+                        val mediaType = document.getString("mediaType")
+                        val item: GalleryMedia? = when (mediaType?.lowercase()) {
+                            "image" -> document.toObject(GalleryImage::class.java) as GalleryMedia
+                            "video" -> document.toObject(GalleryVideo::class.java) as GalleryMedia
+                            else -> {
+                                Log.w("FirestoreDS", "Unknown mediaType '$mediaType' for document ${document.id}")
+                                null
+                            }
+                        }
+                        item?.let { mediaItems.add(it) }
+                    } catch (parseEx: Exception) {
+                        Log.e("FirestoreDS", "Error parsing document ${document.id} to GalleryMedia: ${parseEx.message}", parseEx)
+                    }
+                }
+                val isFromCache = snapshot.metadata.isFromCache
+                Log.d("FirestoreDS", "Snapshot items mapped to GalleryMedia: $mediaItems (isFromCache: $isFromCache)")
+                trySend(ListItemsResultListener.Success(mediaItems, isFromCache)).isSuccess
+            } else {
+                trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess
+            }
+        }
+        // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.
+        awaitClose { listenerRegistration.remove() }
+    }
+    suspend fun moveMediaToAlbum(
+        mediaIdList: Set<String>,
+        newAlbumId: String,
+        oldAlbumId: String,
     ): ResultListener {
-        println("FirestoreDataSource deleteItems()")
         try {
+            Log.d(TAG, "moveMediaToAlbum")
             val batch = db.batch()
 
-            items.forEach { item ->
-                println("item id: ${item.id}")
-                if (item.id != null) {
-                    val documentRef = db.collection(listName).document(item.id!!)
-                    batch.delete(documentRef)
-                }
+            mediaIdList.forEach { id ->
+                val documentRef = db.collection(Constants.GALLERY_MEDIA_TABLE).document(id)
+                batch.update(documentRef, "albumId", newAlbumId)
             }
+            val newAlbumRef = db.collection(Constants.ALBUMS_TABLE).document(newAlbumId)
+            batch.update(newAlbumRef, "count", FieldValue.increment(mediaIdList.size.toDouble()))
+            val oldAlbumRef = db.collection(Constants.ALBUMS_TABLE).document(oldAlbumId)
+            batch.update(oldAlbumRef, "count", FieldValue.increment(-mediaIdList.size.toDouble()))
 
             batch.commit().await()
             return ResultListener.Success
@@ -426,9 +785,208 @@ class FirestoreDataSource@Inject constructor() {
         }
     }
 
+    // ------------------------------------------------------------------------------- ITEMS
+    suspend fun updateGuideProgress(progress: GuideProgressState): ResultListener {
+        val startedAt = System.currentTimeMillis()
+        return try {
+            db.collection(Constants.GUIDE_PROGRESS_TABLE)
+                .document(progress.id)
+                .set(GuideParser.guideProgressToFirestoreMap(progress), SetOptions.merge())
+                .await()
+            Log.d(
+                TAG,
+                "updateGuideProgress success id=${progress.id} durationMs=${System.currentTimeMillis() - startedAt}",
+            )
+            ResultListener.Success
+        } catch (e: Exception) {
+            val message = e.toFirestoreFailureMessage(
+                operation = "updateGuideProgress",
+                listName = Constants.GUIDE_PROGRESS_TABLE,
+                documentId = progress.id,
+            )
+            Log.e(TAG, message, e)
+            ResultListener.Failure(message)
+        }
+    }
+
+    suspend fun saveItem(
+        item: Item,
+        listName: String,
+    ): Result<String, String> {
+        val startedAt = System.currentTimeMillis()
+        try {
+            val uploadItem = when (item) {
+                is Guide -> GuideParser.guideToFirestoreMap(item)
+                is UserList -> userListToFirestoreMap(item)
+                is RoutineListEntry -> listEntryToFirestoreMap(item)
+                else -> item
+            }
+            val documentReference = db.collection(listName).add(uploadItem).await()
+            Log.d(
+                TAG,
+                "saveItem success list=$listName id=${documentReference.id} durationMs=${System.currentTimeMillis() - startedAt}",
+            )
+            return Result.Success(documentReference.id)
+        } catch (e: Exception) {
+            val message = e.toFirestoreFailureMessage(operation = "saveItem", listName = listName)
+            Log.e(TAG, message, e)
+            return Result.Failure(message)
+        }
+    }
+
+    suspend fun updateItem(
+        item: Item,
+        listName: String,
+    ): Result<Unit, String> {
+        val startedAt = System.currentTimeMillis()
+        Log.d(TAG, "updateItem start list=$listName id=${item.id} type=${item::class.simpleName}")
+        try {
+            if (!item.id.isNullOrBlank()) {
+                val uploadItem = when (item) {
+                    is Guide -> GuideParser.guideToFirestoreMap(item)
+                    is UserList -> userListToFirestoreMap(item)
+                    is RoutineListEntry -> listEntryToFirestoreMap(item)
+                    else -> item
+                }
+
+                db.collection(listName)
+                    .document(item.id!!)
+                    .set(uploadItem, SetOptions.merge())
+                    .await()
+
+                Log.d(
+                    TAG,
+                    "updateItem success list=$listName id=${item.id} durationMs=${System.currentTimeMillis() - startedAt}",
+                )
+                return Result.Success(Unit)
+            } else {
+                return Result.Failure("updateItem failed (list=$listName): missing document id")
+            }
+        } catch (e: Exception) {
+            val message = e.toFirestoreFailureMessage(
+                operation = "updateItem",
+                listName = listName,
+                documentId = item.id,
+            )
+            Log.e(TAG, message, e)
+            return Result.Failure(message)
+        }
+    }
+
+    suspend fun toggleCompletableItemCompletion(
+        item: CompletableItem,
+        listName: String,
+    ): Result<Unit, String> {
+        val startedAt = System.currentTimeMillis()
+        try {
+            if (!item.id.isNullOrBlank()) {
+                Log.d(
+                    TAG,
+                    "toggleCompletableItemCompletion ready to upload list=$listName id=${item.id} completed=${item.completed}",
+                )
+                db.collection(listName).document(item.id!!).update(
+                    mapOf(
+                        "completed" to item.completed,
+                        "lastUpdated" to Date(System.currentTimeMillis()), // Set to current time
+                    ),
+                ).await()
+                Log.d(
+                    TAG,
+                    "toggleCompletableItemCompletion success list=$listName id=${item.id} completed=${item.completed} durationMs=${System.currentTimeMillis() - startedAt}",
+                )
+                return Result.Success(Unit)
+            } else {
+                return Result.Failure("toggleCompletableItemCompletion failed (list=$listName): missing document id")
+            }
+        } catch (e: Exception) {
+            val message = e.toFirestoreFailureMessage(
+                operation = "toggleCompletableItemCompletion",
+                listName = listName,
+                documentId = item.id,
+            )
+            Log.e(TAG, message, e)
+            return Result.Failure(message)
+        }
+    }
+
+    suspend fun deleteItem(
+        itemId: String,
+        listName: String,
+    ): ResultListener {
+        Log.d(TAG, "deleteItem")
+        try {
+            if (listName == Constants.GUIDES_TABLE) {
+                deleteGuideWithRelatedProgress(itemId)
+            } else {
+                db.collection(listName).document(itemId).delete().await()
+            }
+            return ResultListener.Success
+        } catch (e: Exception) {
+            Log.e(TAG, "Error", e)
+            return ResultListener.Failure("Error: ${e.message}")
+        }
+    }
+
+    suspend fun deleteItems(
+        listName: String,
+        idsList: List<String>,
+    ): Result<Unit, String> {
+        Log.d(TAG, "deleteItems")
+        try {
+            if (listName == Constants.GUIDES_TABLE) {
+                idsList.forEach { guideId ->
+                    deleteGuideWithRelatedProgress(guideId)
+                }
+                return Result.Success(Unit)
+            }
+
+            val batch = db.batch()
+
+            idsList.forEach { id ->
+                Log.d(TAG, "Processing document")
+                val documentRef = db.collection(listName).document(id)
+                batch.delete(documentRef)
+            }
+
+            batch.commit().await()
+            return Result.Success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error", e)
+            return Result.Failure("Error: ${e.message}")
+        }
+    }
+
+    private suspend fun deleteGuideWithRelatedProgress(guideId: String) {
+        val guideRef = db.collection(Constants.GUIDES_TABLE).document(guideId)
+        guideRef.delete().await()
+
+        runCatching {
+            val progressRefs = db.collection(Constants.GUIDE_PROGRESS_TABLE)
+                .whereEqualTo("guideId", guideId)
+                .get()
+                .await()
+                .documents
+                .map { it.reference }
+
+            progressRefs.chunked(450).forEach { chunk ->
+                val batch = db.batch()
+                chunk.forEach { reference ->
+                    batch.delete(reference)
+                }
+                batch.commit().await()
+            }
+        }.onFailure { cleanupError ->
+            Log.w(
+                TAG,
+                "Guide deleted but related guide_progress cleanup failed for guideId=$guideId: ${cleanupError.message}",
+                cleanupError,
+            )
+        }
+    }
+
     // ------------------------------------------------------------------------------- CATEGORIES
     fun categoriesSnapshotListener() = callbackFlow {
-        println("Firestore categoriesSnapshotListener init")
+        Log.d(TAG, "Firestore categoriesSnapshotListener init")
         val categoryItemsRef = db.collection(Constants.CATEGORY_TABLE)
         val listenerRegistration = categoryItemsRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
@@ -443,7 +1001,7 @@ class FirestoreDataSource@Inject constructor() {
                     document.toObject(Category::class.java)
                 }
 
-                println("Snapshot items to CategoryItems: $categoryItems")
+                Log.d(TAG, "Snapshot items to CategoryItems: loaded")
                 trySend(CategoriesListener.Success(categoryItems)).isSuccess
             }
         }
@@ -453,20 +1011,20 @@ class FirestoreDataSource@Inject constructor() {
 
     suspend fun addCategory(
         category: Category,
-    ): ResultListener {
+    ): Result<Unit, String> {
         try {
             db.collection(Constants.CATEGORY_TABLE).add(category).await()
-            return ResultListener.Success
+            return Result.Success(Unit)
         } catch (e: Exception) {
-            println("Error: ${e.message}")
-            return ResultListener.Failure("Error: ${e.message}")
+            Log.e(TAG, "Error", e)
+            return Result.Failure("Error: ${e.message}")
         }
     }
 
     suspend fun deleteCategory(
         category: Category,
-    ): ResultListener {
-        println("FirestoreDataSource deleteCategory()")
+    ): Result<Unit, String> {
+        Log.d(TAG, "deleteCategory")
         try {
             // Query the collection to find the document with the matching 'name' field
             val querySnapshot = db.collection(Constants.CATEGORY_TABLE)
@@ -479,16 +1037,16 @@ class FirestoreDataSource@Inject constructor() {
                 val documentRef = querySnapshot.documents[0].reference
                 documentRef.delete().await()
             }
-            return ResultListener.Success
+            return Result.Success(Unit)
         } catch (e: Exception) {
-            println("Error: ${e.message}")
-            return ResultListener.Failure("Error: ${e.message}")
+            Log.e(TAG, "Error", e)
+            return Result.Failure("Error: ${e.message}")
         }
     }
 
     // ------------------------------------------------------------------------------- GROCERY SUGGESTIONS
     fun grocerySuggestionsSnapshotListener() = callbackFlow {
-        println("Firestore grocerySuggestionsSnapshotListener init")
+        Log.d(TAG, "Firestore grocerySuggestionsSnapshotListener init")
         val grocerySuggestionsItemsRef = db.collection(Constants.GROCERY_SUGGESTIONS_TABLE)
         val listenerRegistration = grocerySuggestionsItemsRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
@@ -499,9 +1057,15 @@ class FirestoreDataSource@Inject constructor() {
 
             if (snapshot != null) {
                 // Process the changes and update Room database
-                val grocerySuggestions = snapshot.toObjects(GrocerySuggestion::class.java)
+                val grocerySuggestions = snapshot.documents.mapNotNull { document ->
+                    runCatching {
+                        document.toObject(GrocerySuggestion::class.java)?.copy(id = document.id)
+                    }.onFailure { parseError ->
+                        Log.e(TAG, "Failed parsing grocery suggestion ${document.id}", parseError)
+                    }.getOrNull()
+                }
 
-                println("Snapshot items to GrocerySuggestions: $grocerySuggestions")
+                Log.d(TAG, "Snapshot items to GrocerySuggestions: loaded")
                 trySend(GrocerySuggestionsListener.Success(grocerySuggestions)).isSuccess
             }
         }
@@ -512,7 +1076,7 @@ class FirestoreDataSource@Inject constructor() {
     suspend fun deleteGrocerySuggestion(
         grocerySuggestion: GrocerySuggestion,
     ): ResultListener {
-        println("FirestoreDataSource deleteGrocerySuggestion()")
+        Log.d(TAG, "deleteGrocerySuggestion")
         try {
             // Query the collection to find the document with the matching 'name' field
             if (grocerySuggestion.id is String) {
@@ -523,7 +1087,7 @@ class FirestoreDataSource@Inject constructor() {
                 return ResultListener.Failure("Problems with grocery suggestion id")
             }
         } catch (e: Exception) {
-            println("Error: ${e.message}")
+            Log.e(TAG, "Error", e)
             return ResultListener.Failure("Error: ${e.message}")
         }
     }
@@ -535,8 +1099,26 @@ class FirestoreDataSource@Inject constructor() {
             db.collection(Constants.GROCERY_SUGGESTIONS_TABLE).add(grocerySuggestion).await()
             return ResultListener.Success
         } catch (e: Exception) {
-            println("Error: ${e.message}")
+            Log.e(TAG, "Error", e)
             return ResultListener.Failure("Error: ${e.message}")
+        }
+    }
+
+    suspend fun updateGrocerySuggestion(
+        grocerySuggestion: GrocerySuggestion,
+    ): ResultListener {
+        val suggestionId = grocerySuggestion.id
+            ?: return ResultListener.Failure("Missing grocery suggestion id")
+
+        return try {
+            db.collection(Constants.GROCERY_SUGGESTIONS_TABLE)
+                .document(suggestionId)
+                .set(grocerySuggestion)
+                .await()
+            ResultListener.Success
+        } catch (e: Exception) {
+            Log.e(TAG, "Error", e)
+            ResultListener.Failure("Error: ${e.message}")
         }
     }
 
@@ -544,32 +1126,41 @@ class FirestoreDataSource@Inject constructor() {
     suspend fun getImageUrl(
         imageType: ImageType,
     ): StringResultListener? {
-        println("getImageUrl imageType: $imageType")
+        Log.d(TAG, "getImageUrl")
         try {
             when (imageType) {
                 is ImageType.ProfileImage -> {
                     val documentReference =
-                        db.collection("users").document(imageType.uid).get().await()
+                        db.collection(Constants.USER_TABLE).document(imageType.uid).get().await()
                     return documentReference.getString("imageUrl")
                         ?.let { StringResultListener.Success(it) }
                 }
 
                 is ImageType.FamilyImage -> {
                     val documentReference =
-                        db.collection("families").document(imageType.familyId).get().await()
+                        db.collection(Constants.FAMILIES_TABLE).document(imageType.familyId).get().await()
                     return documentReference.getString("imageUrl")
                         ?.let { StringResultListener.Success(it) }
                 }
 
                 is ImageType.RecipeImage -> {
                     val documentReference =
-                        db.collection("recipes").document(imageType.recipeId).get().await()
+                        db.collection(Constants.RECIPES_TABLE).document(imageType.recipeId).get().await()
                     return documentReference.getString("imageUrl")
                         ?.let { StringResultListener.Success(it) }
                 }
+
+                is ImageType.RoutineListEntryImage -> {
+                    val documentReference =
+                        db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE).document(imageType.entryId).get().await()
+                    return documentReference.getString("imageUrl")
+                        ?.let { StringResultListener.Success(it) }
+                }
+
+                is ImageType.GalleryMedia -> return StringResultListener.Failure("Image type GalleryImage is not connected to one specific document")
             }
         } catch (e: Exception) {
-            println("Error: ${e.message}")
+            Log.e(TAG, "Error", e)
             return StringResultListener.Failure("Error: ${e.message}")
         }
     }
@@ -579,72 +1170,129 @@ class FirestoreDataSource@Inject constructor() {
         imageType: ImageType,
     ): ResultListener {
         try {
-            println("saveImageDownloadUrl url: $url")
-            println("saveImageDownloadUrl imageType: $imageType")
+            Log.d(TAG, "saveImageDownloadUrl")
+
 
             val photo = mapOf(
                 "imageUrl" to url,
             )
-            println("saveImageDownloadUrl map: $photo")
 
             when (imageType) {
                 is ImageType.ProfileImage -> {
-                    db.collection("users").document(imageType.uid).update(photo).await()
+                    db.collection(Constants.USER_TABLE).document(imageType.uid).update(photo).await()
                 }
 
                 is ImageType.FamilyImage -> {
-                    db.collection("families").document(imageType.familyId).update(photo).await()
+                    db.collection(Constants.FAMILIES_TABLE).document(imageType.familyId).update(photo).await()
                 }
 
                 is ImageType.RecipeImage -> {
-                    db.collection("recipes").document(imageType.recipeId).update(photo).await()
+                    db.collection(Constants.RECIPES_TABLE).document(imageType.recipeId).update(photo).await()
+                }
+
+                is ImageType.RoutineListEntryImage -> {
+                    db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE).document(imageType.entryId).update(photo).await()
+                }
+
+                else -> {
+                    return ResultListener.Failure("Image type is not connected to one specific document")
                 }
             }
 
             return ResultListener.Success
         } catch (e: Exception) {
-            println("Error: ${e.message}")
+            Log.e(TAG, "Error", e)
             return ResultListener.Failure("Error: ${e.message}")
         }
+    }
+
+    suspend fun saveGalleryMediaMetaData(
+        galleryMedia: List<GalleryMedia>,
+    ): ResultListener {
+        try {
+            Log.d(TAG, "saveGalleryMediaMetaData")
+
+            val batch = db.batch() // Create a batched write
+            val collectionRef = db.collection(Constants.GALLERY_MEDIA_TABLE)
+
+            galleryMedia.forEach { mediaItem ->
+                val docRef = collectionRef.document() // Generate a new document reference
+                batch.set(docRef, mediaItem) // Add set operation to batch
+            }
+
+            batch.commit().await() // Commit the batch operation
+
+            return ResultListener.Success
+        } catch (e: Exception) {
+            Log.e(TAG, "Error", e)
+            return ResultListener.Failure("Error: ${e.message}")
+        }
+    }
+
+    // ------------------------------------------------------------------------------- TIP TRACKER
+    fun tipTrackerSnapshotListener(familyId: String) = callbackFlow {
+        Log.d(TAG, "Firestore tipTrackerSnapshotListener init")
+        val tipTrackerItemsRef =
+            db.collection(Constants.TIP_TRACKER_TABLE).whereEqualTo("familyId", familyId)
+        val listenerRegistration = tipTrackerItemsRef.addSnapshotListener { snapshot, e ->
+            if (e != null) {
+                // Handle error
+                trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess
+                return@addSnapshotListener
+            }
+
+            if (snapshot != null) {
+                // Process the changes and update Room database
+                val tips = snapshot.documents.mapNotNull { document ->
+                    runCatching {
+                        document.toObject(TipItem::class.java)?.copy(id = document.id)
+                    }.onFailure { parseError ->
+                        Log.e(TAG, "Failed parsing tip item ${document.id}", parseError)
+                    }.getOrNull()
+                }
+
+                Log.d(TAG, "Snapshot items to TipItems: loaded")
+                trySend(ListItemsResultListener.Success(tips)).isSuccess
+            } else {
+                trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess
+            }
+        }
+        // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.
+        awaitClose { listenerRegistration.remove() }
     }
 
     // ------------------------------------------------------------------------------- DEVICE TOKEN MANAGEMENT
     // Store the FCM token along with familyId
     suspend fun storeFcmToken(uid: String, familyId: String) {
-        var fcmToken: String? = null
-        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                fcmToken = task.result
-                // Process updatedMembers here
-            } else {
-                Log.e("FirestoreDataSource", "Failed to fetch FCM token: ${task.exception}")
-            }
-        }.await()
-
-        if (fcmToken == null) {
-            println("Failed to fetch FCM token")
+        val fcmToken = try {
+            FirebaseMessaging.getInstance().token.await()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to fetch FCM token", e)
             return
         }
 
-        val familyDocRef = db.collection(Constants.FAMILIES_TABLE).document(familyId)
+        if (fcmToken.isBlank()) {
+            Log.w(TAG, "FCM token is blank")
+            return
+        }
 
-        val familyDocSnaphot = familyDocRef.get().await()
+        try {
+            val familyDocRef = db.collection(Constants.FAMILIES_TABLE).document(familyId)
+            val familyDocSnapshot = familyDocRef.get().await()
 
-        if (familyDocSnaphot.exists()) {
-            // Fetch the current family document
-            val members = familyDocSnaphot.get("members") as? List<Map<String, Any>> ?: emptyList()
+            if (!familyDocSnapshot.exists()) {
+                Log.w(TAG, "Family document not found")
+                return
+            }
 
-            // Find the member with the matching uid
-            var updateNeeded = false
+            @Suppress("UNCHECKED_CAST")
+            val members = familyDocSnapshot.get("members") as? List<Map<String, Any>> ?: emptyList()
+
             val updatedMembers = members.map { member ->
                 if (member["uid"] == uid) {
                     val currentToken = member["fcmToken"] as? String
-                    if (currentToken == null || currentToken != fcmToken) {
-                        // Update only if no token exists or the token is different
-                        updateNeeded = true
-                        member.toMutableMap().apply {
-                            put("fcmToken", fcmToken!!)
-                        }
+                    if (currentToken != fcmToken) {
+                        member.toMutableMap().apply { put("fcmToken", fcmToken) }
                     } else {
                         member
                     }
@@ -653,53 +1301,43 @@ class FirestoreDataSource@Inject constructor() {
                 }
             }
 
-            println("Is it needed to update FCM token: $updateNeeded")
-            if (updateNeeded) {
-                // Update the members array in Firestore
-                familyDocRef.update("members", updatedMembers)
-                    .addOnSuccessListener {
-                        println("FCM token updated successfully.")
-                    }
-                    .addOnFailureListener { e ->
-                        println("Error updating FCM token: ${e.message}")
-                    }
+            val memberChanged = updatedMembers != members
+            if (memberChanged) {
+                familyDocRef.update("members", updatedMembers).await()
+                Log.d(TAG, "FCM token updated successfully")
             }
-        } else {
-            println("Family document not found")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating FCM token", e)
         }
     }
 
-    fun removeDeviceToken(uid: String, familyId: String) {
-        val familyDocRef = db.collection(Constants.FAMILIES_TABLE).document(familyId)
+    suspend fun removeDeviceToken(uid: String, familyId: String): ResultListener {
+        return try {
+            val familyDocRef = db.collection(Constants.FAMILIES_TABLE).document(familyId)
+            val document = familyDocRef.get().await()
 
-        // Fetch the current family document
-        familyDocRef.get().addOnSuccessListener { document ->
-            if (document.exists()) {
-                val members = document.get("members") as? List<Map<String, Any>> ?: emptyList()
-
-                // Remove the fcmToken for the specified uid
-                val updatedMembers = members.map { member ->
-                    if (member["uid"] == uid) {
-                        // Remove the fcmToken
-                        member.toMutableMap().apply {
-                            remove("fcmToken")
-                        }
-                    } else {
-                        member
-                    }
-                }
-
-                // Update the members array in Firestore
-                familyDocRef.update("members", updatedMembers)
-                    .addOnSuccessListener {
-                        println("FCM token removed successfully.")
-                    }
-                    .addOnFailureListener { e ->
-                        println("Error removing FCM token: ${e.message}")
-                    }
+            if (!document.exists()) {
+                Log.w(TAG, "Family document not found")
+                return ResultListener.Failure("Family document not found")
             }
-        }.addOnFailureListener { e ->
-            println("Error fetching family document: ${e.message}")
+
+            @Suppress("UNCHECKED_CAST")
+            val members = document.get("members") as? List<Map<String, Any>> ?: emptyList()
+
+            val updatedMembers = members.map { member ->
+                if (member["uid"] == uid) {
+                    member.toMutableMap().apply { remove("fcmToken") }
+                } else {
+                    member
+                }
+            }
+
+            familyDocRef.update("members", updatedMembers).await()
+            Log.d(TAG, "FCM token removed successfully")
+            ResultListener.Success
+        } catch (e: Exception) {
+            Log.e(TAG, "Error removing FCM token", e)
+            ResultListener.Failure("Error: ${e.message}")
         }
     }
 
@@ -708,6 +1346,7 @@ class FirestoreDataSource@Inject constructor() {
         val familyDocRef = db.collection(Constants.FAMILIES_TABLE).document(familyId).get().await()
 
         val document = familyDocRef.data
+        @Suppress("UNCHECKED_CAST")
         val members = document?.get("members") as? List<Map<String, Any>> ?: emptyList()
 
         // Extract fcmTokens for all members
@@ -720,479 +1359,3 @@ class FirestoreDataSource@Inject constructor() {
         return null
     }
 }
-
- /* val list = listOf<Recipe>(
-    Recipe(
-        itemName = "Apple Cake",
-        description = "A traditional Danish dessert made with layers of apple compote, whipped cream, and crushed macaroons.",
-        ingredients = listOf(
-            Ingredient(amount = 10.0, measureType = MeasureType.PIECE, itemName = "apple"),
-            Ingredient(amount = 0.5, measureType = MeasureType.DECILITER, itemName = "water"),
-            Ingredient(amount = 0.5, measureType = MeasureType.DECILITER, itemName = "sugar"),
-            Ingredient(amount = 1.0, measureType = MeasureType.PIECE, itemName = "macaroon"),
-            Ingredient(amount = 0.0, measureType = MeasureType.PIECE, itemName = "apple cake crumbs"),
-            Ingredient(amount = 0.5, measureType = MeasureType.DECILITER, itemName = "whipping cream")
-        ),
-        instructions = listOf(
-            Instruction(itemName = "Peel the apples"),
-            Instruction(itemName = "Cut them into wedges/thin slices"),
-            Instruction(itemName = "Put them in a pot with 0.5 dl water"),
-            Instruction(itemName = "Bring the water to a boil"),
-            Instruction(itemName = "Add sugar"),
-            Instruction(itemName = "Cook for 20-25 minutes"),
-            Instruction(itemName = "Let it cool completely"),
-            Instruction(itemName = "Whip the cream"),
-            Instruction(itemName = "Crush the macaroons (3-4 per layer)"),
-            Instruction(itemName = "Layer apple compote, macaroons, and crumbs")
-        ),
-        preparationTimeMin = 45,
-        favourite = false,
-        servings = 4,
-        tags = listOf("dessert", "cake", "fruit")
-    ),
-    Recipe(
-        itemName = "American Cookies",
-        description = "Delicious homemade American-style cookies with chocolate chunks.",
-        ingredients = listOf(
-            Ingredient(amount = 120.0, measureType = MeasureType.GRAM, itemName = "sugar"),
-            Ingredient(amount = 140.0, measureType = MeasureType.GRAM, itemName = "brown sugar"),
-            Ingredient(amount = 140.0, measureType = MeasureType.GRAM, itemName = "butter"),
-            Ingredient(amount = 1.0, measureType = MeasureType.PIECE, itemName = "egg"),
-            Ingredient(amount = 240.0, measureType = MeasureType.GRAM, itemName = "flour"),
-            Ingredient(amount = 1.0, measureType = MeasureType.TEASPOON, itemName = "baking powder"),
-            Ingredient(amount = 0.5, measureType = MeasureType.TEASPOON, itemName = "baking soda"),
-            Ingredient(amount = 1.0, measureType = MeasureType.TEASPOON, itemName = "salt"),
-            Ingredient(amount = 0.5, measureType = MeasureType.TEASPOON, itemName = "vanilla sugar"),
-            Ingredient(amount = 200.0, measureType = MeasureType.GRAM, itemName = "dark chocolate")
-        ),
-        instructions = listOf(
-            Instruction(itemName = "Mix sugar, brown sugar, vanilla sugar, and butter together"),
-            Instruction(itemName = "Add the egg and mix again"),
-            Instruction(itemName = "In a separate bowl, combine flour, baking powder, salt, and baking soda"),
-            Instruction(itemName = "Gradually add the flour mixture while mixing on low speed"),
-            Instruction(itemName = "Fold in the chocolate chunks with a spatula"),
-            Instruction(itemName = "Chill the dough for at least 1 hour"),
-            Instruction(itemName = "Bake at 175°C (top and bottom heat) for 10 minutes")
-        ),
-        preparationTimeMin = 70, // Including chilling time
-        favourite = false,
-        servings = 12, // Assuming the recipe makes 12 cookies
-        tags = listOf("dessert", "cookies", "chocolate")
-    ),
-    Recipe(
-        itemName = "Banana Muffins with Chocolate",
-        description = "With a twist of cinnamon and chocolate icing on top - it doesn't get any better.",
-        ingredients = listOf(
-            Ingredient(amount = 2.0, measureType = MeasureType.PIECE, itemName = "egg"),
-            Ingredient(amount = 150.0, measureType = MeasureType.GRAM, itemName = "sugar"),
-            Ingredient(amount = 1.0, measureType = MeasureType.TEASPOON, itemName = "vanilla sugar"),
-            Ingredient(amount = 200.0, measureType = MeasureType.GRAM, itemName = "all-purpose flour"),
-            Ingredient(amount = 2.0, measureType = MeasureType.TEASPOON, itemName = "baking powder"),
-            Ingredient(amount = 125.0, measureType = MeasureType.GRAM, itemName = "butter"),
-            Ingredient(amount = 2.0, measureType = MeasureType.PIECE, itemName = "ripe banana"),
-            Ingredient(amount = 100.0, measureType = MeasureType.GRAM, itemName = "dark chocolate")
-        ),
-        instructions = listOf(
-            Instruction(itemName = "Whisk eggs, sugar, and vanilla sugar until white and frothy"),
-            Instruction(itemName = "Mix flour with baking powder"),
-            Instruction(itemName = "Melt the butter over low heat and cool"),
-            Instruction(itemName = "Stir the flour mixture and melted cooled butter into the egg mixture along with mashed bananas and coarsely chopped chocolate"),
-            Instruction(itemName = "Divide the batter into 12 paper muffin cups (approx. 1 dl each) and bake in the middle of the oven at 200°C for 15-20 minutes"),
-            Instruction(itemName = "Icing:"),
-            Instruction(itemName = "Mix powdered sugar with cocoa and a little boiling water to make an icing"),
-            Instruction(itemName = "Put the icing in a freezer bag, cut a small hole in the corner, and decorate the cakes"),
-        ),
-        preparationTimeMin = 35, // Including baking time
-        favourite = false,
-        servings = 12,
-        tags = listOf("dessert", "muffins", "fruit", "chocolate")
-    ),
-    Recipe(
-        itemName = "Banana Pancakes",
-        description = "Delicious and healthy banana pancakes, perfect for breakfast or as a snack.",
-        ingredients = listOf(
-            Ingredient(amount = 3.0, measureType = MeasureType.PIECE, itemName = "banana"),
-            Ingredient(amount = 4.0, measureType = MeasureType.PIECE, itemName = "egg"),
-            Ingredient(amount = 2.0, measureType = MeasureType.DECILITER, itemName = "oatmeal"),
-            Ingredient(amount = 2.0, measureType = MeasureType.TEASPOON, itemName = "baking powder")
-        ),
-        instructions = listOf(
-            Instruction(itemName = "Consider smashing the bananas in a bowl with a fork so it is easier to blend"),
-            Instruction(itemName = "Blend bananas, eggs, oatmeal, and baking powder together using an blender, food processor, or similar"),
-            Instruction(itemName = "Let the batter rest for 10 minutes to thicken. If it seems too thin, add a bit more oatmeal."),
-            Instruction(itemName = "Heat a bit of fat in a pan over medium heat. Then make small pancakes."),
-            Instruction(itemName = "Cook for about 40-60 seconds on each side")
-        ),
-        preparationTimeMin = 20,
-        favourite = false,
-        servings = 10,
-        tags = listOf("breakfast", "pancakes", "fruit")
-    ),
-    Recipe(
-        itemName = "Brownie Muffins with Raspberry Mousse",
-        description = "Decadent brownie muffins topped with a light and fluffy raspberry mousse.",
-        ingredients = listOf(
-            Ingredient(amount = 200.0, measureType = MeasureType.GRAM, itemName = "butter"),
-            Ingredient(amount = 200.0, measureType = MeasureType.GRAM, itemName = "dark chocolate"),
-            Ingredient(amount = 100.0, measureType = MeasureType.GRAM, itemName = "all-purpose flour"),
-            Ingredient(amount = 3.0, measureType = MeasureType.PIECE, itemName = "egg"),
-            Ingredient(amount = 250.0, measureType = MeasureType.GRAM, itemName = "sugar"),
-            Ingredient(amount = 1.0, measureType = MeasureType.PINCH, itemName = "salt"),
-            Ingredient(amount = 3.0, measureType = MeasureType.PIECE, itemName = "gelatin sheet"),
-            Ingredient(amount = 0.5, measureType = MeasureType.PIECE, itemName = "vanilla bean"),
-            Ingredient(amount = 0.5, measureType = MeasureType.DECILITER, itemName = "sugar"),
-            Ingredient(amount = 200.0, measureType = MeasureType.GRAM, itemName = "frozen raspberries"),
-            Ingredient(amount = 2.5, measureType = MeasureType.DECILITER, itemName = "whipping cream")
-        ),
-        instructions = listOf(
-            Instruction(itemName = "Preheat the oven to 150°C"),
-            Instruction(itemName = "Carefully melt the butter and chocolate in a saucepan"),
-            Instruction(itemName = "Whisk together flour, eggs, sugar, and salt in a bowl until fluffy"),
-            Instruction(itemName = "Fold the chocolate mixture into the egg mixture"),
-            Instruction(itemName = "Pour the batter into muffin cups, filling them ⅔ full"),
-            Instruction(itemName = "Bake in the oven for 15 minutes"),
-            Instruction(itemName = "Let them cool completely, preferably overnight in the refrigerator"),
-            Instruction(itemName = "Soak the gelatin in cold water for 10 minutes"),
-            Instruction(itemName = "Scrape the seeds from the vanilla bean and add both seeds and pod to a saucepan with raspberries and sugar"),
-            Instruction(itemName = "Bring the raspberries to a boil and let simmer for 5 minutes"),
-            Instruction(itemName = "Remove the vanilla pod from the saucepan"),
-            Instruction(itemName = "Squeeze the water from the gelatin and add it to the saucepan, stirring until melted"),
-            Instruction(itemName = "Strain the mixture into a bowl to remove the raspberry seeds"),
-            Instruction(itemName = "Let the raspberry mixture cool to room temperature"),
-            Instruction(itemName = "Whip the cream until fluffy"),
-            Instruction(itemName = "Fold the whipped cream into the raspberry mixture a little at a time until you have a light raspberry mousse"),
-            Instruction(itemName = "Chill the mousse until the cakes are ready to be served"),
-            Instruction(itemName = "For serving:"),
-            Instruction(itemName = "Whisk the raspberry mousse until smooth and fluffy"),
-            Instruction(itemName = "Transfer to a piping bag, and pipe onto the cooled muffins"),
-        ),
-        preparationTimeMin = 45, // Excluding cooling time
-        favourite = false,
-        servings = 10,
-        tags = listOf("dessert", "muffins", "chocolate", "fruit")
-    ),
-    Recipe(
-        itemName = "Dumle Chocolate Cake with Toffifee, Dumle, and Fruit",
-        description = "A rich chocolate cake topped with a variety of chocolates and fresh fruits.",
-        ingredients = listOf(
-            Ingredient(amount = 300.0, measureType = MeasureType.GRAM, itemName = "cake flour"),
-            Ingredient(amount = 2.5, measureType = MeasureType.TEASPOON, itemName = "baking powder"),
-            Ingredient(amount = 2.5, measureType = MeasureType.TEASPOON, itemName = "vanilla sugar"),
-            Ingredient(amount = 0.25, measureType = MeasureType.TEASPOON, itemName = "salt"),
-            Ingredient(amount = 180.0, measureType = MeasureType.GRAM, itemName = "butter"),
-            Ingredient(amount = 375.0, measureType = MeasureType.GRAM, itemName = "sugar"),
-            Ingredient(amount = 3.0, measureType = MeasureType.PIECE, itemName = "egg"),
-            Ingredient(amount = 2.25, measureType = MeasureType.DECILITER, itemName = "milk"),
-            Ingredient(amount = 75.0, measureType = MeasureType.GRAM, itemName = "cocoa powder"),
-            Ingredient(amount = 4.0, measureType = MeasureType.TABLESPOON, itemName = "sugar"),
-            Ingredient(amount = 4.0, measureType = MeasureType.TABLESPOON, itemName = "cocoa powder"),
-            Ingredient(amount = 2.5, measureType = MeasureType.DECILITER, itemName = "cream"),
-            Ingredient(amount = 0.0, measureType = MeasureType.GRAM, itemName = "Ferreo Rocher"),
-            Ingredient(amount = 0.0, measureType = MeasureType.GRAM, itemName = "Maltesers"),
-            Ingredient(amount = 0.0, measureType = MeasureType.GRAM, itemName = "Dumle"),
-            Ingredient(amount = 0.0, measureType = MeasureType.GRAM, itemName = "Toffifee"),
-            Ingredient(amount = 0.0, measureType = MeasureType.GRAM, itemName = "strawberry"),
-            Ingredient(amount = 0.0, measureType = MeasureType.GRAM, itemName = "blueberry")
-        ),
-        instructions = listOf(
-            Instruction(itemName = "Preheat the oven to 175°C (fan)"),
-            Instruction(itemName = "Whisk together the sugar, eggs, and butter until light and fluffy"),
-            Instruction(itemName = "In a separate bowl, mix the flour, salt, baking powder, and vanilla sugar"),
-            Instruction(itemName = "Gradually add the flour mixture to the butter mixture, alternating with the milk, while whisking"),
-            Instruction(itemName = "Add the cocoa powder and whisk until the batter is smooth"),
-            Instruction(itemName = "Pour the batter into a greased springform pan (approx. 25 cm in diameter)"),
-            Instruction(itemName = "Bake for at least 30 minutes, checking regularly after the first 30 minutes"),
-            Instruction(itemName = "To prevent the cake from rising more in the middle, wrap a damp towel around the pan before baking"),
-            Instruction(itemName = "Once the cake is completely cooled, prepare the chocolate cream"),
-            Instruction(itemName = "Spread the chocolate cream over the cake and top with the decorations")
-        ),
-        preparationTimeMin = 55,
-        favourite = false,
-        servings = 8,
-        tags = listOf("dessert", "cake", "chocolate", "fruit")
-    ),
-    Recipe(
-        itemName = "Fruit Salad",
-        description = "A fresh and sweet fruit salad with whipped cream and dark chocolate.",
-        ingredients = listOf(
-            Ingredient(amount = 5.0, measureType = MeasureType.PIECE, itemName = "fruit"),
-            Ingredient(amount = 0.25, measureType = MeasureType.LITER, itemName = "whipping cream"),
-            Ingredient(amount = 100.0, measureType = MeasureType.GRAM, itemName = "dark chocolate")
-        ),
-        instructions = listOf(
-            Instruction(itemName = "Whip the cream with an electric mixer in a bowl"),
-            Instruction(itemName = "Chop the fruit and add to the bowl"),
-            Instruction(itemName = "Chop the dark chocolate to the desired size and add to the bowl"),
-            Instruction(itemName = "Fold the fruit salad with a spatula to mix everything together")
-        ),
-        preparationTimeMin = 15,
-        favourite = false,
-        servings = 6,
-        tags = listOf("dessert", "fruit", "chocolate")
-    ),
-    Recipe(
-        itemName = "Cheese and Garlic Crack Bread (Pull Apart Bread)",
-        description = "This is garlic bread - on crack! Great to share with a crowd, or as a centre piece for dinner accompanied by a simple salad.",
-        ingredients = listOf(
-            Ingredient(amount = 1.0, measureType = MeasureType.PIECE, itemName = "crusty loaf, preferably sourdough or Vienna"),
-            Ingredient(amount = 100.0, measureType = MeasureType.GRAM, itemName = "shredded Mozzarella cheese"),
-            Ingredient(amount = 100.0, measureType = MeasureType.GRAM, itemName = "unsalted butter"),
-            Ingredient(amount = 2.0, measureType = MeasureType.CLOVE, itemName = "garlic"),
-            Ingredient(amount = 0.75, measureType = MeasureType.TEASPOON, itemName = "salt"),
-        ),
-        instructions = listOf(
-            Instruction(itemName = "Preheat the oven to 180°C/350°F"),
-            Instruction(itemName = "Combine butter, garlic, and salt in a heatproof bowl and melt in the microwave"),
-            Instruction(itemName = "Cut the bread on a diagonal into 2cm diamonds but do not cut all the way through the bread"),
-            Instruction(itemName = "Use your fingers or a knife to pry open each crack and drizzle in a teaspoon of butter and stuff in a pinch of cheese"),
-            Instruction(itemName = "Brush surface with remaining butter"),
-            Instruction(itemName = "Wrap with foil and bake for 20 minutes until the cheese has mostly melted"),
-            Instruction(itemName = "Then unwrap and bake for 5 - 10 minutes more to make the bread nice and crusty"),
-            Instruction(itemName = "Serve immediately")
-        ),
-        preparationTimeMin = 30,
-        favourite = false,
-        servings = 8,
-        tags = listOf("appetizer", "side dish")
-    ),
-    Recipe(
-        itemName = "Guacamole",
-        description = "A creamy and flavorful avocado dip with a hint of garlic.",
-        ingredients = listOf(
-            Ingredient(amount = 1.0, measureType = MeasureType.PIECE, itemName = "large garlic clove"),
-            Ingredient(amount = 1.0, measureType = MeasureType.PIECE, itemName = "small garlic clove"),
-            Ingredient(amount = 1.0, measureType = MeasureType.PIECE, itemName = "avocado"),
-            Ingredient(amount = 3.5, measureType = MeasureType.TABLESPOON, itemName = "sour cream"),
-            Ingredient(amount = 0.0, measureType = MeasureType.GRAM, itemName = "salt"),
-            Ingredient(amount = 0.0, measureType = MeasureType.GRAM, itemName = "pepper")
-        ),
-        instructions = listOf(
-            Instruction(itemName = "Cut the avocado in half and remove the pit"),
-            Instruction(itemName = "Use a tablespoon to scoop the avocado out of the skin"),
-            Instruction(itemName = "Mash the two avocado halves with a fork"),
-            Instruction(itemName = "Add salt and pepper to taste"),
-            Instruction(itemName = "Press the garlic cloves and add to the mixture"),
-            Instruction(itemName = "Add the sour cream and mix well")
-        ),
-        preparationTimeMin = 10,
-        favourite = false,
-        servings = 4,
-        tags = listOf("dip", "appetizer")
-    ),
-    Recipe(
-        itemName = "Pancakes",
-        description = "Classic pancakes perfect for a group, served with your favorite toppings.",
-        ingredients = listOf(
-            Ingredient(amount = 5.0, measureType = MeasureType.PIECE, itemName = "egg"),
-            Ingredient(amount = 0.5, measureType = MeasureType.TEASPOON, itemName = "sugar"),
-            Ingredient(amount = 0.25, measureType = MeasureType.TEASPOON, itemName = "salt"),
-            Ingredient(amount = 125.0, measureType = MeasureType.GRAM, itemName = "flour"),
-            Ingredient(amount = 0.5, measureType = MeasureType.CAN, itemName = "beer"),
-            Ingredient(amount = 1.25, measureType = MeasureType.DECILITER, itemName = "milk"),
-            Ingredient(amount = 2.0, measureType = MeasureType.TABLESPOON, itemName = "oil or margarine"),
-            Ingredient(amount = 0.0, measureType = MeasureType.GRAM, itemName = "fat for baking")
-        ),
-        instructions = listOf(
-            Instruction(itemName = "Whisk together eggs, sugar, and salt"),
-            Instruction(itemName = "Add milk, oil (or margarine), and beer"),
-            Instruction(itemName = "Gradually add flour until the batter becomes slightly thick"),
-            Instruction(itemName = "Let the batter rest for 30-45 minutes"),
-            Instruction(itemName = "Heat a bit of fat in a pan and then pour the batter onto the pan")
-        ),
-        preparationTimeMin = 60,
-        favourite = false,
-        servings = 6,
-        tags = listOf("breakfast", "pancakes")
-    ),
-    Recipe(
-        itemName = "Spaghetti Bolognese",
-        description = "A classic Italian pasta dish with a rich and flavorful meat sauce.",
-        ingredients = listOf(
-            Ingredient(amount = 2.0, measureType = MeasureType.CLOVE, itemName = "garlic"),
-            Ingredient(amount = 1.0, measureType = MeasureType.PIECE, itemName = "onion"),
-            Ingredient(amount = 2.0, measureType = MeasureType.TABLESPOON, itemName = "olive oil"),
-            Ingredient(amount = 500.0, measureType = MeasureType.GRAM, itemName = "ground beef"),
-            Ingredient(amount = 1.0, measureType = MeasureType.PIECE, itemName = "beef bouillon cube"),
-            Ingredient(amount = 1.0, measureType = MeasureType.CAN, itemName = "pureed tomatoes"),
-            Ingredient(amount = 1.0, measureType = MeasureType.CAN, itemName = "tomato paste"),
-            Ingredient(amount = 0.0, measureType = MeasureType.GRAM, itemName = "salt"),
-            Ingredient(amount = 0.0, measureType = MeasureType.GRAM, itemName = "pepper"),
-            Ingredient(amount = 0.0, measureType = MeasureType.GRAM, itemName = "paprika"),
-            Ingredient(amount = 0.0, measureType = MeasureType.GRAM, itemName = "chili powder"),
-            Ingredient(amount = 0.0, measureType = MeasureType.GRAM, itemName = "basil")
-        ),
-        instructions = listOf(
-            Instruction(itemName = "Grate the onion"),
-            Instruction(itemName = "Sauté the garlic and onion in oil in a pot until they are slightly colored"),
-            Instruction(itemName = "Heat a cup of cold water in the microwave for 1 minute and 20 seconds"),
-            Instruction(itemName = "Dissolve the bouillon in the water by letting it stand for a bit, then stir and mash it against the side until completely dissolved"),
-            Instruction(itemName = "Add the ground beef to the onions and cook until browned"),
-            Instruction(itemName = "Add a lot of paprika, a little chili powder, salt, and pepper. Add some basil (the rest will be added later)"),
-            Instruction(itemName = "Add the bouillon and pureed tomatoes"),
-            Instruction(itemName = "Cook uncovered for about 15 minutes"),
-            Instruction(itemName = "Add the tomato paste and a little basil"),
-            Instruction(itemName = "Cover and cook for another 5 minutes")
-        ),
-        preparationTimeMin = 30,
-        favourite = false,
-        servings = 5,
-        tags = listOf("dinner", "pasta", "Italian")
-    ),
-    Recipe(
-        itemName = "Pebernødder",
-        description = "Traditional Danish Christmas cookies with a spicy kick.",
-        ingredients = listOf(
-            Ingredient(amount = 250.0, measureType = MeasureType.GRAM, itemName = "liquid margarine"),
-            Ingredient(amount = 250.0, measureType = MeasureType.GRAM, itemName = "sugar"),
-            Ingredient(amount = 1.0, measureType = MeasureType.TABLESPOON, itemName = "syrup"),
-            Ingredient(amount = 2.0, measureType = MeasureType.TEASPOON, itemName = "cardamom"),
-            Ingredient(amount = 2.0, measureType = MeasureType.TEASPOON, itemName = "baking soda"),
-            Ingredient(amount = 1.0, measureType = MeasureType.PIECE, itemName = "egg"),
-            Ingredient(amount = 425.0, measureType = MeasureType.GRAM, itemName = "flour") // Using the average of the range provided
-        ),
-        instructions = listOf(
-            Instruction(itemName = "Mix the liquid ingredients together and the dry ingredients together"),
-            Instruction(itemName = "Combine the contents of the two bowls"),
-            Instruction(itemName = "Knead the mixture together"),
-            Instruction(itemName = "Chill in the refrigerator for 1 hour"),
-            Instruction(itemName = "Bake at 200°C for 8 minutes")
-        ),
-        preparationTimeMin = 68, // Including chilling time
-        favourite = false,
-        servings = 8, // Assuming the recipe makes around 8 servings
-        tags = listOf("dessert", "cookies", "Christmas")
-    ),
-    Recipe(
-        itemName = "Homemade Pizza",
-        description = "A personal-sized pizza with your choice of toppings.",
-        ingredients = listOf(
-            Ingredient(amount = 1.0, measureType = MeasureType.DECILITER, itemName = "water"),
-            Ingredient(amount = 0.25, measureType = MeasureType.PACKAGE, itemName = "yeast"),
-            Ingredient(amount = 1.0, measureType = MeasureType.DECILITER, itemName = "flour"),
-            Ingredient(amount = 1.0, measureType = MeasureType.TEASPOON, itemName = "salt"),
-            Ingredient(amount = 1.5, measureType = MeasureType.DECILITER, itemName = "flour"),
-            Ingredient(amount = 1.0, measureType = MeasureType.TEASPOON, itemName = "olive oil"),
-            Ingredient(amount = 0.0, measureType = MeasureType.GRAM, itemName = "tomato sauce"),
-            Ingredient(amount = 0.0, measureType = MeasureType.GRAM, itemName = "pizza toppings"),
-            Ingredient(amount = 50.0, measureType = MeasureType.GRAM, itemName = "shredded cheese")
-        ),
-        instructions = listOf(
-            Instruction(itemName = "Whisk together water, yeast, 1 dl flour, and a bit of salt in a bowl and cover"),
-            Instruction(itemName = "Let the mixture rest for at least 45 minutes until it becomes a liquid 'dough'"),
-            Instruction(itemName = "Gradually stir the remaining flour into the dough"),
-            Instruction(itemName = "If the dough seems too sticky, add a bit more flour"),
-            Instruction(itemName = "Pour the oil over the dough and turn it in the bowl so it becomes slightly greasy all over"),
-            Instruction(itemName = "Let the dough rest while you prepare the toppings"),
-            Instruction(itemName = "Preheat the oven to 250°C"),
-            Instruction(itemName = "Shape the dough into a ball and dust it with flour"),
-            Instruction(itemName = "Place the dough on a piece of baking paper and press it flat from the center outwards"),
-            Instruction(itemName = "The dough should be thinner than you think and about 30 cm in diameter"),
-            Instruction(itemName = "Cover the pizza with tomato sauce, toppings, and cheese"),
-            Instruction(itemName = "Let the pizza rest for about 30 minutes, then bake on the top rack for 10-12 minutes")
-        ),
-        preparationTimeMin = 90,
-        favourite = false,
-        servings = 1,
-        tags = listOf("dinner", "pizza", "Italian")
-    ),
-    Recipe(
-        itemName = "Macaroni Pie / Torta de pasta",
-        description = "A delicious and easy-to-make dish that's perfect for any occasion.",
-        ingredients = listOf(
-            Ingredient(amount = 454.0, measureType = MeasureType.GRAM, itemName = "short pasta (elbows, shells, rotini)"), // 1 pound = 453.592 grams
-            Ingredient(amount = 454.0, measureType = MeasureType.GRAM, itemName = "mozzarella cheese, shredded, divided into 2 portions"), // 1 pound = 453.592 grams
-            Ingredient(amount = 0.5, measureType = MeasureType.PIECE, itemName = "onion, grated"),
-            Ingredient(amount = 3.0, measureType = MeasureType.TABLESPOON, itemName = "vegetable oil"),
-            Ingredient(amount = 170.097, measureType = MeasureType.GRAM, itemName = "bacon"), // 6 ounces = 170.097 grams
-            Ingredient(amount = 4.0, measureType = MeasureType.PIECE, itemName = "egg, beaten"),
-            Ingredient(amount = 0.0, measureType = MeasureType.GRAM, itemName = "salt"),
-            Ingredient(amount = 0.0, measureType = MeasureType.GRAM, itemName = "pepper"),
-            Ingredient(amount = 2.0, measureType = MeasureType.TABLESPOON, itemName = "all-purpose flour"),
-            Ingredient(amount = 4.75, measureType = MeasureType.DECILITER, itemName = "hot milk"),
-            Ingredient(amount = 3.0, measureType = MeasureType.TABLESPOON, itemName = "unsalted butter"),
-            Ingredient(amount = 0.5, measureType = MeasureType.TABLESPOON, itemName = "salt or chicken/beef bouillon powder"),
-            Ingredient(amount = 0.0, measureType = MeasureType.GRAM, itemName = "pepper")
-        ),
-        instructions = listOf(
-            Instruction(itemName = "Cook the pasta according to the instructions. Drain and rinse with cold water to prevent sticking. Set aside"),
-            Instruction(itemName = "In a pan, sauté the onion in vegetable oil over medium heat until translucent"),
-            Instruction(itemName = "Add the salt, and pepper. Cook for 2-3 minutes, stirring occasionally. Set aside"),
-            Instruction(itemName = "Preheat the oven to 205°C (400°F)"),
-            Instruction(itemName = "In a large bowl, mix the pasta, sautéed vegetables, and bechamel sauce"),
-            Instruction(itemName = "Add half of the cheese, the ham, and the beaten eggs with a pinch of salt. Mix well to combine"),
-            Instruction(itemName = "Adjust seasoning with more salt or pepper if needed"),
-            Instruction(itemName = "Grease a baking dish with butter and add the pasta mixture, spreading it evenly"),
-            Instruction(itemName = "Top with the remaining cheese"),
-            Instruction(itemName = "Bake for 30 minutes, until the top is golden and bubbly. Let cool slightly before serving"),
-            Instruction(itemName = "For the bechamel sauce:"),
-            Instruction(itemName = "Heat the milk in a pot without boiling"),
-            Instruction(itemName = "In a separate pan, melt the butter over medium heat"),
-            Instruction(itemName = "Add the flour and whisk until smooth."),
-            Instruction(itemName = "Gradually add the hot milk, whisking constantly until the sauce thickens"),
-            Instruction(itemName = "Season with salt, pepper, and bouillon powder"),
-            Instruction(itemName = "Remove from heat and set aside"),
-        ),
-        preparationTimeMin = 65,
-        favourite = false,
-        servings = 12,
-        tags = listOf("dinner", "pasta")
-    ),
-    Recipe(
-        itemName = "Yorkshire Pudding / Gratin",
-        description = "A classic British dish that's perfect for breakfast or as a simple dinner.",
-        ingredients = listOf(
-            Ingredient(amount = 3.0, measureType = MeasureType.PIECE, itemName = "egg"),
-            Ingredient(amount = 2.5, measureType = MeasureType.DECILITER, itemName = "milk"),
-            Ingredient(amount = 0.5, measureType = MeasureType.TEASPOON, itemName = "salt"),
-            Ingredient(amount = 2.5, measureType = MeasureType.DECILITER, itemName = "all-purpose flour"),
-            Ingredient(amount = 1.0, measureType = MeasureType.CAN, itemName = "cocktail sausages"),
-            Ingredient(amount = 3.0, measureType = MeasureType.TABLESPOON, itemName = "olive oil"),
-            Ingredient(amount = 0.0, measureType = MeasureType.GRAM, itemName = "optional: bacon"),
-            Ingredient(amount = 0.0, measureType = MeasureType.GRAM, itemName = "optional: butter and maple syrup")
-        ),
-        instructions = listOf(
-            Instruction(itemName = "Preheat oven to 200°C"),
-            Instruction(itemName = "In a small bowl, whisk eggs, milk, and salt"),
-            Instruction(itemName = "Whisk flour into egg mixture until blended"),
-            Instruction(itemName = "Let stand for 30 minutes"),
-            Instruction(itemName = "Meanwhile, cook sausage according to package directions; cut each sausage into 3 pieces"),
-            Instruction(itemName = "Place oil in a 12-in. nonstick ovenproof skillet"),
-            Instruction(itemName = "Place in oven until hot, 3-4 minutes"),
-            Instruction(itemName = "Stir batter and pour into prepared skillet; top with sausage"),
-            Instruction(itemName = "Bake until golden brown and puffed, 20-25 minutes"),
-            Instruction(itemName = "Remove from skillet; cut into wedges"),
-            Instruction(itemName = "If desired, serve with butter and syrup")
-        ),
-        preparationTimeMin = 35,
-        favourite = false,
-        servings = 6,
-        tags = listOf("breakfast", "dinner")
-    ),
-    Recipe(
-        itemName = "Nachos with Chicken",
-        description = "A quick and easy dish with layers of nachos, chicken, and melted cheese.",
-        ingredients = listOf(
-            Ingredient(amount = 1.0, measureType = MeasureType.PACKAGE, itemName = "nachos chips"),
-            Ingredient(amount = 400.0, measureType = MeasureType.GRAM, itemName = "chicken"),
-            Ingredient(amount = 400.0, measureType = MeasureType.GRAM, itemName = "shredded cheese"),
-            Ingredient(amount = 0.0, measureType = MeasureType.GRAM, itemName = "salt and pepper"),
-        ),
-        instructions = listOf(
-            Instruction(itemName = "Cut the chicken into thin slices"),
-            Instruction(itemName = "Cook the chicken in a pan, seasoning with salt and pepper, until done"),
-            Instruction(itemName = "Preheat the oven to 150°C"),
-            Instruction(itemName = "Place half of the chips in a glass dish"),
-            Instruction(itemName = "Add the chicken to the dish"),
-            Instruction(itemName = "Sprinkle half of the cheese on top"),
-            Instruction(itemName = "Add the remaining chips to the dish"),
-            Instruction(itemName = "Sprinkle the remaining cheese on top"),
-            Instruction(itemName = "Bake in the oven for 10 minutes")
-        ),
-        preparationTimeMin = 20,
-        favourite = false,
-        servings = 4,
-        tags = listOf("dinner", "appetizer")
-    )
-).map { recipe ->
-    recipe.copy(familyId = "jHTl4yhYOuruQmaBNUeU")
-} */

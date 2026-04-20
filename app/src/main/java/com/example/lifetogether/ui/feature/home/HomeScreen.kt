@@ -1,7 +1,5 @@
 package com.example.lifetogether.ui.feature.home
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,7 +18,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,37 +25,33 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.BuildConfig
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.domain.model.session.authenticatedUserOrNull
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.LoveButton
 import com.example.lifetogether.ui.common.text.TextDisplayLarge
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 import com.example.lifetogether.ui.viewmodel.ImageViewModel
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HomeScreen(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
 ) {
+    val homeViewModel: HomeViewModel = hiltViewModel()
     val imageViewModel: ImageViewModel = hiltViewModel()
-    val bitmap by imageViewModel.bitmap.collectAsState()
+    val bitmap by imageViewModel.bitmap.collectAsStateWithLifecycle()
 
-    val userInformationState by firebaseViewModel?.userInformation!!.collectAsState()
-
-    LaunchedEffect(key1 = true) {
-        // Perform any one-time initialization or side effect here
-        println("HomeScreen familyId: ${userInformationState?.familyId}")
-
+    val sessionState by homeViewModel.sessionState.collectAsStateWithLifecycle()
+    val userInformationState = sessionState.authenticatedUserOrNull
+    LaunchedEffect(userInformationState?.familyId) {
         userInformationState?.familyId?.let { familyId ->
             imageViewModel.collectImageFlow(
                 imageType = ImageType.FamilyImage(familyId),
@@ -85,7 +78,7 @@ fun HomeScreen(
                         description = "profile picture icon",
                     ),
                     onLeftClick = {
-                        if (firebaseViewModel?.userInformation?.value != null) {
+                        if (userInformationState != null) {
                             appNavigator?.navigateToProfile()
                         } else {
                             appNavigator?.navigateToLogin()
@@ -126,7 +119,7 @@ fun HomeScreen(
             item {
                 when (userInformationState) {
                     is UserInformation -> {
-                        if (userInformationState?.familyId == null) {
+                        if (userInformationState.familyId == null) {
                             Box(
                                 modifier = Modifier
                                     .padding(bottom = 15.dp)
@@ -173,14 +166,12 @@ fun HomeScreen(
 
             item {
                 FlowRow(
-                    maxItemsInEachRow = 2,
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    maxItemsInEachRow = 3,
+                    verticalArrangement = Arrangement.spacedBy(5.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) { // TODO add real items
+                ) {
                     FeatureOverview(
                         "Grocery list",
-                        10,
-                        "Recipe",
                         onClick = {
                             if (userInformationState?.familyId == null) {
                                 // TODO add popup asking to join a family
@@ -192,8 +183,6 @@ fun HomeScreen(
                     )
                     FeatureOverview(
                         "Recipes",
-                        1,
-                        "Recipe",
                         onClick = {
                             if (userInformationState?.familyId == null) {
                                 // TODO add popup asking to join a family
@@ -203,37 +192,72 @@ fun HomeScreen(
                         },
                         icon = Icon(R.drawable.ic_recipes, "recipes chef hat icon"),
                     )
+                    Spacer( // This makes it a two-item row
+                        Modifier
+                            .fillMaxWidth()
+                            .height(0.dp)
+                    )
 //                    FeatureOverview(
 //                        "Memory lane",
-//                        4,
-//                        "Recipe",
 //                        fullWidth = true,
 //                        onClick = {
-//                            if (userInformation?.value?.familyId == null) {
+//                            if (userInformationState?.familyId == null) {
 //                                // TODO add popup asking to join a family
 //                            } else {
 //                                // TODO
 //                            }
 //                        },
 //                    )
-//                    FeatureOverview(
-//                        "Gallery",
-//                        10,
-//                        "Recipe",
-//                        onClick = {
-//                            if (userInformation?.value?.familyId == null) {
-//                                // TODO add popup asking to join a family
-//                            } else {
-//                                // TODO
-//                            }
-//                        },
-//                    )
+                    FeatureOverview(
+                        "Guides",
+                        onClick = {
+                            if (userInformationState?.familyId == null) {
+                                // TODO add popup asking to join a family
+                            } else {
+                                appNavigator?.navigateToGuides()
+                            }
+                        },
+                        icon = Icon(R.drawable.ic_guide, "guides icon"),
+                    )
+                    FeatureOverview(
+                        "Gallery",
+                        onClick = {
+                            if (userInformationState?.familyId == null) {
+                                // TODO add popup asking to join a family
+                            } else {
+                                println("Gallery clicked")
+                                appNavigator?.navigateToGallery()
+                            }
+                        },
+                        icon = Icon(R.drawable.ic_gallery, "image gallery icon"),
+                    )
+                    FeatureOverview(
+                        "Tip Tracker",
+                        onClick = {
+                            if (userInformationState?.familyId == null) {
+                                // TODO add popup asking to join a family
+                            } else {
+                                println("Tip tracker clicked")
+                                appNavigator?.navigateToTipTracker()
+                            }
+                        },
+                        icon = Icon(R.drawable.ic_tip, "money tip icon"),
+                    )
+                    FeatureOverview(
+                        "Lists",
+                        onClick = {
+                            if (userInformationState?.familyId == null) {
+                                // TODO add popup asking to join a family
+                            } else {
+                                appNavigator?.navigateToLists()
+                            }
+                        },
+                        icon = Icon(R.drawable.ic_guide, "lists icon"),
+                    )
 //                    FeatureOverview(
 //                        "Note Corner",
-//                        43,
-//                        "Recipe",
 //                        onClick = {
-//                            if (userInformation?.value?.familyId == null) {
+//                            if (userInformationState?.familyId == null) {
 //                                // TODO add popup asking to join a family
 //                            } else {
 //                                // TODO
@@ -245,8 +269,6 @@ fun HomeScreen(
 
             if (userInformationState?.uid in BuildConfig.ADMIN_LIST.split(",")) {
                 item {
-                    Spacer(modifier = Modifier.height(250.dp))
-
                     TextDisplayLarge("Admin features")
 
                     FlowRow(
@@ -259,8 +281,6 @@ fun HomeScreen(
 
                         FeatureOverview(
                             "Grocery categories",
-                            0,
-                            "Recipe",
                             onClick = {
                                 if (userInformationState?.familyId == null) {
                                     // TODO add popup asking to join a family
@@ -269,12 +289,9 @@ fun HomeScreen(
                                 }
                             },
                             icon = Icon(R.drawable.ic_groceries, "groceries basket icon"),
-                            fullWidth = true,
                         )
                         FeatureOverview(
                             "Grocery suggestions",
-                            0,
-                            "Recipe",
                             onClick = {
                                 if (userInformationState?.familyId == null) {
                                     // TODO add popup asking to join a family
@@ -283,7 +300,6 @@ fun HomeScreen(
                                 }
                             },
                             icon = Icon(R.drawable.ic_groceries, "groceries basket icon"),
-                            fullWidth = true,
                         )
                     }
                 }
@@ -296,13 +312,4 @@ fun HomeScreen(
     }
 
     LoveButton()
-}
-
-@RequiresApi(Build.VERSION_CODES.S)
-@Preview(showBackground = true)
-@Composable
-fun HomeScreenPreview() {
-    LifeTogetherTheme {
-        HomeScreen()
-    }
 }

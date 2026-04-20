@@ -32,6 +32,9 @@ interface FamilyInformationDao {
     @Query("SELECT image_data FROM ${Constants.FAMILIES_TABLE} WHERE family_id = :familyId LIMIT 1")
     fun getImageByteArray(familyId: String): Flow<ByteArray?>
 
+    @Query("SELECT CASE WHEN image_data IS NOT NULL THEN 1 ELSE 0 END FROM ${Constants.FAMILIES_TABLE} WHERE family_id = :familyId LIMIT 1")
+    suspend fun hasImageData(familyId: String): Int?
+
     // Delete all entries in the family table
     @Query("DELETE FROM ${Constants.FAMILIES_TABLE}")
     fun deleteFamiliesTable()

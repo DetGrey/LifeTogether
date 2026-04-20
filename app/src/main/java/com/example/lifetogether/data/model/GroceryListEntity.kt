@@ -21,4 +21,6 @@ data class GroceryListEntity(
     var completed: Boolean = false,
     @Embedded(prefix = "category_")
     var category: Category? = null,
+    @ColumnInfo(name = "approx_price")
+    val approxPrice: Float? = null,
 )

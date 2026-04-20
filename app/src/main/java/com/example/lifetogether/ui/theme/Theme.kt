@@ -1,8 +1,6 @@
 package com.example.lifetogether.ui.theme
 
 import android.app.Activity
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -220,7 +218,6 @@ val unspecified_scheme = ColorFamily(
     Color.Unspecified,
 )
 
-@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun LifeTogetherTheme(
 //    darkTheme: Boolean = isSystemInDarkTheme(),

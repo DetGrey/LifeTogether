@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.FlowRowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -16,57 +16,43 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
-import com.example.lifetogether.ui.common.text.TextHeadingMedium
+import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun RowScope.FeatureOverview(
+fun FlowRowScope.FeatureOverview(
     title: String,
-    itemCount: Int,
-    itemType: String,
     fullWidth: Boolean = false,
     onClick: () -> Unit,
     icon: Icon = Icon(R.drawable.ic_reload, "icon not found"),
 ) {
-    var itemTypeText = itemType
-    if (itemCount > 1) {
-        itemTypeText = "${itemType}s"
-    }
-
     Column(
         modifier = Modifier
-            .clip(shape = RoundedCornerShape(20))
-            .background(MaterialTheme.colorScheme.onBackground)
-            .padding(horizontal = 10.dp, vertical = 20.dp)
-            .clickable { onClick() }
-            .then(
-                if (fullWidth) {
-                    Modifier.fillMaxWidth()
-                } else {
-                    Modifier.weight(0.5f)
-                },
-            ),
+            .then(if (fullWidth) Modifier.fillMaxWidth() else Modifier.weight(1f))
+            .fillMaxRowHeight()
+            .background(
+                MaterialTheme.colorScheme.onBackground,
+                RoundedCornerShape(20)
+                )
+            .padding(10.dp)
+            .clickable { onClick() },
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
         Image(
             painter = painterResource(id = icon.resId),
             contentDescription = icon.description,
-            modifier = Modifier.height(60.dp),
+            modifier = Modifier.height(50.dp),
         )
 
-        TextHeadingMedium(text = title)
-
-//        Text(
-//            text = "$itemCount $itemTypeText",
-//            style = MaterialTheme.typography.bodyMedium,
-//            color = Color.White,
-//        )
+//        TextHeadingMedium(text = title)
+        TextSubHeadingMedium(text = title, alignCenter = true)
     }
 }
 
@@ -77,39 +63,33 @@ fun FeatureOverviewPreview() {
     LifeTogetherTheme {
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
-            maxItemsInEachRow = 2,
+            maxItemsInEachRow = 3,
             verticalArrangement = Arrangement.spacedBy(10.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             FeatureOverview(
                 "Grocery list",
-                10,
-                "Recipe",
                 onClick = {},
             )
             FeatureOverview(
                 "Recipes",
-                1,
-                "Recipe",
+                onClick = {},
+            )
+            FeatureOverview(
+                "Third",
                 onClick = {},
             )
             FeatureOverview(
                 "Memory lane",
-                4,
-                "Recipe",
                 true,
                 onClick = {},
             )
             FeatureOverview(
                 "Gallery",
-                10,
-                "Recipe",
                 onClick = {},
             )
             FeatureOverview(
                 "Note Corner",
-                43,
-                "Recipe",
                 onClick = {},
             )
         }

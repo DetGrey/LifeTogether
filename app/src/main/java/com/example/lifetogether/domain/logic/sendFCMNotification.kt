@@ -9,11 +9,13 @@ import com.google.api.client.http.GenericUrl
 import com.google.api.client.http.HttpHeaders
 import com.google.api.client.http.HttpRequest
 import com.google.api.client.http.HttpResponse
-import com.google.api.client.json.gson.GsonFactory
 import com.google.auth.http.HttpCredentialsAdapter
-import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
 
 suspend fun sendFCMNotification(
     context: Context,
@@ -37,7 +39,6 @@ suspend fun sendFCMNotification(
 
     // Initialize the transport and request factory
     val transport = GoogleNetHttpTransport.newTrustedTransport()
-    val jsonFactory: GsonFactory = GsonFactory.getDefaultInstance()
 
     // Create the HTTP request factory with OAuth 2.0 credentials
     val requestFactory = transport.createRequestFactory(HttpCredentialsAdapter(credentials))
@@ -45,12 +46,6 @@ suspend fun sendFCMNotification(
     // Build the URL for FCM HTTP v1 API endpoint
     val url = "https://fcm.googleapis.com/v1/projects/lifetogether-290b3/messages:send"
 
-    // Create the message data class
-    data class Notification(val title: String, val body: String)
-    data class Message(val token: String, val notification: Notification, val data: Map<String, String>)
-
-    // Create the message object
-    val notification = Notification(title, message)
     val data = mapOf(
         "channelId" to channelId,
         "smallIconResId" to smallIconResId.toString(),
@@ -64,16 +59,25 @@ suspend fun sendFCMNotification(
         i += 1
         println("Sending notification to token $i of ${tokens.size}: $token")
 
-        val messageObject = Message(token, notification, data)
-
-        // Convert the message object to JSON using Gson
-        val gson = Gson()
-        val messageJson = gson.toJson(messageObject)
+        val requestBody = buildJsonObject {
+            putJsonObject("message") {
+                put("token", token)
+                putJsonObject("notification") {
+                    put("title", title)
+                    put("body", message)
+                }
+                putJsonObject("data") {
+                    data.forEach { (key, value) ->
+                        put(key, value)
+                    }
+                }
+            }
+        }
 
         // Create the HTTP request
         val request: HttpRequest = requestFactory.buildPostRequest(
             GenericUrl(url),
-            ByteArrayContent.fromString("application/json", "{\"message\": $messageJson}"),
+            ByteArrayContent.fromString("application/json", Json.encodeToString(requestBody)),
         )
 
         // Set the Authorization header with the OAuth token

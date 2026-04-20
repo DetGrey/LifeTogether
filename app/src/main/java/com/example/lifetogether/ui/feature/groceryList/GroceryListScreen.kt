@@ -2,7 +2,9 @@ package com.example.lifetogether.ui.feature.groceryList
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Text
@@ -12,45 +14,30 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Icon
-import com.example.lifetogether.domain.model.enums.UpdateType
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.add.AddNewListItem
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.list.ItemCategoryList
+import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
-import com.example.lifetogether.ui.viewmodel.GroceryListViewModel
+import com.example.lifetogether.domain.observer.ObserverKey
+import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
+import com.example.lifetogether.util.priceToString
 
 @Composable
 fun GroceryListScreen(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
 ) {
     val groceryListViewModel: GroceryListViewModel = hiltViewModel()
 
-    val userInformationState by firebaseViewModel?.userInformation!!.collectAsState()
-
-    LaunchedEffect(key1 = true) {
-        // Perform any one-time initialization or side effect here
-        println("GroceryList familyId: ${userInformationState?.familyId}")
-        userInformationState?.familyId?.let { groceryListViewModel.setUpGroceryList(it) }
-    }
-
-    // Collecting the StateFlows as state
-    val groceryCategories by groceryListViewModel.groceryCategories.collectAsState()
-    val categoryExpandedStates by groceryListViewModel.categoryExpandedStates.collectAsState()
-    val groceryList by groceryListViewModel.groceryList.collectAsState()
-    val categorizedItems by groceryListViewModel.categorizedItems.collectAsState()
-    val completedItems by groceryListViewModel.completedItems.collectAsState()
+    val uiState by groceryListViewModel.uiState.collectAsState()
 
     Box(
         modifier = Modifier
@@ -77,58 +64,76 @@ fun GroceryListScreen(
             }
 
             item {
-                if (groceryList.isEmpty()) {
-                    Text(text = "No items on the list yet")
-                } else {
-                    categorizedItems.forEach { (category, groceryItems) ->
-                        if (groceryItems.isNotEmpty()) {
-                            categoryExpandedStates[category.name]?.let { expanded ->
-                                ItemCategoryList(
-                                    category = category,
-                                    itemList = groceryItems,
-                                    expanded = expanded,
-                                    onClick = {
-                                        println("before: $expanded")
-                                        groceryListViewModel.toggleCategoryExpanded(category.name)
-                                        println("after: $expanded")
-                                    },
-                                    onCompleteToggle = { item ->
-                                        if (item is GroceryItem) {
-                                            groceryListViewModel.toggleItemCompleted(item)
-                                        }
-                                    },
-                                    // TODO implement notification functionality
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ObserverUpdatingText(
+                        keys = setOf(
+                            ObserverKey.GROCERY_LIST,
+                            ObserverKey.GROCERY_CATEGORIES,
+                            ObserverKey.GROCERY_SUGGESTIONS,
+                        ),
+                    )
+
+                    if (uiState.groceryList.isEmpty()) {
+                        Text(text = "No items on the list yet")
+                    } else {
+
+                        uiState.expectedTotalPrice?.let {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                TextSubHeadingMedium(
+                                    text = "Expected total price:",
+                                )
+                                TextSubHeadingMedium(
+                                    text = it.priceToString(true),
                                 )
                             }
                         }
-                    }
 
-                    if (completedItems.isNotEmpty()) {
-                        ItemCategoryList(
-                            category = Category(
-                                emoji = "✔️",
-                                name = "Completed",
-                            ),
-                            itemList = completedItems,
-                            expanded = groceryListViewModel.completedSectionExpanded,
-                            onClick = {
-                                groceryListViewModel.completedSectionExpanded =
-                                    !groceryListViewModel.completedSectionExpanded
-                            },
-                            onCompleteToggle = { item ->
-                                if (item is GroceryItem) {
-                                    groceryListViewModel.toggleItemCompleted(item)
+                        uiState.categorizedItems.forEach { (category, groceryItems) ->
+                            if (groceryItems.isNotEmpty()) {
+                                uiState.categoryExpandedStates[category.name]?.let { expanded ->
+                                    ItemCategoryList(
+                                        category = category,
+                                        itemList = groceryItems,
+                                        expanded = expanded,
+                                        onClick = {
+                                            println("before: $expanded")
+                                            groceryListViewModel.toggleCategoryExpanded(category.name)
+                                            println("after: $expanded")
+                                        },
+                                        onCompleteToggle = { item ->
+                                            if (item is GroceryItem) {
+                                                groceryListViewModel.toggleItemCompleted(item)
+                                            }
+                                        },
+                                    )
                                 }
-                                if (!item.completed) { // if it was not completed, but now will be
-                                    firebaseViewModel?.updateItemCount("grocery-list", UpdateType.SUBTRACT)
-                                } else {
-                                    firebaseViewModel?.updateItemCount("grocery-list", UpdateType.ADD)
-                                }
-                            },
-                            onDelete = {
-                                groceryListViewModel.showConfirmationDialog = true
-                            },
-                        )
+                            }
+                        }
+
+                        if (uiState.completedItems.isNotEmpty()) {
+                            ItemCategoryList(
+                                category = Category(
+                                    emoji = "✔️",
+                                    name = "Completed",
+                                ),
+                                itemList = uiState.completedItems,
+                                expanded = uiState.completedSectionExpanded,
+                                onClick = {
+                                    groceryListViewModel.toggleCompletedSectionExpanded()
+                                },
+                                onCompleteToggle = { item ->
+                                    if (item is GroceryItem) {
+                                        groceryListViewModel.toggleItemCompleted(item)
+                                    }
+                                },
+                                onDelete = {
+                                    groceryListViewModel.showDeleteCompletedConfirmation()
+                                },
+                            )
+                        }
                     }
                 }
             }
@@ -136,7 +141,7 @@ fun GroceryListScreen(
     }
 
     // ---------------------------------------------------------------- GROCERY SUGGESTIONS POPUP
-    if (groceryListViewModel.currentGrocerySuggestions.value.isNotEmpty()) {
+    if (uiState.currentGrocerySuggestions.isNotEmpty()) {
         Box(
             modifier = Modifier
                 .padding(10.dp)
@@ -145,13 +150,10 @@ fun GroceryListScreen(
             contentAlignment = Alignment.BottomCenter,
         ) {
             GrocerySuggestionPopup(
-                suggestions = groceryListViewModel.currentGrocerySuggestions.value,
+                suggestions = uiState.currentGrocerySuggestions,
                 onClick = {
-                    groceryListViewModel.newItemText = it.suggestionName
-                    groceryListViewModel.newItemCategory = it.category!!
-                    groceryListViewModel.addItemToList(onSuccess = {
-                        firebaseViewModel?.updateItemCount("grocery-list", UpdateType.ADD)
-                    })
+                    groceryListViewModel.applySuggestion(it)
+                    groceryListViewModel.addItemToList()
                 },
             )
         }
@@ -165,15 +167,13 @@ fun GroceryListScreen(
         contentAlignment = Alignment.BottomCenter,
     ) {
         AddNewListItem(
-            textValue = groceryListViewModel.newItemText,
-            onTextChange = { groceryListViewModel.newItemText = it },
-            onAddClick = {
-                groceryListViewModel.addItemToList(onSuccess = {
-                    firebaseViewModel?.updateItemCount("grocery-list", UpdateType.ADD)
-                })
-            },
-            categoryList = groceryCategories,
-            selectedCategory = groceryListViewModel.newItemCategory,
+            textValue = uiState.newItemText,
+            onTextChange = { groceryListViewModel.onNewItemTextChange(it) },
+            priceValue = uiState.newItemPrice,
+            onPriceChange = { groceryListViewModel.onNewItemPriceChange(it) },
+            onAddClick = { groceryListViewModel.addItemToList() },
+            categoryList = uiState.groceryCategories,
+            selectedCategory = uiState.newItemCategory,
             onCategoryChange = { newCategory ->
                 groceryListViewModel.updateNewItemCategory(newCategory)
             },
@@ -181,9 +181,9 @@ fun GroceryListScreen(
     }
 
     // ---------------------------------------------------------------- CONFIRM DELETION OF COMPLETED ITEMS
-    if (groceryListViewModel.showConfirmationDialog) {
+    if (uiState.showConfirmationDialog) {
         ConfirmationDialog(
-            onDismiss = { groceryListViewModel.showConfirmationDialog = false },
+            onDismiss = { groceryListViewModel.dismissDeleteCompletedConfirmation() },
             onConfirm = {
                 groceryListViewModel.deleteCompletedItems()
             },
@@ -195,16 +195,10 @@ fun GroceryListScreen(
     }
 
     // ---------------------------------------------------------------- SHOW ERROR ALERT
-    if (groceryListViewModel.showAlertDialog) {
-        ErrorAlertDialog(groceryListViewModel.error)
-        groceryListViewModel.toggleAlertDialog()
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GroceryListScreenPreview() {
-    LifeTogetherTheme {
-        GroceryListScreen()
+    if (uiState.showAlertDialog) {
+        LaunchedEffect(uiState.error) {
+            groceryListViewModel.toggleAlertDialog()
+        }
+        ErrorAlertDialog(uiState.error)
     }
 }

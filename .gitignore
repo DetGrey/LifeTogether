@@ -2,9 +2,11 @@
 .gradle
 /local.properties
 /.idea
+/.kotlin
 .DS_Store
 /build
 /captures
 .externalNativeBuild
 .cxx
 local.properties
+/app/release

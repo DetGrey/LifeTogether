@@ -22,13 +22,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.ui.common.dropdown.DarkDropdown
 import com.example.lifetogether.ui.common.textfield.CustomTextField
-import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @Composable
 fun AddNewIngredient(
@@ -56,7 +54,22 @@ fun AddNewIngredient(
             ) {
                 Row(
                     modifier = Modifier
-                        .fillMaxWidth(0.5f),
+                        .fillMaxWidth(0.8f),
+                ) {
+                    CustomTextField(
+                        value = addNewIngredientViewModel.ingredient.itemName,
+                        onValueChange = { addNewIngredientViewModel.updateIngredient("itemName", it) },
+                        label = "Ingredient name...",
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Done,
+                    )
+                }
+            }
+
+            Row {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(0.4f),
                 ) {
                     CustomTextField(
                         value = addNewIngredientViewModel.amount,
@@ -70,7 +83,7 @@ fun AddNewIngredient(
                 }
                 Row(
                     modifier = Modifier
-                        .fillMaxWidth(0.7f),
+                        .fillMaxWidth(0.5f),
                 ) {
                     DarkDropdown(
                         selectedValue = addNewIngredientViewModel.ingredient.measureType.unit,
@@ -85,22 +98,6 @@ fun AddNewIngredient(
                         },
                     )
                 }
-            }
-
-            Row {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(0.8f),
-                ) {
-                    CustomTextField(
-                        value = addNewIngredientViewModel.ingredient.itemName,
-                        onValueChange = { addNewIngredientViewModel.updateIngredient("itemName", it) },
-                        label = "Ingredient name...",
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Done,
-                    )
-                }
-
                 Row(
                     modifier = Modifier
                         .padding(10.dp)
@@ -111,6 +108,8 @@ fun AddNewIngredient(
                                 addNewIngredientViewModel.amount,
                             )
                             onAddClick(addNewIngredientViewModel.ingredient)
+                            addNewIngredientViewModel.ingredient = Ingredient()
+                            addNewIngredientViewModel.amount = ""
                         },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -125,15 +124,5 @@ fun AddNewIngredient(
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun AddNewIngredientPreview() {
-    LifeTogetherTheme {
-        AddNewIngredient(
-            onAddClick = {},
-        )
     }
 }

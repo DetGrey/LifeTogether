@@ -1,0 +1,112 @@
+{
+  "id": "uuid",
+  "type": "guide",
+  "name": "Crochet bunny",
+  "description": "Guide content template",
+  "visibility": "private",
+  "contentVersion": 1,
+  "sections": [
+    {
+      "id": "uuid",
+      "orderNumber": 1,
+      "title": "Head",
+      "subtitle": null,
+      "comment": "String",
+      "amount": 1,
+      "steps": [
+        {
+          "id": "uuid",
+          "name": "R1",
+          "type": "round",
+          "content": "sc 3, inc 3 (9 sts)"
+        },
+        {
+          "id": "uuid",
+          "name": "R2",
+          "type": "round",
+          "content": "sc 4, inc 3 (10 sts)"
+        },
+        {
+          "id": "uuid",
+          "type": "comment",
+          "content": "Fasten off"
+        }
+      ]
+    },
+    {
+      "id": "uuid",
+      "orderNumber": 2,
+      "title": "Ears",
+      "subtitle": "Make 2",
+      "comment": null,
+      "amount": 2,
+      "steps": [
+        {
+          "id": "uuid",
+          "name": "R1",
+          "type": "round",
+          "content": "sc 3, inc 3 (9 sts)"
+        },
+        {
+          "id": "uuid",
+          "name": "R2",
+          "type": "round",
+          "content": "sc 4, inc 3 (10 sts)"
+        },
+        {
+          "id": "uuid",
+          "type": "comment",
+          "content": "Fasten off"
+        }
+      ]
+    },
+    {
+      "orderNumber": 3,
+      "title": "Assembly",
+      "subtitle": null,
+      "comment": "String",
+      "amount": 1,
+      "steps": [
+        {
+          "id": "uuid",
+          "type": "numbered",
+          "content": "Fasten off and blal bla bla"
+        },
+        {
+          "id": "uuid",
+          "type": "numbered",
+          "content": "Second step is blal bla bla"
+        }
+      ]
+    },
+    {
+      "orderNumber": 4,
+      "title": "Facial features",
+      "subtitle": null,
+      "comment": "String",
+      "amount": 1,
+      "steps": [
+        {
+          "id": "uuid",
+          "type": "subsection",
+          "title": "Nose",
+          "steps": {
+            "id": "uuid",
+            "type": "numbered",
+            "content": "To make the nose..."
+          }
+        },
+        {
+          "id": "uuid",
+          "type": "subsection",
+          "title": "Nose",
+          "steps": {
+            "id": "uuid",
+            "type": "numbered",
+            "content": "To make the nose..."
+          }
+        }
+      ]
+    }
+  ]
+}

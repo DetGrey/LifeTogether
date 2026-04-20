@@ -28,23 +28,22 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.TopBar
-import com.example.lifetogether.ui.common.add.AddNewListItem
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
+import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
+import com.example.lifetogether.domain.observer.ObserverKey
 
 @Composable
 fun AdminGroceryCategoriesScreen(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
 ) {
     val groceryCategoriesViewModel: AdminGroceryCategoriesViewModel = hiltViewModel()
 
@@ -80,11 +79,18 @@ fun AdminGroceryCategoriesScreen(
             }
 
             item {
-                Text(modifier = Modifier.padding(horizontal = 5.dp),
+                ObserverUpdatingText(
+                    keys = setOf(ObserverKey.GROCERY_CATEGORIES),
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    modifier = Modifier.padding(horizontal = 5.dp),
                     text = "Add new category as a string with an emoji and a name with whitespace between e.g. \"\uD83C\uDF5E Bakery\"",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Black,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -101,7 +107,6 @@ fun AdminGroceryCategoriesScreen(
                     )
                 }
             }
-
         }
     }
 
@@ -174,7 +179,9 @@ fun AdminGroceryCategoriesScreen(
     }
 
     if (groceryCategoriesViewModel.showAlertDialog) {
+        LaunchedEffect(groceryCategoriesViewModel.error) {
+            groceryCategoriesViewModel.toggleAlertDialog()
+        }
         ErrorAlertDialog(groceryCategoriesViewModel.error)
-        groceryCategoriesViewModel.toggleAlertDialog()
     }
 }

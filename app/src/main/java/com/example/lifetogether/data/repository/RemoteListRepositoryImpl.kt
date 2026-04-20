@@ -1,35 +1,39 @@
 package com.example.lifetogether.data.repository
 
+import android.util.Log
 import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.callback.ResultListener
-import com.example.lifetogether.domain.callback.StringResultListener
-import com.example.lifetogether.domain.model.CompletableItem
+import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.model.Item
-import com.example.lifetogether.domain.repository.ListRepository
+import com.example.lifetogether.domain.repository.LegacyListRepository
+import com.example.lifetogether.domain.result.Result
 import javax.inject.Inject
 
 class RemoteListRepositoryImpl @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
-) : ListRepository {
-    override suspend fun saveItem(
+) : LegacyListRepository {
+    private companion object {
+        const val TAG = "RemoteListRepo"
+    }
+
+    // ------------------------------------------ GENERAL LISTS
+    suspend fun saveItem(
         item: Item,
         listName: String,
-    ): StringResultListener {
+    ): Result<String, String> {
         return firestoreDataSource.saveItem(item, listName)
     }
-    // ...
+
     suspend fun updateItem(
         item: Item,
         listName: String,
-    ): ResultListener {
-        return firestoreDataSource.updateItem(item, listName)
-    }
-
-    suspend fun toggleCompletableItemCompletion(
-        item: CompletableItem,
-        listName: String,
-    ): ResultListener {
-        return firestoreDataSource.toggleCompletableItemCompletion(item, listName)
+    ): Result<Unit, String> {
+        Log.d(TAG, "updateItem forwarding listName=$listName id=${item.id} type=${item::class.simpleName}")
+        val result = firestoreDataSource.updateItem(item, listName)
+        when (result) {
+            is Result.Success -> Log.d(TAG, "updateItem success listName=$listName id=${item.id}")
+            is Result.Failure -> Log.e(TAG, "updateItem failure listName=$listName id=${item.id} message=${result.error}")
+        }
+        return result
     }
 
     suspend fun deleteItem(
@@ -41,8 +45,22 @@ class RemoteListRepositoryImpl @Inject constructor(
 
     suspend fun deleteItems(
         listName: String,
-        items: List<Item>,
+        idsList: List<String>,
+    ): Result<Unit, String> {
+        return firestoreDataSource.deleteItems(listName, idsList)
+    }
+    // ------------------------------------------ CUSTOM FUNCTIONS
+    suspend fun updateAlbumCount(
+        albumId: String,
+        count: Int,
     ): ResultListener {
-        return firestoreDataSource.deleteItems(listName, items)
+        return firestoreDataSource.updateAlbumCount(albumId, count)
+    }
+    suspend fun moveMediaToAlbum(
+        mediaIdList: Set<String>,
+        newAlbumId: String,
+        oldAlbumId: String,
+    ): ResultListener {
+        return firestoreDataSource.moveMediaToAlbum(mediaIdList, newAlbumId, oldAlbumId)
     }
 }

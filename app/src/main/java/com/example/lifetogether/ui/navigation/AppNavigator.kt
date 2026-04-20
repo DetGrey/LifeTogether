@@ -1,5 +1,6 @@
 package com.example.lifetogether.ui.navigation
 
+import android.net.Uri
 import androidx.navigation.NavController
 
 class AppNavigator(private val navController: NavController) : Navigator {
@@ -53,6 +54,73 @@ class AppNavigator(private val navController: NavController) : Navigator {
         val route = recipeId?.let {
             "${AppRoutes.RECIPE_DETAILS_SCREEN}/$it"
         } ?: AppRoutes.CREATE_RECIPE_SCREEN
+        navController.navigate(route)
+    }
+
+    override fun navigateToGuides() {
+        navController.navigate(AppRoutes.GUIDES_SCREEN)
+    }
+
+    override fun navigateToGuideDetails(guideId: String) {
+        val route = "${AppRoutes.GUIDE_GRAPH}/${Uri.encode(guideId)}"
+        navController.navigate(route)
+    }
+
+    override fun navigateToGuideStepPlayer() {
+        navController.navigate(AppRoutes.GUIDE_STEP_PLAYER_SCREEN)
+    }
+
+    override fun navigateToGuideCreate() {
+        navController.navigate(AppRoutes.GUIDE_CREATE_SCREEN)
+    }
+
+    override fun navigateToGallery() {
+        navController.navigate(AppRoutes.GALLERY_GRAPH) {
+            launchSingleTop = true
+            // Clear any album or media screens when returning to gallery
+            popUpTo(AppRoutes.GALLERY_SCREEN) {
+                inclusive = false
+            }
+        }
+    }
+
+    override fun navigateToAlbumMedia(albumId: String) {
+        val route = "${AppRoutes.ALBUM_MEDIA_SCREEN}/$albumId"
+        navController.navigate(route) {
+            // Clear any existing album/media screens from back stack
+            popUpTo(AppRoutes.GALLERY_SCREEN) {
+                inclusive = false
+            }
+        }
+    }
+
+    override fun navigateToGalleryMedia(albumId: String, initialIndex: Int) {
+        val route = "${AppRoutes.GALLERY_MEDIA_SCREEN}/$albumId/$initialIndex"
+        navController.navigate(route)
+    }
+
+    override fun navigateToTipTracker() {
+        navController.navigate(AppRoutes.TIP_TRACKER_SCREEN)
+    }
+
+    override fun navigateToTipStatistics() {
+        navController.navigate(AppRoutes.TIP_STATISTICS_SCREEN)
+    }
+
+    override fun navigateToLists() {
+        navController.navigate(AppRoutes.LISTS_SCREEN)
+    }
+
+    override fun navigateToListDetail(listId: String) {
+        navController.navigate("${AppRoutes.LIST_DETAIL_SCREEN}/$listId")
+    }
+
+    override fun navigateToListEntryDetails(listId: String, entryId: String?) {
+        val route = if (entryId != null) {
+            "${AppRoutes.LIST_ENTRY_DETAILS_SCREEN}/$listId/$entryId"
+        } else {
+            "${AppRoutes.LIST_ENTRY_DETAILS_SCREEN}/$listId"
+        }
         navController.navigate(route)
     }
 }

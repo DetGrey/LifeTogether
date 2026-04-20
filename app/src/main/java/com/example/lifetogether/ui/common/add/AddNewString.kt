@@ -22,12 +22,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.ui.common.textfield.CustomTextField
-import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.AddNewListItemViewModel
 
 @Composable
 fun AddNewString(
@@ -69,6 +66,7 @@ fun AddNewString(
                     .fillMaxHeight()
                     .clickable {
                         onAddClick(addNewListItemViewModel.textValue)
+                        addNewListItemViewModel.textValue = ""
                     },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -82,15 +80,5 @@ fun AddNewString(
                 )
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun AddNewStringPreview() {
-    LifeTogetherTheme {
-        AddNewString(
-            onAddClick = {},
-        )
     }
 }

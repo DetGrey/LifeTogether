@@ -10,17 +10,20 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface RecipesDao {
-    @Query("SELECT * FROM $RECIPES_TABLE")
-    fun getAll(): List<RecipeEntity>
-
     @Query("SELECT * FROM $RECIPES_TABLE WHERE family_id = :familyId")
     fun getItems(familyId: String): Flow<List<RecipeEntity>>
 
     @Query("SELECT * FROM $RECIPES_TABLE WHERE family_id = :familyId AND id = :id LIMIT 1")
-    fun getRecipeById(familyId: String, id: String): RecipeEntity?
+    fun getItemById(familyId: String, id: String): RecipeEntity?
+
+    @Query("SELECT * FROM $RECIPES_TABLE WHERE family_id = :familyId AND id = :id LIMIT 1")
+    fun getItemByIdFlow(familyId: String, id: String): Flow<RecipeEntity?>
 
     @Query("SELECT image_data FROM $RECIPES_TABLE WHERE family_id = :familyId AND id = :id LIMIT 1")
     fun getImageByteArray(familyId: String, id: String): Flow<ByteArray?>
+
+    @Query("SELECT id FROM $RECIPES_TABLE WHERE family_id = :familyId AND image_data IS NOT NULL")
+    suspend fun getRecipeIdsWithImages(familyId: String): List<String>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateItems(items: List<RecipeEntity>)

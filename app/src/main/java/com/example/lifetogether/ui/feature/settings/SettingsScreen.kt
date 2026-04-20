@@ -13,7 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.enums.SettingsConfirmationTypes
@@ -22,16 +22,13 @@ import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
-import com.example.lifetogether.ui.viewmodel.SettingsViewModel
 
 @Composable
 fun SettingsScreen(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
 ) {
     val settingsViewModel: SettingsViewModel = hiltViewModel()
-    val userInformationState by firebaseViewModel?.userInformation!!.collectAsState()
+    val userInformationState by settingsViewModel.userInformation.collectAsState()
 
     Box(
         modifier = Modifier
@@ -110,15 +107,7 @@ fun SettingsScreen(
             when (settingsViewModel.confirmationDialogType) {
                 SettingsConfirmationTypes.JOIN_FAMILY -> ConfirmationDialogWithTextField(
                     onDismiss = { settingsViewModel.closeConfirmationDialog() },
-                    onConfirm = {
-                        userInformationState?.uid.let { uid ->
-                            userInformationState?.name.let { name ->
-                                if (uid != null && name != null) {
-                                    settingsViewModel.joinFamily(uid, name)
-                                }
-                            }
-                        }
-                    },
+                    onConfirm = { settingsViewModel.joinFamily() },
                     dialogTitle = "Join a family",
                     dialogMessage = "Please add the family id to join",
                     dismissButtonMessage = "Cancel",
@@ -129,15 +118,7 @@ fun SettingsScreen(
 
                 SettingsConfirmationTypes.NEW_FAMILY -> ConfirmationDialog(
                     onDismiss = { settingsViewModel.closeConfirmationDialog() },
-                    onConfirm = {
-                        userInformationState?.uid.let { uid ->
-                            userInformationState?.name.let { name ->
-                                if (uid != null && name != null) {
-                                    settingsViewModel.createNewFamily(uid, name)
-                                }
-                            }
-                        }
-                    },
+                    onConfirm = { settingsViewModel.createNewFamily() },
                     dialogTitle = "Create new family",
                     dialogMessage = "Are you sure you want to create a new family?",
                     dismissButtonMessage = "Cancel",
@@ -153,7 +134,5 @@ fun SettingsScreen(
 @Preview(showBackground = true)
 @Composable
 fun SettingsScreenPreview() {
-    LifeTogetherTheme {
-        SettingsScreen()
-    }
+    LifeTogetherTheme {}
 }

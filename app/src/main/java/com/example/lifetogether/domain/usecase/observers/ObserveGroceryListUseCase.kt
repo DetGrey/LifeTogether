@@ -1,33 +1,62 @@
 package com.example.lifetogether.domain.usecase.observers
 
-import com.example.lifetogether.data.local.LocalDataSource
+import com.example.lifetogether.data.local.source.GroceryLocalDataSource
+import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.callback.ListItemsResultListener
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class ObserveGroceryListUseCase @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
-    private val localDataSource: LocalDataSource,
+    private val groceryLocalDataSource: GroceryLocalDataSource,
 ) {
-    suspend operator fun invoke(
+    fun start(
+        scope: CoroutineScope,
         familyId: String,
-    ) {
-        println("ObserveGroceryListUseCase invoked")
-        firestoreDataSource.grocerySnapshotListener(familyId).collect { result ->
-            println("grocerySnapshotListener().collect result: $result")
-            when (result) {
-                is ListItemsResultListener.Success -> {
-                    if (result.listItems.isEmpty()) {
-                        println("grocerySnapshotListener().collect result: is empty")
-                    } else {
-                        localDataSource.updateGroceryList(result.listItems)
+    ): ObserverStartHandle {
+        val firstSuccess = CompletableDeferred<Result<Unit>>()
+        val job = scope.launch {
+            println("ObserveGroceryListUseCase invoked")
+            firestoreDataSource.grocerySnapshotListener(familyId).collect { result ->
+                println("grocerySnapshotListener().collect result: $result")
+                when (result) {
+                    is com.example.lifetogether.domain.result.Result.Success -> {
+                        runCatching {
+                            if (result.data.isEmpty()) {
+                                println("grocerySnapshotListener().collect result: is empty")
+                                groceryLocalDataSource.deleteFamilyGroceryItems(familyId)
+                            } else {
+                                val entities = result.data.map { item ->
+                                    GroceryListEntity(
+                                        id = item.id ?: "",
+                                        familyId = item.familyId,
+                                        name = item.itemName,
+                                        lastUpdated = item.lastUpdated,
+                                        completed = item.completed,
+                                        category = item.category,
+                                        approxPrice = item.approxPrice,
+                                    )
+                                }
+                                groceryLocalDataSource.updateGroceryList(
+                                    familyId,
+                                    entities
+                                )
+                            }
+                        }.onSuccess {
+                            firstSuccess.completeFirstSuccessIfNeeded()
+                        }.onFailure { error ->
+                            println("ObserveGroceryListUseCase local update failure: ${error.message}")
+                        }
                     }
-                }
-                is ListItemsResultListener.Failure -> {
-                    // Handle failure
-                    println("ObserveFirestoreUseCase failure: ${result.message}")
+                    is com.example.lifetogether.domain.result.Result.Failure -> {
+                        // Keep listener alive; firstSuccess is one-shot and only completes on success.
+                        println("ObserveFirestoreUseCase failure: ${result.error}")
+                    }
                 }
             }
         }
+        return ObserverStartHandle(firstSuccess = firstSuccess, job = job)
     }
 }

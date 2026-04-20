@@ -1,7 +1,5 @@
 package com.example.lifetogether.ui.feature.profile
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -28,10 +26,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.BuildConfig
 import com.example.lifetogether.R
-import com.example.lifetogether.domain.logic.formatDateToString
+import com.example.lifetogether.domain.logic.toFullDateString
 import com.example.lifetogether.domain.model.ConfirmationDialogDetails
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.sealed.ImageType
@@ -45,24 +43,19 @@ import com.example.lifetogether.ui.common.text.TextHeadingLarge
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.FirebaseViewModel
 import com.example.lifetogether.ui.viewmodel.ImageViewModel
-import com.example.lifetogether.ui.viewmodel.ProfileViewModel
 
 @Composable
 fun ProfileScreen(
     appNavigator: AppNavigator? = null,
-    firebaseViewModel: FirebaseViewModel? = null,
 ) {
     val profileViewModel: ProfileViewModel = hiltViewModel()
     val imageViewModel: ImageViewModel = hiltViewModel()
 
-    val userInformation by firebaseViewModel?.userInformation!!.collectAsState()
+    val userInformation by profileViewModel.userInformation.collectAsState()
     val bitmap by imageViewModel.bitmap.collectAsState()
 
-    LaunchedEffect(key1 = true) {
-        // Perform any one-time initialization or side effect here
-        println("ProfileScreen uid: ${userInformation?.uid}")
+    LaunchedEffect(userInformation?.uid) {
         userInformation?.uid?.let { uid ->
             imageViewModel.collectImageFlow(
                 imageType = ImageType.ProfileImage(uid),
@@ -187,9 +180,7 @@ fun ProfileScreen(
                             description = "cake icon",
                         ),
                         title = "Birthday",
-                        value = userInformation?.birthday?.let { date ->
-                            formatDateToString(date)
-                        } ?: "",
+                        value = userInformation?.birthday?.toFullDateString() ?: "",
                     )
                     if (userInformation?.uid in BuildConfig.ADMIN_LIST.split(",")) {
                         ProfileDetails(
@@ -239,17 +230,12 @@ fun ProfileScreen(
             ProfileViewModel.ProfileConfirmationType.LOGOUT -> ConfirmationDialog(
                 onDismiss = { profileViewModel.closeConfirmationDialog() },
                 onConfirm = {
-                    userInformation?.uid?.let { uid ->
-                        profileViewModel.logout(
-                            uid,
-                            userInformation!!.familyId,
-                            onSuccess = {
-                                firebaseViewModel?.onSignOut()
-                                profileViewModel.closeConfirmationDialog()
-                                appNavigator?.navigateToHome()
-                            },
-                        )
-                    }
+                    profileViewModel.logout(
+                        onSuccess = {
+                            profileViewModel.closeConfirmationDialog()
+                            appNavigator?.navigateToHome()
+                        },
+                    )
                 },
                 dialogTitle = "Logout",
                 dialogMessage = "Are you sure you want to logout?",
@@ -259,11 +245,7 @@ fun ProfileScreen(
 
             ProfileViewModel.ProfileConfirmationType.NAME -> ConfirmationDialogWithTextField(
                 onDismiss = { profileViewModel.closeConfirmationDialog() },
-                onConfirm = {
-                    userInformation?.uid?.let {
-                        profileViewModel.changeName(it, userInformation?.familyId)
-                    }
-                },
+                onConfirm = { profileViewModel.changeName() },
                 dialogTitle = "Change name",
                 dialogMessage = "Please enter your new name",
                 dismissButtonMessage = "Cancel",
@@ -285,14 +267,14 @@ fun ProfileScreen(
     }
 
     // ---------------------------------------------------------------- IMAGE UPLOAD DIALOG
-    if (imageViewModel.showImageUploadDialog && userInformation != null) {
-        userInformation!!.uid?.let {
+    if (imageViewModel.showImageUploadDialog) {
+        userInformation?.uid?.let { uid ->
             ImageUploadDialog(
                 onDismiss = { imageViewModel.showImageUploadDialog = false },
                 onConfirm = { imageViewModel.showImageUploadDialog = false },
                 dialogTitle = "Upload profile photo",
                 dialogMessage = "Select your new profile photo",
-                imageType = ImageType.ProfileImage(it),
+                imageType = ImageType.ProfileImage(uid),
                 dismissButtonMessage = "Cancel",
                 confirmButtonMessage = "Upload photo",
             )
@@ -301,16 +283,15 @@ fun ProfileScreen(
 
     // ---------------------------------------------------------------- SHOW ERROR ALERT
     if (profileViewModel.showAlertDialog) {
+        LaunchedEffect(profileViewModel.error) {
+            profileViewModel.toggleAlertDialog()
+        }
         ErrorAlertDialog(profileViewModel.error)
-        profileViewModel.toggleAlertDialog()
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.S)
 @Preview(showBackground = true)
 @Composable
 fun ProfileScreenPreview() {
-    LifeTogetherTheme {
-        ProfileScreen()
-    }
+    LifeTogetherTheme {}
 }

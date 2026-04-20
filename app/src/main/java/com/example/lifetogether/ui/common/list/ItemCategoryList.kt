@@ -1,7 +1,5 @@
 package com.example.lifetogether.ui.common.list
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,7 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.groceryListNotificationOptions
 import com.example.lifetogether.domain.model.Category
@@ -33,6 +31,7 @@ import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.bodyFontFamily
 import com.example.lifetogether.ui.viewmodel.NotificationViewModel
 import com.example.lifetogether.util.Constants
+import com.example.lifetogether.util.priceToString
 import java.util.Date
 
 @Composable
@@ -94,6 +93,9 @@ fun ItemCategoryList(
                     ListItem(
                         item = item,
                         onCompleteToggle = { onCompleteToggle(item) },
+                        trailingText = if (item is GroceryItem && item.approxPrice != null) {
+                            (item.approxPrice as Float).priceToString()
+                        } else null,
                         onBellClick = if (item is GroceryItem) {
                             {
                                 println("bell clicked")
@@ -119,7 +121,6 @@ fun ItemCategoryList(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.S)
 @Preview(showBackground = true)
 @Composable
 fun ItemCategoryListPreview() {
