@@ -10,6 +10,7 @@ import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.repository.UserRepository
+import com.example.lifetogether.domain.result.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -86,13 +87,15 @@ class ProfileViewModel @Inject constructor(
         val familyId = _userInformation.value?.familyId
 
         viewModelScope.launch {
-            val result = userRepository.changeName(uid, familyId, name)
-            if (result is ResultListener.Success) {
-                closeConfirmationDialog()
-            } else if (result is ResultListener.Failure) {
-                closeConfirmationDialog()
-                error = result.message
-                showAlertDialog = true
+            when (val result = userRepository.changeName(uid, familyId, name)) {
+                is Result.Success -> {
+                    closeConfirmationDialog()
+                }
+                is Result.Failure -> {
+                    closeConfirmationDialog()
+                    error = result.error
+                    showAlertDialog = true
+                }
             }
         }
     }

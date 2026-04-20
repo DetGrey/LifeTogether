@@ -2,7 +2,6 @@ package com.example.lifetogether.ui.feature.admin.groceryList
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.repository.AdminRepository
@@ -214,12 +213,12 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
         )
 
         viewModelScope.launch {
-            val result: ResultListener = adminRepository.saveGrocerySuggestion(grocerySuggestion)
-            if (result is ResultListener.Success) {
-                clearSuggestionDraft()
-            } else if (result is ResultListener.Failure) {
-                println("Error: ${result.message}")
-                showError(result.message)
+            when (val result = adminRepository.saveGrocerySuggestion(grocerySuggestion)) {
+                is Result.Success -> clearSuggestionDraft()
+                is Result.Failure -> {
+                    println("Error: ${result.error}")
+                    showError(result.error)
+                }
             }
         }
     }
@@ -250,10 +249,10 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
 
         viewModelScope.launch {
             when (val result = adminRepository.updateGrocerySuggestion(updatedSuggestion)) {
-                is ResultListener.Success -> clearSuggestionDraft()
-                is ResultListener.Failure -> {
-                    println("Error: ${result.message}")
-                    showError(result.message)
+                is Result.Success -> clearSuggestionDraft()
+                is Result.Failure -> {
+                    println("Error: ${result.error}")
+                    showError(result.error)
                 }
             }
         }
@@ -266,11 +265,11 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            val result: ResultListener = adminRepository.deleteGrocerySuggestion(selectedSuggestion)
+            val result = adminRepository.deleteGrocerySuggestion(selectedSuggestion)
 
-            if (result is ResultListener.Failure) {
-                println("Error: ${result.message}")
-                showError(result.message)
+            if (result is Result.Failure) {
+                println("Error: ${result.error}")
+                showError(result.error)
             }
 
             updateUiState { state ->

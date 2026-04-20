@@ -23,17 +23,26 @@ class AdminRepositoryImpl @Inject constructor(
     }
     override suspend fun saveGrocerySuggestion(
         grocerySuggestion: GrocerySuggestion,
-    ): ResultListener {
-        return firestoreDataSource.addGrocerySuggestion(grocerySuggestion)
+    ): Result<Unit, String> {
+        return when (val result = firestoreDataSource.addGrocerySuggestion(grocerySuggestion)) {
+            is ResultListener.Success -> Result.Success(Unit)
+            is ResultListener.Failure -> Result.Failure(result.message)
+        }
     }
     override suspend fun updateGrocerySuggestion(
         grocerySuggestion: GrocerySuggestion,
-    ): ResultListener {
-        return firestoreDataSource.updateGrocerySuggestion(grocerySuggestion)
+    ): Result<Unit, String> {
+        return when (val result = firestoreDataSource.updateGrocerySuggestion(grocerySuggestion)) {
+            is ResultListener.Success -> Result.Success(Unit)
+            is ResultListener.Failure -> Result.Failure(result.message)
+        }
     }
     override suspend fun deleteGrocerySuggestion(
         grocerySuggestion: GrocerySuggestion,
-    ): ResultListener {
-        return firestoreDataSource.deleteGrocerySuggestion(grocerySuggestion)
+    ): Result<Unit, String> {
+        return when (val result = firestoreDataSource.deleteGrocerySuggestion(grocerySuggestion)) {
+            is ResultListener.Success -> Result.Success(Unit)
+            is ResultListener.Failure -> Result.Failure(result.message)
+        }
     }
 }

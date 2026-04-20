@@ -15,6 +15,20 @@ class FamilyRepositoryImpl @Inject constructor(
         return userRepositoryImpl.getFamilyInformation(familyId)
     }
 
+    override suspend fun joinFamily(familyId: String, uid: String, name: String): Result<Unit, String> {
+        return when (val result = userRepositoryImpl.joinFamily(familyId, uid, name)) {
+            is ResultListener.Success -> Result.Success(Unit)
+            is ResultListener.Failure -> Result.Failure(result.message)
+        }
+    }
+
+    override suspend fun createNewFamily(uid: String, name: String): Result<Unit, String> {
+        return when (val result = userRepositoryImpl.createNewFamily(uid, name)) {
+            is ResultListener.Success -> Result.Success(Unit)
+            is ResultListener.Failure -> Result.Failure(result.message)
+        }
+    }
+
     override suspend fun leaveFamily(familyId: String, uid: String): Result<Unit, String> {
         return when (val result = userRepositoryImpl.leaveFamily(familyId, uid)) {
             is ResultListener.Success -> Result.Success(Unit)

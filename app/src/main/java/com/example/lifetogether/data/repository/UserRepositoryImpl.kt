@@ -133,8 +133,11 @@ class UserRepositoryImpl @Inject constructor(
         uid: String,
         familyId: String?,
         newName: String,
-    ): ResultListener {
-        return firestoreDataSource.changeName(uid, familyId, newName)
+    ): Result<Unit, String> {
+        return when (val result = firestoreDataSource.changeName(uid, familyId, newName)) {
+            is ResultListener.Success -> Result.Success(Unit)
+            is ResultListener.Failure -> Result.Failure(result.message)
+        }
     }
 
     suspend fun joinFamily(
@@ -196,9 +199,13 @@ class UserRepositoryImpl @Inject constructor(
     override suspend fun storeFcmToken(
         uid: String,
         familyId: String,
-    ): ResultListener {
-        firestoreDataSource.storeFcmToken(uid, familyId)
-        return ResultListener.Success // TODO this is temp!
+    ): Result<Unit, String> {
+        return runCatching {
+            firestoreDataSource.storeFcmToken(uid, familyId)
+            Result.Success(Unit)
+        }.getOrElse { error ->
+            Result.Failure(error.message ?: "Failed to store FCM token")
+        }
     }
 
     override suspend fun fetchFcmTokens(
