@@ -14,7 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.logic.getVideoThumbnail
 import com.example.lifetogether.domain.logic.isVideoUri
 import com.example.lifetogether.domain.logic.parseExifDate
@@ -176,18 +176,18 @@ class MediaUploadViewModel @Inject constructor(
             // The UploadMediaItemsUseCase will take this list and handle uploading each item
             // It will also be responsible for creating Firestore/Room entries
             when (val result = uploadGalleryMediaItemsUseCase.invoke(mediaUploadDataList, context)) {
-                is ResultListener.Success -> {
+                is Result.Success -> {
                     withContext(Dispatchers.Main) {
                         _uploadState.value = UploadState.Success
                     }
                     Log.d("MediaUploadVM", "Upload successful for all items.")
                 }
-                is ResultListener.Failure -> {
+                is Result.Failure -> {
                     withContext(Dispatchers.Main) {
-                        _uploadState.value = UploadState.Failure(result.message)
-                        error = result.message
+                        _uploadState.value = UploadState.Failure(result.error)
+                        error = result.error
                     }
-                    Log.e("MediaUploadVM", "Upload failed: ${result.message}")
+                    Log.e("MediaUploadVM", "Upload failed: ${result.error}")
                 }
             }
         }

@@ -2,7 +2,6 @@ package com.example.lifetogether.domain.usecase.observers
 
 import com.example.lifetogether.data.local.source.CategoryLocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.listener.CategoriesListener
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -19,18 +18,18 @@ class ObserveCategoriesUseCase @Inject constructor(
             firestoreDataSource.categoriesSnapshotListener().collect { result ->
                 println("categoriesSnapshotListener().collect result: $result")
                 when (result) {
-                    is CategoriesListener.Success -> {
+                    is com.example.lifetogether.domain.result.Result.Success -> {
                         runCatching {
-                            categoryLocalDataSource.updateCategories(result.listItems)
+                            categoryLocalDataSource.updateCategories(result.data)
                         }.onSuccess {
                             firstSuccess.completeFirstSuccessIfNeeded()
                         }.onFailure { error ->
                             println("categoriesSnapshotListener local update failure: ${error.message}")
                         }
                     }
-                    is CategoriesListener.Failure -> {
+                    is com.example.lifetogether.domain.result.Result.Failure -> {
                         // Keep listener alive; firstSuccess is one-shot and only completes on success.
-                        println("categoriesSnapshotListener failure: ${result.message}")
+                        println("categoriesSnapshotListener failure: ${result.error}")
                     }
                 }
             } 

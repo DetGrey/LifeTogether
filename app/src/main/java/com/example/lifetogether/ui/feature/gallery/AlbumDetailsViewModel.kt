@@ -2,14 +2,12 @@ package com.example.lifetogether.ui.feature.gallery
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.listener.AlbumUiModelResultListener
-import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.logic.toFullDateString
 import com.example.lifetogether.domain.model.SaveProgress
 import com.example.lifetogether.domain.model.gallery.Album
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.repository.GalleryRepository
-import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.usecase.gallery.DeleteAlbumUseCase
 import com.example.lifetogether.domain.usecase.gallery.DeleteMediaUseCase
 import com.example.lifetogether.domain.usecase.gallery.GetAlbumDisplayModelsUseCase
@@ -255,11 +253,11 @@ class AlbumDetailsViewModel @Inject constructor(
 
         viewModelScope.launch {
             when (val result = deleteAlbumUseCase.invoke(albumIdValue, uiState.value.media)) {
-                is ResultListener.Success -> {
+                is Result.Success -> {
                     dismissOverflowMenuActionDialog()
                     onDeleteSuccess()
                 }
-                is ResultListener.Failure -> showError(result.message)
+                is Result.Failure -> showError(result.error)
             }
         }
     }
@@ -309,8 +307,8 @@ class AlbumDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             getAlbumDisplayModelsUseCase(familyIdValue).collect { result ->
                 when (result) {
-                    is AlbumUiModelResultListener.Success -> {
-                        val possibleAlbums = result.albums.filterNot { it.id == albumId }
+                    is Result.Success -> {
+                        val possibleAlbums = result.data.filterNot { it.id == albumId }
                         _uiState.update { it.copy(albums = possibleAlbums, showOverflowMenuActionDialog = true) }
 
                         possibleAlbums.forEach { model ->
@@ -319,7 +317,7 @@ class AlbumDetailsViewModel @Inject constructor(
                             }
                         }
                     }
-                    is AlbumUiModelResultListener.Failure -> showError(result.message)
+                    is Result.Failure -> showError(result.error)
                 }
             }
         }
@@ -331,11 +329,11 @@ class AlbumDetailsViewModel @Inject constructor(
 
         viewModelScope.launch {
             when (val result = moveMediaToAlbumUseCase.invoke(selectedMedia, newAlbumId, oldAlbumId)) {
-                is ResultListener.Success -> {
+                is Result.Success -> {
                     dismissOverflowMenuActionDialog()
                     toggleSelectionMode()
                 }
-                is ResultListener.Failure -> showError(result.message)
+                is Result.Failure -> showError(result.error)
             }
         }
     }
@@ -347,11 +345,11 @@ class AlbumDetailsViewModel @Inject constructor(
 
         viewModelScope.launch {
             when (val result = deleteMediaUseCase.invoke(albumIdValue, selectedMedia)) {
-                is ResultListener.Success -> {
+                is Result.Success -> {
                     dismissOverflowMenuActionDialog()
                     toggleSelectionMode()
                 }
-                is ResultListener.Failure -> showError(result.message)
+                is Result.Failure -> showError(result.error)
             }
         }
     }

@@ -2,7 +2,6 @@ package com.example.lifetogether.ui.feature.gallery
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.listener.AlbumUiModelResultListener
 import com.example.lifetogether.domain.model.gallery.Album
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.GalleryRepository
@@ -98,17 +97,17 @@ class GalleryViewModel @Inject constructor(
         viewModelScope.launch {
             getAlbumDisplayModelsUseCase.invoke(familyIdValue).collect { result ->
                 when (result) {
-                    is AlbumUiModelResultListener.Success -> {
-                        _uiState.update { it.copy(albums = result.albums) }
+                    is Result.Success -> {
+                        _uiState.update { it.copy(albums = result.data) }
 
-                        result.albums.forEach { album ->
+                        result.data.forEach { album ->
                             if (album.thumbnail == null && !requestedThumbnails.contains(album.id)) {
                                 requestedThumbnails.add(album.id)
                                 galleryRepository.fetchAlbumThumbnail(album.id)
                             }
                         }
                     }
-                    is AlbumUiModelResultListener.Failure -> showError(result.message)
+                    is Result.Failure -> showError(result.error)
                 }
             }
         }

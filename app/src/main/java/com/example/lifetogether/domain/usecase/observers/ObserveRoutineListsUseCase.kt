@@ -3,9 +3,8 @@ package com.example.lifetogether.domain.usecase.observers
 import android.util.Log
 import com.example.lifetogether.data.local.source.UserListLocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.listener.ByteArrayResultListener
-import com.example.lifetogether.domain.listener.ListItemsResultListener
 import com.example.lifetogether.domain.datasource.StorageDataSource
+import com.example.lifetogether.domain.result.Result as AppResult
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -29,37 +28,37 @@ class ObserveRoutineListsUseCase @Inject constructor(
             Log.d(TAG, "invoke familyId=$familyId")
             firestoreDataSource.familyRoutineListEntriesSnapshotListener(familyId).collect { result ->
                 when (result) {
-                    is ListItemsResultListener.Success -> {
-                        Log.d(TAG, "snapshot count=${result.listItems.size}")
+                    is AppResult.Success -> {
+                        Log.d(TAG, "snapshot count=${result.data.items.size}")
                         runCatching {
-                            if (result.listItems.isEmpty()) {
+                            if (result.data.items.isEmpty()) {
                                 userListLocalDataSource.deleteFamilyRoutineListEntries(familyId)
                             } else {
                                 val existingIdsWithImages = userListLocalDataSource.getRoutineEntryIdsWithImages(familyId)
 
                                 val byteArrays: MutableMap<String, ByteArray> = mutableMapOf()
-                                for (entry in result.listItems) {
+                                for (entry in result.data.items) {
                                     if (entry.id != null && existingIdsWithImages.contains(entry.id)) {
                                         Log.d(TAG, "Skipping download for ${entry.itemName} — image already cached")
                                         continue
                                     }
-                                    val byteArrayResult: ByteArrayResultListener? =
+                                    val byteArrayResult: AppResult<ByteArray, String>? =
                                         entry.imageUrl?.let { url ->
                                             storageDataSource.fetchImageByteArray(url)
                                         }
-                                    if (byteArrayResult is ByteArrayResultListener.Success) {
-                                        entry.id?.let { byteArrays[it] = byteArrayResult.byteArray }
+                                    if (byteArrayResult is AppResult.Success) {
+                                        entry.id?.let { byteArrays[it] = byteArrayResult.data }
                                     }
                                 }
 
-                                userListLocalDataSource.updateRoutineListEntries(result.listItems, byteArrays)
+                                userListLocalDataSource.updateRoutineListEntries(result.data.items, byteArrays)
                             }
                         }.onSuccess {
                             firstSuccess.completeFirstSuccessIfNeeded()
                         }.onFailure { Log.e(TAG, "local update failure: ${it.message}", it) }
                     }
-                    is ListItemsResultListener.Failure -> {
-                        Log.e(TAG, "listener failure: ${result.message}")
+                    is AppResult.Failure -> {
+                        Log.e(TAG, "listener failure: ${result.error}")
                     }
                 }
             }

@@ -4,16 +4,13 @@ import com.example.lifetogether.data.local.source.SessionCleanupLocalDataSource
 import com.example.lifetogether.data.local.source.UserLocalDataSource
 import com.example.lifetogether.data.remote.FirebaseAuthDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.listener.AuthResultListener
-import com.example.lifetogether.domain.listener.ResultListener
-import com.example.lifetogether.domain.listener.StringResultListener
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.model.family.FamilyMember
 import com.example.lifetogether.domain.repository.SessionUserRepository
 import com.example.lifetogether.domain.repository.UserRepository
-import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -76,13 +73,13 @@ class UserRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun removeSavedUserInformation(): ResultListener {
+    override fun removeSavedUserInformation(): Result<Unit, String> {
         return sessionCleanupLocalDataSource.clearSessionTables()
     }
     // ---------- REMOTE
     suspend fun login(
         user: User,
-    ): AuthResultListener {
+    ): Result<UserInformation, String> {
         println("RemoteUserRepositoryImpl login()")
         return firebaseAuthDataSource.login(user)
     }
@@ -90,42 +87,42 @@ class UserRepositoryImpl @Inject constructor(
     suspend fun signUp(
         user: User,
         userInformation: UserInformation,
-    ): AuthResultListener {
+    ): Result<UserInformation, String> {
         println("RemoteUserRepositoryImpl signUp()")
         try {
             val signupResult = firebaseAuthDataSource.signUp(user, userInformation)
             println("RemoteUserRepositoryImpl signupResult: $signupResult")
-            return if (signupResult is AuthResultListener.Success) {
-                when (val uploadResult = firestoreDataSource.uploadUserInformation(signupResult.userInformation)) {
-                    is ResultListener.Success -> {
+            return if (signupResult is Result.Success) {
+                when (val uploadResult = firestoreDataSource.uploadUserInformation(signupResult.data)) {
+                    is Result.Success -> {
                         println("RemoteUserRepositoryImpl: uploadResult $uploadResult")
                         signupResult
                     }
-                    is ResultListener.Failure -> {
+                    is Result.Failure -> {
                         println("RemoteUserRepositoryImpl: uploadResult $uploadResult")
-                        AuthResultListener.Failure(uploadResult.message)
+                        Result.Failure(uploadResult.error)
                     }
                 }
             } else {
                 signupResult
             }
         } catch (e: Exception) {
-            return AuthResultListener.Failure("Error: ${e.message}")
+            return Result.Failure("Error: ${e.message}")
         }
     }
 
     override suspend fun logout(
         uid: String,
         familyId: String?,
-    ): ResultListener {
+    ): Result<Unit, String> {
         return firebaseAuthDataSource.logout(uid, familyId)
     }
 
-    override suspend fun fetchUserInformation(uid: String): AuthResultListener {
+    override suspend fun fetchUserInformation(uid: String): Result<UserInformation, String> {
         return firestoreDataSource.fetchUserInformation(uid)
     }
 
-    override fun observeUserInformation(uid: String): Flow<AuthResultListener> {
+    override fun observeUserInformation(uid: String): Flow<Result<UserInformation, String>> {
         return firestoreDataSource.userInformationSnapshotListener(uid)
     }
 
@@ -135,8 +132,8 @@ class UserRepositoryImpl @Inject constructor(
         newName: String,
     ): Result<Unit, String> {
         return when (val result = firestoreDataSource.changeName(uid, familyId, newName)) {
-            is ResultListener.Success -> Result.Success(Unit)
-            is ResultListener.Failure -> Result.Failure(result.message)
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> Result.Failure(result.error)
         }
     }
 
@@ -144,15 +141,15 @@ class UserRepositoryImpl @Inject constructor(
         familyId: String,
         uid: String,
         name: String,
-    ): ResultListener {
+    ): Result<Unit, String> {
         println("RemoteUserRepositoryImpl joinFamily()")
         when (val result = firestoreDataSource.joinFamily(familyId, uid, name)) {
-            is ResultListener.Success -> {
+            is Result.Success -> {
                 val updateResult = firestoreDataSource.updateFamilyId(uid, familyId)
                 return updateResult
             }
-            is ResultListener.Failure -> {
-                return ResultListener.Failure(result.message)
+            is Result.Failure -> {
+                return Result.Failure(result.error)
             }
         }
     }
@@ -160,15 +157,15 @@ class UserRepositoryImpl @Inject constructor(
     suspend fun createNewFamily(
         uid: String,
         name: String,
-    ): ResultListener {
+    ): Result<Unit, String> {
         println("RemoteUserRepositoryImpl createNewFamily()")
         when (val result = firestoreDataSource.createNewFamily(uid, name)) {
-            is StringResultListener.Success -> {
-                val updateResult = firestoreDataSource.updateFamilyId(uid, result.string)
+            is Result.Success -> {
+                val updateResult = firestoreDataSource.updateFamilyId(uid, result.data)
                 return updateResult
             }
-            is StringResultListener.Failure -> {
-                return ResultListener.Failure(result.message)
+            is Result.Failure -> {
+                return Result.Failure(result.error)
             }
         }
     }
@@ -176,22 +173,22 @@ class UserRepositoryImpl @Inject constructor(
     suspend fun leaveFamily(
         familyId: String,
         uid: String,
-    ): ResultListener {
+    ): Result<Unit, String> {
         println("RemoteUserRepositoryImpl leaveFamily()")
         when (val result = firestoreDataSource.leaveFamily(familyId, uid)) {
-            is ResultListener.Success -> {
+            is Result.Success -> {
                 val updateResult = firestoreDataSource.updateFamilyId(uid, null)
                 return updateResult
             }
-            is ResultListener.Failure -> {
-                return ResultListener.Failure(result.message)
+            is Result.Failure -> {
+                return Result.Failure(result.error)
             }
         }
     }
 
     suspend fun deleteFamily(
         familyId: String,
-    ): ResultListener {
+    ): Result<Unit, String> {
         println("RemoteUserRepositoryImpl deleteFamily()")
         return firestoreDataSource.deleteFamily(familyId)
     }

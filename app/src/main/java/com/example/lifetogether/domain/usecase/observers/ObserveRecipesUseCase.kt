@@ -3,8 +3,7 @@ package com.example.lifetogether.domain.usecase.observers
 import com.example.lifetogether.data.local.source.RecipeLocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.datasource.StorageDataSource
-import com.example.lifetogether.domain.listener.ByteArrayResultListener
-import com.example.lifetogether.domain.listener.ListItemsResultListener
+import com.example.lifetogether.domain.result.Result as AppResult
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -25,9 +24,9 @@ class ObserveRecipesUseCase @Inject constructor(
             firestoreDataSource.recipeSnapshotListener(familyId).collect { result ->
                 println("recipeSnapshotListener().collect result: $result")
                 when (result) {
-                    is ListItemsResultListener.Success -> {
+                    is AppResult.Success -> {
                         runCatching {
-                            if (result.listItems.isEmpty()) {
+                            if (result.data.items.isEmpty()) {
                                 println("recipeSnapshotListener().collect result: is empty")
                                 recipeLocalDataSource.deleteFamilyRecipes(familyId)
                             } else {
@@ -35,24 +34,24 @@ class ObserveRecipesUseCase @Inject constructor(
                                 val existingRecipeIdsWithImages = recipeLocalDataSource.getRecipeIdsWithImages(familyId)
 
                                 val byteArrays: MutableMap<String, ByteArray> = mutableMapOf()
-                                for (recipe in result.listItems) {
+                                for (recipe in result.data.items) {
                                     // Skip download if this recipe already has an image stored locally
                                     if (recipe.id != null && existingRecipeIdsWithImages.contains(recipe.id)) {
                                         println("ObserveRecipesUseCase: Skipping download for ${recipe.itemName} - image already exists locally")
                                         continue
                                     }
 
-                                    val byteArrayResult: ByteArrayResultListener? =
+                                    val byteArrayResult: AppResult<ByteArray, String>? =
                                         recipe.imageUrl?.let { url ->
                                             storageDataSource.fetchImageByteArray(url)
                                         }
 
-                                    if (byteArrayResult is ByteArrayResultListener.Success) {
-                                        recipe.id?.let { byteArrays.put(it, byteArrayResult.byteArray) }
+                                    if (byteArrayResult is AppResult.Success) {
+                                        recipe.id?.let { byteArrays.put(it, byteArrayResult.data) }
                                     }
                                 }
 
-                                recipeLocalDataSource.updateRecipes(result.listItems, byteArrays)
+                                recipeLocalDataSource.updateRecipes(result.data.items, byteArrays)
                             }
                         }.onSuccess {
                             firstSuccess.completeFirstSuccessIfNeeded()
@@ -60,9 +59,9 @@ class ObserveRecipesUseCase @Inject constructor(
                             println("ObserveRecipesUseCase local update failure: ${error.message}")
                         }
                     }
-                    is ListItemsResultListener.Failure -> {
+                    is AppResult.Failure -> {
                         // Keep listener alive; firstSuccess is one-shot and only completes on success.
-                        println("ObserveRecipesUseCase failure: ${result.message}")
+                        println("ObserveRecipesUseCase failure: ${result.error}")
                     }
                 }
             }

@@ -16,10 +16,7 @@ import aws.smithy.kotlin.runtime.content.writeToFile
 import aws.smithy.kotlin.runtime.net.url.Url
 import com.example.lifetogether.BuildConfig
 import com.example.lifetogether.data.logic.ImageProcessor
-import com.example.lifetogether.domain.listener.ByteArrayResultListener
-import com.example.lifetogether.domain.listener.ResultListener
-import com.example.lifetogether.domain.listener.StringResultListener
-import com.example.lifetogether.domain.listener.TempFileDownloadResult
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.datasource.StorageDataSource
 import kotlinx.coroutines.Dispatchers
@@ -31,7 +28,6 @@ import java.io.File
 import java.util.UUID
 import javax.inject.Inject
 import androidx.core.net.toUri
-import com.example.lifetogether.domain.result.Result
 
 class CloudflareR2StorageDataSource @Inject constructor(
     private val application: Application,
@@ -72,11 +68,11 @@ class CloudflareR2StorageDataSource @Inject constructor(
         uri: Uri,
         imageType: ImageType,
         context: Context,
-    ): StringResultListener {
+    ): Result<String, String> {
         return try {
             // Process image (rotate, resize, compress)
             val processedImage = imageProcessor.processImage(uri, imageType, context)
-                ?: return StringResultListener.Failure("Failed to process image").also {
+                ?: return Result.Failure("Failed to process image").also {
                     Log.e(TAG, "uploadPhoto processing failed")
                 }
 
@@ -99,14 +95,14 @@ class CloudflareR2StorageDataSource @Inject constructor(
 
             // Return the R2.dev public URL
             val downloadUrl = "$PUBLIC_URL_BASE/$objectKey"
-            StringResultListener.Success(downloadUrl)
+            Result.Success(downloadUrl)
         } catch (e: Exception) {
             Log.e(TAG, "Error uploading photo", e)
-            StringResultListener.Failure("Error: ${e.message}")
+            Result.Failure("Error: ${e.message}")
         }
     }
 
-    override suspend fun fetchImageByteArray(url: String): ByteArrayResultListener {
+    override suspend fun fetchImageByteArray(url: String): Result<ByteArray, String> {
         return try {
             val objectKey = extractObjectKeyFromUrl(url)
 
@@ -117,14 +113,14 @@ class CloudflareR2StorageDataSource @Inject constructor(
             val response = s3Client.getObject(getObjectRequest) { resp ->
                 resp.body?.toByteArray()
             }
-            ByteArrayResultListener.Success(response ?: byteArrayOf())
+            Result.Success(response ?: byteArrayOf())
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching image", e)
-            ByteArrayResultListener.Failure("Error: ${e.message}")
+            Result.Failure("Error: ${e.message}")
         }
     }
 
-    override suspend fun deleteImage(url: String): ResultListener {
+    override suspend fun deleteImage(url: String): Result<Unit, String> {
         return try {
             val objectKey = extractObjectKeyFromUrl(url)
 
@@ -134,10 +130,10 @@ class CloudflareR2StorageDataSource @Inject constructor(
             }
             s3Client.deleteObject(deleteObjectRequest)
 
-            ResultListener.Success
+            Result.Success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error deleting image", e)
-            ResultListener.Failure("Error: ${e.message}")
+            Result.Failure("Error: ${e.message}")
         }
     }
 
@@ -156,14 +152,14 @@ class CloudflareR2StorageDataSource @Inject constructor(
 
             val results = deferredResults.awaitAll()
 
-            val allSucceeded = results.all { it is ResultListener.Success }
+            val allSucceeded = results.all { it is Result.Success }
 
             if (allSucceeded) {
                 Log.i(TAG, "Successfully deleted all ${urlList.size} images.")
                 Result.Success(Unit)
             } else {
-                val failedCount = results.count { it is ResultListener.Failure }
-                val firstErrorMessage = (results.firstOrNull { it is ResultListener.Failure } as? ResultListener.Failure)?.message
+                val failedCount = results.count { it is Result.Failure }
+                val firstErrorMessage = (results.firstOrNull { it is Result.Failure } as? Result.Failure)?.error
                     ?: "One or more images failed to delete."
                 Log.e(TAG, "$failedCount image(s) failed to delete. First error: $firstErrorMessage")
                 Result.Failure("$failedCount image(s) failed to delete. First error: $firstErrorMessage")
@@ -175,7 +171,7 @@ class CloudflareR2StorageDataSource @Inject constructor(
         uri: Uri,
         path: String,
         extension: String,
-    ): StringResultListener {
+    ): Result<String, String> {
         return try {
             val fileName = "${UUID.randomUUID()}-${System.currentTimeMillis()}$extension"
             val objectKey = "$path/$fileName"
@@ -196,10 +192,10 @@ class CloudflareR2StorageDataSource @Inject constructor(
 
             val downloadUrl = "$PUBLIC_URL_BASE/$objectKey"
             
-            StringResultListener.Success(downloadUrl)
+            Result.Success(downloadUrl)
         } catch (e: Exception) {
             Log.e(TAG, "Error uploading video", e)
-            StringResultListener.Failure("Error uploading video: ${e.message}")
+            Result.Failure("Error uploading video: ${e.message}")
         }
     }
 
@@ -207,7 +203,7 @@ class CloudflareR2StorageDataSource @Inject constructor(
         context: Context,
         storageUrl: String,
         desiredFileExtension: String,
-    ): TempFileDownloadResult {
+    ): Result<File, String> {
         val ensuredExtension = if (desiredFileExtension.startsWith(".")) desiredFileExtension else ".$desiredFileExtension"
         val tempFileName = "${UUID.randomUUID()}$ensuredExtension"
 
@@ -224,7 +220,7 @@ class CloudflareR2StorageDataSource @Inject constructor(
                 resp.body?.writeToFile(tempFile)
             }
 
-            TempFileDownloadResult.Success(tempFile)
+            Result.Success(tempFile)
         } catch (e: Exception) {
             Log.e(TAG, "Content download failure", e)
             val fileToDeleteOnFailure = File(context.cacheDir, tempFileName)
@@ -233,7 +229,7 @@ class CloudflareR2StorageDataSource @Inject constructor(
                     Log.w(TAG, "Failed to delete temp file on failure: ${fileToDeleteOnFailure.absolutePath}")
                 }
             }
-            TempFileDownloadResult.Failure("Download failed: ${e.message}")
+            Result.Failure("Download failed: ${e.message}")
         }
     }
 
