@@ -1,14 +1,8 @@
 package com.example.lifetogether.data.remote
 
 import android.util.Log
-import com.example.lifetogether.domain.listener.CategoriesListener
-import com.example.lifetogether.domain.listener.FamilyInformationResultListener
-import com.example.lifetogether.domain.listener.GuideProgressResultListener
-import com.example.lifetogether.domain.listener.GrocerySuggestionsListener
-import com.example.lifetogether.domain.listener.ListItemsResultListener
-import com.example.lifetogether.domain.listener.StringResultListener
-import com.example.lifetogether.domain.listener.AuthResultListener
-import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.result.ListSnapshot
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.logic.GuideParser
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.CompletableItem
@@ -32,7 +26,6 @@ import com.example.lifetogether.domain.model.lists.RecurrenceUnit
 import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.model.sealed.ImageType
-import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.util.Constants
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
@@ -82,7 +75,7 @@ class FirestoreDataSource @Inject constructor() {
         val userInformationRef = db.collection(Constants.USER_TABLE).document(uid)
         val listenerRegistration = userInformationRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
-                trySend(AuthResultListener.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure("Error: ${e.message}")).isSuccess
                 return@addSnapshotListener
             }
 
@@ -91,56 +84,56 @@ class FirestoreDataSource @Inject constructor() {
                 val userInformation = snapshot.toObject(UserInformation::class.java)
                 Log.d(TAG, "Snapshot of userInformation: loaded")
                 if (userInformation != null) {
-                    trySend(AuthResultListener.Success(userInformation)).isSuccess
+                    trySend(Result.Success(userInformation)).isSuccess
                 } else {
-                    trySend(AuthResultListener.Failure("User not found")).isSuccess
+                    trySend(Result.Failure("User not found")).isSuccess
                 }
             } else {
-                trySend(AuthResultListener.Failure("User not found")).isSuccess
+                trySend(Result.Failure("User not found")).isSuccess
             }
         }
         // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.
         awaitClose { listenerRegistration.remove() }
     }
 
-    suspend fun fetchUserInformation(uid: String): AuthResultListener {
+    suspend fun fetchUserInformation(uid: String): Result<UserInformation, String> {
         return try {
             val snapshot = db.collection(Constants.USER_TABLE).document(uid).get().await()
             val userInformation = snapshot.toObject(UserInformation::class.java)
             if (userInformation != null) {
-                AuthResultListener.Success(userInformation)
+                Result.Success(userInformation)
             } else {
-                AuthResultListener.Failure("User not found")
+                Result.Failure("User not found")
             }
         } catch (e: Exception) {
             Log.e(TAG, "fetchUserInformation failed for uid=$uid", e)
-            AuthResultListener.Failure("Error: ${e.message}")
+            Result.Failure("Error: ${e.message}")
         }
     }
 
-    suspend fun uploadUserInformation(userInformation: UserInformation): ResultListener {
+    suspend fun uploadUserInformation(userInformation: UserInformation): Result<Unit, String> {
         Log.d(TAG, "uploadUserInformation getting uploaded")
         try {
             if (userInformation.uid != null) {
                 db.collection(Constants.USER_TABLE).document(userInformation.uid)
                     .set(userInformation).await()
-                return ResultListener.Success
+                return Result.Success(Unit)
             } else {
-                return ResultListener.Failure("Cannot upload without being logged in")
+                return Result.Failure("Cannot upload without being logged in")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error", e)
-            return ResultListener.Failure("Error: ${e.message}")
+            return Result.Failure("Error: ${e.message}")
         }
     }
 
-    suspend fun updateFamilyId(uid: String, familyId: String?): ResultListener {
+    suspend fun updateFamilyId(uid: String, familyId: String?): Result<Unit, String> {
         try {
             db.collection(Constants.USER_TABLE).document(uid).update("familyId", familyId).await()
-            return ResultListener.Success
+            return Result.Success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error", e)
-            return ResultListener.Failure("Error: ${e.message}")
+            return Result.Failure("Error: ${e.message}")
         }
     }
 
@@ -148,7 +141,7 @@ class FirestoreDataSource @Inject constructor() {
         uid: String,
         familyId: String?,
         newName: String,
-    ): ResultListener {
+    ): Result<Unit, String> {
         try {
             // Update the name in the user's document
             db.collection(Constants.USER_TABLE).document(uid).update("name", newName).await()
@@ -179,10 +172,10 @@ class FirestoreDataSource @Inject constructor() {
                 }
             }
 
-            return ResultListener.Success
+            return Result.Success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error", e)
-            return ResultListener.Failure("Error: ${e.message}")
+            return Result.Failure("Error: ${e.message}")
         }
     }
 
@@ -193,7 +186,7 @@ class FirestoreDataSource @Inject constructor() {
         val listenerRegistration = familyInformationRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 // Handle error
-                trySend(AuthResultListener.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure("Error: ${e.message}")).isSuccess
                 return@addSnapshotListener
             }
 
@@ -218,7 +211,7 @@ class FirestoreDataSource @Inject constructor() {
                 )
 
                 Log.d(TAG, "Snapshot of familyInformation: loaded")
-                trySend(FamilyInformationResultListener.Success(familyInformation)).isSuccess
+                trySend(Result.Success(familyInformation)).isSuccess
             }
         }
         // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.
@@ -229,7 +222,7 @@ class FirestoreDataSource @Inject constructor() {
         familyId: String,
         uid: String,
         name: String,
-    ): ResultListener {
+    ): Result<Unit, String> {
         Log.d(TAG, "joinFamily")
         try {
             val documentReference =
@@ -247,17 +240,17 @@ class FirestoreDataSource @Inject constructor() {
                 .update("members", updatedMembers)
                 .await()
 
-            return ResultListener.Success
+            return Result.Success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error", e)
-            return ResultListener.Failure("Error: ${e.message}")
+            return Result.Failure("Error: ${e.message}")
         }
     }
 
     suspend fun createNewFamily(
         uid: String,
         name: String,
-    ): StringResultListener {
+    ): Result<String, String> {
         Log.d(TAG, "createNewFamily getting uploaded")
         val map = mapOf(
             "members" to listOf(mapOf("uid" to uid, "name" to name)),
@@ -265,17 +258,17 @@ class FirestoreDataSource @Inject constructor() {
 
         try {
             val documentReference = db.collection(Constants.FAMILIES_TABLE).add(map).await()
-            return StringResultListener.Success(documentReference.id)
+            return Result.Success(documentReference.id)
         } catch (e: Exception) {
             Log.e(TAG, "Error", e)
-            return StringResultListener.Failure("Error: ${e.message}")
+            return Result.Failure("Error: ${e.message}")
         }
     }
 
     suspend fun leaveFamily(
         familyId: String,
         uid: String,
-    ): ResultListener {
+    ): Result<Unit, String> {
         Log.d(TAG, "leaveFamily")
         try {
             val documentReference =
@@ -292,16 +285,16 @@ class FirestoreDataSource @Inject constructor() {
                 .update("members", updatedMembers)
                 .await()
 
-            return ResultListener.Success
+            return Result.Success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error", e)
-            return ResultListener.Failure("Error: ${e.message}")
+            return Result.Failure("Error: ${e.message}")
         }
     }
 
     suspend fun deleteFamily(
         familyId: String,
-    ): ResultListener {
+    ): Result<Unit, String> {
         Log.d(TAG, "deleteFamily")
         try {
             db.collection(Constants.FAMILIES_TABLE).document(familyId).delete().await()
@@ -315,19 +308,19 @@ class FirestoreDataSource @Inject constructor() {
             for (userDocument in usersRef.documents) {
                 val uid = userDocument.id
                 val result = updateFamilyId(uid, null)
-                if (result is ResultListener.Failure) {
-                    failures.add(result.message)
+                if (result is Result.Failure) {
+                    failures.add(result.error)
                 }
             }
 
             if (failures.isNotEmpty()) {
-                return ResultListener.Failure("Could not remove familyId from all users: $failures")
+                return Result.Failure("Could not remove familyId from all users: $failures")
             }
 
-            return ResultListener.Success
+            return Result.Success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error", e)
-            return ResultListener.Failure("Error: ${e.message}")
+            return Result.Failure("Error: ${e.message}")
         }
     }
 
@@ -360,7 +353,7 @@ class FirestoreDataSource @Inject constructor() {
             if (e != null) {
                 // Handle error
                 Log.e(TAG, "Firestore recipeSnapshotListener", e)
-                trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure("Error: ${e.message}")).isSuccess
                 return@addSnapshotListener
             }
 
@@ -374,9 +367,9 @@ class FirestoreDataSource @Inject constructor() {
                     }.getOrNull()
                 }
                 Log.d(TAG, "Snapshot items to Recipe: loaded")
-                trySend(ListItemsResultListener.Success(items)).isSuccess
+                trySend(Result.Success(ListSnapshot(items))).isSuccess
             } else {
-                trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess
+                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
             }
         }
         // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.
@@ -394,12 +387,12 @@ class FirestoreDataSource @Inject constructor() {
         val listenerRegistration = guidesRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 Log.e(TAG, "familySharedGuidesSnapshotListener error", e)
-                trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure("Error: ${e.message}")).isSuccess
                 return@addSnapshotListener
             }
 
             if (snapshot == null) {
-                trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess
+                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
                 return@addSnapshotListener
             }
             Log.d(
@@ -423,7 +416,7 @@ class FirestoreDataSource @Inject constructor() {
                 "familySharedGuidesSnapshotListener parsedCount=${parsedGuides.size} ids=${parsedGuides.mapNotNull { it.id }.take(5)}",
             )
 
-            trySend(ListItemsResultListener.Success(parsedGuides)).isSuccess
+            trySend(Result.Success(ListSnapshot(parsedGuides))).isSuccess
         }
 
         awaitClose { listenerRegistration.remove() }
@@ -442,12 +435,12 @@ class FirestoreDataSource @Inject constructor() {
         val listenerRegistration = guidesRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 Log.e(TAG, "privateGuidesSnapshotListener error", e)
-                trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure("Error: ${e.message}")).isSuccess
                 return@addSnapshotListener
             }
 
             if (snapshot == null) {
-                trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess
+                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
                 return@addSnapshotListener
             }
             Log.d(
@@ -471,7 +464,7 @@ class FirestoreDataSource @Inject constructor() {
                 "privateGuidesSnapshotListener parsedCount=${parsedGuides.size} ids=${parsedGuides.mapNotNull { it.id }.take(5)}",
             )
 
-            trySend(ListItemsResultListener.Success(parsedGuides)).isSuccess
+            trySend(Result.Success(ListSnapshot(parsedGuides))).isSuccess
         }
 
         awaitClose { listenerRegistration.remove() }
@@ -489,12 +482,12 @@ class FirestoreDataSource @Inject constructor() {
         val listenerRegistration = progressRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 Log.e(TAG, "guideProgressSnapshotListener error", e)
-                trySend(GuideProgressResultListener.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure("Error: ${e.message}")).isSuccess
                 return@addSnapshotListener
             }
 
             if (snapshot == null) {
-                trySend(GuideProgressResultListener.Failure("Error: Empty snapshot")).isSuccess
+                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
                 return@addSnapshotListener
             }
 
@@ -514,7 +507,7 @@ class FirestoreDataSource @Inject constructor() {
                 TAG,
                 "guideProgressSnapshotListener parsedCount=${parsedProgress.size} familyId=$familyId uid=$uid",
             )
-            trySend(GuideProgressResultListener.Success(parsedProgress)).isSuccess
+            trySend(Result.Success(parsedProgress)).isSuccess
         }
 
         awaitClose { listenerRegistration.remove() }
@@ -528,8 +521,8 @@ class FirestoreDataSource @Inject constructor() {
             .whereEqualTo("visibility", Constants.VISIBILITY_FAMILY)
 
         val registration = ref.addSnapshotListener { snapshot, e ->
-            if (e != null) { trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess; return@addSnapshotListener }
-            if (snapshot == null) { trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess; return@addSnapshotListener }
+            if (e != null) { trySend(Result.Failure("Error: ${e.message}")).isSuccess; return@addSnapshotListener }
+            if (snapshot == null) { trySend(Result.Failure("Error: Empty snapshot")).isSuccess; return@addSnapshotListener }
 
             Log.d(TAG, "familySharedUserListsSnapshotListener snapshot size=${snapshot.size()} fromCache=${snapshot.metadata.isFromCache}")
             val items = snapshot.documents.mapNotNull { doc ->
@@ -538,7 +531,7 @@ class FirestoreDataSource @Inject constructor() {
                     .onFailure { Log.e(TAG, "Failed parsing family user list ${doc.id}", it) }
                     .getOrNull()
             }
-            trySend(ListItemsResultListener.Success(items)).isSuccess
+            trySend(Result.Success(ListSnapshot(items))).isSuccess
         }
         awaitClose { registration.remove() }
     }
@@ -551,8 +544,8 @@ class FirestoreDataSource @Inject constructor() {
             .whereEqualTo("ownerUid", uid)
 
         val registration = ref.addSnapshotListener { snapshot, e ->
-            if (e != null) { trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess; return@addSnapshotListener }
-            if (snapshot == null) { trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess; return@addSnapshotListener }
+            if (e != null) { trySend(Result.Failure("Error: ${e.message}")).isSuccess; return@addSnapshotListener }
+            if (snapshot == null) { trySend(Result.Failure("Error: Empty snapshot")).isSuccess; return@addSnapshotListener }
 
             Log.d(TAG, "privateUserListsSnapshotListener snapshot size=${snapshot.size()} fromCache=${snapshot.metadata.isFromCache}")
             val items = snapshot.documents.mapNotNull { doc ->
@@ -561,7 +554,7 @@ class FirestoreDataSource @Inject constructor() {
                     .onFailure { Log.e(TAG, "Failed parsing private user list ${doc.id}", it) }
                     .getOrNull()
             }
-            trySend(ListItemsResultListener.Success(items)).isSuccess
+            trySend(Result.Success(ListSnapshot(items))).isSuccess
         }
         awaitClose { registration.remove() }
     }
@@ -601,8 +594,8 @@ class FirestoreDataSource @Inject constructor() {
         val ref = db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE)
             .whereEqualTo("familyId", familyId)
         val registration = ref.addSnapshotListener { snapshot, e ->
-            if (e != null) { trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess; return@addSnapshotListener }
-            if (snapshot == null) { trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess; return@addSnapshotListener }
+            if (e != null) { trySend(Result.Failure("Error: ${e.message}")).isSuccess; return@addSnapshotListener }
+            if (snapshot == null) { trySend(Result.Failure("Error: Empty snapshot")).isSuccess; return@addSnapshotListener }
 
             Log.d(TAG, "familyRoutineListEntriesSnapshotListener snapshot size=${snapshot.size()} fromCache=${snapshot.metadata.isFromCache}")
             val items = snapshot.documents.mapNotNull { doc ->
@@ -611,7 +604,7 @@ class FirestoreDataSource @Inject constructor() {
                     .onFailure { Log.e(TAG, "Failed parsing list entry ${doc.id}", it) }
                     .getOrNull()
             }
-            trySend(ListItemsResultListener.Success(items)).isSuccess
+            trySend(Result.Success(ListSnapshot(items))).isSuccess
         }
         awaitClose { registration.remove() }
     }
@@ -674,7 +667,7 @@ class FirestoreDataSource @Inject constructor() {
             if (e != null) {
                 // Handle error
                 Log.e(TAG, "Firestore albumSnapshotListener", e)
-                trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure("Error: ${e.message}")).isSuccess
                 return@addSnapshotListener
             }
 
@@ -688,25 +681,25 @@ class FirestoreDataSource @Inject constructor() {
                     }.getOrNull()
                 }
                 Log.d(TAG, "Snapshot items to Album: loaded")
-                trySend(ListItemsResultListener.Success(items)).isSuccess
+                trySend(Result.Success(ListSnapshot(items))).isSuccess
             } else {
-                trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess
+                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
             }
         }
         // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.
         awaitClose { listenerRegistration.remove() }
     }
 
-    suspend fun updateAlbumCount(albumId: String, increment: Int): ResultListener {
+    suspend fun updateAlbumCount(albumId: String, increment: Int): Result<Unit, String> {
         try {
             Log.d(TAG, "updateAlbumCount with increment: $increment")
             val albumDocRef = db.collection(Constants.ALBUMS_TABLE).document(albumId)
             albumDocRef.update("count", FieldValue.increment(increment.toDouble())).await()
             Log.d(TAG, "updateAlbumCount successful")
-            return ResultListener.Success
+            return Result.Success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error", e)
-            return ResultListener.Failure("Error: ${e.message}")
+            return Result.Failure("Error: ${e.message}")
         }
     }
 
@@ -719,7 +712,7 @@ class FirestoreDataSource @Inject constructor() {
             if (e != null) {
                 // Handle error
                 Log.e(TAG, "Firestore galleryMediaSnapshotListener", e)
-                trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure("Error: ${e.message}")).isSuccess
                 return@addSnapshotListener
             }
 
@@ -727,9 +720,9 @@ class FirestoreDataSource @Inject constructor() {
 //                // Process the changes and update Room database
 //                val items = snapshot.toObjects(GalleryImage::class.java)
 //                Log.d(LOG_TAG, "Snapshot items to GalleryImage: loaded")
-//                trySend(ListItemsResultListener.Success(items)).isSuccess
+//                trySend(Result.Success(ListSnapshot(items))).isSuccess
 //            } else {
-//                trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess
+//                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
 //            }
             if (snapshot != null) {
                 val mediaItems = mutableListOf<GalleryMedia>()
@@ -751,9 +744,9 @@ class FirestoreDataSource @Inject constructor() {
                 }
                 val isFromCache = snapshot.metadata.isFromCache
                 Log.d("FirestoreDS", "Snapshot items mapped to GalleryMedia: $mediaItems (isFromCache: $isFromCache)")
-                trySend(ListItemsResultListener.Success(mediaItems, isFromCache)).isSuccess
+                trySend(Result.Success(ListSnapshot(mediaItems, isFromCache))).isSuccess
             } else {
-                trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess
+                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
             }
         }
         // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.
@@ -763,7 +756,7 @@ class FirestoreDataSource @Inject constructor() {
         mediaIdList: Set<String>,
         newAlbumId: String,
         oldAlbumId: String,
-    ): ResultListener {
+    ): Result<Unit, String> {
         try {
             Log.d(TAG, "moveMediaToAlbum")
             val batch = db.batch()
@@ -778,15 +771,15 @@ class FirestoreDataSource @Inject constructor() {
             batch.update(oldAlbumRef, "count", FieldValue.increment(-mediaIdList.size.toDouble()))
 
             batch.commit().await()
-            return ResultListener.Success
+            return Result.Success(Unit)
         } catch (e: Exception) {
             println("Error: ${e.message}")
-            return ResultListener.Failure("Error: ${e.message}")
+            return Result.Failure("Error: ${e.message}")
         }
     }
 
     // ------------------------------------------------------------------------------- ITEMS
-    suspend fun updateGuideProgress(progress: GuideProgressState): ResultListener {
+    suspend fun updateGuideProgress(progress: GuideProgressState): Result<Unit, String> {
         val startedAt = System.currentTimeMillis()
         return try {
             db.collection(Constants.GUIDE_PROGRESS_TABLE)
@@ -797,7 +790,7 @@ class FirestoreDataSource @Inject constructor() {
                 TAG,
                 "updateGuideProgress success id=${progress.id} durationMs=${System.currentTimeMillis() - startedAt}",
             )
-            ResultListener.Success
+            Result.Success(Unit)
         } catch (e: Exception) {
             val message = e.toFirestoreFailureMessage(
                 operation = "updateGuideProgress",
@@ -805,7 +798,7 @@ class FirestoreDataSource @Inject constructor() {
                 documentId = progress.id,
             )
             Log.e(TAG, message, e)
-            ResultListener.Failure(message)
+            Result.Failure(message)
         }
     }
 
@@ -912,7 +905,7 @@ class FirestoreDataSource @Inject constructor() {
     suspend fun deleteItem(
         itemId: String,
         listName: String,
-    ): ResultListener {
+    ): Result<Unit, String> {
         Log.d(TAG, "deleteItem")
         try {
             if (listName == Constants.GUIDES_TABLE) {
@@ -920,10 +913,10 @@ class FirestoreDataSource @Inject constructor() {
             } else {
                 db.collection(listName).document(itemId).delete().await()
             }
-            return ResultListener.Success
+            return Result.Success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error", e)
-            return ResultListener.Failure("Error: ${e.message}")
+            return Result.Failure("Error: ${e.message}")
         }
     }
 
@@ -991,7 +984,7 @@ class FirestoreDataSource @Inject constructor() {
         val listenerRegistration = categoryItemsRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 // Handle error
-                trySend(CategoriesListener.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure("Error: ${e.message}")).isSuccess
                 return@addSnapshotListener
             }
 
@@ -1002,7 +995,7 @@ class FirestoreDataSource @Inject constructor() {
                 }
 
                 Log.d(TAG, "Snapshot items to CategoryItems: loaded")
-                trySend(CategoriesListener.Success(categoryItems)).isSuccess
+                trySend(Result.Success(categoryItems)).isSuccess
             }
         }
         // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.
@@ -1051,7 +1044,7 @@ class FirestoreDataSource @Inject constructor() {
         val listenerRegistration = grocerySuggestionsItemsRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 // Handle error
-                trySend(GrocerySuggestionsListener.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure("Error: ${e.message}")).isSuccess
                 return@addSnapshotListener
             }
 
@@ -1066,7 +1059,7 @@ class FirestoreDataSource @Inject constructor() {
                 }
 
                 Log.d(TAG, "Snapshot items to GrocerySuggestions: loaded")
-                trySend(GrocerySuggestionsListener.Success(grocerySuggestions)).isSuccess
+                trySend(Result.Success(grocerySuggestions)).isSuccess
             }
         }
         // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.
@@ -1075,57 +1068,57 @@ class FirestoreDataSource @Inject constructor() {
 
     suspend fun deleteGrocerySuggestion(
         grocerySuggestion: GrocerySuggestion,
-    ): ResultListener {
+    ): Result<Unit, String> {
         Log.d(TAG, "deleteGrocerySuggestion")
         try {
             // Query the collection to find the document with the matching 'name' field
             if (grocerySuggestion.id is String) {
                 db.collection(Constants.GROCERY_SUGGESTIONS_TABLE).document(grocerySuggestion.id)
                     .delete().await()
-                return ResultListener.Success
+                return Result.Success(Unit)
             } else {
-                return ResultListener.Failure("Problems with grocery suggestion id")
+                return Result.Failure("Problems with grocery suggestion id")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error", e)
-            return ResultListener.Failure("Error: ${e.message}")
+            return Result.Failure("Error: ${e.message}")
         }
     }
 
     suspend fun addGrocerySuggestion(
         grocerySuggestion: GrocerySuggestion,
-    ): ResultListener {
+    ): Result<Unit, String> {
         try {
             db.collection(Constants.GROCERY_SUGGESTIONS_TABLE).add(grocerySuggestion).await()
-            return ResultListener.Success
+            return Result.Success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error", e)
-            return ResultListener.Failure("Error: ${e.message}")
+            return Result.Failure("Error: ${e.message}")
         }
     }
 
     suspend fun updateGrocerySuggestion(
         grocerySuggestion: GrocerySuggestion,
-    ): ResultListener {
+    ): Result<Unit, String> {
         val suggestionId = grocerySuggestion.id
-            ?: return ResultListener.Failure("Missing grocery suggestion id")
+            ?: return Result.Failure("Missing grocery suggestion id")
 
         return try {
             db.collection(Constants.GROCERY_SUGGESTIONS_TABLE)
                 .document(suggestionId)
                 .set(grocerySuggestion)
                 .await()
-            ResultListener.Success
+            Result.Success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error", e)
-            ResultListener.Failure("Error: ${e.message}")
+            Result.Failure("Error: ${e.message}")
         }
     }
 
     // ------------------------------------------------------------------------------- IMAGES
     suspend fun getImageUrl(
         imageType: ImageType,
-    ): StringResultListener? {
+    ): Result<String, String>? {
         Log.d(TAG, "getImageUrl")
         try {
             when (imageType) {
@@ -1133,42 +1126,42 @@ class FirestoreDataSource @Inject constructor() {
                     val documentReference =
                         db.collection(Constants.USER_TABLE).document(imageType.uid).get().await()
                     return documentReference.getString("imageUrl")
-                        ?.let { StringResultListener.Success(it) }
+                        ?.let { Result.Success(it) }
                 }
 
                 is ImageType.FamilyImage -> {
                     val documentReference =
                         db.collection(Constants.FAMILIES_TABLE).document(imageType.familyId).get().await()
                     return documentReference.getString("imageUrl")
-                        ?.let { StringResultListener.Success(it) }
+                        ?.let { Result.Success(it) }
                 }
 
                 is ImageType.RecipeImage -> {
                     val documentReference =
                         db.collection(Constants.RECIPES_TABLE).document(imageType.recipeId).get().await()
                     return documentReference.getString("imageUrl")
-                        ?.let { StringResultListener.Success(it) }
+                        ?.let { Result.Success(it) }
                 }
 
                 is ImageType.RoutineListEntryImage -> {
                     val documentReference =
                         db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE).document(imageType.entryId).get().await()
                     return documentReference.getString("imageUrl")
-                        ?.let { StringResultListener.Success(it) }
+                        ?.let { Result.Success(it) }
                 }
 
-                is ImageType.GalleryMedia -> return StringResultListener.Failure("Image type GalleryImage is not connected to one specific document")
+                is ImageType.GalleryMedia -> return Result.Failure("Image type GalleryImage is not connected to one specific document")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error", e)
-            return StringResultListener.Failure("Error: ${e.message}")
+            return Result.Failure("Error: ${e.message}")
         }
     }
 
     suspend fun saveImageDownloadUrl(
         url: String,
         imageType: ImageType,
-    ): ResultListener {
+    ): Result<Unit, String> {
         try {
             Log.d(TAG, "saveImageDownloadUrl")
 
@@ -1195,20 +1188,20 @@ class FirestoreDataSource @Inject constructor() {
                 }
 
                 else -> {
-                    return ResultListener.Failure("Image type is not connected to one specific document")
+                    return Result.Failure("Image type is not connected to one specific document")
                 }
             }
 
-            return ResultListener.Success
+            return Result.Success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error", e)
-            return ResultListener.Failure("Error: ${e.message}")
+            return Result.Failure("Error: ${e.message}")
         }
     }
 
     suspend fun saveGalleryMediaMetaData(
         galleryMedia: List<GalleryMedia>,
-    ): ResultListener {
+    ): Result<Unit, String> {
         try {
             Log.d(TAG, "saveGalleryMediaMetaData")
 
@@ -1222,10 +1215,10 @@ class FirestoreDataSource @Inject constructor() {
 
             batch.commit().await() // Commit the batch operation
 
-            return ResultListener.Success
+            return Result.Success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error", e)
-            return ResultListener.Failure("Error: ${e.message}")
+            return Result.Failure("Error: ${e.message}")
         }
     }
 
@@ -1237,7 +1230,7 @@ class FirestoreDataSource @Inject constructor() {
         val listenerRegistration = tipTrackerItemsRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 // Handle error
-                trySend(ListItemsResultListener.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure("Error: ${e.message}")).isSuccess
                 return@addSnapshotListener
             }
 
@@ -1252,9 +1245,9 @@ class FirestoreDataSource @Inject constructor() {
                 }
 
                 Log.d(TAG, "Snapshot items to TipItems: loaded")
-                trySend(ListItemsResultListener.Success(tips)).isSuccess
+                trySend(Result.Success(ListSnapshot(tips))).isSuccess
             } else {
-                trySend(ListItemsResultListener.Failure("Error: Empty snapshot")).isSuccess
+                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
             }
         }
         // Await close tells the flow builder to suspend until the flow collector is cancelled or disposed.
@@ -1311,14 +1304,14 @@ class FirestoreDataSource @Inject constructor() {
         }
     }
 
-    suspend fun removeDeviceToken(uid: String, familyId: String): ResultListener {
+    suspend fun removeDeviceToken(uid: String, familyId: String): Result<Unit, String> {
         return try {
             val familyDocRef = db.collection(Constants.FAMILIES_TABLE).document(familyId)
             val document = familyDocRef.get().await()
 
             if (!document.exists()) {
                 Log.w(TAG, "Family document not found")
-                return ResultListener.Failure("Family document not found")
+                return Result.Failure("Family document not found")
             }
 
             @Suppress("UNCHECKED_CAST")
@@ -1334,10 +1327,10 @@ class FirestoreDataSource @Inject constructor() {
 
             familyDocRef.update("members", updatedMembers).await()
             Log.d(TAG, "FCM token removed successfully")
-            ResultListener.Success
+            Result.Success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error removing FCM token", e)
-            ResultListener.Failure("Error: ${e.message}")
+            Result.Failure("Error: ${e.message}")
         }
     }
 

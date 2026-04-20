@@ -2,11 +2,10 @@ package com.example.lifetogether.ui.feature.gallery
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.SaveProgress
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.repository.GalleryRepository
-import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.usecase.gallery.DeleteMediaUseCase
 import com.example.lifetogether.domain.usecase.image.DownloadMediaUseCase
 import com.example.lifetogether.domain.model.session.SessionState
@@ -143,10 +142,10 @@ class MediaDetailsViewModel @Inject constructor(
 
         viewModelScope.launch {
             when (val result = deleteMediaUseCase.invoke(currentMedia.albumId, listOf(currentMedia))) {
-                is ResultListener.Success -> {
+                is Result.Success -> {
                     dismissOverflowMenuActionDialog()
                 }
-                is ResultListener.Failure -> showError(result.message)
+                is Result.Failure -> showError(result.error)
             }
         }
     }

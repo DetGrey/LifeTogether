@@ -2,7 +2,7 @@ package com.example.lifetogether.domain.usecase.image
 
 import android.util.Log
 import com.example.lifetogether.data.local.source.MediaLocalDataSource
-import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.SaveProgress
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -43,7 +43,7 @@ class DownloadMediaUseCase @Inject constructor(
 
                 val result = mediaLocalDataSource.copyMediaToGalleryFolder(file, mediaItem)
 
-                if (result is ResultListener.Success) {
+                if (result is Result.Success) {
                     successCount++
                 } else {
                     failureCount++

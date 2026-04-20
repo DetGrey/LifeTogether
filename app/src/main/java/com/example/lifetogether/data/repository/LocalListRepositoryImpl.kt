@@ -2,15 +2,12 @@ package com.example.lifetogether.data.repository
 
 import android.util.Log
 import androidx.core.net.toUri
-import com.example.lifetogether.data.local.source.AlbumLocalDataSource
 import com.example.lifetogether.data.local.source.GroceryLocalDataSource
 import com.example.lifetogether.data.local.source.ListQueryLocalDataSource
 import com.example.lifetogether.data.local.source.UserListLocalDataSource
 import com.example.lifetogether.data.local.source.query.ListQueryType
 import com.example.lifetogether.data.local.source.query.ListQueryTypeMapper
 import com.example.lifetogether.data.model.Entity
-import com.example.lifetogether.domain.listener.ItemResultListener
-import com.example.lifetogether.domain.listener.ListItemsResultListener
 import com.example.lifetogether.domain.model.Item
 import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.domain.model.enums.MediaType
@@ -24,6 +21,7 @@ import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.repository.LegacyListRepository
+import com.example.lifetogether.domain.result.ListSnapshot
 import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.Flow
@@ -35,7 +33,6 @@ import kotlin.reflect.KClass
 class LocalListRepositoryImpl @Inject constructor(
     private val listQueryLocalDataSource: ListQueryLocalDataSource,
     private val groceryLocalDataSource: GroceryLocalDataSource,
-    private val albumLocalDataSource: AlbumLocalDataSource,
     private val userListLocalDataSource: UserListLocalDataSource,
 ) : LegacyListRepository {
     private companion object {
@@ -51,55 +48,6 @@ class LocalListRepositoryImpl @Inject constructor(
             ListQueryType.RoutineListEntries -> userListLocalDataSource.deleteRoutineListEntries(itemIds)
             else -> Result.Failure("Unsupported delete type: $queryType")
         }
-    }
-
-    fun fetchAlbumMedia(
-        familyId: String,
-        albumId: String,
-    ): Flow<ListItemsResultListener<GalleryMedia>> {
-        Log.d(TAG, "fetchAlbumMedia init familyId=$familyId albumId=$albumId")
-        return albumLocalDataSource.getAlbumMedia(familyId, albumId)
-            .map { entities ->
-                try {
-                    Log.d(TAG, "fetchAlbumMedia entitiesCount=${entities.size}")
-                    // Convert entities to items
-                    val itemsList = entities.map { entityWrapper ->
-                        val entity = entityWrapper.entity
-
-                        when (entity.mediaType) {
-                            MediaType.IMAGE -> GalleryImage(
-                                id = entity.id,
-                                familyId = entity.familyId,
-                                itemName = entity.itemName,
-                                lastUpdated = entity.lastUpdated,
-                                albumId = entity.albumId,
-                                dateCreated = entity.dateCreated,
-                                mediaType = MediaType.IMAGE,
-                                mediaUrl = null,
-                                mediaUri = entity.mediaUri?.toUri(),
-                            )
-
-                            MediaType.VIDEO -> GalleryVideo(
-                                id = entity.id,
-                                familyId = entity.familyId,
-                                itemName = entity.itemName,
-                                lastUpdated = entity.lastUpdated,
-                                albumId = entity.albumId,
-                                dateCreated = entity.dateCreated,
-                                mediaType = MediaType.VIDEO,
-                                mediaUrl = null,
-                                mediaUri = entity.mediaUri?.toUri(),
-                                duration = entity.videoDuration,
-                            )
-                        }
-                    }
-                    Log.d(TAG, "fetchAlbumMedia mappedItemsCount=${itemsList.size}")
-                    ListItemsResultListener.Success(itemsList)
-                } catch (e: Exception) {
-                    Log.e(TAG, "fetchAlbumMedia mapping error", e)
-                    ListItemsResultListener.Failure(e.message ?: "Unknown error")
-                }
-            }
     }
 
     fun <T : Item> getListsFlow(
@@ -138,16 +86,16 @@ class LocalListRepositoryImpl @Inject constructor(
         familyId: String,
         itemType: KClass<T>,
         uid: String? = null,
-    ): Flow<ListItemsResultListener<Item>> {
+    ): Flow<Result<ListSnapshot<Item>, String>> {
         // TODO(v2-phase2-cleanup): remove temporary String-based API once call sites use ListQueryType directly.
         val queryType = ListQueryTypeMapper.fromTableNameOrNull(listName)
             ?: return flowOf(
-                ListItemsResultListener.Success(emptyList()),
+                Result.Success(ListSnapshot(emptyList())),
             )
         return getListsFlow(queryType, familyId, itemType, uid).map {
             when (it) {
-                is Result.Success -> ListItemsResultListener.Success(it.data)
-                is Result.Failure -> ListItemsResultListener.Failure(it.error)
+                is Result.Success -> Result.Success(ListSnapshot(it.data))
+                is Result.Failure -> Result.Failure(it.error)
             }
         }
     }
@@ -198,14 +146,14 @@ class LocalListRepositoryImpl @Inject constructor(
         id: String,
         itemType: KClass<out Item>,
         uid: String? = null,
-    ): Flow<ItemResultListener<Item>> {
+    ): Flow<Result<Item, String>> {
         // TODO(v2-phase2-cleanup): remove temporary String-based API once call sites use ListQueryType directly.
         val queryType = ListQueryTypeMapper.fromTableNameOrNull(listName)
             ?: return emptyFlow()
         return getItemByIdFlow(queryType, familyId, id, itemType, uid).map {
             when (it) {
-                is Result.Success -> ItemResultListener.Success(it.data)
-                is Result.Failure -> ItemResultListener.Failure(it.error)
+                is Result.Success -> Result.Success(it.data)
+                is Result.Failure -> Result.Failure(it.error)
             }
         }
     }

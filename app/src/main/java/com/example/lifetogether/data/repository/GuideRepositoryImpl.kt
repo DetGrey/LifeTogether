@@ -5,11 +5,10 @@ import com.example.lifetogether.data.local.source.GuideLocalDataSource
 import com.example.lifetogether.data.local.source.GuideProgressLocalDataSource
 import com.example.lifetogether.data.model.Entity
 import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.guides.GuideProgressState
 import com.example.lifetogether.domain.repository.GuideRepository
-import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.util.Constants
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -62,8 +61,8 @@ class GuideRepositoryImpl @Inject constructor(
 
     override suspend fun deleteGuide(guideId: String): Result<Unit, String> {
         return when (val result = firestoreDataSource.deleteItem(guideId, Constants.GUIDES_TABLE)) {
-            is ResultListener.Success -> Result.Success(Unit)
-            is ResultListener.Failure -> Result.Failure(result.message)
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> Result.Failure(result.error)
         }
     }
 
@@ -100,11 +99,11 @@ class GuideRepositoryImpl @Inject constructor(
 
             val uploadCandidate = progress.copy(lastUploadedAt = now)
             when (val result = firestoreDataSource.updateGuideProgress(uploadCandidate)) {
-                is ResultListener.Success -> {
+                is Result.Success -> {
                     guideProgressLocalDataSource.markGuideProgressSynced(progress.id, now)
                 }
-                is ResultListener.Failure -> {
-                    Log.e(TAG, "Failed syncing guide progress id=${progress.id}: ${result.message}")
+                is Result.Failure -> {
+                    Log.e(TAG, "Failed syncing guide progress id=${progress.id}: ${result.error}")
                 }
             }
         }

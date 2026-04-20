@@ -7,12 +7,10 @@ import com.example.lifetogether.data.local.source.RecipeLocalDataSource
 import com.example.lifetogether.data.local.source.UserListLocalDataSource
 import com.example.lifetogether.data.local.source.UserLocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.listener.ResultListener
-import com.example.lifetogether.domain.listener.StringResultListener
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.datasource.StorageDataSource
 import com.example.lifetogether.domain.repository.ImageRepository
-import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -60,23 +58,23 @@ class ImageRepositoryImpl @Inject constructor(
         uri: Uri,
         imageType: ImageType,
         context: Context,
-    ): StringResultListener {
+    ): Result<String, String> {
         return storageDataSource.uploadPhoto(uri, imageType, context)
     }
 
     override suspend fun deleteImage(
         imageType: ImageType,
-    ): ResultListener {
+    ): Result<Unit, String> {
         return when (val urlResult = firestoreDataSource.getImageUrl(imageType)) {
-            is StringResultListener.Success -> {
-                storageDataSource.deleteImage(urlResult.string)
+            is Result.Success -> {
+                storageDataSource.deleteImage(urlResult.data)
             }
 
-            is StringResultListener.Failure -> {
-                ResultListener.Failure(urlResult.message)
+            is Result.Failure -> {
+                Result.Failure(urlResult.error)
             }
 
-            null -> ResultListener.Success // Means that there is no image to delete
+            null -> Result.Success(Unit) // Means that there is no image to delete
         }
     }
 
@@ -89,7 +87,7 @@ class ImageRepositoryImpl @Inject constructor(
     override suspend fun saveImageDownloadUrl(
         url: String,
         imageType: ImageType,
-    ): ResultListener {
+    ): Result<Unit, String> {
         return firestoreDataSource.saveImageDownloadUrl(url, imageType)
     }
 }

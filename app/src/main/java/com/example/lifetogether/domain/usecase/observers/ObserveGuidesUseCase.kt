@@ -4,9 +4,8 @@ import android.util.Log
 import com.example.lifetogether.data.local.source.GuideLocalDataSource
 import com.example.lifetogether.data.local.source.GuideProgressLocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.listener.GuideProgressResultListener
-import com.example.lifetogether.domain.listener.ListItemsResultListener
 import com.example.lifetogether.domain.model.guides.Guide
+import com.example.lifetogether.domain.result.Result as AppResult
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.combine
@@ -33,23 +32,23 @@ class ObserveGuidesUseCase @Inject constructor(
             launch {
                 firestoreDataSource.guideProgressSnapshotListener(familyId, uid).collect { progressResult ->
                     when (progressResult) {
-                        is GuideProgressResultListener.Success -> {
-                            runCatching {
-                                guideProgressLocalDataSource.updateGuideProgressFromRemote(
-                                    familyId = familyId,
-                                    uid = uid,
-                                    items = progressResult.listItems,
+                    is AppResult.Success -> {
+                        runCatching {
+                            guideProgressLocalDataSource.updateGuideProgressFromRemote(
+                                familyId = familyId,
+                                uid = uid,
+                                items = progressResult.data,
                                 )
                             }.onFailure { error ->
                                 Log.e(TAG, "Guide progress local update failure: ${error.message}", error)
                             }
                         }
 
-                        is GuideProgressResultListener.Failure -> {
-                            Log.e(TAG, "guide progress listener failure: ${progressResult.message}")
-                        }
+                    is AppResult.Failure -> {
+                        Log.e(TAG, "guide progress listener failure: ${progressResult.error}")
                     }
                 }
+            }
             }
 
             var lastSharedGuides: List<Guide> = emptyList()
@@ -64,31 +63,31 @@ class ObserveGuidesUseCase @Inject constructor(
                 sharedResult to privateResult
             }.collect { (sharedResult, privateResult) ->
                 val sharedGuides: List<Guide> = when (sharedResult) {
-                    is ListItemsResultListener.Success -> {
-                        Log.d(TAG, "shared snapshot success count=${sharedResult.listItems.size}")
+                    is AppResult.Success -> {
+                        Log.d(TAG, "shared snapshot success count=${sharedResult.data.items.size}")
                         sharedHasSuccessfulSync = true
-                        sharedResult.listItems.also { lastSharedGuides = it }
+                        sharedResult.data.items.also { lastSharedGuides = it }
                     }
-                    is ListItemsResultListener.Failure -> {
-                        Log.e(TAG, "shared listener failure: ${sharedResult.message}")
+                    is AppResult.Failure -> {
+                        Log.e(TAG, "shared listener failure: ${sharedResult.error}")
                         lastSharedGuides
                     }
                 }
 
                 val privateGuides: List<Guide> = when (privateResult) {
-                    is ListItemsResultListener.Success -> {
-                        Log.d(TAG, "private snapshot success count=${privateResult.listItems.size}")
+                    is AppResult.Success -> {
+                        Log.d(TAG, "private snapshot success count=${privateResult.data.items.size}")
                         privateHasSuccessfulSync = true
-                        privateResult.listItems.also { lastPrivateGuides = it }
+                        privateResult.data.items.also { lastPrivateGuides = it }
                     }
-                    is ListItemsResultListener.Failure -> {
-                        Log.e(TAG, "private listener failure: ${privateResult.message}")
+                    is AppResult.Failure -> {
+                        Log.e(TAG, "private listener failure: ${privateResult.error}")
                         lastPrivateGuides
                     }
                 }
 
-                val hadAnySuccessInThisEmission = sharedResult is ListItemsResultListener.Success ||
-                    privateResult is ListItemsResultListener.Success
+                val hadAnySuccessInThisEmission = sharedResult is AppResult.Success ||
+                    privateResult is AppResult.Success
                 val hasAnySuccessfulSync = sharedHasSuccessfulSync || privateHasSuccessfulSync
                 if (!hadAnySuccessInThisEmission && !hasAnySuccessfulSync && sharedGuides.isEmpty() && privateGuides.isEmpty()) {
                     Log.w(TAG, "both guides listeners failed and no cached fallback exists; skipping local update")

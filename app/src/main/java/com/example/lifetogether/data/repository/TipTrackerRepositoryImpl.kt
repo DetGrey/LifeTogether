@@ -3,10 +3,9 @@ package com.example.lifetogether.data.repository
 import com.example.lifetogether.data.local.source.TipTrackerLocalDataSource
 import com.example.lifetogether.data.model.TipEntity
 import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.domain.repository.TipTrackerRepository
-import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.util.Constants
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -33,8 +32,8 @@ class TipTrackerRepositoryImpl @Inject constructor(
 
     override suspend fun deleteTip(tipId: String): Result<Unit, String> {
         return when (val result = firestoreDataSource.deleteItem(tipId, Constants.TIP_TRACKER_TABLE)) {
-            is ResultListener.Success -> Result.Success(Unit)
-            is ResultListener.Failure -> Result.Failure(result.message)
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> Result.Failure(result.error)
         }
     }
 

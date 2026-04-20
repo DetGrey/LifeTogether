@@ -3,8 +3,8 @@ package com.example.lifetogether.domain.usecase.observers
 import android.util.Log
 import com.example.lifetogether.data.local.source.UserListLocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.listener.ListItemsResultListener
 import com.example.lifetogether.domain.model.lists.UserList
+import com.example.lifetogether.domain.result.Result as AppResult
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.combine
@@ -38,28 +38,28 @@ class ObserveUserListsUseCase @Inject constructor(
                 firestoreDataSource.privateUserListsSnapshotListener(familyId, uid),
             ) { s, p -> s to p }.collect { (sharedResult, privateResult) ->
                 val shared: List<UserList> = when (sharedResult) {
-                    is ListItemsResultListener.Success -> {
+                    is AppResult.Success -> {
                         sharedSynced = true
-                        sharedResult.listItems.also { lastShared = it }
+                        sharedResult.data.items.also { lastShared = it }
                     }
-                    is ListItemsResultListener.Failure -> {
-                        Log.e(TAG, "shared failure: ${sharedResult.message}")
+                    is AppResult.Failure -> {
+                        Log.e(TAG, "shared failure: ${sharedResult.error}")
                         lastShared
                     }
                 }
                 val private: List<UserList> = when (privateResult) {
-                    is ListItemsResultListener.Success -> {
+                    is AppResult.Success -> {
                         privateSynced = true
-                        privateResult.listItems.also { lastPrivate = it }
+                        privateResult.data.items.also { lastPrivate = it }
                     }
-                    is ListItemsResultListener.Failure -> {
-                        Log.e(TAG, "private failure: ${privateResult.message}")
+                    is AppResult.Failure -> {
+                        Log.e(TAG, "private failure: ${privateResult.error}")
                         lastPrivate
                     }
                 }
 
-                val hadSuccess = sharedResult is ListItemsResultListener.Success ||
-                    privateResult is ListItemsResultListener.Success
+                val hadSuccess = sharedResult is AppResult.Success ||
+                    privateResult is AppResult.Success
                 val anySynced = sharedSynced || privateSynced
                 if (!hadSuccess && !anySynced) return@collect
 

@@ -1,7 +1,6 @@
 package com.example.lifetogether.domain.usecase.gallery
 
 import android.util.Log
-import com.example.lifetogether.domain.listener.AlbumUiModelResultListener
 import com.example.lifetogether.domain.repository.GalleryRepository
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.ui.model.AlbumUiModel
@@ -15,7 +14,7 @@ class GetAlbumDisplayModelsUseCase @Inject constructor(
     private val galleryRepository: GalleryRepository,
 ) {
     @OptIn(FlowPreview::class)
-    operator fun invoke(familyId: String): Flow<AlbumUiModelResultListener> {
+    operator fun invoke(familyId: String): Flow<Result<List<AlbumUiModel>, String>> {
         Log.d("GetAlbumDisplayModelsUseCase", "invoke")
 
         return combine(
@@ -41,9 +40,9 @@ class GetAlbumDisplayModelsUseCase @Inject constructor(
                             thumbnail = thumbnailCache[album.id]
                         )
                     }
-                    AlbumUiModelResultListener.Success(albums)
+                    Result.Success(albums)
                 }
-                is Result.Failure -> AlbumUiModelResultListener.Failure(albumsResult.error)
+                is Result.Failure -> albumsResult
             }
         }.debounce(100L) // Waits 100ms for updates to settle.
     }

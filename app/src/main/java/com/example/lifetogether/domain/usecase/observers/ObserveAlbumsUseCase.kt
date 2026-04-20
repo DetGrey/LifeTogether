@@ -2,7 +2,7 @@ package com.example.lifetogether.domain.usecase.observers
 
 import com.example.lifetogether.data.local.source.AlbumLocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.listener.ListItemsResultListener
+import com.example.lifetogether.domain.result.Result as AppResult
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -22,13 +22,13 @@ class ObserveAlbumsUseCase @Inject constructor(
             firestoreDataSource.albumsSnapshotListener(familyId).collect { result ->
                 println("albumsSnapshotListener().collect result: $result")
                 when (result) {
-                    is ListItemsResultListener.Success -> {
+                    is AppResult.Success -> {
                         runCatching {
-                            if (result.listItems.isEmpty()) {
+                            if (result.data.items.isEmpty()) {
                                 println("albumsSnapshotListener().collect result: is empty")
                                 albumLocalDataSource.deleteFamilyAlbums(familyId)
                             } else {
-                                albumLocalDataSource.updateAlbums(result.listItems)
+                                albumLocalDataSource.updateAlbums(result.data.items)
                             }
                         }.onSuccess {
                             firstSuccess.completeFirstSuccessIfNeeded()
@@ -36,9 +36,9 @@ class ObserveAlbumsUseCase @Inject constructor(
                             println("ObserveAlbumsUseCase local update failure: ${error.message}")
                         }
                     }
-                    is ListItemsResultListener.Failure -> {
+                    is AppResult.Failure -> {
                         // Keep listener alive; firstSuccess is one-shot and only completes on success.
-                        println("ObserveAlbumsUseCase failure: ${result.message}")
+                        println("ObserveAlbumsUseCase failure: ${result.error}")
                     }
                 }
             }

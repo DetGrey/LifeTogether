@@ -3,8 +3,7 @@ package com.example.lifetogether.data.repository
 import android.util.Log
 import com.example.lifetogether.data.remote.FirebaseAuthDataSource
 import com.example.lifetogether.di.AppScope
-import com.example.lifetogether.domain.listener.AuthResultListener
-import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.model.session.authenticatedUserOrNull
@@ -36,8 +35,8 @@ class SessionRepositoryImpl @Inject constructor(
         appScope.launch {
             firebaseAuthDataSource.authStateListener().collectLatest { authState ->
                 when (authState) {
-                    is AuthResultListener.Success -> {
-                        val uid = authState.userInformation.uid
+                    is Result.Success -> {
+                        val uid = authState.data.uid
                         if (uid.isNullOrBlank()) {
                             _sessionState.value = SessionState.Unauthenticated
                             return@collectLatest
@@ -46,19 +45,19 @@ class SessionRepositoryImpl @Inject constructor(
                         _sessionState.value = SessionState.Loading
                         sessionUserRepository.observeUserInformation(uid).collect { result ->
                             when (result) {
-                                is AuthResultListener.Success -> {
-                                    _sessionState.value = SessionState.Authenticated(result.userInformation)
+                                is Result.Success -> {
+                                    _sessionState.value = SessionState.Authenticated(result.data)
                                 }
 
-                                is AuthResultListener.Failure -> {
-                                    Log.w(TAG, "User information lookup failed for uid=$uid: ${result.message}")
+                                is Result.Failure -> {
+                                    Log.w(TAG, "User information lookup failed for uid=$uid: ${result.error}")
                                     _sessionState.value = SessionState.Unauthenticated
                                 }
                             }
                         }
                     }
 
-                    is AuthResultListener.Failure -> {
+                    is Result.Failure -> {
                         _sessionState.value = SessionState.Unauthenticated
                     }
                 }
@@ -66,24 +65,24 @@ class SessionRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun signOut(): ResultListener {
+    override suspend fun signOut(): Result<Unit, String> {
         val currentUser = resolveUserForSignOut()
-            ?: return ResultListener.Failure("No authenticated user available for sign out")
+            ?: return Result.Failure("No authenticated user available for sign out")
 
         val uid = currentUser.uid
-            ?: return ResultListener.Failure("No authenticated user available for sign out")
+            ?: return Result.Failure("No authenticated user available for sign out")
 
         return when (val remoteResult = sessionUserRepository.logout(uid, currentUser.familyId)) {
-            is ResultListener.Failure -> remoteResult
-            is ResultListener.Success -> {
+            is Result.Failure -> remoteResult
+            is Result.Success -> {
                 _sessionState.value = SessionState.Unauthenticated
                 when (val localResult = sessionUserRepository.removeSavedUserInformation()) {
-                    is ResultListener.Failure -> {
-                        Log.e(TAG, "Local session cleanup failed after remote logout: ${localResult.message}")
-                        ResultListener.Failure(localResult.message)
+                    is Result.Failure -> {
+                        Log.e(TAG, "Local session cleanup failed after remote logout: ${localResult.error}")
+                        Result.Failure(localResult.error)
                     }
 
-                    is ResultListener.Success -> ResultListener.Success
+                    is Result.Success -> Result.Success(Unit)
                 }
             }
         }
@@ -94,9 +93,9 @@ class SessionRepositoryImpl @Inject constructor(
 
         val currentUid = firebaseAuthDataSource.currentUserUid() ?: return null
         return when (val result = sessionUserRepository.fetchUserInformation(currentUid)) {
-            is AuthResultListener.Success -> result.userInformation
-            is AuthResultListener.Failure -> {
-                Log.w(TAG, "Fallback user fetch for sign out failed for uid=$currentUid: ${result.message}")
+            is Result.Success -> result.data
+            is Result.Failure -> {
+                Log.w(TAG, "Fallback user fetch for sign out failed for uid=$currentUid: ${result.error}")
                 UserInformation(uid = currentUid)
             }
         }

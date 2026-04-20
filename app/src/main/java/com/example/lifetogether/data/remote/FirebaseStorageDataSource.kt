@@ -4,13 +4,9 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import com.example.lifetogether.data.logic.ImageProcessor
-import com.example.lifetogether.domain.listener.ByteArrayResultListener
-import com.example.lifetogether.domain.listener.ResultListener
-import com.example.lifetogether.domain.listener.StringResultListener
-import com.example.lifetogether.domain.listener.TempFileDownloadResult
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.datasource.StorageDataSource
-import com.example.lifetogether.domain.result.Result
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.tasks.await
@@ -26,13 +22,13 @@ class FirebaseStorageDataSource @Inject constructor(
         uri: Uri,
         imageType: ImageType,
         context: Context,
-    ): StringResultListener {
+    ): Result<String, String> {
         return try {
             Log.d("FirebaseStorageDS", "uploadPhoto uri: $uri")
 
             // Process image (rotate, resize, compress)
             val processedImage = imageProcessor.processImage(uri, imageType, context)
-                ?: return StringResultListener.Failure("Failed to process image")
+                ?: return Result.Failure("Failed to process image")
 
             // Create path for Firebase Storage
             val path = "${processedImage.path}/${UUID.randomUUID()}-${System.currentTimeMillis()}${processedImage.extension}"
@@ -45,35 +41,35 @@ class FirebaseStorageDataSource @Inject constructor(
             // Get the download URL
             val downloadUrl = photoRef.downloadUrl.await()
             Log.d("FirebaseStorageDS", "uploadPhoto success. Download URL: $downloadUrl")
-            StringResultListener.Success(downloadUrl.toString())
+            Result.Success(downloadUrl.toString())
         } catch (e: Exception) {
             Log.e("FirebaseStorageDS", "Error uploading photo: ${e.message}", e)
-            StringResultListener.Failure("Error: ${e.message}")
+            Result.Failure("Error: ${e.message}")
         }
     }
 
-    override suspend fun fetchImageByteArray(url: String): ByteArrayResultListener {
+    override suspend fun fetchImageByteArray(url: String): Result<ByteArray, String> {
         return try {
             Log.d("FirebaseStorageDS", "fetchImageByteArray from URL: $url")
             val storageRef = FirebaseStorage.getInstance().getReferenceFromUrl(url)
             val byteArray = storageRef.getBytes(Long.MAX_VALUE).await()
-            ByteArrayResultListener.Success(byteArray)
+            Result.Success(byteArray)
         } catch (e: Exception) {
             Log.e("FirebaseStorageDS", "Error fetching image: ${e.message}", e)
-            ByteArrayResultListener.Failure("Error: ${e.message}")
+            Result.Failure("Error: ${e.message}")
         }
     }
 
-    override suspend fun deleteImage(url: String): ResultListener {
+    override suspend fun deleteImage(url: String): Result<Unit, String> {
         return try {
             Log.d("FirebaseStorageDS", "deleteImage: $url")
             val storageRef = FirebaseStorage.getInstance().getReferenceFromUrl(url)
             storageRef.delete().await()
             Log.d("FirebaseStorageDS", "deleteImage success")
-            ResultListener.Success
+            Result.Success(Unit)
         } catch (e: Exception) {
             Log.e("FirebaseStorageDS", "Error deleting image: ${e.message}", e)
-            ResultListener.Failure("Error: ${e.message}")
+            Result.Failure("Error: ${e.message}")
         }
     }
 
@@ -87,7 +83,7 @@ class FirebaseStorageDataSource @Inject constructor(
         uri: Uri,
         path: String,
         extension: String,
-    ): StringResultListener {
+    ): Result<String, String> {
         return try {
             Log.d("FirebaseStorageDS", "uploadVideo uri: $uri, pathId: $path, ext: $extension")
 
@@ -104,10 +100,10 @@ class FirebaseStorageDataSource @Inject constructor(
             // Get the download URL
             val downloadUrl = videoRef.downloadUrl.await()
             Log.d("FirebaseStorageDS", "uploadVideo success. Download URL: $downloadUrl")
-            StringResultListener.Success(downloadUrl.toString())
+            Result.Success(downloadUrl.toString())
         } catch (e: Exception) {
             Log.e("FirebaseStorageDS", "Error uploading video: ${e.message}", e)
-            StringResultListener.Failure("Error uploading video: ${e.message}")
+            Result.Failure("Error uploading video: ${e.message}")
         }
     }
 
@@ -115,7 +111,7 @@ class FirebaseStorageDataSource @Inject constructor(
         context: Context,
         storageUrl: String,
         desiredFileExtension: String,
-    ): TempFileDownloadResult {
+    ): Result<File, String> {
         // Create a unique temporary file in the app's cache directory
         val ensuredExtension = if (desiredFileExtension.startsWith(".")) desiredFileExtension else ".$desiredFileExtension"
         val tempFileName = "${UUID.randomUUID()}$ensuredExtension"
@@ -128,7 +124,7 @@ class FirebaseStorageDataSource @Inject constructor(
             // Await the completion of the file download
             storageRef.getFile(tempFile).await() // This suspends until download is complete or fails
 
-            TempFileDownloadResult.Success(tempFile)
+            Result.Success(tempFile)
         } catch (e: Exception) {
             Log.e("FirebaseStorageDS", "Content download failure: ${e.message}", e)
             // Attempt to delete partially downloaded file on failure, if it exists
@@ -138,7 +134,7 @@ class FirebaseStorageDataSource @Inject constructor(
                     Log.w("FirebaseStorageDS", "Failed to delete temp file on failure: ${fileToDeleteOnFailure.absolutePath}")
                 }
             }
-            TempFileDownloadResult.Failure("Download failed: ${e.message}")
+            Result.Failure("Download failed: ${e.message}")
         }
     }
 }

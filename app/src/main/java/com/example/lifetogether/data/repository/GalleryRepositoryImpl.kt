@@ -7,8 +7,7 @@ import com.example.lifetogether.data.local.source.AlbumLocalDataSource
 import com.example.lifetogether.data.local.source.MediaLocalDataSource
 import com.example.lifetogether.data.model.AlbumEntity
 import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.listener.ResultListener
-import com.example.lifetogether.domain.listener.StringResultListener
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.enums.MediaType
 import com.example.lifetogether.domain.model.gallery.Album
 import com.example.lifetogether.domain.model.gallery.GalleryImage
@@ -16,7 +15,6 @@ import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.domain.repository.GalleryRepository
 import com.example.lifetogether.domain.datasource.StorageDataSource
-import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.util.Constants
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -81,16 +79,13 @@ class GalleryRepositoryImpl @Inject constructor(
 
     override suspend fun saveGalleryMediaMetaData(galleryMedia: List<GalleryMedia>): Result<Unit, String> {
         return when (val result = firestoreDataSource.saveGalleryMediaMetaData(galleryMedia)) {
-            is ResultListener.Success -> Result.Success(Unit)
-            is ResultListener.Failure -> Result.Failure(result.message)
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> Result.Failure(result.error)
         }
     }
 
     override suspend fun uploadVideo(uri: Uri, path: String, extension: String): Result<String, String> {
-        return when (val result = storageDataSource.uploadVideo(uri, path, extension)) {
-            is StringResultListener.Success -> Result.Success(result.string)
-            is StringResultListener.Failure -> Result.Failure(result.message)
-        }
+        return storageDataSource.uploadVideo(uri, path, extension)
     }
 
     override fun observeAlbumById(familyId: String, albumId: String): Flow<Result<Album, String>> {

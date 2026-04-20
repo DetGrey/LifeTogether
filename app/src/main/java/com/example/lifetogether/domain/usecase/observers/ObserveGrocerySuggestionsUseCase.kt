@@ -3,7 +3,6 @@ package com.example.lifetogether.domain.usecase.observers
 import com.example.lifetogether.data.local.source.GroceryLocalDataSource
 import com.example.lifetogether.data.model.GrocerySuggestionEntity
 import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.listener.GrocerySuggestionsListener
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -20,9 +19,9 @@ class ObserveGrocerySuggestionsUseCase @Inject constructor(
             firestoreDataSource.grocerySuggestionsSnapshotListener().collect { result ->
                 println("grocerySuggestionsSnapshotListener().collect result: $result")
                 when (result) {
-                    is GrocerySuggestionsListener.Success -> {
+                    is com.example.lifetogether.domain.result.Result.Success -> {
                         runCatching {
-                            val entities = result.listItems.mapNotNull { suggestion ->
+                            val entities = result.data.mapNotNull { suggestion ->
                                 suggestion.id?.let { id ->
                                     GrocerySuggestionEntity(
                                         id = id,
@@ -39,9 +38,9 @@ class ObserveGrocerySuggestionsUseCase @Inject constructor(
                             println("ObserveGrocerySuggestionsUseCase local update failure: ${error.message}")
                         }
                     }
-                    is GrocerySuggestionsListener.Failure -> {
+                    is com.example.lifetogether.domain.result.Result.Failure -> {
                         // Keep listener alive; firstSuccess is one-shot and only completes on success.
-                        println("ObserveGrocerySuggestionsUseCase failure: ${result.message}")
+                        println("ObserveGrocerySuggestionsUseCase failure: ${result.error}")
                     }
                 }
             } 

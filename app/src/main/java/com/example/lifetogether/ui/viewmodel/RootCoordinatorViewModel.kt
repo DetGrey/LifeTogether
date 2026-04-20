@@ -9,6 +9,7 @@ import com.example.lifetogether.domain.observer.ObserverSyncState
 import com.example.lifetogether.domain.repository.GuideRepository
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.repository.UserRepository
+import com.example.lifetogether.domain.result.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -119,7 +120,10 @@ class RootCoordinatorViewModel @Inject constructor(
         lastFcmUid = uid
         lastFcmFamilyId = familyId
         viewModelScope.launch {
-            userRepository.storeFcmToken(uid, familyId)
+            when (val result = userRepository.storeFcmToken(uid, familyId)) {
+                is Result.Success -> Unit
+                is Result.Failure -> Unit
+            }
         }
     }
 

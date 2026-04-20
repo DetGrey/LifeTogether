@@ -2,10 +2,9 @@ package com.example.lifetogether.data.repository
 
 import android.util.Log
 import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.Item
 import com.example.lifetogether.domain.repository.LegacyListRepository
-import com.example.lifetogether.domain.result.Result
 import javax.inject.Inject
 
 class RemoteListRepositoryImpl @Inject constructor(
@@ -23,23 +22,10 @@ class RemoteListRepositoryImpl @Inject constructor(
         return firestoreDataSource.saveItem(item, listName)
     }
 
-    suspend fun updateItem(
-        item: Item,
-        listName: String,
-    ): Result<Unit, String> {
-        Log.d(TAG, "updateItem forwarding listName=$listName id=${item.id} type=${item::class.simpleName}")
-        val result = firestoreDataSource.updateItem(item, listName)
-        when (result) {
-            is Result.Success -> Log.d(TAG, "updateItem success listName=$listName id=${item.id}")
-            is Result.Failure -> Log.e(TAG, "updateItem failure listName=$listName id=${item.id} message=${result.error}")
-        }
-        return result
-    }
-
     suspend fun deleteItem(
         itemId: String,
         listName: String,
-    ): ResultListener {
+    ): Result<Unit, String> {
         return firestoreDataSource.deleteItem(itemId, listName)
     }
 
@@ -53,14 +39,14 @@ class RemoteListRepositoryImpl @Inject constructor(
     suspend fun updateAlbumCount(
         albumId: String,
         count: Int,
-    ): ResultListener {
+    ): Result<Unit, String> {
         return firestoreDataSource.updateAlbumCount(albumId, count)
     }
     suspend fun moveMediaToAlbum(
         mediaIdList: Set<String>,
         newAlbumId: String,
         oldAlbumId: String,
-    ): ResultListener {
+    ): Result<Unit, String> {
         return firestoreDataSource.moveMediaToAlbum(mediaIdList, newAlbumId, oldAlbumId)
     }
 }
