@@ -10,7 +10,7 @@ import com.example.lifetogether.data.local.dao.GalleryMediaDao
 import com.example.lifetogether.data.logic.generateImageThumbnailFromFile
 import com.example.lifetogether.data.logic.generateVideoThumbnailFromFile
 import com.example.lifetogether.data.model.GalleryMediaEntity
-import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.enums.MediaType
 import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
@@ -197,7 +197,7 @@ class MediaLocalDataSource @Inject constructor(
     fun copyMediaToGalleryFolder(
         mediaFile: File,
         mediaItem: GalleryMedia,
-    ): ResultListener {
+    ): Result<Unit, String> {
         val resolver = context.contentResolver
         var mediaStoreUri: Uri? = null
 
@@ -231,18 +231,18 @@ class MediaLocalDataSource @Inject constructor(
             }
 
             mediaStoreUri = resolver.insert(collectionUri, contentValues)
-                ?: return ResultListener.Failure("Failed to create MediaStore entry")
+                ?: return Result.Failure("Failed to create MediaStore entry")
 
             resolver.openOutputStream(mediaStoreUri)?.use { outputStream ->
                 mediaFile.inputStream().use { inputStream ->
                     inputStream.copyTo(outputStream)
                 }
-            } ?: return ResultListener.Failure("Failed to open output stream")
+            } ?: return Result.Failure("Failed to open output stream")
 
             contentValues.clear()
             contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
             resolver.update(mediaStoreUri, contentValues, null, null)
-            ResultListener.Success
+            Result.Success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error saving media: ${e.message}", e)
             mediaStoreUri?.let { uri ->
@@ -251,7 +251,7 @@ class MediaLocalDataSource @Inject constructor(
                 } catch (_: Exception) {
                 }
             }
-            ResultListener.Failure("Failed to save file: ${e.message}")
+            Result.Failure("Failed to save file: ${e.message}")
         }
     }
 

@@ -4,11 +4,10 @@ import android.content.Context
 import android.util.Log
 import com.example.lifetogether.data.local.source.MediaLocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.listener.ListItemsResultListener
-import com.example.lifetogether.domain.repository.StorageRepository
-import com.example.lifetogether.domain.listener.TempFileDownloadResult
+import com.example.lifetogether.domain.datasource.StorageDataSource
 import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
+import com.example.lifetogether.domain.result.Result as AppResult
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -25,7 +24,7 @@ import kotlin.let
 
 class ObserveGalleryMediaUseCase @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
-    private val storageRepository: StorageRepository,
+    private val storageDataSource: StorageDataSource,
     private val mediaLocalDataSource: MediaLocalDataSource,
 ) {
     companion object {
@@ -55,17 +54,17 @@ class ObserveGalleryMediaUseCase @Inject constructor(
             firestoreDataSource.galleryMediaSnapshotListener(familyId).collect { result ->
                 Log.d(TAG, "galleryMediaSnapshotListener().collect result: $result")
                 when (result) {
-                    is ListItemsResultListener.Success -> {
+                    is AppResult.Success -> {
                     // Only allow empty list to delete local files if data is from server (not cache)
                     // This prevents offline/cached empty responses from deleting local data
                     // But allows legitimate deletions when confirmed by the server
-                    if (result.listItems.isEmpty() && result.isFromCache) {
+                    if (result.data.items.isEmpty() && result.data.isFromCache) {
                         Log.d(TAG, "galleryMediaSnapshotListener().collect result: is empty from cache - ignoring to preserve local cache")
                         // Don't delete anything - cached empty responses are unreliable
                         return@collect
                     }
                     
-                    if (result.listItems.isEmpty()) {
+                    if (result.data.items.isEmpty()) {
                         Log.d(TAG, "galleryMediaSnapshotListener().collect result: is empty from server - processing deletions")
                     }
 
@@ -73,25 +72,25 @@ class ObserveGalleryMediaUseCase @Inject constructor(
                     val existingMediaMap = mediaLocalDataSource.getExistingGalleryMediaInfo(familyId)
 
                     // Filter items that need downloading (not already in local storage)
-                    val itemsToDownload = result.listItems.filter { galleryMedia ->
+                    val itemsToDownload = result.data.items.filter { galleryMedia ->
                         val mediaId = galleryMedia.id
                         val existingMediaUri = existingMediaMap[mediaId]?.first
                         existingMediaUri == null // Only download if not already locally cached
                     }
 
                     if (itemsToDownload.isEmpty()) {
-                        Log.d(TAG, "All ${result.listItems.size} items already exist locally")
+                        Log.d(TAG, "All ${result.data.items.size} items already exist locally")
                         // Still need to call updateGalleryMedia with completeSourceList to handle deletions
                         mediaLocalDataSource.updateGalleryMedia(
                             familyId = familyId,
                             items = emptyList(), // No new items to download
-                            completeSourceList = result.listItems // Pass complete list for deletion detection
+                            completeSourceList = result.data.items // Pass complete list for deletion detection
                         )
                         firstSuccess.completeFirstSuccessIfNeeded()
                         return@collect
                     }
 
-                    Log.d(TAG, "Need to download ${itemsToDownload.size} items out of ${result.listItems.size}")
+                    Log.d(TAG, "Need to download ${itemsToDownload.size} items out of ${result.data.items.size}")
                     
                     // Track items that fail after all retries for detection/logging
                     val failedItems = mutableSetOf<String>()
@@ -130,22 +129,22 @@ class ObserveGalleryMediaUseCase @Inject constructor(
                                                     )
 
                                                     // Retry logic with exponential backoff
-                                                    var downloadResult: TempFileDownloadResult? = null
+                                                    var downloadResult: AppResult<File, String>? = null
                                                     var lastException: Exception? = null
 
                                                     repeat(MAX_RETRY_ATTEMPTS) { attempt ->
-                                                        if (downloadResult is TempFileDownloadResult.Success) {
+                                                        if (downloadResult is AppResult.Success) {
                                                             return@repeat // Exit early if successful
                                                         }
 
                                                         try {
-                                                            downloadResult = storageRepository.downloadContentToTempFile(
+                                                            downloadResult = storageDataSource.downloadContentToTempFile(
                                                                 context,
                                                                 url,
                                                                 extension
                                                             )
 
-                                                            if (downloadResult is TempFileDownloadResult.Success) {
+                                                            if (downloadResult is AppResult.Success) {
                                                                 if (attempt > 0) {
                                                                     Log.d(TAG, "Downloaded on retry ${attempt + 1}: ${galleryMedia.itemName}")
                                                                 } else {
@@ -167,15 +166,15 @@ class ObserveGalleryMediaUseCase @Inject constructor(
                                                         }
                                                     }
 
-                                                    if (downloadResult is TempFileDownloadResult.Success) {
+                                                    if (downloadResult is AppResult.Success) {
                                                         Pair(
                                                             galleryMedia,
-                                                            downloadResult.downloadedFile
+                                                            downloadResult.data
                                                         )
                                                     } else {
                                                         roundFailedItems.add(galleryMedia.id ?: "unknown")
-                                                        if (downloadResult is TempFileDownloadResult.Failure) {
-                                                            Log.d(TAG, "Failed to download ${galleryMedia.itemName} after $MAX_RETRY_ATTEMPTS attempts: ${downloadResult.message}")
+                                                        if (downloadResult is AppResult.Failure) {
+                                                            Log.d(TAG, "Failed to download ${galleryMedia.itemName} after $MAX_RETRY_ATTEMPTS attempts: ${downloadResult.error}")
                                                         } else if (lastException != null) {
                                                             Log.d(TAG, "Failed to download ${galleryMedia.itemName} after $MAX_RETRY_ATTEMPTS attempts: ${lastException.message}")
                                                         }
@@ -232,7 +231,7 @@ class ObserveGalleryMediaUseCase @Inject constructor(
                     mediaLocalDataSource.updateGalleryMedia(
                         familyId = familyId,
                         items = emptyList(), // No new items to add
-                        completeSourceList = result.listItems // Pass complete list for deletion detection
+                        completeSourceList = result.data.items // Pass complete list for deletion detection
                     )
                     
                     // Detect partial downloads and log warning
@@ -245,7 +244,7 @@ class ObserveGalleryMediaUseCase @Inject constructor(
                         failedItems.addAll(remainingItems.mapNotNull { it.id })
                     }
                     
-                    val expectedCount = result.listItems.size
+                    val expectedCount = result.data.items.size
                     val actualCount = allDownloadedItems.size + existingMediaMap.size
                     if (actualCount < expectedCount) {
                         Log.w(TAG, "Partial media load - Expected $expectedCount items, got $actualCount (${failedItems.size} failed, ${existingMediaMap.size} already cached)")
@@ -253,9 +252,9 @@ class ObserveGalleryMediaUseCase @Inject constructor(
                     firstSuccess.completeFirstSuccessIfNeeded()
                 }
 
-                is ListItemsResultListener.Failure -> {
+                is AppResult.Failure -> {
                     // Handle failure
-                    Log.e(TAG, "failure: ${result.message}")
+                    Log.e(TAG, "failure: ${result.error}")
                 }
             }
         }

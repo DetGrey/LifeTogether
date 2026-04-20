@@ -1,28 +1,29 @@
 package com.example.lifetogether.domain.usecase.user
 
-import com.example.lifetogether.data.repository.RemoteUserRepositoryImpl
-import com.example.lifetogether.domain.listener.AuthResultListener
+import com.example.lifetogether.data.repository.UserRepositoryImpl
 import com.example.lifetogether.domain.model.User
+import com.example.lifetogether.domain.model.UserInformation
+import com.example.lifetogether.domain.result.Result
 import javax.inject.Inject
 
 class LoginUseCase @Inject constructor(
-    private val remoteUserRepositoryImpl: RemoteUserRepositoryImpl,
+    private val userRepositoryImpl: UserRepositoryImpl
 ) {
-    suspend operator fun invoke(user: User): AuthResultListener {
+    suspend operator fun invoke(user: User): Result<UserInformation, String> {
         println("LoginUseCase invoked")
         // TODO Handle the login logic and validation here
 //        val userValidationUseCase = UserValidationUseCase()
 //
 //        val passwordResult = userValidationUseCase.passwordValidation(user.password)
 //        if (!passwordResult) {
-//            return AuthResultListener.Failure("Invalid password.")
+//            return Result.Failure("Invalid password.")
 //        }
 //
 //        val emailResult = userValidationUseCase.emailValidation(user.email)
 //        if (!emailResult) {
-//            return AuthResultListener.Failure("Invalid email.")
+//            return Result.Failure("Invalid email.")
 //        }
 
-        return remoteUserRepositoryImpl.login(user)
+        return userRepositoryImpl.login(user)
     }
 }

@@ -3,17 +3,14 @@ package com.example.lifetogether.ui.feature.guides.stepplayer
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.listener.ItemResultListener
 import com.example.lifetogether.domain.logic.GuideLeafPointer
 import com.example.lifetogether.domain.logic.GuideProgress
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.guides.GuideSection
 import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.repository.GuideRepository
 import com.example.lifetogether.domain.repository.SessionRepository
-import com.example.lifetogether.domain.usecase.guides.MarkGuideProgressDirtyUseCase
-import com.example.lifetogether.domain.usecase.guides.SyncPendingGuideProgressUseCase
-import com.example.lifetogether.domain.usecase.item.FetchItemByIdUseCase
-import com.example.lifetogether.util.Constants
+import com.example.lifetogether.domain.result.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -28,9 +25,7 @@ import javax.inject.Inject
 @HiltViewModel
 class GuideStepPlayerViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
-    private val fetchItemByIdUseCase: FetchItemByIdUseCase,
-    private val markGuideProgressDirtyUseCase: MarkGuideProgressDirtyUseCase,
-    private val syncPendingGuideProgressUseCase: SyncPendingGuideProgressUseCase,
+    private val guideRepository: GuideRepository,
 ) : ViewModel() {
     private companion object {
         const val TAG = "GuideStepPlayerVM"
@@ -109,22 +104,14 @@ class GuideStepPlayerViewModel @Inject constructor(
         guideJob?.cancel()
         guideJob = viewModelScope.launch {
             Log.d(TAG, "startGuideJob subscribing to local guide flow for guideId=$guideId")
-            fetchItemByIdUseCase(
+            guideRepository.observeGuideById(
                 familyId = familyIdValue,
                 id = guideId,
-                listName = Constants.GUIDES_TABLE,
-                itemType = Guide::class,
                 uid = uidValue,
             ).collect { result ->
                 when (result) {
-                    is ItemResultListener.Success -> {
-                        val guide = result.item as? Guide ?: run {
-                            Log.w(
-                                TAG,
-                                "Observed non-guide item from fetchItemByIdUseCase: ${result.item::class.simpleName}",
-                            )
-                            return@collect
-                        }
+                    is Result.Success -> {
+                        val guide = result.data
                         Log.d(
                             TAG,
                             "Observed guide emission id=${guide.id} started=${guide.started} resume=${guide.resume} lastUpdated=${guide.lastUpdated.time}",
@@ -134,10 +121,9 @@ class GuideStepPlayerViewModel @Inject constructor(
                             forcePointerRecompute = currentPointerIndex < 0,
                         )
                     }
-
-                    is ItemResultListener.Failure -> {
-                        Log.e(TAG, "Guide observation failed: ${result.message}")
-                        showError(result.message)
+                    is Result.Failure -> {
+                        Log.e(TAG, "Guide observation failed: ${result.error}")
+                        showError(result.error)
                     }
                 }
             }
@@ -153,31 +139,19 @@ class GuideStepPlayerViewModel @Inject constructor(
         if (targetIndex !in leaves.indices) return
 
         currentPointerIndex = targetIndex
-        applyGuideUpdate(
-            uiGuide = currentGuide,
-            forcePointerRecompute = false,
-        )
+        applyGuideUpdate(uiGuide = currentGuide, forcePointerRecompute = false)
         scheduleNavigationPersistence(currentGuide)
     }
 
     fun toggleCurrentStepCompletion() {
-        updateCurrentStep(
-            completionMode = CompletionMode.TOGGLE,
-            moveToNext = false,
-        )
+        updateCurrentStep(completionMode = CompletionMode.TOGGLE, moveToNext = false)
     }
 
     fun completeCurrentAndGoNext() {
-        updateCurrentStep(
-            completionMode = CompletionMode.COMPLETE_IF_NEEDED,
-            moveToNext = true,
-        )
+        updateCurrentStep(completionMode = CompletionMode.COMPLETE_IF_NEEDED, moveToNext = true)
     }
 
-    private fun updateCurrentStep(
-        completionMode: CompletionMode,
-        moveToNext: Boolean,
-    ) {
+    private fun updateCurrentStep(completionMode: CompletionMode, moveToNext: Boolean) {
         val currentGuide = _uiState.value.guide ?: return
         val pointer = currentPointer(currentGuide) ?: return
 
@@ -231,7 +205,6 @@ class GuideStepPlayerViewModel @Inject constructor(
             currentPointerIndex = -1
             return true
         }
-
         if (currentPointerIndex < leaves.lastIndex) {
             currentPointerIndex += 1
             return true
@@ -258,10 +231,7 @@ class GuideStepPlayerViewModel @Inject constructor(
         forcePointerRecompute: Boolean = false,
         persistedGuide: Guide? = null,
     ) {
-        updateUiState(
-            guide = uiGuide,
-            forcePointerRecompute = forcePointerRecompute,
-        )
+        updateUiState(guide = uiGuide, forcePointerRecompute = forcePointerRecompute)
         persistedGuide?.let(::scheduleStepProgressPersistence)
     }
 
@@ -274,18 +244,13 @@ class GuideStepPlayerViewModel @Inject constructor(
         scheduleGuidePersistence(pointerResumeGuide)
     }
 
-    private fun scheduleStepProgressPersistence(guide: Guide) {
-        scheduleGuidePersistence(guide)
-    }
+    private fun scheduleStepProgressPersistence(guide: Guide) { scheduleGuidePersistence(guide) }
 
     private fun scheduleGuidePersistence(guide: Guide) {
         val normalizedGuide = normalizeGuideForPersistence(guide) ?: return
         pendingGuide = normalizedGuide
         guidePersistJob?.cancel()
-        Log.d(
-            TAG,
-            "scheduleGuidePersistence cached guideId=${normalizedGuide.id} debounceMs=$GUIDE_PERSIST_DEBOUNCE_MS",
-        )
+        Log.d(TAG, "scheduleGuidePersistence cached guideId=${normalizedGuide.id} debounceMs=$GUIDE_PERSIST_DEBOUNCE_MS")
         guidePersistJob = viewModelScope.launch {
             delay(GUIDE_PERSIST_DEBOUNCE_MS)
             flushPendingGuidePersistence()
@@ -299,7 +264,7 @@ class GuideStepPlayerViewModel @Inject constructor(
         val activeGuideId = guideId
         if (!activeFamilyId.isNullOrBlank() && !activeUid.isNullOrBlank()) {
             viewModelScope.launch {
-                syncPendingGuideProgressUseCase(
+                guideRepository.syncPendingGuideProgress(
                     familyId = activeFamilyId,
                     uid = activeUid,
                     force = true,
@@ -326,25 +291,19 @@ class GuideStepPlayerViewModel @Inject constructor(
         pendingGuide = null
     }
 
-    private fun persistGuide(
-        guide: Guide,
-        forceUpload: Boolean = false,
-    ) {
+    private fun persistGuide(guide: Guide, forceUpload: Boolean = false) {
         val normalizedGuide = normalizeGuideForPersistence(guide) ?: return
         val activeUid = uid ?: return
         val activeFamilyId = familyId ?: return
-        Log.d(
-            TAG,
-            "persistGuide local save guideId=${normalizedGuide.id} started=${normalizedGuide.started} resume=${normalizedGuide.resume} lastUpdated=${normalizedGuide.lastUpdated.time} forceUpload=$forceUpload",
-        )
+        Log.d(TAG, "persistGuide local save guideId=${normalizedGuide.id} started=${normalizedGuide.started} resume=${normalizedGuide.resume} lastUpdated=${normalizedGuide.lastUpdated.time} forceUpload=$forceUpload")
 
         viewModelScope.launch {
-            val marked = markGuideProgressDirtyUseCase(normalizedGuide, activeUid)
+            val marked = guideRepository.markGuideProgressDirty(normalizedGuide, activeUid)
             if (!marked) {
                 showError("Unable to save guide progress. Missing guide id.")
                 return@launch
             }
-            syncPendingGuideProgressUseCase(
+            guideRepository.syncPendingGuideProgress(
                 familyId = activeFamilyId,
                 uid = activeUid,
                 force = forceUpload,
@@ -359,48 +318,32 @@ class GuideStepPlayerViewModel @Inject constructor(
             showError("Unable to save guide progress. Missing guide id.")
             return null
         }
-        return if (guide.id == resolvedGuideId) {
-            guide
-        } else {
-            guide.copy(id = resolvedGuideId)
-        }
+        return if (guide.id == resolvedGuideId) guide else guide.copy(id = resolvedGuideId)
     }
 
     private fun resolveGuideId(guide: Guide): String? {
-        return guide.id?.takeIf { it.isNotBlank() }
-            ?: guideId?.takeIf { it.isNotBlank() }
+        return guide.id?.takeIf { it.isNotBlank() } ?: guideId?.takeIf { it.isNotBlank() }
     }
 
     private fun showError(message: String) {
         Log.e(TAG, "showError: $message")
         dismissAlertJob?.cancel()
         _uiState.update { state ->
-            state.copy(
-                showAlertDialog = true,
-                error = message,
-            )
+            state.copy(showAlertDialog = true, error = message)
         }
     }
 
     private fun clearError() {
         _uiState.update { state ->
-            state.copy(
-                showAlertDialog = false,
-                error = "",
-            )
+            state.copy(showAlertDialog = false, error = "")
         }
     }
 
-    private fun updateUiState(
-        guide: Guide,
-        forcePointerRecompute: Boolean,
-    ) {
+    private fun updateUiState(guide: Guide, forcePointerRecompute: Boolean) {
         val leaves = GuideProgress.buildLeafPointers(guide.sections)
         if (leaves.isEmpty()) {
             currentPointerIndex = -1
-            _uiState.value = mergeTransientUiState(
-                GuideStepPlayerUiState(guide = guide),
-            )
+            _uiState.value = mergeTransientUiState(GuideStepPlayerUiState(guide = guide))
             return
         }
 
@@ -443,15 +386,9 @@ class GuideStepPlayerViewModel @Inject constructor(
 
         val currentSection = guide.sections.getOrNull(pointer.sectionIndex)
         val currentPartProgress = currentSection?.let {
-            GuideProgress.sectionAmountProgress(
-                section = it,
-                amountIndex = pointer.sectionAmountIndex,
-            )
+            GuideProgress.sectionAmountProgress(section = it, amountIndex = pointer.sectionAmountIndex)
         } ?: (0 to 0)
-        val currentPartLabel = buildCurrentPartLabel(
-            section = currentSection,
-            pointer = pointer,
-        )
+        val currentPartLabel = buildCurrentPartLabel(section = currentSection, pointer = pointer)
         return GuideStepPlayerUiState(
             guide = guide,
             currentStep = currentStep,
@@ -477,20 +414,13 @@ class GuideStepPlayerViewModel @Inject constructor(
         )
     }
 
-    private fun buildCurrentPartLabel(
-        section: GuideSection?,
-        pointer: GuideLeafPointer,
-    ): String {
+    private fun buildCurrentPartLabel(section: GuideSection?, pointer: GuideLeafPointer): String {
         if (section == null || section.amount <= 1) return ""
         return "Part ${pointer.sectionAmountIndex + 1}/${section.amount}"
     }
 
     private fun mergeTransientUiState(baseState: GuideStepPlayerUiState): GuideStepPlayerUiState {
         val currentState = _uiState.value
-        return baseState.copy(
-            showAlertDialog = currentState.showAlertDialog,
-            error = currentState.error,
-        )
+        return baseState.copy(showAlertDialog = currentState.showAlertDialog, error = currentState.error)
     }
-
 }

@@ -5,12 +5,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.listener.CategoriesListener
-import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.model.Category
-import com.example.lifetogether.domain.usecase.item.AddCategoryUseCase
-import com.example.lifetogether.domain.usecase.item.DeleteCategoryUseCase
-import com.example.lifetogether.domain.usecase.item.FetchCategoriesUseCase
+import com.example.lifetogether.domain.repository.AdminRepository
+import com.example.lifetogether.domain.repository.CategoryRepository
+import com.example.lifetogether.domain.result.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,9 +19,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AdminGroceryCategoriesViewModel @Inject constructor(
-    private val fetchCategoriesUseCase: FetchCategoriesUseCase,
-    private val deleteCategoryUseCase: DeleteCategoryUseCase,
-    private val addCategoryUseCase: AddCategoryUseCase,
+    private val categoryRepository: CategoryRepository,
+    private val adminRepository: AdminRepository,
 ) : ViewModel() {
     var showDeleteCategoryConfirmationDialog: Boolean by mutableStateOf(false)
     var selectedCategory: Category? by mutableStateOf(null)
@@ -48,23 +45,19 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
     val groceryCategories: StateFlow<List<Category>> = _groceryCategories.asStateFlow()
 
     private fun fetchCategories() {
-        println("GroceryListViewModel before calling fetchCategoriesUseCase")
         viewModelScope.launch {
-            fetchCategoriesUseCase().collect { result ->
-                println("GroceryListViewModel fetchCategoriesUseCase result: $result")
+            categoryRepository.getCategories().collect { result ->
                 when (result) {
-                    is CategoriesListener.Success -> {
-                        println("GroceryListViewModel categories updated: ${result.listItems}")
-                        _groceryCategories.value = result.listItems
+                    is Result.Success -> {
+                        _groceryCategories.value = result.data
                             .filterNot { it.name == "Uncategorized" }
                             .sortedBy { it.name }
                             .let { listOf(Category("❓️", "Uncategorized")) + it }
                     }
 
-                    is CategoriesListener.Failure -> {
+                    is Result.Failure -> {
                         _groceryCategories.value = emptyList()
-                        // Handle failure, e.g., show an error message
-                        error = result.message
+                        error = result.error
                         showAlertDialog = true
                     }
                 }
@@ -85,13 +78,12 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
         val category = Category(emoji = categoryAsList[0], name = categoryAsList[1].trim())
 
         viewModelScope.launch {
-            val result: ResultListener = addCategoryUseCase.invoke(category)
-            if (result is ResultListener.Success) {
+            val result = adminRepository.addCategory(category)
+            if (result is Result.Success) {
                 newCategory = ""
-            } else if (result is ResultListener.Failure) {
-                // TODO popup saying the error for 5 sec
-                println("Error: ${result.message}")
-                error = result.message
+            } else if (result is Result.Failure) {
+                println("Error: ${result.error}")
+                error = result.error
                 showAlertDialog = true
             }
         }
@@ -99,23 +91,17 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
 
     // ---------------------------------------------------------------- DELETE CATEGORY
     fun deleteCategory() {
-//        isLoading = true
-
-        if (selectedCategory == null) {
-            return
-        }
+        val category = selectedCategory ?: return
         viewModelScope.launch {
-            val result: ResultListener = deleteCategoryUseCase.invoke(selectedCategory!!)
+            val result = adminRepository.deleteCategory(category)
 
-            if (result is ResultListener.Failure) {
-                // TODO popup saying the error for 5 sec
-                println("Error: ${result.message}")
-                error = result.message
+            if (result is Result.Failure) {
+                println("Error: ${result.error}")
+                error = result.error
                 showAlertDialog = true
             }
 
             showDeleteCategoryConfirmationDialog = false
-            // isLoading = false
         }
     }
 }

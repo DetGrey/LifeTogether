@@ -2,9 +2,8 @@ package com.example.lifetogether.domain.usecase.observers
 
 import com.example.lifetogether.data.local.source.UserLocalDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.repository.StorageRepository
-import com.example.lifetogether.domain.listener.AuthResultListener
-import com.example.lifetogether.domain.listener.ByteArrayResultListener
+import com.example.lifetogether.domain.datasource.StorageDataSource
+import com.example.lifetogether.domain.result.Result as AppResult
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -12,7 +11,7 @@ import javax.inject.Inject
 
 class ObserveUserInformationUseCase @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
-    private val storageRepository: StorageRepository,
+    private val storageDataSource: StorageDataSource,
     private val userLocalDataSource: UserLocalDataSource,
 ) {
     fun start(
@@ -25,37 +24,37 @@ class ObserveUserInformationUseCase @Inject constructor(
             firestoreDataSource.userInformationSnapshotListener(uid).collect { result ->
                 println("userInformationSnapshotListener().collect result: $result")
                 when (result) {
-                    is AuthResultListener.Success -> {
+                    is AppResult.Success -> {
                         runCatching {
                             // Check if user already has a profile image to avoid re-downloading
-                            val hasExistingImage = result.userInformation.uid?.let { uidValue ->
+                            val hasExistingImage = result.data.uid?.let { uidValue ->
                                 userLocalDataSource.userHasProfileImage(uidValue)
                             } ?: false
 
                             if (!hasExistingImage) {
                                 // Only download if image doesn't exist
-                                val byteArrayResult: ByteArrayResultListener? =
-                                    result.userInformation.imageUrl?.let { url ->
-                                        storageRepository.fetchImageByteArray(url)
+                                val byteArrayResult: AppResult<ByteArray, String>? =
+                                    result.data.imageUrl?.let { url ->
+                                        storageDataSource.fetchImageByteArray(url)
                                     }
 
                                 when (byteArrayResult) {
-                                    is ByteArrayResultListener.Success -> {
+                                    is AppResult.Success -> {
                                         userLocalDataSource.updateUserInformation(
-                                            result.userInformation,
-                                            byteArrayResult.byteArray,
+                                            result.data,
+                                            byteArrayResult.data,
                                         )
                                     }
 
-                                    is ByteArrayResultListener.Failure -> {
-                                        println("ByteArrayResultListener failure: ${byteArrayResult.message}")
+                                    is AppResult.Failure -> {
+                                        println("ByteArrayResultListener failure: ${byteArrayResult.error}")
                                         // Update without image on failure
-                                        userLocalDataSource.updateUserInformation(result.userInformation)
+                                        userLocalDataSource.updateUserInformation(result.data)
                                     }
 
                                     null -> {
                                         // No image URL provided, update without image
-                                        userLocalDataSource.updateUserInformation(result.userInformation)
+                                        userLocalDataSource.updateUserInformation(result.data)
                                     }
                                 }
                             } else {
@@ -68,9 +67,9 @@ class ObserveUserInformationUseCase @Inject constructor(
                                 println("ObserveUserInformationUseCase local update failure: ${error.message}")
                             }
                     }
-                    is AuthResultListener.Failure -> {
+                    is AppResult.Failure -> {
                         // Keep listener alive; firstSuccess is one-shot and only completes on success.
-                        println("userInformationSnapshotListener failure: ${result.message}")
+                        println("userInformationSnapshotListener failure: ${result.error}")
                     }
                 }
             }

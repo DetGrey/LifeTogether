@@ -1,7 +1,6 @@
 package com.example.lifetogether.data.remote
 
-import com.example.lifetogether.domain.listener.AuthResultListener
-import com.example.lifetogether.domain.listener.ResultListener
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
 import com.google.firebase.Firebase
@@ -18,28 +17,28 @@ class FirebaseAuthDataSource@Inject constructor(
 ) {
     suspend fun login(
         user: User,
-    ): AuthResultListener {
+    ): Result<UserInformation, String> {
         println("FirebaseAuthDataSource login()")
         try {
             val loginResult = Firebase.auth.signInWithEmailAndPassword(user.email, user.password).await()
             val firebaseUser = loginResult.user
             return if (firebaseUser != null) {
-                AuthResultListener.Success(
+                Result.Success(
                     UserInformation(uid = firebaseUser.uid),
                 )
             } else {
-                AuthResultListener.Failure("Authentication failed")
+                Result.Failure("Authentication failed")
             }
         } catch (e: Exception) {
             println("FirebaseAuthDataSource login() error: ${e.message}")
-            return AuthResultListener.Failure("Error: ${e.message}")
+            return Result.Failure("Error: ${e.message}")
         }
     }
 
     suspend fun signUp(
         user: User,
         userInformation: UserInformation,
-    ): AuthResultListener {
+    ): Result<UserInformation, String> {
         println("FirebaseAuthDataSource signUp()")
         try {
             val signupResult = Firebase.auth.createUserWithEmailAndPassword(user.email, user.password).await()
@@ -48,22 +47,22 @@ class FirebaseAuthDataSource@Inject constructor(
             println("firebaseUser: $firebaseUser")
             if (firebaseUser != null) {
                 val updatedUserInformation = userInformation.copy(uid = firebaseUser.uid)
-                return AuthResultListener.Success(updatedUserInformation)
+                return Result.Success(updatedUserInformation)
             } else {
-                return AuthResultListener.Failure("Authentication failed")
+                return Result.Failure("Authentication failed")
             }
         } catch (e: Exception) {
-            return AuthResultListener.Failure("Error: ${e.message}")
+            return Result.Failure("Error: ${e.message}")
         }
     }
 
-    suspend fun authStateListener(): Flow<AuthResultListener> = callbackFlow {
+    fun authStateListener(): Flow<Result<UserInformation, String>> = callbackFlow {
         val authStateListener = FirebaseAuth.AuthStateListener { auth ->
             val currentUser = auth.currentUser
             if (currentUser != null) {
-                trySend(AuthResultListener.Success(UserInformation(uid = currentUser.uid)))
+                trySend(Result.Success(UserInformation(uid = currentUser.uid)))
             } else {
-                trySend(AuthResultListener.Failure("Authentication failed"))
+                trySend(Result.Failure("Authentication failed"))
             }
         }
 
@@ -79,16 +78,16 @@ class FirebaseAuthDataSource@Inject constructor(
     suspend fun logout(
         uid: String,
         familyId: String?,
-    ): ResultListener {
+    ): Result<Unit, String> {
         try {
             FirebaseAuth.getInstance().signOut()
             println("datasource logout result: ${FirebaseAuth.getInstance().currentUser}")
             if (familyId != null) {
                 firestoreDataSource.removeDeviceToken(uid, familyId)
             }
-            return ResultListener.Success
+            return Result.Success(Unit)
         } catch (e: Exception) {
-            return ResultListener.Failure("Error: ${e.message}")
+            return Result.Failure("Error: ${e.message}")
         }
     }
 }

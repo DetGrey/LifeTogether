@@ -5,16 +5,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.listener.ListItemsResultListener
-import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.lists.ListType
 import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.SessionRepository
-import com.example.lifetogether.domain.usecase.item.FetchListItemsUseCase
-import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
-import com.example.lifetogether.util.Constants
+import com.example.lifetogether.domain.repository.UserListRepository
+import com.example.lifetogether.domain.result.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -28,8 +25,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ListsViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
-    private val fetchListItemsUseCase: FetchListItemsUseCase,
-    private val saveItemUseCase: SaveItemUseCase,
+    private val userListRepository: UserListRepository,
 ) : ViewModel() {
     private var familyId: String? = null
     private var uid: String? = null
@@ -78,23 +74,16 @@ class ListsViewModel @Inject constructor(
 
     private fun setUpLists() {
         val familyIdValue = familyId ?: return
-        val uidValue = uid ?: return
 
         listsJob?.cancel()
         listsJob = viewModelScope.launch {
-            fetchListItemsUseCase(
-                familyId = familyIdValue,
-                listName = Constants.USER_LISTS_TABLE,
-                itemType = UserList::class,
-                uid = uidValue,
-            ).collect { result ->
+            userListRepository.observeUserLists(familyId = familyIdValue).collect { result ->
                 when (result) {
-                    is ListItemsResultListener.Success ->
-                        _userLists.value = result.listItems
-                            .filterIsInstance<UserList>()
-                            .sortedBy { it.itemName.lowercase() }
-                    is ListItemsResultListener.Failure -> {
-                        error = result.message
+                    is Result.Success -> {
+                        _userLists.value = result.data.sortedBy { it.itemName.lowercase() }
+                    }
+                    is Result.Failure -> {
+                        error = result.error
                         showAlertDialog = true
                     }
                 }
@@ -129,13 +118,13 @@ class ListsViewModel @Inject constructor(
                 visibility = newListVisibility,
                 ownerUid = activeUid,
             )
-            when (val result = saveItemUseCase(list, Constants.USER_LISTS_TABLE)) {
-                is StringResultListener.Success -> {
+            when (val result = userListRepository.saveUserList(list)) {
+                is Result.Success -> {
                     showCreateDialog = false
-                    onCreated(result.string)
+                    onCreated(result.data)
                 }
-                is StringResultListener.Failure -> {
-                    error = result.message
+                is Result.Failure -> {
+                    error = result.error
                     showAlertDialog = true
                 }
             }

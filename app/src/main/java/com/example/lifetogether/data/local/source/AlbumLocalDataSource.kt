@@ -19,6 +19,11 @@ class AlbumLocalDataSource @Inject constructor(
     private val albumsDao: AlbumsDao,
     private val galleryMediaDao: GalleryMediaDao,
 ) {
+    fun observeAlbums(familyId: String): Flow<List<AlbumEntity>> = albumsDao.getItems(familyId)
+
+    fun observeAlbumById(familyId: String, albumId: String): Flow<AlbumEntity?> =
+        albumsDao.getItemByIdFlow(familyId, albumId)
+
     suspend fun updateAlbums(items: List<Album>) {
         val familyId = items.firstOrNull()?.familyId ?: return
         val entities = items.map { item ->

@@ -5,9 +5,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.listener.AuthResultListener
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.usecase.user.LoginUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -30,12 +30,12 @@ class LoginViewModel @Inject constructor(
         error = ""
 
         viewModelScope.launch {
-            val loginResult: AuthResultListener = loginUseCase.invoke(User(email, password))
-            if (loginResult is AuthResultListener.Success) {
+            val loginResult: Result<UserInformation, String> = loginUseCase.invoke(User(email, password))
+            if (loginResult is Result.Success) {
                 println("LoginViewModel: Login successful")
-                onSuccess(loginResult.userInformation)
-            } else if (loginResult is AuthResultListener.Failure) {
-                error = loginResult.message
+                onSuccess(loginResult.data)
+            } else if (loginResult is Result.Failure) {
+                error = loginResult.error
             }
         }
     }

@@ -32,7 +32,7 @@ class GuideLocalDataSource @Inject constructor(
     fun getItems(
         familyId: String,
         uid: String? = null,
-    ): Flow<List<Entity>> {
+    ): Flow<List<Entity.Guide>> {
         return if (uid.isNullOrBlank()) {
             guidesDao.getItems(familyId).map { list ->
                 list.map { Entity.Guide(it) }
@@ -59,7 +59,7 @@ class GuideLocalDataSource @Inject constructor(
         familyId: String,
         id: String,
         uid: String? = null,
-    ): Flow<Entity> {
+    ): Flow<Entity.Guide> {
         return flow {
             val guideFlow = guidesDao.getItemByIdFlow(familyId, id)
             val mergedFlow = if (uid.isNullOrBlank()) {

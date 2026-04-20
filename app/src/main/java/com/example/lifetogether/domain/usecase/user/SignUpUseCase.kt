@@ -1,18 +1,18 @@
 package com.example.lifetogether.domain.usecase.user
 
-import com.example.lifetogether.data.repository.RemoteUserRepositoryImpl
-import com.example.lifetogether.domain.listener.AuthResultListener
+import com.example.lifetogether.data.repository.UserRepositoryImpl
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
+import com.example.lifetogether.domain.result.Result
 import javax.inject.Inject
 
 class SignUpUseCase @Inject constructor(
-    private val remoteUserRepositoryImpl: RemoteUserRepositoryImpl,
+    private val userRepositoryImpl: UserRepositoryImpl,
 ) {
     suspend operator fun invoke(
         user: User,
         userInformation: UserInformation,
-    ): AuthResultListener {
+    ): Result<UserInformation, String> {
         // TODO sign up validation is needed to fit with the validation when logging in
 //        if (user.password != confirmPassword) {
 //            error = "Confirmed password does not match"
@@ -35,6 +35,6 @@ class SignUpUseCase @Inject constructor(
 //            return
 //        }
         println("SignUpUseCase invoked")
-        return remoteUserRepositoryImpl.signUp(user, userInformation)
+        return userRepositoryImpl.signUp(user, userInformation)
     }
 }

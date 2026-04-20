@@ -1,13 +1,9 @@
 package com.example.lifetogether.domain.usecase.gallery
 
 import android.util.Log
-import com.example.lifetogether.data.repository.LocalImageRepositoryImpl
-import com.example.lifetogether.domain.listener.AlbumUiModelResultListener
-import com.example.lifetogether.domain.listener.ListItemsResultListener
-import com.example.lifetogether.domain.model.gallery.Album
-import com.example.lifetogether.domain.usecase.item.FetchListItemsUseCase
+import com.example.lifetogether.domain.repository.GalleryRepository
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.ui.model.AlbumUiModel
-import com.example.lifetogether.util.Constants
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -15,42 +11,38 @@ import kotlinx.coroutines.flow.debounce
 import javax.inject.Inject
 
 class GetAlbumDisplayModelsUseCase @Inject constructor(
-    private val fetchListItemsUseCase: FetchListItemsUseCase,
-    private val localImageRepositoryImpl: LocalImageRepositoryImpl,
+    private val galleryRepository: GalleryRepository,
 ) {
     @OptIn(FlowPreview::class)
-    operator fun invoke(familyId: String): Flow<AlbumUiModelResultListener> {
+    operator fun invoke(familyId: String): Flow<Result<List<AlbumUiModel>, String>> {
         Log.d("GetAlbumDisplayModelsUseCase", "invoke")
 
         return combine(
-            fetchListItemsUseCase(familyId, Constants.ALBUMS_TABLE, Album::class),
-            localImageRepositoryImpl.thumbnailCache
-        ) { listResult, thumbnailCache ->
+            galleryRepository.observeAlbums(familyId),
+            galleryRepository.thumbnailCache
+        ) { albumsResult, thumbnailCache ->
 
-            if (listResult is ListItemsResultListener.Success) {
-                // Determine how many thumbnails we actually have (for debugging)
-                val albumIds = listResult.listItems.filterIsInstance<Album>().map { it.id }
-                val cachedCount = albumIds.count { thumbnailCache.containsKey(it) }
-                Log.d(
-                    "GetAlbumDisplayModelsUseCase",
-                    "Merging lists. Albums: ${albumIds.size}, Cached Thumbs: $cachedCount"
-                )
-
-                val albums = listResult.listItems.filterIsInstance<Album>().map { album ->
-                    AlbumUiModel(
-                        id = album.id ?: "",
-                        familyId = album.familyId,
-                        name = album.itemName,
-                        lastUpdated = album.lastUpdated,
-                        mediaCount = album.count,
-                        thumbnail = thumbnailCache[album.id]
+            when (albumsResult) {
+                is Result.Success -> {
+                    val cachedCount = albumsResult.data.count { thumbnailCache.containsKey(it.id) }
+                    Log.d(
+                        "GetAlbumDisplayModelsUseCase",
+                        "Merging lists. Albums: ${albumsResult.data.size}, Cached Thumbs: $cachedCount"
                     )
+
+                    val albums = albumsResult.data.map { album ->
+                        AlbumUiModel(
+                            id = album.id ?: "",
+                            familyId = album.familyId,
+                            name = album.itemName,
+                            lastUpdated = album.lastUpdated,
+                            mediaCount = album.count,
+                            thumbnail = thumbnailCache[album.id]
+                        )
+                    }
+                    Result.Success(albums)
                 }
-                AlbumUiModelResultListener.Success(albums)
-            } else {
-                val message =
-                    (listResult as? ListItemsResultListener.Failure)?.message ?: "Unknown error"
-                AlbumUiModelResultListener.Failure(message)
+                is Result.Failure -> albumsResult
             }
         }.debounce(100L) // Waits 100ms for updates to settle.
     }

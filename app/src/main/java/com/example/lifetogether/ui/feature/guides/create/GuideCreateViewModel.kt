@@ -5,7 +5,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.logic.GuideProgress
 import com.example.lifetogether.domain.logic.GuideRoundGrouping
 import com.example.lifetogether.domain.model.guides.Guide
@@ -14,9 +13,9 @@ import com.example.lifetogether.domain.model.guides.GuideStep
 import com.example.lifetogether.domain.model.guides.GuideStepType
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.repository.GuideRepository
 import com.example.lifetogether.domain.repository.SessionRepository
-import com.example.lifetogether.domain.usecase.item.SaveItemUseCase
-import com.example.lifetogether.util.Constants
+import com.example.lifetogether.domain.result.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,7 +29,7 @@ import javax.inject.Inject
 @HiltViewModel
 class GuideCreateViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
-    private val saveItemUseCase: SaveItemUseCase,
+    private val guideRepository: GuideRepository,
 ) : ViewModel() {
     private var familyId: String? = null
     private var uid: String? = null
@@ -71,14 +70,13 @@ class GuideCreateViewModel @Inject constructor(
             "Section ${_sections.value.size + 1}"
         }
         val normalizedAmount = amount.coerceAtLeast(1)
-
-        _sections.value = _sections.value + GuideSection(
-            id = UUID.randomUUID().toString(),
-            orderNumber = _sections.value.size + 1,
-            title = normalizedTitle,
-            amount = normalizedAmount,
-            steps = emptyList(),
-        )
+        _sections.value += GuideSection(
+                    id = UUID.randomUUID().toString(),
+                    orderNumber = _sections.value.size + 1,
+                    title = normalizedTitle,
+                    amount = normalizedAmount,
+                    steps = emptyList(),
+                )
     }
 
     fun addStep(
@@ -112,26 +110,19 @@ class GuideCreateViewModel @Inject constructor(
                         ),
                     )
                 }
-
-                section.copy(
-                    steps = section.steps + newSteps,
-                )
+                section.copy(steps = section.steps + newSteps)
             }
         }
     }
 
     private fun expandRoundDraft(draft: String): List<GuideStep> {
-        val parsedPrefix = GuideRoundGrouping.parseRoundPrefix(draft)
-        if (parsedPrefix == null) {
-            return listOf(
-                GuideStep(
-                    id = UUID.randomUUID().toString(),
-                    type = GuideStepType.ROUND,
-                    content = draft,
-                ),
-            )
-        }
-
+        val parsedPrefix = GuideRoundGrouping.parseRoundPrefix(draft) ?: return listOf(
+            GuideStep(
+                id = UUID.randomUUID().toString(),
+                type = GuideStepType.ROUND,
+                content = draft,
+            ),
+        )
         val (roundRange, sharedContent) = parsedPrefix
         return roundRange.map { roundNumber ->
             GuideStep(
@@ -179,13 +170,10 @@ class GuideCreateViewModel @Inject constructor(
         )
 
         viewModelScope.launch {
-            when (val result = saveItemUseCase.invoke(guide, Constants.GUIDES_TABLE)) {
-                is StringResultListener.Success -> {
-                    onSuccess(result.string)
-                }
-
-                is StringResultListener.Failure -> {
-                    error = result.message
+            when (val result = guideRepository.saveGuide(guide)) {
+                is Result.Success -> onSuccess(result.data)
+                is Result.Failure -> {
+                    error = result.error
                     showAlertDialog = true
                 }
             }

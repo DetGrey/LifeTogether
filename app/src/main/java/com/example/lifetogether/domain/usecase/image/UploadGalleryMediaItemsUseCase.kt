@@ -4,14 +4,14 @@ import android.content.ContentValues.TAG
 import android.content.Context
 import android.provider.MediaStore
 import android.util.Log
-import com.example.lifetogether.data.repository.RemoteImageRepositoryImpl
+import com.example.lifetogether.data.repository.ImageRepositoryImpl
 import com.example.lifetogether.data.repository.RemoteListRepositoryImpl
-import com.example.lifetogether.domain.listener.ResultListener
-import com.example.lifetogether.domain.listener.StringResultListener
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.domain.model.gallery.MediaUploadData
+import com.example.lifetogether.domain.repository.GalleryRepository
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.util.Constants
 import kotlinx.coroutines.Deferred
@@ -23,7 +23,8 @@ import kotlinx.coroutines.sync.Semaphore
 import javax.inject.Inject
 
 class UploadGalleryMediaItemsUseCase @Inject constructor(
-    private val remoteImageRepository: RemoteImageRepositoryImpl,
+    private val imageRepositoryImpl: ImageRepositoryImpl,
+    private val galleryRepository: GalleryRepository,
     private val remoteListRepository: RemoteListRepositoryImpl,
 ) {
     companion object {
@@ -36,10 +37,10 @@ class UploadGalleryMediaItemsUseCase @Inject constructor(
     suspend operator fun invoke(
         mediaUploadList: List<MediaUploadData>,
         context: Context,
-    ): ResultListener {
+    ): Result<Unit, String> {
         if (mediaUploadList.isEmpty()) {
             Log.d(TAG, "MediaUploadList is empty. Nothing to upload.")
-            return ResultListener.Success
+            return Result.Success(Unit)
         }
 
         // Validate file sizes before uploading to prevent OOM
@@ -67,7 +68,7 @@ class UploadGalleryMediaItemsUseCase @Inject constructor(
         }
 
         if (oversizedItems.isNotEmpty()) {
-            return ResultListener.Failure("Files too large (max 100MB each): ${oversizedItems.joinToString(", ")}")
+            return Result.Failure("Files too large (max 100MB each): ${oversizedItems.joinToString(", ")}")
         }
 
         val albumId = mediaUploadList.first().mediaType.albumId
@@ -96,21 +97,21 @@ class UploadGalleryMediaItemsUseCase @Inject constructor(
                                     ),
                                 )
 
-                                val fileUploadResult = remoteImageRepository.uploadImage(
+                                val fileUploadResult = imageRepositoryImpl.uploadImage(
                                     uri,
                                     imageType,
                                     context,
                                 )
 
                                 when (fileUploadResult) {
-                                    is StringResultListener.Success -> {
-                                        Log.d(TAG, "Image $itemName uploaded: ${fileUploadResult.string}")
-                                        Pair(mediaType.copy(mediaUrl = fileUploadResult.string), null)
+                                    is Result.Success -> {
+                                        Log.d(TAG, "Image $itemName uploaded: ${fileUploadResult.data}")
+                                        Pair(mediaType.copy(mediaUrl = fileUploadResult.data), null)
                                     }
 
-                                    is StringResultListener.Failure -> {
-                                        Log.e(TAG, "Failed to upload image $itemName: ${fileUploadResult.message}")
-                                        Pair(null, "Image $itemName: ${fileUploadResult.message}")
+                                    is Result.Failure -> {
+                                        Log.e(TAG, "Failed to upload image $itemName: ${fileUploadResult.error}")
+                                        Pair(null, "Image $itemName: ${fileUploadResult.error}")
                                     }
                                 }
                             }
@@ -118,21 +119,21 @@ class UploadGalleryMediaItemsUseCase @Inject constructor(
                             is MediaUploadData.VideoUpload -> {
                                 Log.d(TAG, "Uploading video: $uri for item: $itemName")
 
-                                val fileUploadResult = remoteImageRepository.uploadVideo(
+                                val fileUploadResult = galleryRepository.uploadVideo(
                                     uri,
                                     Constants.GALLERY_MEDIA_TABLE,
                                     extension,
                                 )
 
                                 when (fileUploadResult) {
-                                    is StringResultListener.Success -> {
-                                        Log.d(TAG, "Video $itemName uploaded: ${fileUploadResult.string}")
-                                        Pair((mediaType as GalleryVideo).copy(mediaUrl = fileUploadResult.string), null)
+                                    is Result.Success -> {
+                                        Log.d(TAG, "Video $itemName uploaded: ${fileUploadResult.data}")
+                                        Pair((mediaType as GalleryVideo).copy(mediaUrl = fileUploadResult.data), null)
                                     }
 
-                                    is StringResultListener.Failure -> {
-                                        Log.e(TAG, "Failed to upload video $itemName: ${fileUploadResult.message}")
-                                        Pair(null, "Video $itemName: ${fileUploadResult.message}")
+                                    is Result.Failure -> {
+                                        Log.e(TAG, "Failed to upload video $itemName: ${fileUploadResult.error}")
+                                        Pair(null, "Video $itemName: ${fileUploadResult.error}")
                                     }
                                 }
                             }
@@ -154,7 +155,7 @@ class UploadGalleryMediaItemsUseCase @Inject constructor(
         if (successfullyUploadedMedia.isEmpty() && mediaUploadList.isNotEmpty()) {
             val combinedError = uploadErrorMessages.joinToString(separator = "\n")
             Log.e(TAG, "All media items failed to upload. Errors: $combinedError")
-            return ResultListener.Failure("All media uploads failed.${if (combinedError.isNotBlank()) " Details: $combinedError" else ""}".take(250))
+            return Result.Failure("All media uploads failed.${if (combinedError.isNotBlank()) " Details: $combinedError" else ""}".take(250))
         }
 
         if (uploadErrorMessages.isNotEmpty()) {
@@ -163,30 +164,30 @@ class UploadGalleryMediaItemsUseCase @Inject constructor(
 
         if (successfullyUploadedMedia.isNotEmpty()) {
             Log.d(TAG, "Saving metadata for ${successfullyUploadedMedia.size} items.")
-            val saveMetaDataResult = remoteImageRepository.saveGalleryMediaMetaData(successfullyUploadedMedia)
+            val saveMetaDataResult = galleryRepository.saveGalleryMediaMetaData(successfullyUploadedMedia)
 
-            return if (saveMetaDataResult is ResultListener.Success) {
-                Log.d(TAG, "Metadata saved successfully. Updating album count.")
-                remoteListRepository.updateAlbumCount(albumId, successfullyUploadedMedia.size).let { countResult ->
-                    if (countResult is ResultListener.Failure) {
-                        Log.w(TAG, "Failed to update album count: ${countResult.message}")
+            return if (saveMetaDataResult is Result.Success) {
+                    Log.d(TAG, "Metadata saved successfully. Updating album count.")
+                    remoteListRepository.updateAlbumCount(albumId, successfullyUploadedMedia.size).let { countResult ->
+                        if (countResult is Result.Failure) {
+                            Log.w(TAG, "Failed to update album count: ${countResult.error}")
+                        }
                     }
-                }
-                if (uploadErrorMessages.isNotEmpty()) {
-                    ResultListener.Failure("Partial success. ${uploadErrorMessages.size} item(s) failed: ${uploadErrorMessages.joinToString(", ").take(200)}")
-                } else {
-                    ResultListener.Success
-                }
-            } else if (saveMetaDataResult is ResultListener.Failure) {
-                Log.e(TAG, "Failed to save metadata: ${saveMetaDataResult.message}")
-                ResultListener.Failure("Failed to save media metadata: ${saveMetaDataResult.message}")
+                    if (uploadErrorMessages.isNotEmpty()) {
+                        Result.Failure("Partial success. ${uploadErrorMessages.size} item(s) failed: ${uploadErrorMessages.joinToString(", ").take(200)}")
+                    } else {
+                        Result.Success(Unit)
+                    }
+            } else if (saveMetaDataResult is Result.Failure) {
+                Log.e(TAG, "Failed to save metadata: ${saveMetaDataResult.error}")
+                Result.Failure("Failed to save media metadata: ${saveMetaDataResult.error}")
             } else {
                 Log.e(TAG, "Unknown result from saveMediaMetaData.")
-                ResultListener.Failure("Unknown error saving metadata.")
+                Result.Failure("Unknown error saving metadata.")
             }
         }
 
         Log.d(TAG, "No media items were successfully uploaded or prepared for metadata.")
-        return ResultListener.Failure("No media items processed successfully.")
+        return Result.Failure("No media items processed successfully.")
     }
 }

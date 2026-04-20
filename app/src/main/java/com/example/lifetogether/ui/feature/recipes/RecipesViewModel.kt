@@ -6,12 +6,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.listener.ListItemsResultListener
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.repository.RecipeRepository
 import com.example.lifetogether.domain.repository.SessionRepository
-import com.example.lifetogether.domain.usecase.item.FetchListItemsUseCase
-import com.example.lifetogether.util.Constants
+import com.example.lifetogether.domain.result.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,9 +23,8 @@ import javax.inject.Inject
 @HiltViewModel
 class RecipesViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
-    private val fetchListItemsUseCase: FetchListItemsUseCase,
+    private val recipeRepository: RecipeRepository,
 ) : ViewModel() {
-    // ---------------------------------------------------------------- ERROR
     var showAlertDialog: Boolean by mutableStateOf(false)
     var error: String by mutableStateOf("")
     fun toggleAlertDialog() {
@@ -68,24 +66,17 @@ class RecipesViewModel @Inject constructor(
     private fun setUpRecipes() {
         val familyId = familyId ?: return
         viewModelScope.launch {
-            fetchListItemsUseCase(familyId, Constants.RECIPES_TABLE, Recipe::class).collect { result ->
-                println("fetchListItemsUseCase result: $result")
+            recipeRepository.observeRecipes(familyId).collect { result ->
                 when (result) {
-                    is ListItemsResultListener.Success -> {
-                        val foundRecipes = result.listItems.filterIsInstance<Recipe>()
+                    is Result.Success -> {
+                        val foundRecipes = result.data
                         if (foundRecipes.isNotEmpty()) {
                             _recipes.value = foundRecipes
                             updateTagsList(foundRecipes.map { it.tags })
-                        } else {
-                            println("Error: No Recipe instances found in the result")
-                            error = "No Recipe instances found in the result"
-                            showAlertDialog = true
                         }
                     }
-
-                    is ListItemsResultListener.Failure -> {
-                        println("Error: ${result.message}")
-                        error = result.message
+                    is Result.Failure -> {
+                        error = result.error
                         showAlertDialog = true
                     }
                 }
@@ -108,15 +99,10 @@ class RecipesViewModel @Inject constructor(
         }
     }
 
-    private fun updateTagsList(
-        list: List<List<String>>,
-    ) {
+    private fun updateTagsList(list: List<List<String>>) {
         for (tags in list) {
             for (tag in tags) {
-                // Capitalize the first letter and make the rest lowercase
                 val normalizedTag = tag.replaceFirstChar { it.uppercase() }
-
-                // Check if the normalized tag is already in the list, ignoring case
                 if (_tagsList.none { it.equals(normalizedTag, ignoreCase = true) }) {
                     _tagsList.add(normalizedTag)
                 }
