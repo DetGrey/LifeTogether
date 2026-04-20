@@ -6,10 +6,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.listener.ByteArrayResultListener
 import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.model.sealed.ImageType
-import com.example.lifetogether.domain.usecase.image.FetchImageByteArrayUseCase
+import com.example.lifetogether.domain.repository.ImageRepository
+import com.example.lifetogether.domain.result.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,7 +19,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ImageViewModel @Inject constructor(
-    private val fetchImageByteArrayUseCase: FetchImageByteArrayUseCase,
+    private val imageRepository: ImageRepository,
 ) : ViewModel() {
     // ---------------------------------------------------------------- Upload Dialog
     var showImageUploadDialog: Boolean by mutableStateOf(false)
@@ -35,18 +35,18 @@ class ImageViewModel @Inject constructor(
     ) {
         println("ImageViewModel collectImageFlow")
         viewModelScope.launch {
-            fetchImageByteArrayUseCase.invoke(imageType).collect { result ->
-                println("fetchImageByteArrayUseCase result: $result")
+            imageRepository.getImageByteArray(imageType).collect { result ->
+                println("getImageByteArray result: $result")
                 when (result) {
-                    is ByteArrayResultListener.Success -> {
-                        _bitmap.value = result.byteArray.toBitmap()
+                    is Result.Success -> {
+                        _bitmap.value = result.data.toBitmap()
                     }
 
-                    is ByteArrayResultListener.Failure -> {
+                    is Result.Failure -> {
                         _bitmap.value = null
-                        println("Error: ${result.message}")
-                        if (result.message != "No ByteArray found") {
-                            onError(result.message)
+                        println("Error: ${result.error}")
+                        if (result.error != "No ByteArray found") {
+                            onError(result.error)
                         }
                     }
                 }

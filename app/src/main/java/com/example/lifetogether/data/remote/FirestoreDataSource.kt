@@ -1011,19 +1011,19 @@ class FirestoreDataSource @Inject constructor() {
 
     suspend fun addCategory(
         category: Category,
-    ): ResultListener {
+    ): Result<Unit, String> {
         try {
             db.collection(Constants.CATEGORY_TABLE).add(category).await()
-            return ResultListener.Success
+            return Result.Success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error", e)
-            return ResultListener.Failure("Error: ${e.message}")
+            return Result.Failure("Error: ${e.message}")
         }
     }
 
     suspend fun deleteCategory(
         category: Category,
-    ): ResultListener {
+    ): Result<Unit, String> {
         Log.d(TAG, "deleteCategory")
         try {
             // Query the collection to find the document with the matching 'name' field
@@ -1037,10 +1037,10 @@ class FirestoreDataSource @Inject constructor() {
                 val documentRef = querySnapshot.documents[0].reference
                 documentRef.delete().await()
             }
-            return ResultListener.Success
+            return Result.Success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error", e)
-            return ResultListener.Failure("Error: ${e.message}")
+            return Result.Failure("Error: ${e.message}")
         }
     }
 

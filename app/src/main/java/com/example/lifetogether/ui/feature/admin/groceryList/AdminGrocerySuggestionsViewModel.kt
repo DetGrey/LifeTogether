@@ -2,16 +2,13 @@ package com.example.lifetogether.ui.feature.admin.groceryList
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.listener.CategoriesListener
-import com.example.lifetogether.domain.listener.GrocerySuggestionsListener
 import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
-import com.example.lifetogether.domain.usecase.item.DeleteGrocerySuggestionUseCase
-import com.example.lifetogether.domain.usecase.item.FetchCategoriesUseCase
-import com.example.lifetogether.domain.usecase.item.FetchGrocerySuggestionsUseCase
-import com.example.lifetogether.domain.usecase.item.SaveGrocerySuggestionUseCase
-import com.example.lifetogether.domain.usecase.item.UpdateGrocerySuggestionUseCase
+import com.example.lifetogether.domain.repository.AdminRepository
+import com.example.lifetogether.domain.repository.CategoryRepository
+import com.example.lifetogether.domain.repository.GroceryRepository
+import com.example.lifetogether.domain.result.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,11 +42,9 @@ data class AdminGrocerySuggestionsUiState(
 
 @HiltViewModel
 class AdminGrocerySuggestionsViewModel @Inject constructor(
-    private val fetchCategoriesUseCase: FetchCategoriesUseCase,
-    private val fetchGrocerySuggestionsUseCase: FetchGrocerySuggestionsUseCase,
-    private val deleteGrocerySuggestionUseCase: DeleteGrocerySuggestionUseCase,
-    private val saveGrocerySuggestionUseCase: SaveGrocerySuggestionUseCase,
-    private val updateGrocerySuggestionUseCase: UpdateGrocerySuggestionUseCase,
+    private val categoryRepository: CategoryRepository,
+    private val groceryRepository: GroceryRepository,
+    private val adminRepository: AdminRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(AdminGrocerySuggestionsUiState())
     val uiState: StateFlow<AdminGrocerySuggestionsUiState> = _uiState.asStateFlow()
@@ -74,16 +69,13 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
 
     // ---------------------------------------------------------------- CATEGORIES
     private fun fetchCategories() {
-        println("GroceryListViewModel before calling fetchCategoriesUseCase")
         viewModelScope.launch {
-            fetchCategoriesUseCase().collect { result ->
-                println("GroceryListViewModel fetchCategoriesUseCase result: $result")
+            categoryRepository.getCategories().collect { result ->
                 when (result) {
-                    is CategoriesListener.Success -> {
-                        println("GroceryListViewModel categories updated: ${result.listItems}")
+                    is Result.Success -> {
                         updateUiState { state ->
                             state.copy(
-                                groceryCategories = result.listItems
+                                groceryCategories = result.data
                                     .filterNot { it.name == UNCATEGORIZED_NAME }
                                     .sortedBy { it.name }
                                     .let { listOf(UNCATEGORIZED_CATEGORY) + it },
@@ -91,11 +83,11 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
                         }
                     }
 
-                    is CategoriesListener.Failure -> {
+                    is Result.Failure -> {
                         updateUiState { state ->
                             state.copy(groceryCategories = emptyList())
                         }
-                        showError(result.message)
+                        showError(result.error)
                     }
                 }
             }
@@ -119,24 +111,24 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
     private fun fetchGrocerySuggestions() {
         println("GroceryListViewModel before calling fetchGrocerySuggestionsUseCase")
         viewModelScope.launch {
-            fetchGrocerySuggestionsUseCase().collect { result ->
+            groceryRepository.getGrocerySuggestions().collect { result ->
                 println("GroceryListViewModel fetchGrocerySuggestionsUseCase result: $result")
                 when (result) {
-                    is GrocerySuggestionsListener.Success -> {
-                        println("GroceryListViewModel categories updated: ${result.listItems}")
+                    is Result.Success -> {
+                        println("GroceryListViewModel categories updated: ${result.data}")
                         updateUiState { state ->
                             state.copy(
-                                grocerySuggestions = result.listItems
+                                grocerySuggestions = result.data
                                     .sortedBy { it.category?.name }
                             )
                         }
                     }
 
-                    is GrocerySuggestionsListener.Failure -> {
+                    is Result.Failure -> {
                         updateUiState { state ->
                             state.copy(grocerySuggestions = emptyList())
                         }
-                        showError(result.message)
+                        showError(result.error)
                     }
                 }
             }
@@ -222,7 +214,7 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
         )
 
         viewModelScope.launch {
-            val result: ResultListener = saveGrocerySuggestionUseCase.invoke(grocerySuggestion)
+            val result: ResultListener = adminRepository.saveGrocerySuggestion(grocerySuggestion)
             if (result is ResultListener.Success) {
                 clearSuggestionDraft()
             } else if (result is ResultListener.Failure) {
@@ -257,7 +249,7 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
         )
 
         viewModelScope.launch {
-            when (val result = updateGrocerySuggestionUseCase.invoke(updatedSuggestion)) {
+            when (val result = adminRepository.updateGrocerySuggestion(updatedSuggestion)) {
                 is ResultListener.Success -> clearSuggestionDraft()
                 is ResultListener.Failure -> {
                     println("Error: ${result.message}")
@@ -274,7 +266,7 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            val result: ResultListener = deleteGrocerySuggestionUseCase.invoke(selectedSuggestion)
+            val result: ResultListener = adminRepository.deleteGrocerySuggestion(selectedSuggestion)
 
             if (result is ResultListener.Failure) {
                 println("Error: ${result.message}")

@@ -2,6 +2,7 @@ package com.example.lifetogether.data.repository
 
 import android.net.Uri
 import android.util.Log
+import androidx.core.net.toUri
 import com.example.lifetogether.data.local.source.AlbumLocalDataSource
 import com.example.lifetogether.data.local.source.MediaLocalDataSource
 import com.example.lifetogether.data.model.AlbumEntity
@@ -9,8 +10,11 @@ import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.listener.ByteArrayResultListener
 import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.listener.StringResultListener
+import com.example.lifetogether.domain.model.enums.MediaType
 import com.example.lifetogether.domain.model.gallery.Album
+import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
+import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.domain.repository.GalleryRepository
 import com.example.lifetogether.domain.datasource.StorageDataSource
 import com.example.lifetogether.domain.result.Result
@@ -82,6 +86,62 @@ class GalleryRepositoryImpl @Inject constructor(
 
     override suspend fun uploadVideo(uri: Uri, path: String, extension: String): StringResultListener {
         return storageDataSource.uploadVideo(uri, path, extension)
+    }
+
+    override fun observeAlbumById(familyId: String, albumId: String): Flow<Result<Album, String>> {
+        return albumLocalDataSource.observeAlbumById(familyId, albumId).map { entity ->
+            try {
+                if (entity != null) {
+                    Result.Success(entity.toModel())
+                } else {
+                    Result.Failure("Album not found")
+                }
+            } catch (e: Exception) {
+                Result.Failure(e.message ?: "Unknown error")
+            }
+        }
+    }
+
+    override fun observeAlbumMedia(familyId: String, albumId: String): Flow<Result<List<GalleryMedia>, String>> {
+        return albumLocalDataSource.getAlbumMedia(familyId, albumId).map { entities ->
+            try {
+                val items: List<GalleryMedia> = entities.map { wrapper ->
+                    val entity = wrapper.entity
+                    when (entity.mediaType) {
+                        MediaType.IMAGE -> GalleryImage(
+                            id = entity.id,
+                            familyId = entity.familyId,
+                            itemName = entity.itemName,
+                            lastUpdated = entity.lastUpdated,
+                            albumId = entity.albumId,
+                            dateCreated = entity.dateCreated,
+                            mediaType = MediaType.IMAGE,
+                            mediaUrl = null,
+                            mediaUri = entity.mediaUri?.toUri(),
+                        )
+                        MediaType.VIDEO -> GalleryVideo(
+                            id = entity.id,
+                            familyId = entity.familyId,
+                            itemName = entity.itemName,
+                            lastUpdated = entity.lastUpdated,
+                            albumId = entity.albumId,
+                            dateCreated = entity.dateCreated,
+                            mediaType = MediaType.VIDEO,
+                            mediaUrl = null,
+                            mediaUri = entity.mediaUri?.toUri(),
+                            duration = entity.videoDuration,
+                        )
+                    }
+                }
+                Result.Success(items)
+            } catch (e: Exception) {
+                Result.Failure(e.message ?: "Unknown mapping error")
+            }
+        }
+    }
+
+    override suspend fun updateAlbum(album: Album): Result<Unit, String> {
+        return firestoreDataSource.updateItem(album, Constants.ALBUMS_TABLE)
     }
 
     private fun AlbumEntity.toModel() = Album(

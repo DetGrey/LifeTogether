@@ -6,9 +6,9 @@ import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.observer.ObserverCoordinator
 import com.example.lifetogether.domain.observer.ObserverKey
 import com.example.lifetogether.domain.observer.ObserverSyncState
+import com.example.lifetogether.domain.repository.GuideRepository
 import com.example.lifetogether.domain.repository.SessionRepository
-import com.example.lifetogether.domain.usecase.guides.SyncPendingGuideProgressUseCase
-import com.example.lifetogether.domain.usecase.user.StoreFcmTokenUseCase
+import com.example.lifetogether.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -21,8 +21,8 @@ import javax.inject.Inject
 class RootCoordinatorViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
     private val observerCoordinator: ObserverCoordinator,
-    private val syncPendingGuideProgressUseCase: SyncPendingGuideProgressUseCase,
-    private val storeFcmTokenUseCase: StoreFcmTokenUseCase,
+    private val guideRepository: GuideRepository,
+    private val userRepository: UserRepository,
 ) : ViewModel() {
 
     val sessionState: StateFlow<SessionState> = sessionRepository.sessionState
@@ -104,10 +104,10 @@ class RootCoordinatorViewModel @Inject constructor(
         lastGuideSyncFamilyId = familyId
 
         guideProgressSyncJob = viewModelScope.launch {
-            syncPendingGuideProgressUseCase(familyId = familyId, uid = uid, force = true)
+            guideRepository.syncPendingGuideProgress(familyId = familyId, uid = uid, force = true, guideId = null)
             while (isActive) {
                 delay(30_000)
-                syncPendingGuideProgressUseCase(familyId = familyId, uid = uid, force = false)
+                guideRepository.syncPendingGuideProgress(familyId = familyId, uid = uid, force = false, guideId = null)
             }
         }
     }
@@ -119,7 +119,7 @@ class RootCoordinatorViewModel @Inject constructor(
         lastFcmUid = uid
         lastFcmFamilyId = familyId
         viewModelScope.launch {
-            storeFcmTokenUseCase.invoke(uid, familyId)
+            userRepository.storeFcmToken(uid, familyId)
         }
     }
 

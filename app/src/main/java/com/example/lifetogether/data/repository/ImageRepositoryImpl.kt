@@ -11,6 +11,7 @@ import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.datasource.StorageDataSource
+import com.example.lifetogether.domain.repository.ImageRepository
 import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -25,11 +26,11 @@ class ImageRepositoryImpl @Inject constructor(
     private val userListLocalDataSource: UserListLocalDataSource,
     private val storageDataSource: StorageDataSource,
     private val firestoreDataSource: FirestoreDataSource,
-) {
+) : ImageRepository {
     companion object {
         private const val TAG = "LocalImageRepositoryImpl"
     }
-    fun getImageByteArray(imageType: ImageType): Flow<Result<ByteArray, String>> {
+    override fun getImageByteArray(imageType: ImageType): Flow<Result<ByteArray, String>> {
         Log.d(TAG, "getImageByteArray")
         val byteArrayFlow = when (imageType) {
             is ImageType.ProfileImage -> userLocalDataSource.getProfileImageByteArray(imageType.uid)
@@ -55,7 +56,7 @@ class ImageRepositoryImpl @Inject constructor(
     }
 
     // ------------------- REMOTE
-    suspend fun uploadImage(
+    override suspend fun uploadImage(
         uri: Uri,
         imageType: ImageType,
         context: Context,
@@ -63,7 +64,7 @@ class ImageRepositoryImpl @Inject constructor(
         return storageDataSource.uploadPhoto(uri, imageType, context)
     }
 
-    suspend fun deleteImage(
+    override suspend fun deleteImage(
         imageType: ImageType,
     ): ResultListener {
         return when (val urlResult = firestoreDataSource.getImageUrl(imageType)) {
@@ -79,17 +80,16 @@ class ImageRepositoryImpl @Inject constructor(
         }
     }
 
-    suspend fun deleteMediaFiles(
+    override suspend fun deleteMediaFiles(
         urlList: List<String>,
     ): Result<Unit, String> {
         return storageDataSource.deleteImages(urlList)
     }
 
-    suspend fun saveImageDownloadUrl(
+    override suspend fun saveImageDownloadUrl(
         url: String,
         imageType: ImageType,
     ): ResultListener {
         return firestoreDataSource.saveImageDownloadUrl(url, imageType)
     }
-
 }

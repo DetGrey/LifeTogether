@@ -4,28 +4,22 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.listener.AlbumUiModelResultListener
 import com.example.lifetogether.domain.listener.ByteArrayResultListener
-import com.example.lifetogether.domain.listener.ItemResultListener
-import com.example.lifetogether.domain.listener.ListItemsResultListener
 import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.logic.toFullDateString
 import com.example.lifetogether.domain.model.SaveProgress
 import com.example.lifetogether.domain.model.gallery.Album
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
+import com.example.lifetogether.domain.repository.GalleryRepository
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.usecase.gallery.DeleteAlbumUseCase
 import com.example.lifetogether.domain.usecase.gallery.DeleteMediaUseCase
-import com.example.lifetogether.domain.usecase.gallery.FetchAlbumMediaUseCase
 import com.example.lifetogether.domain.usecase.gallery.GetAlbumDisplayModelsUseCase
 import com.example.lifetogether.domain.usecase.image.DownloadMediaUseCase
-import com.example.lifetogether.domain.usecase.image.FetchAlbumMediaThumbnailUseCase
-import com.example.lifetogether.domain.usecase.image.FetchAlbumThumbnailUseCase
-import com.example.lifetogether.domain.usecase.item.FetchItemByIdUseCase
 import com.example.lifetogether.domain.usecase.item.MoveMediaToAlbumUseCase
-import com.example.lifetogether.domain.usecase.item.UpdateItemUseCase
 import com.example.lifetogether.ui.model.AlbumUiModel
 import com.example.lifetogether.ui.model.MenuAction
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.SessionRepository
-import com.example.lifetogether.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -62,14 +56,10 @@ data class AlbumDetailsUiState(
 @HiltViewModel
 class AlbumDetailsViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
-    private val fetchAlbumMediaUseCase: FetchAlbumMediaUseCase,
-    private val updateItemUseCase: UpdateItemUseCase,
+    private val galleryRepository: GalleryRepository,
     private val moveMediaToAlbumUseCase: MoveMediaToAlbumUseCase,
     private val deleteAlbumUseCase: DeleteAlbumUseCase,
-    private val fetchItemByIdUseCase: FetchItemByIdUseCase,
-    private val fetchAlbumMediaThumbnailUseCase: FetchAlbumMediaThumbnailUseCase,
     private val getAlbumDisplayModelsUseCase: GetAlbumDisplayModelsUseCase,
-    private val fetchAlbumThumbnailUseCase: FetchAlbumThumbnailUseCase,
     private val deleteMediaUseCase: DeleteMediaUseCase,
     private val downloadMediaUseCase: DownloadMediaUseCase,
 ) : ViewModel() {
@@ -119,28 +109,18 @@ class AlbumDetailsViewModel @Inject constructor(
         val albumIdValue = albumId ?: return
 
         viewModelScope.launch {
-            fetchItemByIdUseCase.invoke(
-                familyIdValue,
-                albumIdValue,
-                Constants.ALBUMS_TABLE,
-                Album::class,
-            ).collect { result ->
+            galleryRepository.observeAlbumById(familyIdValue, albumIdValue).collect { result ->
                 when (result) {
-                    is ItemResultListener.Success -> {
-                        val album = result.item as? Album
-                        if (album != null) {
-                            _uiState.update { state ->
-                                state.copy(
-                                    album = album,
-                                    isSyncing = album.count > 0 && state.media.isEmpty(),
-                                )
-                            }
-                        } else {
-                            showError("Cannot find the album")
+                    is Result.Success -> {
+                        val album = result.data
+                        _uiState.update { state ->
+                            state.copy(
+                                album = album,
+                                isSyncing = album.count > 0 && state.media.isEmpty(),
+                            )
                         }
                     }
-
-                    is ItemResultListener.Failure -> showError(result.message)
+                    is Result.Failure -> showError(result.error)
                 }
             }
         }
@@ -155,13 +135,10 @@ class AlbumDetailsViewModel @Inject constructor(
                 _uiState.update { it.copy(isSyncing = true) }
             }
 
-            fetchAlbumMediaUseCase.invoke(
-                familyIdValue,
-                albumIdValue,
-            ).collect { result ->
+            galleryRepository.observeAlbumMedia(familyIdValue, albumIdValue).collect { result ->
                 when (result) {
-                    is ListItemsResultListener.Success -> handleMediaSuccess(result.listItems)
-                    is ListItemsResultListener.Failure -> handleMediaFailure(result.message)
+                    is Result.Success -> handleMediaSuccess(result.data)
+                    is Result.Failure -> handleMediaFailure(result.error)
                 }
             }
         }
@@ -235,7 +212,7 @@ class AlbumDetailsViewModel @Inject constructor(
         if (_uiState.value.thumbnails.containsKey(mediaId)) return
 
         viewModelScope.launch(Dispatchers.IO) {
-            when (val result = fetchAlbumMediaThumbnailUseCase.invoke(mediaId)) {
+            when (val result = galleryRepository.getAlbumMediaThumbnail(mediaId)) {
                 is ByteArrayResultListener.Success -> {
                     _uiState.update { state ->
                         state.copy(thumbnails = state.thumbnails + (mediaId to result.byteArray))
@@ -265,12 +242,12 @@ class AlbumDetailsViewModel @Inject constructor(
         val updatedAlbum = currentAlbum?.copy(itemName = newName) ?: return
 
         viewModelScope.launch {
-            when (val result = updateItemUseCase.invoke(updatedAlbum, Constants.ALBUMS_TABLE)) {
-                is ResultListener.Success -> {
+            when (val result = galleryRepository.updateAlbum(updatedAlbum)) {
+                is Result.Success -> {
                     _uiState.update { it.copy(album = updatedAlbum) }
                     dismissOverflowMenuActionDialog()
                 }
-                is ResultListener.Failure -> showError(result.message)
+                is Result.Failure -> showError(result.error)
             }
         }
     }
@@ -339,7 +316,7 @@ class AlbumDetailsViewModel @Inject constructor(
 
                         possibleAlbums.forEach { model ->
                             if (model.thumbnail == null) {
-                                fetchAlbumThumbnailUseCase.invoke(model.id)
+                                galleryRepository.fetchAlbumThumbnail(model.id)
                             }
                         }
                     }

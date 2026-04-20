@@ -129,7 +129,7 @@ class UserRepositoryImpl @Inject constructor(
         return firestoreDataSource.userInformationSnapshotListener(uid)
     }
 
-    suspend fun changeName(
+    override suspend fun changeName(
         uid: String,
         familyId: String?,
         newName: String,
@@ -193,7 +193,7 @@ class UserRepositoryImpl @Inject constructor(
         return firestoreDataSource.deleteFamily(familyId)
     }
 
-    suspend fun storeFcmToken(
+    override suspend fun storeFcmToken(
         uid: String,
         familyId: String,
     ): ResultListener {
@@ -201,7 +201,7 @@ class UserRepositoryImpl @Inject constructor(
         return ResultListener.Success // TODO this is temp!
     }
 
-    suspend fun fetchFcmTokens(
+    override suspend fun fetchFcmTokens(
         familyId: String,
     ): List<String>? {
         return firestoreDataSource.getFcmTokensFromFamily(familyId)

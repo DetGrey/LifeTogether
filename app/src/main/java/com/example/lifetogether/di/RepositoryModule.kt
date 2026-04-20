@@ -5,9 +5,10 @@ import com.example.lifetogether.data.repository.FamilyRepositoryImpl
 import com.example.lifetogether.data.repository.GalleryRepositoryImpl
 import com.example.lifetogether.data.repository.GroceryRepositoryImpl
 import com.example.lifetogether.data.repository.GuideRepositoryImpl
+import com.example.lifetogether.data.repository.ImageRepositoryImpl
 import com.example.lifetogether.data.repository.LocalListRepositoryImpl
 import com.example.lifetogether.data.repository.RecipeRepositoryImpl
-import com.example.lifetogether.data.repository.RemoteAdminRepositoryImpl
+import com.example.lifetogether.data.repository.AdminRepositoryImpl
 import com.example.lifetogether.data.repository.RemoteListRepositoryImpl
 import com.example.lifetogether.data.repository.TipTrackerRepositoryImpl
 import com.example.lifetogether.data.repository.UserListRepositoryImpl
@@ -18,6 +19,7 @@ import com.example.lifetogether.domain.repository.FamilyRepository
 import com.example.lifetogether.domain.repository.GalleryRepository
 import com.example.lifetogether.domain.repository.GroceryRepository
 import com.example.lifetogether.domain.repository.GuideRepository
+import com.example.lifetogether.domain.repository.ImageRepository
 import com.example.lifetogether.domain.repository.LegacyListRepository
 import com.example.lifetogether.domain.repository.RecipeRepository
 import com.example.lifetogether.domain.repository.TipTrackerRepository
@@ -34,7 +36,7 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindRemoteAdminRepository(
-        remoteAdminRepositoryImpl: RemoteAdminRepositoryImpl,
+        adminRepositoryImpl: AdminRepositoryImpl,
     ): AdminRepository
 
     @Binds
@@ -91,4 +93,9 @@ abstract class RepositoryModule {
     abstract fun bindFamilyRepository(
         familyRepositoryImpl: FamilyRepositoryImpl
     ): FamilyRepository
+
+    @Binds
+    abstract fun bindImageRepository(
+        imageRepositoryImpl: ImageRepositoryImpl
+    ): ImageRepository
 }
