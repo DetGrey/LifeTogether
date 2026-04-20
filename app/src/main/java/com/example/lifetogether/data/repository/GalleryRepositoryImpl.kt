@@ -7,7 +7,6 @@ import com.example.lifetogether.data.local.source.AlbumLocalDataSource
 import com.example.lifetogether.data.local.source.MediaLocalDataSource
 import com.example.lifetogether.data.model.AlbumEntity
 import com.example.lifetogether.data.remote.FirestoreDataSource
-import com.example.lifetogether.domain.listener.ByteArrayResultListener
 import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.model.enums.MediaType
@@ -70,22 +69,28 @@ class GalleryRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getAlbumMediaThumbnail(mediaId: String): ByteArrayResultListener {
+    override suspend fun getAlbumMediaThumbnail(mediaId: String): Result<ByteArray, String> {
         Log.d(TAG, "getAlbumMediaThumbnail")
         val result = mediaLocalDataSource.getAlbumMediaThumbnail(mediaId)
         return if (result != null) {
-            ByteArrayResultListener.Success(result)
+            Result.Success(result)
         } else {
-            ByteArrayResultListener.Failure("No thumbnail found")
+            Result.Failure("No thumbnail found")
         }
     }
 
-    override suspend fun saveGalleryMediaMetaData(galleryMedia: List<GalleryMedia>): ResultListener {
-        return firestoreDataSource.saveGalleryMediaMetaData(galleryMedia)
+    override suspend fun saveGalleryMediaMetaData(galleryMedia: List<GalleryMedia>): Result<Unit, String> {
+        return when (val result = firestoreDataSource.saveGalleryMediaMetaData(galleryMedia)) {
+            is ResultListener.Success -> Result.Success(Unit)
+            is ResultListener.Failure -> Result.Failure(result.message)
+        }
     }
 
-    override suspend fun uploadVideo(uri: Uri, path: String, extension: String): StringResultListener {
-        return storageDataSource.uploadVideo(uri, path, extension)
+    override suspend fun uploadVideo(uri: Uri, path: String, extension: String): Result<String, String> {
+        return when (val result = storageDataSource.uploadVideo(uri, path, extension)) {
+            is StringResultListener.Success -> Result.Success(result.string)
+            is StringResultListener.Failure -> Result.Failure(result.message)
+        }
     }
 
     override fun observeAlbumById(familyId: String, albumId: String): Flow<Result<Album, String>> {

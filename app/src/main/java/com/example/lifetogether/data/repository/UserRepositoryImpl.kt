@@ -5,7 +5,6 @@ import com.example.lifetogether.data.local.source.UserLocalDataSource
 import com.example.lifetogether.data.remote.FirebaseAuthDataSource
 import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.listener.AuthResultListener
-import com.example.lifetogether.domain.listener.FamilyInformationResultListener
 import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.model.User
@@ -14,6 +13,7 @@ import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.model.family.FamilyMember
 import com.example.lifetogether.domain.repository.SessionUserRepository
 import com.example.lifetogether.domain.repository.UserRepository
+import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -26,20 +26,20 @@ class UserRepositoryImpl @Inject constructor(
     private val firestoreDataSource: FirestoreDataSource,
 ) : UserRepository, SessionUserRepository {
 
-    fun getFamilyInformation(familyId: String): Flow<FamilyInformationResultListener> {
+    fun getFamilyInformation(familyId: String): Flow<Result<FamilyInformation, String>> {
         // Get family information (without members)
-        val familyInformationFlow: Flow<FamilyInformationResultListener> = userLocalDataSource.getFamilyInformation(familyId).map { user ->
+        val familyInformationFlow: Flow<Result<FamilyInformation, String>> = userLocalDataSource.getFamilyInformation(familyId).map { user ->
             try {
                 println("LocalUserRepositoryImpl getFamilyInformation user: $user")
 
                 // Initial FamilyInformation without members
-                FamilyInformationResultListener.Success(
+                Result.Success(
                     FamilyInformation(
                         familyId = user.familyId,
                     ),
                 )
             } catch (e: Exception) {
-                FamilyInformationResultListener.Failure(e.message ?: "Unknown error")
+                Result.Failure(e.message ?: "Unknown error")
             }
         }
 
@@ -63,13 +63,13 @@ class UserRepositoryImpl @Inject constructor(
         // Combine both flows
         return familyInformationFlow.combine(familyMembersFlow) { familyInfo, familyMembers ->
             when (familyInfo) {
-                is FamilyInformationResultListener.Success -> {
+                is Result.Success -> {
                     // Add the family members to the family information
                     val validMembers = familyMembers.filterIsInstance<FamilyMember>()
-                    val updatedFamilyInfo = familyInfo.familyInformation.copy(members = validMembers)
-                    FamilyInformationResultListener.Success(updatedFamilyInfo)
+                    val updatedFamilyInfo = familyInfo.data.copy(members = validMembers)
+                    Result.Success(updatedFamilyInfo)
                 }
-                is FamilyInformationResultListener.Failure -> {
+                is Result.Failure -> {
                     familyInfo
                 }
             }

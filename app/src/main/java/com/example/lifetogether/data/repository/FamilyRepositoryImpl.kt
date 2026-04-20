@@ -1,12 +1,10 @@
 package com.example.lifetogether.data.repository
 
-import com.example.lifetogether.domain.listener.FamilyInformationResultListener
 import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.repository.FamilyRepository
 import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class FamilyRepositoryImpl @Inject constructor(
@@ -14,12 +12,7 @@ class FamilyRepositoryImpl @Inject constructor(
 ) : FamilyRepository {
 
     override fun observeFamilyInformation(familyId: String): Flow<Result<FamilyInformation, String>> {
-        return userRepositoryImpl.getFamilyInformation(familyId).map { listener ->
-            when (listener) {
-                is FamilyInformationResultListener.Success -> Result.Success(listener.familyInformation)
-                is FamilyInformationResultListener.Failure -> Result.Failure(listener.message)
-            }
-        }
+        return userRepositoryImpl.getFamilyInformation(familyId)
     }
 
     override suspend fun leaveFamily(familyId: String, uid: String): Result<Unit, String> {

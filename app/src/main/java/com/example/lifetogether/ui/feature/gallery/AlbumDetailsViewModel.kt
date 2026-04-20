@@ -3,7 +3,6 @@ package com.example.lifetogether.ui.feature.gallery
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.listener.AlbumUiModelResultListener
-import com.example.lifetogether.domain.listener.ByteArrayResultListener
 import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.logic.toFullDateString
 import com.example.lifetogether.domain.model.SaveProgress
@@ -213,12 +212,12 @@ class AlbumDetailsViewModel @Inject constructor(
 
         viewModelScope.launch(Dispatchers.IO) {
             when (val result = galleryRepository.getAlbumMediaThumbnail(mediaId)) {
-                is ByteArrayResultListener.Success -> {
+                is Result.Success -> {
                     _uiState.update { state ->
-                        state.copy(thumbnails = state.thumbnails + (mediaId to result.byteArray))
+                        state.copy(thumbnails = state.thumbnails + (mediaId to result.data))
                     }
                 }
-                is ByteArrayResultListener.Failure -> {
+                is Result.Failure -> {
                     // Ignore missing thumbnail
                 }
             }

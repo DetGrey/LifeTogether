@@ -6,13 +6,14 @@ import android.provider.MediaStore
 import android.util.Log
 import com.example.lifetogether.data.repository.ImageRepositoryImpl
 import com.example.lifetogether.data.repository.RemoteListRepositoryImpl
-import com.example.lifetogether.domain.repository.GalleryRepository
 import com.example.lifetogether.domain.listener.ResultListener
 import com.example.lifetogether.domain.listener.StringResultListener
 import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.domain.model.gallery.MediaUploadData
+import com.example.lifetogether.domain.repository.GalleryRepository
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.util.Constants
 import kotlinx.coroutines.Deferred
@@ -127,14 +128,14 @@ class UploadGalleryMediaItemsUseCase @Inject constructor(
                                 )
 
                                 when (fileUploadResult) {
-                                    is StringResultListener.Success -> {
-                                        Log.d(TAG, "Video $itemName uploaded: ${fileUploadResult.string}")
-                                        Pair((mediaType as GalleryVideo).copy(mediaUrl = fileUploadResult.string), null)
+                                    is Result.Success -> {
+                                        Log.d(TAG, "Video $itemName uploaded: ${fileUploadResult.data}")
+                                        Pair((mediaType as GalleryVideo).copy(mediaUrl = fileUploadResult.data), null)
                                     }
 
-                                    is StringResultListener.Failure -> {
-                                        Log.e(TAG, "Failed to upload video $itemName: ${fileUploadResult.message}")
-                                        Pair(null, "Video $itemName: ${fileUploadResult.message}")
+                                    is Result.Failure -> {
+                                        Log.e(TAG, "Failed to upload video $itemName: ${fileUploadResult.error}")
+                                        Pair(null, "Video $itemName: ${fileUploadResult.error}")
                                     }
                                 }
                             }
@@ -167,21 +168,21 @@ class UploadGalleryMediaItemsUseCase @Inject constructor(
             Log.d(TAG, "Saving metadata for ${successfullyUploadedMedia.size} items.")
             val saveMetaDataResult = galleryRepository.saveGalleryMediaMetaData(successfullyUploadedMedia)
 
-            return if (saveMetaDataResult is ResultListener.Success) {
-                Log.d(TAG, "Metadata saved successfully. Updating album count.")
-                remoteListRepository.updateAlbumCount(albumId, successfullyUploadedMedia.size).let { countResult ->
-                    if (countResult is ResultListener.Failure) {
-                        Log.w(TAG, "Failed to update album count: ${countResult.message}")
+            return if (saveMetaDataResult is Result.Success) {
+                    Log.d(TAG, "Metadata saved successfully. Updating album count.")
+                    remoteListRepository.updateAlbumCount(albumId, successfullyUploadedMedia.size).let { countResult ->
+                        if (countResult is ResultListener.Failure) {
+                            Log.w(TAG, "Failed to update album count: ${countResult.message}")
+                        }
                     }
-                }
-                if (uploadErrorMessages.isNotEmpty()) {
-                    ResultListener.Failure("Partial success. ${uploadErrorMessages.size} item(s) failed: ${uploadErrorMessages.joinToString(", ").take(200)}")
-                } else {
-                    ResultListener.Success
-                }
-            } else if (saveMetaDataResult is ResultListener.Failure) {
-                Log.e(TAG, "Failed to save metadata: ${saveMetaDataResult.message}")
-                ResultListener.Failure("Failed to save media metadata: ${saveMetaDataResult.message}")
+                    if (uploadErrorMessages.isNotEmpty()) {
+                        ResultListener.Failure("Partial success. ${uploadErrorMessages.size} item(s) failed: ${uploadErrorMessages.joinToString(", ").take(200)}")
+                    } else {
+                        ResultListener.Success
+                    }
+            } else if (saveMetaDataResult is Result.Failure) {
+                Log.e(TAG, "Failed to save metadata: ${saveMetaDataResult.error}")
+                ResultListener.Failure("Failed to save media metadata: ${saveMetaDataResult.error}")
             } else {
                 Log.e(TAG, "Unknown result from saveMediaMetaData.")
                 ResultListener.Failure("Unknown error saving metadata.")
