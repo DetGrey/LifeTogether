@@ -5,6 +5,7 @@ import com.example.lifetogether.data.local.source.internal.computeItemsToDelete
 import com.example.lifetogether.data.local.source.internal.computeItemsToUpdate
 import com.example.lifetogether.data.model.RecipeEntity
 import com.example.lifetogether.domain.model.recipe.Recipe
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import javax.inject.Inject
@@ -14,6 +15,10 @@ import javax.inject.Singleton
 class RecipeLocalDataSource @Inject constructor(
     private val recipesDao: RecipesDao,
 ) {
+    fun observeRecipes(familyId: String): Flow<List<RecipeEntity>> = recipesDao.getItems(familyId)
+
+    fun observeRecipeById(familyId: String, id: String): Flow<RecipeEntity?> = recipesDao.getItemByIdFlow(familyId, id)
+
     suspend fun updateRecipes(
         items: List<Recipe>,
         byteArrays: Map<String, ByteArray>,
