@@ -111,3 +111,9 @@ Issue body requirements:
 - include issue-specific subphase checklist items from this file
 - include issue-specific acceptance criteria and test checklist items as checkboxes
 - include out-of-scope boundaries against other Phase 2 issues
+
+## Questions
+
+- How to handle admin actions. Why mix all admin in one like AdminRepository. Would it be better to move all category related to CategoryRepository or what is best practice?
+- Is there any of the use cases that handles logic that might as well be inside the repo instead?
+- Find all old patterns like runCaching and such and give me a list of things that should be updated to follow current best practices
