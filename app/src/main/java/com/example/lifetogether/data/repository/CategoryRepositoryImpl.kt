@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.repository
 
+import com.example.lifetogether.data.logic.AppErrors
+
 import com.example.lifetogether.domain.result.AppError
 
 import com.example.lifetogether.data.local.source.CategoryLocalDataSource
@@ -27,7 +29,7 @@ class CategoryRepositoryImpl @Inject constructor(
                     },
                 )
             } catch (e: Exception) {
-                Result.Failure(e.message ?: "Unknown error")
+                Result.Failure(AppErrors.fromThrowable(e))
             }
         }
     }
@@ -39,7 +41,7 @@ class CategoryRepositoryImpl @Inject constructor(
                     categoryLocalDataSource.updateCategories(result.data)
                     Result.Success(Unit)
                 }.getOrElse { error ->
-                    Result.Failure(error.message ?: "Failed to sync categories")
+                    Result.Failure(AppErrors.fromThrowable(error))
                 }
                 is Result.Failure -> Result.Failure(result.error)
             }

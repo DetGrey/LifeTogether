@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.remote
 
+import com.example.lifetogether.data.logic.AppErrors
+
 import com.example.lifetogether.domain.result.AppError
 
 import android.content.Context
@@ -30,7 +32,7 @@ class FirebaseStorageDataSource @Inject constructor(
 
             // Process image (rotate, resize, compress)
             val processedImage = imageProcessor.processImage(uri, imageType, context)
-                ?: return Result.Failure("Failed to process image")
+                ?: return Result.Failure(AppErrors.validation("Failed to process image"))
 
             // Create path for Firebase Storage
             val path = "${processedImage.path}/${UUID.randomUUID()}-${System.currentTimeMillis()}${processedImage.extension}"
@@ -45,8 +47,7 @@ class FirebaseStorageDataSource @Inject constructor(
             Log.d("FirebaseStorageDS", "uploadPhoto success. Download URL: $downloadUrl")
             Result.Success(downloadUrl.toString())
         } catch (e: Exception) {
-            Log.e("FirebaseStorageDS", "Error uploading photo: ${e.message}", e)
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -57,8 +58,7 @@ class FirebaseStorageDataSource @Inject constructor(
             val byteArray = storageRef.getBytes(Long.MAX_VALUE).await()
             Result.Success(byteArray)
         } catch (e: Exception) {
-            Log.e("FirebaseStorageDS", "Error fetching image: ${e.message}", e)
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -70,14 +70,13 @@ class FirebaseStorageDataSource @Inject constructor(
             Log.d("FirebaseStorageDS", "deleteImage success")
             Result.Success(Unit)
         } catch (e: Exception) {
-            Log.e("FirebaseStorageDS", "Error deleting image: ${e.message}", e)
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
     override suspend fun deleteImages(urlList: List<String>): Result<Unit, AppError> =
         coroutineScope {
-            Result.Failure("Not implemented")
+            Result.Failure(AppErrors.unknown("Not implemented"))
         }
 
     // ------------------------------------------------------------------------------- VIDEOS
@@ -104,8 +103,7 @@ class FirebaseStorageDataSource @Inject constructor(
             Log.d("FirebaseStorageDS", "uploadVideo success. Download URL: $downloadUrl")
             Result.Success(downloadUrl.toString())
         } catch (e: Exception) {
-            Log.e("FirebaseStorageDS", "Error uploading video: ${e.message}", e)
-            Result.Failure("Error uploading video: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -128,7 +126,6 @@ class FirebaseStorageDataSource @Inject constructor(
 
             Result.Success(tempFile)
         } catch (e: Exception) {
-            Log.e("FirebaseStorageDS", "Content download failure: ${e.message}", e)
             // Attempt to delete partially downloaded file on failure, if it exists
             val fileToDeleteOnFailure = File(context.cacheDir, tempFileName)
             if (fileToDeleteOnFailure.exists()) {
@@ -136,7 +133,7 @@ class FirebaseStorageDataSource @Inject constructor(
                     Log.w("FirebaseStorageDS", "Failed to delete temp file on failure: ${fileToDeleteOnFailure.absolutePath}")
                 }
             }
-            Result.Failure("Download failed: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 }

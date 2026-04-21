@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.remote
 
+import com.example.lifetogether.data.logic.AppErrors
+
 import com.example.lifetogether.domain.result.AppError
 
 import android.app.Application
@@ -76,7 +78,7 @@ class CloudflareR2StorageDataSource @Inject constructor(
         return try {
             // Process image (rotate, resize, compress)
             val processedImage = imageProcessor.processImage(uri, imageType, context)
-                ?: return Result.Failure("Failed to process image").also {
+                ?: return Result.Failure(AppErrors.validation("Failed to process image")).also {
                     Log.e(TAG, "uploadPhoto processing failed")
                 }
 
@@ -102,7 +104,7 @@ class CloudflareR2StorageDataSource @Inject constructor(
             Result.Success(downloadUrl)
         } catch (e: Exception) {
             Log.e(TAG, "Error uploading photo", e)
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -120,7 +122,7 @@ class CloudflareR2StorageDataSource @Inject constructor(
             Result.Success(response ?: byteArrayOf())
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching image", e)
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -137,7 +139,7 @@ class CloudflareR2StorageDataSource @Inject constructor(
             Result.Success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error deleting image", e)
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -166,7 +168,7 @@ class CloudflareR2StorageDataSource @Inject constructor(
                 val firstErrorMessage = (results.firstOrNull { it is Result.Failure } as? Result.Failure)?.error
                     ?: "One or more images failed to delete."
                 Log.e(TAG, "$failedCount image(s) failed to delete. First error: $firstErrorMessage")
-                Result.Failure("$failedCount image(s) failed to delete. First error: $firstErrorMessage")
+                Result.Failure(AppErrors.storage("$failedCount image(s) failed to delete. First error: $firstErrorMessage"))
             }
         }
 
@@ -199,7 +201,7 @@ class CloudflareR2StorageDataSource @Inject constructor(
             Result.Success(downloadUrl)
         } catch (e: Exception) {
             Log.e(TAG, "Error uploading video", e)
-            Result.Failure("Error uploading video: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -233,7 +235,7 @@ class CloudflareR2StorageDataSource @Inject constructor(
                     Log.w(TAG, "Failed to delete temp file on failure: ${fileToDeleteOnFailure.absolutePath}")
                 }
             }
-            Result.Failure("Download failed: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 

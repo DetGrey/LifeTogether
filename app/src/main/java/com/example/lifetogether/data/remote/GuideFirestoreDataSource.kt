@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.remote
 
+import com.example.lifetogether.data.logic.AppErrors
+
 import com.example.lifetogether.domain.result.AppError
 
 import android.util.Log
@@ -28,11 +30,11 @@ class GuideFirestoreDataSource @Inject constructor(
             .whereEqualTo("visibility", Constants.VISIBILITY_FAMILY)
         val registration = ref.addSnapshotListener { snapshot, e ->
             if (e != null) {
-                trySend(Result.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
                 return@addSnapshotListener
             }
             if (snapshot == null) {
-                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
+                trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
                 return@addSnapshotListener
             }
             val guides = snapshot.documents.mapNotNull { document ->
@@ -53,11 +55,11 @@ class GuideFirestoreDataSource @Inject constructor(
             .whereEqualTo("ownerUid", uid)
         val registration = ref.addSnapshotListener { snapshot, e ->
             if (e != null) {
-                trySend(Result.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
                 return@addSnapshotListener
             }
             if (snapshot == null) {
-                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
+                trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
                 return@addSnapshotListener
             }
             val guides = snapshot.documents.mapNotNull { document ->
@@ -77,11 +79,11 @@ class GuideFirestoreDataSource @Inject constructor(
             .whereEqualTo("uid", uid)
         val registration = ref.addSnapshotListener { snapshot, e ->
             if (e != null) {
-                trySend(Result.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
                 return@addSnapshotListener
             }
             if (snapshot == null) {
-                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
+                trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
                 return@addSnapshotListener
             }
             val progress = snapshot.documents.mapNotNull { document ->
@@ -101,18 +103,18 @@ class GuideFirestoreDataSource @Inject constructor(
             val doc = db.collection(Constants.GUIDES_TABLE).add(upload).await()
             Result.Success(doc.id)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
     suspend fun updateGuide(guide: Guide): Result<Unit, AppError> {
         return try {
-            val id = guide.id ?: return Result.Failure("Missing guide id")
+            val id = guide.id ?: return Result.Failure(AppErrors.validation("Missing guide id"))
             val upload = GuideParser.guideToFirestoreMap(guide)
             db.collection(Constants.GUIDES_TABLE).document(id).set(upload, SetOptions.merge()).await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -121,7 +123,7 @@ class GuideFirestoreDataSource @Inject constructor(
             deleteGuideWithRelatedProgress(guideId)
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -133,7 +135,7 @@ class GuideFirestoreDataSource @Inject constructor(
                 .await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 

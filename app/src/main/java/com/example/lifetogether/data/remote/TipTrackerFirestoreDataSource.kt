@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.remote
 
+import com.example.lifetogether.data.logic.AppErrors
+
 import com.example.lifetogether.domain.result.AppError
 
 import android.util.Log
@@ -23,7 +25,7 @@ class TipTrackerFirestoreDataSource @Inject constructor(
         val ref = db.collection(Constants.TIP_TRACKER_TABLE).whereEqualTo("familyId", familyId)
         val registration = ref.addSnapshotListener { snapshot, e ->
             if (e != null) {
-                trySend(Result.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
                 return@addSnapshotListener
             }
             if (snapshot != null) {
@@ -34,7 +36,7 @@ class TipTrackerFirestoreDataSource @Inject constructor(
                 }
                 trySend(Result.Success(ListSnapshot(items))).isSuccess
             } else {
-                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
+                trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
             }
         }
         awaitClose { registration.remove() }
@@ -45,7 +47,7 @@ class TipTrackerFirestoreDataSource @Inject constructor(
             val doc = db.collection(Constants.TIP_TRACKER_TABLE).add(tip).await()
             Result.Success(doc.id)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -54,7 +56,7 @@ class TipTrackerFirestoreDataSource @Inject constructor(
             db.collection(Constants.TIP_TRACKER_TABLE).document(tipId).delete().await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 }

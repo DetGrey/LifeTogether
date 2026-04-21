@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.remote
 
+import com.example.lifetogether.data.logic.AppErrors
+
 import com.example.lifetogether.domain.result.AppError
 
 import android.util.Log
@@ -22,12 +24,12 @@ class UserFirestoreDataSource @Inject constructor(
         val ref = db.collection(Constants.USER_TABLE).document(uid)
         val registration = ref.addSnapshotListener { snapshot, e ->
             if (e != null) {
-                trySend(Result.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
                 return@addSnapshotListener
             }
             val userInformation = snapshot?.toObject(UserInformation::class.java)
             if (userInformation != null) trySend(Result.Success(userInformation)).isSuccess
-            else trySend(Result.Failure("User not found")).isSuccess
+            else trySend(Result.Failure(AppErrors.notFound("User not found"))).isSuccess
         }
         awaitClose { registration.remove() }
     }
@@ -36,19 +38,19 @@ class UserFirestoreDataSource @Inject constructor(
         return try {
             val snapshot = db.collection(Constants.USER_TABLE).document(uid).get().await()
             val userInformation = snapshot.toObject(UserInformation::class.java)
-            if (userInformation != null) Result.Success(userInformation) else Result.Failure("User not found")
+            if (userInformation != null) Result.Success(userInformation) else Result.Failure(AppErrors.notFound("User not found"))
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
     suspend fun uploadUserInformation(userInformation: UserInformation): Result<Unit, AppError> {
         return try {
-            val uid = userInformation.uid ?: return Result.Failure("Cannot upload without being logged in")
+            val uid = userInformation.uid ?: return Result.Failure(AppErrors.authentication("Cannot upload without being logged in"))
             db.collection(Constants.USER_TABLE).document(uid).set(userInformation).await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -57,7 +59,7 @@ class UserFirestoreDataSource @Inject constructor(
             db.collection(Constants.USER_TABLE).document(uid).update("familyId", familyId).await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -82,7 +84,7 @@ class UserFirestoreDataSource @Inject constructor(
             }
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -90,9 +92,9 @@ class UserFirestoreDataSource @Inject constructor(
         return try {
             val document = db.collection(Constants.USER_TABLE).document(uid).get().await()
             val url = document.getString("imageUrl")
-            if (url != null) Result.Success(url) else Result.Failure(AppError.NotFound("User image not found"))
+            if (url != null) Result.Success(url) else Result.Failure(AppErrors.notFound("User image not found"))
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -101,7 +103,7 @@ class UserFirestoreDataSource @Inject constructor(
             db.collection(Constants.USER_TABLE).document(uid).update(mapOf("imageUrl" to url)).await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 }

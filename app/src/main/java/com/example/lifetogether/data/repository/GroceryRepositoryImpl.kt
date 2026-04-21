@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.repository
 
+import com.example.lifetogether.data.logic.AppErrors
+
 import com.example.lifetogether.domain.result.AppError
 
 import com.example.lifetogether.data.local.source.GroceryLocalDataSource
@@ -31,7 +33,7 @@ class GroceryRepositoryImpl @Inject constructor(
                         .sortedBy { it.itemName }
                     Result.Success(groceryItems)
                 } catch (e: Exception) {
-                    Result.Failure(e.message ?: "Unknown mapping error")
+                    Result.Failure(AppErrors.fromThrowable(e))
                 }
             }
     }
@@ -58,7 +60,7 @@ class GroceryRepositoryImpl @Inject constructor(
                     }
                     Result.Success(Unit)
                 }.getOrElse { error ->
-                    Result.Failure(error.message ?: "Failed to sync grocery items")
+                    Result.Failure(AppErrors.fromThrowable(error))
                 }
 
                 is Result.Failure -> Result.Failure(result.error)
@@ -83,7 +85,7 @@ class GroceryRepositoryImpl @Inject constructor(
                     groceryLocalDataSource.updateGrocerySuggestions(entities)
                     Result.Success(Unit)
                 }.getOrElse { error ->
-                    Result.Failure(error.message ?: "Failed to sync grocery suggestions")
+                    Result.Failure(AppErrors.fromThrowable(error))
                 }
 
                 is Result.Failure -> Result.Failure(result.error)
@@ -118,7 +120,7 @@ class GroceryRepositoryImpl @Inject constructor(
                     },
                 )
             } catch (e: Exception) {
-                Result.Failure(e.message ?: "Unknown error")
+                Result.Failure(AppErrors.fromThrowable(e))
             }
         }
     }

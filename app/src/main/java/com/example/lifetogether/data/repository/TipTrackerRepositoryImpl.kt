@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.repository
 
+import com.example.lifetogether.data.logic.AppErrors
+
 import com.example.lifetogether.domain.result.AppError
 
 import com.example.lifetogether.data.local.source.TipTrackerLocalDataSource
@@ -23,7 +25,7 @@ class TipTrackerRepositoryImpl @Inject constructor(
             try {
                 Result.Success(entities.map { it.toModel() })
             } catch (e: Exception) {
-                Result.Failure(e.message ?: "Unknown mapping error")
+                Result.Failure(AppErrors.fromThrowable(e))
             }
         }
     }
@@ -39,7 +41,7 @@ class TipTrackerRepositoryImpl @Inject constructor(
                     }
                     Result.Success(Unit)
                 }.getOrElse { error ->
-                    Result.Failure(error.message ?: "Failed to sync tips")
+                    Result.Failure(AppErrors.fromThrowable(error))
                 }
 
                 is Result.Failure -> Result.Failure(result.error)

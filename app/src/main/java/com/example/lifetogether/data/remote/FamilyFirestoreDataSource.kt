@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.remote
 
+import com.example.lifetogether.data.logic.AppErrors
+
 import com.example.lifetogether.domain.result.AppError
 
 import android.util.Log
@@ -25,7 +27,7 @@ class FamilyFirestoreDataSource @Inject constructor(
         val ref = db.collection(Constants.FAMILIES_TABLE).document(familyId)
         val registration = ref.addSnapshotListener { snapshot, e ->
             if (e != null) {
-                trySend(Result.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
                 return@addSnapshotListener
             }
             if (snapshot != null && snapshot.exists()) {
@@ -56,7 +58,7 @@ class FamilyFirestoreDataSource @Inject constructor(
             db.collection(Constants.FAMILIES_TABLE).document(familyId).update("members", updatedMembers).await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -66,7 +68,7 @@ class FamilyFirestoreDataSource @Inject constructor(
             val documentReference = db.collection(Constants.FAMILIES_TABLE).add(map).await()
             Result.Success(documentReference.id)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -79,7 +81,7 @@ class FamilyFirestoreDataSource @Inject constructor(
             db.collection(Constants.FAMILIES_TABLE).document(familyId).update("members", updatedMembers).await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -93,10 +95,10 @@ class FamilyFirestoreDataSource @Inject constructor(
                 val result = userFirestoreDataSource.updateFamilyId(uid, null)
                 if (result is Result.Failure) failures.add(result.error)
             }
-            if (failures.isNotEmpty()) Result.Failure("Could not remove familyId from all users: $failures")
+            if (failures.isNotEmpty()) Result.Failure(AppErrors.conflict("Could not remove familyId from all users: $failures"))
             else Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -104,9 +106,9 @@ class FamilyFirestoreDataSource @Inject constructor(
         return try {
             val doc = db.collection(Constants.FAMILIES_TABLE).document(familyId).get().await()
             val url = doc.getString("imageUrl")
-            if (url != null) Result.Success(url) else Result.Failure(AppError.NotFound("Family image not found"))
+            if (url != null) Result.Success(url) else Result.Failure(AppErrors.notFound("Family image not found"))
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -115,7 +117,7 @@ class FamilyFirestoreDataSource @Inject constructor(
             db.collection(Constants.FAMILIES_TABLE).document(familyId).update(mapOf("imageUrl" to url)).await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -155,7 +157,7 @@ class FamilyFirestoreDataSource @Inject constructor(
         return try {
             val familyDocRef = db.collection(Constants.FAMILIES_TABLE).document(familyId)
             val document = familyDocRef.get().await()
-            if (!document.exists()) return Result.Failure("Family document not found")
+            if (!document.exists()) return Result.Failure(AppErrors.notFound("Family document not found"))
 
             @Suppress("UNCHECKED_CAST")
             val members = document.get("members") as? List<Map<String, Any>> ?: emptyList()
@@ -165,7 +167,7 @@ class FamilyFirestoreDataSource @Inject constructor(
             familyDocRef.update("members", updatedMembers).await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 

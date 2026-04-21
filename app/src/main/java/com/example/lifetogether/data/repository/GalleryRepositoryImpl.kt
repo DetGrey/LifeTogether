@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.repository
 
+import com.example.lifetogether.data.logic.AppErrors
+
 import com.example.lifetogether.domain.result.AppError
 
 import android.content.Context
@@ -66,7 +68,7 @@ class GalleryRepositoryImpl @Inject constructor(
             try {
                 Result.Success(entities.map { it.toModel() }.sortedBy { it.itemName })
             } catch (e: Exception) {
-                Result.Failure(e.message ?: "Unknown mapping error")
+                Result.Failure(AppErrors.fromThrowable(e))
             }
         }
     }
@@ -82,7 +84,7 @@ class GalleryRepositoryImpl @Inject constructor(
                     }
                     Result.Success(Unit)
                 }.getOrElse { error ->
-                    Result.Failure(error.message ?: "Failed to sync albums")
+                    Result.Failure(AppErrors.fromThrowable(error))
                 }
 
                 is Result.Failure -> Result.Failure(result.error)
@@ -113,7 +115,7 @@ class GalleryRepositoryImpl @Inject constructor(
         return if (result != null) {
             Result.Success(result)
         } else {
-            Result.Failure("No thumbnail found")
+            Result.Failure(AppErrors.notFound("No thumbnail found"))
         }
     }
 
@@ -154,10 +156,10 @@ class GalleryRepositoryImpl @Inject constructor(
                 if (entity != null) {
                     Result.Success(entity.toModel())
                 } else {
-                    Result.Failure("Album not found")
+                    Result.Failure(AppErrors.notFound("Album not found"))
                 }
             } catch (e: Exception) {
-                Result.Failure(e.message ?: "Unknown error")
+                Result.Failure(AppErrors.fromThrowable(e))
             }
         }
     }
@@ -195,7 +197,7 @@ class GalleryRepositoryImpl @Inject constructor(
                 }
                 Result.Success(items)
             } catch (e: Exception) {
-                Result.Failure(e.message ?: "Unknown mapping error")
+                Result.Failure(AppErrors.fromThrowable(e))
             }
         }
     }

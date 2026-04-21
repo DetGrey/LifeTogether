@@ -1,5 +1,7 @@
 package com.example.lifetogether.domain.usecase.gallery
 
+import com.example.lifetogether.data.logic.AppErrors
+
 import com.example.lifetogether.domain.result.AppError
 
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
@@ -46,7 +48,7 @@ class DeleteMediaUseCase @Inject constructor(
             Result.Success(Unit)
 
         } catch (e: Exception) {
-            Result.Failure(e.message ?: "Unknown error occurred")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 }

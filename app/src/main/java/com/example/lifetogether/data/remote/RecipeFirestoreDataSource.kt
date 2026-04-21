@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.remote
 
+import com.example.lifetogether.data.logic.AppErrors
+
 import com.example.lifetogether.domain.result.AppError
 
 import android.util.Log
@@ -24,7 +26,7 @@ class RecipeFirestoreDataSource @Inject constructor(
         val ref = db.collection(Constants.RECIPES_TABLE).whereEqualTo("familyId", familyId)
         val registration = ref.addSnapshotListener { snapshot, e ->
             if (e != null) {
-                trySend(Result.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
                 return@addSnapshotListener
             }
             if (snapshot != null) {
@@ -35,7 +37,7 @@ class RecipeFirestoreDataSource @Inject constructor(
                 }
                 trySend(Result.Success(ListSnapshot(items))).isSuccess
             } else {
-                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
+                trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
             }
         }
         awaitClose { registration.remove() }
@@ -46,17 +48,17 @@ class RecipeFirestoreDataSource @Inject constructor(
             val documentReference = db.collection(Constants.RECIPES_TABLE).add(recipe).await()
             Result.Success(documentReference.id)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
     suspend fun updateRecipe(recipe: Recipe): Result<Unit, AppError> {
         return try {
-            val id = recipe.id ?: return Result.Failure("Missing recipe id")
+            val id = recipe.id ?: return Result.Failure(AppErrors.validation("Missing recipe id"))
             db.collection(Constants.RECIPES_TABLE).document(id).set(recipe, SetOptions.merge()).await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -65,7 +67,7 @@ class RecipeFirestoreDataSource @Inject constructor(
             db.collection(Constants.RECIPES_TABLE).document(recipeId).delete().await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -73,9 +75,9 @@ class RecipeFirestoreDataSource @Inject constructor(
         return try {
             val doc = db.collection(Constants.RECIPES_TABLE).document(recipeId).get().await()
             val url = doc.getString("imageUrl")
-            if (url != null) Result.Success(url) else Result.Failure(AppError.NotFound("Recipe image not found"))
+            if (url != null) Result.Success(url) else Result.Failure(AppErrors.notFound("Recipe image not found"))
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -84,7 +86,7 @@ class RecipeFirestoreDataSource @Inject constructor(
             db.collection(Constants.RECIPES_TABLE).document(recipeId).update(mapOf("imageUrl" to url)).await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 }

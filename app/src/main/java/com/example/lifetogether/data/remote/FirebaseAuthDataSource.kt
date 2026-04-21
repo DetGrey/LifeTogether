@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.remote
 
+import com.example.lifetogether.data.logic.AppErrors
+
 import com.example.lifetogether.domain.result.AppError
 
 import com.example.lifetogether.domain.result.Result
@@ -29,11 +31,11 @@ class FirebaseAuthDataSource@Inject constructor(
                     UserInformation(uid = firebaseUser.uid),
                 )
             } else {
-                Result.Failure("Authentication failed")
+                Result.Failure(AppErrors.authentication("Authentication failed"))
             }
         } catch (e: Exception) {
             println("FirebaseAuthDataSource login() error: ${e.message}")
-            return Result.Failure("Error: ${e.message}")
+            return Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -51,10 +53,10 @@ class FirebaseAuthDataSource@Inject constructor(
                 val updatedUserInformation = userInformation.copy(uid = firebaseUser.uid)
                 return Result.Success(updatedUserInformation)
             } else {
-                return Result.Failure("Authentication failed")
+                return Result.Failure(AppErrors.authentication("Authentication failed"))
             }
         } catch (e: Exception) {
-            return Result.Failure("Error: ${e.message}")
+            return Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -64,7 +66,7 @@ class FirebaseAuthDataSource@Inject constructor(
             if (currentUser != null) {
                 trySend(Result.Success(UserInformation(uid = currentUser.uid)))
             } else {
-                trySend(Result.Failure("Authentication failed"))
+                trySend(Result.Failure(AppErrors.authentication("Authentication failed")))
             }
         }
 
@@ -89,7 +91,7 @@ class FirebaseAuthDataSource@Inject constructor(
             }
             return Result.Success(Unit)
         } catch (e: Exception) {
-            return Result.Failure("Error: ${e.message}")
+            return Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 }

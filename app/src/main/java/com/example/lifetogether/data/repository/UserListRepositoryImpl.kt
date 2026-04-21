@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.repository
 
+import com.example.lifetogether.data.logic.AppErrors
+
 import com.example.lifetogether.domain.result.AppError
 
 import com.example.lifetogether.data.local.source.UserListLocalDataSource
@@ -32,7 +34,7 @@ class UserListRepositoryImpl @Inject constructor(
                         .sortedBy { it.itemName }
                     Result.Success(userLists)
                 } catch (e: Exception) {
-                    Result.Failure(e.message ?: "Unknown mapping error")
+                    Result.Failure(AppErrors.fromThrowable(e))
                 }
             }
     }
@@ -54,10 +56,12 @@ class UserListRepositoryImpl @Inject constructor(
             val hadSuccess = sharedResult is Result.Success || privateResult is Result.Success
             if (!hadSuccess) {
                 return@combine Result.Failure(
-                    listOfNotNull(
-                        (sharedResult as? Result.Failure)?.error,
-                        (privateResult as? Result.Failure)?.error,
-                    ).joinToString(" | ").ifBlank { "User list sync failed" },
+                    AppErrors.unknown(
+                        listOfNotNull(
+                            (sharedResult as? Result.Failure)?.error,
+                            (privateResult as? Result.Failure)?.error,
+                        ).joinToString(" | ").ifBlank { "User list sync failed" },
+                    ),
                 )
             }
 
@@ -74,7 +78,7 @@ class UserListRepositoryImpl @Inject constructor(
                 }
                 Result.Success(Unit)
             }.getOrElse { error ->
-                Result.Failure(error.message ?: "Failed to sync user lists")
+                Result.Failure(AppErrors.fromThrowable(error))
             }
         }
     }
@@ -93,7 +97,7 @@ class UserListRepositoryImpl @Inject constructor(
                         .sortedBy { it.itemName }
                     Result.Success(routineListEntry)
                 } catch (e: Exception) {
-                    Result.Failure(e.message ?: "Unknown mapping error")
+                    Result.Failure(AppErrors.fromThrowable(e))
                 }
             }
     }
@@ -120,7 +124,7 @@ class UserListRepositoryImpl @Inject constructor(
                     }
                     Result.Success(Unit)
                 }.getOrElse { error ->
-                    Result.Failure(error.message ?: "Failed to sync routine list entries")
+                    Result.Failure(AppErrors.fromThrowable(error))
                 }
 
                 is Result.Failure -> Result.Failure(result.error)
@@ -135,7 +139,7 @@ class UserListRepositoryImpl @Inject constructor(
                     val routineListEntry = entity.toModel()
                     Result.Success(routineListEntry)
                 } catch (e: Exception) {
-                    Result.Failure(e.message ?: "Unknown mapping error")
+                    Result.Failure(AppErrors.fromThrowable(e))
                 }
             }
     }
@@ -147,10 +151,10 @@ class UserListRepositoryImpl @Inject constructor(
                 if (byteArray != null) {
                     Result.Success(byteArray)
                 } else {
-                    Result.Failure("No ByteArray found")
+                    Result.Failure(AppErrors.storage("No ByteArray found"))
                 }
             } catch (e: Exception) {
-                Result.Failure(e.message ?: "Unknown error")
+                Result.Failure(AppErrors.fromThrowable(e))
             }
         }
     }

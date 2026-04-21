@@ -1,5 +1,7 @@
 package com.example.lifetogether.domain.usecase.item
 
+import com.example.lifetogether.data.logic.AppErrors
+
 import com.example.lifetogether.domain.result.AppError
 
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
@@ -29,7 +31,7 @@ class DeleteRoutineListEntriesUseCase @Inject constructor(
             if (remoteDeleteResult is Result.Failure) return remoteDeleteResult
             remoteDeleteResult
         } catch (e: Exception) {
-            Result.Failure(e.message ?: "Unknown error occurred")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 }

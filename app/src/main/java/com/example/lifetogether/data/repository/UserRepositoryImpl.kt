@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.repository
 
+import com.example.lifetogether.data.logic.AppErrors
+
 import com.example.lifetogether.domain.result.AppError
 
 import com.example.lifetogether.data.local.source.SessionCleanupLocalDataSource
@@ -42,7 +44,7 @@ class UserRepositoryImpl @Inject constructor(
                     ),
                 )
             } catch (e: Exception) {
-                Result.Failure(e.message ?: "Unknown error")
+                Result.Failure(AppErrors.fromThrowable(e))
             }
         }
 
@@ -113,7 +115,7 @@ class UserRepositoryImpl @Inject constructor(
                 signupResult
             }
         } catch (e: Exception) {
-            return Result.Failure("Error: ${e.message}")
+            return Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -163,7 +165,7 @@ class UserRepositoryImpl @Inject constructor(
                     }
                     Result.Success(Unit)
                 }.getOrElse { error ->
-                    Result.Failure(error.message ?: "Failed to sync user information")
+                    Result.Failure(AppErrors.fromThrowable(error))
                 }
 
                 is Result.Failure -> Result.Failure(result.error)
@@ -191,7 +193,7 @@ class UserRepositoryImpl @Inject constructor(
                     }
                     Result.Success(Unit)
                 }.getOrElse { error ->
-                    Result.Failure(error.message ?: "Failed to sync family information")
+                    Result.Failure(AppErrors.fromThrowable(error))
                 }
 
                 is Result.Failure -> Result.Failure(result.error)
@@ -263,7 +265,7 @@ class UserRepositoryImpl @Inject constructor(
             familyFirestoreDataSource.storeFcmToken(uid, familyId)
             Result.Success(Unit)
         }.getOrElse { error ->
-            Result.Failure(error.message ?: "Failed to store FCM token")
+            Result.Failure(AppErrors.fromThrowable(error))
         }
     }
 

@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.repository
 
+import com.example.lifetogether.data.logic.AppErrors
+
 import com.example.lifetogether.domain.result.AppError
 
 import android.content.Context
@@ -53,10 +55,10 @@ class ImageRepositoryImpl @Inject constructor(
                 if (byteArray != null) {
                     Result.Success(byteArray)
                 } else {
-                    Result.Failure("No ByteArray found")
+                    Result.Failure(AppErrors.storage("No ByteArray found"))
                 }
             } catch (e: Exception) {
-                Result.Failure(e.message ?: "Unknown error")
+                Result.Failure(AppErrors.fromThrowable(e))
             }
         }
     }
@@ -78,7 +80,7 @@ class ImageRepositoryImpl @Inject constructor(
             is ImageType.FamilyImage -> familyFirestoreDataSource.getFamilyImageUrl(imageType.familyId)
             is ImageType.RecipeImage -> recipeFirestoreDataSource.getRecipeImageUrl(imageType.recipeId)
             is ImageType.RoutineListEntryImage -> userListFirestoreDataSource.getRoutineListEntryImageUrl(imageType.entryId)
-            is ImageType.GalleryMedia -> Result.Failure("Image type GalleryImage is not connected to one specific document")
+            is ImageType.GalleryMedia -> Result.Failure(AppErrors.validation("Image type GalleryImage is not connected to one specific document"))
         }
         return when (urlResult) {
             is Result.Success -> {
@@ -105,7 +107,7 @@ class ImageRepositoryImpl @Inject constructor(
             is ImageType.FamilyImage -> familyFirestoreDataSource.saveFamilyImageUrl(imageType.familyId, url)
             is ImageType.RecipeImage -> recipeFirestoreDataSource.saveRecipeImageUrl(imageType.recipeId, url)
             is ImageType.RoutineListEntryImage -> userListFirestoreDataSource.saveRoutineListEntryImageUrl(imageType.entryId, url)
-            is ImageType.GalleryMedia -> Result.Failure("Image type is not connected to one specific document")
+            is ImageType.GalleryMedia -> Result.Failure(AppErrors.validation("Image type is not connected to one specific document"))
         }
     }
 }

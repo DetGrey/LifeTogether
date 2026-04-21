@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.repository
 
+import com.example.lifetogether.data.logic.AppErrors
+
 import com.example.lifetogether.domain.result.AppError
 
 import com.example.lifetogether.data.local.source.RecipeLocalDataSource
@@ -26,7 +28,7 @@ class RecipeRepositoryImpl @Inject constructor(
                 try {
                     Result.Success(entities.map { it.toModel() }.sortedBy { it.itemName })
                 } catch (e: Exception) {
-                    Result.Failure(e.message ?: "Unknown mapping error")
+                    Result.Failure(AppErrors.fromThrowable(e))
                 }
             }
     }
@@ -55,7 +57,7 @@ class RecipeRepositoryImpl @Inject constructor(
                     }
                     Result.Success(Unit)
                 }.getOrElse { error ->
-                    Result.Failure(error.message ?: "Failed to sync recipes")
+                    Result.Failure(AppErrors.fromThrowable(error))
                 }
 
                 is Result.Failure -> Result.Failure(result.error)
@@ -70,10 +72,10 @@ class RecipeRepositoryImpl @Inject constructor(
                     if (entity != null) {
                         Result.Success(entity.toModel())
                     } else {
-                        Result.Failure("Recipe not found")
+                        Result.Failure(AppErrors.notFound("Recipe not found"))
                     }
                 } catch (e: Exception) {
-                    Result.Failure(e.message ?: "Unknown mapping error")
+                    Result.Failure(AppErrors.fromThrowable(e))
                 }
             }
     }

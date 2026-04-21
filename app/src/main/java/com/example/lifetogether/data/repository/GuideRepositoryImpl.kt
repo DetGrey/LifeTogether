@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.repository
 
+import com.example.lifetogether.data.logic.AppErrors
+
 import com.example.lifetogether.domain.result.AppError
 
 import android.util.Log
@@ -41,7 +43,7 @@ class GuideRepositoryImpl @Inject constructor(
                         .sortedBy { it.itemName }
                     Result.Success(guides)
                 } catch (e: Exception) {
-                    Result.Failure(e.message ?: "Unknown mapping error")
+                    Result.Failure(AppErrors.fromThrowable(e))
                 }
             }
     }
@@ -107,7 +109,7 @@ class GuideRepositoryImpl @Inject constructor(
                 val hasAnySuccessfulSync = sharedHasSuccessfulSync || privateHasSuccessfulSync
                 if (!hadAnySuccessInThisEmission && !hasAnySuccessfulSync && sharedGuides.isEmpty() && privateGuides.isEmpty()) {
                     Log.w(TAG, "both guides listeners failed and no cached fallback exists; skipping local update")
-                    emit(Result.Failure("Guide listeners failed with no cached fallback"))
+                    emit(Result.Failure(AppErrors.storage("Guide listeners failed with no cached fallback")))
                     return@collect
                 }
 
@@ -135,7 +137,7 @@ class GuideRepositoryImpl @Inject constructor(
                     }
                 }.onFailure { error ->
                     Log.e(TAG, "Guide local sync failure: ${error.message}", error)
-                    emit(Result.Failure(error.message ?: "Failed to sync guides"))
+                    emit(Result.Failure(AppErrors.fromThrowable(error)))
                 }
             }
         }
@@ -147,7 +149,7 @@ class GuideRepositoryImpl @Inject constructor(
                 try {
                     Result.Success(entity.toModel())
                 } catch (e: Exception) {
-                    Result.Failure(e.message ?: "Unknown mapping error")
+                    Result.Failure(AppErrors.fromThrowable(e))
                 }
             }
     }

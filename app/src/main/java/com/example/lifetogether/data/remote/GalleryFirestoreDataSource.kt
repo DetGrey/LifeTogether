@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.remote
 
+import com.example.lifetogether.data.logic.AppErrors
+
 import com.example.lifetogether.domain.result.AppError
 
 import android.util.Log
@@ -28,7 +30,7 @@ class GalleryFirestoreDataSource @Inject constructor(
         val ref = db.collection(Constants.ALBUMS_TABLE).whereEqualTo("familyId", familyId)
         val registration = ref.addSnapshotListener { snapshot, e ->
             if (e != null) {
-                trySend(Result.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
                 return@addSnapshotListener
             }
             if (snapshot != null) {
@@ -39,7 +41,7 @@ class GalleryFirestoreDataSource @Inject constructor(
                 }
                 trySend(Result.Success(ListSnapshot(items))).isSuccess
             } else {
-                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
+                trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
             }
         }
         awaitClose { registration.remove() }
@@ -49,7 +51,7 @@ class GalleryFirestoreDataSource @Inject constructor(
         val ref = db.collection(Constants.GALLERY_MEDIA_TABLE).whereEqualTo("familyId", familyId)
         val registration = ref.addSnapshotListener { snapshot, e ->
             if (e != null) {
-                trySend(Result.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
                 return@addSnapshotListener
             }
             if (snapshot != null) {
@@ -69,7 +71,7 @@ class GalleryFirestoreDataSource @Inject constructor(
                 }
                 trySend(Result.Success(ListSnapshot(items, snapshot.metadata.isFromCache))).isSuccess
             } else {
-                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
+                trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
             }
         }
         awaitClose { registration.remove() }
@@ -80,17 +82,17 @@ class GalleryFirestoreDataSource @Inject constructor(
             val doc = db.collection(Constants.ALBUMS_TABLE).add(album).await()
             Result.Success(doc.id)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
     suspend fun updateAlbum(album: Album): Result<Unit, AppError> {
         return try {
-            val id = album.id ?: return Result.Failure("Missing album id")
+            val id = album.id ?: return Result.Failure(AppErrors.validation("Missing album id"))
             db.collection(Constants.ALBUMS_TABLE).document(id).set(album, SetOptions.merge()).await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -99,7 +101,7 @@ class GalleryFirestoreDataSource @Inject constructor(
             db.collection(Constants.ALBUMS_TABLE).document(albumId).delete().await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -110,7 +112,7 @@ class GalleryFirestoreDataSource @Inject constructor(
             batch.commit().await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -120,7 +122,7 @@ class GalleryFirestoreDataSource @Inject constructor(
                 .update("count", FieldValue.increment(increment.toDouble())).await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -135,7 +137,7 @@ class GalleryFirestoreDataSource @Inject constructor(
             batch.commit().await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -150,7 +152,7 @@ class GalleryFirestoreDataSource @Inject constructor(
             batch.commit().await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 }

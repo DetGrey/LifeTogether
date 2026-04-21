@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.remote
 
+import com.example.lifetogether.data.logic.AppErrors
+
 import com.example.lifetogether.domain.result.AppError
 
 import com.example.lifetogether.domain.model.Category
@@ -26,7 +28,7 @@ class GroceryFirestoreDataSource @Inject constructor(
             .whereEqualTo("familyId", familyId)
             .addSnapshotListener { snapshot, e ->
                 if (e != null) {
-                    trySend(Result.Failure("Firestore Error: ${e.message}"))
+                    trySend(Result.Failure(AppErrors.fromThrowable(e)))
                     return@addSnapshotListener
                 }
                 snapshot?.let { qs ->
@@ -44,13 +46,13 @@ class GroceryFirestoreDataSource @Inject constructor(
             val doc = db.collection(Constants.GROCERY_TABLE).add(item).await()
             Result.Success(doc.id)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
     suspend fun toggleGroceryItemCompletion(item: CompletableItem): Result<Unit, AppError> {
         return try {
-            val id = item.id ?: return Result.Failure("Missing item id")
+            val id = item.id ?: return Result.Failure(AppErrors.validation("Missing item id"))
             db.collection(Constants.GROCERY_TABLE).document(id).update(
                 mapOf(
                     "completed" to item.completed,
@@ -59,7 +61,7 @@ class GroceryFirestoreDataSource @Inject constructor(
             ).await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -70,7 +72,7 @@ class GroceryFirestoreDataSource @Inject constructor(
             batch.commit().await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -78,7 +80,7 @@ class GroceryFirestoreDataSource @Inject constructor(
         val ref = db.collection(Constants.CATEGORY_TABLE)
         val registration = ref.addSnapshotListener { snapshot, e ->
             if (e != null) {
-                trySend(Result.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
                 return@addSnapshotListener
             }
             if (snapshot != null) {
@@ -94,7 +96,7 @@ class GroceryFirestoreDataSource @Inject constructor(
             db.collection(Constants.CATEGORY_TABLE).add(category).await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -104,7 +106,7 @@ class GroceryFirestoreDataSource @Inject constructor(
             if (query.documents.isNotEmpty()) query.documents[0].reference.delete().await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -112,7 +114,7 @@ class GroceryFirestoreDataSource @Inject constructor(
         val ref = db.collection(Constants.GROCERY_SUGGESTIONS_TABLE)
         val registration = ref.addSnapshotListener { snapshot, e ->
             if (e != null) {
-                trySend(Result.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
                 return@addSnapshotListener
             }
             if (snapshot != null) {
@@ -130,27 +132,27 @@ class GroceryFirestoreDataSource @Inject constructor(
             db.collection(Constants.GROCERY_SUGGESTIONS_TABLE).add(suggestion).await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
     suspend fun updateGrocerySuggestion(suggestion: GrocerySuggestion): Result<Unit, AppError> {
-        val id = suggestion.id ?: return Result.Failure("Missing grocery suggestion id")
+        val id = suggestion.id ?: return Result.Failure(AppErrors.validation("Missing grocery suggestion id"))
         return try {
             db.collection(Constants.GROCERY_SUGGESTIONS_TABLE).document(id).set(suggestion).await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
     suspend fun deleteGrocerySuggestion(suggestion: GrocerySuggestion): Result<Unit, AppError> {
-        val id = suggestion.id ?: return Result.Failure("Problems with grocery suggestion id")
+        val id = suggestion.id ?: return Result.Failure(AppErrors.validation("Problems with grocery suggestion id"))
         return try {
             db.collection(Constants.GROCERY_SUGGESTIONS_TABLE).document(id).delete().await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 }

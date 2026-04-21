@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.local.source
 
+import com.example.lifetogether.data.logic.AppErrors
+
 import com.example.lifetogether.domain.result.AppError
 
 import android.content.Context
@@ -46,7 +48,7 @@ class SessionCleanupLocalDataSource @Inject constructor(
             guidesDao.deleteTable()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: $e")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 }

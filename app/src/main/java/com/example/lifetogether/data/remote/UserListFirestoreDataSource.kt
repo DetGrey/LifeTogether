@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.remote
 
+import com.example.lifetogether.data.logic.AppErrors
+
 import com.example.lifetogether.domain.result.AppError
 
 import android.util.Log
@@ -32,11 +34,11 @@ class UserListFirestoreDataSource @Inject constructor(
             .whereEqualTo("visibility", Constants.VISIBILITY_FAMILY)
         val reg = ref.addSnapshotListener { snapshot, e ->
             if (e != null) {
-                trySend(Result.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
                 return@addSnapshotListener
             }
             if (snapshot == null) {
-                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
+                trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
                 return@addSnapshotListener
             }
             val items = snapshot.documents.mapNotNull { doc ->
@@ -57,11 +59,11 @@ class UserListFirestoreDataSource @Inject constructor(
             .whereEqualTo("ownerUid", uid)
         val reg = ref.addSnapshotListener { snapshot, e ->
             if (e != null) {
-                trySend(Result.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
                 return@addSnapshotListener
             }
             if (snapshot == null) {
-                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
+                trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
                 return@addSnapshotListener
             }
             val items = snapshot.documents.mapNotNull { doc ->
@@ -79,11 +81,11 @@ class UserListFirestoreDataSource @Inject constructor(
         val ref = db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE).whereEqualTo("familyId", familyId)
         val reg = ref.addSnapshotListener { snapshot, e ->
             if (e != null) {
-                trySend(Result.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
                 return@addSnapshotListener
             }
             if (snapshot == null) {
-                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
+                trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
                 return@addSnapshotListener
             }
             val items = snapshot.documents.mapNotNull { doc ->
@@ -102,7 +104,7 @@ class UserListFirestoreDataSource @Inject constructor(
             val doc = db.collection(Constants.USER_LISTS_TABLE).add(userListToFirestoreMap(userList)).await()
             Result.Success(doc.id)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -111,19 +113,19 @@ class UserListFirestoreDataSource @Inject constructor(
             val doc = db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE).add(listEntryToFirestoreMap(entry)).await()
             Result.Success(doc.id)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
     suspend fun updateRoutineListEntry(entry: RoutineListEntry): Result<Unit, AppError> {
-        val id = entry.id ?: return Result.Failure("Missing routine list entry id")
+        val id = entry.id ?: return Result.Failure(AppErrors.validation("Missing routine list entry id"))
         return try {
             db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE).document(id)
                 .set(listEntryToFirestoreMap(entry), SetOptions.merge())
                 .await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -136,7 +138,7 @@ class UserListFirestoreDataSource @Inject constructor(
             batch.commit().await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -144,9 +146,9 @@ class UserListFirestoreDataSource @Inject constructor(
         return try {
             val doc = db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE).document(entryId).get().await()
             val url = doc.getString("imageUrl")
-            if (url != null) Result.Success(url) else Result.Failure(AppError.NotFound("List entry image not found"))
+            if (url != null) Result.Success(url) else Result.Failure(AppErrors.notFound("List entry image not found"))
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -157,7 +159,7 @@ class UserListFirestoreDataSource @Inject constructor(
                 .await()
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 

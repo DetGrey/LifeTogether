@@ -1,5 +1,7 @@
 package com.example.lifetogether.domain.usecase.gallery
 
+import com.example.lifetogether.data.logic.AppErrors
+
 import com.example.lifetogether.domain.result.AppError
 
 import com.example.lifetogether.domain.result.Result
@@ -29,7 +31,7 @@ class DeleteAlbumUseCase @Inject constructor(
                 is Result.Failure -> result
             }
         } catch (e: Exception) {
-            return Result.Failure(e.message ?: "Unknown error occurred")
+            return Result.Failure(AppErrors.fromThrowable(e))
         }
     }
     private suspend fun deleteAlbum(albumId: String): Result<Unit, AppError> {

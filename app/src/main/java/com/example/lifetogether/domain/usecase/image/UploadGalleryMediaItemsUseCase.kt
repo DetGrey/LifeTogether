@@ -1,5 +1,7 @@
 package com.example.lifetogether.domain.usecase.image
 
+import com.example.lifetogether.data.logic.AppErrors
+
 import com.example.lifetogether.domain.result.AppError
 
 import android.content.ContentValues.TAG
@@ -70,7 +72,7 @@ class UploadGalleryMediaItemsUseCase @Inject constructor(
         }
 
         if (oversizedItems.isNotEmpty()) {
-            return Result.Failure("Files too large (max 100MB each): ${oversizedItems.joinToString(", ")}")
+            return Result.Failure(AppErrors.validation("Files too large (max 100MB each): ${oversizedItems.joinToString(", ")}"))
         }
 
         val albumId = mediaUploadList.first().mediaType.albumId
@@ -157,7 +159,7 @@ class UploadGalleryMediaItemsUseCase @Inject constructor(
         if (successfullyUploadedMedia.isEmpty() && mediaUploadList.isNotEmpty()) {
             val combinedError = uploadErrorMessages.joinToString(separator = "\n")
             Log.e(TAG, "All media items failed to upload. Errors: $combinedError")
-            return Result.Failure("All media uploads failed.${if (combinedError.isNotBlank()) " Details: $combinedError" else ""}".take(250))
+            return Result.Failure(AppErrors.storage("All media uploads failed.${if (combinedError.isNotBlank()) " Details: $combinedError" else ""}".take(250)))
         }
 
         if (uploadErrorMessages.isNotEmpty()) {
@@ -176,20 +178,20 @@ class UploadGalleryMediaItemsUseCase @Inject constructor(
                         }
                     }
                     if (uploadErrorMessages.isNotEmpty()) {
-                        Result.Failure("Partial success. ${uploadErrorMessages.size} item(s) failed: ${uploadErrorMessages.joinToString(", ").take(200)}")
+                        Result.Failure(AppErrors.storage("Partial success. ${uploadErrorMessages.size} item(s) failed: ${uploadErrorMessages.joinToString(", ").take(200)}"))
                     } else {
                         Result.Success(Unit)
                     }
             } else if (saveMetaDataResult is Result.Failure) {
                 Log.e(TAG, "Failed to save metadata: ${saveMetaDataResult.error}")
-                Result.Failure("Failed to save media metadata: ${saveMetaDataResult.error}")
+                Result.Failure(AppErrors.storage("Failed to save media metadata: ${saveMetaDataResult.error}"))
             } else {
                 Log.e(TAG, "Unknown result from saveMediaMetaData.")
-                Result.Failure("Unknown error saving metadata.")
+                Result.Failure(AppErrors.unknown("Unknown error saving metadata."))
             }
         }
 
         Log.d(TAG, "No media items were successfully uploaded or prepared for metadata.")
-        return Result.Failure("No media items processed successfully.")
+        return Result.Failure(AppErrors.storage("No media items processed successfully."))
     }
 }
