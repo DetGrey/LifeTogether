@@ -16,7 +16,7 @@ import javax.inject.Singleton
 
 @Singleton
 class SessionCleanupLocalDataSource @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val groceryListDao: GroceryListDao,
     private val recipesDao: RecipesDao,
     private val userInformationDao: UserInformationDao,

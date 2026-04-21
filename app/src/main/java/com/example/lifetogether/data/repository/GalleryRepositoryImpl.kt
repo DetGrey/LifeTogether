@@ -8,6 +8,7 @@ import com.example.lifetogether.data.local.source.AlbumLocalDataSource
 import com.example.lifetogether.data.local.source.MediaLocalDataSource
 import com.example.lifetogether.data.model.AlbumEntity
 import com.example.lifetogether.data.remote.GalleryFirestoreDataSource
+import com.example.lifetogether.di.IoDispatcher
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.SaveProgress
 import com.example.lifetogether.domain.model.enums.MediaType
@@ -25,8 +26,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -42,6 +43,7 @@ class GalleryRepositoryImpl @Inject constructor(
     private val mediaLocalDataSource: MediaLocalDataSource,
     private val galleryFirestoreDataSource: GalleryFirestoreDataSource,
     private val storageDataSource: StorageDataSource,
+    @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : GalleryRepository {
 
     companion object {
@@ -236,7 +238,7 @@ class GalleryRepositoryImpl @Inject constructor(
                             coroutineScope {
                                 val semaphore = Semaphore(MAX_CONCURRENT_DOWNLOADS)
                                 val downloadTasks: List<Deferred<Pair<GalleryMedia, File>?>> = batch.map { galleryMedia ->
-                                    async(Dispatchers.IO) {
+                                    async(ioDispatcher) {
                                         semaphore.acquire()
                                         try {
                                             galleryMedia.mediaUrl?.let { url ->

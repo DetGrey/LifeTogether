@@ -8,9 +8,10 @@ import android.net.Uri
 import android.util.Log
 import coil.ImageLoader
 import coil.request.ImageRequest
+import com.example.lifetogether.di.IoDispatcher
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.util.Constants
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import javax.inject.Inject
@@ -21,7 +22,9 @@ import javax.inject.Singleton
  * Extracted from data sources to follow Single Responsibility Principle.
  */
 @Singleton
-class ImageProcessor @Inject constructor() {
+class ImageProcessor @Inject constructor(
+    @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+) {
 
     companion object {
         private const val TAG = "ImageProcessor"
@@ -40,7 +43,7 @@ class ImageProcessor @Inject constructor() {
         imageType: ImageType,
         context: Context,
     ): ProcessedImage? {
-        return withContext(Dispatchers.IO) {
+        return withContext(ioDispatcher) {
             try {
                 // Get path and processing parameters based on image type
                 val config = getImageConfig(imageType) ?: return@withContext null
@@ -118,7 +121,7 @@ class ImageProcessor @Inject constructor() {
         maxWidth: Int,
         maxHeight: Int,
     ): Bitmap? {
-        return withContext(Dispatchers.IO) {
+        return withContext(ioDispatcher) {
             try {
                 // First decode bounds to calculate inSampleSize
                 val options = BitmapFactory.Options().apply {

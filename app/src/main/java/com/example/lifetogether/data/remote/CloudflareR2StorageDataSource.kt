@@ -16,10 +16,11 @@ import aws.smithy.kotlin.runtime.content.writeToFile
 import aws.smithy.kotlin.runtime.net.url.Url
 import com.example.lifetogether.BuildConfig
 import com.example.lifetogether.data.logic.ImageProcessor
+import com.example.lifetogether.di.IoDispatcher
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.datasource.StorageDataSource
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -32,6 +33,7 @@ import androidx.core.net.toUri
 class CloudflareR2StorageDataSource @Inject constructor(
     private val application: Application,
     private val imageProcessor: ImageProcessor,
+    @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : StorageDataSource {
 
     companion object {
@@ -145,7 +147,7 @@ class CloudflareR2StorageDataSource @Inject constructor(
             }
 
             val deferredResults = urlList.map { url ->
-                async(Dispatchers.IO) {
+                async(ioDispatcher) {
                     deleteImage(url)
                 }
             }
@@ -177,7 +179,7 @@ class CloudflareR2StorageDataSource @Inject constructor(
             val objectKey = "$path/$fileName"
 
             // Open and use input stream, ensuring it's closed after upload
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 application.contentResolver.openInputStream(uri)?.use { videoStream ->
                     // Stream video upload to avoid loading entire file into memory
                     val putObjectRequest = PutObjectRequest {

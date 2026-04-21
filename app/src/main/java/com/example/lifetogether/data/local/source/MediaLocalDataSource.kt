@@ -10,6 +10,7 @@ import com.example.lifetogether.data.local.dao.GalleryMediaDao
 import com.example.lifetogether.data.logic.generateImageThumbnailFromFile
 import com.example.lifetogether.data.logic.generateVideoThumbnailFromFile
 import com.example.lifetogether.data.model.GalleryMediaEntity
+import com.example.lifetogether.di.IoDispatcher
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.enums.MediaType
 import com.example.lifetogether.domain.model.gallery.GalleryImage
@@ -17,7 +18,7 @@ import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -25,8 +26,9 @@ import javax.inject.Singleton
 
 @Singleton
 class MediaLocalDataSource @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val galleryMediaDao: GalleryMediaDao,
+    @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
     companion object {
         private const val TAG = "MediaLocalDataSource"
@@ -259,7 +261,7 @@ class MediaLocalDataSource @Inject constructor(
         val entity = galleryMediaDao.getItemByIdDirect(mediaId) ?: return null
         val mediaUri = entity.mediaUri?.toUri() ?: return null
 
-        val tempFile = withContext(Dispatchers.IO) {
+        val tempFile = withContext(ioDispatcher) {
             File.createTempFile("thumb_regen_", "tmp", context.cacheDir)
         }
         return try {
