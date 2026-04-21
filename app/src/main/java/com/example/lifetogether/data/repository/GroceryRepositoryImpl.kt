@@ -1,6 +1,7 @@
 package com.example.lifetogether.data.repository
 
 import com.example.lifetogether.data.logic.AppErrors
+import com.example.lifetogether.data.logic.appResultOf
 
 import com.example.lifetogether.domain.result.AppError
 
@@ -13,7 +14,6 @@ import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.repository.GroceryRepository
 import com.example.lifetogether.domain.result.Result
-import com.example.lifetogether.util.Constants
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -27,13 +27,10 @@ class GroceryRepositoryImpl @Inject constructor(
     override fun observeGroceryItems(familyId: String): Flow<Result<List<GroceryItem>, AppError>> {
         return groceryLocalDataSource.observeGroceryItems(familyId)
             .map { entities ->
-                try {
-                    val groceryItems = entities
+                appResultOf {
+                    entities
                         .map { it.toModel() }
                         .sortedBy { it.itemName }
-                    Result.Success(groceryItems)
-                } catch (e: Exception) {
-                    Result.Failure(AppErrors.fromThrowable(e))
                 }
             }
     }
@@ -108,19 +105,15 @@ class GroceryRepositoryImpl @Inject constructor(
 
     override fun getGrocerySuggestions(): Flow<Result<List<GrocerySuggestion>, AppError>> {
         return groceryLocalDataSource.getGrocerySuggestions().map { list ->
-            try {
-                Result.Success(
-                    list.map { grocerySuggestion ->
-                        GrocerySuggestion(
-                            id = grocerySuggestion.id,
-                            suggestionName = grocerySuggestion.suggestionName,
-                            category = grocerySuggestion.category,
-                            approxPrice = grocerySuggestion.approxPrice,
-                        )
-                    },
-                )
-            } catch (e: Exception) {
-                Result.Failure(AppErrors.fromThrowable(e))
+            appResultOf {
+                list.map { grocerySuggestion ->
+                    GrocerySuggestion(
+                        id = grocerySuggestion.id,
+                        suggestionName = grocerySuggestion.suggestionName,
+                        category = grocerySuggestion.category,
+                        approxPrice = grocerySuggestion.approxPrice,
+                    )
+                }
             }
         }
     }

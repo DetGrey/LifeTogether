@@ -1,6 +1,7 @@
 package com.example.lifetogether.domain.usecase.gallery
 
-import com.example.lifetogether.data.logic.AppErrors
+import com.example.lifetogether.data.logic.AppErrorThrowable
+import com.example.lifetogether.data.logic.appResultOfSuspend
 
 import com.example.lifetogether.domain.result.AppError
 
@@ -19,15 +20,15 @@ class DeleteMediaUseCase @Inject constructor(
         mediaList: List<GalleryMedia>,
         albumIsToBeDeleted: Boolean = false,
     ): Result<Unit, AppError> {
-        if (mediaList.isEmpty()) return Result.Success(Unit)
+        return appResultOfSuspend {
+            if (mediaList.isEmpty()) return@appResultOfSuspend
 
-        return try {
             // Attempt to delete media files
             val urlList = mediaList.mapNotNull { it.mediaUrl }
             val fileDeleteResult = imageRepository.deleteMediaFiles(urlList)
 
             if (fileDeleteResult is Result.Failure) {
-                return Result.Failure(fileDeleteResult.error)
+                throw AppErrorThrowable(fileDeleteResult.error)
             }
 
             // Attempt to delete associated media metadata
@@ -35,20 +36,16 @@ class DeleteMediaUseCase @Inject constructor(
             val dbDeleteResult = galleryRepository.deleteGalleryMedia(idsList)
 
             if (dbDeleteResult is Result.Failure) {
-                return Result.Failure(dbDeleteResult.error)
+                throw AppErrorThrowable(dbDeleteResult.error)
             }
 
             // Update album count (if necessary)
             if (!albumIsToBeDeleted) {
                 val countUpdateResult = galleryRepository.updateAlbumCount(albumId, -mediaList.size)
-                if (countUpdateResult !is Result.Success) {
-                    return countUpdateResult
+                if (countUpdateResult is Result.Failure) {
+                    throw AppErrorThrowable(countUpdateResult.error)
                 }
             }
-            Result.Success(Unit)
-
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 }

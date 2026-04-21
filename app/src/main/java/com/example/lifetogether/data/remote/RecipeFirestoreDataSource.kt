@@ -1,6 +1,7 @@
 package com.example.lifetogether.data.remote
 
 import com.example.lifetogether.data.logic.AppErrors
+import com.example.lifetogether.data.logic.appResultOfSuspend
 
 import com.example.lifetogether.domain.result.AppError
 
@@ -44,49 +45,43 @@ class RecipeFirestoreDataSource @Inject constructor(
     }
 
     suspend fun saveRecipe(recipe: Recipe): Result<String, AppError> {
-        return try {
+        return appResultOfSuspend {
             val documentReference = db.collection(Constants.RECIPES_TABLE).add(recipe).await()
-            Result.Success(documentReference.id)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
+            documentReference.id
         }
     }
 
     suspend fun updateRecipe(recipe: Recipe): Result<Unit, AppError> {
-        return try {
-            val id = recipe.id ?: return Result.Failure(AppErrors.validation("Missing recipe id"))
+        val id = recipe.id ?: return Result.Failure(AppErrors.validation("Missing recipe id"))
+        return appResultOfSuspend {
             db.collection(Constants.RECIPES_TABLE).document(id).set(recipe, SetOptions.merge()).await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
     suspend fun deleteRecipe(recipeId: String): Result<Unit, AppError> {
-        return try {
+        return appResultOfSuspend {
             db.collection(Constants.RECIPES_TABLE).document(recipeId).delete().await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
     suspend fun getRecipeImageUrl(recipeId: String): Result<String, AppError> {
-        return try {
+        val docResult = appResultOfSuspend {
             val doc = db.collection(Constants.RECIPES_TABLE).document(recipeId).get().await()
-            val url = doc.getString("imageUrl")
-            if (url != null) Result.Success(url) else Result.Failure(AppErrors.notFound("Recipe image not found"))
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
+            doc
+        }
+        return when (docResult) {
+            is Result.Success -> {
+                val url = docResult.data.getString("imageUrl")
+                if (url != null) Result.Success(url) else Result.Failure(AppErrors.notFound("Recipe image not found"))
+            }
+
+            is Result.Failure -> docResult
         }
     }
 
     suspend fun saveRecipeImageUrl(recipeId: String, url: String): Result<Unit, AppError> {
-        return try {
+        return appResultOfSuspend {
             db.collection(Constants.RECIPES_TABLE).document(recipeId).update(mapOf("imageUrl" to url)).await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 }

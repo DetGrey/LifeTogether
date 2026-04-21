@@ -1,6 +1,7 @@
 package com.example.lifetogether.domain.usecase.item
 
-import com.example.lifetogether.data.logic.AppErrors
+import com.example.lifetogether.data.logic.AppErrorThrowable
+import com.example.lifetogether.data.logic.appResultOfSuspend
 
 import com.example.lifetogether.domain.result.AppError
 
@@ -17,21 +18,18 @@ class DeleteRoutineListEntriesUseCase @Inject constructor(
     suspend operator fun invoke(
         entries: List<RoutineListEntry>,
     ): Result<Unit, AppError> {
-        if (entries.isEmpty()) return Result.Success(Unit)
+        return appResultOfSuspend {
+            if (entries.isEmpty()) return@appResultOfSuspend
 
-        return try {
             val imageUrls = entries.mapNotNull { it.imageUrl }
             val imageDeleteResult = imageRepository.deleteMediaFiles(imageUrls)
-            if (imageDeleteResult is Result.Failure) return imageDeleteResult
+            if (imageDeleteResult is Result.Failure) throw AppErrorThrowable(imageDeleteResult.error)
 
             val entryIds = entries.mapNotNull { it.id }
-            if (entryIds.isEmpty()) return Result.Success(Unit)
+            if (entryIds.isEmpty()) return@appResultOfSuspend
 
             val remoteDeleteResult = userListRepository.deleteRoutineListEntries(entryIds)
-            if (remoteDeleteResult is Result.Failure) return remoteDeleteResult
-            remoteDeleteResult
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
+            if (remoteDeleteResult is Result.Failure) throw AppErrorThrowable(remoteDeleteResult.error)
         }
     }
 }

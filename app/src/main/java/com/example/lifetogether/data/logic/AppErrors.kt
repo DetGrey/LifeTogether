@@ -20,6 +20,7 @@ object AppErrors {
     ): AppError {
         val fallbackMessage = messageOverride ?: throwable.message ?: "Unknown error"
         return when (throwable) {
+            is AppErrorThrowable -> throwable.appError
             is FirebaseNetworkException, is IOException -> network(fallbackMessage, source, throwable)
             is FirebaseAuthInvalidUserException, is FirebaseAuthException -> authentication(fallbackMessage, source, throwable)
             is FirebaseFirestoreException -> when (throwable.code) {

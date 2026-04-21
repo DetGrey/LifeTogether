@@ -1,6 +1,6 @@
 package com.example.lifetogether.data.local.source
 
-import com.example.lifetogether.data.logic.AppErrors
+import com.example.lifetogether.data.logic.appResultOf
 
 import com.example.lifetogether.domain.result.AppError
 
@@ -110,11 +110,8 @@ class UserListLocalDataSource @Inject constructor(
     }
 
     fun deleteRoutineListEntries(itemIds: List<String>): Result<Unit, AppError> =
-        try {
+        appResultOf {
             routineListsDao.deleteItems(itemIds)
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
         }
 
     fun observeRoutineImageByteArray(entryId: String) = routineListsDao.getImageByteArray(entryId)

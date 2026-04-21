@@ -1,6 +1,6 @@
 package com.example.lifetogether.data.local.source
 
-import com.example.lifetogether.data.logic.AppErrors
+import com.example.lifetogether.data.logic.appResultOf
 
 import com.example.lifetogether.domain.result.AppError
 
@@ -30,7 +30,7 @@ class SessionCleanupLocalDataSource @Inject constructor(
     private val guidesDao: GuidesDao,
 ) {
     fun clearSessionTables(): Result<Unit, AppError> {
-        return try {
+        return appResultOf {
             groceryListDao.deleteTable()
             recipesDao.deleteTable()
             userInformationDao.deleteTable()
@@ -46,9 +46,6 @@ class SessionCleanupLocalDataSource @Inject constructor(
             galleryMediaDao.deleteTable()
             albumsDao.deleteTable()
             guidesDao.deleteTable()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 }

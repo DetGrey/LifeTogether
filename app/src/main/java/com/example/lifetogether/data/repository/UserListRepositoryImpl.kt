@@ -1,11 +1,12 @@
 package com.example.lifetogether.data.repository
 
 import com.example.lifetogether.data.logic.AppErrors
+import com.example.lifetogether.data.logic.AppErrorThrowable
+import com.example.lifetogether.data.logic.appResultOf
 
 import com.example.lifetogether.domain.result.AppError
 
 import com.example.lifetogether.data.local.source.UserListLocalDataSource
-import com.example.lifetogether.data.local.source.query.ListQueryType
 import com.example.lifetogether.data.model.RoutineListEntryEntity
 import com.example.lifetogether.data.model.UserListEntity
 import com.example.lifetogether.data.remote.UserListFirestoreDataSource
@@ -28,13 +29,10 @@ class UserListRepositoryImpl @Inject constructor(
     override fun observeUserLists(familyId: String): Flow<Result<List<UserList>, AppError>> {
         return userListLocalDataSource.observeUserLists(familyId)
             .map { entities ->
-                try {
-                    val userLists = entities
+                appResultOf {
+                    entities
                         .map { it.toModel() }
                         .sortedBy { it.itemName }
-                    Result.Success(userLists)
-                } catch (e: Exception) {
-                    Result.Failure(AppErrors.fromThrowable(e))
                 }
             }
     }
@@ -91,13 +89,10 @@ class UserListRepositoryImpl @Inject constructor(
     override fun observeRoutineListEntries(familyId: String): Flow<Result<List<RoutineListEntry>, AppError>> {
         return userListLocalDataSource.observeRoutineListEntries(familyId)
             .map { entities ->
-                try {
-                    val routineListEntry = entities
+                appResultOf {
+                    entities
                         .map { it.toModel() }
                         .sortedBy { it.itemName }
-                    Result.Success(routineListEntry)
-                } catch (e: Exception) {
-                    Result.Failure(AppErrors.fromThrowable(e))
                 }
             }
     }
@@ -134,27 +129,14 @@ class UserListRepositoryImpl @Inject constructor(
 
     override fun observeRoutineListEntry(id: String): Flow<Result<RoutineListEntry, AppError>> {
         return userListLocalDataSource.observeRoutineListEntry(id)
-            .map { entity ->
-                try {
-                    val routineListEntry = entity.toModel()
-                    Result.Success(routineListEntry)
-                } catch (e: Exception) {
-                    Result.Failure(AppErrors.fromThrowable(e))
-                }
-            }
+            .map { entity -> appResultOf { entity.toModel() } }
     }
 
     override fun observeRoutineImageByteArray(entryId: String): Flow<Result<ByteArray, AppError>> {
         val byteArrayFlow = userListLocalDataSource.observeRoutineImageByteArray(entryId)
         return byteArrayFlow.map { byteArray ->
-            try {
-                if (byteArray != null) {
-                    Result.Success(byteArray)
-                } else {
-                    Result.Failure(AppErrors.storage("No ByteArray found"))
-                }
-            } catch (e: Exception) {
-                Result.Failure(AppErrors.fromThrowable(e))
+            appResultOf {
+                byteArray ?: throw AppErrorThrowable(AppErrors.storage("No ByteArray found"))
             }
         }
     }

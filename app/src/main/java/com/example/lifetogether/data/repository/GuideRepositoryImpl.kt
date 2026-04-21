@@ -1,6 +1,7 @@
 package com.example.lifetogether.data.repository
 
 import com.example.lifetogether.data.logic.AppErrors
+import com.example.lifetogether.data.logic.appResultOf
 
 import com.example.lifetogether.domain.result.AppError
 
@@ -13,7 +14,6 @@ import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.guides.GuideProgressState
 import com.example.lifetogether.domain.repository.GuideRepository
-import com.example.lifetogether.util.Constants
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
@@ -37,13 +37,10 @@ class GuideRepositoryImpl @Inject constructor(
     override fun observeGuides(familyId: String, uid: String): Flow<Result<List<Guide>, AppError>> {
         return guideLocalDataSource.getItems(familyId, uid)
             .map { entities ->
-                try {
-                    val guides = entities
+                appResultOf {
+                    entities
                         .map { it.toModel() }
                         .sortedBy { it.itemName }
-                    Result.Success(guides)
-                } catch (e: Exception) {
-                    Result.Failure(AppErrors.fromThrowable(e))
                 }
             }
     }
@@ -145,13 +142,7 @@ class GuideRepositoryImpl @Inject constructor(
 
     override fun observeGuideById(familyId: String, id: String, uid: String): Flow<Result<Guide, AppError>> {
         return guideLocalDataSource.getItemById(familyId, id, uid)
-            .map { entity ->
-                try {
-                    Result.Success(entity.toModel())
-                } catch (e: Exception) {
-                    Result.Failure(AppErrors.fromThrowable(e))
-                }
-            }
+            .map { entity -> appResultOf { entity.toModel() } }
     }
 
     override suspend fun saveGuide(guide: Guide): Result<String, AppError> {

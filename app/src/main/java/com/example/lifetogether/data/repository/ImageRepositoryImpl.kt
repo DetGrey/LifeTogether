@@ -1,6 +1,8 @@
 package com.example.lifetogether.data.repository
 
 import com.example.lifetogether.data.logic.AppErrors
+import com.example.lifetogether.data.logic.AppErrorThrowable
+import com.example.lifetogether.data.logic.appResultOf
 
 import com.example.lifetogether.domain.result.AppError
 
@@ -51,14 +53,8 @@ class ImageRepositoryImpl @Inject constructor(
             is ImageType.GalleryMedia -> flowOf(null)
         }
         return byteArrayFlow.map { byteArray ->
-            try {
-                if (byteArray != null) {
-                    Result.Success(byteArray)
-                } else {
-                    Result.Failure(AppErrors.storage("No ByteArray found"))
-                }
-            } catch (e: Exception) {
-                Result.Failure(AppErrors.fromThrowable(e))
+            appResultOf {
+                byteArray ?: throw AppErrorThrowable(AppErrors.storage("No ByteArray found"))
             }
         }
     }

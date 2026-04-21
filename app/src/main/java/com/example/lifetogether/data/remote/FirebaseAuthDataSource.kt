@@ -1,6 +1,7 @@
 package com.example.lifetogether.data.remote
 
 import com.example.lifetogether.data.logic.AppErrors
+import com.example.lifetogether.data.logic.appResultOfSuspend
 
 import com.example.lifetogether.domain.result.AppError
 
@@ -23,19 +24,14 @@ class FirebaseAuthDataSource@Inject constructor(
         user: User,
     ): Result<UserInformation, AppError> {
         println("FirebaseAuthDataSource login()")
-        try {
+        return appResultOfSuspend {
             val loginResult = Firebase.auth.signInWithEmailAndPassword(user.email, user.password).await()
             val firebaseUser = loginResult.user
-            return if (firebaseUser != null) {
-                Result.Success(
-                    UserInformation(uid = firebaseUser.uid),
-                )
+            if (firebaseUser != null) {
+                UserInformation(uid = firebaseUser.uid)
             } else {
-                Result.Failure(AppErrors.authentication("Authentication failed"))
+                throw IllegalStateException("Authentication failed")
             }
-        } catch (e: Exception) {
-            println("FirebaseAuthDataSource login() error: ${e.message}")
-            return Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -44,19 +40,16 @@ class FirebaseAuthDataSource@Inject constructor(
         userInformation: UserInformation,
     ): Result<UserInformation, AppError> {
         println("FirebaseAuthDataSource signUp()")
-        try {
+        return appResultOfSuspend {
             val signupResult = Firebase.auth.createUserWithEmailAndPassword(user.email, user.password).await()
             val firebaseUser = signupResult.user
             println("signupResult: $signupResult")
             println("firebaseUser: $firebaseUser")
             if (firebaseUser != null) {
-                val updatedUserInformation = userInformation.copy(uid = firebaseUser.uid)
-                return Result.Success(updatedUserInformation)
+                userInformation.copy(uid = firebaseUser.uid)
             } else {
-                return Result.Failure(AppErrors.authentication("Authentication failed"))
+                throw IllegalStateException("Authentication failed")
             }
-        } catch (e: Exception) {
-            return Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -83,15 +76,12 @@ class FirebaseAuthDataSource@Inject constructor(
         uid: String,
         familyId: String?,
     ): Result<Unit, AppError> {
-        try {
+        return appResultOfSuspend {
             FirebaseAuth.getInstance().signOut()
             println("datasource logout result: ${FirebaseAuth.getInstance().currentUser}")
             if (familyId != null) {
                 familyFirestoreDataSource.removeDeviceToken(uid, familyId)
             }
-            return Result.Success(Unit)
-        } catch (e: Exception) {
-            return Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 }

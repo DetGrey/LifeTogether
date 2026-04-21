@@ -1,6 +1,6 @@
 package com.example.lifetogether.data.repository
 
-import com.example.lifetogether.data.logic.AppErrors
+import com.example.lifetogether.data.logic.appResultOf
 
 import com.example.lifetogether.domain.result.AppError
 
@@ -19,17 +19,13 @@ class CategoryRepositoryImpl @Inject constructor(
 ): CategoryRepository {
     override fun getCategories(): Flow<Result<List<Category>, AppError>> {
         return categoryLocalDataSource.getCategories().map { list ->
-            try {
-                Result.Success(
-                    list.map { category ->
-                        Category(
-                            emoji = category.emoji,
-                            name = category.name,
-                        )
-                    },
-                )
-            } catch (e: Exception) {
-                Result.Failure(AppErrors.fromThrowable(e))
+            appResultOf {
+                list.map { category ->
+                    Category(
+                        emoji = category.emoji,
+                        name = category.name,
+                    )
+                }
             }
         }
     }
@@ -37,11 +33,8 @@ class CategoryRepositoryImpl @Inject constructor(
     override fun syncCategoriesFromRemote(): Flow<Result<Unit, AppError>> {
         return groceryFirestoreDataSource.categoriesSnapshotListener().map { result ->
             when (result) {
-                is Result.Success -> runCatching {
+                is Result.Success -> appResultOf {
                     categoryLocalDataSource.updateCategories(result.data)
-                    Result.Success(Unit)
-                }.getOrElse { error ->
-                    Result.Failure(AppErrors.fromThrowable(error))
                 }
                 is Result.Failure -> Result.Failure(result.error)
             }

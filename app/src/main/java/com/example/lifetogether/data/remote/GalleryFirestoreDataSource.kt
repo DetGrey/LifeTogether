@@ -1,6 +1,7 @@
 package com.example.lifetogether.data.remote
 
 import com.example.lifetogether.data.logic.AppErrors
+import com.example.lifetogether.data.logic.appResultOfSuspend
 
 import com.example.lifetogether.domain.result.AppError
 
@@ -78,56 +79,42 @@ class GalleryFirestoreDataSource @Inject constructor(
     }
 
     suspend fun saveAlbum(album: Album): Result<String, AppError> {
-        return try {
+        return appResultOfSuspend {
             val doc = db.collection(Constants.ALBUMS_TABLE).add(album).await()
-            Result.Success(doc.id)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
+            doc.id
         }
     }
 
     suspend fun updateAlbum(album: Album): Result<Unit, AppError> {
-        return try {
-            val id = album.id ?: return Result.Failure(AppErrors.validation("Missing album id"))
+        val id = album.id ?: return Result.Failure(AppErrors.validation("Missing album id"))
+        return appResultOfSuspend {
             db.collection(Constants.ALBUMS_TABLE).document(id).set(album, SetOptions.merge()).await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
     suspend fun deleteAlbum(albumId: String): Result<Unit, AppError> {
-        return try {
+        return appResultOfSuspend {
             db.collection(Constants.ALBUMS_TABLE).document(albumId).delete().await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
     suspend fun deleteGalleryMedia(mediaIds: List<String>): Result<Unit, AppError> {
-        return try {
+        return appResultOfSuspend {
             val batch = db.batch()
             mediaIds.forEach { id -> batch.delete(db.collection(Constants.GALLERY_MEDIA_TABLE).document(id)) }
             batch.commit().await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
     suspend fun updateAlbumCount(albumId: String, increment: Int): Result<Unit, AppError> {
-        return try {
+        return appResultOfSuspend {
             db.collection(Constants.ALBUMS_TABLE).document(albumId)
                 .update("count", FieldValue.increment(increment.toDouble())).await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
     suspend fun moveMediaToAlbum(mediaIdList: Set<String>, newAlbumId: String, oldAlbumId: String): Result<Unit, AppError> {
-        return try {
+        return appResultOfSuspend {
             val batch = db.batch()
             mediaIdList.forEach { id ->
                 batch.update(db.collection(Constants.GALLERY_MEDIA_TABLE).document(id), "albumId", newAlbumId)
@@ -135,14 +122,11 @@ class GalleryFirestoreDataSource @Inject constructor(
             batch.update(db.collection(Constants.ALBUMS_TABLE).document(newAlbumId), "count", FieldValue.increment(mediaIdList.size.toDouble()))
             batch.update(db.collection(Constants.ALBUMS_TABLE).document(oldAlbumId), "count", FieldValue.increment(-mediaIdList.size.toDouble()))
             batch.commit().await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
     suspend fun saveGalleryMediaMetaData(galleryMedia: List<GalleryMedia>): Result<Unit, AppError> {
-        return try {
+        return appResultOfSuspend {
             val batch = db.batch()
             val collectionRef = db.collection(Constants.GALLERY_MEDIA_TABLE)
             galleryMedia.forEach { media ->
@@ -150,9 +134,6 @@ class GalleryFirestoreDataSource @Inject constructor(
                 batch.set(docRef, media)
             }
             batch.commit().await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 }

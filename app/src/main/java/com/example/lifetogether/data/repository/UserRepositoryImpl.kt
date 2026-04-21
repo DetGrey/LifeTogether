@@ -1,6 +1,9 @@
 package com.example.lifetogether.data.repository
 
 import com.example.lifetogether.data.logic.AppErrors
+import com.example.lifetogether.data.logic.AppErrorThrowable
+import com.example.lifetogether.data.logic.appResultOf
+import com.example.lifetogether.data.logic.appResultOfSuspend
 
 import com.example.lifetogether.domain.result.AppError
 
@@ -34,17 +37,13 @@ class UserRepositoryImpl @Inject constructor(
     fun getFamilyInformation(familyId: String): Flow<Result<FamilyInformation, AppError>> {
         // Get family information (without members)
         val familyInformationFlow: Flow<Result<FamilyInformation, AppError>> = userLocalDataSource.getFamilyInformation(familyId).map { user ->
-            try {
+            appResultOf {
                 println("LocalUserRepositoryImpl getFamilyInformation user: $user")
 
                 // Initial FamilyInformation without members
-                Result.Success(
-                    FamilyInformation(
-                        familyId = user.familyId,
-                    ),
+                FamilyInformation(
+                    familyId = user.familyId,
                 )
-            } catch (e: Exception) {
-                Result.Failure(AppErrors.fromThrowable(e))
             }
         }
 
@@ -97,25 +96,23 @@ class UserRepositoryImpl @Inject constructor(
         userInformation: UserInformation,
     ): Result<UserInformation, AppError> {
         println("RemoteUserRepositoryImpl signUp()")
-        try {
+        return appResultOfSuspend {
             val signupResult = firebaseAuthDataSource.signUp(user, userInformation)
             println("RemoteUserRepositoryImpl signupResult: $signupResult")
-            return if (signupResult is Result.Success) {
-                when (val uploadResult = userFirestoreDataSource.uploadUserInformation(signupResult.data)) {
-                    is Result.Success -> {
-                        println("RemoteUserRepositoryImpl: uploadResult $uploadResult")
-                        signupResult
-                    }
-                    is Result.Failure -> {
-                        println("RemoteUserRepositoryImpl: uploadResult $uploadResult")
-                        Result.Failure(uploadResult.error)
-                    }
-                }
-            } else {
-                signupResult
+            val signedUpUser = when (signupResult) {
+                is Result.Success -> signupResult.data
+                is Result.Failure -> throw AppErrorThrowable(signupResult.error)
             }
-        } catch (e: Exception) {
-            return Result.Failure(AppErrors.fromThrowable(e))
+            when (val uploadResult = userFirestoreDataSource.uploadUserInformation(signedUpUser)) {
+                is Result.Success -> {
+                    println("RemoteUserRepositoryImpl: uploadResult $uploadResult")
+                    signedUpUser
+                }
+                is Result.Failure -> {
+                    println("RemoteUserRepositoryImpl: uploadResult $uploadResult")
+                    throw AppErrorThrowable(uploadResult.error)
+                }
+            }
         }
     }
 
@@ -261,11 +258,8 @@ class UserRepositoryImpl @Inject constructor(
         uid: String,
         familyId: String,
     ): Result<Unit, AppError> {
-        return runCatching {
+        return appResultOfSuspend {
             familyFirestoreDataSource.storeFcmToken(uid, familyId)
-            Result.Success(Unit)
-        }.getOrElse { error ->
-            Result.Failure(AppErrors.fromThrowable(error))
         }
     }
 

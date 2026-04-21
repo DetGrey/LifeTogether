@@ -1,6 +1,8 @@
 package com.example.lifetogether.data.repository
 
 import com.example.lifetogether.data.logic.AppErrors
+import com.example.lifetogether.data.logic.AppErrorThrowable
+import com.example.lifetogether.data.logic.appResultOf
 
 import com.example.lifetogether.domain.result.AppError
 
@@ -22,7 +24,6 @@ import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.domain.repository.GalleryRepository
 import com.example.lifetogether.domain.datasource.StorageDataSource
-import com.example.lifetogether.util.Constants
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -65,11 +66,7 @@ class GalleryRepositoryImpl @Inject constructor(
 
     override fun observeAlbums(familyId: String): Flow<Result<List<Album>, AppError>> {
         return albumLocalDataSource.observeAlbums(familyId).map { entities ->
-            try {
-                Result.Success(entities.map { it.toModel() }.sortedBy { it.itemName })
-            } catch (e: Exception) {
-                Result.Failure(AppErrors.fromThrowable(e))
-            }
+            appResultOf { entities.map { it.toModel() }.sortedBy { it.itemName } }
         }
     }
 
@@ -152,22 +149,16 @@ class GalleryRepositoryImpl @Inject constructor(
 
     override fun observeAlbumById(familyId: String, albumId: String): Flow<Result<Album, AppError>> {
         return albumLocalDataSource.observeAlbumById(familyId, albumId).map { entity ->
-            try {
-                if (entity != null) {
-                    Result.Success(entity.toModel())
-                } else {
-                    Result.Failure(AppErrors.notFound("Album not found"))
-                }
-            } catch (e: Exception) {
-                Result.Failure(AppErrors.fromThrowable(e))
+            appResultOf {
+                entity?.toModel() ?: throw AppErrorThrowable(AppErrors.notFound("Album not found"))
             }
         }
     }
 
     override fun observeAlbumMedia(familyId: String, albumId: String): Flow<Result<List<GalleryMedia>, AppError>> {
         return albumLocalDataSource.getAlbumMedia(familyId, albumId).map { entities ->
-            try {
-                val items: List<GalleryMedia> = entities.map { wrapper ->
+            appResultOf {
+                entities.map { wrapper ->
                     val entity = wrapper.entity
                     when (entity.mediaType) {
                         MediaType.IMAGE -> GalleryImage(
@@ -195,9 +186,6 @@ class GalleryRepositoryImpl @Inject constructor(
                         )
                     }
                 }
-                Result.Success(items)
-            } catch (e: Exception) {
-                Result.Failure(AppErrors.fromThrowable(e))
             }
         }
     }
@@ -271,7 +259,7 @@ class GalleryRepositoryImpl @Inject constructor(
                                                 }
 
                                                 if (downloadResult is Result.Success) {
-                                                    Pair(galleryMedia, (downloadResult as Result.Success<File>).data)
+                                                    Pair(galleryMedia, downloadResult.data)
                                                 } else {
                                                     roundFailedItems.add(galleryMedia.id ?: "unknown")
                                                     if (downloadResult is Result.Failure) {

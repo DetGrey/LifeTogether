@@ -1,6 +1,7 @@
 package com.example.lifetogether.data.remote
 
 import com.example.lifetogether.data.logic.AppErrors
+import com.example.lifetogether.data.logic.appResultOfSuspend
 
 import com.example.lifetogether.domain.result.AppError
 
@@ -43,20 +44,15 @@ class TipTrackerFirestoreDataSource @Inject constructor(
     }
 
     suspend fun saveTip(tip: TipItem): Result<String, AppError> {
-        return try {
+        return appResultOfSuspend {
             val doc = db.collection(Constants.TIP_TRACKER_TABLE).add(tip).await()
-            Result.Success(doc.id)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
+            doc.id
         }
     }
 
     suspend fun deleteTip(tipId: String): Result<Unit, AppError> {
-        return try {
+        return appResultOfSuspend {
             db.collection(Constants.TIP_TRACKER_TABLE).document(tipId).delete().await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 }

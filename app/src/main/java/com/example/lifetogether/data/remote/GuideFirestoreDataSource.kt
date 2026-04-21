@@ -1,6 +1,7 @@
 package com.example.lifetogether.data.remote
 
 import com.example.lifetogether.data.logic.AppErrors
+import com.example.lifetogether.data.logic.appResultOfSuspend
 
 import com.example.lifetogether.domain.result.AppError
 
@@ -98,50 +99,39 @@ class GuideFirestoreDataSource @Inject constructor(
     }
 
     suspend fun saveGuide(guide: Guide): Result<String, AppError> {
-        return try {
+        return appResultOfSuspend {
             val upload = GuideParser.guideToFirestoreMap(guide)
             val doc = db.collection(Constants.GUIDES_TABLE).add(upload).await()
-            Result.Success(doc.id)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
+            doc.id
         }
     }
 
     suspend fun updateGuide(guide: Guide): Result<Unit, AppError> {
-        return try {
-            val id = guide.id ?: return Result.Failure(AppErrors.validation("Missing guide id"))
+        val id = guide.id ?: return Result.Failure(AppErrors.validation("Missing guide id"))
+        return appResultOfSuspend {
             val upload = GuideParser.guideToFirestoreMap(guide)
             db.collection(Constants.GUIDES_TABLE).document(id).set(upload, SetOptions.merge()).await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
     suspend fun deleteGuide(guideId: String): Result<Unit, AppError> {
-        return try {
+        return appResultOfSuspend {
             deleteGuideWithRelatedProgress(guideId)
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
     suspend fun updateGuideProgress(progress: GuideProgressState): Result<Unit, AppError> {
-        return try {
+        return appResultOfSuspend {
             db.collection(Constants.GUIDE_PROGRESS_TABLE)
                 .document(progress.id)
                 .set(GuideParser.guideProgressToFirestoreMap(progress), SetOptions.merge())
                 .await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
     private suspend fun deleteGuideWithRelatedProgress(guideId: String) {
         db.collection(Constants.GUIDES_TABLE).document(guideId).delete().await()
-        runCatching {
+        appResultOfSuspend {
             val progressRefs = db.collection(Constants.GUIDE_PROGRESS_TABLE)
                 .whereEqualTo("guideId", guideId)
                 .get()
@@ -153,8 +143,6 @@ class GuideFirestoreDataSource @Inject constructor(
                 chunk.forEach { ref -> batch.delete(ref) }
                 batch.commit().await()
             }
-        }.onFailure {
-            Log.w(TAG, "Guide deleted but related guide_progress cleanup failed for guideId=$guideId", it)
         }
     }
 }

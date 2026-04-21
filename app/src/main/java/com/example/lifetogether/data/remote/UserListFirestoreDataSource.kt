@@ -5,6 +5,8 @@ import com.example.lifetogether.data.logic.AppErrors
 import com.example.lifetogether.domain.result.AppError
 
 import android.util.Log
+import com.example.lifetogether.data.logic.AppErrorThrowable
+import com.example.lifetogether.data.logic.appResultOfSuspend
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.lists.ListType
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
@@ -100,66 +102,54 @@ class UserListFirestoreDataSource @Inject constructor(
     }
 
     suspend fun saveUserList(userList: UserList): Result<String, AppError> {
-        return try {
+        return appResultOfSuspend {
             val doc = db.collection(Constants.USER_LISTS_TABLE).add(userListToFirestoreMap(userList)).await()
-            Result.Success(doc.id)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
+            doc.id
         }
     }
 
     suspend fun saveRoutineListEntry(entry: RoutineListEntry): Result<String, AppError> {
-        return try {
-            val doc = db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE).add(listEntryToFirestoreMap(entry)).await()
-            Result.Success(doc.id)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
+        return appResultOfSuspend {
+            val doc = db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE)
+                .add(listEntryToFirestoreMap(entry)).await()
+            doc.id
         }
     }
 
     suspend fun updateRoutineListEntry(entry: RoutineListEntry): Result<Unit, AppError> {
         val id = entry.id ?: return Result.Failure(AppErrors.validation("Missing routine list entry id"))
-        return try {
+        return appResultOfSuspend {
             db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE).document(id)
                 .set(listEntryToFirestoreMap(entry), SetOptions.merge())
                 .await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
     suspend fun deleteRoutineListEntries(itemIds: List<String>): Result<Unit, AppError> {
-        return try {
+        return appResultOfSuspend {
             val batch = db.batch()
             itemIds.forEach { id ->
                 batch.delete(db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE).document(id))
             }
             batch.commit().await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
-    suspend fun getRoutineListEntryImageUrl(entryId: String): Result<String, AppError> {
-        return try {
-            val doc = db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE).document(entryId).get().await()
-            val url = doc.getString("imageUrl")
-            if (url != null) Result.Success(url) else Result.Failure(AppErrors.notFound("List entry image not found"))
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
-        }
+    suspend fun getRoutineListEntryImageUrl(entryId: String): Result<String, AppError> = appResultOfSuspend {
+        val doc = db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE)
+            .document(entryId)
+            .get()
+            .await()
+
+        val url = doc.getString("imageUrl")
+        url ?: throw AppErrorThrowable(AppErrors.notFound("List entry image not found"))
     }
 
     suspend fun saveRoutineListEntryImageUrl(entryId: String, url: String): Result<Unit, AppError> {
-        return try {
+        return appResultOfSuspend {
             db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE).document(entryId)
                 .update(mapOf("imageUrl" to url))
                 .await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 

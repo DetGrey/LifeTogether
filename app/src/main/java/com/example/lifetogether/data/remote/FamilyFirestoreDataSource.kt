@@ -5,6 +5,8 @@ import com.example.lifetogether.data.logic.AppErrors
 import com.example.lifetogether.domain.result.AppError
 
 import android.util.Log
+import com.example.lifetogether.data.logic.AppErrorThrowable
+import com.example.lifetogether.data.logic.appResultOfSuspend
 import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.model.family.FamilyMember
 import com.example.lifetogether.domain.result.Result
@@ -49,7 +51,7 @@ class FamilyFirestoreDataSource @Inject constructor(
     }
 
     suspend fun joinFamily(familyId: String, uid: String, name: String): Result<Unit, AppError> {
-        return try {
+        return appResultOfSuspend {
             val doc = db.collection(Constants.FAMILIES_TABLE).document(familyId).get().await()
             @Suppress("UNCHECKED_CAST")
             val members = doc.data?.get("members") as? List<Map<String, String>>
@@ -57,36 +59,30 @@ class FamilyFirestoreDataSource @Inject constructor(
             updatedMembers.add(mapOf("uid" to uid, "name" to name))
             db.collection(Constants.FAMILIES_TABLE).document(familyId).update("members", updatedMembers).await()
             Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
     suspend fun createNewFamily(uid: String, name: String): Result<String, AppError> {
-        return try {
+        return appResultOfSuspend {
             val map = mapOf("members" to listOf(mapOf("uid" to uid, "name" to name)))
             val documentReference = db.collection(Constants.FAMILIES_TABLE).add(map).await()
-            Result.Success(documentReference.id)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
+            documentReference.id
         }
     }
 
     suspend fun leaveFamily(familyId: String, uid: String): Result<Unit, AppError> {
-        return try {
+        return appResultOfSuspend {
             val doc = db.collection(Constants.FAMILIES_TABLE).document(familyId).get().await()
             @Suppress("UNCHECKED_CAST")
             val members = doc.data?.get("members") as? List<Map<String, String>>
             val updatedMembers = members?.filterNot { it["uid"] == uid }?.toMutableList() ?: mutableListOf()
             db.collection(Constants.FAMILIES_TABLE).document(familyId).update("members", updatedMembers).await()
             Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
     suspend fun deleteFamily(familyId: String): Result<Unit, AppError> {
-        return try {
+        return appResultOfSuspend {
             db.collection(Constants.FAMILIES_TABLE).document(familyId).delete().await()
             val usersRef = db.collection(Constants.USER_TABLE).whereEqualTo("familyId", familyId).get().await()
             val failures = mutableListOf<AppError>()
@@ -95,29 +91,25 @@ class FamilyFirestoreDataSource @Inject constructor(
                 val result = userFirestoreDataSource.updateFamilyId(uid, null)
                 if (result is Result.Failure) failures.add(result.error)
             }
-            if (failures.isNotEmpty()) Result.Failure(AppErrors.conflict("Could not remove familyId from all users: $failures"))
-            else Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
+            if (failures.isNotEmpty()) {
+                throw AppErrorThrowable(
+                    AppErrors.conflict("Could not remove familyId from all users: $failures")
+                )
+            }
         }
     }
 
-    suspend fun getFamilyImageUrl(familyId: String): Result<String, AppError> {
-        return try {
-            val doc = db.collection(Constants.FAMILIES_TABLE).document(familyId).get().await()
-            val url = doc.getString("imageUrl")
-            if (url != null) Result.Success(url) else Result.Failure(AppErrors.notFound("Family image not found"))
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
-        }
+    suspend fun getFamilyImageUrl(familyId: String): Result<String, AppError> = appResultOfSuspend {
+        val doc = db.collection(Constants.FAMILIES_TABLE).document(familyId).get().await()
+        val url = doc.getString("imageUrl")
+
+        url ?: throw AppErrorThrowable(AppErrors.notFound("Family image not found"))
     }
 
     suspend fun saveFamilyImageUrl(familyId: String, url: String): Result<Unit, AppError> {
-        return try {
-            db.collection(Constants.FAMILIES_TABLE).document(familyId).update(mapOf("imageUrl" to url)).await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
+        return appResultOfSuspend {
+            db.collection(Constants.FAMILIES_TABLE).document(familyId)
+                .update(mapOf("imageUrl" to url)).await()
         }
     }
 
@@ -154,10 +146,10 @@ class FamilyFirestoreDataSource @Inject constructor(
     }
 
     suspend fun removeDeviceToken(uid: String, familyId: String): Result<Unit, AppError> {
-        return try {
+        return appResultOfSuspend {
             val familyDocRef = db.collection(Constants.FAMILIES_TABLE).document(familyId)
             val document = familyDocRef.get().await()
-            if (!document.exists()) return Result.Failure(AppErrors.notFound("Family document not found"))
+            if (!document.exists()) throw AppErrorThrowable(AppErrors.notFound("Family document not found"))
 
             @Suppress("UNCHECKED_CAST")
             val members = document.get("members") as? List<Map<String, Any>> ?: emptyList()
@@ -165,9 +157,6 @@ class FamilyFirestoreDataSource @Inject constructor(
                 if (member["uid"] == uid) member.toMutableMap().apply { remove("fcmToken") } else member
             }
             familyDocRef.update("members", updatedMembers).await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 

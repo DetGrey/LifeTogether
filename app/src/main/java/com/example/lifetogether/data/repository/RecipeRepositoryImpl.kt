@@ -1,6 +1,8 @@
 package com.example.lifetogether.data.repository
 
 import com.example.lifetogether.data.logic.AppErrors
+import com.example.lifetogether.data.logic.AppErrorThrowable
+import com.example.lifetogether.data.logic.appResultOf
 
 import com.example.lifetogether.domain.result.AppError
 
@@ -11,7 +13,6 @@ import com.example.lifetogether.domain.datasource.StorageDataSource
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.repository.RecipeRepository
-import com.example.lifetogether.util.Constants
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -24,13 +25,7 @@ class RecipeRepositoryImpl @Inject constructor(
 
     override fun observeRecipes(familyId: String): Flow<Result<List<Recipe>, AppError>> {
         return recipeLocalDataSource.observeRecipes(familyId)
-            .map { entities ->
-                try {
-                    Result.Success(entities.map { it.toModel() }.sortedBy { it.itemName })
-                } catch (e: Exception) {
-                    Result.Failure(AppErrors.fromThrowable(e))
-                }
-            }
+            .map { entities -> appResultOf { entities.map { it.toModel() }.sortedBy { it.itemName } } }
     }
 
     override fun syncRecipesFromRemote(familyId: String): Flow<Result<Unit, AppError>> {
@@ -68,14 +63,8 @@ class RecipeRepositoryImpl @Inject constructor(
     override fun observeRecipeById(familyId: String, id: String): Flow<Result<Recipe, AppError>> {
         return recipeLocalDataSource.observeRecipeById(familyId, id)
             .map { entity ->
-                try {
-                    if (entity != null) {
-                        Result.Success(entity.toModel())
-                    } else {
-                        Result.Failure(AppErrors.notFound("Recipe not found"))
-                    }
-                } catch (e: Exception) {
-                    Result.Failure(AppErrors.fromThrowable(e))
+                appResultOf {
+                    entity?.toModel() ?: throw AppErrorThrowable(AppErrors.notFound("Recipe not found"))
                 }
             }
     }

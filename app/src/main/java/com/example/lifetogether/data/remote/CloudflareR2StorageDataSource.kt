@@ -33,6 +33,8 @@ import java.io.File
 import java.util.UUID
 import javax.inject.Inject
 import androidx.core.net.toUri
+import com.example.lifetogether.data.logic.AppErrorThrowable
+import com.example.lifetogether.data.logic.appResultOfSuspend
 
 class CloudflareR2StorageDataSource @Inject constructor(
     private val application: Application,
@@ -75,12 +77,10 @@ class CloudflareR2StorageDataSource @Inject constructor(
         imageType: ImageType,
         context: Context,
     ): Result<String, AppError> {
-        return try {
+        return appResultOfSuspend {
             // Process image (rotate, resize, compress)
             val processedImage = imageProcessor.processImage(uri, imageType, context)
-                ?: return Result.Failure(AppErrors.validation("Failed to process image")).also {
-                    Log.e(TAG, "uploadPhoto processing failed")
-                }
+                ?: throw AppErrorThrowable(AppErrors.validation("Failed to process image"))
 
             // Create object key (path) in R2
             val objectKey = "${processedImage.path}/${UUID.randomUUID()}-${System.currentTimeMillis()}${processedImage.extension}"
@@ -101,15 +101,13 @@ class CloudflareR2StorageDataSource @Inject constructor(
 
             // Return the R2.dev public URL
             val downloadUrl = "$PUBLIC_URL_BASE/$objectKey"
-            Result.Success(downloadUrl)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error uploading photo", e)
-            Result.Failure(AppErrors.fromThrowable(e))
+            downloadUrl
         }
     }
 
     override suspend fun fetchImageByteArray(url: String): Result<ByteArray, AppError> {
-        return try {
+        //todo does it seem smart to send empty byteArray if none?
+        return appResultOfSuspend {
             val objectKey = extractObjectKeyFromUrl(url)
 
             val getObjectRequest = GetObjectRequest {
@@ -119,15 +117,12 @@ class CloudflareR2StorageDataSource @Inject constructor(
             val response = s3Client.getObject(getObjectRequest) { resp ->
                 resp.body?.toByteArray()
             }
-            Result.Success(response ?: byteArrayOf())
-        } catch (e: Exception) {
-            Log.e(TAG, "Error fetching image", e)
-            Result.Failure(AppErrors.fromThrowable(e))
+            response ?: byteArrayOf()
         }
     }
 
     override suspend fun deleteImage(url: String): Result<Unit, AppError> {
-        return try {
+        return appResultOfSuspend {
             val objectKey = extractObjectKeyFromUrl(url)
 
             val deleteObjectRequest = DeleteObjectRequest {
@@ -135,11 +130,6 @@ class CloudflareR2StorageDataSource @Inject constructor(
                 key = objectKey
             }
             s3Client.deleteObject(deleteObjectRequest)
-
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error deleting image", e)
-            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 
@@ -178,7 +168,7 @@ class CloudflareR2StorageDataSource @Inject constructor(
         path: String,
         extension: String,
     ): Result<String, AppError> {
-        return try {
+        return appResultOfSuspend {
             val fileName = "${UUID.randomUUID()}-${System.currentTimeMillis()}$extension"
             val objectKey = "$path/$fileName"
 
@@ -197,11 +187,7 @@ class CloudflareR2StorageDataSource @Inject constructor(
             }
 
             val downloadUrl = "$PUBLIC_URL_BASE/$objectKey"
-            
-            Result.Success(downloadUrl)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error uploading video", e)
-            Result.Failure(AppErrors.fromThrowable(e))
+            downloadUrl
         }
     }
 

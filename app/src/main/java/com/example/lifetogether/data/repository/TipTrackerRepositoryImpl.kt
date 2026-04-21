@@ -1,6 +1,6 @@
 package com.example.lifetogether.data.repository
 
-import com.example.lifetogether.data.logic.AppErrors
+import com.example.lifetogether.data.logic.appResultOf
 
 import com.example.lifetogether.domain.result.AppError
 
@@ -10,7 +10,6 @@ import com.example.lifetogether.data.remote.TipTrackerFirestoreDataSource
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.domain.repository.TipTrackerRepository
-import com.example.lifetogether.util.Constants
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -22,26 +21,19 @@ class TipTrackerRepositoryImpl @Inject constructor(
 
     override fun observeTips(familyId: String): Flow<Result<List<TipItem>, AppError>> {
         return tipTrackerLocalDataSource.observeTips(familyId).map { entities ->
-            try {
-                Result.Success(entities.map { it.toModel() })
-            } catch (e: Exception) {
-                Result.Failure(AppErrors.fromThrowable(e))
-            }
+            appResultOf { entities.map { it.toModel() } }
         }
     }
 
     override fun syncTipsFromRemote(familyId: String): Flow<Result<Unit, AppError>> {
         return tipTrackerFirestoreDataSource.tipTrackerSnapshotListener(familyId).map { result ->
             when (result) {
-                is Result.Success -> runCatching {
+                is Result.Success -> appResultOf {
                     if (result.data.items.isEmpty()) {
                         tipTrackerLocalDataSource.deleteFamilyTipItems(familyId)
                     } else {
                         tipTrackerLocalDataSource.updateTipTracker(result.data.items)
                     }
-                    Result.Success(Unit)
-                }.getOrElse { error ->
-                    Result.Failure(AppErrors.fromThrowable(error))
                 }
 
                 is Result.Failure -> Result.Failure(result.error)
