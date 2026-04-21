@@ -13,7 +13,7 @@ import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 class FirebaseAuthDataSource@Inject constructor(
-    private val firestoreDataSource: FirestoreDataSource,
+    private val familyFirestoreDataSource: FamilyFirestoreDataSource,
 ) {
     suspend fun login(
         user: User,
@@ -83,7 +83,7 @@ class FirebaseAuthDataSource@Inject constructor(
             FirebaseAuth.getInstance().signOut()
             println("datasource logout result: ${FirebaseAuth.getInstance().currentUser}")
             if (familyId != null) {
-                firestoreDataSource.removeDeviceToken(uid, familyId)
+                familyFirestoreDataSource.removeDeviceToken(uid, familyId)
             }
             return Result.Success(Unit)
         } catch (e: Exception) {

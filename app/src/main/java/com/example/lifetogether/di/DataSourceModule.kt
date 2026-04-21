@@ -1,9 +1,12 @@
 package com.example.lifetogether.di
 
 import com.example.lifetogether.data.remote.CloudflareR2StorageDataSource
+import com.example.lifetogether.data.remote.FamilyFirestoreDataSource
 import com.example.lifetogether.data.remote.FirebaseAuthDataSource
-import com.example.lifetogether.data.remote.FirestoreDataSource
 import com.example.lifetogether.domain.datasource.StorageDataSource
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.firestore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -16,13 +19,15 @@ object DataSourceModule {
 
     @Provides
     @Singleton
-    fun provideFirebaseAuthDataSource(firestoreDataSource: FirestoreDataSource): FirebaseAuthDataSource {
-        return FirebaseAuthDataSource(firestoreDataSource)
+    fun provideFirebaseAuthDataSource(
+        familyFirestoreDataSource: FamilyFirestoreDataSource,
+    ): FirebaseAuthDataSource {
+        return FirebaseAuthDataSource(familyFirestoreDataSource)
     }
 
     @Provides
     @Singleton
-    fun provideFirestoreDataSource(): FirestoreDataSource = FirestoreDataSource()
+    fun provideFirebaseFirestore(): FirebaseFirestore = Firebase.firestore
 
     @Provides
     @Singleton

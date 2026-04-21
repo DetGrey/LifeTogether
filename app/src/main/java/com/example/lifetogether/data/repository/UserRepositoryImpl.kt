@@ -2,8 +2,9 @@ package com.example.lifetogether.data.repository
 
 import com.example.lifetogether.data.local.source.SessionCleanupLocalDataSource
 import com.example.lifetogether.data.local.source.UserLocalDataSource
+import com.example.lifetogether.data.remote.FamilyFirestoreDataSource
 import com.example.lifetogether.data.remote.FirebaseAuthDataSource
-import com.example.lifetogether.data.remote.FirestoreDataSource
+import com.example.lifetogether.data.remote.UserFirestoreDataSource
 import com.example.lifetogether.domain.datasource.StorageDataSource
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.User
@@ -21,7 +22,8 @@ class UserRepositoryImpl @Inject constructor(
     private val userLocalDataSource: UserLocalDataSource,
     private val sessionCleanupLocalDataSource: SessionCleanupLocalDataSource,
     private val firebaseAuthDataSource: FirebaseAuthDataSource,
-    private val firestoreDataSource: FirestoreDataSource,
+    private val userFirestoreDataSource: UserFirestoreDataSource,
+    private val familyFirestoreDataSource: FamilyFirestoreDataSource,
     private val storageDataSource: StorageDataSource,
 ) : UserRepository, SessionUserRepository {
 
@@ -95,7 +97,7 @@ class UserRepositoryImpl @Inject constructor(
             val signupResult = firebaseAuthDataSource.signUp(user, userInformation)
             println("RemoteUserRepositoryImpl signupResult: $signupResult")
             return if (signupResult is Result.Success) {
-                when (val uploadResult = firestoreDataSource.uploadUserInformation(signupResult.data)) {
+                when (val uploadResult = userFirestoreDataSource.uploadUserInformation(signupResult.data)) {
                     is Result.Success -> {
                         println("RemoteUserRepositoryImpl: uploadResult $uploadResult")
                         signupResult
@@ -121,11 +123,11 @@ class UserRepositoryImpl @Inject constructor(
     }
 
     override suspend fun fetchUserInformation(uid: String): Result<UserInformation, String> {
-        return firestoreDataSource.fetchUserInformation(uid)
+        return userFirestoreDataSource.fetchUserInformation(uid)
     }
 
     override fun observeUserInformation(uid: String): Flow<Result<UserInformation, String>> {
-        return firestoreDataSource.userInformationSnapshotListener(uid)
+        return userFirestoreDataSource.userInformationSnapshotListener(uid)
     }
 
     override suspend fun changeName(
@@ -133,14 +135,14 @@ class UserRepositoryImpl @Inject constructor(
         familyId: String?,
         newName: String,
     ): Result<Unit, String> {
-        return when (val result = firestoreDataSource.changeName(uid, familyId, newName)) {
+        return when (val result = userFirestoreDataSource.changeName(uid, familyId, newName)) {
             is Result.Success -> Result.Success(Unit)
             is Result.Failure -> Result.Failure(result.error)
         }
     }
 
     override fun syncUserInformationFromRemote(uid: String): Flow<Result<Unit, String>> {
-        return firestoreDataSource.userInformationSnapshotListener(uid).map { result ->
+        return userFirestoreDataSource.userInformationSnapshotListener(uid).map { result ->
             when (result) {
                 is Result.Success -> runCatching {
                     val hasExistingImage = result.data.uid?.let { uidValue ->
@@ -168,7 +170,7 @@ class UserRepositoryImpl @Inject constructor(
     }
 
     fun syncFamilyInformationFromRemote(familyId: String): Flow<Result<Unit, String>> {
-        return firestoreDataSource.familyInformationSnapshotListener(familyId).map { result ->
+        return familyFirestoreDataSource.familyInformationSnapshotListener(familyId).map { result ->
             when (result) {
                 is Result.Success -> runCatching {
                     val hasExistingImage = result.data.familyId?.let { familyIdValue ->
@@ -201,9 +203,9 @@ class UserRepositoryImpl @Inject constructor(
         name: String,
     ): Result<Unit, String> {
         println("RemoteUserRepositoryImpl joinFamily()")
-        when (val result = firestoreDataSource.joinFamily(familyId, uid, name)) {
+        when (val result = familyFirestoreDataSource.joinFamily(familyId, uid, name)) {
             is Result.Success -> {
-                val updateResult = firestoreDataSource.updateFamilyId(uid, familyId)
+                val updateResult = userFirestoreDataSource.updateFamilyId(uid, familyId)
                 return updateResult
             }
             is Result.Failure -> {
@@ -217,9 +219,9 @@ class UserRepositoryImpl @Inject constructor(
         name: String,
     ): Result<Unit, String> {
         println("RemoteUserRepositoryImpl createNewFamily()")
-        when (val result = firestoreDataSource.createNewFamily(uid, name)) {
+        when (val result = familyFirestoreDataSource.createNewFamily(uid, name)) {
             is Result.Success -> {
-                val updateResult = firestoreDataSource.updateFamilyId(uid, result.data)
+                val updateResult = userFirestoreDataSource.updateFamilyId(uid, result.data)
                 return updateResult
             }
             is Result.Failure -> {
@@ -233,9 +235,9 @@ class UserRepositoryImpl @Inject constructor(
         uid: String,
     ): Result<Unit, String> {
         println("RemoteUserRepositoryImpl leaveFamily()")
-        when (val result = firestoreDataSource.leaveFamily(familyId, uid)) {
+        when (val result = familyFirestoreDataSource.leaveFamily(familyId, uid)) {
             is Result.Success -> {
-                val updateResult = firestoreDataSource.updateFamilyId(uid, null)
+                val updateResult = userFirestoreDataSource.updateFamilyId(uid, null)
                 return updateResult
             }
             is Result.Failure -> {
@@ -248,7 +250,7 @@ class UserRepositoryImpl @Inject constructor(
         familyId: String,
     ): Result<Unit, String> {
         println("RemoteUserRepositoryImpl deleteFamily()")
-        return firestoreDataSource.deleteFamily(familyId)
+        return familyFirestoreDataSource.deleteFamily(familyId)
     }
 
     override suspend fun storeFcmToken(
@@ -256,7 +258,7 @@ class UserRepositoryImpl @Inject constructor(
         familyId: String,
     ): Result<Unit, String> {
         return runCatching {
-            firestoreDataSource.storeFcmToken(uid, familyId)
+            familyFirestoreDataSource.storeFcmToken(uid, familyId)
             Result.Success(Unit)
         }.getOrElse { error ->
             Result.Failure(error.message ?: "Failed to store FCM token")
@@ -266,6 +268,6 @@ class UserRepositoryImpl @Inject constructor(
     override suspend fun fetchFcmTokens(
         familyId: String,
     ): List<String>? {
-        return firestoreDataSource.getFcmTokensFromFamily(familyId)
+        return familyFirestoreDataSource.getFcmTokensFromFamily(familyId)
     }
 }
