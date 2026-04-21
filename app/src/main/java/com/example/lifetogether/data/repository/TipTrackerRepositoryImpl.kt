@@ -2,7 +2,7 @@ package com.example.lifetogether.data.repository
 
 import com.example.lifetogether.data.local.source.TipTrackerLocalDataSource
 import com.example.lifetogether.data.model.TipEntity
-import com.example.lifetogether.data.remote.FirestoreDataSource
+import com.example.lifetogether.data.remote.TipTrackerFirestoreDataSource
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.domain.repository.TipTrackerRepository
@@ -13,7 +13,7 @@ import javax.inject.Inject
 
 class TipTrackerRepositoryImpl @Inject constructor(
     private val tipTrackerLocalDataSource: TipTrackerLocalDataSource,
-    private val firestoreDataSource: FirestoreDataSource,
+    private val tipTrackerFirestoreDataSource: TipTrackerFirestoreDataSource,
 ) : TipTrackerRepository {
 
     override fun observeTips(familyId: String): Flow<Result<List<TipItem>, String>> {
@@ -27,7 +27,7 @@ class TipTrackerRepositoryImpl @Inject constructor(
     }
 
     override fun syncTipsFromRemote(familyId: String): Flow<Result<Unit, String>> {
-        return firestoreDataSource.tipTrackerSnapshotListener(familyId).map { result ->
+        return tipTrackerFirestoreDataSource.tipTrackerSnapshotListener(familyId).map { result ->
             when (result) {
                 is Result.Success -> runCatching {
                     if (result.data.items.isEmpty()) {
@@ -46,11 +46,11 @@ class TipTrackerRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveTip(tip: TipItem): Result<String, String> {
-        return firestoreDataSource.saveItem(tip, Constants.TIP_TRACKER_TABLE)
+        return tipTrackerFirestoreDataSource.saveTip(tip)
     }
 
     override suspend fun deleteTip(tipId: String): Result<Unit, String> {
-        return when (val result = firestoreDataSource.deleteItem(tipId, Constants.TIP_TRACKER_TABLE)) {
+        return when (val result = tipTrackerFirestoreDataSource.deleteTip(tipId)) {
             is Result.Success -> Result.Success(Unit)
             is Result.Failure -> Result.Failure(result.error)
         }

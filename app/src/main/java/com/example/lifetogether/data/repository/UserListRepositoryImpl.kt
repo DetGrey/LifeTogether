@@ -4,27 +4,22 @@ import com.example.lifetogether.data.local.source.UserListLocalDataSource
 import com.example.lifetogether.data.local.source.query.ListQueryType
 import com.example.lifetogether.data.model.RoutineListEntryEntity
 import com.example.lifetogether.data.model.UserListEntity
-import com.example.lifetogether.data.remote.FirestoreDataSource
+import com.example.lifetogether.data.remote.UserListFirestoreDataSource
 import com.example.lifetogether.domain.datasource.StorageDataSource
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.repository.UserListRepository
 import com.example.lifetogether.domain.result.Result
-import com.example.lifetogether.util.Constants
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class UserListRepositoryImpl @Inject constructor(
-    private val firestoreDataSource: FirestoreDataSource,
+    private val userListFirestoreDataSource: UserListFirestoreDataSource,
     private val userListLocalDataSource: UserListLocalDataSource,
     private val storageDataSource: StorageDataSource,
 ): UserListRepository {
-    companion object {
-        val userListsType = ListQueryType.UserLists //todo rename to something better
-    }
-
     // USER LIST
     override fun observeUserLists(familyId: String): Flow<Result<List<UserList>, String>> {
         return userListLocalDataSource.observeUserLists(familyId)
@@ -42,8 +37,8 @@ class UserListRepositoryImpl @Inject constructor(
 
     override fun syncUserListsFromRemote(uid: String, familyId: String): Flow<Result<Unit, String>> {
         return combine(
-            firestoreDataSource.familySharedUserListsSnapshotListener(familyId),
-            firestoreDataSource.privateUserListsSnapshotListener(familyId, uid),
+            userListFirestoreDataSource.familySharedUserListsSnapshotListener(familyId),
+            userListFirestoreDataSource.privateUserListsSnapshotListener(familyId, uid),
         ) { sharedResult, privateResult ->
             val shared = when (sharedResult) {
                 is Result.Success -> sharedResult.data.items
@@ -83,7 +78,7 @@ class UserListRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveUserList(userList: UserList): Result<String, String> {
-        return firestoreDataSource.saveItem(userList, userListsType.tableName)
+        return userListFirestoreDataSource.saveUserList(userList)
     }
     
     // ROUTINE ENTRY
@@ -102,7 +97,7 @@ class UserListRepositoryImpl @Inject constructor(
     }
 
     override fun syncRoutineListEntriesFromRemote(familyId: String): Flow<Result<Unit, String>> {
-        return firestoreDataSource.familyRoutineListEntriesSnapshotListener(familyId).map { result ->
+        return userListFirestoreDataSource.familyRoutineListEntriesSnapshotListener(familyId).map { result ->
             when (result) {
                 is Result.Success -> runCatching {
                     if (result.data.items.isEmpty()) {
@@ -159,15 +154,15 @@ class UserListRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveRoutineListEntry(entry: RoutineListEntry): Result<String, String> {
-        return firestoreDataSource.saveItem(entry, Constants.ROUTINE_LIST_ENTRIES_TABLE)
+        return userListFirestoreDataSource.saveRoutineListEntry(entry)
     }
 
     override suspend fun updateRoutineListEntry(entry: RoutineListEntry): Result<Unit, String> {
-        return firestoreDataSource.updateItem(entry, Constants.ROUTINE_LIST_ENTRIES_TABLE)
+        return userListFirestoreDataSource.updateRoutineListEntry(entry)
     }
 
     override suspend fun deleteRoutineListEntries(itemIds: List<String>): Result<Unit, String> {
-        val remoteDelete = firestoreDataSource.deleteItems(Constants.ROUTINE_LIST_ENTRIES_TABLE, itemIds)
+        val remoteDelete = userListFirestoreDataSource.deleteRoutineListEntries(itemIds)
         if (remoteDelete is Result.Failure) return remoteDelete
         return userListLocalDataSource.deleteRoutineListEntries(itemIds)
     }

@@ -1,7 +1,7 @@
 package com.example.lifetogether.data.repository
 
 import com.example.lifetogether.data.local.source.CategoryLocalDataSource
-import com.example.lifetogether.data.remote.FirestoreDataSource
+import com.example.lifetogether.data.remote.GroceryFirestoreDataSource
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.repository.CategoryRepository
 import com.example.lifetogether.domain.result.Result
@@ -11,7 +11,7 @@ import javax.inject.Inject
 
 class CategoryRepositoryImpl @Inject constructor(
     private val categoryLocalDataSource: CategoryLocalDataSource,
-    private val firestoreDataSource: FirestoreDataSource,
+    private val groceryFirestoreDataSource: GroceryFirestoreDataSource,
 ): CategoryRepository {
     override fun getCategories(): Flow<Result<List<Category>, String>> {
         return categoryLocalDataSource.getCategories().map { list ->
@@ -31,7 +31,7 @@ class CategoryRepositoryImpl @Inject constructor(
     }
 
     override fun syncCategoriesFromRemote(): Flow<Result<Unit, String>> {
-        return firestoreDataSource.categoriesSnapshotListener().map { result ->
+        return groceryFirestoreDataSource.categoriesSnapshotListener().map { result ->
             when (result) {
                 is Result.Success -> runCatching {
                     categoryLocalDataSource.updateCategories(result.data)

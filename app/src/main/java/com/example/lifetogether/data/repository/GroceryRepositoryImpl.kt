@@ -3,7 +3,7 @@ package com.example.lifetogether.data.repository
 import com.example.lifetogether.data.local.source.GroceryLocalDataSource
 import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.model.GrocerySuggestionEntity
-import com.example.lifetogether.data.remote.FirestoreDataSource
+import com.example.lifetogether.data.remote.GroceryFirestoreDataSource
 import com.example.lifetogether.domain.model.Item
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
@@ -17,7 +17,7 @@ import kotlin.collections.map
 
 class GroceryRepositoryImpl @Inject constructor(
     private val groceryLocalDataSource: GroceryLocalDataSource,
-    private val firestoreDataSource: FirestoreDataSource,
+    private val groceryFirestoreDataSource: GroceryFirestoreDataSource,
 ): GroceryRepository {
 
     override fun observeGroceryItems(familyId: String): Flow<Result<List<GroceryItem>, String>> {
@@ -35,7 +35,7 @@ class GroceryRepositoryImpl @Inject constructor(
     }
 
     override fun syncGroceryItemsFromRemote(familyId: String): Flow<Result<Unit, String>> {
-        return firestoreDataSource.grocerySnapshotListener(familyId).map { result ->
+        return groceryFirestoreDataSource.grocerySnapshotListener(familyId).map { result ->
             when (result) {
                 is Result.Success -> runCatching {
                     if (result.data.isEmpty()) {
@@ -65,7 +65,7 @@ class GroceryRepositoryImpl @Inject constructor(
     }
 
     override fun syncGrocerySuggestionsFromRemote(): Flow<Result<Unit, String>> {
-        return firestoreDataSource.grocerySuggestionsSnapshotListener().map { result ->
+        return groceryFirestoreDataSource.grocerySuggestionsSnapshotListener().map { result ->
             when (result) {
                 is Result.Success -> runCatching {
                     val entities = result.data.mapNotNull { suggestion ->
@@ -90,16 +90,16 @@ class GroceryRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveItem(item: Item): Result<String, String> {
-        return firestoreDataSource.saveItem(item, Constants.GROCERY_TABLE)
+        return groceryFirestoreDataSource.saveGroceryItem(item)
     }
 
     //todo do not use listName. Maybe use ListQueryType or somthing
     override suspend fun toggleGroceryItemBought(item: GroceryItem): Result<Unit, String> {
-        return firestoreDataSource.toggleCompletableItemCompletion(item, Constants.GROCERY_TABLE)
+        return groceryFirestoreDataSource.toggleGroceryItemCompletion(item)
     }
 
     override suspend fun deleteGroceryItems(itemIds: List<String>): Result<Unit, String> {
-        return firestoreDataSource.deleteItems(Constants.GROCERY_TABLE, itemIds)
+        return groceryFirestoreDataSource.deleteGroceryItems(itemIds)
     }
 
     override fun getGrocerySuggestions(): Flow<Result<List<GrocerySuggestion>, String>> {

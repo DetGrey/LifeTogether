@@ -4,7 +4,7 @@ import android.util.Log
 import com.example.lifetogether.data.local.source.GuideLocalDataSource
 import com.example.lifetogether.data.local.source.GuideProgressLocalDataSource
 import com.example.lifetogether.data.model.Entity
-import com.example.lifetogether.data.remote.FirestoreDataSource
+import com.example.lifetogether.data.remote.GuideFirestoreDataSource
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.guides.GuideProgressState
@@ -22,7 +22,7 @@ import javax.inject.Inject
 class GuideRepositoryImpl @Inject constructor(
     private val guideLocalDataSource: GuideLocalDataSource,
     private val guideProgressLocalDataSource: GuideProgressLocalDataSource,
-    private val firestoreDataSource: FirestoreDataSource,
+    private val guideFirestoreDataSource: GuideFirestoreDataSource,
 ) : GuideRepository {
 
     private companion object {
@@ -47,7 +47,7 @@ class GuideRepositoryImpl @Inject constructor(
     override fun syncGuidesFromRemote(uid: String, familyId: String): Flow<Result<Unit, String>> = flow {
         coroutineScope {
             launch {
-                firestoreDataSource.guideProgressSnapshotListener(familyId, uid).collect { progressResult ->
+                guideFirestoreDataSource.guideProgressSnapshotListener(familyId, uid).collect { progressResult ->
                     when (progressResult) {
                         is Result.Success -> runCatching {
                             guideProgressLocalDataSource.updateGuideProgressFromRemote(
@@ -72,8 +72,8 @@ class GuideRepositoryImpl @Inject constructor(
             var privateHasSuccessfulSync = false
 
             combine(
-                firestoreDataSource.familySharedGuidesSnapshotListener(familyId),
-                firestoreDataSource.privateGuidesSnapshotListener(familyId, uid),
+                guideFirestoreDataSource.familySharedGuidesSnapshotListener(familyId),
+                guideFirestoreDataSource.privateGuidesSnapshotListener(familyId, uid),
             ) { sharedResult, privateResult ->
                 sharedResult to privateResult
             }.collect { (sharedResult, privateResult) ->
@@ -151,15 +151,15 @@ class GuideRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveGuide(guide: Guide): Result<String, String> {
-        return firestoreDataSource.saveItem(guide, Constants.GUIDES_TABLE)
+        return guideFirestoreDataSource.saveGuide(guide)
     }
 
     override suspend fun updateGuide(guide: Guide): Result<Unit, String> {
-        return firestoreDataSource.updateItem(guide, Constants.GUIDES_TABLE)
+        return guideFirestoreDataSource.updateGuide(guide)
     }
 
     override suspend fun deleteGuide(guideId: String): Result<Unit, String> {
-        return when (val result = firestoreDataSource.deleteItem(guideId, Constants.GUIDES_TABLE)) {
+        return when (val result = guideFirestoreDataSource.deleteGuide(guideId)) {
             is Result.Success -> Result.Success(Unit)
             is Result.Failure -> Result.Failure(result.error)
         }
@@ -197,7 +197,7 @@ class GuideRepositoryImpl @Inject constructor(
             }
 
             val uploadCandidate = progress.copy(lastUploadedAt = now)
-            when (val result = firestoreDataSource.updateGuideProgress(uploadCandidate)) {
+            when (val result = guideFirestoreDataSource.updateGuideProgress(uploadCandidate)) {
                 is Result.Success -> {
                     guideProgressLocalDataSource.markGuideProgressSynced(progress.id, now)
                 }

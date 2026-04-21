@@ -7,7 +7,7 @@ import androidx.core.net.toUri
 import com.example.lifetogether.data.local.source.AlbumLocalDataSource
 import com.example.lifetogether.data.local.source.MediaLocalDataSource
 import com.example.lifetogether.data.model.AlbumEntity
-import com.example.lifetogether.data.remote.FirestoreDataSource
+import com.example.lifetogether.data.remote.GalleryFirestoreDataSource
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.SaveProgress
 import com.example.lifetogether.domain.model.enums.MediaType
@@ -40,7 +40,7 @@ import javax.inject.Singleton
 class GalleryRepositoryImpl @Inject constructor(
     private val albumLocalDataSource: AlbumLocalDataSource,
     private val mediaLocalDataSource: MediaLocalDataSource,
-    private val firestoreDataSource: FirestoreDataSource,
+    private val galleryFirestoreDataSource: GalleryFirestoreDataSource,
     private val storageDataSource: StorageDataSource,
 ) : GalleryRepository {
 
@@ -68,7 +68,7 @@ class GalleryRepositoryImpl @Inject constructor(
     }
 
     override fun syncAlbumsFromRemote(familyId: String): Flow<Result<Unit, String>> {
-        return firestoreDataSource.albumsSnapshotListener(familyId).map { result ->
+        return galleryFirestoreDataSource.albumsSnapshotListener(familyId).map { result ->
             when (result) {
                 is Result.Success -> runCatching {
                     if (result.data.items.isEmpty()) {
@@ -87,7 +87,7 @@ class GalleryRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveAlbum(album: Album): Result<String, String> {
-        return firestoreDataSource.saveItem(album, Constants.ALBUMS_TABLE)
+        return galleryFirestoreDataSource.saveAlbum(album)
     }
 
     override suspend fun fetchAlbumThumbnail(albumId: String) {
@@ -114,7 +114,7 @@ class GalleryRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveGalleryMediaMetaData(galleryMedia: List<GalleryMedia>): Result<Unit, String> {
-        return when (val result = firestoreDataSource.saveGalleryMediaMetaData(galleryMedia)) {
+        return when (val result = galleryFirestoreDataSource.saveGalleryMediaMetaData(galleryMedia)) {
             is Result.Success -> Result.Success(Unit)
             is Result.Failure -> Result.Failure(result.error)
         }
@@ -125,15 +125,15 @@ class GalleryRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteAlbum(albumId: String): Result<Unit, String> {
-        return firestoreDataSource.deleteItem(albumId, Constants.ALBUMS_TABLE)
+        return galleryFirestoreDataSource.deleteAlbum(albumId)
     }
 
     override suspend fun deleteGalleryMedia(mediaIds: List<String>): Result<Unit, String> {
-        return firestoreDataSource.deleteItems(Constants.GALLERY_MEDIA_TABLE, mediaIds)
+        return galleryFirestoreDataSource.deleteGalleryMedia(mediaIds)
     }
 
     override suspend fun updateAlbumCount(albumId: String, count: Int): Result<Unit, String> {
-        return firestoreDataSource.updateAlbumCount(albumId, count)
+        return galleryFirestoreDataSource.updateAlbumCount(albumId, count)
     }
 
     override suspend fun moveMediaToAlbum(
@@ -141,7 +141,7 @@ class GalleryRepositoryImpl @Inject constructor(
         newAlbumId: String,
         oldAlbumId: String,
     ): Result<Unit, String> {
-        return firestoreDataSource.moveMediaToAlbum(mediaIdList, newAlbumId, oldAlbumId)
+        return galleryFirestoreDataSource.moveMediaToAlbum(mediaIdList, newAlbumId, oldAlbumId)
     }
 
     override fun observeAlbumById(familyId: String, albumId: String): Flow<Result<Album, String>> {
@@ -200,7 +200,7 @@ class GalleryRepositoryImpl @Inject constructor(
         familyId: String,
         context: Context,
     ): Flow<Result<Unit, String>> = flow {
-        firestoreDataSource.galleryMediaSnapshotListener(familyId).collect { result ->
+        galleryFirestoreDataSource.galleryMediaSnapshotListener(familyId).collect { result ->
             when (result) {
                 is Result.Success -> {
                     if (result.data.items.isEmpty() && result.data.isFromCache) {
@@ -358,7 +358,7 @@ class GalleryRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateAlbum(album: Album): Result<Unit, String> {
-        return firestoreDataSource.updateItem(album, Constants.ALBUMS_TABLE)
+        return galleryFirestoreDataSource.updateAlbum(album)
     }
 
     private fun AlbumEntity.toModel() = Album(

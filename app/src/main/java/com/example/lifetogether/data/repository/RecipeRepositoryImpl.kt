@@ -2,7 +2,7 @@ package com.example.lifetogether.data.repository
 
 import com.example.lifetogether.data.local.source.RecipeLocalDataSource
 import com.example.lifetogether.data.model.RecipeEntity
-import com.example.lifetogether.data.remote.FirestoreDataSource
+import com.example.lifetogether.data.remote.RecipeFirestoreDataSource
 import com.example.lifetogether.domain.datasource.StorageDataSource
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.recipe.Recipe
@@ -14,7 +14,7 @@ import javax.inject.Inject
 
 class RecipeRepositoryImpl @Inject constructor(
     private val recipeLocalDataSource: RecipeLocalDataSource,
-    private val firestoreDataSource: FirestoreDataSource,
+    private val recipeFirestoreDataSource: RecipeFirestoreDataSource,
     private val storageDataSource: StorageDataSource,
 ) : RecipeRepository {
 
@@ -30,7 +30,7 @@ class RecipeRepositoryImpl @Inject constructor(
     }
 
     override fun syncRecipesFromRemote(familyId: String): Flow<Result<Unit, String>> {
-        return firestoreDataSource.recipeSnapshotListener(familyId).map { result ->
+        return recipeFirestoreDataSource.recipeSnapshotListener(familyId).map { result ->
             when (result) {
                 is Result.Success -> runCatching {
                     if (result.data.items.isEmpty()) {
@@ -77,15 +77,15 @@ class RecipeRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveRecipe(recipe: Recipe): Result<String, String> {
-        return firestoreDataSource.saveItem(recipe, Constants.RECIPES_TABLE)
+        return recipeFirestoreDataSource.saveRecipe(recipe)
     }
 
     override suspend fun updateRecipe(recipe: Recipe): Result<Unit, String> {
-        return firestoreDataSource.updateItem(recipe, Constants.RECIPES_TABLE)
+        return recipeFirestoreDataSource.updateRecipe(recipe)
     }
 
     override suspend fun deleteRecipe(recipeId: String): Result<Unit, String> {
-        return when (val result = firestoreDataSource.deleteItem(recipeId, Constants.RECIPES_TABLE)) {
+        return when (val result = recipeFirestoreDataSource.deleteRecipe(recipeId)) {
             is Result.Success -> Result.Success(Unit)
             is Result.Failure -> Result.Failure(result.error)
         }
