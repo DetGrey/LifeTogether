@@ -1,5 +1,6 @@
 package com.example.lifetogether.domain.usecase.observers
 
+import android.util.Log
 import com.example.lifetogether.domain.repository.TipTrackerRepository
 import com.example.lifetogether.domain.result.Result as AppResult
 import kotlinx.coroutines.CompletableDeferred
@@ -10,6 +11,10 @@ import javax.inject.Inject
 class ObserveTipTrackerUseCase @Inject constructor(
     private val tipTrackerRepository: TipTrackerRepository,
 ) {
+    private companion object {
+        const val TAG = "ObserveTipTrackerUC"
+    }
+
     fun start(
         scope: CoroutineScope,
         familyId: String,
@@ -19,7 +24,7 @@ class ObserveTipTrackerUseCase @Inject constructor(
             tipTrackerRepository.syncTipsFromRemote(familyId).collect { result ->
                 when (result) {
                     is AppResult.Success -> firstSuccess.completeFirstSuccessIfNeeded()
-                    is AppResult.Failure -> println("tip sync failure: ${result.error}")
+                    is AppResult.Failure -> Log.e(TAG, "tip sync failure: ${result.error}")
                 }
             }
         }

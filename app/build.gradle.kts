@@ -253,8 +253,54 @@ tasks.register("verifyNoStringResultInDataDomain") {
     }
 }
 
+tasks.register("verifyNoPrintlnInDataUsecase") {
+    group = "verification"
+    description = "Fails if println(...) is used in data/ or domain/usecase source sets."
+
+    doLast {
+        val pattern = Regex("""\bprintln\s*\(""")
+        val roots =
+            listOf(
+                File(projectDir, "src/main/java/com/example/lifetogether/data"),
+                File(projectDir, "src/main/java/com/example/lifetogether/domain/usecase"),
+            )
+
+        val violations =
+            roots
+                .filter { it.exists() }
+                .flatMap { root ->
+                    root
+                        .walkTopDown()
+                        .filter { it.isFile && it.extension == "kt" }
+                        .flatMap { file ->
+                            file
+                                .readLines()
+                                .mapIndexedNotNull { index, line ->
+                                    if (pattern.containsMatchIn(line)) {
+                                        "${file.relativeTo(projectDir).path}:${index + 1}: $line"
+                                    } else {
+                                        null
+                                    }
+                                }
+                                .toList()
+                        }
+                        .toList()
+                }
+
+        if (violations.isNotEmpty()) {
+            throw GradleException(
+                buildString {
+                    appendLine("Found forbidden println(...) usage in data/domain-usecase:")
+                    violations.forEach { appendLine(it) }
+                },
+            )
+        }
+    }
+}
+
 tasks.named("check") {
     dependsOn("verifyNoStringResultInDataDomain")
+    dependsOn("verifyNoPrintlnInDataUsecase")
 }
 
 afterEvaluate {
