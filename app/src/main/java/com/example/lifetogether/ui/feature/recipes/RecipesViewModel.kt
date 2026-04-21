@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.feature.recipes
 
+import com.example.lifetogether.domain.result.toUserMessage
+
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -76,7 +78,7 @@ class RecipesViewModel @Inject constructor(
                         }
                     }
                     is Result.Failure -> {
-                        error = result.error
+                        error = result.error.toUserMessage()
                         showAlertDialog = true
                     }
                 }

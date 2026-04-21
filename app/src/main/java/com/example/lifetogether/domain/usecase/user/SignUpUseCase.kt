@@ -1,5 +1,7 @@
 package com.example.lifetogether.domain.usecase.user
 
+import com.example.lifetogether.domain.result.AppError
+
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.repository.UserRepository
@@ -12,7 +14,7 @@ class SignUpUseCase @Inject constructor(
     suspend operator fun invoke(
         user: User,
         userInformation: UserInformation,
-    ): Result<UserInformation, String> {
+    ): Result<UserInformation, AppError> {
         // TODO sign up validation is needed to fit with the validation when logging in
 //        if (user.password != confirmPassword) {
 //            error = "Confirmed password does not match"

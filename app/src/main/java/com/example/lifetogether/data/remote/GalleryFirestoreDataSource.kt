@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.remote
 
+import com.example.lifetogether.domain.result.AppError
+
 import android.util.Log
 import com.example.lifetogether.domain.model.gallery.Album
 import com.example.lifetogether.domain.model.gallery.GalleryImage
@@ -73,7 +75,7 @@ class GalleryFirestoreDataSource @Inject constructor(
         awaitClose { registration.remove() }
     }
 
-    suspend fun saveAlbum(album: Album): Result<String, String> {
+    suspend fun saveAlbum(album: Album): Result<String, AppError> {
         return try {
             val doc = db.collection(Constants.ALBUMS_TABLE).add(album).await()
             Result.Success(doc.id)
@@ -82,7 +84,7 @@ class GalleryFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun updateAlbum(album: Album): Result<Unit, String> {
+    suspend fun updateAlbum(album: Album): Result<Unit, AppError> {
         return try {
             val id = album.id ?: return Result.Failure("Missing album id")
             db.collection(Constants.ALBUMS_TABLE).document(id).set(album, SetOptions.merge()).await()
@@ -92,7 +94,7 @@ class GalleryFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun deleteAlbum(albumId: String): Result<Unit, String> {
+    suspend fun deleteAlbum(albumId: String): Result<Unit, AppError> {
         return try {
             db.collection(Constants.ALBUMS_TABLE).document(albumId).delete().await()
             Result.Success(Unit)
@@ -101,7 +103,7 @@ class GalleryFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun deleteGalleryMedia(mediaIds: List<String>): Result<Unit, String> {
+    suspend fun deleteGalleryMedia(mediaIds: List<String>): Result<Unit, AppError> {
         return try {
             val batch = db.batch()
             mediaIds.forEach { id -> batch.delete(db.collection(Constants.GALLERY_MEDIA_TABLE).document(id)) }
@@ -112,7 +114,7 @@ class GalleryFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun updateAlbumCount(albumId: String, increment: Int): Result<Unit, String> {
+    suspend fun updateAlbumCount(albumId: String, increment: Int): Result<Unit, AppError> {
         return try {
             db.collection(Constants.ALBUMS_TABLE).document(albumId)
                 .update("count", FieldValue.increment(increment.toDouble())).await()
@@ -122,7 +124,7 @@ class GalleryFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun moveMediaToAlbum(mediaIdList: Set<String>, newAlbumId: String, oldAlbumId: String): Result<Unit, String> {
+    suspend fun moveMediaToAlbum(mediaIdList: Set<String>, newAlbumId: String, oldAlbumId: String): Result<Unit, AppError> {
         return try {
             val batch = db.batch()
             mediaIdList.forEach { id ->
@@ -137,7 +139,7 @@ class GalleryFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun saveGalleryMediaMetaData(galleryMedia: List<GalleryMedia>): Result<Unit, String> {
+    suspend fun saveGalleryMediaMetaData(galleryMedia: List<GalleryMedia>): Result<Unit, AppError> {
         return try {
             val batch = db.batch()
             val collectionRef = db.collection(Constants.GALLERY_MEDIA_TABLE)

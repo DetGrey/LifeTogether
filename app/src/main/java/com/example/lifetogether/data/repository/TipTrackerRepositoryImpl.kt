@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.repository
 
+import com.example.lifetogether.domain.result.AppError
+
 import com.example.lifetogether.data.local.source.TipTrackerLocalDataSource
 import com.example.lifetogether.data.model.TipEntity
 import com.example.lifetogether.data.remote.TipTrackerFirestoreDataSource
@@ -16,7 +18,7 @@ class TipTrackerRepositoryImpl @Inject constructor(
     private val tipTrackerFirestoreDataSource: TipTrackerFirestoreDataSource,
 ) : TipTrackerRepository {
 
-    override fun observeTips(familyId: String): Flow<Result<List<TipItem>, String>> {
+    override fun observeTips(familyId: String): Flow<Result<List<TipItem>, AppError>> {
         return tipTrackerLocalDataSource.observeTips(familyId).map { entities ->
             try {
                 Result.Success(entities.map { it.toModel() })
@@ -26,7 +28,7 @@ class TipTrackerRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun syncTipsFromRemote(familyId: String): Flow<Result<Unit, String>> {
+    override fun syncTipsFromRemote(familyId: String): Flow<Result<Unit, AppError>> {
         return tipTrackerFirestoreDataSource.tipTrackerSnapshotListener(familyId).map { result ->
             when (result) {
                 is Result.Success -> runCatching {
@@ -45,11 +47,11 @@ class TipTrackerRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun saveTip(tip: TipItem): Result<String, String> {
+    override suspend fun saveTip(tip: TipItem): Result<String, AppError> {
         return tipTrackerFirestoreDataSource.saveTip(tip)
     }
 
-    override suspend fun deleteTip(tipId: String): Result<Unit, String> {
+    override suspend fun deleteTip(tipId: String): Result<Unit, AppError> {
         return when (val result = tipTrackerFirestoreDataSource.deleteTip(tipId)) {
             is Result.Success -> Result.Success(Unit)
             is Result.Failure -> Result.Failure(result.error)

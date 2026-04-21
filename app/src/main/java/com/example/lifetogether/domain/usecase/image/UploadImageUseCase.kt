@@ -1,5 +1,7 @@
 package com.example.lifetogether.domain.usecase.image
 
+import com.example.lifetogether.domain.result.AppError
+
 import android.content.Context
 import android.net.Uri
 import com.example.lifetogether.domain.model.sealed.ImageType
@@ -14,7 +16,7 @@ class UploadImageUseCase @Inject constructor(
         uri: Uri,
         imageType: ImageType,
         context: Context,
-    ): Result<Unit, String> {
+    ): Result<Unit, AppError> {
         println("UploadImageUseCase uri: $uri")
         val firebaseStorageResult = imageRepository.uploadImage(uri, imageType, context)
         println("UploadImageUseCase firebaseStorageResult: $firebaseStorageResult")

@@ -7,7 +7,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
+import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
+import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.domain.usecase.user.SignUpUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -42,11 +44,11 @@ class SignUpViewModel @Inject constructor(
         println("SignUpViewModel userInformation: $userInformation")
 
         viewModelScope.launch {
-            val loginResult: Result<UserInformation, String> = signUpUseCase.invoke(User(email, password), userInformation)
+            val loginResult: Result<UserInformation, AppError> = signUpUseCase.invoke(User(email, password), userInformation)
             if (loginResult is Result.Success) {
                 onSuccess(loginResult.data)
             } else if (loginResult is Result.Failure) {
-                error = loginResult.error
+                error = loginResult.error.toUserMessage()
             }
         }
     }

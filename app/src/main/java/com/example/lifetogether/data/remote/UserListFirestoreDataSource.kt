@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.remote
 
+import com.example.lifetogether.domain.result.AppError
+
 import android.util.Log
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.lists.ListType
@@ -95,7 +97,7 @@ class UserListFirestoreDataSource @Inject constructor(
         awaitClose { reg.remove() }
     }
 
-    suspend fun saveUserList(userList: UserList): Result<String, String> {
+    suspend fun saveUserList(userList: UserList): Result<String, AppError> {
         return try {
             val doc = db.collection(Constants.USER_LISTS_TABLE).add(userListToFirestoreMap(userList)).await()
             Result.Success(doc.id)
@@ -104,7 +106,7 @@ class UserListFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun saveRoutineListEntry(entry: RoutineListEntry): Result<String, String> {
+    suspend fun saveRoutineListEntry(entry: RoutineListEntry): Result<String, AppError> {
         return try {
             val doc = db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE).add(listEntryToFirestoreMap(entry)).await()
             Result.Success(doc.id)
@@ -113,7 +115,7 @@ class UserListFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun updateRoutineListEntry(entry: RoutineListEntry): Result<Unit, String> {
+    suspend fun updateRoutineListEntry(entry: RoutineListEntry): Result<Unit, AppError> {
         val id = entry.id ?: return Result.Failure("Missing routine list entry id")
         return try {
             db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE).document(id)
@@ -125,7 +127,7 @@ class UserListFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun deleteRoutineListEntries(itemIds: List<String>): Result<Unit, String> {
+    suspend fun deleteRoutineListEntries(itemIds: List<String>): Result<Unit, AppError> {
         return try {
             val batch = db.batch()
             itemIds.forEach { id ->
@@ -138,16 +140,17 @@ class UserListFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun getRoutineListEntryImageUrl(entryId: String): Result<String, String>? {
+    suspend fun getRoutineListEntryImageUrl(entryId: String): Result<String, AppError> {
         return try {
             val doc = db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE).document(entryId).get().await()
-            doc.getString("imageUrl")?.let { Result.Success(it) }
+            val url = doc.getString("imageUrl")
+            if (url != null) Result.Success(url) else Result.Failure(AppError.NotFound("List entry image not found"))
         } catch (e: Exception) {
             Result.Failure("Error: ${e.message}")
         }
     }
 
-    suspend fun saveRoutineListEntryImageUrl(entryId: String, url: String): Result<Unit, String> {
+    suspend fun saveRoutineListEntryImageUrl(entryId: String, url: String): Result<Unit, AppError> {
         return try {
             db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE).document(entryId)
                 .update(mapOf("imageUrl" to url))

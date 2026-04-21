@@ -1,5 +1,7 @@
 package com.example.lifetogether.domain.usecase.gallery
 
+import com.example.lifetogether.domain.result.AppError
+
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.repository.ImageRepository
 import com.example.lifetogether.domain.repository.GalleryRepository
@@ -14,7 +16,7 @@ class DeleteMediaUseCase @Inject constructor(
         albumId: String,
         mediaList: List<GalleryMedia>,
         albumIsToBeDeleted: Boolean = false,
-    ): Result<Unit, String> {
+    ): Result<Unit, AppError> {
         if (mediaList.isEmpty()) return Result.Success(Unit)
 
         return try {

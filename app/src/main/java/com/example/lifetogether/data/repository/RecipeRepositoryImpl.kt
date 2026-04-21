@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.repository
 
+import com.example.lifetogether.domain.result.AppError
+
 import com.example.lifetogether.data.local.source.RecipeLocalDataSource
 import com.example.lifetogether.data.model.RecipeEntity
 import com.example.lifetogether.data.remote.RecipeFirestoreDataSource
@@ -18,7 +20,7 @@ class RecipeRepositoryImpl @Inject constructor(
     private val storageDataSource: StorageDataSource,
 ) : RecipeRepository {
 
-    override fun observeRecipes(familyId: String): Flow<Result<List<Recipe>, String>> {
+    override fun observeRecipes(familyId: String): Flow<Result<List<Recipe>, AppError>> {
         return recipeLocalDataSource.observeRecipes(familyId)
             .map { entities ->
                 try {
@@ -29,7 +31,7 @@ class RecipeRepositoryImpl @Inject constructor(
             }
     }
 
-    override fun syncRecipesFromRemote(familyId: String): Flow<Result<Unit, String>> {
+    override fun syncRecipesFromRemote(familyId: String): Flow<Result<Unit, AppError>> {
         return recipeFirestoreDataSource.recipeSnapshotListener(familyId).map { result ->
             when (result) {
                 is Result.Success -> runCatching {
@@ -61,7 +63,7 @@ class RecipeRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun observeRecipeById(familyId: String, id: String): Flow<Result<Recipe, String>> {
+    override fun observeRecipeById(familyId: String, id: String): Flow<Result<Recipe, AppError>> {
         return recipeLocalDataSource.observeRecipeById(familyId, id)
             .map { entity ->
                 try {
@@ -76,15 +78,15 @@ class RecipeRepositoryImpl @Inject constructor(
             }
     }
 
-    override suspend fun saveRecipe(recipe: Recipe): Result<String, String> {
+    override suspend fun saveRecipe(recipe: Recipe): Result<String, AppError> {
         return recipeFirestoreDataSource.saveRecipe(recipe)
     }
 
-    override suspend fun updateRecipe(recipe: Recipe): Result<Unit, String> {
+    override suspend fun updateRecipe(recipe: Recipe): Result<Unit, AppError> {
         return recipeFirestoreDataSource.updateRecipe(recipe)
     }
 
-    override suspend fun deleteRecipe(recipeId: String): Result<Unit, String> {
+    override suspend fun deleteRecipe(recipeId: String): Result<Unit, AppError> {
         return when (val result = recipeFirestoreDataSource.deleteRecipe(recipeId)) {
             is Result.Success -> Result.Success(Unit)
             is Result.Failure -> Result.Failure(result.error)

@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.repository
 
+import com.example.lifetogether.domain.result.AppError
+
 import android.content.Context
 import android.net.Uri
 import android.util.Log
@@ -59,7 +61,7 @@ class GalleryRepositoryImpl @Inject constructor(
     private val _thumbnailCache = MutableStateFlow<Map<String, ByteArray>>(emptyMap())
     override val thumbnailCache: StateFlow<Map<String, ByteArray>> = _thumbnailCache.asStateFlow()
 
-    override fun observeAlbums(familyId: String): Flow<Result<List<Album>, String>> {
+    override fun observeAlbums(familyId: String): Flow<Result<List<Album>, AppError>> {
         return albumLocalDataSource.observeAlbums(familyId).map { entities ->
             try {
                 Result.Success(entities.map { it.toModel() }.sortedBy { it.itemName })
@@ -69,7 +71,7 @@ class GalleryRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun syncAlbumsFromRemote(familyId: String): Flow<Result<Unit, String>> {
+    override fun syncAlbumsFromRemote(familyId: String): Flow<Result<Unit, AppError>> {
         return galleryFirestoreDataSource.albumsSnapshotListener(familyId).map { result ->
             when (result) {
                 is Result.Success -> runCatching {
@@ -88,7 +90,7 @@ class GalleryRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun saveAlbum(album: Album): Result<String, String> {
+    override suspend fun saveAlbum(album: Album): Result<String, AppError> {
         return galleryFirestoreDataSource.saveAlbum(album)
     }
 
@@ -105,7 +107,7 @@ class GalleryRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getAlbumMediaThumbnail(mediaId: String): Result<ByteArray, String> {
+    override suspend fun getAlbumMediaThumbnail(mediaId: String): Result<ByteArray, AppError> {
         Log.d(TAG, "getAlbumMediaThumbnail")
         val result = mediaLocalDataSource.getAlbumMediaThumbnail(mediaId)
         return if (result != null) {
@@ -115,26 +117,26 @@ class GalleryRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun saveGalleryMediaMetaData(galleryMedia: List<GalleryMedia>): Result<Unit, String> {
+    override suspend fun saveGalleryMediaMetaData(galleryMedia: List<GalleryMedia>): Result<Unit, AppError> {
         return when (val result = galleryFirestoreDataSource.saveGalleryMediaMetaData(galleryMedia)) {
             is Result.Success -> Result.Success(Unit)
             is Result.Failure -> Result.Failure(result.error)
         }
     }
 
-    override suspend fun uploadVideo(uri: Uri, path: String, extension: String): Result<String, String> {
+    override suspend fun uploadVideo(uri: Uri, path: String, extension: String): Result<String, AppError> {
         return storageDataSource.uploadVideo(uri, path, extension)
     }
 
-    override suspend fun deleteAlbum(albumId: String): Result<Unit, String> {
+    override suspend fun deleteAlbum(albumId: String): Result<Unit, AppError> {
         return galleryFirestoreDataSource.deleteAlbum(albumId)
     }
 
-    override suspend fun deleteGalleryMedia(mediaIds: List<String>): Result<Unit, String> {
+    override suspend fun deleteGalleryMedia(mediaIds: List<String>): Result<Unit, AppError> {
         return galleryFirestoreDataSource.deleteGalleryMedia(mediaIds)
     }
 
-    override suspend fun updateAlbumCount(albumId: String, count: Int): Result<Unit, String> {
+    override suspend fun updateAlbumCount(albumId: String, count: Int): Result<Unit, AppError> {
         return galleryFirestoreDataSource.updateAlbumCount(albumId, count)
     }
 
@@ -142,11 +144,11 @@ class GalleryRepositoryImpl @Inject constructor(
         mediaIdList: Set<String>,
         newAlbumId: String,
         oldAlbumId: String,
-    ): Result<Unit, String> {
+    ): Result<Unit, AppError> {
         return galleryFirestoreDataSource.moveMediaToAlbum(mediaIdList, newAlbumId, oldAlbumId)
     }
 
-    override fun observeAlbumById(familyId: String, albumId: String): Flow<Result<Album, String>> {
+    override fun observeAlbumById(familyId: String, albumId: String): Flow<Result<Album, AppError>> {
         return albumLocalDataSource.observeAlbumById(familyId, albumId).map { entity ->
             try {
                 if (entity != null) {
@@ -160,7 +162,7 @@ class GalleryRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun observeAlbumMedia(familyId: String, albumId: String): Flow<Result<List<GalleryMedia>, String>> {
+    override fun observeAlbumMedia(familyId: String, albumId: String): Flow<Result<List<GalleryMedia>, AppError>> {
         return albumLocalDataSource.getAlbumMedia(familyId, albumId).map { entities ->
             try {
                 val items: List<GalleryMedia> = entities.map { wrapper ->
@@ -201,7 +203,7 @@ class GalleryRepositoryImpl @Inject constructor(
     override fun syncGalleryMediaFromRemote(
         familyId: String,
         context: Context,
-    ): Flow<Result<Unit, String>> = flow {
+    ): Flow<Result<Unit, AppError>> = flow {
         galleryFirestoreDataSource.galleryMediaSnapshotListener(familyId).collect { result ->
             when (result) {
                 is Result.Success -> {
@@ -244,7 +246,7 @@ class GalleryRepositoryImpl @Inject constructor(
                                             galleryMedia.mediaUrl?.let { url ->
                                                 val fallbackExtension = if (galleryMedia is GalleryImage) "jpeg" else "mp4"
                                                 val extension = "." + galleryMedia.itemName.substringAfterLast('.', fallbackExtension)
-                                                var downloadResult: Result<File, String>? = null
+                                                var downloadResult: Result<File, AppError>? = null
                                                 var lastException: Exception? = null
 
                                                 repeat(MAX_RETRY_ATTEMPTS) { attempt ->
@@ -271,7 +273,7 @@ class GalleryRepositoryImpl @Inject constructor(
                                                 } else {
                                                     roundFailedItems.add(galleryMedia.id ?: "unknown")
                                                     if (downloadResult is Result.Failure) {
-                                                        Log.d(TAG, "Failed to download ${galleryMedia.itemName}: ${(downloadResult as Result.Failure<String>).error}")
+                                                        Log.d(TAG, "Failed to download ${galleryMedia.itemName}: ${downloadResult.error}")
                                                     } else if (lastException != null) {
                                                         Log.d(TAG, "Failed to download ${galleryMedia.itemName}: ${lastException.message}")
                                                     }
@@ -359,7 +361,7 @@ class GalleryRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun updateAlbum(album: Album): Result<Unit, String> {
+    override suspend fun updateAlbum(album: Album): Result<Unit, AppError> {
         return galleryFirestoreDataSource.updateAlbum(album)
     }
 

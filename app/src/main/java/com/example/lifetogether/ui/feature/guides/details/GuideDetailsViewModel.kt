@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.feature.guides.details
 
+import com.example.lifetogether.domain.result.toUserMessage
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.logic.GuideLeafPointer
@@ -175,7 +177,7 @@ class GuideDetailsViewModel @Inject constructor(
                         )
                         applyGuideUpdate(uiGuide = normalizedGuide)
                     }
-                    is Result.Failure -> showError(result.error)
+                    is Result.Failure -> showError(result.error.toUserMessage())
                 }
             }
         }
@@ -244,7 +246,7 @@ class GuideDetailsViewModel @Inject constructor(
             updateLoadingState(isDeletingGuide = true)
             when (val result = guideRepository.deleteGuide(currentGuideId)) {
                 is Result.Success -> onSuccess()
-                is Result.Failure -> showError(result.error)
+                is Result.Failure -> showError(result.error.toUserMessage())
             }
             updateLoadingState(isDeletingGuide = false)
         }
@@ -404,7 +406,7 @@ class GuideDetailsViewModel @Inject constructor(
             when (val result = guideRepository.updateGuide(normalizedGuide)) {
                 is Result.Success -> onSuccess()
                 is Result.Failure -> {
-                    showError(result.error)
+                    showError(result.error.toUserMessage())
                     onFailure()
                 }
             }

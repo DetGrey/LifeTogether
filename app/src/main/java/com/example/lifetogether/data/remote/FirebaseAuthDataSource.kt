@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.remote
 
+import com.example.lifetogether.domain.result.AppError
+
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
@@ -17,7 +19,7 @@ class FirebaseAuthDataSource@Inject constructor(
 ) {
     suspend fun login(
         user: User,
-    ): Result<UserInformation, String> {
+    ): Result<UserInformation, AppError> {
         println("FirebaseAuthDataSource login()")
         try {
             val loginResult = Firebase.auth.signInWithEmailAndPassword(user.email, user.password).await()
@@ -38,7 +40,7 @@ class FirebaseAuthDataSource@Inject constructor(
     suspend fun signUp(
         user: User,
         userInformation: UserInformation,
-    ): Result<UserInformation, String> {
+    ): Result<UserInformation, AppError> {
         println("FirebaseAuthDataSource signUp()")
         try {
             val signupResult = Firebase.auth.createUserWithEmailAndPassword(user.email, user.password).await()
@@ -56,7 +58,7 @@ class FirebaseAuthDataSource@Inject constructor(
         }
     }
 
-    fun authStateListener(): Flow<Result<UserInformation, String>> = callbackFlow {
+    fun authStateListener(): Flow<Result<UserInformation, AppError>> = callbackFlow {
         val authStateListener = FirebaseAuth.AuthStateListener { auth ->
             val currentUser = auth.currentUser
             if (currentUser != null) {
@@ -78,7 +80,7 @@ class FirebaseAuthDataSource@Inject constructor(
     suspend fun logout(
         uid: String,
         familyId: String?,
-    ): Result<Unit, String> {
+    ): Result<Unit, AppError> {
         try {
             FirebaseAuth.getInstance().signOut()
             println("datasource logout result: ${FirebaseAuth.getInstance().currentUser}")

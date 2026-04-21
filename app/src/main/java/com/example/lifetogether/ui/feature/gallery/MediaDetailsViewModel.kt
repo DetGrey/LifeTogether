@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.feature.gallery
 
+import com.example.lifetogether.domain.result.toUserMessage
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.result.Result
@@ -85,7 +87,7 @@ class MediaDetailsViewModel @Inject constructor(
                             }
                         }
                         is Result.Failure -> {
-                            showError(result.error)
+                            showError(result.error.toUserMessage())
                         }
                     }
                 }
@@ -143,7 +145,7 @@ class MediaDetailsViewModel @Inject constructor(
                 is Result.Success -> {
                     dismissOverflowMenuActionDialog()
                 }
-                is Result.Failure -> showError(result.error)
+                is Result.Failure -> showError(result.error.toUserMessage())
             }
         }
     }

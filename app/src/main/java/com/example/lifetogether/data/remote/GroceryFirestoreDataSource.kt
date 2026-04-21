@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.remote
 
+import com.example.lifetogether.domain.result.AppError
+
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.CompletableItem
 import com.example.lifetogether.domain.model.Item
@@ -19,7 +21,7 @@ class GroceryFirestoreDataSource @Inject constructor(
     private val db: FirebaseFirestore,
 ) {
 
-    fun grocerySnapshotListener(familyId: String): Flow<Result<List<GroceryItem>, String>> = callbackFlow {
+    fun grocerySnapshotListener(familyId: String): Flow<Result<List<GroceryItem>, AppError>> = callbackFlow {
         val registration = db.collection(Constants.GROCERY_TABLE)
             .whereEqualTo("familyId", familyId)
             .addSnapshotListener { snapshot, e ->
@@ -37,7 +39,7 @@ class GroceryFirestoreDataSource @Inject constructor(
         awaitClose { registration.remove() }
     }
 
-    suspend fun saveGroceryItem(item: Item): Result<String, String> {
+    suspend fun saveGroceryItem(item: Item): Result<String, AppError> {
         return try {
             val doc = db.collection(Constants.GROCERY_TABLE).add(item).await()
             Result.Success(doc.id)
@@ -46,7 +48,7 @@ class GroceryFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun toggleGroceryItemCompletion(item: CompletableItem): Result<Unit, String> {
+    suspend fun toggleGroceryItemCompletion(item: CompletableItem): Result<Unit, AppError> {
         return try {
             val id = item.id ?: return Result.Failure("Missing item id")
             db.collection(Constants.GROCERY_TABLE).document(id).update(
@@ -61,7 +63,7 @@ class GroceryFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun deleteGroceryItems(itemIds: List<String>): Result<Unit, String> {
+    suspend fun deleteGroceryItems(itemIds: List<String>): Result<Unit, AppError> {
         return try {
             val batch = db.batch()
             itemIds.forEach { id -> batch.delete(db.collection(Constants.GROCERY_TABLE).document(id)) }
@@ -87,7 +89,7 @@ class GroceryFirestoreDataSource @Inject constructor(
         awaitClose { registration.remove() }
     }
 
-    suspend fun addCategory(category: Category): Result<Unit, String> {
+    suspend fun addCategory(category: Category): Result<Unit, AppError> {
         return try {
             db.collection(Constants.CATEGORY_TABLE).add(category).await()
             Result.Success(Unit)
@@ -96,7 +98,7 @@ class GroceryFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun deleteCategory(category: Category): Result<Unit, String> {
+    suspend fun deleteCategory(category: Category): Result<Unit, AppError> {
         return try {
             val query = db.collection(Constants.CATEGORY_TABLE).whereEqualTo("name", category.name).get().await()
             if (query.documents.isNotEmpty()) query.documents[0].reference.delete().await()
@@ -123,7 +125,7 @@ class GroceryFirestoreDataSource @Inject constructor(
         awaitClose { registration.remove() }
     }
 
-    suspend fun addGrocerySuggestion(suggestion: GrocerySuggestion): Result<Unit, String> {
+    suspend fun addGrocerySuggestion(suggestion: GrocerySuggestion): Result<Unit, AppError> {
         return try {
             db.collection(Constants.GROCERY_SUGGESTIONS_TABLE).add(suggestion).await()
             Result.Success(Unit)
@@ -132,7 +134,7 @@ class GroceryFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun updateGrocerySuggestion(suggestion: GrocerySuggestion): Result<Unit, String> {
+    suspend fun updateGrocerySuggestion(suggestion: GrocerySuggestion): Result<Unit, AppError> {
         val id = suggestion.id ?: return Result.Failure("Missing grocery suggestion id")
         return try {
             db.collection(Constants.GROCERY_SUGGESTIONS_TABLE).document(id).set(suggestion).await()
@@ -142,7 +144,7 @@ class GroceryFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun deleteGrocerySuggestion(suggestion: GrocerySuggestion): Result<Unit, String> {
+    suspend fun deleteGrocerySuggestion(suggestion: GrocerySuggestion): Result<Unit, AppError> {
         val id = suggestion.id ?: return Result.Failure("Problems with grocery suggestion id")
         return try {
             db.collection(Constants.GROCERY_SUGGESTIONS_TABLE).document(id).delete().await()

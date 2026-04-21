@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.feature.lists.entryDetails
 
+import com.example.lifetogether.domain.result.toUserMessage
+
 import android.content.ContentResolver
 import android.content.Context
 import android.graphics.Bitmap
@@ -205,7 +207,7 @@ class ListEntryDetailsViewModel @Inject constructor(
                     }
                     is Result.Failure -> {
                         _uiState.update { if (it is EntryDetailsUiState.Content) it.copy(isSaving = false) else it }
-                        showError(r.error)
+                        showError(r.error.toUserMessage())
                     }
                 }
             } else {
@@ -216,7 +218,7 @@ class ListEntryDetailsViewModel @Inject constructor(
                         originalFormState = _formState.value
                         _uiState.update { if (it is EntryDetailsUiState.Content) it.copy(isEditing = false) else it }
                     }
-                    is Result.Failure -> showError(result.error)
+                    is Result.Failure -> showError(result.error.toUserMessage())
                 }
             }
         }

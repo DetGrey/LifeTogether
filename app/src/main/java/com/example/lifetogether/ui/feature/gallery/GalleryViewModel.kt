@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.feature.gallery
 
+import com.example.lifetogether.domain.result.toUserMessage
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.model.gallery.Album
@@ -86,7 +88,7 @@ class GalleryViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = galleryRepository.saveAlbum(album)) {
                 is Result.Success -> closeNewAlbumDialog()
-                is Result.Failure -> showError(result.error)
+                is Result.Failure -> showError(result.error.toUserMessage())
             }
         }
     }
@@ -107,7 +109,7 @@ class GalleryViewModel @Inject constructor(
                             }
                         }
                     }
-                    is Result.Failure -> showError(result.error)
+                    is Result.Failure -> showError(result.error.toUserMessage())
                 }
             }
         }

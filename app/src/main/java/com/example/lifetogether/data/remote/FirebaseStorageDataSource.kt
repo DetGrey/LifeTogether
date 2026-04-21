@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.remote
 
+import com.example.lifetogether.domain.result.AppError
+
 import android.content.Context
 import android.net.Uri
 import android.util.Log
@@ -22,7 +24,7 @@ class FirebaseStorageDataSource @Inject constructor(
         uri: Uri,
         imageType: ImageType,
         context: Context,
-    ): Result<String, String> {
+    ): Result<String, AppError> {
         return try {
             Log.d("FirebaseStorageDS", "uploadPhoto uri: $uri")
 
@@ -48,7 +50,7 @@ class FirebaseStorageDataSource @Inject constructor(
         }
     }
 
-    override suspend fun fetchImageByteArray(url: String): Result<ByteArray, String> {
+    override suspend fun fetchImageByteArray(url: String): Result<ByteArray, AppError> {
         return try {
             Log.d("FirebaseStorageDS", "fetchImageByteArray from URL: $url")
             val storageRef = FirebaseStorage.getInstance().getReferenceFromUrl(url)
@@ -60,7 +62,7 @@ class FirebaseStorageDataSource @Inject constructor(
         }
     }
 
-    override suspend fun deleteImage(url: String): Result<Unit, String> {
+    override suspend fun deleteImage(url: String): Result<Unit, AppError> {
         return try {
             Log.d("FirebaseStorageDS", "deleteImage: $url")
             val storageRef = FirebaseStorage.getInstance().getReferenceFromUrl(url)
@@ -73,7 +75,7 @@ class FirebaseStorageDataSource @Inject constructor(
         }
     }
 
-    override suspend fun deleteImages(urlList: List<String>): Result<Unit, String> =
+    override suspend fun deleteImages(urlList: List<String>): Result<Unit, AppError> =
         coroutineScope {
             Result.Failure("Not implemented")
         }
@@ -83,7 +85,7 @@ class FirebaseStorageDataSource @Inject constructor(
         uri: Uri,
         path: String,
         extension: String,
-    ): Result<String, String> {
+    ): Result<String, AppError> {
         return try {
             Log.d("FirebaseStorageDS", "uploadVideo uri: $uri, pathId: $path, ext: $extension")
 
@@ -111,7 +113,7 @@ class FirebaseStorageDataSource @Inject constructor(
         context: Context,
         storageUrl: String,
         desiredFileExtension: String,
-    ): Result<File, String> {
+    ): Result<File, AppError> {
         // Create a unique temporary file in the app's cache directory
         val ensuredExtension = if (desiredFileExtension.startsWith(".")) desiredFileExtension else ".$desiredFileExtension"
         val tempFileName = "${UUID.randomUUID()}$ensuredExtension"

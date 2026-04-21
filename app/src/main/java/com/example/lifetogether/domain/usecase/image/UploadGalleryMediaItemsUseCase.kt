@@ -1,5 +1,7 @@
 package com.example.lifetogether.domain.usecase.image
 
+import com.example.lifetogether.domain.result.AppError
+
 import android.content.ContentValues.TAG
 import android.content.Context
 import android.provider.MediaStore
@@ -37,7 +39,7 @@ class UploadGalleryMediaItemsUseCase @Inject constructor(
     suspend operator fun invoke(
         mediaUploadList: List<MediaUploadData>,
         context: Context,
-    ): Result<Unit, String> {
+    ): Result<Unit, AppError> {
         if (mediaUploadList.isEmpty()) {
             Log.d(TAG, "MediaUploadList is empty. Nothing to upload.")
             return Result.Success(Unit)

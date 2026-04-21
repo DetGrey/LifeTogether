@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.remote
 
+import com.example.lifetogether.domain.result.AppError
+
 import android.util.Log
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.result.Result
@@ -30,7 +32,7 @@ class UserFirestoreDataSource @Inject constructor(
         awaitClose { registration.remove() }
     }
 
-    suspend fun fetchUserInformation(uid: String): Result<UserInformation, String> {
+    suspend fun fetchUserInformation(uid: String): Result<UserInformation, AppError> {
         return try {
             val snapshot = db.collection(Constants.USER_TABLE).document(uid).get().await()
             val userInformation = snapshot.toObject(UserInformation::class.java)
@@ -40,7 +42,7 @@ class UserFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun uploadUserInformation(userInformation: UserInformation): Result<Unit, String> {
+    suspend fun uploadUserInformation(userInformation: UserInformation): Result<Unit, AppError> {
         return try {
             val uid = userInformation.uid ?: return Result.Failure("Cannot upload without being logged in")
             db.collection(Constants.USER_TABLE).document(uid).set(userInformation).await()
@@ -50,7 +52,7 @@ class UserFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun updateFamilyId(uid: String, familyId: String?): Result<Unit, String> {
+    suspend fun updateFamilyId(uid: String, familyId: String?): Result<Unit, AppError> {
         return try {
             db.collection(Constants.USER_TABLE).document(uid).update("familyId", familyId).await()
             Result.Success(Unit)
@@ -63,7 +65,7 @@ class UserFirestoreDataSource @Inject constructor(
         uid: String,
         familyId: String?,
         newName: String,
-    ): Result<Unit, String> {
+    ): Result<Unit, AppError> {
         return try {
             db.collection(Constants.USER_TABLE).document(uid).update("name", newName).await()
             if (familyId != null) {
@@ -84,16 +86,17 @@ class UserFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun getUserImageUrl(uid: String): Result<String, String>? {
+    suspend fun getUserImageUrl(uid: String): Result<String, AppError> {
         return try {
             val document = db.collection(Constants.USER_TABLE).document(uid).get().await()
-            document.getString("imageUrl")?.let { Result.Success(it) }
+            val url = document.getString("imageUrl")
+            if (url != null) Result.Success(url) else Result.Failure(AppError.NotFound("User image not found"))
         } catch (e: Exception) {
             Result.Failure("Error: ${e.message}")
         }
     }
 
-    suspend fun saveUserImageUrl(uid: String, url: String): Result<Unit, String> {
+    suspend fun saveUserImageUrl(uid: String, url: String): Result<Unit, AppError> {
         return try {
             db.collection(Constants.USER_TABLE).document(uid).update(mapOf("imageUrl" to url)).await()
             Result.Success(Unit)

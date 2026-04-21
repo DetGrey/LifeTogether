@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.feature.gallery
 
+import com.example.lifetogether.domain.result.toUserMessage
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.result.Result
@@ -115,7 +117,7 @@ class AlbumDetailsViewModel @Inject constructor(
                             )
                         }
                     }
-                    is Result.Failure -> showError(result.error)
+                    is Result.Failure -> showError(result.error.toUserMessage())
                 }
             }
         }
@@ -133,7 +135,7 @@ class AlbumDetailsViewModel @Inject constructor(
             galleryRepository.observeAlbumMedia(familyIdValue, albumIdValue).collect { result ->
                 when (result) {
                     is Result.Success -> handleMediaSuccess(result.data)
-                    is Result.Failure -> handleMediaFailure(result.error)
+                    is Result.Failure -> handleMediaFailure(result.error.toUserMessage())
                 }
             }
         }
@@ -242,7 +244,7 @@ class AlbumDetailsViewModel @Inject constructor(
                     _uiState.update { it.copy(album = updatedAlbum) }
                     dismissOverflowMenuActionDialog()
                 }
-                is Result.Failure -> showError(result.error)
+                is Result.Failure -> showError(result.error.toUserMessage())
             }
         }
     }
@@ -255,7 +257,7 @@ class AlbumDetailsViewModel @Inject constructor(
                     dismissOverflowMenuActionDialog()
                     onDeleteSuccess()
                 }
-                is Result.Failure -> showError(result.error)
+                is Result.Failure -> showError(result.error.toUserMessage())
             }
         }
     }
@@ -315,7 +317,7 @@ class AlbumDetailsViewModel @Inject constructor(
                             }
                         }
                     }
-                    is Result.Failure -> showError(result.error)
+                    is Result.Failure -> showError(result.error.toUserMessage())
                 }
             }
         }
@@ -331,7 +333,7 @@ class AlbumDetailsViewModel @Inject constructor(
                     dismissOverflowMenuActionDialog()
                     toggleSelectionMode()
                 }
-                is Result.Failure -> showError(result.error)
+                is Result.Failure -> showError(result.error.toUserMessage())
             }
         }
     }
@@ -347,7 +349,7 @@ class AlbumDetailsViewModel @Inject constructor(
                     dismissOverflowMenuActionDialog()
                     toggleSelectionMode()
                 }
-                is Result.Failure -> showError(result.error)
+                is Result.Failure -> showError(result.error.toUserMessage())
             }
         }
     }

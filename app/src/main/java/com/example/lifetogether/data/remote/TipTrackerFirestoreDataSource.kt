@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.remote
 
+import com.example.lifetogether.domain.result.AppError
+
 import android.util.Log
 import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.domain.result.ListSnapshot
@@ -38,7 +40,7 @@ class TipTrackerFirestoreDataSource @Inject constructor(
         awaitClose { registration.remove() }
     }
 
-    suspend fun saveTip(tip: TipItem): Result<String, String> {
+    suspend fun saveTip(tip: TipItem): Result<String, AppError> {
         return try {
             val doc = db.collection(Constants.TIP_TRACKER_TABLE).add(tip).await()
             Result.Success(doc.id)
@@ -47,7 +49,7 @@ class TipTrackerFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun deleteTip(tipId: String): Result<Unit, String> {
+    suspend fun deleteTip(tipId: String): Result<Unit, AppError> {
         return try {
             db.collection(Constants.TIP_TRACKER_TABLE).document(tipId).delete().await()
             Result.Success(Unit)

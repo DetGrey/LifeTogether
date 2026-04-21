@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.feature.lists
 
+import com.example.lifetogether.domain.result.toUserMessage
+
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -83,7 +85,7 @@ class ListsViewModel @Inject constructor(
                         _userLists.value = result.data.sortedBy { it.itemName.lowercase() }
                     }
                     is Result.Failure -> {
-                        error = result.error
+                        error = result.error.toUserMessage()
                         showAlertDialog = true
                     }
                 }
@@ -124,7 +126,7 @@ class ListsViewModel @Inject constructor(
                     onCreated(result.data)
                 }
                 is Result.Failure -> {
-                    error = result.error
+                    error = result.error.toUserMessage()
                     showAlertDialog = true
                 }
             }

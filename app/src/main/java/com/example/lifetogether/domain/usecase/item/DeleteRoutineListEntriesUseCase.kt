@@ -1,5 +1,7 @@
 package com.example.lifetogether.domain.usecase.item
 
+import com.example.lifetogether.domain.result.AppError
+
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.domain.repository.ImageRepository
 import com.example.lifetogether.domain.repository.UserListRepository
@@ -12,7 +14,7 @@ class DeleteRoutineListEntriesUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(
         entries: List<RoutineListEntry>,
-    ): Result<Unit, String> {
+    ): Result<Unit, AppError> {
         if (entries.isEmpty()) return Result.Success(Unit)
 
         return try {

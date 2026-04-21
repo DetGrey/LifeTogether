@@ -1,5 +1,7 @@
 package com.example.lifetogether.domain.usecase.gallery
 
+import com.example.lifetogether.domain.result.AppError
+
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.repository.GalleryRepository
@@ -12,7 +14,7 @@ class DeleteAlbumUseCase @Inject constructor(
     suspend operator fun invoke(
         albumId: String,
         albumMedia: List<GalleryMedia>,
-    ): Result<Unit, String> {
+    ): Result<Unit, AppError> {
         try {
             // Step 1: Skip media deletion if empty album
             if (albumMedia.isEmpty()) {
@@ -30,7 +32,7 @@ class DeleteAlbumUseCase @Inject constructor(
             return Result.Failure(e.message ?: "Unknown error occurred")
         }
     }
-    private suspend fun deleteAlbum(albumId: String): Result<Unit, String> {
+    private suspend fun deleteAlbum(albumId: String): Result<Unit, AppError> {
         return galleryRepository.deleteAlbum(albumId)
     }
 

@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.feature.admin.groceryList
 
+import com.example.lifetogether.domain.result.toUserMessage
+
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -57,7 +59,7 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
 
                     is Result.Failure -> {
                         _groceryCategories.value = emptyList()
-                        error = result.error
+                        error = result.error.toUserMessage()
                         showAlertDialog = true
                     }
                 }
@@ -82,8 +84,8 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
             if (result is Result.Success) {
                 newCategory = ""
             } else if (result is Result.Failure) {
-                println("Error: ${result.error}")
-                error = result.error
+                println("Error: ${result.error.toUserMessage()}")
+                error = result.error.toUserMessage()
                 showAlertDialog = true
             }
         }
@@ -96,8 +98,8 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
             val result = adminRepository.deleteCategory(category)
 
             if (result is Result.Failure) {
-                println("Error: ${result.error}")
-                error = result.error
+                println("Error: ${result.error.toUserMessage()}")
+                error = result.error.toUserMessage()
                 showAlertDialog = true
             }
 

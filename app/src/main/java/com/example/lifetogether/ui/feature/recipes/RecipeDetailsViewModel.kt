@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.feature.recipes
 
+import com.example.lifetogether.domain.result.toUserMessage
+
 import android.annotation.SuppressLint
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -108,7 +110,7 @@ class RecipeDetailsViewModel @Inject constructor(
                 when (result) {
                     is Result.Success -> updateRecipeFlow(result.data)
                     is Result.Failure -> {
-                        error = result.error
+                        error = result.error.toUserMessage()
                         showAlertDialog = true
                     }
                 }
@@ -183,7 +185,7 @@ class RecipeDetailsViewModel @Inject constructor(
                 when (val result = recipeRepository.saveRecipe(newRecipe)) {
                     is Result.Success -> onSuccess()
                     is Result.Failure -> {
-                        error = result.error
+                        error = result.error.toUserMessage()
                         showAlertDialog = true
                     }
                 }
@@ -191,7 +193,7 @@ class RecipeDetailsViewModel @Inject constructor(
                 when (val result = recipeRepository.updateRecipe(newRecipe)) {
                     is Result.Success -> onSuccess()
                     is Result.Failure -> {
-                        error = result.error
+                        error = result.error.toUserMessage()
                         showAlertDialog = true
                     }
                 }
@@ -210,7 +212,7 @@ class RecipeDetailsViewModel @Inject constructor(
             when (val result = recipeRepository.deleteRecipe(recipeId)) {
                 is Result.Success -> onSuccess()
                 is Result.Failure -> {
-                    error = result.error
+                    error = result.error.toUserMessage()
                     showAlertDialog = true
                 }
             }

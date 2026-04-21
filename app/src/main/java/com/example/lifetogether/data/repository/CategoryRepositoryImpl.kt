@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.repository
 
+import com.example.lifetogether.domain.result.AppError
+
 import com.example.lifetogether.data.local.source.CategoryLocalDataSource
 import com.example.lifetogether.data.remote.GroceryFirestoreDataSource
 import com.example.lifetogether.domain.model.Category
@@ -13,7 +15,7 @@ class CategoryRepositoryImpl @Inject constructor(
     private val categoryLocalDataSource: CategoryLocalDataSource,
     private val groceryFirestoreDataSource: GroceryFirestoreDataSource,
 ): CategoryRepository {
-    override fun getCategories(): Flow<Result<List<Category>, String>> {
+    override fun getCategories(): Flow<Result<List<Category>, AppError>> {
         return categoryLocalDataSource.getCategories().map { list ->
             try {
                 Result.Success(
@@ -30,7 +32,7 @@ class CategoryRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun syncCategoriesFromRemote(): Flow<Result<Unit, String>> {
+    override fun syncCategoriesFromRemote(): Flow<Result<Unit, AppError>> {
         return groceryFirestoreDataSource.categoriesSnapshotListener().map { result ->
             when (result) {
                 is Result.Success -> runCatching {

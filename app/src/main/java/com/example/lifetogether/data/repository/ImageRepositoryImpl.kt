@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.repository
 
+import com.example.lifetogether.domain.result.AppError
+
 import android.content.Context
 import android.net.Uri
 import android.util.Log
@@ -34,7 +36,7 @@ class ImageRepositoryImpl @Inject constructor(
     companion object {
         private const val TAG = "LocalImageRepositoryImpl"
     }
-    override fun getImageByteArray(imageType: ImageType): Flow<Result<ByteArray, String>> {
+    override fun getImageByteArray(imageType: ImageType): Flow<Result<ByteArray, AppError>> {
         Log.d(TAG, "getImageByteArray")
         val byteArrayFlow = when (imageType) {
             is ImageType.ProfileImage -> userLocalDataSource.getProfileImageByteArray(imageType.uid)
@@ -64,13 +66,13 @@ class ImageRepositoryImpl @Inject constructor(
         uri: Uri,
         imageType: ImageType,
         context: Context,
-    ): Result<String, String> {
+    ): Result<String, AppError> {
         return storageDataSource.uploadPhoto(uri, imageType, context)
     }
 
     override suspend fun deleteImage(
         imageType: ImageType,
-    ): Result<Unit, String> {
+    ): Result<Unit, AppError> {
         val urlResult = when (imageType) {
             is ImageType.ProfileImage -> userFirestoreDataSource.getUserImageUrl(imageType.uid)
             is ImageType.FamilyImage -> familyFirestoreDataSource.getFamilyImageUrl(imageType.familyId)
@@ -83,22 +85,21 @@ class ImageRepositoryImpl @Inject constructor(
                 storageDataSource.deleteImage(urlResult.data)
             }
             is Result.Failure -> {
-                Result.Failure(urlResult.error)
+                if (urlResult.error is AppError.NotFound) Result.Success(Unit) else Result.Failure(urlResult.error)
             }
-            null -> Result.Success(Unit) // Means that there is no image to delete
         }
     }
 
     override suspend fun deleteMediaFiles(
         urlList: List<String>,
-    ): Result<Unit, String> {
+    ): Result<Unit, AppError> {
         return storageDataSource.deleteImages(urlList)
     }
 
     override suspend fun saveImageDownloadUrl(
         url: String,
         imageType: ImageType,
-    ): Result<Unit, String> {
+    ): Result<Unit, AppError> {
         return when (imageType) {
             is ImageType.ProfileImage -> userFirestoreDataSource.saveUserImageUrl(imageType.uid, url)
             is ImageType.FamilyImage -> familyFirestoreDataSource.saveFamilyImageUrl(imageType.familyId, url)

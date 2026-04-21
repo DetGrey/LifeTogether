@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.repository
 
+import com.example.lifetogether.domain.result.AppError
+
 import com.example.lifetogether.data.local.source.UserListLocalDataSource
 import com.example.lifetogether.data.local.source.query.ListQueryType
 import com.example.lifetogether.data.model.RoutineListEntryEntity
@@ -21,7 +23,7 @@ class UserListRepositoryImpl @Inject constructor(
     private val storageDataSource: StorageDataSource,
 ): UserListRepository {
     // USER LIST
-    override fun observeUserLists(familyId: String): Flow<Result<List<UserList>, String>> {
+    override fun observeUserLists(familyId: String): Flow<Result<List<UserList>, AppError>> {
         return userListLocalDataSource.observeUserLists(familyId)
             .map { entities ->
                 try {
@@ -35,7 +37,7 @@ class UserListRepositoryImpl @Inject constructor(
             }
     }
 
-    override fun syncUserListsFromRemote(uid: String, familyId: String): Flow<Result<Unit, String>> {
+    override fun syncUserListsFromRemote(uid: String, familyId: String): Flow<Result<Unit, AppError>> {
         return combine(
             userListFirestoreDataSource.familySharedUserListsSnapshotListener(familyId),
             userListFirestoreDataSource.privateUserListsSnapshotListener(familyId, uid),
@@ -77,12 +79,12 @@ class UserListRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun saveUserList(userList: UserList): Result<String, String> {
+    override suspend fun saveUserList(userList: UserList): Result<String, AppError> {
         return userListFirestoreDataSource.saveUserList(userList)
     }
     
     // ROUTINE ENTRY
-    override fun observeRoutineListEntries(familyId: String): Flow<Result<List<RoutineListEntry>, String>> {
+    override fun observeRoutineListEntries(familyId: String): Flow<Result<List<RoutineListEntry>, AppError>> {
         return userListLocalDataSource.observeRoutineListEntries(familyId)
             .map { entities ->
                 try {
@@ -96,7 +98,7 @@ class UserListRepositoryImpl @Inject constructor(
             }
     }
 
-    override fun syncRoutineListEntriesFromRemote(familyId: String): Flow<Result<Unit, String>> {
+    override fun syncRoutineListEntriesFromRemote(familyId: String): Flow<Result<Unit, AppError>> {
         return userListFirestoreDataSource.familyRoutineListEntriesSnapshotListener(familyId).map { result ->
             when (result) {
                 is Result.Success -> runCatching {
@@ -126,7 +128,7 @@ class UserListRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun observeRoutineListEntry(id: String): Flow<Result<RoutineListEntry, String>> {
+    override fun observeRoutineListEntry(id: String): Flow<Result<RoutineListEntry, AppError>> {
         return userListLocalDataSource.observeRoutineListEntry(id)
             .map { entity ->
                 try {
@@ -138,7 +140,7 @@ class UserListRepositoryImpl @Inject constructor(
             }
     }
 
-    override fun observeRoutineImageByteArray(entryId: String): Flow<Result<ByteArray, String>> {
+    override fun observeRoutineImageByteArray(entryId: String): Flow<Result<ByteArray, AppError>> {
         val byteArrayFlow = userListLocalDataSource.observeRoutineImageByteArray(entryId)
         return byteArrayFlow.map { byteArray ->
             try {
@@ -153,15 +155,15 @@ class UserListRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun saveRoutineListEntry(entry: RoutineListEntry): Result<String, String> {
+    override suspend fun saveRoutineListEntry(entry: RoutineListEntry): Result<String, AppError> {
         return userListFirestoreDataSource.saveRoutineListEntry(entry)
     }
 
-    override suspend fun updateRoutineListEntry(entry: RoutineListEntry): Result<Unit, String> {
+    override suspend fun updateRoutineListEntry(entry: RoutineListEntry): Result<Unit, AppError> {
         return userListFirestoreDataSource.updateRoutineListEntry(entry)
     }
 
-    override suspend fun deleteRoutineListEntries(itemIds: List<String>): Result<Unit, String> {
+    override suspend fun deleteRoutineListEntries(itemIds: List<String>): Result<Unit, AppError> {
         val remoteDelete = userListFirestoreDataSource.deleteRoutineListEntries(itemIds)
         if (remoteDelete is Result.Failure) return remoteDelete
         return userListLocalDataSource.deleteRoutineListEntries(itemIds)

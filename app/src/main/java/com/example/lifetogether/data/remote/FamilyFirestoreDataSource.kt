@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.remote
 
+import com.example.lifetogether.domain.result.AppError
+
 import android.util.Log
 import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.model.family.FamilyMember
@@ -44,7 +46,7 @@ class FamilyFirestoreDataSource @Inject constructor(
         awaitClose { registration.remove() }
     }
 
-    suspend fun joinFamily(familyId: String, uid: String, name: String): Result<Unit, String> {
+    suspend fun joinFamily(familyId: String, uid: String, name: String): Result<Unit, AppError> {
         return try {
             val doc = db.collection(Constants.FAMILIES_TABLE).document(familyId).get().await()
             @Suppress("UNCHECKED_CAST")
@@ -58,7 +60,7 @@ class FamilyFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun createNewFamily(uid: String, name: String): Result<String, String> {
+    suspend fun createNewFamily(uid: String, name: String): Result<String, AppError> {
         return try {
             val map = mapOf("members" to listOf(mapOf("uid" to uid, "name" to name)))
             val documentReference = db.collection(Constants.FAMILIES_TABLE).add(map).await()
@@ -68,7 +70,7 @@ class FamilyFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun leaveFamily(familyId: String, uid: String): Result<Unit, String> {
+    suspend fun leaveFamily(familyId: String, uid: String): Result<Unit, AppError> {
         return try {
             val doc = db.collection(Constants.FAMILIES_TABLE).document(familyId).get().await()
             @Suppress("UNCHECKED_CAST")
@@ -81,11 +83,11 @@ class FamilyFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun deleteFamily(familyId: String): Result<Unit, String> {
+    suspend fun deleteFamily(familyId: String): Result<Unit, AppError> {
         return try {
             db.collection(Constants.FAMILIES_TABLE).document(familyId).delete().await()
             val usersRef = db.collection(Constants.USER_TABLE).whereEqualTo("familyId", familyId).get().await()
-            val failures = mutableListOf<String>()
+            val failures = mutableListOf<AppError>()
             for (userDocument in usersRef.documents) {
                 val uid = userDocument.id
                 val result = userFirestoreDataSource.updateFamilyId(uid, null)
@@ -98,16 +100,17 @@ class FamilyFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun getFamilyImageUrl(familyId: String): Result<String, String>? {
+    suspend fun getFamilyImageUrl(familyId: String): Result<String, AppError> {
         return try {
             val doc = db.collection(Constants.FAMILIES_TABLE).document(familyId).get().await()
-            doc.getString("imageUrl")?.let { Result.Success(it) }
+            val url = doc.getString("imageUrl")
+            if (url != null) Result.Success(url) else Result.Failure(AppError.NotFound("Family image not found"))
         } catch (e: Exception) {
             Result.Failure("Error: ${e.message}")
         }
     }
 
-    suspend fun saveFamilyImageUrl(familyId: String, url: String): Result<Unit, String> {
+    suspend fun saveFamilyImageUrl(familyId: String, url: String): Result<Unit, AppError> {
         return try {
             db.collection(Constants.FAMILIES_TABLE).document(familyId).update(mapOf("imageUrl" to url)).await()
             Result.Success(Unit)
@@ -148,7 +151,7 @@ class FamilyFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun removeDeviceToken(uid: String, familyId: String): Result<Unit, String> {
+    suspend fun removeDeviceToken(uid: String, familyId: String): Result<Unit, AppError> {
         return try {
             val familyDocRef = db.collection(Constants.FAMILIES_TABLE).document(familyId)
             val document = familyDocRef.get().await()

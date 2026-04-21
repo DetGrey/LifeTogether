@@ -1,5 +1,6 @@
 import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
+import java.io.File
 
 plugins {
     alias(libs.plugins.androidApplication)
@@ -205,6 +206,55 @@ tasks.register("ktlint") {
     group = "verification"
     // Collects all ktlintCheck tasks from all submodules
     dependsOn(subprojects.map { "${it.path}:ktlintCheck" })
+}
+
+tasks.register("verifyNoStringResultInDataDomain") {
+    group = "verification"
+    description = "Fails if Result<*, String> is used in data/domain source sets."
+
+    doLast {
+        val pattern = Regex("""Result<.*?,\s*String>""")
+        val roots =
+            listOf(
+                File(projectDir, "src/main/java/com/example/lifetogether/data"),
+                File(projectDir, "src/main/java/com/example/lifetogether/domain"),
+            )
+
+        val violations =
+            roots
+                .filter { it.exists() }
+                .flatMap { root ->
+                    root
+                        .walkTopDown()
+                        .filter { it.isFile && it.extension == "kt" }
+                        .flatMap { file ->
+                            file
+                                .readLines()
+                                .mapIndexedNotNull { index, line ->
+                                    if (pattern.containsMatchIn(line)) {
+                                        "${file.relativeTo(projectDir).path}:${index + 1}: $line"
+                                    } else {
+                                        null
+                                    }
+                                }
+                                .toList()
+                        }
+                        .toList()
+                }
+
+        if (violations.isNotEmpty()) {
+            throw GradleException(
+                buildString {
+                    appendLine("Found forbidden Result<*, String> usage in data/domain:")
+                    violations.forEach { appendLine(it) }
+                },
+            )
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn("verifyNoStringResultInDataDomain")
 }
 
 afterEvaluate {

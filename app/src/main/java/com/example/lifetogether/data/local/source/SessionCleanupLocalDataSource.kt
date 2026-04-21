@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.local.source
 
+import com.example.lifetogether.domain.result.AppError
+
 import android.content.Context
 import androidx.core.net.toUri
 import com.example.lifetogether.data.local.dao.AlbumsDao
@@ -25,7 +27,7 @@ class SessionCleanupLocalDataSource @Inject constructor(
     private val albumsDao: AlbumsDao,
     private val guidesDao: GuidesDao,
 ) {
-    fun clearSessionTables(): Result<Unit, String> {
+    fun clearSessionTables(): Result<Unit, AppError> {
         return try {
             groceryListDao.deleteTable()
             recipesDao.deleteTable()

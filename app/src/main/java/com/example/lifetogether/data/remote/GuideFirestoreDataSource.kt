@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.remote
 
+import com.example.lifetogether.domain.result.AppError
+
 import android.util.Log
 import com.example.lifetogether.domain.logic.GuideParser
 import com.example.lifetogether.domain.model.guides.Guide
@@ -93,7 +95,7 @@ class GuideFirestoreDataSource @Inject constructor(
         awaitClose { registration.remove() }
     }
 
-    suspend fun saveGuide(guide: Guide): Result<String, String> {
+    suspend fun saveGuide(guide: Guide): Result<String, AppError> {
         return try {
             val upload = GuideParser.guideToFirestoreMap(guide)
             val doc = db.collection(Constants.GUIDES_TABLE).add(upload).await()
@@ -103,7 +105,7 @@ class GuideFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun updateGuide(guide: Guide): Result<Unit, String> {
+    suspend fun updateGuide(guide: Guide): Result<Unit, AppError> {
         return try {
             val id = guide.id ?: return Result.Failure("Missing guide id")
             val upload = GuideParser.guideToFirestoreMap(guide)
@@ -114,7 +116,7 @@ class GuideFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun deleteGuide(guideId: String): Result<Unit, String> {
+    suspend fun deleteGuide(guideId: String): Result<Unit, AppError> {
         return try {
             deleteGuideWithRelatedProgress(guideId)
             Result.Success(Unit)
@@ -123,7 +125,7 @@ class GuideFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun updateGuideProgress(progress: GuideProgressState): Result<Unit, String> {
+    suspend fun updateGuideProgress(progress: GuideProgressState): Result<Unit, AppError> {
         return try {
             db.collection(Constants.GUIDE_PROGRESS_TABLE)
                 .document(progress.id)

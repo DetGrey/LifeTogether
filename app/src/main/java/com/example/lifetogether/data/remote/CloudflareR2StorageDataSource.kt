@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.remote
 
+import com.example.lifetogether.domain.result.AppError
+
 import android.app.Application
 import android.content.Context
 import android.net.Uri
@@ -70,7 +72,7 @@ class CloudflareR2StorageDataSource @Inject constructor(
         uri: Uri,
         imageType: ImageType,
         context: Context,
-    ): Result<String, String> {
+    ): Result<String, AppError> {
         return try {
             // Process image (rotate, resize, compress)
             val processedImage = imageProcessor.processImage(uri, imageType, context)
@@ -104,7 +106,7 @@ class CloudflareR2StorageDataSource @Inject constructor(
         }
     }
 
-    override suspend fun fetchImageByteArray(url: String): Result<ByteArray, String> {
+    override suspend fun fetchImageByteArray(url: String): Result<ByteArray, AppError> {
         return try {
             val objectKey = extractObjectKeyFromUrl(url)
 
@@ -122,7 +124,7 @@ class CloudflareR2StorageDataSource @Inject constructor(
         }
     }
 
-    override suspend fun deleteImage(url: String): Result<Unit, String> {
+    override suspend fun deleteImage(url: String): Result<Unit, AppError> {
         return try {
             val objectKey = extractObjectKeyFromUrl(url)
 
@@ -139,7 +141,7 @@ class CloudflareR2StorageDataSource @Inject constructor(
         }
     }
 
-    override suspend fun deleteImages(urlList: List<String>): Result<Unit, String> =
+    override suspend fun deleteImages(urlList: List<String>): Result<Unit, AppError> =
         coroutineScope {
             if (urlList.isEmpty()) {
                 Log.i(TAG, "deleteImages: URL list is empty. Nothing to delete.")
@@ -173,7 +175,7 @@ class CloudflareR2StorageDataSource @Inject constructor(
         uri: Uri,
         path: String,
         extension: String,
-    ): Result<String, String> {
+    ): Result<String, AppError> {
         return try {
             val fileName = "${UUID.randomUUID()}-${System.currentTimeMillis()}$extension"
             val objectKey = "$path/$fileName"
@@ -205,7 +207,7 @@ class CloudflareR2StorageDataSource @Inject constructor(
         context: Context,
         storageUrl: String,
         desiredFileExtension: String,
-    ): Result<File, String> {
+    ): Result<File, AppError> {
         val ensuredExtension = if (desiredFileExtension.startsWith(".")) desiredFileExtension else ".$desiredFileExtension"
         val tempFileName = "${UUID.randomUUID()}$ensuredExtension"
 

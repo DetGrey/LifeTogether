@@ -1,5 +1,7 @@
 package com.example.lifetogether.data.local.source
 
+import com.example.lifetogether.domain.result.AppError
+
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
@@ -199,7 +201,7 @@ class MediaLocalDataSource @Inject constructor(
     fun copyMediaToGalleryFolder(
         mediaFile: File,
         mediaItem: GalleryMedia,
-    ): Result<Unit, String> {
+    ): Result<Unit, AppError> {
         val resolver = context.contentResolver
         var mediaStoreUri: Uri? = null
 
