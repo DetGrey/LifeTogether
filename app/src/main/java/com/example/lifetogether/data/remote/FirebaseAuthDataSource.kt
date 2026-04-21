@@ -5,6 +5,7 @@ import com.example.lifetogether.data.logic.appResultOfSuspend
 
 import com.example.lifetogether.domain.result.AppError
 
+import android.util.Log
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
@@ -20,10 +21,14 @@ import javax.inject.Inject
 class FirebaseAuthDataSource@Inject constructor(
     private val familyFirestoreDataSource: FamilyFirestoreDataSource,
 ) {
+    private companion object {
+        const val TAG = "FirebaseAuthDS"
+    }
+
     suspend fun login(
         user: User,
     ): Result<UserInformation, AppError> {
-        println("FirebaseAuthDataSource login()")
+        Log.d(TAG, "login start")
         return appResultOfSuspend {
             val loginResult = Firebase.auth.signInWithEmailAndPassword(user.email, user.password).await()
             val firebaseUser = loginResult.user
@@ -39,12 +44,11 @@ class FirebaseAuthDataSource@Inject constructor(
         user: User,
         userInformation: UserInformation,
     ): Result<UserInformation, AppError> {
-        println("FirebaseAuthDataSource signUp()")
+        Log.d(TAG, "signUp start")
         return appResultOfSuspend {
             val signupResult = Firebase.auth.createUserWithEmailAndPassword(user.email, user.password).await()
             val firebaseUser = signupResult.user
-            println("signupResult: $signupResult")
-            println("firebaseUser: $firebaseUser")
+            Log.d(TAG, "signUp auth response received")
             if (firebaseUser != null) {
                 userInformation.copy(uid = firebaseUser.uid)
             } else {
@@ -78,7 +82,7 @@ class FirebaseAuthDataSource@Inject constructor(
     ): Result<Unit, AppError> {
         return appResultOfSuspend {
             FirebaseAuth.getInstance().signOut()
-            println("datasource logout result: ${FirebaseAuth.getInstance().currentUser}")
+            Log.d(TAG, "logout signOut completed")
             if (familyId != null) {
                 familyFirestoreDataSource.removeDeviceToken(uid, familyId)
             }

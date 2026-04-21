@@ -2,6 +2,7 @@ package com.example.lifetogether.domain.usecase.user
 
 import com.example.lifetogether.domain.result.AppError
 
+import android.util.Log
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.repository.UserRepository
@@ -11,6 +12,10 @@ import javax.inject.Inject
 class SignUpUseCase @Inject constructor(
     private val userRepository: UserRepository,
 ) {
+    private companion object {
+        const val TAG = "SignUpUseCase"
+    }
+
     suspend operator fun invoke(
         user: User,
         userInformation: UserInformation,
@@ -36,7 +41,7 @@ class SignUpUseCase @Inject constructor(
 //            error = "Invalid email."
 //            return
 //        }
-        println("SignUpUseCase invoked")
+        Log.d(TAG, "invoke")
         return userRepository.signUp(user, userInformation)
     }
 }

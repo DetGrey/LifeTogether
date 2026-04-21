@@ -1,5 +1,6 @@
 package com.example.lifetogether.domain.usecase.observers
 
+import android.util.Log
 import com.example.lifetogether.domain.repository.UserRepository
 import com.example.lifetogether.domain.result.Result as AppResult
 import kotlinx.coroutines.CompletableDeferred
@@ -10,6 +11,10 @@ import javax.inject.Inject
 class ObserveUserInformationUseCase @Inject constructor(
     private val userRepository: UserRepository,
 ) {
+    private companion object {
+        const val TAG = "ObserveUserInfoUC"
+    }
+
     fun start(
         scope: CoroutineScope,
         uid: String,
@@ -19,7 +24,7 @@ class ObserveUserInformationUseCase @Inject constructor(
             userRepository.syncUserInformationFromRemote(uid).collect { result ->
                 when (result) {
                     is AppResult.Success -> firstSuccess.completeFirstSuccessIfNeeded()
-                    is AppResult.Failure -> println("user info sync failure: ${result.error}")
+                    is AppResult.Failure -> Log.e(TAG, "user info sync failure: ${result.error}")
                 }
             }
         }

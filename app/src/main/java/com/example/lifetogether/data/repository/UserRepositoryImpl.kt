@@ -7,6 +7,7 @@ import com.example.lifetogether.data.logic.appResultOfSuspend
 
 import com.example.lifetogether.domain.result.AppError
 
+import android.util.Log
 import com.example.lifetogether.data.local.source.SessionCleanupLocalDataSource
 import com.example.lifetogether.data.local.source.UserLocalDataSource
 import com.example.lifetogether.data.remote.FamilyFirestoreDataSource
@@ -33,12 +34,15 @@ class UserRepositoryImpl @Inject constructor(
     private val familyFirestoreDataSource: FamilyFirestoreDataSource,
     private val storageDataSource: StorageDataSource,
 ) : UserRepository, SessionUserRepository {
+    private companion object {
+        const val TAG = "UserRepositoryImpl"
+    }
 
     fun getFamilyInformation(familyId: String): Flow<Result<FamilyInformation, AppError>> {
         // Get family information (without members)
         val familyInformationFlow: Flow<Result<FamilyInformation, AppError>> = userLocalDataSource.getFamilyInformation(familyId).map { user ->
             appResultOf {
-                println("LocalUserRepositoryImpl getFamilyInformation user: $user")
+                Log.d(TAG, "Mapping family information from local user record")
 
                 // Initial FamilyInformation without members
                 FamilyInformation(
@@ -51,14 +55,14 @@ class UserRepositoryImpl @Inject constructor(
         val familyMembersFlow = userLocalDataSource.getFamilyMembers(familyId).map { list ->
             list.map { familyMember ->
                 try {
-                    println("LocalUserRepositoryImpl getFamilyInformation familyMember: $familyMember")
+                    Log.d(TAG, "Mapping local family member")
 
                     FamilyMember(
                         uid = familyMember.uid,
                         name = familyMember.name,
                     )
                 } catch (e: Exception) {
-                    println("Error fetching family members: ${e.message}")
+                    Log.e(TAG, "Failed mapping family member: ${e.message}", e)
                     emptyList<FamilyMember>()
                 }
             }
@@ -87,7 +91,7 @@ class UserRepositoryImpl @Inject constructor(
     override suspend fun login(
         user: User,
     ): Result<UserInformation, AppError> {
-        println("RemoteUserRepositoryImpl login()")
+        Log.d(TAG, "login start")
         return firebaseAuthDataSource.login(user)
     }
 
@@ -95,21 +99,21 @@ class UserRepositoryImpl @Inject constructor(
         user: User,
         userInformation: UserInformation,
     ): Result<UserInformation, AppError> {
-        println("RemoteUserRepositoryImpl signUp()")
+        Log.d(TAG, "signUp start")
         return appResultOfSuspend {
             val signupResult = firebaseAuthDataSource.signUp(user, userInformation)
-            println("RemoteUserRepositoryImpl signupResult: $signupResult")
+            Log.d(TAG, "signUp auth response received")
             val signedUpUser = when (signupResult) {
                 is Result.Success -> signupResult.data
                 is Result.Failure -> throw AppErrorThrowable(signupResult.error)
             }
             when (val uploadResult = userFirestoreDataSource.uploadUserInformation(signedUpUser)) {
                 is Result.Success -> {
-                    println("RemoteUserRepositoryImpl: uploadResult $uploadResult")
+                    Log.d(TAG, "signUp user info upload succeeded")
                     signedUpUser
                 }
                 is Result.Failure -> {
-                    println("RemoteUserRepositoryImpl: uploadResult $uploadResult")
+                    Log.e(TAG, "signUp user info upload failed: ${uploadResult.error}")
                     throw AppErrorThrowable(uploadResult.error)
                 }
             }
@@ -203,7 +207,7 @@ class UserRepositoryImpl @Inject constructor(
         uid: String,
         name: String,
     ): Result<Unit, AppError> {
-        println("RemoteUserRepositoryImpl joinFamily()")
+        Log.d(TAG, "joinFamily start")
         when (val result = familyFirestoreDataSource.joinFamily(familyId, uid, name)) {
             is Result.Success -> {
                 val updateResult = userFirestoreDataSource.updateFamilyId(uid, familyId)
@@ -219,7 +223,7 @@ class UserRepositoryImpl @Inject constructor(
         uid: String,
         name: String,
     ): Result<Unit, AppError> {
-        println("RemoteUserRepositoryImpl createNewFamily()")
+        Log.d(TAG, "createNewFamily start")
         when (val result = familyFirestoreDataSource.createNewFamily(uid, name)) {
             is Result.Success -> {
                 val updateResult = userFirestoreDataSource.updateFamilyId(uid, result.data)
@@ -235,7 +239,7 @@ class UserRepositoryImpl @Inject constructor(
         familyId: String,
         uid: String,
     ): Result<Unit, AppError> {
-        println("RemoteUserRepositoryImpl leaveFamily()")
+        Log.d(TAG, "leaveFamily start")
         when (val result = familyFirestoreDataSource.leaveFamily(familyId, uid)) {
             is Result.Success -> {
                 val updateResult = userFirestoreDataSource.updateFamilyId(uid, null)
@@ -250,7 +254,7 @@ class UserRepositoryImpl @Inject constructor(
     suspend fun deleteFamily(
         familyId: String,
     ): Result<Unit, AppError> {
-        println("RemoteUserRepositoryImpl deleteFamily()")
+        Log.d(TAG, "deleteFamily start")
         return familyFirestoreDataSource.deleteFamily(familyId)
     }
 

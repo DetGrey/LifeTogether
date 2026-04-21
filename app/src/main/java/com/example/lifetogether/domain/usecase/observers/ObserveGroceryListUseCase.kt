@@ -1,5 +1,6 @@
 package com.example.lifetogether.domain.usecase.observers
 
+import android.util.Log
 import com.example.lifetogether.domain.repository.GroceryRepository
 import com.example.lifetogether.domain.result.Result as AppResult
 import kotlinx.coroutines.CompletableDeferred
@@ -10,6 +11,10 @@ import javax.inject.Inject
 class ObserveGroceryListUseCase @Inject constructor(
     private val groceryRepository: GroceryRepository,
 ) {
+    private companion object {
+        const val TAG = "ObserveGroceryListUC"
+    }
+
     fun start(
         scope: CoroutineScope,
         familyId: String,
@@ -19,7 +24,7 @@ class ObserveGroceryListUseCase @Inject constructor(
             groceryRepository.syncGroceryItemsFromRemote(familyId).collect { result ->
                 when (result) {
                     is AppResult.Success -> firstSuccess.completeFirstSuccessIfNeeded()
-                    is AppResult.Failure -> println("grocery list sync failure: ${result.error}")
+                    is AppResult.Failure -> Log.e(TAG, "grocery list sync failure: ${result.error}")
                 }
             }
         }
