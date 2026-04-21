@@ -1,7 +1,12 @@
 package com.example.lifetogether.data.repository
 
+import com.example.lifetogether.data.logic.AppErrors
+import com.example.lifetogether.data.logic.AppErrorThrowable
+import com.example.lifetogether.data.logic.appResultOf
+
+import com.example.lifetogether.domain.result.AppError
+
 import com.example.lifetogether.data.local.source.UserListLocalDataSource
-import com.example.lifetogether.data.local.source.query.ListQueryType
 import com.example.lifetogether.data.model.RoutineListEntryEntity
 import com.example.lifetogether.data.model.UserListEntity
 import com.example.lifetogether.data.remote.UserListFirestoreDataSource
@@ -21,21 +26,18 @@ class UserListRepositoryImpl @Inject constructor(
     private val storageDataSource: StorageDataSource,
 ): UserListRepository {
     // USER LIST
-    override fun observeUserLists(familyId: String): Flow<Result<List<UserList>, String>> {
+    override fun observeUserLists(familyId: String): Flow<Result<List<UserList>, AppError>> {
         return userListLocalDataSource.observeUserLists(familyId)
             .map { entities ->
-                try {
-                    val userLists = entities
+                appResultOf {
+                    entities
                         .map { it.toModel() }
                         .sortedBy { it.itemName }
-                    Result.Success(userLists)
-                } catch (e: Exception) {
-                    Result.Failure(e.message ?: "Unknown mapping error")
                 }
             }
     }
 
-    override fun syncUserListsFromRemote(uid: String, familyId: String): Flow<Result<Unit, String>> {
+    override fun syncUserListsFromRemote(uid: String, familyId: String): Flow<Result<Unit, AppError>> {
         return combine(
             userListFirestoreDataSource.familySharedUserListsSnapshotListener(familyId),
             userListFirestoreDataSource.privateUserListsSnapshotListener(familyId, uid),
@@ -52,10 +54,12 @@ class UserListRepositoryImpl @Inject constructor(
             val hadSuccess = sharedResult is Result.Success || privateResult is Result.Success
             if (!hadSuccess) {
                 return@combine Result.Failure(
-                    listOfNotNull(
-                        (sharedResult as? Result.Failure)?.error,
-                        (privateResult as? Result.Failure)?.error,
-                    ).joinToString(" | ").ifBlank { "User list sync failed" },
+                    AppErrors.unknown(
+                        listOfNotNull(
+                            (sharedResult as? Result.Failure)?.error,
+                            (privateResult as? Result.Failure)?.error,
+                        ).joinToString(" | ").ifBlank { "User list sync failed" },
+                    ),
                 )
             }
 
@@ -72,31 +76,28 @@ class UserListRepositoryImpl @Inject constructor(
                 }
                 Result.Success(Unit)
             }.getOrElse { error ->
-                Result.Failure(error.message ?: "Failed to sync user lists")
+                Result.Failure(AppErrors.fromThrowable(error))
             }
         }
     }
 
-    override suspend fun saveUserList(userList: UserList): Result<String, String> {
+    override suspend fun saveUserList(userList: UserList): Result<String, AppError> {
         return userListFirestoreDataSource.saveUserList(userList)
     }
     
     // ROUTINE ENTRY
-    override fun observeRoutineListEntries(familyId: String): Flow<Result<List<RoutineListEntry>, String>> {
+    override fun observeRoutineListEntries(familyId: String): Flow<Result<List<RoutineListEntry>, AppError>> {
         return userListLocalDataSource.observeRoutineListEntries(familyId)
             .map { entities ->
-                try {
-                    val routineListEntry = entities
+                appResultOf {
+                    entities
                         .map { it.toModel() }
                         .sortedBy { it.itemName }
-                    Result.Success(routineListEntry)
-                } catch (e: Exception) {
-                    Result.Failure(e.message ?: "Unknown mapping error")
                 }
             }
     }
 
-    override fun syncRoutineListEntriesFromRemote(familyId: String): Flow<Result<Unit, String>> {
+    override fun syncRoutineListEntriesFromRemote(familyId: String): Flow<Result<Unit, AppError>> {
         return userListFirestoreDataSource.familyRoutineListEntriesSnapshotListener(familyId).map { result ->
             when (result) {
                 is Result.Success -> runCatching {
@@ -118,7 +119,7 @@ class UserListRepositoryImpl @Inject constructor(
                     }
                     Result.Success(Unit)
                 }.getOrElse { error ->
-                    Result.Failure(error.message ?: "Failed to sync routine list entries")
+                    Result.Failure(AppErrors.fromThrowable(error))
                 }
 
                 is Result.Failure -> Result.Failure(result.error)
@@ -126,42 +127,29 @@ class UserListRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun observeRoutineListEntry(id: String): Flow<Result<RoutineListEntry, String>> {
+    override fun observeRoutineListEntry(id: String): Flow<Result<RoutineListEntry, AppError>> {
         return userListLocalDataSource.observeRoutineListEntry(id)
-            .map { entity ->
-                try {
-                    val routineListEntry = entity.toModel()
-                    Result.Success(routineListEntry)
-                } catch (e: Exception) {
-                    Result.Failure(e.message ?: "Unknown mapping error")
-                }
-            }
+            .map { entity -> appResultOf { entity.toModel() } }
     }
 
-    override fun observeRoutineImageByteArray(entryId: String): Flow<Result<ByteArray, String>> {
+    override fun observeRoutineImageByteArray(entryId: String): Flow<Result<ByteArray, AppError>> {
         val byteArrayFlow = userListLocalDataSource.observeRoutineImageByteArray(entryId)
         return byteArrayFlow.map { byteArray ->
-            try {
-                if (byteArray != null) {
-                    Result.Success(byteArray)
-                } else {
-                    Result.Failure("No ByteArray found")
-                }
-            } catch (e: Exception) {
-                Result.Failure(e.message ?: "Unknown error")
+            appResultOf {
+                byteArray ?: throw AppErrorThrowable(AppErrors.storage("No ByteArray found"))
             }
         }
     }
 
-    override suspend fun saveRoutineListEntry(entry: RoutineListEntry): Result<String, String> {
+    override suspend fun saveRoutineListEntry(entry: RoutineListEntry): Result<String, AppError> {
         return userListFirestoreDataSource.saveRoutineListEntry(entry)
     }
 
-    override suspend fun updateRoutineListEntry(entry: RoutineListEntry): Result<Unit, String> {
+    override suspend fun updateRoutineListEntry(entry: RoutineListEntry): Result<Unit, AppError> {
         return userListFirestoreDataSource.updateRoutineListEntry(entry)
     }
 
-    override suspend fun deleteRoutineListEntries(itemIds: List<String>): Result<Unit, String> {
+    override suspend fun deleteRoutineListEntries(itemIds: List<String>): Result<Unit, AppError> {
         val remoteDelete = userListFirestoreDataSource.deleteRoutineListEntries(itemIds)
         if (remoteDelete is Result.Failure) return remoteDelete
         return userListLocalDataSource.deleteRoutineListEntries(itemIds)

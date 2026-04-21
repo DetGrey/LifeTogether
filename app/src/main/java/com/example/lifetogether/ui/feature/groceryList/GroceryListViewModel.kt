@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.feature.groceryList
 
+import com.example.lifetogether.domain.result.toUserMessage
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.model.Category
@@ -107,8 +109,8 @@ class GroceryListViewModel @Inject constructor(
                     }
 
                     is Result.Failure -> {
-                        println("Error: ${result.error}")
-                        showError(result.error)
+                        println("Error: ${result.error.toUserMessage()}")
+                        showError(result.error.toUserMessage())
                     }
                 }
             }
@@ -154,7 +156,7 @@ class GroceryListViewModel @Inject constructor(
                         updateUiState { state ->
                             state.copy(groceryCategories = emptyList())
                         }
-                        showError(result.error)
+                        showError(result.error.toUserMessage())
                     }
                 }
             }
@@ -182,7 +184,7 @@ class GroceryListViewModel @Inject constructor(
                         updateUiState { state ->
                             state.copy(allGrocerySuggestions = emptyList())
                         }
-                        showError(result.error)
+                        showError(result.error.toUserMessage())
                     }
                 }
             }
@@ -295,8 +297,8 @@ class GroceryListViewModel @Inject constructor(
                     }
                 }
                 is Result.Failure -> {
-                    println("Error: ${result.error}")
-                    showError(result.error)
+                    println("Error: ${result.error.toUserMessage()}")
+                    showError(result.error.toUserMessage())
                 }
             }
         }
@@ -319,8 +321,8 @@ class GroceryListViewModel @Inject constructor(
                     }
                 }
                 is Result.Failure -> {
-                    println("Error: ${result.error}")
-                    showError(result.error)
+                    println("Error: ${result.error.toUserMessage()}")
+                    showError(result.error.toUserMessage())
                     updateUiState { state ->
                         state.copy(isLoading = false)
                     }

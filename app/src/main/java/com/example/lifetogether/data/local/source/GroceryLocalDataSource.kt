@@ -1,5 +1,9 @@
 package com.example.lifetogether.data.local.source
 
+import com.example.lifetogether.data.logic.appResultOf
+
+import com.example.lifetogether.domain.result.AppError
+
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
 import com.example.lifetogether.data.local.source.internal.computeItemsToDelete
@@ -67,11 +71,8 @@ class GroceryLocalDataSource @Inject constructor(
         }
     }
 
-    fun deleteItems(itemIds: List<String>): Result<Unit, String> =
-        try {
+    fun deleteItems(itemIds: List<String>): Result<Unit, AppError> =
+        appResultOf {
             groceryListDao.deleteItems(itemIds)
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
         }
 }

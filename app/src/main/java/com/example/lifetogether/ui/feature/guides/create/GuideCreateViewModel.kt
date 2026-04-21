@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.feature.guides.create
 
+import com.example.lifetogether.domain.result.toUserMessage
+
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -173,7 +175,7 @@ class GuideCreateViewModel @Inject constructor(
             when (val result = guideRepository.saveGuide(guide)) {
                 is Result.Success -> onSuccess(result.data)
                 is Result.Failure -> {
-                    error = result.error
+                    error = result.error.toUserMessage()
                     showAlertDialog = true
                 }
             }

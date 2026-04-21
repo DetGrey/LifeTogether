@@ -1,5 +1,9 @@
 package com.example.lifetogether.data.local.source
 
+import com.example.lifetogether.data.logic.AppErrors
+
+import com.example.lifetogether.domain.result.AppError
+
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
@@ -199,7 +203,7 @@ class MediaLocalDataSource @Inject constructor(
     fun copyMediaToGalleryFolder(
         mediaFile: File,
         mediaItem: GalleryMedia,
-    ): Result<Unit, String> {
+    ): Result<Unit, AppError> {
         val resolver = context.contentResolver
         var mediaStoreUri: Uri? = null
 
@@ -233,27 +237,26 @@ class MediaLocalDataSource @Inject constructor(
             }
 
             mediaStoreUri = resolver.insert(collectionUri, contentValues)
-                ?: return Result.Failure("Failed to create MediaStore entry")
+                ?: return Result.Failure(AppErrors.storage("Failed to create MediaStore entry"))
 
             resolver.openOutputStream(mediaStoreUri)?.use { outputStream ->
                 mediaFile.inputStream().use { inputStream ->
                     inputStream.copyTo(outputStream)
                 }
-            } ?: return Result.Failure("Failed to open output stream")
+            } ?: return Result.Failure(AppErrors.storage("Failed to open output stream"))
 
             contentValues.clear()
             contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
             resolver.update(mediaStoreUri, contentValues, null, null)
             Result.Success(Unit)
         } catch (e: Exception) {
-            Log.e(TAG, "Error saving media: ${e.message}", e)
             mediaStoreUri?.let { uri ->
                 try {
                     resolver.delete(uri, null, null)
                 } catch (_: Exception) {
                 }
             }
-            Result.Failure("Failed to save file: ${e.message}")
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 

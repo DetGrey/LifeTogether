@@ -1,5 +1,10 @@
 package com.example.lifetogether.data.remote
 
+import com.example.lifetogether.data.logic.AppErrors
+import com.example.lifetogether.data.logic.appResultOfSuspend
+
+import com.example.lifetogether.domain.result.AppError
+
 import android.util.Log
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.result.ListSnapshot
@@ -22,7 +27,7 @@ class RecipeFirestoreDataSource @Inject constructor(
         val ref = db.collection(Constants.RECIPES_TABLE).whereEqualTo("familyId", familyId)
         val registration = ref.addSnapshotListener { snapshot, e ->
             if (e != null) {
-                trySend(Result.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
                 return@addSnapshotListener
             }
             if (snapshot != null) {
@@ -33,55 +38,50 @@ class RecipeFirestoreDataSource @Inject constructor(
                 }
                 trySend(Result.Success(ListSnapshot(items))).isSuccess
             } else {
-                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
+                trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
             }
         }
         awaitClose { registration.remove() }
     }
 
-    suspend fun saveRecipe(recipe: Recipe): Result<String, String> {
-        return try {
+    suspend fun saveRecipe(recipe: Recipe): Result<String, AppError> {
+        return appResultOfSuspend {
             val documentReference = db.collection(Constants.RECIPES_TABLE).add(recipe).await()
-            Result.Success(documentReference.id)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            documentReference.id
         }
     }
 
-    suspend fun updateRecipe(recipe: Recipe): Result<Unit, String> {
-        return try {
-            val id = recipe.id ?: return Result.Failure("Missing recipe id")
+    suspend fun updateRecipe(recipe: Recipe): Result<Unit, AppError> {
+        val id = recipe.id ?: return Result.Failure(AppErrors.validation("Missing recipe id"))
+        return appResultOfSuspend {
             db.collection(Constants.RECIPES_TABLE).document(id).set(recipe, SetOptions.merge()).await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
         }
     }
 
-    suspend fun deleteRecipe(recipeId: String): Result<Unit, String> {
-        return try {
+    suspend fun deleteRecipe(recipeId: String): Result<Unit, AppError> {
+        return appResultOfSuspend {
             db.collection(Constants.RECIPES_TABLE).document(recipeId).delete().await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
         }
     }
 
-    suspend fun getRecipeImageUrl(recipeId: String): Result<String, String>? {
-        return try {
+    suspend fun getRecipeImageUrl(recipeId: String): Result<String, AppError> {
+        val docResult = appResultOfSuspend {
             val doc = db.collection(Constants.RECIPES_TABLE).document(recipeId).get().await()
-            doc.getString("imageUrl")?.let { Result.Success(it) }
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            doc
+        }
+        return when (docResult) {
+            is Result.Success -> {
+                val url = docResult.data.getString("imageUrl")
+                if (url != null) Result.Success(url) else Result.Failure(AppErrors.notFound("Recipe image not found"))
+            }
+
+            is Result.Failure -> docResult
         }
     }
 
-    suspend fun saveRecipeImageUrl(recipeId: String, url: String): Result<Unit, String> {
-        return try {
+    suspend fun saveRecipeImageUrl(recipeId: String, url: String): Result<Unit, AppError> {
+        return appResultOfSuspend {
             db.collection(Constants.RECIPES_TABLE).document(recipeId).update(mapOf("imageUrl" to url)).await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
         }
     }
 }

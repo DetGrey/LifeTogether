@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.feature.lists.listDetails
 
+import com.example.lifetogether.domain.result.toUserMessage
+
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -125,7 +127,7 @@ class ListDetailsViewModel @Inject constructor(
                             }
                         }
                     }
-                    is Result.Failure -> showError(result.error)
+                    is Result.Failure -> showError(result.error.toUserMessage())
                 }
             }
         }
@@ -148,7 +150,7 @@ class ListDetailsViewModel @Inject constructor(
                         syncSelectionState(sortedEntries)
                     }
 
-                    is Result.Failure -> showError(result.error)
+                    is Result.Failure -> showError(result.error.toUserMessage())
                 }
             }
         }
@@ -277,7 +279,7 @@ class ListDetailsViewModel @Inject constructor(
                             showDeleteSelectedDialog = false,
                         )
                     }
-                    showError(result.error)
+                    showError(result.error.toUserMessage())
                 }
             }
         }
@@ -288,7 +290,7 @@ class ListDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = userListRepository.updateRoutineListEntry(updatedEntry)) {
                 is Result.Success -> Unit
-                is Result.Failure -> showError(result.error)
+                is Result.Failure -> showError(result.error.toUserMessage())
             }
         }
     }

@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.feature.profile
 
+import com.example.lifetogether.domain.result.toUserMessage
+
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -69,7 +71,7 @@ class ProfileViewModel @Inject constructor(
                 println("ProfileViewModel: Logout successful")
                 onSuccess()
             } else if (result is Result.Failure) {
-                error = result.error
+                error = result.error.toUserMessage()
                 showAlertDialog = true
             }
         }
@@ -92,7 +94,7 @@ class ProfileViewModel @Inject constructor(
                 }
                 is Result.Failure -> {
                     closeConfirmationDialog()
-                    error = result.error
+                    error = result.error.toUserMessage()
                     showAlertDialog = true
                 }
             }

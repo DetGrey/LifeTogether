@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.feature.family
 
+import com.example.lifetogether.domain.result.toUserMessage
+
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -111,7 +113,7 @@ class FamilyViewModel @Inject constructor(
                 }
                 is Result.Failure -> {
                     closeConfirmationDialog()
-                    error = result.error
+                    error = result.error.toUserMessage()
                     showAlertDialog = true
                     onComplete()
                 }
@@ -131,7 +133,7 @@ class FamilyViewModel @Inject constructor(
                 }
                 is Result.Failure -> {
                     closeConfirmationDialog()
-                    error = result.error
+                    error = result.error.toUserMessage()
                     showAlertDialog = true
                     onComplete()
                 }

@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.feature.guides.stepplayer
 
+import com.example.lifetogether.domain.result.toUserMessage
+
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -122,8 +124,8 @@ class GuideStepPlayerViewModel @Inject constructor(
                         )
                     }
                     is Result.Failure -> {
-                        Log.e(TAG, "Guide observation failed: ${result.error}")
-                        showError(result.error)
+                        Log.e(TAG, "Guide observation failed: ${result.error.toUserMessage()}")
+                        showError(result.error.toUserMessage())
                     }
                 }
             }

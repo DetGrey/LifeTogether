@@ -1,5 +1,10 @@
 package com.example.lifetogether.data.remote
 
+import com.example.lifetogether.data.logic.AppErrors
+import com.example.lifetogether.data.logic.appResultOfSuspend
+
+import com.example.lifetogether.domain.result.AppError
+
 import android.util.Log
 import com.example.lifetogether.domain.logic.GuideParser
 import com.example.lifetogether.domain.model.guides.Guide
@@ -26,11 +31,11 @@ class GuideFirestoreDataSource @Inject constructor(
             .whereEqualTo("visibility", Constants.VISIBILITY_FAMILY)
         val registration = ref.addSnapshotListener { snapshot, e ->
             if (e != null) {
-                trySend(Result.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
                 return@addSnapshotListener
             }
             if (snapshot == null) {
-                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
+                trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
                 return@addSnapshotListener
             }
             val guides = snapshot.documents.mapNotNull { document ->
@@ -51,11 +56,11 @@ class GuideFirestoreDataSource @Inject constructor(
             .whereEqualTo("ownerUid", uid)
         val registration = ref.addSnapshotListener { snapshot, e ->
             if (e != null) {
-                trySend(Result.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
                 return@addSnapshotListener
             }
             if (snapshot == null) {
-                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
+                trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
                 return@addSnapshotListener
             }
             val guides = snapshot.documents.mapNotNull { document ->
@@ -75,11 +80,11 @@ class GuideFirestoreDataSource @Inject constructor(
             .whereEqualTo("uid", uid)
         val registration = ref.addSnapshotListener { snapshot, e ->
             if (e != null) {
-                trySend(Result.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
                 return@addSnapshotListener
             }
             if (snapshot == null) {
-                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
+                trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
                 return@addSnapshotListener
             }
             val progress = snapshot.documents.mapNotNull { document ->
@@ -93,51 +98,40 @@ class GuideFirestoreDataSource @Inject constructor(
         awaitClose { registration.remove() }
     }
 
-    suspend fun saveGuide(guide: Guide): Result<String, String> {
-        return try {
+    suspend fun saveGuide(guide: Guide): Result<String, AppError> {
+        return appResultOfSuspend {
             val upload = GuideParser.guideToFirestoreMap(guide)
             val doc = db.collection(Constants.GUIDES_TABLE).add(upload).await()
-            Result.Success(doc.id)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            doc.id
         }
     }
 
-    suspend fun updateGuide(guide: Guide): Result<Unit, String> {
-        return try {
-            val id = guide.id ?: return Result.Failure("Missing guide id")
+    suspend fun updateGuide(guide: Guide): Result<Unit, AppError> {
+        val id = guide.id ?: return Result.Failure(AppErrors.validation("Missing guide id"))
+        return appResultOfSuspend {
             val upload = GuideParser.guideToFirestoreMap(guide)
             db.collection(Constants.GUIDES_TABLE).document(id).set(upload, SetOptions.merge()).await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
         }
     }
 
-    suspend fun deleteGuide(guideId: String): Result<Unit, String> {
-        return try {
+    suspend fun deleteGuide(guideId: String): Result<Unit, AppError> {
+        return appResultOfSuspend {
             deleteGuideWithRelatedProgress(guideId)
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
         }
     }
 
-    suspend fun updateGuideProgress(progress: GuideProgressState): Result<Unit, String> {
-        return try {
+    suspend fun updateGuideProgress(progress: GuideProgressState): Result<Unit, AppError> {
+        return appResultOfSuspend {
             db.collection(Constants.GUIDE_PROGRESS_TABLE)
                 .document(progress.id)
                 .set(GuideParser.guideProgressToFirestoreMap(progress), SetOptions.merge())
                 .await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
         }
     }
 
     private suspend fun deleteGuideWithRelatedProgress(guideId: String) {
         db.collection(Constants.GUIDES_TABLE).document(guideId).delete().await()
-        runCatching {
+        appResultOfSuspend {
             val progressRefs = db.collection(Constants.GUIDE_PROGRESS_TABLE)
                 .whereEqualTo("guideId", guideId)
                 .get()
@@ -149,8 +143,6 @@ class GuideFirestoreDataSource @Inject constructor(
                 chunk.forEach { ref -> batch.delete(ref) }
                 batch.commit().await()
             }
-        }.onFailure {
-            Log.w(TAG, "Guide deleted but related guide_progress cleanup failed for guideId=$guideId", it)
         }
     }
 }

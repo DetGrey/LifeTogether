@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.feature.admin.groceryList
 
+import com.example.lifetogether.domain.result.toUserMessage
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.model.Category
@@ -86,7 +88,7 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
                         updateUiState { state ->
                             state.copy(groceryCategories = emptyList())
                         }
-                        showError(result.error)
+                        showError(result.error.toUserMessage())
                     }
                 }
             }
@@ -127,7 +129,7 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
                         updateUiState { state ->
                             state.copy(grocerySuggestions = emptyList())
                         }
-                        showError(result.error)
+                        showError(result.error.toUserMessage())
                     }
                 }
             }
@@ -216,8 +218,8 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
             when (val result = adminRepository.saveGrocerySuggestion(grocerySuggestion)) {
                 is Result.Success -> clearSuggestionDraft()
                 is Result.Failure -> {
-                    println("Error: ${result.error}")
-                    showError(result.error)
+                    println("Error: ${result.error.toUserMessage()}")
+                    showError(result.error.toUserMessage())
                 }
             }
         }
@@ -251,8 +253,8 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
             when (val result = adminRepository.updateGrocerySuggestion(updatedSuggestion)) {
                 is Result.Success -> clearSuggestionDraft()
                 is Result.Failure -> {
-                    println("Error: ${result.error}")
-                    showError(result.error)
+                    println("Error: ${result.error.toUserMessage()}")
+                    showError(result.error.toUserMessage())
                 }
             }
         }
@@ -268,8 +270,8 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
             val result = adminRepository.deleteGrocerySuggestion(selectedSuggestion)
 
             if (result is Result.Failure) {
-                println("Error: ${result.error}")
-                showError(result.error)
+                println("Error: ${result.error.toUserMessage()}")
+                showError(result.error.toUserMessage())
             }
 
             updateUiState { state ->

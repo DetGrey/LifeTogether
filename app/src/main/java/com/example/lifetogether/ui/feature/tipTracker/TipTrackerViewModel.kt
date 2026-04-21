@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.feature.tipTracker
 
+import com.example.lifetogether.domain.result.toUserMessage
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.logic.toFullDateString
@@ -84,7 +86,7 @@ class TipTrackerViewModel @Inject constructor(
             tipTrackerRepository.observeTips(familyId!!).collect { result ->
                 when (result) {
                     is Result.Success -> handleTipsSuccess(result.data)
-                    is Result.Failure -> handleTipsError(result.error)
+                    is Result.Failure -> handleTipsError(result.error.toUserMessage())
                 }
             }
         }
@@ -272,7 +274,7 @@ class TipTrackerViewModel @Inject constructor(
                 }
 
                 is Result.Failure -> {
-                    showError(result.error)
+                    showError(result.error.toUserMessage())
                 }
             }
         }
@@ -293,7 +295,7 @@ class TipTrackerViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(showConfirmationDialog = false)
                     }
-                    showError(result.error)
+                    showError(result.error.toUserMessage())
                 }
             }
         }

@@ -1,5 +1,10 @@
 package com.example.lifetogether.domain.usecase.item
 
+import com.example.lifetogether.data.logic.AppErrorThrowable
+import com.example.lifetogether.data.logic.appResultOfSuspend
+
+import com.example.lifetogether.domain.result.AppError
+
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.domain.repository.ImageRepository
 import com.example.lifetogether.domain.repository.UserListRepository
@@ -12,22 +17,19 @@ class DeleteRoutineListEntriesUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(
         entries: List<RoutineListEntry>,
-    ): Result<Unit, String> {
-        if (entries.isEmpty()) return Result.Success(Unit)
+    ): Result<Unit, AppError> {
+        return appResultOfSuspend {
+            if (entries.isEmpty()) return@appResultOfSuspend
 
-        return try {
             val imageUrls = entries.mapNotNull { it.imageUrl }
             val imageDeleteResult = imageRepository.deleteMediaFiles(imageUrls)
-            if (imageDeleteResult is Result.Failure) return imageDeleteResult
+            if (imageDeleteResult is Result.Failure) throw AppErrorThrowable(imageDeleteResult.error)
 
             val entryIds = entries.mapNotNull { it.id }
-            if (entryIds.isEmpty()) return Result.Success(Unit)
+            if (entryIds.isEmpty()) return@appResultOfSuspend
 
             val remoteDeleteResult = userListRepository.deleteRoutineListEntries(entryIds)
-            if (remoteDeleteResult is Result.Failure) return remoteDeleteResult
-            remoteDeleteResult
-        } catch (e: Exception) {
-            Result.Failure(e.message ?: "Unknown error occurred")
+            if (remoteDeleteResult is Result.Failure) throw AppErrorThrowable(remoteDeleteResult.error)
         }
     }
 }

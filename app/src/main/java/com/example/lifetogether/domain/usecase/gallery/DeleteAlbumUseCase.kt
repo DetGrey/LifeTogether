@@ -1,5 +1,10 @@
 package com.example.lifetogether.domain.usecase.gallery
 
+import com.example.lifetogether.data.logic.AppErrorThrowable
+import com.example.lifetogether.data.logic.appResultOfSuspend
+
+import com.example.lifetogether.domain.result.AppError
+
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.repository.GalleryRepository
@@ -12,25 +17,29 @@ class DeleteAlbumUseCase @Inject constructor(
     suspend operator fun invoke(
         albumId: String,
         albumMedia: List<GalleryMedia>,
-    ): Result<Unit, String> {
-        try {
+    ): Result<Unit, AppError> {
+        return appResultOfSuspend {
             // Step 1: Skip media deletion if empty album
             if (albumMedia.isEmpty()) {
-                return deleteAlbum(albumId)
+                when (val result = deleteAlbum(albumId)) {
+                    is Result.Success -> return@appResultOfSuspend
+                    is Result.Failure -> throw AppErrorThrowable(result.error)
+                }
             }
             // Step 2: Delete media files and associated metadata
-            return when (val result = deleteMediaUseCase.invoke(albumId, albumMedia, true)) {
+            when (val result = deleteMediaUseCase.invoke(albumId, albumMedia, true)) {
                 is Result.Success -> {
                     // Step 3: If media deletion was successful, attempt to delete the album item itself
-                    deleteAlbum(albumId)
+                    when (val deleteResult = deleteAlbum(albumId)) {
+                        is Result.Success -> Unit
+                        is Result.Failure -> throw AppErrorThrowable(deleteResult.error)
+                    }
                 }
-                is Result.Failure -> result
+                is Result.Failure -> throw AppErrorThrowable(result.error)
             }
-        } catch (e: Exception) {
-            return Result.Failure(e.message ?: "Unknown error occurred")
         }
     }
-    private suspend fun deleteAlbum(albumId: String): Result<Unit, String> {
+    private suspend fun deleteAlbum(albumId: String): Result<Unit, AppError> {
         return galleryRepository.deleteAlbum(albumId)
     }
 

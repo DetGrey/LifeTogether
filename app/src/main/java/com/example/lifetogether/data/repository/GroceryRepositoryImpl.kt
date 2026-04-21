@@ -1,5 +1,10 @@
 package com.example.lifetogether.data.repository
 
+import com.example.lifetogether.data.logic.AppErrors
+import com.example.lifetogether.data.logic.appResultOf
+
+import com.example.lifetogether.domain.result.AppError
+
 import com.example.lifetogether.data.local.source.GroceryLocalDataSource
 import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.model.GrocerySuggestionEntity
@@ -9,7 +14,6 @@ import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.repository.GroceryRepository
 import com.example.lifetogether.domain.result.Result
-import com.example.lifetogether.util.Constants
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -20,21 +24,18 @@ class GroceryRepositoryImpl @Inject constructor(
     private val groceryFirestoreDataSource: GroceryFirestoreDataSource,
 ): GroceryRepository {
 
-    override fun observeGroceryItems(familyId: String): Flow<Result<List<GroceryItem>, String>> {
+    override fun observeGroceryItems(familyId: String): Flow<Result<List<GroceryItem>, AppError>> {
         return groceryLocalDataSource.observeGroceryItems(familyId)
             .map { entities ->
-                try {
-                    val groceryItems = entities
+                appResultOf {
+                    entities
                         .map { it.toModel() }
                         .sortedBy { it.itemName }
-                    Result.Success(groceryItems)
-                } catch (e: Exception) {
-                    Result.Failure(e.message ?: "Unknown mapping error")
                 }
             }
     }
 
-    override fun syncGroceryItemsFromRemote(familyId: String): Flow<Result<Unit, String>> {
+    override fun syncGroceryItemsFromRemote(familyId: String): Flow<Result<Unit, AppError>> {
         return groceryFirestoreDataSource.grocerySnapshotListener(familyId).map { result ->
             when (result) {
                 is Result.Success -> runCatching {
@@ -56,7 +57,7 @@ class GroceryRepositoryImpl @Inject constructor(
                     }
                     Result.Success(Unit)
                 }.getOrElse { error ->
-                    Result.Failure(error.message ?: "Failed to sync grocery items")
+                    Result.Failure(AppErrors.fromThrowable(error))
                 }
 
                 is Result.Failure -> Result.Failure(result.error)
@@ -64,7 +65,7 @@ class GroceryRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun syncGrocerySuggestionsFromRemote(): Flow<Result<Unit, String>> {
+    override fun syncGrocerySuggestionsFromRemote(): Flow<Result<Unit, AppError>> {
         return groceryFirestoreDataSource.grocerySuggestionsSnapshotListener().map { result ->
             when (result) {
                 is Result.Success -> runCatching {
@@ -81,7 +82,7 @@ class GroceryRepositoryImpl @Inject constructor(
                     groceryLocalDataSource.updateGrocerySuggestions(entities)
                     Result.Success(Unit)
                 }.getOrElse { error ->
-                    Result.Failure(error.message ?: "Failed to sync grocery suggestions")
+                    Result.Failure(AppErrors.fromThrowable(error))
                 }
 
                 is Result.Failure -> Result.Failure(result.error)
@@ -89,34 +90,30 @@ class GroceryRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun saveItem(item: Item): Result<String, String> {
+    override suspend fun saveItem(item: Item): Result<String, AppError> {
         return groceryFirestoreDataSource.saveGroceryItem(item)
     }
 
     //todo do not use listName. Maybe use ListQueryType or somthing
-    override suspend fun toggleGroceryItemBought(item: GroceryItem): Result<Unit, String> {
+    override suspend fun toggleGroceryItemBought(item: GroceryItem): Result<Unit, AppError> {
         return groceryFirestoreDataSource.toggleGroceryItemCompletion(item)
     }
 
-    override suspend fun deleteGroceryItems(itemIds: List<String>): Result<Unit, String> {
+    override suspend fun deleteGroceryItems(itemIds: List<String>): Result<Unit, AppError> {
         return groceryFirestoreDataSource.deleteGroceryItems(itemIds)
     }
 
-    override fun getGrocerySuggestions(): Flow<Result<List<GrocerySuggestion>, String>> {
+    override fun getGrocerySuggestions(): Flow<Result<List<GrocerySuggestion>, AppError>> {
         return groceryLocalDataSource.getGrocerySuggestions().map { list ->
-            try {
-                Result.Success(
-                    list.map { grocerySuggestion ->
-                        GrocerySuggestion(
-                            id = grocerySuggestion.id,
-                            suggestionName = grocerySuggestion.suggestionName,
-                            category = grocerySuggestion.category,
-                            approxPrice = grocerySuggestion.approxPrice,
-                        )
-                    },
-                )
-            } catch (e: Exception) {
-                Result.Failure(e.message ?: "Unknown error")
+            appResultOf {
+                list.map { grocerySuggestion ->
+                    GrocerySuggestion(
+                        id = grocerySuggestion.id,
+                        suggestionName = grocerySuggestion.suggestionName,
+                        category = grocerySuggestion.category,
+                        approxPrice = grocerySuggestion.approxPrice,
+                    )
+                }
             }
         }
     }

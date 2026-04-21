@@ -1,6 +1,11 @@
 package com.example.lifetogether.data.remote
 
-import android.util.Log
+import com.example.lifetogether.data.logic.AppErrors
+import com.example.lifetogether.data.logic.appResultOfSuspend
+
+import com.example.lifetogether.domain.result.AppError
+
+import com.example.lifetogether.data.logic.AppErrorThrowable
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.util.Constants
@@ -13,49 +18,42 @@ import javax.inject.Inject
 class UserFirestoreDataSource @Inject constructor(
     private val db: FirebaseFirestore,
 ) {
-    private companion object {
-        const val TAG = "UserFirestoreDS"
-    }
     fun userInformationSnapshotListener(uid: String) = callbackFlow {
         val ref = db.collection(Constants.USER_TABLE).document(uid)
-        val registration = ref.addSnapshotListener { snapshot, e ->
-            if (e != null) {
-                trySend(Result.Failure("Error: ${e.message}")).isSuccess
-                return@addSnapshotListener
+
+        val registration = ref.addSnapshotListener { snapshot, error ->
+            val result = when {
+                error != null -> Result.Failure(AppErrors.fromThrowable(error))
+                snapshot != null && snapshot.exists() -> {
+                    val data = snapshot.toObject(UserInformation::class.java)
+                    if (data != null) Result.Success(data)
+                    else Result.Failure(AppErrors.unknown("Mapping error"))
+                }
+                else -> Result.Failure(AppErrors.notFound("User not found"))
             }
-            val userInformation = snapshot?.toObject(UserInformation::class.java)
-            if (userInformation != null) trySend(Result.Success(userInformation)).isSuccess
-            else trySend(Result.Failure("User not found")).isSuccess
+
+            trySend(result)
         }
+
         awaitClose { registration.remove() }
     }
 
-    suspend fun fetchUserInformation(uid: String): Result<UserInformation, String> {
-        return try {
-            val snapshot = db.collection(Constants.USER_TABLE).document(uid).get().await()
-            val userInformation = snapshot.toObject(UserInformation::class.java)
-            if (userInformation != null) Result.Success(userInformation) else Result.Failure("User not found")
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
-        }
+    suspend fun fetchUserInformation(uid: String): Result<UserInformation, AppError> = appResultOfSuspend {
+        val snapshot = db.collection(Constants.USER_TABLE).document(uid).get().await()
+        val userInformation = snapshot.toObject(UserInformation::class.java)
+        userInformation ?: throw AppErrorThrowable(AppErrors.notFound("User not found"))
     }
 
-    suspend fun uploadUserInformation(userInformation: UserInformation): Result<Unit, String> {
-        return try {
-            val uid = userInformation.uid ?: return Result.Failure("Cannot upload without being logged in")
+    suspend fun uploadUserInformation(userInformation: UserInformation): Result<Unit, AppError> {
+        val uid = userInformation.uid ?: return Result.Failure(AppErrors.authentication("Cannot upload without being logged in"))
+        return appResultOfSuspend {
             db.collection(Constants.USER_TABLE).document(uid).set(userInformation).await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
         }
     }
 
-    suspend fun updateFamilyId(uid: String, familyId: String?): Result<Unit, String> {
-        return try {
+    suspend fun updateFamilyId(uid: String, familyId: String?): Result<Unit, AppError> {
+        return appResultOfSuspend {
             db.collection(Constants.USER_TABLE).document(uid).update("familyId", familyId).await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
         }
     }
 
@@ -63,8 +61,8 @@ class UserFirestoreDataSource @Inject constructor(
         uid: String,
         familyId: String?,
         newName: String,
-    ): Result<Unit, String> {
-        return try {
+    ): Result<Unit, AppError> {
+        return appResultOfSuspend {
             db.collection(Constants.USER_TABLE).document(uid).update("name", newName).await()
             if (familyId != null) {
                 val familyDocRef = db.collection(Constants.FAMILIES_TABLE).document(familyId)
@@ -78,27 +76,18 @@ class UserFirestoreDataSource @Inject constructor(
                     familyDocRef.update("members", updatedMembers).await()
                 }
             }
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
         }
     }
 
-    suspend fun getUserImageUrl(uid: String): Result<String, String>? {
-        return try {
-            val document = db.collection(Constants.USER_TABLE).document(uid).get().await()
-            document.getString("imageUrl")?.let { Result.Success(it) }
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
-        }
+    suspend fun getUserImageUrl(uid: String): Result<String, AppError> = appResultOfSuspend {
+        val document = db.collection(Constants.USER_TABLE).document(uid).get().await()
+        val url = document.getString("imageUrl")
+        url ?: throw AppErrorThrowable(AppErrors.notFound("User image not found"))
     }
 
-    suspend fun saveUserImageUrl(uid: String, url: String): Result<Unit, String> {
-        return try {
+    suspend fun saveUserImageUrl(uid: String, url: String): Result<Unit, AppError> {
+        return appResultOfSuspend {
             db.collection(Constants.USER_TABLE).document(uid).update(mapOf("imageUrl" to url)).await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
         }
     }
 }

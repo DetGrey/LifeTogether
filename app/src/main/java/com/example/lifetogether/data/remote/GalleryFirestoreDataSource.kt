@@ -1,5 +1,10 @@
 package com.example.lifetogether.data.remote
 
+import com.example.lifetogether.data.logic.AppErrors
+import com.example.lifetogether.data.logic.appResultOfSuspend
+
+import com.example.lifetogether.domain.result.AppError
+
 import android.util.Log
 import com.example.lifetogether.domain.model.gallery.Album
 import com.example.lifetogether.domain.model.gallery.GalleryImage
@@ -26,7 +31,7 @@ class GalleryFirestoreDataSource @Inject constructor(
         val ref = db.collection(Constants.ALBUMS_TABLE).whereEqualTo("familyId", familyId)
         val registration = ref.addSnapshotListener { snapshot, e ->
             if (e != null) {
-                trySend(Result.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
                 return@addSnapshotListener
             }
             if (snapshot != null) {
@@ -37,7 +42,7 @@ class GalleryFirestoreDataSource @Inject constructor(
                 }
                 trySend(Result.Success(ListSnapshot(items))).isSuccess
             } else {
-                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
+                trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
             }
         }
         awaitClose { registration.remove() }
@@ -47,7 +52,7 @@ class GalleryFirestoreDataSource @Inject constructor(
         val ref = db.collection(Constants.GALLERY_MEDIA_TABLE).whereEqualTo("familyId", familyId)
         val registration = ref.addSnapshotListener { snapshot, e ->
             if (e != null) {
-                trySend(Result.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
                 return@addSnapshotListener
             }
             if (snapshot != null) {
@@ -67,63 +72,49 @@ class GalleryFirestoreDataSource @Inject constructor(
                 }
                 trySend(Result.Success(ListSnapshot(items, snapshot.metadata.isFromCache))).isSuccess
             } else {
-                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
+                trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
             }
         }
         awaitClose { registration.remove() }
     }
 
-    suspend fun saveAlbum(album: Album): Result<String, String> {
-        return try {
+    suspend fun saveAlbum(album: Album): Result<String, AppError> {
+        return appResultOfSuspend {
             val doc = db.collection(Constants.ALBUMS_TABLE).add(album).await()
-            Result.Success(doc.id)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            doc.id
         }
     }
 
-    suspend fun updateAlbum(album: Album): Result<Unit, String> {
-        return try {
-            val id = album.id ?: return Result.Failure("Missing album id")
+    suspend fun updateAlbum(album: Album): Result<Unit, AppError> {
+        val id = album.id ?: return Result.Failure(AppErrors.validation("Missing album id"))
+        return appResultOfSuspend {
             db.collection(Constants.ALBUMS_TABLE).document(id).set(album, SetOptions.merge()).await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
         }
     }
 
-    suspend fun deleteAlbum(albumId: String): Result<Unit, String> {
-        return try {
+    suspend fun deleteAlbum(albumId: String): Result<Unit, AppError> {
+        return appResultOfSuspend {
             db.collection(Constants.ALBUMS_TABLE).document(albumId).delete().await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
         }
     }
 
-    suspend fun deleteGalleryMedia(mediaIds: List<String>): Result<Unit, String> {
-        return try {
+    suspend fun deleteGalleryMedia(mediaIds: List<String>): Result<Unit, AppError> {
+        return appResultOfSuspend {
             val batch = db.batch()
             mediaIds.forEach { id -> batch.delete(db.collection(Constants.GALLERY_MEDIA_TABLE).document(id)) }
             batch.commit().await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
         }
     }
 
-    suspend fun updateAlbumCount(albumId: String, increment: Int): Result<Unit, String> {
-        return try {
+    suspend fun updateAlbumCount(albumId: String, increment: Int): Result<Unit, AppError> {
+        return appResultOfSuspend {
             db.collection(Constants.ALBUMS_TABLE).document(albumId)
                 .update("count", FieldValue.increment(increment.toDouble())).await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
         }
     }
 
-    suspend fun moveMediaToAlbum(mediaIdList: Set<String>, newAlbumId: String, oldAlbumId: String): Result<Unit, String> {
-        return try {
+    suspend fun moveMediaToAlbum(mediaIdList: Set<String>, newAlbumId: String, oldAlbumId: String): Result<Unit, AppError> {
+        return appResultOfSuspend {
             val batch = db.batch()
             mediaIdList.forEach { id ->
                 batch.update(db.collection(Constants.GALLERY_MEDIA_TABLE).document(id), "albumId", newAlbumId)
@@ -131,14 +122,11 @@ class GalleryFirestoreDataSource @Inject constructor(
             batch.update(db.collection(Constants.ALBUMS_TABLE).document(newAlbumId), "count", FieldValue.increment(mediaIdList.size.toDouble()))
             batch.update(db.collection(Constants.ALBUMS_TABLE).document(oldAlbumId), "count", FieldValue.increment(-mediaIdList.size.toDouble()))
             batch.commit().await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
         }
     }
 
-    suspend fun saveGalleryMediaMetaData(galleryMedia: List<GalleryMedia>): Result<Unit, String> {
-        return try {
+    suspend fun saveGalleryMediaMetaData(galleryMedia: List<GalleryMedia>): Result<Unit, AppError> {
+        return appResultOfSuspend {
             val batch = db.batch()
             val collectionRef = db.collection(Constants.GALLERY_MEDIA_TABLE)
             galleryMedia.forEach { media ->
@@ -146,9 +134,6 @@ class GalleryFirestoreDataSource @Inject constructor(
                 batch.set(docRef, media)
             }
             batch.commit().await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
         }
     }
 }

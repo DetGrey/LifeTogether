@@ -1,6 +1,12 @@
 package com.example.lifetogether.data.remote
 
+import com.example.lifetogether.data.logic.AppErrors
+
+import com.example.lifetogether.domain.result.AppError
+
 import android.util.Log
+import com.example.lifetogether.data.logic.AppErrorThrowable
+import com.example.lifetogether.data.logic.appResultOfSuspend
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.lists.ListType
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
@@ -30,11 +36,11 @@ class UserListFirestoreDataSource @Inject constructor(
             .whereEqualTo("visibility", Constants.VISIBILITY_FAMILY)
         val reg = ref.addSnapshotListener { snapshot, e ->
             if (e != null) {
-                trySend(Result.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
                 return@addSnapshotListener
             }
             if (snapshot == null) {
-                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
+                trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
                 return@addSnapshotListener
             }
             val items = snapshot.documents.mapNotNull { doc ->
@@ -55,11 +61,11 @@ class UserListFirestoreDataSource @Inject constructor(
             .whereEqualTo("ownerUid", uid)
         val reg = ref.addSnapshotListener { snapshot, e ->
             if (e != null) {
-                trySend(Result.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
                 return@addSnapshotListener
             }
             if (snapshot == null) {
-                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
+                trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
                 return@addSnapshotListener
             }
             val items = snapshot.documents.mapNotNull { doc ->
@@ -77,11 +83,11 @@ class UserListFirestoreDataSource @Inject constructor(
         val ref = db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE).whereEqualTo("familyId", familyId)
         val reg = ref.addSnapshotListener { snapshot, e ->
             if (e != null) {
-                trySend(Result.Failure("Error: ${e.message}")).isSuccess
+                trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
                 return@addSnapshotListener
             }
             if (snapshot == null) {
-                trySend(Result.Failure("Error: Empty snapshot")).isSuccess
+                trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
                 return@addSnapshotListener
             }
             val items = snapshot.documents.mapNotNull { doc ->
@@ -95,66 +101,55 @@ class UserListFirestoreDataSource @Inject constructor(
         awaitClose { reg.remove() }
     }
 
-    suspend fun saveUserList(userList: UserList): Result<String, String> {
-        return try {
+    suspend fun saveUserList(userList: UserList): Result<String, AppError> {
+        return appResultOfSuspend {
             val doc = db.collection(Constants.USER_LISTS_TABLE).add(userListToFirestoreMap(userList)).await()
-            Result.Success(doc.id)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+            doc.id
         }
     }
 
-    suspend fun saveRoutineListEntry(entry: RoutineListEntry): Result<String, String> {
-        return try {
-            val doc = db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE).add(listEntryToFirestoreMap(entry)).await()
-            Result.Success(doc.id)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
+    suspend fun saveRoutineListEntry(entry: RoutineListEntry): Result<String, AppError> {
+        return appResultOfSuspend {
+            val doc = db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE)
+                .add(listEntryToFirestoreMap(entry)).await()
+            doc.id
         }
     }
 
-    suspend fun updateRoutineListEntry(entry: RoutineListEntry): Result<Unit, String> {
-        val id = entry.id ?: return Result.Failure("Missing routine list entry id")
-        return try {
+    suspend fun updateRoutineListEntry(entry: RoutineListEntry): Result<Unit, AppError> {
+        val id = entry.id ?: return Result.Failure(AppErrors.validation("Missing routine list entry id"))
+        return appResultOfSuspend {
             db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE).document(id)
                 .set(listEntryToFirestoreMap(entry), SetOptions.merge())
                 .await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
         }
     }
 
-    suspend fun deleteRoutineListEntries(itemIds: List<String>): Result<Unit, String> {
-        return try {
+    suspend fun deleteRoutineListEntries(itemIds: List<String>): Result<Unit, AppError> {
+        return appResultOfSuspend {
             val batch = db.batch()
             itemIds.forEach { id ->
                 batch.delete(db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE).document(id))
             }
             batch.commit().await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
         }
     }
 
-    suspend fun getRoutineListEntryImageUrl(entryId: String): Result<String, String>? {
-        return try {
-            val doc = db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE).document(entryId).get().await()
-            doc.getString("imageUrl")?.let { Result.Success(it) }
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
-        }
+    suspend fun getRoutineListEntryImageUrl(entryId: String): Result<String, AppError> = appResultOfSuspend {
+        val doc = db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE)
+            .document(entryId)
+            .get()
+            .await()
+
+        val url = doc.getString("imageUrl")
+        url ?: throw AppErrorThrowable(AppErrors.notFound("List entry image not found"))
     }
 
-    suspend fun saveRoutineListEntryImageUrl(entryId: String, url: String): Result<Unit, String> {
-        return try {
+    suspend fun saveRoutineListEntryImageUrl(entryId: String, url: String): Result<Unit, AppError> {
+        return appResultOfSuspend {
             db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE).document(entryId)
                 .update(mapOf("imageUrl" to url))
                 .await()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
         }
     }
 
