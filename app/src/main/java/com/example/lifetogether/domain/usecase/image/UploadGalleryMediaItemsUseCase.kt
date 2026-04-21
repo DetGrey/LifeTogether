@@ -4,6 +4,7 @@ import android.content.ContentValues.TAG
 import android.content.Context
 import android.provider.MediaStore
 import android.util.Log
+import com.example.lifetogether.di.IoDispatcher
 import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
@@ -13,8 +14,8 @@ import com.example.lifetogether.domain.repository.ImageRepository
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.util.Constants
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -24,6 +25,7 @@ import javax.inject.Inject
 class UploadGalleryMediaItemsUseCase @Inject constructor(
     private val imageRepository: ImageRepository,
     private val galleryRepository: GalleryRepository,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
     companion object {
         // Limit to 1 concurrent upload - AWS SDK buffers request bodies for checksums
@@ -77,7 +79,7 @@ class UploadGalleryMediaItemsUseCase @Inject constructor(
         val processedResults: List<Pair<GalleryMedia?, String?>> = coroutineScope {
             val semaphore = Semaphore(MAX_CONCURRENT_UPLOADS)
             val deferredTasks: List<Deferred<Pair<GalleryMedia?, String?>>> = mediaUploadList.map { mediaData ->
-                async(Dispatchers.IO) { // Each async block will return Pair(GalleryMedia_on_success_OR_null, error_message_string_OR_null)
+                async(ioDispatcher) { // Each async block will return Pair(GalleryMedia_on_success_OR_null, error_message_string_OR_null)
                     semaphore.acquire()
                     try {
                         val (mediaType, uri, extension) = Triple(mediaData.mediaType, mediaData.uri, mediaData.extension)
