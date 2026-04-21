@@ -43,7 +43,7 @@ class GalleryRepositoryImpl @Inject constructor(
     private val mediaLocalDataSource: MediaLocalDataSource,
     private val galleryFirestoreDataSource: GalleryFirestoreDataSource,
     private val storageDataSource: StorageDataSource,
-    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : GalleryRepository {
 
     companion object {

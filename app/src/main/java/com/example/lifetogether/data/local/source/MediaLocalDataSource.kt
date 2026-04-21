@@ -26,9 +26,9 @@ import javax.inject.Singleton
 
 @Singleton
 class MediaLocalDataSource @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val galleryMediaDao: GalleryMediaDao,
-    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
     companion object {
         private const val TAG = "MediaLocalDataSource"

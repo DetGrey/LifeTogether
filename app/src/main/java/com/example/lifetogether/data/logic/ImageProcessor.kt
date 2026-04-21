@@ -23,7 +23,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class ImageProcessor @Inject constructor(
-    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
 
     companion object {

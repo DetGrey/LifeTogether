@@ -25,7 +25,7 @@ import javax.inject.Inject
 class UploadGalleryMediaItemsUseCase @Inject constructor(
     private val imageRepository: ImageRepository,
     private val galleryRepository: GalleryRepository,
-    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
     companion object {
         // Limit to 1 concurrent upload - AWS SDK buffers request bodies for checksums
