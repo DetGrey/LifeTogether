@@ -2,9 +2,7 @@ package com.example.lifetogether.data.repository
 
 import com.example.lifetogether.data.logic.AppErrors
 import com.example.lifetogether.data.logic.appResultOf
-
 import com.example.lifetogether.domain.result.AppError
-
 import android.util.Log
 import com.example.lifetogether.data.local.source.GuideLocalDataSource
 import com.example.lifetogether.data.local.source.GuideProgressLocalDataSource
@@ -50,14 +48,16 @@ class GuideRepositoryImpl @Inject constructor(
             launch {
                 guideFirestoreDataSource.guideProgressSnapshotListener(familyId, uid).collect { progressResult ->
                     when (progressResult) {
-                        is Result.Success -> runCatching {
-                            guideProgressLocalDataSource.updateGuideProgressFromRemote(
-                                familyId = familyId,
-                                uid = uid,
-                                items = progressResult.data,
-                            )
-                        }.onFailure { error ->
-                            Log.e(TAG, "Guide progress local update failure: ${error.message}", error)
+                        is Result.Success -> {
+                            try {
+                                guideProgressLocalDataSource.updateGuideProgressFromRemote(
+                                    familyId = familyId,
+                                    uid = uid,
+                                    items = progressResult.data,
+                                )
+                            } catch (error: Exception) {
+                                Log.e(TAG, "Guide progress local update failure: ${error.message}", error)
+                            }
                         }
 
                         is Result.Failure -> {
@@ -116,7 +116,7 @@ class GuideRepositoryImpl @Inject constructor(
                     .filter { !it.id.isNullOrBlank() }
                 val hasFullSnapshotCoverage = sharedHasSuccessfulSync && privateHasSuccessfulSync
 
-                runCatching {
+                try {
                     if (mergedGuides.isEmpty()) {
                         if (hasFullSnapshotCoverage) {
                             guideLocalDataSource.deleteFamilyGuides(familyId)
@@ -128,11 +128,10 @@ class GuideRepositoryImpl @Inject constructor(
                             guideLocalDataSource.upsertGuides(mergedGuides.toList())
                         }
                     }
-                }.onSuccess {
                     if (hasAnySuccessfulSync) {
                         emit(Result.Success(Unit))
                     }
-                }.onFailure { error ->
+                } catch (error: Exception) {
                     Log.e(TAG, "Guide local sync failure: ${error.message}", error)
                     emit(Result.Failure(AppErrors.fromThrowable(error)))
                 }

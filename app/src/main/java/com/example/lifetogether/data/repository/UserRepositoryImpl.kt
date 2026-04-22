@@ -1,12 +1,9 @@
 package com.example.lifetogether.data.repository
 
-import com.example.lifetogether.data.logic.AppErrors
 import com.example.lifetogether.data.logic.AppErrorThrowable
 import com.example.lifetogether.data.logic.appResultOf
 import com.example.lifetogether.data.logic.appResultOfSuspend
-
 import com.example.lifetogether.domain.result.AppError
-
 import android.util.Log
 import com.example.lifetogether.data.local.source.SessionCleanupLocalDataSource
 import com.example.lifetogether.data.local.source.UserLocalDataSource
@@ -149,7 +146,7 @@ class UserRepositoryImpl @Inject constructor(
     override fun syncUserInformationFromRemote(uid: String): Flow<Result<Unit, AppError>> {
         return userFirestoreDataSource.userInformationSnapshotListener(uid).map { result ->
             when (result) {
-                is Result.Success -> runCatching {
+                is Result.Success -> appResultOfSuspend {
                     val hasExistingImage = result.data.uid?.let { uidValue ->
                         userLocalDataSource.userHasProfileImage(uidValue)
                     } ?: false
@@ -164,9 +161,6 @@ class UserRepositoryImpl @Inject constructor(
                             null -> userLocalDataSource.updateUserInformation(result.data)
                         }
                     }
-                    Result.Success(Unit)
-                }.getOrElse { error ->
-                    Result.Failure(AppErrors.fromThrowable(error))
                 }
 
                 is Result.Failure -> Result.Failure(result.error)
@@ -177,7 +171,7 @@ class UserRepositoryImpl @Inject constructor(
     fun syncFamilyInformationFromRemote(familyId: String): Flow<Result<Unit, AppError>> {
         return familyFirestoreDataSource.familyInformationSnapshotListener(familyId).map { result ->
             when (result) {
-                is Result.Success -> runCatching {
+                is Result.Success -> appResultOfSuspend {
                     val hasExistingImage = result.data.familyId?.let { familyIdValue ->
                         userLocalDataSource.familyHasImage(familyIdValue)
                     } ?: false
@@ -192,9 +186,6 @@ class UserRepositoryImpl @Inject constructor(
                             null -> userLocalDataSource.updateFamilyInformation(result.data)
                         }
                     }
-                    Result.Success(Unit)
-                }.getOrElse { error ->
-                    Result.Failure(AppErrors.fromThrowable(error))
                 }
 
                 is Result.Failure -> Result.Failure(result.error)

@@ -3,10 +3,9 @@ package com.example.lifetogether.data.repository
 import com.example.lifetogether.data.logic.AppErrors
 import com.example.lifetogether.data.logic.AppErrorThrowable
 import com.example.lifetogether.data.logic.appResultOf
-
 import com.example.lifetogether.domain.result.AppError
-
 import com.example.lifetogether.data.local.source.RecipeLocalDataSource
+import com.example.lifetogether.data.logic.appResultOfSuspend
 import com.example.lifetogether.data.model.RecipeEntity
 import com.example.lifetogether.data.remote.RecipeFirestoreDataSource
 import com.example.lifetogether.domain.datasource.StorageDataSource
@@ -31,7 +30,7 @@ class RecipeRepositoryImpl @Inject constructor(
     override fun syncRecipesFromRemote(familyId: String): Flow<Result<Unit, AppError>> {
         return recipeFirestoreDataSource.recipeSnapshotListener(familyId).map { result ->
             when (result) {
-                is Result.Success -> runCatching {
+                is Result.Success -> appResultOfSuspend {
                     if (result.data.items.isEmpty()) {
                         recipeLocalDataSource.deleteFamilyRecipes(familyId)
                     } else {
@@ -50,9 +49,6 @@ class RecipeRepositoryImpl @Inject constructor(
                         }
                         recipeLocalDataSource.updateRecipes(result.data.items, byteArrays)
                     }
-                    Result.Success(Unit)
-                }.getOrElse { error ->
-                    Result.Failure(AppErrors.fromThrowable(error))
                 }
 
                 is Result.Failure -> Result.Failure(result.error)

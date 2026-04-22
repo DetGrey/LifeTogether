@@ -3,15 +3,14 @@ package com.example.lifetogether.data.repository
 import com.example.lifetogether.data.logic.AppErrors
 import com.example.lifetogether.data.logic.AppErrorThrowable
 import com.example.lifetogether.data.logic.appResultOf
-
 import com.example.lifetogether.domain.result.AppError
-
 import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.core.net.toUri
 import com.example.lifetogether.data.local.source.AlbumLocalDataSource
 import com.example.lifetogether.data.local.source.MediaLocalDataSource
+import com.example.lifetogether.data.logic.appResultOfSuspend
 import com.example.lifetogether.data.model.AlbumEntity
 import com.example.lifetogether.data.model.GalleryMediaEntity
 import com.example.lifetogether.data.remote.GalleryFirestoreDataSource
@@ -74,15 +73,12 @@ class GalleryRepositoryImpl @Inject constructor(
     override fun syncAlbumsFromRemote(familyId: String): Flow<Result<Unit, AppError>> {
         return galleryFirestoreDataSource.albumsSnapshotListener(familyId).map { result ->
             when (result) {
-                is Result.Success -> runCatching {
+                is Result.Success -> appResultOfSuspend {
                     if (result.data.items.isEmpty()) {
                         albumLocalDataSource.deleteFamilyAlbums(familyId)
                     } else {
                         albumLocalDataSource.updateAlbums(result.data.items)
                     }
-                    Result.Success(Unit)
-                }.getOrElse { error ->
-                    Result.Failure(AppErrors.fromThrowable(error))
                 }
 
                 is Result.Failure -> Result.Failure(result.error)

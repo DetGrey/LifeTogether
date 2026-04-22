@@ -115,5 +115,4 @@ Issue body requirements:
 ## Questions
 
 - Is there any of the use cases that handles logic that might as well be inside the repo instead?
-- Find all old patterns like runCatching and such and give me a list of things that should be updated to follow current best practices
 - ImageRepository should be removed and move the functions into the domain repos instead

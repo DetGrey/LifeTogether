@@ -3,10 +3,9 @@ package com.example.lifetogether.data.repository
 import com.example.lifetogether.data.logic.AppErrors
 import com.example.lifetogether.data.logic.AppErrorThrowable
 import com.example.lifetogether.data.logic.appResultOf
-
 import com.example.lifetogether.domain.result.AppError
-
 import com.example.lifetogether.data.local.source.UserListLocalDataSource
+import com.example.lifetogether.data.logic.appResultOfSuspend
 import com.example.lifetogether.data.model.RoutineListEntryEntity
 import com.example.lifetogether.data.model.UserListEntity
 import com.example.lifetogether.data.remote.UserListFirestoreDataSource
@@ -63,7 +62,7 @@ class UserListRepositoryImpl @Inject constructor(
                 )
             }
 
-            runCatching {
+            appResultOfSuspend {
                 val merged = (shared + private)
                     .associateBy { it.id ?: "" }
                     .values
@@ -74,9 +73,6 @@ class UserListRepositoryImpl @Inject constructor(
                 } else {
                     userListLocalDataSource.updateUserLists(merged.toList())
                 }
-                Result.Success(Unit)
-            }.getOrElse { error ->
-                Result.Failure(AppErrors.fromThrowable(error))
             }
         }
     }
@@ -100,7 +96,7 @@ class UserListRepositoryImpl @Inject constructor(
     override fun syncRoutineListEntriesFromRemote(familyId: String): Flow<Result<Unit, AppError>> {
         return userListFirestoreDataSource.familyRoutineListEntriesSnapshotListener(familyId).map { result ->
             when (result) {
-                is Result.Success -> runCatching {
+                is Result.Success -> appResultOfSuspend {
                     if (result.data.items.isEmpty()) {
                         userListLocalDataSource.deleteFamilyRoutineListEntries(familyId)
                     } else {
@@ -115,11 +111,11 @@ class UserListRepositoryImpl @Inject constructor(
                                 entry.id?.let { byteArrays[it] = byteArrayResult.data }
                             }
                         }
-                        userListLocalDataSource.updateRoutineListEntries(result.data.items, byteArrays)
+                        userListLocalDataSource.updateRoutineListEntries(
+                            result.data.items,
+                            byteArrays
+                        )
                     }
-                    Result.Success(Unit)
-                }.getOrElse { error ->
-                    Result.Failure(AppErrors.fromThrowable(error))
                 }
 
                 is Result.Failure -> Result.Failure(result.error)
