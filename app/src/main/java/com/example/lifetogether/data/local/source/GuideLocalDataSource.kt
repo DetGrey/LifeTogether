@@ -5,7 +5,6 @@ import com.example.lifetogether.data.local.dao.GuideProgressDao
 import com.example.lifetogether.data.local.dao.GuidesDao
 import com.example.lifetogether.data.local.source.internal.computeItemsToDelete
 import com.example.lifetogether.data.local.source.internal.computeItemsToUpdate
-import com.example.lifetogether.data.model.Entity
 import com.example.lifetogether.data.model.GuideEntity
 import com.example.lifetogether.data.model.GuideProgressEntity
 import com.example.lifetogether.domain.logic.GuideProgressSnapshot
@@ -15,7 +14,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -32,11 +30,9 @@ class GuideLocalDataSource @Inject constructor(
     fun getItems(
         familyId: String,
         uid: String? = null,
-    ): Flow<List<Entity.Guide>> {
+    ): Flow<List<GuideEntity>> {
         return if (uid.isNullOrBlank()) {
-            guidesDao.getItems(familyId).map { list ->
-                list.map { Entity.Guide(it) }
-            }
+            guidesDao.getItems(familyId)
         } else {
             combine(
                 guidesDao.getItems(familyId),
@@ -44,11 +40,9 @@ class GuideLocalDataSource @Inject constructor(
             ) { guides, progressItems ->
                 val progressByGuideId = progressItems.associateBy { it.guideId }
                 guides.map { guide ->
-                    Entity.Guide(
-                        applyProgressToGuideEntity(
-                            guide = guide,
-                            progress = progressByGuideId[guide.id],
-                        ),
+                    applyProgressToGuideEntity(
+                        guide = guide,
+                        progress = progressByGuideId[guide.id],
                     )
                 }
             }
@@ -59,17 +53,17 @@ class GuideLocalDataSource @Inject constructor(
         familyId: String,
         id: String,
         uid: String? = null,
-    ): Flow<Entity.Guide> {
+    ): Flow<GuideEntity> {
         return flow {
             val guideFlow = guidesDao.getItemByIdFlow(familyId, id)
             val mergedFlow = if (uid.isNullOrBlank()) {
-                guideFlow.map { guide -> guide?.let { Entity.Guide(it) } }
+                guideFlow
             } else {
                 combine(
                     guideFlow,
                     guideProgressDao.getItemByGuideIdFlow(familyId, uid, id),
                 ) { guide, progress ->
-                    guide?.let { Entity.Guide(applyProgressToGuideEntity(it, progress)) }
+                    guide?.let { applyProgressToGuideEntity(it, progress) }
                 }
             }
             emitAll(mergedFlow.mapNotNull { it })

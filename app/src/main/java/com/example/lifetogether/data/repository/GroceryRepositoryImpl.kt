@@ -94,7 +94,6 @@ class GroceryRepositoryImpl @Inject constructor(
         return groceryFirestoreDataSource.saveGroceryItem(item)
     }
 
-    //todo do not use listName. Maybe use ListQueryType or somthing
     override suspend fun toggleGroceryItemBought(item: GroceryItem): Result<Unit, AppError> {
         return groceryFirestoreDataSource.toggleGroceryItemCompletion(item)
     }
