@@ -37,7 +37,7 @@ class ImageViewModel @Inject constructor(
     ) {
         println("ImageViewModel collectImageFlow")
         viewModelScope.launch {
-            imageRepository.getImageByteArray(imageType).collect { result ->
+            imageRepository.observeImageByteArray(imageType).collect { result ->
                 println("getImageByteArray result: $result")
                 when (result) {
                     is Result.Success -> {

@@ -5,8 +5,8 @@ import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
-import com.example.lifetogether.domain.observer.ObserverKey
-import com.example.lifetogether.ui.common.observer.FeatureObserverLifecycleBinding
+import com.example.lifetogether.domain.sync.SyncKey
+import com.example.lifetogether.ui.common.sync.FeatureSyncLifecycleBinding
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.navigation.AppRoutes
 
@@ -21,8 +21,8 @@ fun TipTrackerRoute(
     }
     val viewModel: TipTrackerViewModel = hiltViewModel(sharedEntry)
 
-    FeatureObserverLifecycleBinding(
-        keys = setOf(ObserverKey.TIP_TRACKER),
+    FeatureSyncLifecycleBinding(
+        keys = setOf(SyncKey.TIP_TRACKER),
     )
     TipTrackerScreen(appNavigator, viewModel)
 }

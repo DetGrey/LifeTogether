@@ -13,7 +13,7 @@ class FamilyRepositoryImpl @Inject constructor(
 ) : FamilyRepository {
 
     override fun observeFamilyInformation(familyId: String): Flow<Result<FamilyInformation, AppError>> {
-        return userRepositoryImpl.getFamilyInformation(familyId)
+        return userRepositoryImpl.observeFamilyInformation(familyId)
     }
 
     override fun syncFamilyInformationFromRemote(familyId: String): Flow<Result<Unit, AppError>> {

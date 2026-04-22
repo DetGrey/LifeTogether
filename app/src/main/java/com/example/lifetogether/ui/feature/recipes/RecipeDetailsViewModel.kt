@@ -71,7 +71,7 @@ class RecipeDetailsViewModel @Inject constructor(
     // ---------------------------------------------------------------- SETUP/FETCH LIST
     fun setUp(recipeId: String?) {
         if (recipeId is String) {
-            fetchRecipe(recipeId)
+            observeRecipe(recipeId)
         } else {
             editMode = true
         }
@@ -99,7 +99,7 @@ class RecipeDetailsViewModel @Inject constructor(
         ingredientsByServings()
     }
 
-    private fun fetchRecipe(recipeId: String) {
+    private fun observeRecipe(recipeId: String) {
         val familyIdValue = _familyId.value ?: run {
             error = "Not connected to a family"
             showAlertDialog = true

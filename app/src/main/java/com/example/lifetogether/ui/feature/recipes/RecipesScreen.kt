@@ -21,10 +21,10 @@ import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
-import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
+import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.domain.observer.ObserverKey
+import com.example.lifetogether.domain.sync.SyncKey
 
 @Composable
 fun RecipesScreen(
@@ -58,8 +58,8 @@ fun RecipesScreen(
 
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ObserverUpdatingText(
-                        keys = setOf(ObserverKey.RECIPES),
+                    SyncUpdatingText(
+                        keys = setOf(SyncKey.RECIPES),
                     )
 
                     TagOptionRow(

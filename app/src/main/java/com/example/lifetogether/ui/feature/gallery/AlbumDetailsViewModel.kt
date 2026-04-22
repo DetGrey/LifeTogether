@@ -97,11 +97,11 @@ class AlbumDetailsViewModel @Inject constructor(
     }
 
     private fun startFetch() {
-        fetchAlbum()
-        fetchAlbumMedia()
+        observeAlbum()
+        observeAlbumMedia()
     }
 
-    private fun fetchAlbum() {
+    private fun observeAlbum() {
         val familyIdValue = familyId ?: return
         val albumIdValue = albumId ?: return
 
@@ -122,7 +122,7 @@ class AlbumDetailsViewModel @Inject constructor(
             }
         }
     }
-    private fun fetchAlbumMedia() {
+    private fun observeAlbumMedia() {
         val familyIdValue = familyId ?: return
         val albumIdValue = albumId ?: return
 
@@ -158,7 +158,7 @@ class AlbumDetailsViewModel @Inject constructor(
                 syncRetryAttempts += 1
                 viewModelScope.launch {
                     delay(3000) // Wait 3 seconds before retry to allow failed downloads to complete
-                    fetchAlbumMedia()
+                    observeAlbumMedia()
                 }
                 return
             } else if (expectedCount > items.size) {
@@ -179,7 +179,7 @@ class AlbumDetailsViewModel @Inject constructor(
             syncRetryAttempts += 1
             viewModelScope.launch {
                 delay(2000)
-                fetchAlbumMedia()
+                observeAlbumMedia()
             }
         } else {
             _uiState.update { it.copy(isSyncing = false) }
@@ -203,7 +203,7 @@ class AlbumDetailsViewModel @Inject constructor(
     fun retryFetchAlbumMedia() {
         _uiState.update { it.copy(isRefreshing = true) }
         syncRetryAttempts = 0
-        fetchAlbumMedia()
+        observeAlbumMedia()
     }
     fun fetchThumbnail(mediaId: String) {
         if (_uiState.value.thumbnails.containsKey(mediaId)) return
@@ -301,7 +301,7 @@ class AlbumDetailsViewModel @Inject constructor(
             }
         }
     }
-    private fun fetchAlbums() {
+    private fun observeAlbums() {
         val familyIdValue = familyId ?: return
 
         viewModelScope.launch {
@@ -405,7 +405,7 @@ class AlbumDetailsViewModel @Inject constructor(
             )
         }
         if (action == MenuAction.SelectionActions.MOVE) {
-            fetchAlbums()
+            observeAlbums()
         } else {
             _uiState.update { it.copy(showOverflowMenuActionDialog = true) }
         }

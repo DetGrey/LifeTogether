@@ -25,9 +25,9 @@ import com.example.lifetogether.ui.common.add.AddNewListItem
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.list.ItemCategoryList
-import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
+import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.domain.observer.ObserverKey
+import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.util.priceToString
 
@@ -65,11 +65,11 @@ fun GroceryListScreen(
 
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ObserverUpdatingText(
+                    SyncUpdatingText(
                         keys = setOf(
-                            ObserverKey.GROCERY_LIST,
-                            ObserverKey.GROCERY_CATEGORIES,
-                            ObserverKey.GROCERY_SUGGESTIONS,
+                            SyncKey.GROCERY_LIST,
+                            SyncKey.GROCERY_CATEGORIES,
+                            SyncKey.GROCERY_SUGGESTIONS,
                         ),
                     )
 

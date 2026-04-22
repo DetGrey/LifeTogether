@@ -40,12 +40,12 @@ class ImageRepositoryImpl @Inject constructor(
     companion object {
         private const val TAG = "LocalImageRepositoryImpl"
     }
-    override fun getImageByteArray(imageType: ImageType): Flow<Result<ByteArray, AppError>> {
+    override fun observeImageByteArray(imageType: ImageType): Flow<Result<ByteArray, AppError>> {
         Log.d(TAG, "getImageByteArray")
         val byteArrayFlow = when (imageType) {
-            is ImageType.ProfileImage -> userLocalDataSource.getProfileImageByteArray(imageType.uid)
-            is ImageType.FamilyImage -> userLocalDataSource.getFamilyImageByteArray(imageType.familyId)
-            is ImageType.RecipeImage -> recipeLocalDataSource.getImageByteArray(
+            is ImageType.ProfileImage -> userLocalDataSource.observeProfileImageByteArray(imageType.uid)
+            is ImageType.FamilyImage -> userLocalDataSource.observeFamilyImageByteArray(imageType.familyId)
+            is ImageType.RecipeImage -> recipeLocalDataSource.observeImageByteArray(
                 familyId = imageType.familyId,
                 recipeId = imageType.recipeId,
             )

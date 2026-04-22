@@ -8,8 +8,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.model.Category
-import com.example.lifetogether.domain.repository.AdminRepository
-import com.example.lifetogether.domain.repository.CategoryRepository
+import com.example.lifetogether.domain.repository.GroceryRepository
 import com.example.lifetogether.domain.result.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -21,8 +20,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AdminGroceryCategoriesViewModel @Inject constructor(
-    private val categoryRepository: CategoryRepository,
-    private val adminRepository: AdminRepository,
+    private val groceryRepository: GroceryRepository,
 ) : ViewModel() {
     var showDeleteCategoryConfirmationDialog: Boolean by mutableStateOf(false)
     var selectedCategory: Category? by mutableStateOf(null)
@@ -39,16 +37,16 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
 
     // ---------------------------------------------------------------- SETUP/FETCH LIST
     fun setUpCategories() {
-        fetchCategories()
+        observeCategories()
     }
 
     // ---------------------------------------------------------------- CATEGORIES
     private val _groceryCategories = MutableStateFlow<List<Category>>(emptyList())
     val groceryCategories: StateFlow<List<Category>> = _groceryCategories.asStateFlow()
 
-    private fun fetchCategories() {
+    private fun observeCategories() {
         viewModelScope.launch {
-            categoryRepository.getCategories().collect { result ->
+            groceryRepository.observeCategories().collect { result ->
                 when (result) {
                     is Result.Success -> {
                         _groceryCategories.value = result.data
@@ -80,7 +78,7 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
         val category = Category(emoji = categoryAsList[0], name = categoryAsList[1].trim())
 
         viewModelScope.launch {
-            val result = adminRepository.addCategory(category)
+            val result = groceryRepository.addCategory(category)
             if (result is Result.Success) {
                 newCategory = ""
             } else if (result is Result.Failure) {
@@ -95,7 +93,7 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
     fun deleteCategory() {
         val category = selectedCategory ?: return
         viewModelScope.launch {
-            val result = adminRepository.deleteCategory(category)
+            val result = groceryRepository.deleteCategory(category)
 
             if (result is Result.Failure) {
                 println("Error: ${result.error.toUserMessage()}")

@@ -25,7 +25,7 @@ class GroceryFirestoreDataSource @Inject constructor(
     private val db: FirebaseFirestore,
 ) {
 
-    fun grocerySnapshotListener(familyId: String): Flow<Result<List<GroceryItem>, AppError>> = callbackFlow {
+    fun syncGroceryItems(familyId: String): Flow<Result<List<GroceryItem>, AppError>> = callbackFlow {
         val registration = db.collection(Constants.GROCERY_TABLE)
             .whereEqualTo("familyId", familyId)
             .addSnapshotListener { snapshot, e ->
@@ -70,7 +70,7 @@ class GroceryFirestoreDataSource @Inject constructor(
         }
     }
 
-    fun categoriesSnapshotListener() = callbackFlow {
+    fun syncCategories(): Flow<Result<List<Category>, AppError>> = callbackFlow {
         val ref = db.collection(Constants.CATEGORY_TABLE)
         val registration = ref.addSnapshotListener { snapshot, e ->
             if (e != null) {
@@ -102,7 +102,7 @@ class GroceryFirestoreDataSource @Inject constructor(
         }
     }
 
-    fun grocerySuggestionsSnapshotListener() = callbackFlow {
+    fun syncGrocerySuggestions(): Flow<Result<List<GrocerySuggestion>, AppError>> = callbackFlow {
         val ref = db.collection(Constants.GROCERY_SUGGESTIONS_TABLE)
         val registration = ref.addSnapshotListener { snapshot, e ->
             if (e != null) {
@@ -119,7 +119,7 @@ class GroceryFirestoreDataSource @Inject constructor(
         awaitClose { registration.remove() }
     }
 
-    suspend fun addGrocerySuggestion(suggestion: GrocerySuggestion): Result<Unit, AppError> {
+    suspend fun saveGrocerySuggestion(suggestion: GrocerySuggestion): Result<Unit, AppError> {
         return appResultOfSuspend {
             db.collection(Constants.GROCERY_SUGGESTIONS_TABLE).add(suggestion).await()
         }

@@ -40,7 +40,7 @@ class FamilyViewModel @Inject constructor(
                 val newFamilyId = authenticated?.user?.familyId
                 if (newFamilyId != null && newFamilyId != _familyId.value) {
                     _familyId.value = newFamilyId
-                    fetchFamilyInformation(newFamilyId)
+                    observeFamilyInformation(newFamilyId)
                 } else if (state is SessionState.Unauthenticated) {
                     _familyId.value = null
                     _uid.value = null
@@ -83,7 +83,7 @@ class FamilyViewModel @Inject constructor(
     }
 
     // ---------------------------------------------------------------- FUNCTIONS
-    private fun fetchFamilyInformation(familyId: String) {
+    private fun observeFamilyInformation(familyId: String) {
         viewModelScope.launch {
             familyRepository.observeFamilyInformation(familyId).collect { result ->
                 when (result) {

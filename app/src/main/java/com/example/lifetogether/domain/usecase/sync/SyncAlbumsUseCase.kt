@@ -1,6 +1,5 @@
-package com.example.lifetogether.domain.usecase.observers
+package com.example.lifetogether.domain.usecase.sync
 
-import android.content.Context
 import android.util.Log
 import com.example.lifetogether.domain.repository.GalleryRepository
 import com.example.lifetogether.domain.result.Result as AppResult
@@ -9,28 +8,26 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-class ObserveGalleryMediaUseCase @Inject constructor(
+class SyncAlbumsUseCase @Inject constructor(
     private val galleryRepository: GalleryRepository,
 ) {
-    companion object {
-        private const val TAG = "ObserveGalleryMedia"
+    private companion object {
+        const val TAG = "ObserveAlbumsUC"
     }
 
     fun start(
         scope: CoroutineScope,
         familyId: String,
-        context: Context,
-    ): ObserverStartHandle {
+    ): SyncStartHandle {
         val firstSuccess = CompletableDeferred<kotlin.Result<Unit>>()
         val job = scope.launch {
-            Log.d(TAG, "invoked")
-            galleryRepository.syncGalleryMediaFromRemote(familyId, context).collect { result ->
+            galleryRepository.syncAlbumsFromRemote(familyId).collect { result ->
                 when (result) {
                     is AppResult.Success -> firstSuccess.completeFirstSuccessIfNeeded()
-                    is AppResult.Failure -> Log.e(TAG, "failure: ${result.error}")
+                    is AppResult.Failure -> Log.e(TAG, "albums sync failure: ${result.error}")
                 }
             }
         }
-        return ObserverStartHandle(firstSuccess = firstSuccess, job = job)
+        return SyncStartHandle(firstSuccess = firstSuccess, job = job)
     }
 }

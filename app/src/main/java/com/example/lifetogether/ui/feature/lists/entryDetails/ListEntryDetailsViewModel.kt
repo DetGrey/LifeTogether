@@ -200,7 +200,7 @@ class ListEntryDetailsViewModel @Inject constructor(
                                 ImageType.RoutineListEntryImage(activeFamilyId, r.data),
                                 context,
                             )
-                            // Result ignored — entry is already saved; image syncs via observer
+                            // Result ignored — entry is already saved; image syncs via Synchronizer
                         }
                         _uiState.update { if (it is EntryDetailsUiState.Content) it.copy(isSaving = false) else it }
                         onDone()

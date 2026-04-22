@@ -26,11 +26,11 @@ import com.example.lifetogether.ui.common.add.AddNewListItem
 import com.example.lifetogether.ui.common.add.EditListItem
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
-import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
+import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.domain.observer.ObserverKey
+import com.example.lifetogether.domain.sync.SyncKey
 
 @Composable
 fun AdminGrocerySuggestionsScreen(
@@ -64,8 +64,8 @@ fun AdminGrocerySuggestionsScreen(
                 text = "Edit grocery list",
             )
 
-            ObserverUpdatingText(
-                keys = setOf(ObserverKey.GROCERY_CATEGORIES, ObserverKey.GROCERY_SUGGESTIONS),
+            SyncUpdatingText(
+                keys = setOf(SyncKey.GROCERY_CATEGORIES, SyncKey.GROCERY_SUGGESTIONS),
             )
 
             Spacer(modifier = Modifier.height(8.dp))

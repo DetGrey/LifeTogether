@@ -1,33 +1,33 @@
-package com.example.lifetogether.domain.usecase.observers
+package com.example.lifetogether.domain.usecase.sync
 
 import android.util.Log
-import com.example.lifetogether.domain.repository.UserRepository
+import com.example.lifetogether.domain.repository.TipTrackerRepository
 import com.example.lifetogether.domain.result.Result as AppResult
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-class ObserveUserInformationUseCase @Inject constructor(
-    private val userRepository: UserRepository,
+class SyncTipTrackerUseCase @Inject constructor(
+    private val tipTrackerRepository: TipTrackerRepository,
 ) {
     private companion object {
-        const val TAG = "ObserveUserInfoUC"
+        const val TAG = "ObserveTipTrackerUC"
     }
 
     fun start(
         scope: CoroutineScope,
-        uid: String,
-    ): ObserverStartHandle {
+        familyId: String,
+    ): SyncStartHandle {
         val firstSuccess = CompletableDeferred<kotlin.Result<Unit>>()
         val job = scope.launch {
-            userRepository.syncUserInformationFromRemote(uid).collect { result ->
+            tipTrackerRepository.syncTipsFromRemote(familyId).collect { result ->
                 when (result) {
                     is AppResult.Success -> firstSuccess.completeFirstSuccessIfNeeded()
-                    is AppResult.Failure -> Log.e(TAG, "user info sync failure: ${result.error}")
+                    is AppResult.Failure -> Log.e(TAG, "tip sync failure: ${result.error}")
                 }
             }
         }
-        return ObserverStartHandle(firstSuccess = firstSuccess, job = job)
+        return SyncStartHandle(firstSuccess = firstSuccess, job = job)
     }
 }

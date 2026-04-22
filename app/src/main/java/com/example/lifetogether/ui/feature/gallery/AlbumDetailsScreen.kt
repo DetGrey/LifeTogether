@@ -46,11 +46,11 @@ import com.example.lifetogether.ui.common.image.MediaUploadMultipleDialog
 import com.example.lifetogether.ui.common.list.CompletableBox
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
-import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
+import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.model.MenuAction
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.viewmodel.ImageViewModel
-import com.example.lifetogether.domain.observer.ObserverKey
+import com.example.lifetogether.domain.sync.SyncKey
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -100,8 +100,8 @@ fun AlbumDetailsScreen(
                 onRightClick = { albumDetailsViewModel.toggleOverflowMenu() },
             )
 
-            ObserverUpdatingText(
-                keys = setOf(ObserverKey.GALLERY_ALBUMS, ObserverKey.GALLERY_MEDIA),
+            SyncUpdatingText(
+                keys = setOf(SyncKey.GALLERY_ALBUMS, SyncKey.GALLERY_MEDIA),
             )
             when (uiState.isSelectionModeActive) {
                 true -> {
