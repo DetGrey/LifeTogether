@@ -46,7 +46,7 @@ class GalleryViewModel @Inject constructor(
                 val newFamilyId = (state as? SessionState.Authenticated)?.user?.familyId
                 if (newFamilyId != null && newFamilyId != familyId) {
                     familyId = newFamilyId
-                    fetchAlbums()
+                    observeAlbums()
                 } else if (state is SessionState.Unauthenticated) {
                     familyId = null
                 }
@@ -93,7 +93,7 @@ class GalleryViewModel @Inject constructor(
         }
     }
 
-    private fun fetchAlbums() {
+    private fun observeAlbums() {
         val familyIdValue = familyId ?: return
 
         viewModelScope.launch {

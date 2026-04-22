@@ -38,9 +38,9 @@ class UserRepositoryImpl @Inject constructor(
         const val TAG = "UserRepositoryImpl"
     }
 
-    fun getFamilyInformation(familyId: String): Flow<Result<FamilyInformation, AppError>> {
+    fun observeFamilyInformation(familyId: String): Flow<Result<FamilyInformation, AppError>> {
         // Get family information (without members)
-        val familyInformationFlow: Flow<Result<FamilyInformation, AppError>> = userLocalDataSource.getFamilyInformation(familyId).map { user ->
+        val familyInformationFlow: Flow<Result<FamilyInformation, AppError>> = userLocalDataSource.observeFamilyInformation(familyId).map { user ->
             appResultOf {
                 Log.d(TAG, "Mapping family information from local user record")
 
@@ -52,7 +52,7 @@ class UserRepositoryImpl @Inject constructor(
         }
 
         // Get family members
-        val familyMembersFlow = userLocalDataSource.getFamilyMembers(familyId).map { list ->
+        val familyMembersFlow = userLocalDataSource.observeFamilyMembers(familyId).map { list ->
             list.map { familyMember ->
                 try {
                     Log.d(TAG, "Mapping local family member")

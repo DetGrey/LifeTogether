@@ -8,7 +8,6 @@ import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.model.session.SessionState
-import com.example.lifetogether.domain.repository.CategoryRepository
 import com.example.lifetogether.domain.repository.GroceryRepository
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.result.Result
@@ -51,7 +50,6 @@ data class GroceryListUiState(
 @HiltViewModel
 class GroceryListViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
-    private val categoryRepository: CategoryRepository,
     private val groceryRepository: GroceryRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(GroceryListUiState())
@@ -87,8 +85,8 @@ class GroceryListViewModel @Inject constructor(
 
     // ---------------------------------------------------------------- SETUP/FETCH LIST
     private fun setUpGroceryList() {
-        fetchCategories()
-        fetchGrocerySuggestions()
+        observeCategories()
+        observeGrocerySuggestions()
 
         val familyId = familyId ?: return //todo maybe not the best way
 
@@ -134,10 +132,10 @@ class GroceryListViewModel @Inject constructor(
     }
 
     // ---------------------------------------------------------------- CATEGORIES
-    private fun fetchCategories() {
+    private fun observeCategories() {
         println("GroceryListViewModel before calling getCategories")
         viewModelScope.launch {
-            categoryRepository.getCategories().collect { result ->
+            groceryRepository.observeCategories().collect { result ->
                 println("GroceryListViewModel getCategories result: $result")
                 when (result) {
                     is Result.Success -> {
@@ -164,11 +162,11 @@ class GroceryListViewModel @Inject constructor(
     }
 
     // ---------------------------------------------------------------- GROCERY SUGGESTIONS
-    private fun fetchGrocerySuggestions() {
-        println("GroceryListViewModel before calling getGrocerySuggestions")
+    private fun observeGrocerySuggestions() {
+        println("GroceryListViewModel before calling observeGrocerySuggestions")
         viewModelScope.launch {
-            groceryRepository.getGrocerySuggestions().collect { result ->
-                println("GroceryListViewModel getGrocerySuggestions result: $result")
+            groceryRepository.observeGrocerySuggestions().collect { result ->
+                println("GroceryListViewModel observeGrocerySuggestions result: $result")
                 when (result) {
                     is Result.Success -> {
                         println("GroceryListViewModel categories updated: ${result.data}")
@@ -286,7 +284,7 @@ class GroceryListViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            when (val result = groceryRepository.saveItem(groceryItem)) {
+            when (val result = groceryRepository.saveGroceryItem(groceryItem)) {
                 is Result.Success -> {
                     updateUiState { currentState ->
                         currentState.copy(

@@ -43,10 +43,10 @@ import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.image.DisplayImageFromUri
 import com.example.lifetogether.ui.common.image.DisplayVideoFromUri
 import com.example.lifetogether.ui.common.image.MediaInfoPanel
-import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
+import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.model.MenuAction
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.domain.observer.ObserverKey
+import com.example.lifetogether.domain.sync.SyncKey
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -124,8 +124,8 @@ fun MediaDetailsScreen(
                 onRightClick = { mediaDetailsViewModel.toggleOverflowMenu() },
             )
 
-            ObserverUpdatingText(
-                keys = setOf(ObserverKey.GALLERY_ALBUMS, ObserverKey.GALLERY_MEDIA),
+            SyncUpdatingText(
+                keys = setOf(SyncKey.GALLERY_ALBUMS, SyncKey.GALLERY_MEDIA),
             )
 
             HorizontalPager(

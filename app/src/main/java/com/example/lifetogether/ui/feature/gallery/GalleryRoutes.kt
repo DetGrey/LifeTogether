@@ -10,8 +10,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.domain.model.session.SessionState
-import com.example.lifetogether.domain.observer.ObserverKey
-import com.example.lifetogether.ui.common.observer.FeatureObserverLifecycleBinding
+import com.example.lifetogether.domain.sync.SyncKey
+import com.example.lifetogether.ui.common.sync.FeatureSyncLifecycleBinding
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.navigation.AppRoutes
 import com.example.lifetogether.ui.viewmodel.RootCoordinatorViewModel
@@ -32,8 +32,8 @@ fun GalleryGraphObserverRoute(
         ?.any { destination -> destination.route == AppRoutes.GALLERY_GRAPH } == true
 
     if (isInGalleryGraph && !familyId.isNullOrBlank()) {
-        FeatureObserverLifecycleBinding(
-            keys = setOf(ObserverKey.GALLERY_ALBUMS, ObserverKey.GALLERY_MEDIA),
+        FeatureSyncLifecycleBinding(
+            keys = setOf(SyncKey.GALLERY_ALBUMS, SyncKey.GALLERY_MEDIA),
         )
     }
 }

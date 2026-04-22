@@ -114,7 +114,8 @@ class UserListLocalDataSource @Inject constructor(
             routineListsDao.deleteItems(itemIds)
         }
 
-    fun observeRoutineImageByteArray(entryId: String) = routineListsDao.getImageByteArray(entryId)
+    fun observeRoutineImageByteArray(entryId: String): Flow<ByteArray?> =
+        routineListsDao.observeImageByteArray(entryId)
 
     private fun RoutineListEntry.toEntity() = RoutineListEntryEntity(
         id = id ?: "",

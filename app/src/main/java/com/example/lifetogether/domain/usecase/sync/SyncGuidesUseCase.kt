@@ -1,4 +1,4 @@
-package com.example.lifetogether.domain.usecase.observers
+package com.example.lifetogether.domain.usecase.sync
 
 import android.util.Log
 import com.example.lifetogether.domain.repository.GuideRepository
@@ -8,18 +8,18 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-class ObserveGuidesUseCase @Inject constructor(
+class SyncGuidesUseCase @Inject constructor(
     private val guideRepository: GuideRepository,
 ) {
     private companion object {
-        const val TAG = "ObserveGuidesUseCase"
+        const val TAG = "SyncGuidesUseCase"
     }
 
     fun start(
         scope: CoroutineScope,
         uid: String,
         familyId: String,
-    ): ObserverStartHandle {
+    ): SyncStartHandle {
         val firstSuccess = CompletableDeferred<kotlin.Result<Unit>>()
         val job = scope.launch {
             Log.d(TAG, "invoke uid=$uid familyId=$familyId")
@@ -30,6 +30,6 @@ class ObserveGuidesUseCase @Inject constructor(
                 }
             }
         }
-        return ObserverStartHandle(firstSuccess = firstSuccess, job = job)
+        return SyncStartHandle(firstSuccess = firstSuccess, job = job)
     }
 }

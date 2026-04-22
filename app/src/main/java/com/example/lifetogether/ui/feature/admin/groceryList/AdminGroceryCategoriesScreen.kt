@@ -35,11 +35,11 @@ import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
-import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
+import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.domain.observer.ObserverKey
+import com.example.lifetogether.domain.sync.SyncKey
 
 @Composable
 fun AdminGroceryCategoriesScreen(
@@ -79,8 +79,8 @@ fun AdminGroceryCategoriesScreen(
             }
 
             item {
-                ObserverUpdatingText(
-                    keys = setOf(ObserverKey.GROCERY_CATEGORIES),
+                SyncUpdatingText(
+                    keys = setOf(SyncKey.GROCERY_CATEGORIES),
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))

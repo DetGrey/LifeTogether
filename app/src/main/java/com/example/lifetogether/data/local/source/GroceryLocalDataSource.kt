@@ -4,12 +4,15 @@ import com.example.lifetogether.data.logic.appResultOf
 
 import com.example.lifetogether.domain.result.AppError
 
+import com.example.lifetogether.data.local.dao.CategoriesDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
 import com.example.lifetogether.data.local.source.internal.computeItemsToDelete
 import com.example.lifetogether.data.local.source.internal.computeItemsToUpdate
+import com.example.lifetogether.data.model.CategoryEntity
 import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.model.GrocerySuggestionEntity
+import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -19,6 +22,7 @@ import javax.inject.Singleton
 
 @Singleton
 class GroceryLocalDataSource @Inject constructor(
+    private val categoriesDao: CategoriesDao,
     private val groceryListDao: GroceryListDao,
     private val grocerySuggestionsDao: GrocerySuggestionsDao,
 ) {
@@ -27,7 +31,31 @@ class GroceryLocalDataSource @Inject constructor(
         return groceryListDao.getItems(familyId)
     }
 
-    fun getGrocerySuggestions(): Flow<List<GrocerySuggestionEntity>> = grocerySuggestionsDao.getItems()
+    fun observeCategories(): Flow<List<CategoryEntity>> = categoriesDao.getItems()
+
+    fun observeGrocerySuggestions(): Flow<List<GrocerySuggestionEntity>> = grocerySuggestionsDao.getItems()
+
+    suspend fun updateCategories(items: List<Category>) {
+        val entities = items.map { category ->
+            CategoryEntity(
+                emoji = category.emoji,
+                name = category.name,
+            )
+        }
+        val currentItems = categoriesDao.getItems().first()
+        val itemsToUpdate = computeItemsToUpdate(
+            currentItems = currentItems,
+            incomingItems = entities,
+            key = { it.name },
+        )
+        val itemsToDelete = computeItemsToDelete(
+            currentItems = currentItems,
+            incomingItems = entities,
+            key = { it.name },
+        )
+        categoriesDao.updateItems(itemsToUpdate)
+        categoriesDao.deleteItems(itemsToDelete)
+    }
 
     suspend fun updateGrocerySuggestions(entities: List<GrocerySuggestionEntity>) {
         val currentItems = grocerySuggestionsDao.getItems().first()

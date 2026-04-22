@@ -1,4 +1,4 @@
-package com.example.lifetogether.domain.usecase.observers
+package com.example.lifetogether.domain.usecase.sync
 
 import android.util.Log
 import com.example.lifetogether.domain.repository.GroceryRepository
@@ -8,7 +8,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-class ObserveGroceryListUseCase @Inject constructor(
+class SyncGroceryListUseCase @Inject constructor(
     private val groceryRepository: GroceryRepository,
 ) {
     private companion object {
@@ -18,16 +18,16 @@ class ObserveGroceryListUseCase @Inject constructor(
     fun start(
         scope: CoroutineScope,
         familyId: String,
-    ): ObserverStartHandle {
+    ): SyncStartHandle {
         val firstSuccess = CompletableDeferred<kotlin.Result<Unit>>()
         val job = scope.launch {
-            groceryRepository.syncGroceryItemsFromRemote(familyId).collect { result ->
+            groceryRepository.syncGroceryItems(familyId).collect { result ->
                 when (result) {
                     is AppResult.Success -> firstSuccess.completeFirstSuccessIfNeeded()
                     is AppResult.Failure -> Log.e(TAG, "grocery list sync failure: ${result.error}")
                 }
             }
         }
-        return ObserverStartHandle(firstSuccess = firstSuccess, job = job)
+        return SyncStartHandle(firstSuccess = firstSuccess, job = job)
     }
 }

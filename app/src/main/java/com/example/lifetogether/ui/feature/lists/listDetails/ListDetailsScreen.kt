@@ -39,7 +39,7 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
-import com.example.lifetogether.domain.observer.ObserverKey
+import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.ActionSheet
 import com.example.lifetogether.ui.common.ActionSheetItem
 import com.example.lifetogether.ui.common.TopBar
@@ -47,7 +47,7 @@ import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.list.CompletableBox
-import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
+import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.navigation.AppNavigator
@@ -117,8 +117,8 @@ fun ListDetailsScreen(
                         .padding(horizontal = 10.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    ObserverUpdatingText(
-                        keys = setOf(ObserverKey.ROUTINE_LIST_ENTRIES),
+                    SyncUpdatingText(
+                        keys = setOf(SyncKey.ROUTINE_LIST_ENTRIES),
                     )
 
                     if (uiState.isSelectionModeActive) {

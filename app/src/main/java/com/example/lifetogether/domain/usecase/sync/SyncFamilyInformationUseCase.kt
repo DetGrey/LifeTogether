@@ -1,33 +1,33 @@
-package com.example.lifetogether.domain.usecase.observers
+package com.example.lifetogether.domain.usecase.sync
 
 import android.util.Log
-import com.example.lifetogether.domain.repository.GalleryRepository
+import com.example.lifetogether.domain.repository.FamilyRepository
 import com.example.lifetogether.domain.result.Result as AppResult
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-class ObserveAlbumsUseCase @Inject constructor(
-    private val galleryRepository: GalleryRepository,
+class SyncFamilyInformationUseCase @Inject constructor(
+    private val familyRepository: FamilyRepository,
 ) {
     private companion object {
-        const val TAG = "ObserveAlbumsUC"
+        const val TAG = "ObserveFamilyInfoUC"
     }
 
     fun start(
         scope: CoroutineScope,
         familyId: String,
-    ): ObserverStartHandle {
+    ): SyncStartHandle {
         val firstSuccess = CompletableDeferred<kotlin.Result<Unit>>()
         val job = scope.launch {
-            galleryRepository.syncAlbumsFromRemote(familyId).collect { result ->
+            familyRepository.syncFamilyInformationFromRemote(familyId).collect { result ->
                 when (result) {
                     is AppResult.Success -> firstSuccess.completeFirstSuccessIfNeeded()
-                    is AppResult.Failure -> Log.e(TAG, "albums sync failure: ${result.error}")
+                    is AppResult.Failure -> Log.e(TAG, "family info sync failure: ${result.error}")
                 }
             }
         }
-        return ObserverStartHandle(firstSuccess = firstSuccess, job = job)
+        return SyncStartHandle(firstSuccess = firstSuccess, job = job)
     }
 }

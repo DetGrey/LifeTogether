@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.common.observer
+package com.example.lifetogether.ui.common.sync
 
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
@@ -15,13 +15,13 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.example.lifetogether.domain.observer.ObserverKey
-import com.example.lifetogether.domain.observer.ObserverSyncState
+import com.example.lifetogether.domain.sync.SyncKey
+import com.example.lifetogether.domain.sync.SyncState
 import com.example.lifetogether.ui.viewmodel.RootCoordinatorViewModel
 
 @Composable
-fun FeatureObserverLifecycleBinding(
-    keys: Set<ObserverKey>,
+fun FeatureSyncLifecycleBinding(
+    keys: Set<SyncKey>,
 ) {
     if (keys.isEmpty()) return
 
@@ -54,20 +54,20 @@ fun FeatureObserverLifecycleBinding(
 }
 
 @Composable
-fun ObserverUpdatingText(
-    keys: Set<ObserverKey>,
+fun SyncUpdatingText(
+    keys: Set<SyncKey>,
     modifier: Modifier = Modifier,
 ) {
     val activity = LocalActivity.current as? ComponentActivity ?: return
     val rootCoordinator: RootCoordinatorViewModel = hiltViewModel(activity)
 
-    val syncStates by rootCoordinator.observerSyncStates.collectAsState()
-    val activeKeys by rootCoordinator.activeObserverKeys.collectAsState()
+    val syncStates by rootCoordinator.syncStates.collectAsState()
+    val activeKeys by rootCoordinator.activeSyncKeys.collectAsState()
     val hasSyncedOnce by rootCoordinator.observerHasSyncedOnce.collectAsState()
 
     val activeKeysAwaitingFirstSuccess = keys.filter { key ->
         key in activeKeys &&
-            syncStates[key] == ObserverSyncState.UPDATING &&
+            syncStates[key] == SyncState.UPDATING &&
             hasSyncedOnce[key] != true
     }
 

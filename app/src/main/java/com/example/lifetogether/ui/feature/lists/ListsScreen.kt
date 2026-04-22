@@ -35,11 +35,11 @@ import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.lists.ListType
 import com.example.lifetogether.domain.model.lists.UserList
-import com.example.lifetogether.domain.observer.ObserverKey
+import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
-import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
+import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -74,8 +74,8 @@ fun ListsScreen(
                         text = "Lists",
                     )
 
-                    ObserverUpdatingText(
-                        keys = setOf(ObserverKey.USER_LISTS, ObserverKey.ROUTINE_LIST_ENTRIES),
+                    SyncUpdatingText(
+                        keys = setOf(SyncKey.USER_LISTS, SyncKey.ROUTINE_LIST_ENTRIES),
                     )
                 }
             }

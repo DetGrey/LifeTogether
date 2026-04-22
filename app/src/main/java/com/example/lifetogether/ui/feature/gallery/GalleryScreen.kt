@@ -25,9 +25,9 @@ import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
-import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
+import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.domain.observer.ObserverKey
+import com.example.lifetogether.domain.sync.SyncKey
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -63,8 +63,8 @@ fun GalleryScreen(
 
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ObserverUpdatingText(
-                        keys = setOf(ObserverKey.GALLERY_ALBUMS, ObserverKey.GALLERY_MEDIA),
+                    SyncUpdatingText(
+                        keys = setOf(SyncKey.GALLERY_ALBUMS, SyncKey.GALLERY_MEDIA),
                     )
 
                     if (uiState.albums.isEmpty()) {

@@ -9,7 +9,7 @@ import com.example.lifetogether.domain.model.sealed.ImageType
 import kotlinx.coroutines.flow.Flow
 
 interface ImageRepository {
-    fun getImageByteArray(imageType: ImageType): Flow<Result<ByteArray, AppError>>
+    fun observeImageByteArray(imageType: ImageType): Flow<Result<ByteArray, AppError>>
     suspend fun uploadImage(uri: Uri,
         imageType: ImageType,
         context: Context,
