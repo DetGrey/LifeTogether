@@ -111,8 +111,3 @@ Issue body requirements:
 - include issue-specific subphase checklist items from this file
 - include issue-specific acceptance criteria and test checklist items as checkboxes
 - include out-of-scope boundaries against other Phase 2 issues
-
-## Questions
-
-- Is there any of the use cases that handles logic that might as well be inside the repo instead?
-- ImageRepository should be removed and move the functions into the domain repos instead
