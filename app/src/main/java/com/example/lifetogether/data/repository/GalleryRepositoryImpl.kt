@@ -13,6 +13,7 @@ import androidx.core.net.toUri
 import com.example.lifetogether.data.local.source.AlbumLocalDataSource
 import com.example.lifetogether.data.local.source.MediaLocalDataSource
 import com.example.lifetogether.data.model.AlbumEntity
+import com.example.lifetogether.data.model.GalleryMediaEntity
 import com.example.lifetogether.data.remote.GalleryFirestoreDataSource
 import com.example.lifetogether.di.IoDispatcher
 import com.example.lifetogether.domain.result.Result
@@ -158,34 +159,7 @@ class GalleryRepositoryImpl @Inject constructor(
     override fun observeAlbumMedia(familyId: String, albumId: String): Flow<Result<List<GalleryMedia>, AppError>> {
         return albumLocalDataSource.getAlbumMedia(familyId, albumId).map { entities ->
             appResultOf {
-                entities.map { wrapper ->
-                    val entity = wrapper.entity
-                    when (entity.mediaType) {
-                        MediaType.IMAGE -> GalleryImage(
-                            id = entity.id,
-                            familyId = entity.familyId,
-                            itemName = entity.itemName,
-                            lastUpdated = entity.lastUpdated,
-                            albumId = entity.albumId,
-                            dateCreated = entity.dateCreated,
-                            mediaType = MediaType.IMAGE,
-                            mediaUrl = null,
-                            mediaUri = entity.mediaUri?.toUri(),
-                        )
-                        MediaType.VIDEO -> GalleryVideo(
-                            id = entity.id,
-                            familyId = entity.familyId,
-                            itemName = entity.itemName,
-                            lastUpdated = entity.lastUpdated,
-                            albumId = entity.albumId,
-                            dateCreated = entity.dateCreated,
-                            mediaType = MediaType.VIDEO,
-                            mediaUrl = null,
-                            mediaUri = entity.mediaUri?.toUri(),
-                            duration = entity.videoDuration,
-                        )
-                    }
-                }
+                entities.map { it.toModel() }
             }
         }
     }
@@ -362,4 +336,32 @@ class GalleryRepositoryImpl @Inject constructor(
         lastUpdated = lastUpdated,
         count = count,
     )
+
+    private fun GalleryMediaEntity.toModel(): GalleryMedia =
+        when (mediaType) {
+            MediaType.IMAGE -> GalleryImage(
+                id = id,
+                familyId = familyId,
+                itemName = itemName,
+                lastUpdated = lastUpdated,
+                albumId = albumId,
+                dateCreated = dateCreated,
+                mediaType = MediaType.IMAGE,
+                mediaUrl = null,
+                mediaUri = mediaUri?.toUri(),
+            )
+
+            MediaType.VIDEO -> GalleryVideo(
+                id = id,
+                familyId = familyId,
+                itemName = itemName,
+                lastUpdated = lastUpdated,
+                albumId = albumId,
+                dateCreated = dateCreated,
+                mediaType = MediaType.VIDEO,
+                mediaUrl = null,
+                mediaUri = mediaUri?.toUri(),
+                duration = videoDuration,
+            )
+        }
 }

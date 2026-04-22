@@ -8,7 +8,7 @@ import com.example.lifetogether.domain.result.AppError
 import android.util.Log
 import com.example.lifetogether.data.local.source.GuideLocalDataSource
 import com.example.lifetogether.data.local.source.GuideProgressLocalDataSource
-import com.example.lifetogether.data.model.Entity
+import com.example.lifetogether.data.model.GuideEntity
 import com.example.lifetogether.data.remote.GuideFirestoreDataSource
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.guides.Guide
@@ -203,17 +203,17 @@ class GuideRepositoryImpl @Inject constructor(
         }
     }
 
-    private fun Entity.Guide.toModel() = Guide(
-        id = entity.id,
-        familyId = entity.familyId,
-        itemName = entity.itemName,
-        lastUpdated = entity.lastUpdated,
-        description = entity.description,
-        visibility = entity.visibility,
-        ownerUid = entity.ownerUid,
-        contentVersion = entity.contentVersion,
-        started = entity.started,
-        sections = entity.sections,
-        resume = entity.resume,
+    private fun GuideEntity.toModel() = Guide(
+        id = id,
+        familyId = familyId,
+        itemName = itemName,
+        lastUpdated = lastUpdated,
+        description = description,
+        visibility = visibility,
+        ownerUid = ownerUid,
+        contentVersion = contentVersion,
+        started = started,
+        sections = sections,
+        resume = resume,
     )
 }
