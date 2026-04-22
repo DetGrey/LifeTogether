@@ -1,6 +1,6 @@
 # Phase 3 — Route/Screen Split
 
-**Status:** Ready for implementation _(Not started → Grill-me in progress → Ready for implementation → Implementing → Complete)_
+**Status:** Implementing _(Not started → Grill-me in progress → Ready for implementation → Implementing → Complete)_
 
 ## Goal
 

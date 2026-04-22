@@ -2,6 +2,7 @@ package com.example.lifetogether.ui.navigation
 
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -38,6 +39,7 @@ import com.example.lifetogether.ui.feature.tipTracker.TipTrackerRoute
 @Composable
 fun NavHost(
     navController: NavHostController,
+    _rootSnackbarHostState: SnackbarHostState,
 ) {
     val appNavigator = AppNavigator(navController)
     GalleryGraphObserverRoute(navController = navController)
