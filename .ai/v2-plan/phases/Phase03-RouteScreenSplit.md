@@ -24,6 +24,7 @@ Separate every feature screen into a route composable (Android wiring) and a scr
 - Naming convention (locked):
 - `UiEvent` means user/UI input flowing into `ViewModel` (for example click, text change, retry tap).
 - `NavigationEvent` means user/UI navigation intent emitted by a screen and handled by the route (not by `ViewModel`).
+- `NavigationEvent` types live in their own feature-scoped file; do not nest navigation intents inside `UiEvent`.
 - `Command` means one-shot output emitted from `ViewModel` to UI (for example `ShowSnackbar`).
 - Concrete naming for this phase:
 - shared base type is `UiCommand`
@@ -38,7 +39,10 @@ Separate every feature screen into a route composable (Android wiring) and a scr
 - `Route` maps `<Feature>UiEvent` to `viewModel.onEvent(...)`.
 - `ViewModel` exposes lifecycle-collected state (`StateFlow<UiState>`) and one-shot commands (`Flow<UiCommand>`).
 - `Screen` never calls `ViewModel` methods directly.
+- Any navigation triggered by `ViewModel` logic is emitted as a `Command`, not a `UiEvent`.
 - `ViewModel` startup work uses `init` when no dynamic route argument is required; explicit load events are reserved for argument-driven/dynamic loads.
+- For complex screens with repeated gating/layout logic, the route may precompute ordered presentation models (for example sections/tiles) so the screen stays declarative and does not repeat access checks.
+- Prefer explicit sealed presentation models over nullable UI strings/flags when the screen has multiple visible states.
 - Snackbar design (locked for Phase 3):
 - Global root-level snackbar styling (single implementation in app root `SnackbarHost`).
 - Error-only visual variant in this phase.

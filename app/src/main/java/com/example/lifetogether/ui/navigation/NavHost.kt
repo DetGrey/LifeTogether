@@ -24,22 +24,22 @@ import com.example.lifetogether.ui.feature.guides.create.GuideCreateScreen
 import com.example.lifetogether.ui.feature.guides.details.GuideDetailsDestinationRoute
 import com.example.lifetogether.ui.feature.guides.details.GuideStepPlayerDestinationRoute
 import com.example.lifetogether.ui.feature.groceryList.GroceryListRoute
-import com.example.lifetogether.ui.feature.home.HomeScreen
-import com.example.lifetogether.ui.feature.loading.LoadingScreen
-import com.example.lifetogether.ui.feature.login.LoginScreen
+import com.example.lifetogether.ui.feature.home.HomeRoute
+import com.example.lifetogether.ui.feature.loading.LoadingRoute
+import com.example.lifetogether.ui.feature.login.LoginRoute
 import com.example.lifetogether.ui.feature.profile.ProfileScreen
 import com.example.lifetogether.ui.feature.recipes.CreateRecipeRoute
 import com.example.lifetogether.ui.feature.recipes.RecipeDetailsRoute
 import com.example.lifetogether.ui.feature.recipes.RecipesRoute
-import com.example.lifetogether.ui.feature.settings.SettingsScreen
-import com.example.lifetogether.ui.feature.signup.SignupScreen
+import com.example.lifetogether.ui.feature.settings.SettingsRoute
+import com.example.lifetogether.ui.feature.signup.SignupRoute
 import com.example.lifetogether.ui.feature.tipTracker.TipStatisticsRoute
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerRoute
 
 @Composable
 fun NavHost(
     navController: NavHostController,
-    _rootSnackbarHostState: SnackbarHostState,
+    _rootSnackbarHostState: SnackbarHostState, //todo can this be removed?
 ) {
     val appNavigator = AppNavigator(navController)
     GalleryGraphObserverRoute(navController = navController)
@@ -80,11 +80,11 @@ fun NavHost(
         }
 
         composable(AppRoutes.LOADING_SCREEN) {
-            LoadingScreen(appNavigator)
+            LoadingRoute(appNavigator)
         }
 
         composable(AppRoutes.HOME_SCREEN) {
-            HomeScreen(appNavigator)
+            HomeRoute(appNavigator)
         }
 
         composable(AppRoutes.PROFILE_SCREEN) {
@@ -96,14 +96,14 @@ fun NavHost(
         }
 
         composable(AppRoutes.SETTINGS_SCREEN) {
-            SettingsScreen(appNavigator)
+            SettingsRoute(appNavigator)
         }
 
         composable(AppRoutes.LOGIN_SCREEN) {
-            LoginScreen(appNavigator)
+            LoginRoute(appNavigator)
         }
         composable(AppRoutes.SIGNUP_SCREEN) {
-            SignupScreen(appNavigator)
+            SignupRoute(appNavigator)
         }
 
         composable(AppRoutes.GROCERY_LIST_SCREEN) {
