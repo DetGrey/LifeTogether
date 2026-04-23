@@ -11,33 +11,25 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
-import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
-import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.domain.sync.SyncKey
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun GalleryScreen(
-    appNavigator: AppNavigator? = null,
+    uiState: GalleryUiState,
+    onUiEvent: (GalleryUiEvent) -> Unit,
+    onNavigationEvent: (GalleryNavigationEvent) -> Unit,
 ) {
-    val galleryViewModel: GalleryViewModel = hiltViewModel()
-
-    val uiState by galleryViewModel.uiState.collectAsState()
-
     Box(
         modifier = Modifier
             .fillMaxSize(),
@@ -54,9 +46,7 @@ fun GalleryScreen(
                         resId = R.drawable.ic_back_arrow,
                         description = "back arrow icon",
                     ),
-                    onLeftClick = {
-                        appNavigator?.navigateBack()
-                    },
+                    onLeftClick = { onNavigationEvent(GalleryNavigationEvent.NavigateBack) },
                     text = "Albums",
                 )
             }
@@ -81,7 +71,7 @@ fun GalleryScreen(
                                     album.mediaCount,
                                     album.thumbnail?.toBitmap(),
                                     onClick = {
-                                        appNavigator?.navigateToAlbumMedia(album.id)
+                                        onNavigationEvent(GalleryNavigationEvent.NavigateToAlbumMedia(album.id))
                                     },
                                 )
                             }
@@ -100,29 +90,21 @@ fun GalleryScreen(
         contentAlignment = Alignment.BottomEnd,
     ) {
         AddButton(onClick = {
-            galleryViewModel.openNewAlbumDialog()
+            onUiEvent(GalleryUiEvent.OpenNewAlbumDialog)
         })
     }
 
     if (uiState.showNewAlbumDialog) {
         ConfirmationDialogWithTextField(
-            onDismiss = { galleryViewModel.closeNewAlbumDialog() },
-            onConfirm = { galleryViewModel.createNewAlbum() },
+            onDismiss = { onUiEvent(GalleryUiEvent.DismissNewAlbumDialog) },
+            onConfirm = { onUiEvent(GalleryUiEvent.CreateNewAlbum) },
             dialogTitle = "Create new album",
             dialogMessage = "Please enter a name for your new album",
             dismissButtonMessage = "Cancel",
             confirmButtonMessage = "Create",
             textValue = uiState.newAlbumName,
-            onTextValueChange = { galleryViewModel.setNewAlbumName(it) },
+            onTextValueChange = { onUiEvent(GalleryUiEvent.NewAlbumNameChanged(it)) },
             capitalization = true,
         )
-    }
-
-    // ---------------------------------------------------------------- SHOW ERROR ALERT
-    if (uiState.showAlertDialog) {
-        LaunchedEffect(uiState.error) {
-            galleryViewModel.dismissAlert()
-        }
-        ErrorAlertDialog(uiState.error)
     }
 }

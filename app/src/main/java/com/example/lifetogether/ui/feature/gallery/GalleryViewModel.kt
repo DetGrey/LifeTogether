@@ -1,7 +1,5 @@
 package com.example.lifetogether.ui.feature.gallery
 
-import com.example.lifetogether.domain.result.toUserMessage
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.model.gallery.Album
@@ -9,24 +7,19 @@ import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.GalleryRepository
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.result.Result
+import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.domain.usecase.gallery.GetAlbumDisplayModelsUseCase
-import com.example.lifetogether.ui.model.AlbumUiModel
+import com.example.lifetogether.ui.common.event.UiCommand
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-data class GalleryUiState(
-    val albums: List<AlbumUiModel> = emptyList(),
-    val showNewAlbumDialog: Boolean = false,
-    val newAlbumName: String = "",
-    val showAlertDialog: Boolean = false,
-    val error: String = "",
-)
 
 @HiltViewModel
 class GalleryViewModel @Inject constructor(
@@ -37,6 +30,9 @@ class GalleryViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(GalleryUiState())
     val uiState: StateFlow<GalleryUiState> = _uiState.asStateFlow()
 
+    private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
+    val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
+
     private val requestedThumbnails = mutableSetOf<String>()
     private var familyId: String? = null
 
@@ -46,27 +42,45 @@ class GalleryViewModel @Inject constructor(
                 val newFamilyId = (state as? SessionState.Authenticated)?.user?.familyId
                 if (newFamilyId != null && newFamilyId != familyId) {
                     familyId = newFamilyId
+                    requestedThumbnails.clear()
                     observeAlbums()
                 } else if (state is SessionState.Unauthenticated) {
                     familyId = null
+                    requestedThumbnails.clear()
+                    _uiState.update {
+                        it.copy(
+                            albums = emptyList(),
+                            showNewAlbumDialog = false,
+                            newAlbumName = "",
+                        )
+                    }
                 }
             }
         }
     }
 
-    fun openNewAlbumDialog() {
+    fun onEvent(event: GalleryUiEvent) {
+        when (event) {
+            GalleryUiEvent.OpenNewAlbumDialog -> openNewAlbumDialog()
+            GalleryUiEvent.DismissNewAlbumDialog -> closeNewAlbumDialog()
+            is GalleryUiEvent.NewAlbumNameChanged -> setNewAlbumName(event.name)
+            GalleryUiEvent.CreateNewAlbum -> createNewAlbum()
+        }
+    }
+
+    private fun openNewAlbumDialog() {
         _uiState.update { it.copy(showNewAlbumDialog = true) }
     }
 
-    fun closeNewAlbumDialog() {
+    private fun closeNewAlbumDialog() {
         _uiState.update { it.copy(showNewAlbumDialog = false, newAlbumName = "") }
     }
 
-    fun setNewAlbumName(name: String) {
+    private fun setNewAlbumName(name: String) {
         _uiState.update { it.copy(newAlbumName = name) }
     }
 
-    fun createNewAlbum() {
+    private fun createNewAlbum() {
         val familyIdValue = familyId
         val albumName = _uiState.value.newAlbumName.trim()
 
@@ -109,20 +123,21 @@ class GalleryViewModel @Inject constructor(
                             }
                         }
                     }
+
                     is Result.Failure -> showError(result.error.toUserMessage())
                 }
             }
         }
     }
 
-    fun dismissAlert() {
-        viewModelScope.launch {
-            delay(3000)
-            _uiState.update { it.copy(showAlertDialog = false, error = "") }
-        }
-    }
-
     private fun showError(message: String) {
-        _uiState.update { it.copy(showAlertDialog = true, error = message) }
+        viewModelScope.launch {
+            _uiCommands.send(
+                UiCommand.ShowSnackbar(
+                    message = message,
+                    withDismissAction = true,
+                ),
+            )
+        }
     }
 }

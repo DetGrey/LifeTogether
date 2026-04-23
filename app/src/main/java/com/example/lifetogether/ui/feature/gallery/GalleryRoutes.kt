@@ -3,18 +3,21 @@ package com.example.lifetogether.ui.feature.gallery
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.sync.SyncKey
+import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.common.sync.FeatureSyncLifecycleBinding
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.navigation.AppRoutes
 import com.example.lifetogether.ui.viewmodel.RootCoordinatorViewModel
+import com.example.lifetogether.ui.viewmodel.ImageViewModel
 
 @Composable
 fun GalleryGraphObserverRoute(
@@ -22,7 +25,7 @@ fun GalleryGraphObserverRoute(
 ) {
     val activity = LocalActivity.current as? ComponentActivity ?: return
     val rootCoordinator: RootCoordinatorViewModel = hiltViewModel(activity)
-    val sessionState by rootCoordinator.sessionState.collectAsState()
+    val sessionState by rootCoordinator.sessionState.collectAsStateWithLifecycle()
     val familyId = (sessionState as? SessionState.Authenticated)?.user?.familyId
 
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
@@ -42,7 +45,22 @@ fun GalleryGraphObserverRoute(
 fun GalleryScreenRoute(
     appNavigator: AppNavigator,
 ) {
-    GalleryScreen(appNavigator)
+    val viewModel: GalleryViewModel = hiltViewModel()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    CollectUiCommands(viewModel.uiCommands)
+
+    GalleryScreen(
+        uiState = uiState,
+        onUiEvent = viewModel::onEvent,
+        onNavigationEvent = { navigationEvent ->
+            when (navigationEvent) {
+                GalleryNavigationEvent.NavigateBack -> appNavigator.navigateBack()
+                is GalleryNavigationEvent.NavigateToAlbumMedia -> {
+                    appNavigator.navigateToAlbumMedia(navigationEvent.albumId)
+                }
+            }
+        },
+    )
 }
 
 @Composable
@@ -50,7 +68,43 @@ fun AlbumDetailsRoute(
     appNavigator: AppNavigator,
     albumId: String,
 ) {
-    AlbumDetailsScreen(appNavigator, albumId)
+    val viewModel: AlbumDetailsViewModel = hiltViewModel()
+    val imageViewModel: ImageViewModel = hiltViewModel()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    CollectUiCommands(viewModel.uiCommands)
+
+    LaunchedEffect(albumId) {
+        viewModel.setUp(albumId)
+    }
+
+    LaunchedEffect(viewModel.commands) {
+        viewModel.commands.collect { command ->
+            when (command) {
+                AlbumDetailsCommand.NavigateBack -> appNavigator.navigateBack()
+            }
+        }
+    }
+
+    AlbumDetailsScreen(
+        uiState = uiState,
+        showImageUploadDialog = imageViewModel.showImageUploadDialog,
+        onUiEvent = { event ->
+            when (event) {
+                AlbumDetailsUiEvent.RequestImageUpload -> imageViewModel.showImageUploadDialog = true
+                AlbumDetailsUiEvent.DismissImageUploadDialog,
+                AlbumDetailsUiEvent.ConfirmImageUploadDialog -> imageViewModel.showImageUploadDialog = false
+                else -> viewModel.onEvent(event)
+            }
+        },
+        onNavigationEvent = { navigationEvent ->
+            when (navigationEvent) {
+                AlbumDetailsNavigationEvent.NavigateBack -> appNavigator.navigateBack()
+                is AlbumDetailsNavigationEvent.NavigateToMediaDetails -> {
+                    appNavigator.navigateToGalleryMedia(albumId, navigationEvent.initialIndex)
+                }
+            }
+        },
+    )
 }
 
 @Composable
@@ -59,5 +113,21 @@ fun MediaDetailsRoute(
     albumId: String,
     initialIndex: Int,
 ) {
-    MediaDetailsScreen(appNavigator, albumId, initialIndex)
+    val viewModel: MediaDetailsViewModel = hiltViewModel()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    CollectUiCommands(viewModel.uiCommands)
+
+    LaunchedEffect(albumId, initialIndex) {
+        viewModel.setUp(albumId, initialIndex)
+    }
+
+    MediaDetailsScreen(
+        uiState = uiState,
+        onUiEvent = viewModel::onEvent,
+        onNavigationEvent = { navigationEvent ->
+            when (navigationEvent) {
+                MediaDetailsNavigationEvent.NavigateBack -> appNavigator.navigateBack()
+            }
+        },
+    )
 }
