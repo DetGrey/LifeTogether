@@ -161,10 +161,6 @@ Create milestone `Phase 3: Route/Screen Split` and the following issues assigned
 - `[Phase 3] Route/screen split — TipTracker` (`TipTracker`, `TipStatistics`)
 - `[Phase 3] ErrorAlertDialog migration`
 
-TipTracker-specific note for this phase:
-- Keep all TipTracker screen contract types together in `TipTrackerModels.kt` (`TipTrackerUiState`, `TipTrackerUiEvent`, `TipTrackerNavigationEvent`, and related feature models). Do not split navigation events into separate files for already-migrated screens.
-- Keep calendar presentation state precomputed in `TipTrackerViewModel` as part of `TipTrackerUiState.Content` so `TipsCalendar` stays render-only. Do not introduce a separate `TipsCalendarViewModel` for this split.
-
 ### Phase 3 execution strategy (explicit override)
 
 - All route/screen split issues in this phase are implemented on the **same branch**.

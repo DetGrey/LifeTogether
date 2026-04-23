@@ -19,7 +19,7 @@ import com.example.lifetogether.ui.feature.guides.GuidesRoute
 import com.example.lifetogether.ui.feature.lists.listDetails.ListDetailsRoute
 import com.example.lifetogether.ui.feature.lists.entryDetails.ListEntryDetailsRoute
 import com.example.lifetogether.ui.feature.lists.ListsRoute
-import com.example.lifetogether.ui.feature.guides.create.GuideCreateScreen
+import com.example.lifetogether.ui.feature.guides.create.GuideCreateRoute
 import com.example.lifetogether.ui.feature.guides.details.GuideDetailsDestinationRoute
 import com.example.lifetogether.ui.feature.guides.details.GuideStepPlayerDestinationRoute
 import com.example.lifetogether.ui.feature.groceryList.GroceryListRoute
@@ -117,7 +117,7 @@ fun NavHost(
         }
 
         composable(AppRoutes.GUIDE_CREATE_SCREEN) {
-            GuideCreateScreen(appNavigator)
+            GuideCreateRoute(appNavigator)
         }
 
         navigation(

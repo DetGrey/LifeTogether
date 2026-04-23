@@ -14,7 +14,7 @@ fun GuideStepRows(
     steps: List<GuideStep>,
     textColor: Color,
     indentLevel: Int,
-    canToggleStep: (String) -> Boolean,
+    canToggleStep: Boolean,
     onToggleStep: (String) -> Unit,
 ) {
     var numberedIndex = 1
@@ -25,7 +25,7 @@ fun GuideStepRows(
 
             StepToggleRow(
                 isCompleted = step.completed,
-                enabled = canToggleStep(step.id),
+                enabled = canToggleStep,
                 indentLevel = indentLevel,
                 onToggle = { onToggleStep(step.id) },
             ) { modifier, textDecoration ->
