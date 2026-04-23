@@ -4,7 +4,6 @@ import com.example.lifetogether.domain.result.toUserMessage
 
 import android.content.ContentResolver
 import android.content.Context
-import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -19,14 +18,17 @@ import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.repository.UserListRepository
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.usecase.image.UploadImageUseCase
+import com.example.lifetogether.ui.common.event.UiCommand
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -46,20 +48,6 @@ class ListEntryDetailsViewModel @Inject constructor(
         val WEEKDAYS: List<String> = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
     }
 
-    data class EntryFormState(
-        val name: String = "",
-        val recurrenceUnit: RecurrenceUnit = RecurrenceUnit.DAYS,
-        val interval: String = "1",
-        val selectedWeekdays: Set<Int> = emptySet(),
-        val pendingImageUri: Uri? = null,
-        val pendingImageBitmap: Bitmap? = null,
-    )
-
-    data class EntryDetailsScreenState(
-        val uiState: EntryDetailsUiState = EntryDetailsUiState.Loading,
-        val formState: EntryFormState = EntryFormState(),
-    )
-
     private val _familyId = MutableStateFlow<String?>(null)
     val familyId: StateFlow<String?> = _familyId.asStateFlow()
     private var listId: String? = null
@@ -68,6 +56,9 @@ class ListEntryDetailsViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow<EntryDetailsUiState>(EntryDetailsUiState.Loading)
     private val _formState = MutableStateFlow(EntryFormState())
+
+    private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
+    val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
 
     val screenState: StateFlow<EntryDetailsScreenState> = combine(_uiState, _formState) { ui, form ->
         EntryDetailsScreenState(ui, form)
@@ -126,15 +117,6 @@ class ListEntryDetailsViewModel @Inject constructor(
         }
     }
 
-    fun dismissAlert() {
-        viewModelScope.launch {
-            delay(3000)
-            _uiState.update { state ->
-                if (state is EntryDetailsUiState.Content) state.copy(showAlertDialog = false, error = "") else state
-            }
-        }
-    }
-
     fun enterEditMode() {
         _uiState.update { if (it is EntryDetailsUiState.Content) it.copy(isEditing = true) else it }
     }
@@ -153,8 +135,13 @@ class ListEntryDetailsViewModel @Inject constructor(
     }
 
     private fun showError(message: String) {
-        _uiState.update { state ->
-            if (state is EntryDetailsUiState.Content) state.copy(showAlertDialog = true, error = message) else state
+        viewModelScope.launch {
+            _uiCommands.send(
+                UiCommand.ShowSnackbar(
+                    message = message,
+                    withDismissAction = true,
+                ),
+            )
         }
     }
 
