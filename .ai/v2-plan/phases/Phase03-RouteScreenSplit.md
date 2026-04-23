@@ -39,6 +39,8 @@ Separate every feature screen into a route composable (Android wiring) and a scr
 - `Route` maps `<Feature>UiEvent` to `viewModel.onEvent(...)`.
 - `ViewModel` exposes lifecycle-collected state (`StateFlow<UiState>`) and one-shot commands (`Flow<UiCommand>`).
 - `Screen` never calls `ViewModel` methods directly.
+- For screens with both VM-bound actions and nav-only actions, keep separate callbacks instead of folding navigation into `UiEvent`.
+- Navigation events live in their own feature-scoped file.
 - Any navigation triggered by `ViewModel` logic is emitted as a `Command`, not a `UiEvent`.
 - `ViewModel` startup work uses `init` when no dynamic route argument is required; explicit load events are reserved for argument-driven/dynamic loads.
 - For complex screens with repeated gating/layout logic, the route may precompute ordered presentation models (for example sections/tiles) so the screen stays declarative and does not repeat access checks.

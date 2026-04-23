@@ -11,7 +11,7 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
 import com.example.lifetogether.ui.feature.admin.groceryList.categories.AdminGroceryCategoriesRoute
 import com.example.lifetogether.ui.feature.admin.groceryList.suggestions.AdminGrocerySuggestionsRoute
-import com.example.lifetogether.ui.feature.family.FamilyScreen
+import com.example.lifetogether.ui.feature.family.FamilyRoute
 import com.example.lifetogether.ui.feature.gallery.AlbumDetailsRoute
 import com.example.lifetogether.ui.feature.gallery.GalleryGraphObserverRoute
 import com.example.lifetogether.ui.feature.gallery.GalleryScreenRoute
@@ -27,7 +27,7 @@ import com.example.lifetogether.ui.feature.groceryList.GroceryListRoute
 import com.example.lifetogether.ui.feature.home.HomeRoute
 import com.example.lifetogether.ui.feature.loading.LoadingRoute
 import com.example.lifetogether.ui.feature.login.LoginRoute
-import com.example.lifetogether.ui.feature.profile.ProfileScreen
+import com.example.lifetogether.ui.feature.profile.ProfileRoute
 import com.example.lifetogether.ui.feature.recipes.CreateRecipeRoute
 import com.example.lifetogether.ui.feature.recipes.RecipeDetailsRoute
 import com.example.lifetogether.ui.feature.recipes.RecipesRoute
@@ -88,11 +88,11 @@ fun NavHost(
         }
 
         composable(AppRoutes.PROFILE_SCREEN) {
-            ProfileScreen(appNavigator)
+            ProfileRoute(appNavigator)
         }
 
         composable(AppRoutes.FAMILY_SCREEN) {
-            FamilyScreen(appNavigator)
+            FamilyRoute(appNavigator)
         }
 
         composable(AppRoutes.SETTINGS_SCREEN) {
