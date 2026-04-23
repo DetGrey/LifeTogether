@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.feature.tipTracker
+package com.example.lifetogether.ui.feature.tipTracker.statistics
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -7,30 +7,34 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.toFullDateString
+import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.TopBar
-import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
-import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.feature.tipTracker.components.StatsCard
+import com.example.lifetogether.ui.feature.tipTracker.TipTrackerNavigationEvent
+import com.example.lifetogether.ui.feature.tipTracker.TipTrackerStats
+import com.example.lifetogether.ui.feature.tipTracker.TipTrackerUiEvent
+import com.example.lifetogether.ui.feature.tipTracker.TipTrackerUiState
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import java.util.Date
 
 @Composable
 fun TipStatisticsScreen(
-    appNavigator: AppNavigator? = null,
-    tipTrackerViewModel: TipTrackerViewModel,
+    uiState: TipTrackerUiState,
+    onUiEvent: (TipTrackerUiEvent) -> Unit,
+    onNavigationEvent: (TipTrackerNavigationEvent) -> Unit,
 ) {
-
-    val uiState by tipTrackerViewModel.uiState.collectAsState()
+    val content = uiState as TipTrackerUiState.Content
 
     Box(
         modifier = Modifier
@@ -44,54 +48,53 @@ fun TipStatisticsScreen(
             verticalArrangement = Arrangement.spacedBy(30.dp),
         ) {
             item {
-                TopBar(
-                    leftIcon = Icon(
-                        resId = R.drawable.ic_back_arrow,
-                        description = "back arrow icon",
-                    ),
-                    onLeftClick = {
-                        appNavigator?.navigateBack()
-                    },
-                    text = "Tip Statistics",
-                )
-            }
+                    TopBar(
+                        leftIcon = Icon(
+                            resId = R.drawable.ic_back_arrow,
+                            description = "back arrow icon",
+                        ),
+                        onLeftClick = {
+                            onNavigationEvent(TipTrackerNavigationEvent.NavigateBack)
+                        },
+                        text = "Tip Statistics",
+                    )
+                }
 
             item {
-                if (uiState.tips.isNotEmpty()) {
+                if (content.tips.isNotEmpty()) {
                     TagOptionRow(
                         options = listOf("Week", "Month", "Year", "All"),
-                        selectedOption = uiState.timePeriod,
+                        selectedOption = content.timePeriod,
                         onSelectedOptionChange = {
-                            tipTrackerViewModel.setTimePeriod(it)
+                            onUiEvent(TipTrackerUiEvent.TimePeriodSelected(it))
                         },
                         center = true,
                     )
                     StatsCard(
-                        title = when (uiState.timePeriod) {
+                        title = when (content.timePeriod) {
                             "Week" -> "This week"
                             "Month" -> "This month"
                             "Year" -> "This year"
                             else -> "All time"
                         },
-                        total = when (uiState.timePeriod) {
-                            "Week" -> uiState.stats.weeklyTotal.toString()
-                            "Month" -> uiState.stats.monthlyTotal.toString()
-                            "Year" -> uiState.stats.yearlyTotal.toString()
-                            else -> uiState.stats.total.toString()
+                        total = when (content.timePeriod) {
+                            "Week" -> content.stats.weeklyTotal.toString()
+                            "Month" -> content.stats.monthlyTotal.toString()
+                            "Year" -> content.stats.yearlyTotal.toString()
+                            else -> content.stats.total.toString()
                         },
-                        average = when (uiState.timePeriod) {
-                            "Week" -> uiState.stats.weeklyAverage.toString()
-                            "Month" -> uiState.stats.monthlyAverage.toString()
-                            "Year" -> uiState.stats.yearlyAverage.toString()
-                            else -> uiState.stats.totalAverage.toString()
+                        average = when (content.timePeriod) {
+                            "Week" -> content.stats.weeklyAverage.toString()
+                            "Month" -> content.stats.monthlyAverage.toString()
+                            "Year" -> content.stats.yearlyAverage.toString()
+                            else -> content.stats.totalAverage.toString()
                         },
-
                     )
                 }
             }
             // TODO check if the item is still there if highest tip is null because I don't want the spacedBy to be there always
             item {
-                uiState.stats.highestTip?.let { tip ->
+                content.stats.highestTip?.let { tip ->
                     TextSubHeadingMedium("Highest tip", color = MaterialTheme.colorScheme.primary)
                     TextDefault(
                         text = "Tip amount: ${tip.amount}",
@@ -106,7 +109,7 @@ fun TipStatisticsScreen(
                 }
             }
             item {
-                uiState.stats.bestMonth?.let { bestMonth ->
+                content.stats.bestMonth?.let { bestMonth ->
                     TextSubHeadingMedium("Best month", color = MaterialTheme.colorScheme.primary)
                     TextDefault(
                         text = "Tip amount: ${bestMonth.second}",
@@ -122,12 +125,31 @@ fun TipStatisticsScreen(
             }
         }
     }
+}
 
-    // ---------------------------------------------------------------- SHOW ERROR ALERT
-    if (uiState.showAlertDialog) {
-        LaunchedEffect(uiState.error) {
-            tipTrackerViewModel.dismissAlert()
-        }
-        ErrorAlertDialog(uiState.error)
+@Preview(showBackground = true)
+@Composable
+private fun TipStatisticsScreenPreview() {
+    LifeTogetherTheme {
+        TipStatisticsScreen(
+            uiState = TipTrackerUiState.Content(
+                tips = listOf(TipItem(amount = 120f, date = Date())),
+                stats = TipTrackerStats(
+                    weeklyTotal = 120f,
+                    monthlyTotal = 120f,
+                    yearlyTotal = 120f,
+                    total = 120f,
+                    weeklyAverage = 120f,
+                    monthlyAverage = 120f,
+                    yearlyAverage = 120f,
+                    totalAverage = 120f,
+                    highestTip = TipItem(amount = 120f, date = Date()),
+                    bestMonth = "January 2026" to 120f,
+                ),
+                groupedTips = mapOf("01. January 2026" to listOf(TipItem(amount = 120f, date = Date()))),
+            ),
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
     }
 }

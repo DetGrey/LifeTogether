@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.feature.tipTracker
+package com.example.lifetogether.ui.feature.tipTracker.components
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,17 +25,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
+import com.example.lifetogether.ui.feature.tipTracker.TipTrackerCalendarDay
+import com.example.lifetogether.ui.feature.tipTracker.TipTrackerCalendarState
 
 @Composable
 fun TipsCalendar(
-    groupedTips: Map<String, List<TipItem>>,
+    calendar: TipTrackerCalendarState,
+    onPreviousMonthClick: () -> Unit,
+    onCurrentMonthClick: () -> Unit,
+    onNextMonthClick: () -> Unit,
 ) {
-    val viewModel: TipsCalendarViewModel = hiltViewModel()
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -45,29 +46,35 @@ fun TipsCalendar(
     ) {
         TextDefault(
             text = "< Previous",
-            modifier = Modifier.clickable { viewModel.selectPreviousMonth() }.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .clickable { onPreviousMonthClick() },
             color = MaterialTheme.colorScheme.secondary,
             textAlign = TextAlign.End,
         )
         TextDefault(
             text = "Current month",
-            modifier = Modifier.clickable { viewModel.selectCurrentMonth() }.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .clickable { onCurrentMonthClick() },
             color = MaterialTheme.colorScheme.secondary,
             textAlign = TextAlign.Center,
         )
         TextDefault(
             text = "Next >",
-            modifier = Modifier.clickable { viewModel.selectNextMonth() }.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .clickable { onNextMonthClick() },
             color = MaterialTheme.colorScheme.secondary,
             textAlign = TextAlign.Start,
         )
     }
 
     TextSubHeadingMedium(
-        viewModel.getCurrentMonthYearDisplay(),
+        calendar.monthLabel,
         Modifier.fillMaxWidth(),
         MaterialTheme.colorScheme.primary,
-        alignCenter = true
+        alignCenter = true,
     )
 
     Row(
@@ -75,17 +82,16 @@ fun TipsCalendar(
             .fillMaxWidth()
             .padding(vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
+        horizontalArrangement = Arrangement.Center,
     ) {
-        val monthlyStats = viewModel.getMonthlySummary(groupedTips)
         TextDefault(
-            text = "Total: ${monthlyStats.total}",
+            text = "Total: ${calendar.summary.totalText}",
             color = MaterialTheme.colorScheme.secondary,
             textAlign = TextAlign.Center,
         )
         Spacer(modifier = Modifier.width(15.dp))
         TextDefault(
-            text = "Average: ${monthlyStats.average}",
+            text = "Average: ${calendar.summary.averageText}",
             color = MaterialTheme.colorScheme.secondary,
             textAlign = TextAlign.Center,
         )
@@ -95,44 +101,45 @@ fun TipsCalendar(
         columns = GridCells.Fixed(5),
         modifier = Modifier
             .fillMaxWidth()
-            .height(viewModel.getGridHeight())
+            .height(calendar.gridHeight)
             .padding(16.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        items(items = viewModel.days, key = { it }) { day ->
-            val date = viewModel.getDate(day)
-            val dayOfWeek = viewModel.getDayOfWeekLabel(date)
-            val tipTotal = viewModel.getTipTotal(viewModel.getDateKey(date), groupedTips)
+        items(items = calendar.days, key = { it.label }) { day ->
+            DayCell(day = day)
+        }
+    }
+}
 
-            Box(
+@Composable
+private fun DayCell(day: TipTrackerCalendarDay) {
+    Box(
+        modifier = Modifier
+            .aspectRatio(1f)
+            .clip(RoundedCornerShape(10.dp))
+            .border(2.dp, Color(0xFF007A7A), RoundedCornerShape(10.dp)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(modifier = Modifier.aspectRatio(1f)) {
+            Text(
+                text = day.label,
                 modifier = Modifier
-                    .aspectRatio(1f)
-                    .clip(RoundedCornerShape(10.dp))
-                    .border(2.dp, Color(0xFF007A7A), RoundedCornerShape(10.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Box(modifier = Modifier.aspectRatio(1f)) {
-                    Text(
-                        text = "$day $dayOfWeek",
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(top = 2.dp, start = 4.dp),
-                        fontSize = 9.sp,
-                    )
+                    .align(Alignment.TopStart)
+                    .padding(top = 2.dp, start = 4.dp),
+                fontSize = 9.sp,
+            )
 
-                    if (tipTotal > 0f) {
-                        Text(
-                            text = viewModel.formatTipTotal(tipTotal),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontSize = 18.sp,
-                            modifier = Modifier
-                                .padding(top = 4.dp)
-                                .align(Alignment.Center),
-                        )
-                    }
-                }
+            day.totalText?.let { totalText ->
+                Text(
+                    text = totalText,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 18.sp,
+                    modifier = Modifier
+                        .padding(top = 4.dp)
+                        .align(Alignment.Center),
+                )
             }
         }
     }

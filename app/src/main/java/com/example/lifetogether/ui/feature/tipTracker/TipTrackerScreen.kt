@@ -7,30 +7,31 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
+import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
-import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
-import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.domain.sync.SyncKey
+import com.example.lifetogether.ui.feature.tipTracker.components.AddNewTipItem
+import com.example.lifetogether.ui.feature.tipTracker.components.TipsCalendar
+import com.example.lifetogether.ui.feature.tipTracker.components.TipsList
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import java.util.Date
 
 @Composable
 fun TipTrackerScreen(
-    appNavigator: AppNavigator? = null,
-    tipTrackerViewModel: TipTrackerViewModel,
+    uiState: TipTrackerUiState,
+    onUiEvent: (TipTrackerUiEvent) -> Unit,
+    onNavigationEvent: (TipTrackerNavigationEvent) -> Unit,
 ) {
-
-    val uiState by tipTrackerViewModel.uiState.collectAsState()
-
+    val content = uiState as TipTrackerUiState.Content
     Box(
         modifier = Modifier
             .fillMaxSize(),
@@ -43,24 +44,24 @@ fun TipTrackerScreen(
             verticalArrangement = Arrangement.spacedBy(30.dp),
         ) {
             item {
-                TopBar(
-                    leftIcon = Icon(
-                        resId = R.drawable.ic_back_arrow,
-                        description = "back arrow icon",
-                    ),
-                    onLeftClick = {
-                        appNavigator?.navigateBack()
-                    },
-                    text = "Tip Tracker",
-                    rightIcon = Icon(
-                        resId = R.drawable.ic_statistics,
-                        description = "back arrow icon",
-                    ),
-                    onRightClick = {
-                        appNavigator?.navigateToTipStatistics()
-                    },
-                )
-            }
+                    TopBar(
+                        leftIcon = Icon(
+                            resId = R.drawable.ic_back_arrow,
+                            description = "back arrow icon",
+                        ),
+                        onLeftClick = {
+                            onNavigationEvent(TipTrackerNavigationEvent.NavigateBack)
+                        },
+                        text = "Tip Tracker",
+                        rightIcon = Icon(
+                            resId = R.drawable.ic_statistics,
+                            description = "back arrow icon",
+                        ),
+                        onRightClick = {
+                            onNavigationEvent(TipTrackerNavigationEvent.NavigateToStatistics)
+                        },
+                    )
+                }
 
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -68,26 +69,36 @@ fun TipTrackerScreen(
                         keys = setOf(SyncKey.TIP_TRACKER),
                     )
 
-                    if (uiState.tips.isNotEmpty()) {
+                    if (content.tips.isNotEmpty()) {
                         TagOptionRow(
                             options = listOf("Calendar", "List"),
-                            selectedOption = uiState.overviewOption,
+                            selectedOption = content.overviewOption,
                             onSelectedOptionChange = {
-                                tipTrackerViewModel.setOverviewOption(it)
+                                onUiEvent(TipTrackerUiEvent.OverviewOptionSelected(it))
                             },
                             center = true,
                         )
-                        when (uiState.overviewOption) {
+                        when (content.overviewOption) {
                             "Calendar" -> {
-                                TipsCalendar(uiState.groupedTips)
+                                TipsCalendar(
+                                    calendar = content.calendar,
+                                    onPreviousMonthClick = {
+                                        onUiEvent(TipTrackerUiEvent.PreviousMonthClicked)
+                                    },
+                                    onCurrentMonthClick = {
+                                        onUiEvent(TipTrackerUiEvent.CurrentMonthClicked)
+                                    },
+                                    onNextMonthClick = {
+                                        onUiEvent(TipTrackerUiEvent.NextMonthClicked)
+                                    },
+                                )
                             }
 
                             "List" -> {
                                 TipsList(
-                                    uiState.groupedTips,
+                                    content.groupedTips,
                                     onDeleteClick = {
-                                        tipTrackerViewModel.setSelectedTip(it)
-                                        tipTrackerViewModel.setShowConfirmationDialog(true)
+                                        onUiEvent(TipTrackerUiEvent.DeleteTipClicked(it))
                                     },
                                 )
                             }
@@ -106,26 +117,24 @@ fun TipTrackerScreen(
         contentAlignment = Alignment.BottomCenter,
     ) {
         AddNewTipItem(
-            textValue = uiState.newItemAmount,
-            onTextChange = { tipTrackerViewModel.setNewItemAmount(it) },
+            textValue = content.newItemAmount,
+            onTextChange = { onUiEvent(TipTrackerUiEvent.NewItemAmountChanged(it)) },
             onAddClick = {
-                tipTrackerViewModel.addItemToList {
-                    tipTrackerViewModel.setShowConfirmationDialog(false)
-                }
+                onUiEvent(TipTrackerUiEvent.AddItemClicked)
             },
-            dateValue = uiState.newItemDate,
+            dateValue = content.newItemDate,
             onDateChange = {
-                tipTrackerViewModel.setNewItemDate(it)
+                onUiEvent(TipTrackerUiEvent.NewItemDateChanged(it))
             },
         )
     }
 
     // ---------------------------------------------------------------- CONFIRM DELETION OF COMPLETED ITEMS
-    if (uiState.showConfirmationDialog && uiState.selectedTip != null) {
+    if (content.showConfirmationDialog && content.selectedTip != null) {
         ConfirmationDialog(
-            onDismiss = { tipTrackerViewModel.setShowConfirmationDialog(false) },
+            onDismiss = { onUiEvent(TipTrackerUiEvent.DismissDeleteConfirmation) },
             onConfirm = {
-                tipTrackerViewModel.deleteItem()
+                onUiEvent(TipTrackerUiEvent.ConfirmDeleteConfirmation)
             },
             dialogTitle = "Delete tip",
             dialogMessage = "Are you sure you want to delete this tip?",
@@ -133,12 +142,21 @@ fun TipTrackerScreen(
             confirmButtonMessage = "Delete",
         )
     }
+}
 
-    // ---------------------------------------------------------------- SHOW ERROR ALERT
-    if (uiState.showAlertDialog) {
-        LaunchedEffect(uiState.error) {
-            tipTrackerViewModel.dismissAlert()
-        }
-        ErrorAlertDialog(uiState.error)
+@Preview(showBackground = true)
+@Composable
+private fun TipTrackerScreenPreview() {
+    LifeTogetherTheme {
+        TipTrackerScreen(
+            uiState = TipTrackerUiState.Content(
+                tips = listOf(
+                    TipItem(amount = 120f, date = Date()),
+                ),
+                groupedTips = mapOf("01. January 2026" to listOf(TipItem(amount = 120f, date = Date()))),
+            ),
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
     }
 }

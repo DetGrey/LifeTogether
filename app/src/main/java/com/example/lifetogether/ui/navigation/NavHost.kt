@@ -32,8 +32,8 @@ import com.example.lifetogether.ui.feature.recipes.RecipeDetailsRoute
 import com.example.lifetogether.ui.feature.recipes.RecipesRoute
 import com.example.lifetogether.ui.feature.settings.SettingsRoute
 import com.example.lifetogether.ui.feature.signup.SignupRoute
-import com.example.lifetogether.ui.feature.tipTracker.TipStatisticsRoute
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerRoute
+import com.example.lifetogether.ui.feature.tipTracker.statistics.TipStatisticsRoute
 
 @Composable
 fun NavHost(
