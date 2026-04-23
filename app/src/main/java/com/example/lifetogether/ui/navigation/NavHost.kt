@@ -186,15 +186,17 @@ fun NavHost(
         }
 
         navigation<TipTrackerGraph>(startDestination = TipTrackerNavRoute::class) {
-            composable<TipTrackerNavRoute> {
+            composable<TipTrackerNavRoute> { backStackEntry ->
                 TipTrackerRoute(
                     navController = navController,
+                    backStackEntry = backStackEntry,
                     appNavigator = appNavigator,
                 )
             }
-            composable<TipStatisticsNavRoute> {
+            composable<TipStatisticsNavRoute> { backStackEntry ->
                 TipStatisticsRoute(
                     navController = navController,
+                    backStackEntry = backStackEntry,
                     appNavigator = appNavigator,
                 )
             }
