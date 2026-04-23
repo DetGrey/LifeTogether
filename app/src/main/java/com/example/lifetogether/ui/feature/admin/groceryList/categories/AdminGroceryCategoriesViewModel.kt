@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.feature.admin.groceryList
+package com.example.lifetogether.ui.feature.admin.groceryList.categories
 
 import com.example.lifetogether.domain.result.toUserMessage
 

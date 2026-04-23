@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.feature.admin.groceryList
+package com.example.lifetogether.ui.feature.admin.groceryList.categories
 
 import androidx.compose.runtime.Composable
 import com.example.lifetogether.domain.sync.SyncKey
@@ -6,11 +6,11 @@ import com.example.lifetogether.ui.common.sync.FeatureSyncLifecycleBinding
 import com.example.lifetogether.ui.navigation.AppNavigator
 
 @Composable
-fun AdminGrocerySuggestionsRoute(
+fun AdminGroceryCategoriesRoute(
     appNavigator: AppNavigator,
 ) {
     FeatureSyncLifecycleBinding(
-        keys = setOf(SyncKey.GROCERY_CATEGORIES, SyncKey.GROCERY_SUGGESTIONS),
+        keys = setOf(SyncKey.GROCERY_CATEGORIES),
     )
-    AdminGrocerySuggestionsScreen(appNavigator)
+    AdminGroceryCategoriesScreen(appNavigator)
 }

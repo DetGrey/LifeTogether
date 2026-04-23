@@ -23,6 +23,7 @@ Separate every feature screen into a route composable (Android wiring) and a scr
 - **Shared `SnackbarHost`** wired at the app root with a reusable route-level collector.
 - Naming convention (locked):
 - `UiEvent` means user/UI input flowing into `ViewModel` (for example click, text change, retry tap).
+- `NavigationEvent` means user/UI navigation intent emitted by a screen and handled by the route (not by `ViewModel`).
 - `Command` means one-shot output emitted from `ViewModel` to UI (for example `ShowSnackbar`).
 - Concrete naming for this phase:
 - shared base type is `UiCommand`
@@ -32,18 +33,27 @@ Separate every feature screen into a route composable (Android wiring) and a scr
 - Feature layers emit typed `Command`s (via `Channel`) — they do not render error dialogs directly.
 - Input API migration is required in this phase: split screens must migrate `ViewModel` input handling to typed `UiEvent` dispatch (`onEvent(event)`), not keep ad-hoc public method callbacks.
 - Per-screen migration contract for this phase:
-- `Screen` emits only `<Feature>UiEvent`.
-- `Route` maps UI callbacks to `viewModel.onEvent(...)`.
+- `Screen` emits `<Feature>UiEvent` and `<Feature>NavigationEvent` through separate callbacks (`onUiEvent`, `onNavigationEvent`).
+- `Route` handles `<Feature>NavigationEvent` directly via `AppNavigator`.
+- `Route` maps `<Feature>UiEvent` to `viewModel.onEvent(...)`.
 - `ViewModel` exposes lifecycle-collected state (`StateFlow<UiState>`) and one-shot commands (`Flow<UiCommand>`).
 - `Screen` never calls `ViewModel` methods directly.
+- `ViewModel` startup work uses `init` when no dynamic route argument is required; explicit load events are reserved for argument-driven/dynamic loads.
+- Snackbar design (locked for Phase 3):
+- Global root-level snackbar styling (single implementation in app root `SnackbarHost`).
+- Error-only visual variant in this phase.
+- Top-floating card placement (top-center), not bottom docked default styling.
+- Visual parity target with existing `ErrorAlertDialog`: rounded card, error container color, white title/body text.
+- Content format: fixed title `"An error occurred"` + error message text.
+- Dismissible + auto-dismiss behavior; retain default snackbar queue behavior for repeated errors.
 - **Snackbar-first error handling:** validation → inline field errors; operation failures → snackbar/banner; blocking dialogs reserved for rare high-severity interruptions only.
 - Each screen has at most one meaningful `Scaffold`; no extra scaffolds just for error handling.
-- Pilot screen: `ui/feature/admin/groceryList/AdminGrocerySuggestionsScreen.kt`.
+- Pilot screen: `ui/feature/admin/groceryList/suggestions/AdminGrocerySuggestionsScreen.kt`.
 
 ## Subphases
 
-- [ ] 3.1 Wire shared `SnackbarHost` at app root; define typed `Command` base / collection helper
-- [ ] 3.2 Pilot split: `AdminGrocerySuggestionsScreen` — route + screen + preview
+- [x] 3.1 Wire shared `SnackbarHost` at app root; define typed `Command` base / collection helper
+- [x] 3.2 Pilot split: `AdminGrocerySuggestionsScreen` — route + screen + preview
 - [ ] 3.3 Split remaining feature screens (one by one or grouped by feature)
 - [ ] 3.4 Enforce `collectAsStateWithLifecycle()` across all route layers
 - [ ] 3.5 Migrate `ErrorAlertDialog` usages to snackbar/command pattern
@@ -107,6 +117,7 @@ Separate every feature screen into a route composable (Android wiring) and a scr
 - [ ] `UiCommand` infrastructure exists in `ui/common/event/` with shared `ShowSnackbar` command
 - [ ] Every split screen follows route/screen separation (`Route` Android wiring, `Screen` plain previewable UI)
 - [ ] Every split screen migrates input handling to typed `<Feature>UiEvent` via `viewModel.onEvent(...)`
+- [ ] Every split screen emits navigation through typed `<Feature>NavigationEvent` handled in route (not forwarded to `ViewModel`)
 - [ ] Every split screen emits one-shot output via `Flow<UiCommand>` from `ViewModel`
 - [ ] Route layers use `collectAsStateWithLifecycle()` for state collection (no remaining route `collectAsState()` uses)
 - [ ] `ErrorAlertDialog` usage is removed from migrated split screens and replaced by snackbar command handling

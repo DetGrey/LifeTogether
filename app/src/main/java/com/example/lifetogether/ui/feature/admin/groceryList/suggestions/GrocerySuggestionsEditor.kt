@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.feature.admin.groceryList
+package com.example.lifetogether.ui.feature.admin.groceryList.suggestions
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image

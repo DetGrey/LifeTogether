@@ -9,8 +9,8 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
-import com.example.lifetogether.ui.feature.admin.groceryList.AdminGroceryCategoriesRoute
-import com.example.lifetogether.ui.feature.admin.groceryList.AdminGrocerySuggestionsRoute
+import com.example.lifetogether.ui.feature.admin.groceryList.categories.AdminGroceryCategoriesRoute
+import com.example.lifetogether.ui.feature.admin.groceryList.suggestions.AdminGrocerySuggestionsRoute
 import com.example.lifetogether.ui.feature.family.FamilyScreen
 import com.example.lifetogether.ui.feature.gallery.AlbumDetailsRoute
 import com.example.lifetogether.ui.feature.gallery.GalleryGraphObserverRoute

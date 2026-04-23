@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.feature.admin.groceryList
+package com.example.lifetogether.ui.feature.admin.groceryList.categories
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -101,7 +101,8 @@ fun AdminGroceryCategoriesScreen(
                         groceryCategories.map { category -> "${category.emoji} ${category.name}" },
                         onDelete = { categoryString ->
                             val categoryList = categoryString.split(" ", limit = 2)
-                            groceryCategoriesViewModel.selectedCategory = Category(categoryList[0], categoryList[1])
+                            groceryCategoriesViewModel.selectedCategory =
+                                Category(categoryList[0], categoryList[1])
                             groceryCategoriesViewModel.showDeleteCategoryConfirmationDialog = true
                         },
                     )
