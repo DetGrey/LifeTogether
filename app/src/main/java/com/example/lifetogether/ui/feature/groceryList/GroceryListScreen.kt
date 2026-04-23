@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.feature.groceryList
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,39 +11,33 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.grocery.GroceryItem
+import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
+import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.add.AddNewListItem
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
-import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.list.ItemCategoryList
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
-import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.util.priceToString
 
 @Composable
 fun GroceryListScreen(
-    appNavigator: AppNavigator? = null,
+    uiState: GroceryListUiState,
+    onUiEvent: (GroceryListUiEvent) -> Unit,
+    onNavigationEvent: (GroceryListNavigationEvent) -> Unit,
 ) {
-    val groceryListViewModel: GroceryListViewModel = hiltViewModel()
-
-    val uiState by groceryListViewModel.uiState.collectAsState()
-
     Box(
-        modifier = Modifier
-            .fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
     ) {
         LazyColumn(
             modifier = Modifier
@@ -57,7 +53,7 @@ fun GroceryListScreen(
                         description = "back arrow icon",
                     ),
                     onLeftClick = {
-                        appNavigator?.navigateBack()
+                        onNavigationEvent(GroceryListNavigationEvent.NavigateBack)
                     },
                     text = "Grocery list",
                 )
@@ -76,11 +72,10 @@ fun GroceryListScreen(
                     if (uiState.groceryList.isEmpty()) {
                         Text(text = "No items on the list yet")
                     } else {
-
                         uiState.expectedTotalPrice?.let {
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally
+                                horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
                                 TextSubHeadingMedium(
                                     text = "Expected total price:",
@@ -99,13 +94,11 @@ fun GroceryListScreen(
                                         itemList = groceryItems,
                                         expanded = expanded,
                                         onClick = {
-                                            println("before: $expanded")
-                                            groceryListViewModel.toggleCategoryExpanded(category.name)
-                                            println("after: $expanded")
+                                            onUiEvent(GroceryListUiEvent.CategoryExpandedClicked(category.name))
                                         },
                                         onCompleteToggle = { item ->
                                             if (item is GroceryItem) {
-                                                groceryListViewModel.toggleItemCompleted(item)
+                                                onUiEvent(GroceryListUiEvent.ItemCompletedToggled(item))
                                             }
                                         },
                                     )
@@ -122,15 +115,15 @@ fun GroceryListScreen(
                                 itemList = uiState.completedItems,
                                 expanded = uiState.completedSectionExpanded,
                                 onClick = {
-                                    groceryListViewModel.toggleCompletedSectionExpanded()
+                                    onUiEvent(GroceryListUiEvent.CompletedSectionExpandedClicked)
                                 },
                                 onCompleteToggle = { item ->
                                     if (item is GroceryItem) {
-                                        groceryListViewModel.toggleItemCompleted(item)
+                                        onUiEvent(GroceryListUiEvent.ItemCompletedToggled(item))
                                     }
                                 },
                                 onDelete = {
-                                    groceryListViewModel.showDeleteCompletedConfirmation()
+                                    onUiEvent(GroceryListUiEvent.DeleteCompletedClicked)
                                 },
                             )
                         }
@@ -138,67 +131,65 @@ fun GroceryListScreen(
                 }
             }
         }
-    }
 
-    // ---------------------------------------------------------------- GROCERY SUGGESTIONS POPUP
-    if (uiState.currentGrocerySuggestions.isNotEmpty()) {
+        if (uiState.currentGrocerySuggestions.isNotEmpty()) {
+            Box(
+                modifier = Modifier
+                    .padding(10.dp)
+                    .padding(bottom = 30.dp)
+                    .fillMaxSize(),
+                contentAlignment = Alignment.BottomCenter,
+            ) {
+                GrocerySuggestionPopup(
+                    suggestions = uiState.currentGrocerySuggestions,
+                    onClick = { suggestion ->
+                        onUiEvent(GroceryListUiEvent.SuggestionClicked(suggestion))
+                    },
+                )
+            }
+        }
+
         Box(
             modifier = Modifier
                 .padding(10.dp)
-                .padding(bottom = 30.dp)
                 .fillMaxSize(),
             contentAlignment = Alignment.BottomCenter,
         ) {
-            GrocerySuggestionPopup(
-                suggestions = uiState.currentGrocerySuggestions,
-                onClick = {
-                    groceryListViewModel.applySuggestion(it)
-                    groceryListViewModel.addItemToList()
+            AddNewListItem(
+                textValue = uiState.newItemText,
+                onTextChange = { onUiEvent(GroceryListUiEvent.NewItemTextChanged(it)) },
+                priceValue = uiState.newItemPrice,
+                onPriceChange = { onUiEvent(GroceryListUiEvent.NewItemPriceChanged(it)) },
+                onAddClick = { onUiEvent(GroceryListUiEvent.AddItemClicked) },
+                categoryList = uiState.groceryCategories,
+                selectedCategory = uiState.newItemCategory,
+                onCategoryChange = { newCategory ->
+                    onUiEvent(GroceryListUiEvent.NewItemCategoryChanged(newCategory))
                 },
             )
         }
-    }
 
-    // ---------------------------------------------------------------- ADD NEW GROCERY ITEM
-    Box(
-        modifier = Modifier
-            .padding(10.dp)
-            .fillMaxSize(),
-        contentAlignment = Alignment.BottomCenter,
-    ) {
-        AddNewListItem(
-            textValue = uiState.newItemText,
-            onTextChange = { groceryListViewModel.onNewItemTextChange(it) },
-            priceValue = uiState.newItemPrice,
-            onPriceChange = { groceryListViewModel.onNewItemPriceChange(it) },
-            onAddClick = { groceryListViewModel.addItemToList() },
-            categoryList = uiState.groceryCategories,
-            selectedCategory = uiState.newItemCategory,
-            onCategoryChange = { newCategory ->
-                groceryListViewModel.updateNewItemCategory(newCategory)
-            },
-        )
-    }
-
-    // ---------------------------------------------------------------- CONFIRM DELETION OF COMPLETED ITEMS
-    if (uiState.showConfirmationDialog) {
-        ConfirmationDialog(
-            onDismiss = { groceryListViewModel.dismissDeleteCompletedConfirmation() },
-            onConfirm = {
-                groceryListViewModel.deleteCompletedItems()
-            },
-            dialogTitle = "Delete completed items",
-            dialogMessage = "Are you sure you want to delete all completed grocery items?",
-            dismissButtonMessage = "Cancel",
-            confirmButtonMessage = "Delete",
-        )
-    }
-
-    // ---------------------------------------------------------------- SHOW ERROR ALERT
-    if (uiState.showAlertDialog) {
-        LaunchedEffect(uiState.error) {
-            groceryListViewModel.toggleAlertDialog()
+        if (uiState.showConfirmationDialog) {
+            ConfirmationDialog(
+                onDismiss = { onUiEvent(GroceryListUiEvent.DismissDeleteCompletedConfirmation) },
+                onConfirm = { onUiEvent(GroceryListUiEvent.ConfirmDeleteCompletedConfirmation) },
+                dialogTitle = "Delete completed items",
+                dialogMessage = "Are you sure you want to delete all completed grocery items?",
+                dismissButtonMessage = "Cancel",
+                confirmButtonMessage = "Delete",
+            )
         }
-        ErrorAlertDialog(uiState.error)
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun GroceryListScreenPreview() {
+    LifeTogetherTheme {
+        GroceryListScreen(
+            uiState = GroceryListUiState(),
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
     }
 }

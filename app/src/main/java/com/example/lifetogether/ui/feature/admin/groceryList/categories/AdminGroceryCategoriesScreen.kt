@@ -17,9 +17,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,36 +24,27 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
-import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.common.textfield.CustomTextField
-import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.domain.sync.SyncKey
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @Composable
 fun AdminGroceryCategoriesScreen(
-    appNavigator: AppNavigator? = null,
+    uiState: AdminGroceryCategoriesUiState,
+    onUiEvent: (AdminGroceryCategoriesUiEvent) -> Unit,
+    onNavigationEvent: (AdminGroceryCategoriesNavigationEvent) -> Unit,
 ) {
-    val groceryCategoriesViewModel: AdminGroceryCategoriesViewModel = hiltViewModel()
-
-    val groceryCategories by groceryCategoriesViewModel.groceryCategories.collectAsState()
-
-    LaunchedEffect(key1 = true) {
-        // Perform any one-time initialization or side effect here
-        groceryCategoriesViewModel.setUpCategories()
-    }
-
     Box(
-        modifier = Modifier
-            .fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
     ) {
         LazyColumn(
             modifier = Modifier
@@ -72,7 +60,7 @@ fun AdminGroceryCategoriesScreen(
                         description = "back arrow icon",
                     ),
                     onLeftClick = {
-                        appNavigator?.navigateBack()
+                        onNavigationEvent(AdminGroceryCategoriesNavigationEvent.NavigateBack)
                     },
                     text = "Edit grocery list",
                 )
@@ -96,93 +84,101 @@ fun AdminGroceryCategoriesScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 TextHeadingMedium("Grocery categories")
-                if (groceryCategories.isNotEmpty()) {
+                if (uiState.groceryCategories.isNotEmpty()) {
                     ListEditorContainer(
-                        groceryCategories.map { category -> "${category.emoji} ${category.name}" },
+                        uiState.groceryCategories.map { category -> "${category.emoji} ${category.name}" },
                         onDelete = { categoryString ->
                             val categoryList = categoryString.split(" ", limit = 2)
-                            groceryCategoriesViewModel.selectedCategory =
-                                Category(categoryList[0], categoryList[1])
-                            groceryCategoriesViewModel.showDeleteCategoryConfirmationDialog = true
+                            onUiEvent(
+                                AdminGroceryCategoriesUiEvent.DeleteCategoryClicked(
+                                    Category(categoryList[0], categoryList[1]),
+                                ),
+                            )
                         },
                     )
                 }
             }
         }
-    }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(10.dp),
-        contentAlignment = Alignment.BottomCenter,
-    ) {
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(60.dp)
-                .clip(shape = RoundedCornerShape(20))
-                .background(color = MaterialTheme.colorScheme.onBackground),
-            contentAlignment = Alignment.CenterStart,
+                .fillMaxSize()
+                .padding(10.dp),
+            contentAlignment = Alignment.BottomCenter,
         ) {
-            Row(
+            Box(
                 modifier = Modifier
-                    .fillMaxSize(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                    .fillMaxWidth()
+                    .height(60.dp)
+                    .clip(shape = RoundedCornerShape(20))
+                    .background(color = MaterialTheme.colorScheme.onBackground),
+                contentAlignment = Alignment.CenterStart,
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth(0.8f),
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    CustomTextField(
-                        value = groceryCategoriesViewModel.newCategory,
-                        onValueChange = {
-                            groceryCategoriesViewModel.newCategory = it
-                        },
-                        label = "Add category",
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Done,
-                    )
-                }
-                Row(
-                    modifier = Modifier
-                        .padding(10.dp)
-                        .fillMaxHeight()
-                        .clickable {
-                            groceryCategoriesViewModel.addCategory()
-                        },
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(text = "Add", color = Color.White)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(0.8f),
+                    ) {
+                        CustomTextField(
+                            value = uiState.newCategory,
+                            onValueChange = {
+                                onUiEvent(AdminGroceryCategoriesUiEvent.NewCategoryChanged(it))
+                            },
+                            label = "Add category",
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Done,
+                        )
+                    }
+                    Row(
+                        modifier = Modifier
+                            .padding(10.dp)
+                            .fillMaxHeight()
+                            .clickable {
+                                onUiEvent(AdminGroceryCategoriesUiEvent.AddCategoryClicked)
+                            },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(text = "Add", color = Color.White)
 
-                    Spacer(modifier = Modifier.width(5.dp))
+                        Spacer(modifier = Modifier.width(5.dp))
 
-                    Text(
-                        text = ">",
-                        color = MaterialTheme.colorScheme.secondary,
-                    )
+                        Text(
+                            text = ">",
+                            color = MaterialTheme.colorScheme.secondary,
+                        )
+                    }
                 }
             }
         }
-    }
 
-    if (groceryCategoriesViewModel.showDeleteCategoryConfirmationDialog && groceryCategoriesViewModel.selectedCategory != null) {
-        ConfirmationDialog(
-            onDismiss = { groceryCategoriesViewModel.showDeleteCategoryConfirmationDialog = false },
-            onConfirm = {
-                groceryCategoriesViewModel.deleteCategory()
-            },
-            dialogTitle = "Delete category?",
-            dialogMessage = "Are you sure you want to delete the category: ${groceryCategoriesViewModel.selectedCategory!!.emoji} ${groceryCategoriesViewModel.selectedCategory!!.name}?",
-            dismissButtonMessage = "Cancel",
-            confirmButtonMessage = "Delete",
-        )
-    }
-
-    if (groceryCategoriesViewModel.showAlertDialog) {
-        LaunchedEffect(groceryCategoriesViewModel.error) {
-            groceryCategoriesViewModel.toggleAlertDialog()
+        if (uiState.showDeleteCategoryConfirmationDialog && uiState.selectedCategory != null) {
+            ConfirmationDialog(
+                onDismiss = { onUiEvent(AdminGroceryCategoriesUiEvent.DismissDeleteCategoryConfirmation) },
+                onConfirm = { onUiEvent(AdminGroceryCategoriesUiEvent.ConfirmDeleteCategory) },
+                dialogTitle = "Delete category?",
+                dialogMessage = "Are you sure you want to delete the category: ${uiState.selectedCategory.emoji} ${uiState.selectedCategory.name}?",
+                dismissButtonMessage = "Cancel",
+                confirmButtonMessage = "Delete",
+            )
         }
-        ErrorAlertDialog(groceryCategoriesViewModel.error)
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AdminGroceryCategoriesScreenPreview() {
+    LifeTogetherTheme {
+        AdminGroceryCategoriesScreen(
+            uiState = AdminGroceryCategoriesUiState(
+                groceryCategories = listOf(
+                    Category("❓️", "Uncategorized"),
+                    Category("🥦", "Vegetables"),
+                ),
+            ),
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
     }
 }
