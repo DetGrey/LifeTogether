@@ -8,7 +8,7 @@ import androidx.navigation.NavHostController
 import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.sync.FeatureSyncLifecycleBinding
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.navigation.AppRoutes
+import com.example.lifetogether.ui.navigation.TipTrackerGraph
 
 @Composable
 fun TipTrackerRoute(
@@ -17,7 +17,7 @@ fun TipTrackerRoute(
     appNavigator: AppNavigator,
 ) {
     val sharedEntry = remember(backStackEntry) {
-        navController.getBackStackEntry(AppRoutes.TIP_TRACKER_GRAPH)
+        navController.getBackStackEntry<TipTrackerGraph>()
     }
     val viewModel: TipTrackerViewModel = hiltViewModel(sharedEntry)
 
@@ -34,7 +34,7 @@ fun TipStatisticsRoute(
     appNavigator: AppNavigator,
 ) {
     val sharedEntry = remember(backStackEntry) {
-        navController.getBackStackEntry(AppRoutes.TIP_TRACKER_GRAPH)
+        navController.getBackStackEntry<TipTrackerGraph>()
     }
     val viewModel: TipTrackerViewModel = hiltViewModel(sharedEntry)
 

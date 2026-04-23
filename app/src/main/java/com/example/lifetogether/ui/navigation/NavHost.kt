@@ -4,10 +4,9 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
-import androidx.navigation.navArgument
+import androidx.navigation.toRoute
 import com.example.lifetogether.ui.feature.admin.groceryList.AdminGroceryCategoriesRoute
 import com.example.lifetogether.ui.feature.admin.groceryList.AdminGrocerySuggestionsRoute
 import com.example.lifetogether.ui.feature.family.FamilyScreen
@@ -16,14 +15,14 @@ import com.example.lifetogether.ui.feature.gallery.GalleryGraphObserverRoute
 import com.example.lifetogether.ui.feature.gallery.GalleryScreenRoute
 import com.example.lifetogether.ui.feature.gallery.MediaDetailsRoute
 import com.example.lifetogether.ui.feature.guides.GuidesRoute
-import com.example.lifetogether.ui.feature.lists.listDetails.ListDetailsRoute
-import com.example.lifetogether.ui.feature.lists.entryDetails.ListEntryDetailsRoute
-import com.example.lifetogether.ui.feature.lists.ListsRoute
 import com.example.lifetogether.ui.feature.guides.create.GuideCreateScreen
 import com.example.lifetogether.ui.feature.guides.details.GuideDetailsDestinationRoute
 import com.example.lifetogether.ui.feature.guides.details.GuideStepPlayerDestinationRoute
 import com.example.lifetogether.ui.feature.groceryList.GroceryListRoute
 import com.example.lifetogether.ui.feature.home.HomeScreen
+import com.example.lifetogether.ui.feature.lists.ListsRoute
+import com.example.lifetogether.ui.feature.lists.entryDetails.ListEntryDetailsRoute
+import com.example.lifetogether.ui.feature.lists.listDetails.ListDetailsRoute
 import com.example.lifetogether.ui.feature.loading.LoadingScreen
 import com.example.lifetogether.ui.feature.login.LoginScreen
 import com.example.lifetogether.ui.feature.profile.ProfileScreen
@@ -44,7 +43,7 @@ fun NavHost(
 
     androidx.navigation.compose.NavHost(
         navController = navController,
-        startDestination = AppRoutes.LOADING_SCREEN,
+        startDestination = LoadingNavRoute,
         enterTransition = {
             slideIntoContainer(
                 AnimatedContentTransitionScope.SlideDirection.Left,
@@ -70,176 +69,131 @@ fun NavHost(
             )
         },
     ) {
-        composable(AppRoutes.ADMIN_GROCERY_CATEGORIES_SCREEN) {
+        composable<AdminGroceryCategoriesNavRoute> {
             AdminGroceryCategoriesRoute(appNavigator)
         }
-        composable(AppRoutes.ADMIN_GROCERY_SUGGESTIONS_SCREEN) {
+        composable<AdminGrocerySuggestionsNavRoute> {
             AdminGrocerySuggestionsRoute(appNavigator)
         }
 
-        composable(AppRoutes.LOADING_SCREEN) {
+        composable<LoadingNavRoute> {
             LoadingScreen(appNavigator)
         }
 
-        composable(AppRoutes.HOME_SCREEN) {
+        composable<HomeNavRoute> {
             HomeScreen(appNavigator)
         }
 
-        composable(AppRoutes.PROFILE_SCREEN) {
+        composable<ProfileNavRoute> {
             ProfileScreen(appNavigator)
         }
 
-        composable(AppRoutes.FAMILY_SCREEN) {
+        composable<FamilyNavRoute> {
             FamilyScreen(appNavigator)
         }
 
-        composable(AppRoutes.SETTINGS_SCREEN) {
+        composable<SettingsNavRoute> {
             SettingsScreen(appNavigator)
         }
 
-        composable(AppRoutes.LOGIN_SCREEN) {
+        composable<LoginNavRoute> {
             LoginScreen(appNavigator)
         }
-        composable(AppRoutes.SIGNUP_SCREEN) {
+
+        composable<SignupNavRoute> {
             SignupScreen(appNavigator)
         }
 
-        composable(AppRoutes.GROCERY_LIST_SCREEN) {
+        composable<GroceryListNavRoute> {
             GroceryListRoute(appNavigator)
         }
 
-        composable(AppRoutes.RECIPES_SCREEN) {
+        composable<RecipesNavRoute> {
             RecipesRoute(appNavigator)
         }
 
-        composable(AppRoutes.GUIDES_SCREEN) {
+        composable<GuidesNavRoute> {
             GuidesRoute(appNavigator)
         }
 
-        composable(AppRoutes.GUIDE_CREATE_SCREEN) {
+        composable<GuideCreateNavRoute> {
             GuideCreateScreen(appNavigator)
         }
 
-        navigation(
-            route = AppRoutes.GUIDE_GRAPH_ROUTE,
-            arguments = listOf(navArgument(AppRoutes.GUIDE_ID_ARG) { type = NavType.StringType }),
-            startDestination = AppRoutes.GUIDE_DETAILS_SCREEN,
-        ) {
-            composable(AppRoutes.GUIDE_DETAILS_SCREEN) { backStackEntry ->
+        navigation<GuideGraph>(startDestination = GuideDetailsNavRoute::class) {
+            composable<GuideDetailsNavRoute> { backStackEntry ->
+                val guideId = backStackEntry.toRoute<GuideDetailsNavRoute>().guideId
                 GuideDetailsDestinationRoute(
                     navController = navController,
                     backStackEntry = backStackEntry,
+                    guideId = guideId,
                     appNavigator = appNavigator,
                 )
             }
-
-            composable(AppRoutes.GUIDE_STEP_PLAYER_SCREEN) { backStackEntry ->
+            composable<GuideStepPlayerNavRoute> { backStackEntry ->
+                val guideId = backStackEntry.toRoute<GuideStepPlayerNavRoute>().guideId
                 GuideStepPlayerDestinationRoute(
                     navController = navController,
                     backStackEntry = backStackEntry,
+                    guideId = guideId,
                     appNavigator = appNavigator,
                 )
             }
         }
 
-        composable(AppRoutes.CREATE_RECIPE_SCREEN) {
+        composable<CreateRecipeNavRoute> {
             CreateRecipeRoute(appNavigator)
         }
 
-        composable(
-            route = "${AppRoutes.RECIPE_DETAILS_SCREEN}/{${AppRoutes.RECIPE_ID_ARG}}",
-            arguments = listOf(navArgument(AppRoutes.RECIPE_ID_ARG) { type = NavType.StringType }),
-        ) { backStackEntry ->
-            RecipeDetailsRoute(backStackEntry, appNavigator)
+        composable<RecipeDetailsNavRoute> { backStackEntry ->
+            val recipeId = backStackEntry.toRoute<RecipeDetailsNavRoute>().recipeId
+            RecipeDetailsRoute(recipeId = recipeId, appNavigator = appNavigator)
         }
 
-        navigation(
-            route = AppRoutes.GALLERY_GRAPH,
-            startDestination = AppRoutes.GALLERY_SCREEN,
-        ) {
-            composable(AppRoutes.GALLERY_SCREEN) {
+        navigation<GalleryGraph>(startDestination = GalleryNavRoute::class) {
+            composable<GalleryNavRoute> {
                 GalleryScreenRoute(appNavigator)
             }
-
-            composable(
-                route = "${AppRoutes.ALBUM_MEDIA_SCREEN}/{${AppRoutes.ALBUM_MEDIA_ID_ARG}}",
-                arguments = listOf(navArgument(AppRoutes.ALBUM_MEDIA_ID_ARG) { type = NavType.StringType }),
-            ) { backStackEntry ->
-                val albumId = backStackEntry.arguments?.getString(AppRoutes.ALBUM_MEDIA_ID_ARG)
-                    ?: return@composable
+            composable<AlbumMediaNavRoute> { backStackEntry ->
+                val albumId = backStackEntry.toRoute<AlbumMediaNavRoute>().albumId
                 AlbumDetailsRoute(appNavigator, albumId)
             }
-
-            composable(
-                route = "${AppRoutes.GALLERY_MEDIA_SCREEN}/{${AppRoutes.GALLERY_MEDIA_ALBUM_ARG}}/{${AppRoutes.GALLERY_MEDIA_INDEX_ARG}}",
-                arguments = listOf(
-                    navArgument(AppRoutes.GALLERY_MEDIA_ALBUM_ARG) { type = NavType.StringType },
-                    navArgument(AppRoutes.GALLERY_MEDIA_INDEX_ARG) { type = NavType.IntType },
-                ),
-            ) { backStackEntry ->
-                val albumId = backStackEntry.arguments?.getString(AppRoutes.GALLERY_MEDIA_ALBUM_ARG)
-                    ?: return@composable
-                val initialIndex = backStackEntry.arguments?.getInt(AppRoutes.GALLERY_MEDIA_INDEX_ARG)
-                    ?: 0
-                MediaDetailsRoute(appNavigator, albumId, initialIndex)
+            composable<GalleryMediaNavRoute> { backStackEntry ->
+                val route = backStackEntry.toRoute<GalleryMediaNavRoute>()
+                MediaDetailsRoute(appNavigator, route.albumId, route.initialIndex)
             }
         }
 
-        composable(AppRoutes.LISTS_SCREEN) {
+        composable<ListsNavRoute> {
             ListsRoute(appNavigator)
         }
 
-        composable(
-            route = "${AppRoutes.LIST_DETAIL_SCREEN}/{${AppRoutes.LIST_ID_ARG}}",
-            arguments = listOf(navArgument(AppRoutes.LIST_ID_ARG) { type = NavType.StringType }),
-        ) { backStackEntry ->
-            val listId = backStackEntry.arguments?.getString(AppRoutes.LIST_ID_ARG) ?: return@composable
+        composable<ListDetailNavRoute> { backStackEntry ->
+            val listId = backStackEntry.toRoute<ListDetailNavRoute>().listId
             ListDetailsRoute(
                 listId = listId,
                 appNavigator = appNavigator,
             )
         }
 
-        composable(
-            route = "${AppRoutes.LIST_ENTRY_DETAILS_SCREEN}/{${AppRoutes.LIST_ID_ARG}}",
-            arguments = listOf(navArgument(AppRoutes.LIST_ID_ARG) { type = NavType.StringType }),
-        ) { backStackEntry ->
-            val listId = backStackEntry.arguments?.getString(AppRoutes.LIST_ID_ARG) ?: return@composable
+        composable<ListEntryDetailsNavRoute> { backStackEntry ->
+            val route = backStackEntry.toRoute<ListEntryDetailsNavRoute>()
             ListEntryDetailsRoute(
-                listId = listId,
-                entryId = null,
+                listId = route.listId,
+                entryId = route.entryId,
                 appNavigator = appNavigator,
             )
         }
 
-        composable(
-            route = "${AppRoutes.LIST_ENTRY_DETAILS_SCREEN}/{${AppRoutes.LIST_ID_ARG}}/{${AppRoutes.LIST_ENTRY_ID_ARG}}",
-            arguments = listOf(
-                navArgument(AppRoutes.LIST_ID_ARG) { type = NavType.StringType },
-                navArgument(AppRoutes.LIST_ENTRY_ID_ARG) { type = NavType.StringType },
-            ),
-        ) { backStackEntry ->
-            val listId = backStackEntry.arguments?.getString(AppRoutes.LIST_ID_ARG) ?: return@composable
-            val entryId = backStackEntry.arguments?.getString(AppRoutes.LIST_ENTRY_ID_ARG)
-            ListEntryDetailsRoute(
-                listId = listId,
-                entryId = entryId,
-                appNavigator = appNavigator,
-            )
-        }
-
-        // Nested graph
-        navigation(startDestination = AppRoutes.TIP_TRACKER_SCREEN, route = AppRoutes.TIP_TRACKER_GRAPH) {
-
-            composable(AppRoutes.TIP_TRACKER_SCREEN) { backStackEntry ->
+        navigation<TipTrackerGraph>(startDestination = TipTrackerNavRoute::class) {
+            composable<TipTrackerNavRoute> { backStackEntry ->
                 TipTrackerRoute(
                     navController = navController,
                     backStackEntry = backStackEntry,
                     appNavigator = appNavigator,
                 )
             }
-
-            composable(AppRoutes.TIP_STATISTICS_SCREEN) { backStackEntry ->
+            composable<TipStatisticsNavRoute> { backStackEntry ->
                 TipStatisticsRoute(
                     navController = navController,
                     backStackEntry = backStackEntry,
