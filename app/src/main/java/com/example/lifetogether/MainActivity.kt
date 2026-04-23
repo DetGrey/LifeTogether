@@ -1,5 +1,6 @@
 package com.example.lifetogether
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -8,20 +9,30 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.example.lifetogether.ui.common.ErrorStyledSnackbar
 import com.example.lifetogether.ui.feature.notification.NotificationService
+import com.example.lifetogether.ui.common.event.LocalRootSnackbarHostState
 import com.example.lifetogether.ui.navigation.NavHost
 import com.example.lifetogether.ui.theme.AppTypography
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -36,6 +47,7 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var navController: NavHostController
 
+    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     @OptIn(ExperimentalPermissionsApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,6 +87,7 @@ class MainActivity : ComponentActivity() {
 
                     val navControllerState = rememberNavController()
                     navController = navControllerState
+                    val rootSnackbarHostState = remember { SnackbarHostState() }
 
                     LaunchedEffect(destination, navControllerState) {
                         if (destination != null) {
@@ -89,7 +102,37 @@ class MainActivity : ComponentActivity() {
 
                     // Makes the default Text style bodyMedium instead of bodyLarge
                     ProvideTextStyle(value = AppTypography.bodyMedium) {
-                        NavHost(navController = navControllerState)
+                        CompositionLocalProvider(LocalRootSnackbarHostState provides rootSnackbarHostState) {
+                            Scaffold(
+                                snackbarHost = {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(16.dp),
+                                        contentAlignment = Alignment.TopCenter,
+                                    ) {
+                                        SnackbarHost(
+                                            hostState = rootSnackbarHostState,
+                                            modifier = Modifier.fillMaxWidth(),
+                                            snackbar = { data ->
+                                                ErrorStyledSnackbar(data)
+                                            },
+                                        )
+                                    }
+                                },
+                                containerColor = MaterialTheme.colorScheme.background,
+                                contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize(),
+                                ) {
+                                    NavHost(
+                                        navController = navControllerState,
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

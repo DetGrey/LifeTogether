@@ -16,29 +16,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.CustomDatePickerDialog
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.common.textfield.DatePickerTextField
-import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @Composable
 fun SignupScreen(
-    appNavigator: AppNavigator? = null,
+    uiState: SignupUiState,
+    onUiEvent: (SignupUiEvent) -> Unit,
+    onNavigationEvent: (SignupNavigationEvent) -> Unit,
 ) {
-    val signupViewModel: SignUpViewModel = hiltViewModel()
-
     Box(
-        modifier = Modifier
-            .fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
     ) {
         LazyColumn(
-            modifier = Modifier
-                .padding(10.dp),
+            modifier = Modifier.padding(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(30.dp),
         ) {
@@ -49,7 +47,7 @@ fun SignupScreen(
                         description = "back arrow icon",
                     ),
                     onLeftClick = {
-                        appNavigator?.navigateBack()
+                        onNavigationEvent(SignupNavigationEvent.NavigateBack)
                     },
                     text = "Sign up",
                 )
@@ -64,48 +62,47 @@ fun SignupScreen(
                     verticalArrangement = Arrangement.spacedBy(20.dp),
                 ) {
                     CustomTextField(
-                        value = signupViewModel.name,
-                        onValueChange = { value -> signupViewModel.name = value },
+                        value = uiState.name,
+                        onValueChange = { value -> onUiEvent(SignupUiEvent.NameChanged(value)) },
                         label = "Name",
                         capitalization = true,
                         keyboardType = KeyboardType.Text,
                         imeAction = ImeAction.Next,
                     )
                     CustomTextField(
-                        value = signupViewModel.email,
-                        onValueChange = { value -> signupViewModel.email = value },
+                        value = uiState.email,
+                        onValueChange = { value -> onUiEvent(SignupUiEvent.EmailChanged(value)) },
                         label = "Email",
                         keyboardType = KeyboardType.Email,
                         imeAction = ImeAction.Next,
                     )
                     DatePickerTextField(
                         label = "Birthday",
-                        date = signupViewModel.birthday,
-                        onClick = { signupViewModel.birthdayExpanded = true }, // TODO
+                        date = uiState.birthday,
+                        onClick = {
+                            onUiEvent(SignupUiEvent.BirthdayClicked)
+                        },
                     )
                     CustomTextField(
-                        value = signupViewModel.password,
-                        onValueChange = { value -> signupViewModel.password = value },
+                        value = uiState.password,
+                        onValueChange = { value -> onUiEvent(SignupUiEvent.PasswordChanged(value)) },
                         label = "Password",
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Next,
                     )
                     CustomTextField(
-                        value = signupViewModel.confirmPassword,
-                        onValueChange = { value -> signupViewModel.confirmPassword = value },
+                        value = uiState.confirmPassword,
+                        onValueChange = { value -> onUiEvent(SignupUiEvent.ConfirmPasswordChanged(value)) },
                         label = "Confirm password",
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Done,
                     )
 
-                    Button(onClick = {
-                        signupViewModel.onSignUpClicked(
-                            onSuccess = { userInformation ->
-//                                authViewModel?.updateUserInformation(userInformation)
-                                appNavigator?.navigateToProfile()
-                            },
-                        )
-                    }) {
+                    Button(
+                        onClick = {
+                            onUiEvent(SignupUiEvent.SignUpClicked)
+                        },
+                    ) {
                         Text(text = "Sign up")
                     }
 
@@ -113,7 +110,7 @@ fun SignupScreen(
                         modifier = Modifier
                             .padding(top = 10.dp)
                             .fillMaxWidth()
-                            .clickable { appNavigator?.navigateToLogin() },
+                            .clickable { onNavigationEvent(SignupNavigationEvent.LoginClicked) },
                         text = "Do you already have an account?\nLogin here",
                         textAlign = TextAlign.Center,
                     )
@@ -121,17 +118,34 @@ fun SignupScreen(
             }
         }
 
-        if (signupViewModel.birthdayExpanded) {
+        if (uiState.showBirthdayPicker) {
             CustomDatePickerDialog(
-                selectedDate = signupViewModel.birthday,
+                selectedDate = uiState.birthday,
                 onDateSelected = { date ->
-                    signupViewModel.birthday = date
-                    signupViewModel.birthdayExpanded = false
+                    onUiEvent(SignupUiEvent.BirthdaySelected(date))
                 },
                 onDismiss = {
-                    signupViewModel.birthdayExpanded = false
+                    onUiEvent(SignupUiEvent.BirthdayDismissed)
                 },
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SignupScreenPreview() {
+    LifeTogetherTheme {
+        SignupScreen(
+            uiState = SignupUiState(
+                name = "Alex",
+                email = "alex@example.com",
+                birthday = null,
+                password = "password123",
+                confirmPassword = "password123",
+            ),
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
     }
 }

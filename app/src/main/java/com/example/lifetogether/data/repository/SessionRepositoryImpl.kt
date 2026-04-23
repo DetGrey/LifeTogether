@@ -1,5 +1,9 @@
 package com.example.lifetogether.data.repository
 
+import com.example.lifetogether.data.logic.AppErrors
+
+import com.example.lifetogether.domain.result.AppError
+
 import android.util.Log
 import com.example.lifetogether.data.remote.FirebaseAuthDataSource
 import com.example.lifetogether.di.AppScope
@@ -65,12 +69,12 @@ class SessionRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun signOut(): Result<Unit, String> {
+    override suspend fun signOut(): Result<Unit, AppError> {
         val currentUser = resolveUserForSignOut()
-            ?: return Result.Failure("No authenticated user available for sign out")
+            ?: return Result.Failure(AppErrors.authentication("No authenticated user available for sign out"))
 
         val uid = currentUser.uid
-            ?: return Result.Failure("No authenticated user available for sign out")
+            ?: return Result.Failure(AppErrors.authentication("No authenticated user available for sign out"))
 
         return when (val remoteResult = sessionUserRepository.logout(uid, currentUser.familyId)) {
             is Result.Failure -> remoteResult

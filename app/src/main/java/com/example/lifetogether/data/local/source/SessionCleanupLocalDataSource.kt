@@ -1,5 +1,9 @@
 package com.example.lifetogether.data.local.source
 
+import com.example.lifetogether.data.logic.appResultOf
+
+import com.example.lifetogether.domain.result.AppError
+
 import android.content.Context
 import androidx.core.net.toUri
 import com.example.lifetogether.data.local.dao.AlbumsDao
@@ -16,7 +20,7 @@ import javax.inject.Singleton
 
 @Singleton
 class SessionCleanupLocalDataSource @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val groceryListDao: GroceryListDao,
     private val recipesDao: RecipesDao,
     private val userInformationDao: UserInformationDao,
@@ -25,8 +29,8 @@ class SessionCleanupLocalDataSource @Inject constructor(
     private val albumsDao: AlbumsDao,
     private val guidesDao: GuidesDao,
 ) {
-    fun clearSessionTables(): Result<Unit, String> {
-        return try {
+    fun clearSessionTables(): Result<Unit, AppError> {
+        return appResultOf {
             groceryListDao.deleteTable()
             recipesDao.deleteTable()
             userInformationDao.deleteTable()
@@ -42,9 +46,6 @@ class SessionCleanupLocalDataSource @Inject constructor(
             galleryMediaDao.deleteTable()
             albumsDao.deleteTable()
             guidesDao.deleteTable()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure("Error: $e")
         }
     }
 }

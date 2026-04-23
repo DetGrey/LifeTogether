@@ -1,26 +1,19 @@
 package com.example.lifetogether.di
 
-import com.example.lifetogether.data.repository.CategoryRepositoryImpl
 import com.example.lifetogether.data.repository.FamilyRepositoryImpl
 import com.example.lifetogether.data.repository.GalleryRepositoryImpl
 import com.example.lifetogether.data.repository.GroceryRepositoryImpl
 import com.example.lifetogether.data.repository.GuideRepositoryImpl
 import com.example.lifetogether.data.repository.ImageRepositoryImpl
-import com.example.lifetogether.data.repository.LocalListRepositoryImpl
 import com.example.lifetogether.data.repository.RecipeRepositoryImpl
-import com.example.lifetogether.data.repository.AdminRepositoryImpl
-import com.example.lifetogether.data.repository.RemoteListRepositoryImpl
 import com.example.lifetogether.data.repository.TipTrackerRepositoryImpl
 import com.example.lifetogether.data.repository.UserListRepositoryImpl
 import com.example.lifetogether.data.repository.UserRepositoryImpl
-import com.example.lifetogether.domain.repository.AdminRepository
-import com.example.lifetogether.domain.repository.CategoryRepository
 import com.example.lifetogether.domain.repository.FamilyRepository
 import com.example.lifetogether.domain.repository.GalleryRepository
 import com.example.lifetogether.domain.repository.GroceryRepository
 import com.example.lifetogether.domain.repository.GuideRepository
 import com.example.lifetogether.domain.repository.ImageRepository
-import com.example.lifetogether.domain.repository.LegacyListRepository
 import com.example.lifetogether.domain.repository.RecipeRepository
 import com.example.lifetogether.domain.repository.TipTrackerRepository
 import com.example.lifetogether.domain.repository.UserListRepository
@@ -28,36 +21,16 @@ import com.example.lifetogether.domain.repository.UserRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
-import dagger.hilt.android.components.ViewModelComponent
+import dagger.hilt.components.SingletonComponent
 
 @Module
-@InstallIn(ViewModelComponent::class)
+@InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
-
-    @Binds
-    abstract fun bindRemoteAdminRepository(
-        adminRepositoryImpl: AdminRepositoryImpl,
-    ): AdminRepository
-
-    @Binds
-    abstract fun bindRemoteListRepository(
-        remoteListRepositoryImpl: RemoteListRepositoryImpl,
-    ): LegacyListRepository
-
-    @Binds
-    abstract fun bindLocalListRepository(
-        localListRepositoryImpl: LocalListRepositoryImpl,
-    ): LegacyListRepository
 
     @Binds
     abstract fun bindUserRepository(
         userRepositoryImpl: UserRepositoryImpl,
     ): UserRepository
-
-    @Binds
-    abstract fun bindCategoryRepository(
-        categoryRepositoryImpl: CategoryRepositoryImpl,
-    ): CategoryRepository
 
     @Binds
     abstract fun bindGroceryRepository(

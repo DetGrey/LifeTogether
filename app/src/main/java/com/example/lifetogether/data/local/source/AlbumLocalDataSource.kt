@@ -5,12 +5,11 @@ import com.example.lifetogether.data.local.dao.GalleryMediaDao
 import com.example.lifetogether.data.local.source.internal.computeItemsToDelete
 import com.example.lifetogether.data.local.source.internal.computeItemsToUpdate
 import com.example.lifetogether.data.model.AlbumEntity
-import com.example.lifetogether.data.model.Entity
+import com.example.lifetogether.data.model.GalleryMediaEntity
 import com.example.lifetogether.domain.model.gallery.Album
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -59,8 +58,6 @@ class AlbumLocalDataSource @Inject constructor(
     fun getAlbumMedia(
         familyId: String,
         albumId: String,
-    ): Flow<List<Entity.GalleryMedia>> =
-        galleryMediaDao.getItemsByAlbumId(familyId, albumId).map { list ->
-            list.map { Entity.GalleryMedia(it) }
-        }
+    ): Flow<List<GalleryMediaEntity>> =
+        galleryMediaDao.getItemsByAlbumId(familyId, albumId)
 }

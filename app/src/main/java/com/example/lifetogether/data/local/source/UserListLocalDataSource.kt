@@ -1,5 +1,9 @@
 package com.example.lifetogether.data.local.source
 
+import com.example.lifetogether.data.logic.appResultOf
+
+import com.example.lifetogether.domain.result.AppError
+
 import com.example.lifetogether.data.local.dao.RoutineListsDao
 import com.example.lifetogether.data.local.dao.UserListsDao
 import com.example.lifetogether.data.local.source.internal.computeItemsToDelete
@@ -105,15 +109,13 @@ class UserListLocalDataSource @Inject constructor(
         routineListsDao.deleteFamilyItems(familyId)
     }
 
-    fun deleteRoutineListEntries(itemIds: List<String>): Result<Unit, String> =
-        try {
+    fun deleteRoutineListEntries(itemIds: List<String>): Result<Unit, AppError> =
+        appResultOf {
             routineListsDao.deleteItems(itemIds)
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
         }
 
-    fun observeRoutineImageByteArray(entryId: String) = routineListsDao.getImageByteArray(entryId)
+    fun observeRoutineImageByteArray(entryId: String): Flow<ByteArray?> =
+        routineListsDao.observeImageByteArray(entryId)
 
     private fun RoutineListEntry.toEntity() = RoutineListEntryEntity(
         id = id ?: "",

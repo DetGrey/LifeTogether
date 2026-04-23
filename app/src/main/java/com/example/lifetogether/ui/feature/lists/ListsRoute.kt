@@ -1,16 +1,40 @@
 package com.example.lifetogether.ui.feature.lists
 
 import androidx.compose.runtime.Composable
-import com.example.lifetogether.domain.observer.ObserverKey
-import com.example.lifetogether.ui.common.observer.FeatureObserverLifecycleBinding
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.lifetogether.domain.sync.SyncKey
+import com.example.lifetogether.ui.common.event.CollectUiCommands
+import com.example.lifetogether.ui.common.sync.FeatureSyncLifecycleBinding
 import com.example.lifetogether.ui.navigation.AppNavigator
 
 @Composable
 fun ListsRoute(
     appNavigator: AppNavigator,
 ) {
-    FeatureObserverLifecycleBinding(
-        keys = setOf(ObserverKey.USER_LISTS, ObserverKey.ROUTINE_LIST_ENTRIES),
+    val viewModel: ListsViewModel = hiltViewModel()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    FeatureSyncLifecycleBinding(keys = setOf(SyncKey.USER_LISTS, SyncKey.ROUTINE_LIST_ENTRIES))
+    CollectUiCommands(viewModel.uiCommands)
+
+    LaunchedEffect(viewModel) {
+        viewModel.commands.collect { command ->
+            when (command) {
+                is ListsCommand.NavigateToListDetails -> appNavigator.navigateToListDetail(command.listId)
+            }
+        }
+    }
+
+    ListsScreen(
+        uiState = uiState,
+        onUiEvent = viewModel::onEvent,
+        onNavigationEvent = { navigationEvent ->
+            when (navigationEvent) {
+                ListsNavigationEvent.NavigateBack -> appNavigator.navigateBack()
+                is ListsNavigationEvent.NavigateToListDetails -> appNavigator.navigateToListDetail(navigationEvent.listId)
+            }
+        },
     )
-    ListsScreen(appNavigator)
 }

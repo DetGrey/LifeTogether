@@ -7,12 +7,12 @@ inline fun <T> appResultOf(block: () -> T): Result<T, AppError> =
     try {
         Result.Success(block())
     } catch (throwable: Throwable) {
-        Result.Failure(throwable.toAppError())
+        Result.Failure(AppErrors.fromThrowable(throwable))
     }
 
 suspend inline fun <T> appResultOfSuspend(crossinline block: suspend () -> T): Result<T, AppError> =
     try {
         Result.Success(block())
     } catch (throwable: Throwable) {
-        Result.Failure(throwable.toAppError())
+        Result.Failure(AppErrors.fromThrowable(throwable))
     }

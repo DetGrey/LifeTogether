@@ -11,14 +11,18 @@ import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.GuideRepository
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.result.Result
+import com.example.lifetogether.domain.result.toUserMessage
+import com.example.lifetogether.ui.common.event.UiCommand
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import java.util.Date
 import javax.inject.Inject
 
@@ -29,7 +33,6 @@ class GuideStepPlayerViewModel @Inject constructor(
 ) : ViewModel() {
     private companion object {
         const val TAG = "GuideStepPlayerVM"
-        const val ALERT_DISMISS_DELAY_MS = 3000L
         const val GUIDE_PERSIST_DEBOUNCE_MS = 250L
     }
 
@@ -42,7 +45,6 @@ class GuideStepPlayerViewModel @Inject constructor(
     private var uid: String? = null
     private var guideId: String? = null
     private var guideJob: Job? = null
-    private var dismissAlertJob: Job? = null
     private var guidePersistJob: Job? = null
     private var pendingGuide: Guide? = null
 
@@ -50,6 +52,9 @@ class GuideStepPlayerViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(GuideStepPlayerUiState())
     val uiState: StateFlow<GuideStepPlayerUiState> = _uiState.asStateFlow()
+
+    private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
+    val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
 
     init {
         viewModelScope.launch {
@@ -71,11 +76,12 @@ class GuideStepPlayerViewModel @Inject constructor(
         }
     }
 
-    fun dismissAlert() {
-        dismissAlertJob?.cancel()
-        dismissAlertJob = viewModelScope.launch {
-            delay(ALERT_DISMISS_DELAY_MS)
-            clearError()
+    fun onEvent(event: GuideStepPlayerUiEvent) {
+        when (event) {
+            is GuideStepPlayerUiEvent.Initialize -> setUp(event.guideId)
+            GuideStepPlayerUiEvent.PreviousClicked -> goToPreviousStep()
+            GuideStepPlayerUiEvent.CompleteCurrentAndGoNextClicked -> completeCurrentAndGoNext()
+            GuideStepPlayerUiEvent.ToggleCurrentStepCompletionClicked -> toggleCurrentStepCompletion()
         }
     }
 
@@ -122,8 +128,8 @@ class GuideStepPlayerViewModel @Inject constructor(
                         )
                     }
                     is Result.Failure -> {
-                        Log.e(TAG, "Guide observation failed: ${result.error}")
-                        showError(result.error)
+                        Log.e(TAG, "Guide observation failed: ${result.error.toUserMessage()}")
+                        showError(result.error.toUserMessage())
                     }
                 }
             }
@@ -327,15 +333,13 @@ class GuideStepPlayerViewModel @Inject constructor(
 
     private fun showError(message: String) {
         Log.e(TAG, "showError: $message")
-        dismissAlertJob?.cancel()
-        _uiState.update { state ->
-            state.copy(showAlertDialog = true, error = message)
-        }
-    }
-
-    private fun clearError() {
-        _uiState.update { state ->
-            state.copy(showAlertDialog = false, error = "")
+        viewModelScope.launch {
+            _uiCommands.send(
+                UiCommand.ShowSnackbar(
+                    message = message,
+                    withDismissAction = true,
+                ),
+            )
         }
     }
 
@@ -343,7 +347,7 @@ class GuideStepPlayerViewModel @Inject constructor(
         val leaves = GuideProgress.buildLeafPointers(guide.sections)
         if (leaves.isEmpty()) {
             currentPointerIndex = -1
-            _uiState.value = mergeTransientUiState(GuideStepPlayerUiState(guide = guide))
+            _uiState.value = GuideStepPlayerUiState(guide = guide)
             return
         }
 
@@ -354,12 +358,10 @@ class GuideStepPlayerViewModel @Inject constructor(
         )
 
         val pointer = leaves[currentPointerIndex]
-        _uiState.value = mergeTransientUiState(
-            buildUiState(
-                guide = guide,
-                leaves = leaves,
-                pointer = pointer,
-            ),
+        _uiState.value = buildUiState(
+            guide = guide,
+            leaves = leaves,
+            pointer = pointer,
         )
     }
 
@@ -419,8 +421,4 @@ class GuideStepPlayerViewModel @Inject constructor(
         return "Part ${pointer.sectionAmountIndex + 1}/${section.amount}"
     }
 
-    private fun mergeTransientUiState(baseState: GuideStepPlayerUiState): GuideStepPlayerUiState {
-        val currentState = _uiState.value
-        return baseState.copy(showAlertDialog = currentState.showAlertDialog, error = currentState.error)
-    }
 }

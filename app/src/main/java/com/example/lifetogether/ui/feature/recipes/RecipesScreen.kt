@@ -9,30 +9,26 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
-import com.example.lifetogether.domain.model.Icon
-import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
-import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
-import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
+import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
-import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.domain.observer.ObserverKey
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.domain.model.recipe.Recipe
+import com.example.lifetogether.domain.sync.SyncKey
 
 @Composable
 fun RecipesScreen(
-    appNavigator: AppNavigator? = null,
+    uiState: RecipesUiState,
+    onUiEvent: (RecipesUiEvent) -> Unit,
+    onNavigationEvent: (RecipesNavigationEvent) -> Unit,
 ) {
-    val recipesViewModel: RecipesViewModel = hiltViewModel()
-    val recipes by recipesViewModel.filteredRecipes.collectAsState()
-
     Box(
         modifier = Modifier
             .fillMaxSize(),
@@ -50,7 +46,7 @@ fun RecipesScreen(
                         description = "back arrow icon",
                     ),
                     onLeftClick = {
-                        appNavigator?.navigateBack()
+                        onNavigationEvent(RecipesNavigationEvent.NavigateBack)
                     },
                     text = "Recipes",
                 )
@@ -58,15 +54,15 @@ fun RecipesScreen(
 
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ObserverUpdatingText(
-                        keys = setOf(ObserverKey.RECIPES),
+                    SyncUpdatingText(
+                        keys = setOf(SyncKey.RECIPES),
                     )
 
                     TagOptionRow(
-                        options = recipesViewModel.tagsList,
-                        selectedOption = recipesViewModel.selectedTag,
+                        options = uiState.tagsList,
+                        selectedOption = uiState.selectedTag,
                         onSelectedOptionChange = {
-                            recipesViewModel.selectedTag = it
+                            onUiEvent(RecipesUiEvent.TagSelected(it))
                         },
                     )
                 }
@@ -76,11 +72,11 @@ fun RecipesScreen(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    for (recipe in recipes) {
+                    for (recipe in uiState.recipes) {
                         RecipeOverview(
                             recipe = recipe,
                             onClick = {
-                                appNavigator?.navigateToRecipeDetails(recipe.id)
+                                onNavigationEvent(RecipesNavigationEvent.NavigateToRecipeDetails(recipe.id))
                             },
                         )
                     }
@@ -98,14 +94,30 @@ fun RecipesScreen(
         contentAlignment = Alignment.BottomEnd,
     ) {
         AddButton(onClick = {
-            appNavigator?.navigateToRecipeDetails()
+            onNavigationEvent(RecipesNavigationEvent.NavigateToRecipeDetails())
         })
     }
-    // ---------------------------------------------------------------- SHOW ERROR ALERT
-    if (recipesViewModel.showAlertDialog) {
-        LaunchedEffect(recipesViewModel.error) {
-            recipesViewModel.toggleAlertDialog()
-        }
-        ErrorAlertDialog(recipesViewModel.error)
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RecipesScreenPreview() {
+    LifeTogetherTheme {
+        RecipesScreen(
+            uiState = RecipesUiState(
+                recipes = listOf(
+                    Recipe(
+                        id = "1",
+                        itemName = "Tomato Soup",
+                        preparationTimeMin = 25,
+                        tags = listOf("Dinner", "Soup"),
+                    ),
+                ),
+                tagsList = listOf("All", "Dinner", "Soup"),
+                selectedTag = "All",
+            ),
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
     }
 }

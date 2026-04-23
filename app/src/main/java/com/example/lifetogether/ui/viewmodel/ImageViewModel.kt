@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.viewmodel
 
+import com.example.lifetogether.domain.result.toUserMessage
+
 import android.graphics.Bitmap
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,7 +37,7 @@ class ImageViewModel @Inject constructor(
     ) {
         println("ImageViewModel collectImageFlow")
         viewModelScope.launch {
-            imageRepository.getImageByteArray(imageType).collect { result ->
+            imageRepository.observeImageByteArray(imageType).collect { result ->
                 println("getImageByteArray result: $result")
                 when (result) {
                     is Result.Success -> {
@@ -44,9 +46,9 @@ class ImageViewModel @Inject constructor(
 
                     is Result.Failure -> {
                         _bitmap.value = null
-                        println("Error: ${result.error}")
-                        if (result.error != "No ByteArray found") {
-                            onError(result.error)
+                        println("Error: ${result.error.toUserMessage()}")
+                        if (result.error.toUserMessage() != "No ByteArray found") {
+                            onError(result.error.toUserMessage())
                         }
                     }
                 }

@@ -1,30 +1,37 @@
 package com.example.lifetogether.domain.usecase.image
 
+import com.example.lifetogether.domain.result.AppError
+
 import android.content.Context
 import android.net.Uri
-import com.example.lifetogether.data.repository.ImageRepositoryImpl
-import com.example.lifetogether.domain.result.Result
+import android.util.Log
 import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.domain.repository.ImageRepository
+import com.example.lifetogether.domain.result.Result
 import javax.inject.Inject
 
 class UploadImageUseCase @Inject constructor(
-    private val imageRepositoryImpl: ImageRepositoryImpl,
+    private val imageRepository: ImageRepository,
 ) {
+    private companion object {
+        const val TAG = "UploadImageUseCase"
+    }
+
     suspend operator fun invoke(
         uri: Uri,
         imageType: ImageType,
         context: Context,
-    ): Result<Unit, String> {
-        println("UploadImageUseCase uri: $uri")
-        val firebaseStorageResult = imageRepositoryImpl.uploadImage(uri, imageType, context)
-        println("UploadImageUseCase firebaseStorageResult: $firebaseStorageResult")
+    ): Result<Unit, AppError> {
+        Log.d(TAG, "invoke")
+        val firebaseStorageResult = imageRepository.uploadImage(uri, imageType, context)
+        Log.d(TAG, "uploadImage completed")
         when (firebaseStorageResult) {
             is Result.Success -> {
                 val url = firebaseStorageResult.data
-                println("UploadImageUseCase image download url: $url")
-                val firestoreDeleteOldImageResult = imageRepositoryImpl.deleteImage(imageType)
+                Log.d(TAG, "image upload returned url; updating references")
+                val firestoreDeleteOldImageResult = imageRepository.deleteImage(imageType)
 
-                val firestoreNewUrlResult = imageRepositoryImpl.saveImageDownloadUrl(url, imageType)
+                val firestoreNewUrlResult = imageRepository.saveImageDownloadUrl(url, imageType)
 
                 if (firestoreDeleteOldImageResult is Result.Failure && firestoreNewUrlResult is Result.Success) {
                     return firestoreDeleteOldImageResult

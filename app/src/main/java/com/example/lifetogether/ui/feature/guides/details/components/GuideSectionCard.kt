@@ -32,7 +32,7 @@ fun GuideSectionCard(
     onSelectAmountIndex: (Int) -> Unit,
     expanded: Boolean,
     onToggleExpanded: () -> Unit,
-    canToggleStep: (Int, String) -> Boolean,
+    canToggleStep: (Int) -> Boolean,
     onToggleStep: (Int, String) -> Unit,
 ) {
     val normalizedAmount = section.amount.coerceAtLeast(1)
@@ -123,13 +123,12 @@ fun GuideSectionCard(
             }
 
             if (expanded) {
+                val canToggleSelectedAmount = canToggleStep(normalizedSelectedAmountIndex)
                 GuideStepRows(
                     steps = selectedAmountSteps,
                     textColor = MaterialTheme.colorScheme.background,
                     indentLevel = 0,
-                    canToggleStep = { stepId ->
-                        canToggleStep(normalizedSelectedAmountIndex, stepId)
-                    },
+                    canToggleStep = canToggleSelectedAmount,
                     onToggleStep = { stepId ->
                         onToggleStep(normalizedSelectedAmountIndex, stepId)
                     },

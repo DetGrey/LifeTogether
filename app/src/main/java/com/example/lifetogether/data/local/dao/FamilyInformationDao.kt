@@ -26,11 +26,11 @@ interface FamilyInformationDao {
 
     // Query to get family members by familyId (FamilyMemberEntity)
     @Query("SELECT * FROM ${Constants.FAMILY_MEMBERS_TABLE} WHERE family_id = :familyId")
-    fun getFamilyMembers(familyId: String): Flow<List<FamilyMemberEntity>>
+    fun observeFamilyMembers(familyId: String): Flow<List<FamilyMemberEntity>>
 
     // Query to get image bytearray by familyId
     @Query("SELECT image_data FROM ${Constants.FAMILIES_TABLE} WHERE family_id = :familyId LIMIT 1")
-    fun getImageByteArray(familyId: String): Flow<ByteArray?>
+    fun observeImageByteArray(familyId: String): Flow<ByteArray?>
 
     @Query("SELECT CASE WHEN image_data IS NOT NULL THEN 1 ELSE 0 END FROM ${Constants.FAMILIES_TABLE} WHERE family_id = :familyId LIMIT 1")
     suspend fun hasImageData(familyId: String): Int?
