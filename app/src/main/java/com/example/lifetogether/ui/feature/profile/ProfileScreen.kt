@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.toFullDateString
 import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.ConfirmationDialogDetails
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.ui.common.TopBar
@@ -222,13 +223,11 @@ fun ProfileScreen(
                     capitalization = true,
                 )
 
-                ProfileConfirmationType.PASSWORD -> ConfirmationDialog(
-                    onDismiss = { onUiEvent(ProfileUiEvent.DismissConfirmationDialog) },
-                    onConfirm = { onUiEvent(ProfileUiEvent.ConfirmConfirmationDialog) },
+                ProfileConfirmationType.PASSWORD -> ConfirmationDialogDetails( //todo should probably have onDismiss
                     dialogTitle = "Change password",
-                    dialogMessage = "Password changes are not implemented yet.",
-                    dismissButtonMessage = "Cancel",
-                    confirmButtonMessage = "Close",
+                    dialogMessage = "Are you sure you want change password?", // TODO
+                    confirmButtonMessage = "Change password",
+                    onConfirm = {}, // TODO
                 )
 
                 null -> Unit

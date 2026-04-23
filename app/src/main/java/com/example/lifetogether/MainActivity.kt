@@ -129,7 +129,6 @@ class MainActivity : ComponentActivity() {
                                 ) {
                                     NavHost(
                                         navController = navControllerState,
-                                        rootSnackbarHostState,
                                     )
                                 }
                             }
