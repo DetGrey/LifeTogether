@@ -42,6 +42,8 @@ import com.example.lifetogether.ui.common.image.ImageUploadDialog
 import com.example.lifetogether.ui.common.text.TextHeadingLarge
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.HomeNavRoute
+import com.example.lifetogether.ui.navigation.SettingsNavRoute
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.viewmodel.ImageViewModel
 
@@ -92,7 +94,7 @@ fun ProfileScreen(
                         description = "settings icon",
                     ),
                     onRightClick = {
-                        appNavigator?.navigateToSettings()
+                        appNavigator?.navigate(SettingsNavRoute)
                     },
                 )
             }
@@ -233,7 +235,7 @@ fun ProfileScreen(
                     profileViewModel.logout(
                         onSuccess = {
                             profileViewModel.closeConfirmationDialog()
-                            appNavigator?.navigateToHome()
+                            appNavigator?.navigate(HomeNavRoute)
                         },
                     )
                 },

@@ -37,7 +37,18 @@ import com.example.lifetogether.domain.model.session.authenticatedUserOrNull
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.LoveButton
 import com.example.lifetogether.ui.common.text.TextDisplayLarge
+import com.example.lifetogether.ui.navigation.AdminGroceryCategoriesNavRoute
+import com.example.lifetogether.ui.navigation.AdminGrocerySuggestionsNavRoute
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.GalleryNavRoute
+import com.example.lifetogether.ui.navigation.GroceryListNavRoute
+import com.example.lifetogether.ui.navigation.GuidesNavRoute
+import com.example.lifetogether.ui.navigation.ListsNavRoute
+import com.example.lifetogether.ui.navigation.LoginNavRoute
+import com.example.lifetogether.ui.navigation.ProfileNavRoute
+import com.example.lifetogether.ui.navigation.RecipesNavRoute
+import com.example.lifetogether.ui.navigation.SettingsNavRoute
+import com.example.lifetogether.ui.navigation.TipTrackerNavRoute
 import com.example.lifetogether.ui.viewmodel.ImageViewModel
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -79,9 +90,9 @@ fun HomeScreen(
                     ),
                     onLeftClick = {
                         if (userInformationState != null) {
-                            appNavigator?.navigateToProfile()
+                            appNavigator?.navigate(ProfileNavRoute)
                         } else {
-                            appNavigator?.navigateToLogin()
+                            appNavigator?.navigate(LoginNavRoute)
                         }
                     },
                     text = "Life Together",
@@ -90,7 +101,7 @@ fun HomeScreen(
                         description = "settings icon",
                     ),
                     onRightClick = {
-                        appNavigator?.navigateToSettings()
+                        appNavigator?.navigate(SettingsNavRoute)
                     },
                     subText = "x days together", // TODO
                 )
@@ -129,7 +140,7 @@ fun HomeScreen(
                                     .background(MaterialTheme.colorScheme.tertiary)
                                     .padding(horizontal = 20.dp)
                                     .clickable {
-                                        appNavigator?.navigateToSettings()
+                                        appNavigator?.navigate(SettingsNavRoute)
                                     },
                                 contentAlignment = Alignment.Center,
                             ) {
@@ -154,7 +165,7 @@ fun HomeScreen(
                                 .clip(shape = RoundedCornerShape(20))
                                 .background(MaterialTheme.colorScheme.tertiary)
                                 .clickable {
-                                    appNavigator?.navigateToLogin()
+                                    appNavigator?.navigate(LoginNavRoute)
                                 },
                             contentAlignment = Alignment.Center,
                         ) {
@@ -176,7 +187,7 @@ fun HomeScreen(
                             if (userInformationState?.familyId == null) {
                                 // TODO add popup asking to join a family
                             } else {
-                                appNavigator?.navigateToGroceryList()
+                                appNavigator?.navigate(GroceryListNavRoute)
                             }
                         },
                         icon = Icon(R.drawable.ic_groceries, "groceries basket icon"),
@@ -187,7 +198,7 @@ fun HomeScreen(
                             if (userInformationState?.familyId == null) {
                                 // TODO add popup asking to join a family
                             } else {
-                                appNavigator?.navigateToRecipes()
+                                appNavigator?.navigate(RecipesNavRoute)
                             }
                         },
                         icon = Icon(R.drawable.ic_recipes, "recipes chef hat icon"),
@@ -214,7 +225,7 @@ fun HomeScreen(
                             if (userInformationState?.familyId == null) {
                                 // TODO add popup asking to join a family
                             } else {
-                                appNavigator?.navigateToGuides()
+                                appNavigator?.navigate(GuidesNavRoute)
                             }
                         },
                         icon = Icon(R.drawable.ic_guide, "guides icon"),
@@ -226,7 +237,7 @@ fun HomeScreen(
                                 // TODO add popup asking to join a family
                             } else {
                                 println("Gallery clicked")
-                                appNavigator?.navigateToGallery()
+                                appNavigator?.navigate(GalleryNavRoute)
                             }
                         },
                         icon = Icon(R.drawable.ic_gallery, "image gallery icon"),
@@ -238,7 +249,7 @@ fun HomeScreen(
                                 // TODO add popup asking to join a family
                             } else {
                                 println("Tip tracker clicked")
-                                appNavigator?.navigateToTipTracker()
+                                appNavigator?.navigate(TipTrackerNavRoute)
                             }
                         },
                         icon = Icon(R.drawable.ic_tip, "money tip icon"),
@@ -249,7 +260,7 @@ fun HomeScreen(
                             if (userInformationState?.familyId == null) {
                                 // TODO add popup asking to join a family
                             } else {
-                                appNavigator?.navigateToLists()
+                                appNavigator?.navigate(ListsNavRoute)
                             }
                         },
                         icon = Icon(R.drawable.ic_guide, "lists icon"),
@@ -285,7 +296,7 @@ fun HomeScreen(
                                 if (userInformationState?.familyId == null) {
                                     // TODO add popup asking to join a family
                                 } else {
-                                    appNavigator?.navigateToAdminGroceryCategories()
+                                    appNavigator?.navigate(AdminGroceryCategoriesNavRoute)
                                 }
                             },
                             icon = Icon(R.drawable.ic_groceries, "groceries basket icon"),
@@ -296,7 +307,7 @@ fun HomeScreen(
                                 if (userInformationState?.familyId == null) {
                                     // TODO add popup asking to join a family
                                 } else {
-                                    appNavigator?.navigateToAdminGrocerySuggestions()
+                                    appNavigator?.navigate(AdminGrocerySuggestionsNavRoute)
                                 }
                             },
                             icon = Icon(R.drawable.ic_groceries, "groceries basket icon"),

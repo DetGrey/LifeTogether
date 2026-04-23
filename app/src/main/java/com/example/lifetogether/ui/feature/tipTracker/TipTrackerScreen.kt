@@ -21,6 +21,7 @@ import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.TipStatisticsNavRoute
 import com.example.lifetogether.domain.sync.SyncKey
 
 @Composable
@@ -57,7 +58,7 @@ fun TipTrackerScreen(
                         description = "back arrow icon",
                     ),
                     onRightClick = {
-                        appNavigator?.navigateToTipStatistics()
+                        appNavigator?.navigate(TipStatisticsNavRoute)
                     },
                 )
             }

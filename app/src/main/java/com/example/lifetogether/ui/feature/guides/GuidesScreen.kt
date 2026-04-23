@@ -47,6 +47,8 @@ import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.GuideCreateNavRoute
+import com.example.lifetogether.ui.navigation.GuideDetailsNavRoute
 import com.example.lifetogether.domain.sync.SyncKey
 
 @Composable
@@ -133,7 +135,7 @@ fun GuidesScreen(
                     GuideOverviewCard(
                         guide = guide,
                         onClick = {
-                            guide.id?.let { appNavigator?.navigateToGuideDetails(it) }
+                            guide.id?.let { appNavigator?.navigate(GuideDetailsNavRoute(it)) }
                         },
                     )
                 }
@@ -160,7 +162,7 @@ fun GuidesScreen(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
                             guidesViewModel.closeAddOptionsDialog()
-                            appNavigator?.navigateToGuideCreate()
+                            appNavigator?.navigate(GuideCreateNavRoute)
                         },
                     ) {
                         Text("Create guide manually")

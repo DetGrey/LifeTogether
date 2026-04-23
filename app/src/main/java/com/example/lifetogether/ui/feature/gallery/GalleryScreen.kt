@@ -26,6 +26,7 @@ import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
+import com.example.lifetogether.ui.navigation.AlbumMediaNavRoute
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.domain.sync.SyncKey
 
@@ -81,7 +82,7 @@ fun GalleryScreen(
                                     album.mediaCount,
                                     album.thumbnail?.toBitmap(),
                                     onClick = {
-                                        appNavigator?.navigateToAlbumMedia(album.id)
+                                        appNavigator?.navigate(AlbumMediaNavRoute(album.id))
                                     },
                                 )
                             }

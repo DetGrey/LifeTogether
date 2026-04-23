@@ -51,6 +51,7 @@ import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.ListEntryDetailsNavRoute
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -93,7 +94,7 @@ fun ListDetailsScreen(
         },
         floatingActionButton = {
             if (contentState?.isSelectionModeActive != true) {
-                AddButton(onClick = { appNavigator?.navigateToListEntryDetails(listId) })
+                AddButton(onClick = { appNavigator?.navigate(ListEntryDetailsNavRoute(listId)) })
             }
         },
     ) { padding ->
@@ -156,7 +157,7 @@ fun ListDetailsScreen(
                                         if (uiState.isSelectionModeActive) {
                                             entry.id?.let(vm::toggleEntrySelection)
                                         } else {
-                                            entry.id?.let { appNavigator?.navigateToListEntryDetails(listId, it) }
+                                            entry.id?.let { appNavigator?.navigate(ListEntryDetailsNavRoute(listId, it)) }
                                         }
                                     },
                                     onLongClick = {
