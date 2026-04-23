@@ -1,6 +1,5 @@
 package com.example.lifetogether.ui.feature.guides.details
 
-import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.navigation.NavBackStackEntry
@@ -9,12 +8,13 @@ import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.sync.FeatureSyncLifecycleBinding
 import com.example.lifetogether.ui.feature.guides.stepplayer.GuideStepPlayerRoute
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.navigation.AppRoutes
+import com.example.lifetogether.ui.navigation.GuideGraph
 
 @Composable
 fun GuideDetailsDestinationRoute(
     navController: NavHostController,
     backStackEntry: NavBackStackEntry,
+    guideId: String,
     appNavigator: AppNavigator,
 ) {
     FeatureSyncLifecycleBinding(
@@ -22,11 +22,8 @@ fun GuideDetailsDestinationRoute(
     )
 
     val guideGraphEntry = remember(backStackEntry) {
-        navController.getBackStackEntry(AppRoutes.GUIDE_GRAPH_ROUTE)
+        navController.getBackStackEntry<GuideGraph>()
     }
-    val guideId = guideGraphEntry.arguments?.getString(AppRoutes.GUIDE_ID_ARG)
-        ?.let(Uri::decode)
-        ?: return
 
     GuideDetailsRoute(
         appNavigator = appNavigator,
@@ -39,6 +36,7 @@ fun GuideDetailsDestinationRoute(
 fun GuideStepPlayerDestinationRoute(
     navController: NavHostController,
     backStackEntry: NavBackStackEntry,
+    guideId: String,
     appNavigator: AppNavigator,
 ) {
     FeatureSyncLifecycleBinding(
@@ -46,11 +44,8 @@ fun GuideStepPlayerDestinationRoute(
     )
 
     val guideGraphEntry = remember(backStackEntry) {
-        navController.getBackStackEntry(AppRoutes.GUIDE_GRAPH_ROUTE)
+        navController.getBackStackEntry<GuideGraph>()
     }
-    val guideId = guideGraphEntry.arguments?.getString(AppRoutes.GUIDE_ID_ARG)
-        ?.let(Uri::decode)
-        ?: return
 
     GuideStepPlayerRoute(
         appNavigator = appNavigator,
