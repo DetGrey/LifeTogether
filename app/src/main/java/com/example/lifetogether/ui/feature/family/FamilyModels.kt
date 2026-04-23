@@ -31,6 +31,10 @@ sealed interface FamilyUiEvent {
     data object ConfirmConfirmationDialog : FamilyUiEvent
 }
 
+sealed interface FamilyNavigationEvent {
+    data object NavigateBack : FamilyNavigationEvent
+}
+
 sealed interface FamilyCommand {
     data object NavigateBack : FamilyCommand
     data class CopyFamilyId(val familyId: String) : FamilyCommand

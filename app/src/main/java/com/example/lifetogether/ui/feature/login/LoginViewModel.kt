@@ -18,21 +18,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class LoginUiState(
-    val email: String = "",
-    val password: String = "",
-)
-
-sealed interface LoginUiEvent {
-    data class EmailChanged(val value: String) : LoginUiEvent
-    data class PasswordChanged(val value: String) : LoginUiEvent
-    data object LoginClicked : LoginUiEvent
-}
-
-sealed interface LoginCommand {
-    data object NavigateBackOnSuccess : LoginCommand
-}
-
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,

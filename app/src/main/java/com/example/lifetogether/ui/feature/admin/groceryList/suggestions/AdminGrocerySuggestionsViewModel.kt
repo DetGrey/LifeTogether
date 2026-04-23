@@ -19,38 +19,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-private const val UNCATEGORIZED_NAME = "Uncategorized"
-private val UNCATEGORIZED_CATEGORY = Category(
-    emoji = "❓️",
-    name = UNCATEGORIZED_NAME,
-)
-
-data class AdminGrocerySuggestionsUiState(
-    val showDeleteCategoryConfirmationDialog: Boolean = false,
-    val selectedSuggestion: GrocerySuggestion? = null,
-    val groceryCategories: List<Category> = emptyList(),
-    val categoryExpandedStates: Set<String> = emptySet(),
-    val grocerySuggestions: List<GrocerySuggestion> = emptyList(),
-    val newSuggestionText: String = "",
-    val newSuggestionPrice: String = "",
-    val newSuggestionCategory: Category = UNCATEGORIZED_CATEGORY,
-    val editingSuggestionId: String? = null,
-    val isEditMode: Boolean = false,
-)
-
-sealed interface AdminGrocerySuggestionsUiEvent {
-    data class ToggleCategory(val categoryName: String) : AdminGrocerySuggestionsUiEvent
-    data class StartEditingSuggestion(val suggestion: GrocerySuggestion) : AdminGrocerySuggestionsUiEvent
-    data class ClickDeleteSuggestion(val suggestion: GrocerySuggestion) : AdminGrocerySuggestionsUiEvent
-    data object DismissDeleteSuggestionDialog : AdminGrocerySuggestionsUiEvent
-    data object ConfirmDeleteSuggestion : AdminGrocerySuggestionsUiEvent
-    data class NewSuggestionTextChanged(val value: String) : AdminGrocerySuggestionsUiEvent
-    data class NewSuggestionPriceChanged(val value: String) : AdminGrocerySuggestionsUiEvent
-    data class NewSuggestionCategoryChanged(val category: Category?) : AdminGrocerySuggestionsUiEvent
-    data object ClickAddSuggestion : AdminGrocerySuggestionsUiEvent
-    data object ClickSaveSuggestion : AdminGrocerySuggestionsUiEvent
-}
-
 @HiltViewModel
 class AdminGrocerySuggestionsViewModel @Inject constructor(
     private val groceryRepository: GroceryRepository,

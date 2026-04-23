@@ -27,6 +27,11 @@ sealed interface ProfileUiEvent {
     data class NewNameChanged(val value: String) : ProfileUiEvent
 }
 
+sealed interface ProfileNavigationEvent {
+    data object NavigateBack : ProfileNavigationEvent
+    data object NavigateToSettings : ProfileNavigationEvent
+}
+
 sealed interface ProfileCommand {
     data object NavigateToHome : ProfileCommand
 }

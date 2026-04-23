@@ -24,7 +24,9 @@ Separate every feature screen into a route composable (Android wiring) and a scr
 - Naming convention (locked):
 - `UiEvent` means user/UI input flowing into `ViewModel` (for example click, text change, retry tap).
 - `NavigationEvent` means user/UI navigation intent emitted by a screen and handled by the route (not by `ViewModel`).
-- `NavigationEvent` types live in their own feature-scoped file; do not nest navigation intents inside `UiEvent`.
+- Keep `UiState`, `UiEvent`, `NavigationEvent`, and `Command` together in the feature `Models.kt` file when the feature has one; do not split navigation events into separate files.
+- For screens already migrated in this branch, normalize any remaining model declarations into the feature `Models.kt` file before committing the issue.
+- Leave not-yet-refactored screens alone until their route/screen split issue is active.
 - `Command` means one-shot output emitted from `ViewModel` to UI (for example `ShowSnackbar`).
 - Concrete naming for this phase:
 - shared base type is `UiCommand`
@@ -40,7 +42,7 @@ Separate every feature screen into a route composable (Android wiring) and a scr
 - `ViewModel` exposes lifecycle-collected state (`StateFlow<UiState>`) and one-shot commands (`Flow<UiCommand>`).
 - `Screen` never calls `ViewModel` methods directly.
 - For screens with both VM-bound actions and nav-only actions, keep separate callbacks instead of folding navigation into `UiEvent`.
-- Navigation events live in their own feature-scoped file.
+- Keep `NavigationEvent` in the feature `Models.kt` file alongside the other models when that file exists.
 - Any navigation triggered by `ViewModel` logic is emitted as a `Command`, not a `UiEvent`.
 - `ViewModel` startup work uses `init` when no dynamic route argument is required; explicit load events are reserved for argument-driven/dynamic loads.
 - For complex screens with repeated gating/layout logic, the route may precompute ordered presentation models (for example sections/tiles) so the screen stays declarative and does not repeat access checks.
@@ -158,6 +160,10 @@ Create milestone `Phase 3: Route/Screen Split` and the following issues assigned
 - `[Phase 3] Route/screen split — Gallery` (`Gallery`, `AlbumDetails`, `MediaDetails`)
 - `[Phase 3] Route/screen split — TipTracker` (`TipTracker`, `TipStatistics`)
 - `[Phase 3] ErrorAlertDialog migration`
+
+Recipe-specific routing note for this phase:
+- `RecipesScreen` and `RecipeDetailsScreen` follow the pilot contract: `onUiEvent` for VM-bound input, `onNavigationEvent` for route-only navigation, and feature-scoped navigation event files.
+- `RecipeDetailsRoute` owns image observation through `ImageViewModel`, passes the bitmap into the screen, and keeps save/delete success navigation as `RecipeDetailsCommand.NavigateBack` from the ViewModel.
 
 ### Phase 3 execution strategy (explicit override)
 

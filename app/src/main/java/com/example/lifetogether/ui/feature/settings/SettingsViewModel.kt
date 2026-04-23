@@ -22,22 +22,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class SettingsUiState(
-    val userInformation: UserInformation? = null,
-    val showConfirmationDialog: Boolean = false,
-    val confirmationDialogType: SettingsConfirmationTypes? = null,
-    val addedFamilyId: String = "",
-)
-
-sealed interface SettingsUiEvent {
-    data object JoinFamilyClicked : SettingsUiEvent
-    data object CreateNewFamilyClicked : SettingsUiEvent
-    data object DismissConfirmationDialog : SettingsUiEvent
-    data class AddedFamilyIdChanged(val value: String) : SettingsUiEvent
-    data object ConfirmJoinFamily : SettingsUiEvent
-    data object ConfirmCreateNewFamily : SettingsUiEvent
-}
-
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
