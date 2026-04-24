@@ -26,10 +26,10 @@ import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.CompletableItem
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.ui.common.ListItem
-import com.example.lifetogether.ui.navigation.AppRoutes
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.bodyFontFamily
 import com.example.lifetogether.ui.viewmodel.NotificationViewModel
+import com.example.lifetogether.ui.navigation.NotificationDestination
 import com.example.lifetogether.util.Constants
 import com.example.lifetogether.util.priceToString
 import java.util.Date
@@ -107,7 +107,7 @@ fun ItemCategoryList(
                                     title = option.title,
                                     message = option.message,
                                     channelId = Constants.GROCERY_LIST_CHANNEL,
-                                    destination = AppRoutes.GROCERY_LIST_SCREEN,
+                                    destination = NotificationDestination.Grocery,
                                 )
                             }
                         } else {

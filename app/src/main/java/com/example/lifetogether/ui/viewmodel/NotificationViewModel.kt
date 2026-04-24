@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.repository.UserRepository
 import com.example.lifetogether.ui.feature.notification.NotificationService
+import com.example.lifetogether.ui.navigation.NotificationDestination
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -19,7 +20,7 @@ class NotificationViewModel @Inject constructor(
         title: String,
         message: String,
         channelId: String,
-        destination: String,
+        destination: NotificationDestination,
     ) {
         val notificationService = NotificationService(context)
 
@@ -37,7 +38,7 @@ class NotificationViewModel @Inject constructor(
                     title = title,
                     message = message,
                     notificationId = System.currentTimeMillis().toInt(),
-                    destination = destination,
+                    destination = destination.key,
                 )
             }
         }

@@ -24,6 +24,8 @@ import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.CreateRecipeNavRoute
+import com.example.lifetogether.ui.navigation.RecipeDetailsNavRoute
 import com.example.lifetogether.domain.sync.SyncKey
 
 @Composable
@@ -80,7 +82,9 @@ fun RecipesScreen(
                         RecipeOverview(
                             recipe = recipe,
                             onClick = {
-                                appNavigator?.navigateToRecipeDetails(recipe.id)
+                                recipe.id?.let { recipeId ->
+                                    appNavigator?.navigate(RecipeDetailsNavRoute(recipeId))
+                                }
                             },
                         )
                     }
@@ -98,7 +102,7 @@ fun RecipesScreen(
         contentAlignment = Alignment.BottomEnd,
     ) {
         AddButton(onClick = {
-            appNavigator?.navigateToRecipeDetails()
+            appNavigator?.navigate(CreateRecipeNavRoute)
         })
     }
     // ---------------------------------------------------------------- SHOW ERROR ALERT

@@ -33,6 +33,7 @@ import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.feature.guides.details.components.GuideHeroCard
 import com.example.lifetogether.ui.feature.guides.details.components.GuideSectionCard
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.GuideStepPlayerNavRoute
 
 @Composable
 fun GuideDetailsScreen(
@@ -110,7 +111,7 @@ fun GuideDetailsScreen(
                     enabled = !uiState.isStartingGuide,
                     onClick = {
                         guideDetailsViewModel.onStartOrContinue { _ ->
-                            appNavigator?.navigateToGuideStepPlayer()
+                            appNavigator?.navigate(GuideStepPlayerNavRoute(guideId))
                         }
                     },
                 ) {

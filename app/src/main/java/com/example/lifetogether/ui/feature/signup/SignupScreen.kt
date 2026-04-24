@@ -25,6 +25,8 @@ import com.example.lifetogether.ui.common.dialog.CustomDatePickerDialog
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.common.textfield.DatePickerTextField
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.LoginNavRoute
+import com.example.lifetogether.ui.navigation.ProfileNavRoute
 
 @Composable
 fun SignupScreen(
@@ -102,7 +104,7 @@ fun SignupScreen(
                         signupViewModel.onSignUpClicked(
                             onSuccess = { userInformation ->
 //                                authViewModel?.updateUserInformation(userInformation)
-                                appNavigator?.navigateToProfile()
+                                appNavigator?.navigate(ProfileNavRoute)
                             },
                         )
                     }) {
@@ -113,7 +115,7 @@ fun SignupScreen(
                         modifier = Modifier
                             .padding(top = 10.dp)
                             .fillMaxWidth()
-                            .clickable { appNavigator?.navigateToLogin() },
+                            .clickable { appNavigator?.navigate(LoginNavRoute) },
                         text = "Do you already have an account?\nLogin here",
                         textAlign = TextAlign.Center,
                     )

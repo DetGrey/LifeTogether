@@ -42,6 +42,7 @@ import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.ListDetailNavRoute
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @Composable
@@ -88,7 +89,7 @@ fun ListsScreen(
                 items(userLists) { list ->
                     UserListCard(
                         list = list,
-                        onClick = { list.id?.let { appNavigator?.navigateToListDetail(it) } },
+                        onClick = { list.id?.let { appNavigator?.navigate(ListDetailNavRoute(it)) } },
                     )
                 }
             }
@@ -123,7 +124,7 @@ fun ListsScreen(
             onDismiss = { viewModel.showCreateDialog = false },
             onCreate = {
                 viewModel.createList { newId ->
-                    appNavigator?.navigateToListDetail(newId)
+                    appNavigator?.navigate(ListDetailNavRoute(newId))
                 }
             },
         )

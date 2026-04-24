@@ -49,6 +49,7 @@ import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.model.MenuAction
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.GalleryMediaNavRoute
 import com.example.lifetogether.ui.viewmodel.ImageViewModel
 import com.example.lifetogether.domain.sync.SyncKey
 
@@ -188,7 +189,7 @@ fun AlbumDetailsScreen(
                                     if (uiState.isSelectionModeActive) {
                                         albumDetailsViewModel.toggleMediaSelection(media.id)
                                     } else {
-                                        appNavigator?.navigateToGalleryMedia(albumId, globalIndex)
+                                        appNavigator?.navigate(GalleryMediaNavRoute(albumId, globalIndex))
                                     }
                                 },
                                 onLongClick = {

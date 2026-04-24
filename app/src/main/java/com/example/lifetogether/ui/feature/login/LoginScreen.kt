@@ -24,6 +24,7 @@ import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.SignupNavRoute
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @Composable
@@ -91,7 +92,7 @@ fun LoginScreen(
                         modifier = Modifier
                             .padding(top = 10.dp)
                             .fillMaxWidth()
-                            .clickable { appNavigator?.navigateToSignUp() },
+                            .clickable { appNavigator?.navigate(SignupNavRoute) },
                         text = "Do you not have an account?\nSign up here",
                         textAlign = TextAlign.Center,
                     )

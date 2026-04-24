@@ -21,6 +21,8 @@ import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.FamilyNavRoute
+import com.example.lifetogether.ui.navigation.ProfileNavRoute
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @Composable
@@ -62,7 +64,7 @@ fun SettingsScreen(
                         title = userInformationState?.name ?: "Username",
                         link = "Edit my profile",
                         linkClickable = {
-                            appNavigator?.navigateToProfile()
+                            appNavigator?.navigate(ProfileNavRoute)
                         },
                     )
 
@@ -72,7 +74,7 @@ fun SettingsScreen(
                             title = "My family",
                             link = "Edit family",
                             linkClickable = {
-                                appNavigator?.navigateToFamily()
+                                appNavigator?.navigate(FamilyNavRoute)
                             },
                         )
                     } else {
