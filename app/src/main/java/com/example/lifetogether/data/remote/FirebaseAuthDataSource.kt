@@ -1,11 +1,5 @@
 package com.example.lifetogether.data.remote
 
-import com.example.lifetogether.data.logic.AppErrors
-import com.example.lifetogether.data.logic.appResultOfSuspend
-
-import com.example.lifetogether.domain.result.AppError
-
-import android.util.Log
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
@@ -19,51 +13,56 @@ import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 class FirebaseAuthDataSource@Inject constructor(
-    private val familyFirestoreDataSource: FamilyFirestoreDataSource,
+    private val firestoreDataSource: FirestoreDataSource,
 ) {
-    private companion object {
-        const val TAG = "FirebaseAuthDS"
-    }
-
     suspend fun login(
         user: User,
-    ): Result<UserInformation, AppError> {
-        Log.d(TAG, "login start")
-        return appResultOfSuspend {
+    ): Result<UserInformation, String> {
+        println("FirebaseAuthDataSource login()")
+        try {
             val loginResult = Firebase.auth.signInWithEmailAndPassword(user.email, user.password).await()
             val firebaseUser = loginResult.user
-            if (firebaseUser != null) {
-                UserInformation(uid = firebaseUser.uid)
+            return if (firebaseUser != null) {
+                Result.Success(
+                    UserInformation(uid = firebaseUser.uid),
+                )
             } else {
-                throw IllegalStateException("Authentication failed")
+                Result.Failure("Authentication failed")
             }
+        } catch (e: Exception) {
+            println("FirebaseAuthDataSource login() error: ${e.message}")
+            return Result.Failure("Error: ${e.message}")
         }
     }
 
     suspend fun signUp(
         user: User,
         userInformation: UserInformation,
-    ): Result<UserInformation, AppError> {
-        Log.d(TAG, "signUp start")
-        return appResultOfSuspend {
+    ): Result<UserInformation, String> {
+        println("FirebaseAuthDataSource signUp()")
+        try {
             val signupResult = Firebase.auth.createUserWithEmailAndPassword(user.email, user.password).await()
             val firebaseUser = signupResult.user
-            Log.d(TAG, "signUp auth response received")
+            println("signupResult: $signupResult")
+            println("firebaseUser: $firebaseUser")
             if (firebaseUser != null) {
-                userInformation.copy(uid = firebaseUser.uid)
+                val updatedUserInformation = userInformation.copy(uid = firebaseUser.uid)
+                return Result.Success(updatedUserInformation)
             } else {
-                throw IllegalStateException("Authentication failed")
+                return Result.Failure("Authentication failed")
             }
+        } catch (e: Exception) {
+            return Result.Failure("Error: ${e.message}")
         }
     }
 
-    fun authStateListener(): Flow<Result<UserInformation, AppError>> = callbackFlow {
+    fun authStateListener(): Flow<Result<UserInformation, String>> = callbackFlow {
         val authStateListener = FirebaseAuth.AuthStateListener { auth ->
             val currentUser = auth.currentUser
             if (currentUser != null) {
                 trySend(Result.Success(UserInformation(uid = currentUser.uid)))
             } else {
-                trySend(Result.Failure(AppErrors.authentication("Authentication failed")))
+                trySend(Result.Failure("Authentication failed"))
             }
         }
 
@@ -79,13 +78,16 @@ class FirebaseAuthDataSource@Inject constructor(
     suspend fun logout(
         uid: String,
         familyId: String?,
-    ): Result<Unit, AppError> {
-        return appResultOfSuspend {
+    ): Result<Unit, String> {
+        try {
             FirebaseAuth.getInstance().signOut()
-            Log.d(TAG, "logout signOut completed")
+            println("datasource logout result: ${FirebaseAuth.getInstance().currentUser}")
             if (familyId != null) {
-                familyFirestoreDataSource.removeDeviceToken(uid, familyId)
+                firestoreDataSource.removeDeviceToken(uid, familyId)
             }
+            return Result.Success(Unit)
+        } catch (e: Exception) {
+            return Result.Failure("Error: ${e.message}")
         }
     }
 }

@@ -1,7 +1,5 @@
 package com.example.lifetogether.ui.common.image // Or your desired package
 
-import com.example.lifetogether.domain.result.toUserMessage
-
 import android.content.ContentResolver
 import android.content.Context
 import android.graphics.Bitmap
@@ -186,10 +184,10 @@ class MediaUploadViewModel @Inject constructor(
                 }
                 is Result.Failure -> {
                     withContext(Dispatchers.Main) {
-                        _uploadState.value = UploadState.Failure(result.error.toUserMessage())
-                        error = result.error.toUserMessage()
+                        _uploadState.value = UploadState.Failure(result.error)
+                        error = result.error
                     }
-                    Log.e("MediaUploadVM", "Upload failed: ${result.error.toUserMessage()}")
+                    Log.e("MediaUploadVM", "Upload failed: ${result.error}")
                 }
             }
         }

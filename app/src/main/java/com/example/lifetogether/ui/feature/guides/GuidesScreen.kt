@@ -25,6 +25,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,24 +36,26 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.GuideProgress
 import com.example.lifetogether.domain.model.Icon
-import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.guides.Guide
+import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
-import com.example.lifetogether.ui.common.sync.SyncUpdatingText
-import com.example.lifetogether.domain.sync.SyncKey
-import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
+import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
+import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.domain.observer.ObserverKey
 
 @Composable
 fun GuidesScreen(
-    uiState: GuidesUiState,
-    onUiEvent: (GuidesUiEvent) -> Unit,
-    onNavigationEvent: (GuidesNavigationEvent) -> Unit,
+    appNavigator: AppNavigator? = null,
 ) {
+    val guidesViewModel: GuidesViewModel = hiltViewModel()
+    val guides by guidesViewModel.guides.collectAsState()
+
     val context = LocalContext.current
     var guideTemplate by remember { mutableStateOf("") }
     var guideProgressTemplate by remember { mutableStateOf("") }
@@ -83,11 +86,11 @@ fun GuidesScreen(
     ) { uri ->
         val content = uri?.let { readTextFromUri(context, it) }
         if (content.isNullOrBlank()) {
-            onUiEvent(GuidesUiEvent.CloseImportDialog)
-            onUiEvent(GuidesUiEvent.ImportGuidesFromJson(""))
+            guidesViewModel.error = "Could not read the selected JSON file"
+            guidesViewModel.showAlertDialog = true
             return@rememberLauncherForActivityResult
         }
-        onUiEvent(GuidesUiEvent.ImportGuidesFromJson(content))
+        guidesViewModel.importGuidesFromJson(content)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -110,29 +113,27 @@ fun GuidesScreen(
                             description = "back arrow icon",
                         ),
                         onLeftClick = {
-                            onNavigationEvent(GuidesNavigationEvent.NavigateBack)
+                            appNavigator?.navigateBack()
                         },
                         text = "Guides",
                     )
 
-                    SyncUpdatingText(
-                        keys = setOf(SyncKey.GUIDES),
+                    ObserverUpdatingText(
+                        keys = setOf(ObserverKey.GUIDES),
                     )
                 }
             }
 
-            if (uiState.guides.isEmpty()) {
+            if (guides.isEmpty()) {
                 item {
                     Text(text = "No guides yet. Tap + to create or import one.")
                 }
             } else {
-                items(uiState.guides) { guide ->
+                items(guides) { guide ->
                     GuideOverviewCard(
                         guide = guide,
                         onClick = {
-                            guide.id?.let {
-                                onNavigationEvent(GuidesNavigationEvent.NavigateToGuideDetails(it))
-                            }
+                            guide.id?.let { appNavigator?.navigateToGuideDetails(it) }
                         },
                     )
                 }
@@ -145,21 +146,21 @@ fun GuidesScreen(
                 .padding(bottom = 30.dp, end = 30.dp),
             contentAlignment = Alignment.BottomEnd,
         ) {
-            AddButton(onClick = { onUiEvent(GuidesUiEvent.OpenAddOptionsDialog) })
+            AddButton(onClick = { guidesViewModel.openAddOptionsDialog() })
         }
     }
 
-    if (uiState.showAddOptionsDialog) {
+    if (guidesViewModel.showAddOptionsDialog) {
         AlertDialog(
-            onDismissRequest = { onUiEvent(GuidesUiEvent.CloseAddOptionsDialog) },
+            onDismissRequest = { guidesViewModel.closeAddOptionsDialog() },
             title = { Text("Add guide") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Button(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
-                            onUiEvent(GuidesUiEvent.CloseAddOptionsDialog)
-                            onNavigationEvent(GuidesNavigationEvent.NavigateToGuideCreate)
+                            guidesViewModel.closeAddOptionsDialog()
+                            appNavigator?.navigateToGuideCreate()
                         },
                     ) {
                         Text("Create guide manually")
@@ -168,7 +169,7 @@ fun GuidesScreen(
                     Button(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
-                            onUiEvent(GuidesUiEvent.OpenImportDialog)
+                            guidesViewModel.openImportDialog()
                         },
                     ) {
                         Text("Upload JSON file")
@@ -177,16 +178,16 @@ fun GuidesScreen(
             },
             confirmButton = {},
             dismissButton = {
-                Button(onClick = { onUiEvent(GuidesUiEvent.CloseAddOptionsDialog) }) {
+                Button(onClick = { guidesViewModel.closeAddOptionsDialog() }) {
                     Text("Close")
                 }
             },
         )
     }
 
-    if (uiState.showImportDialog) {
+    if (guidesViewModel.showImportDialog) {
         AlertDialog(
-            onDismissRequest = { onUiEvent(GuidesUiEvent.CloseImportDialog) },
+            onDismissRequest = { guidesViewModel.closeImportDialog() },
             title = { Text("Import guides from JSON") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -242,13 +243,13 @@ fun GuidesScreen(
                         Text("Choose JSON file")
                     }
 
-                    if (uiState.isImporting) {
+                    if (guidesViewModel.isImporting) {
                         RowWithCenteredLoader()
                     }
 
-                    if (uiState.importSummary.isNotEmpty()) {
+                    if (guidesViewModel.importSummary.isNotEmpty()) {
                         Text(
-                            text = uiState.importSummary,
+                            text = guidesViewModel.importSummary,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold,
                         )
@@ -256,38 +257,23 @@ fun GuidesScreen(
                 }
             },
             confirmButton = {
-                Button(onClick = { onUiEvent(GuidesUiEvent.CloseImportDialog) }) {
+                Button(onClick = { guidesViewModel.closeImportDialog() }) {
                     Text("Done")
                 }
             },
             dismissButton = {
-                Button(onClick = { onUiEvent(GuidesUiEvent.CloseImportDialog) }) {
+                Button(onClick = { guidesViewModel.closeImportDialog() }) {
                     Text("Cancel")
                 }
             },
         )
     }
-}
 
-@Preview(showBackground = true)
-@Composable
-private fun GuidesScreenPreview() {
-    LifeTogetherTheme {
-        GuidesScreen(
-            uiState = GuidesUiState(
-                guides = listOf(
-                    Guide(
-                        itemName = "Family reset",
-                        description = "Set up a weekly reset plan.",
-                        visibility = Visibility.FAMILY,
-                        started = true,
-                        sections = emptyList(),
-                    ),
-                ),
-            ),
-            onUiEvent = {},
-            onNavigationEvent = {},
-        )
+    if (guidesViewModel.showAlertDialog) {
+        LaunchedEffect(guidesViewModel.error) {
+            guidesViewModel.dismissAlert()
+        }
+        ErrorAlertDialog(guidesViewModel.error)
     }
 }
 

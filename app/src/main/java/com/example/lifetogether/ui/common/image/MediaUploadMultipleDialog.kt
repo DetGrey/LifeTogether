@@ -22,6 +22,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,7 +34,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.rememberAsyncImagePainter
 import com.example.lifetogether.domain.logic.isImageUri
 import com.example.lifetogether.domain.logic.isVideoUri
@@ -52,9 +52,9 @@ fun MediaUploadMultipleDialog(
 ) {
     val viewModel: MediaUploadViewModel = hiltViewModel()
     val context = LocalContext.current
-    val selectedMediaUris by viewModel.selectedMediaUris.collectAsStateWithLifecycle()
-    val videoThumbnails by viewModel.videoThumbnails.collectAsStateWithLifecycle()
-    val uploadState by viewModel.uploadState.collectAsStateWithLifecycle()
+    val selectedMediaUris by viewModel.selectedMediaUris.collectAsState()
+    val videoThumbnails by viewModel.videoThumbnails.collectAsState()
+    val uploadState by viewModel.uploadState.collectAsState()
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents(),

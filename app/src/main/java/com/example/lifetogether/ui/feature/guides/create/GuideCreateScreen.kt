@@ -15,6 +15,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -22,23 +24,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
-import com.example.lifetogether.domain.model.enums.Visibility
-import com.example.lifetogether.domain.model.guides.GuideSection
 import com.example.lifetogether.domain.model.guides.GuideStepType
+import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.dropdown.Dropdown
-import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.navigation.AppNavigator
 
 @Composable
 fun GuideCreateScreen(
-    uiState: GuideCreateUiState,
-    onUiEvent: (GuideCreateUiEvent) -> Unit,
-    onNavigationEvent: (GuideCreateNavigationEvent) -> Unit,
+    appNavigator: AppNavigator? = null,
 ) {
+    val guideCreateViewModel: GuideCreateViewModel = hiltViewModel()
+    val sections by guideCreateViewModel.sections.collectAsState()
+
     var visibilityExpanded by remember { mutableStateOf(false) }
     var newSectionTitle by remember { mutableStateOf("") }
     var newSectionAmount by remember { mutableStateOf("1") }
@@ -58,7 +61,7 @@ fun GuideCreateScreen(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
                 ),
-                onLeftClick = { onNavigationEvent(GuideCreateNavigationEvent.NavigateBack) },
+                onLeftClick = { appNavigator?.navigateBack() },
                 text = "Create guide",
             )
         }
@@ -66,8 +69,8 @@ fun GuideCreateScreen(
         item {
             TextField(
                 modifier = Modifier.fillMaxWidth(),
-                value = uiState.title,
-                onValueChange = { onUiEvent(GuideCreateUiEvent.TitleChanged(it)) },
+                value = guideCreateViewModel.title,
+                onValueChange = { guideCreateViewModel.title = it },
                 label = { Text("Title") },
             )
         }
@@ -75,15 +78,15 @@ fun GuideCreateScreen(
         item {
             TextField(
                 modifier = Modifier.fillMaxWidth(),
-                value = uiState.description,
-                onValueChange = { onUiEvent(GuideCreateUiEvent.DescriptionChanged(it)) },
+                value = guideCreateViewModel.description,
+                onValueChange = { guideCreateViewModel.description = it },
                 label = { Text("Description") },
             )
         }
 
         item {
             Dropdown(
-                selectedValue = if (uiState.visibility == Visibility.FAMILY) {
+                selectedValue = if (guideCreateViewModel.visibility == Visibility.FAMILY) {
                     "Family shared"
                 } else {
                     "Private"
@@ -93,11 +96,11 @@ fun GuideCreateScreen(
                 options = listOf("Private", "Family shared"),
                 label = "Visibility",
                 onValueChangedEvent = {
-                    onUiEvent(
-                        GuideCreateUiEvent.VisibilityChanged(
-                            if (it == "Family shared") Visibility.FAMILY else Visibility.PRIVATE,
-                        ),
-                    )
+                    guideCreateViewModel.visibility = if (it == "Family shared") {
+                        Visibility.FAMILY
+                    } else {
+                        Visibility.PRIVATE
+                    }
                 },
             )
         }
@@ -132,7 +135,7 @@ fun GuideCreateScreen(
                     Button(
                         onClick = {
                             val amount = newSectionAmount.toIntOrNull() ?: 1
-                            onUiEvent(GuideCreateUiEvent.AddSectionRequested(newSectionTitle, amount))
+                            guideCreateViewModel.addSection(newSectionTitle, amount)
                             newSectionTitle = ""
                             newSectionAmount = "1"
                         },
@@ -143,7 +146,7 @@ fun GuideCreateScreen(
             }
         }
 
-        uiState.sections.forEach { section ->
+        sections.forEach { section ->
             item(key = section.id) {
                 Box(
                     modifier = Modifier
@@ -195,7 +198,12 @@ fun GuideCreateScreen(
                             selectedValue = toStepTypeLabel(stepTypeDrafts[section.id] ?: GuideStepType.NUMBERED),
                             expanded = stepTypeExpanded,
                             onExpandedChange = { stepTypeExpanded = it },
-                            options = listOf("Numbered", "Round", "Comment", "Subsection"),
+                            options = listOf(
+                                "Numbered",
+                                "Round",
+                                "Comment",
+                                "Subsection",
+                            ),
                             label = "Step type",
                             onValueChangedEvent = { selectedLabel ->
                                 stepTypeDrafts[section.id] = fromStepTypeLabel(selectedLabel)
@@ -205,12 +213,10 @@ fun GuideCreateScreen(
                         Button(
                             onClick = {
                                 val draftText = stepDrafts[section.id].orEmpty()
-                                onUiEvent(
-                                    GuideCreateUiEvent.AddStepRequested(
-                                        sectionId = section.id,
-                                        content = draftText,
-                                        type = stepTypeDrafts[section.id] ?: GuideStepType.NUMBERED,
-                                    ),
+                                guideCreateViewModel.addStep(
+                                    section.id,
+                                    draftText,
+                                    stepTypeDrafts[section.id] ?: GuideStepType.NUMBERED,
                                 )
                                 stepDrafts[section.id] = ""
                             },
@@ -225,35 +231,22 @@ fun GuideCreateScreen(
         item {
             Button(
                 modifier = Modifier.fillMaxWidth(),
-                onClick = { onUiEvent(GuideCreateUiEvent.SaveClicked) },
+                onClick = {
+                    guideCreateViewModel.saveGuide { createdGuideId ->
+                        appNavigator?.navigateToGuideDetails(createdGuideId)
+                    }
+                },
             ) {
                 Text("Save guide")
             }
         }
     }
-}
 
-@Preview(showBackground = true)
-@Composable
-private fun GuideCreateScreenPreview() {
-    LifeTogetherTheme {
-        GuideCreateScreen(
-            uiState = GuideCreateUiState(
-                title = "Family reset",
-                description = "A simple weekly reset guide",
-                sections = listOf(
-                    GuideSection(
-                        id = "section-1",
-                        orderNumber = 1,
-                        title = "Intro",
-                        amount = 1,
-                        steps = emptyList(),
-                    ),
-                ),
-            ),
-            onUiEvent = {},
-            onNavigationEvent = {},
-        )
+    if (guideCreateViewModel.showAlertDialog) {
+        LaunchedEffect(guideCreateViewModel.error) {
+            guideCreateViewModel.dismissAlert()
+        }
+        ErrorAlertDialog(guideCreateViewModel.error)
     }
 }
 

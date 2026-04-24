@@ -1,7 +1,7 @@
 package com.example.lifetogether.ui.feature.lists.entryDetails
 
-import android.graphics.Bitmap
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -23,44 +23,72 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.ui.common.TopBar
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
+import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.image.ImageUploadDialog
 import com.example.lifetogether.ui.common.tagOptionRow.TagOption
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.common.textfield.CustomTextField
+import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.viewmodel.ImageViewModel
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ListEntryDetailsScreen(
-    screenState: EntryDetailsScreenState,
+    listId: String,
     entryId: String? = null,
-    familyId: String? = null,
-    bitmap: Bitmap? = null,
-    showImageUploadDialog: Boolean = false,
-    onUiEvent: (ListEntryDetailsUiEvent) -> Unit,
-    onNavigationEvent: (ListEntryDetailsNavigationEvent) -> Unit,
+    appNavigator: AppNavigator? = null,
 ) {
+    val vm: ListEntryDetailsViewModel = hiltViewModel()
+    val imageViewModel: ImageViewModel = hiltViewModel()
+    val screenState by vm.screenState.collectAsState()
+    val familyId by vm.familyId.collectAsState()
     val uiState = screenState.uiState
     val formState = screenState.formState
+    val bitmap by imageViewModel.bitmap.collectAsState()
+    val context = LocalContext.current
+
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
     ) { uri: Uri? ->
-        uri?.let { onUiEvent(ListEntryDetailsUiEvent.ImageSelected(it)) }
+        uri?.let { vm.onImageSelected(it, context.contentResolver) }
+    }
+
+    LaunchedEffect(listId, entryId) {
+        Log.d("ListEntryDetailsScreen", "listId: $listId, entryId: $entryId")
+        if (listId.isNotBlank()) {
+            vm.setUp(listId, entryId) { appNavigator?.navigateBack() }
+        }
+    }
+
+    LaunchedEffect(familyId, entryId) {
+        if (!familyId.isNullOrBlank() && entryId != null) {
+            imageViewModel.collectImageFlow(
+                imageType = ImageType.RoutineListEntryImage(familyId!!, entryId),
+                onError = { /* image load errors are non-fatal */ },
+            )
+        }
     }
 
     val isExistingEntry = entryId != null
@@ -70,14 +98,15 @@ fun ListEntryDetailsScreen(
         topBar = {
             TopBar(
                 leftIcon = Icon(resId = R.drawable.ic_back_arrow, description = "back arrow"),
-                onLeftClick = { onNavigationEvent(ListEntryDetailsNavigationEvent.NavigateBack) },
+                onLeftClick = { appNavigator?.navigateBack() },
                 text = title,
+                // TODO: replace ic_edit_black with a dedicated close/cancel icon when in edit mode once the icon is created
                 rightIcon = if (isExistingEntry) Icon(resId = R.drawable.ic_edit_black, description = "edit entry") else null,
                 onRightClick = if (isExistingEntry) {
                     if ((uiState as? EntryDetailsUiState.Content)?.isEditing == true) {
-                        { onUiEvent(ListEntryDetailsUiEvent.RequestCancelEdit) }
+                        { vm.requestCancelEdit() }
                     } else {
-                        { onUiEvent(ListEntryDetailsUiEvent.EnterEditMode) }
+                        { vm.enterEditMode() }
                     }
                 } else null,
             )
@@ -94,13 +123,12 @@ fun ListEntryDetailsScreen(
                     CircularProgressIndicator()
                 }
             }
-
             is EntryDetailsUiState.Content -> {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(top = padding.calculateTopPadding())
-                        .padding(10.dp),
+                        .padding(10.dp)
                 ) {
                     LazyColumn(
                         modifier = Modifier.weight(1f),
@@ -113,13 +141,19 @@ fun ListEntryDetailsScreen(
                                     .fillMaxWidth()
                                     .height(180.dp)
                                     .background(MaterialTheme.colorScheme.surfaceVariant)
-                                    .clickable(enabled = uiState.isEditing) {
-                                        if (isExistingEntry) {
-                                            onUiEvent(ListEntryDetailsUiEvent.RequestImageUpload)
+                                    .then(
+                                        if (uiState.isEditing) {
+                                            if (isExistingEntry) {
+                                                Modifier.clickable {
+                                                    imageViewModel.showImageUploadDialog = true
+                                                }
+                                            } else {
+                                                Modifier.clickable { imagePickerLauncher.launch("image/*") }
+                                            }
                                         } else {
-                                            imagePickerLauncher.launch("image/*")
+                                            Modifier
                                         }
-                                    },
+                                    ),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 if (displayBitmap != null) {
@@ -129,13 +163,7 @@ fun ListEntryDetailsScreen(
                                         contentDescription = "entry image",
                                         contentScale = ContentScale.Crop,
                                     )
-                                } else {
-                                    Text(
-                                        text = if (uiState.isEditing) "Tap to add image" else "No image",
-                                        style = MaterialTheme.typography.bodySmall,
-                                    )
                                 }
-
                                 if (uiState.isEditing) {
                                     Box(
                                         modifier = Modifier
@@ -159,7 +187,7 @@ fun ListEntryDetailsScreen(
                         item {
                             CustomTextField(
                                 value = formState.name,
-                                onValueChange = { onUiEvent(ListEntryDetailsUiEvent.NameChanged(it)) },
+                                onValueChange = { vm.onNameChange(it) },
                                 label = "Name",
                                 modifier = Modifier.fillMaxWidth(),
                                 imeAction = ImeAction.Next,
@@ -175,11 +203,7 @@ fun ListEntryDetailsScreen(
                                 TagOptionRow(
                                     options = RecurrenceUnit.entries.map { it.name.lowercase() },
                                     selectedOption = formState.recurrenceUnit.name,
-                                    onSelectedOptionChange = {
-                                        if (uiState.isEditing) {
-                                            onUiEvent(ListEntryDetailsUiEvent.RecurrenceUnitChanged(it))
-                                        }
-                                    },
+                                    onSelectedOptionChange = { if (uiState.isEditing) vm.onRecurrenceUnitChange(it) },
                                     showDividers = false,
                                 )
                             }
@@ -188,7 +212,7 @@ fun ListEntryDetailsScreen(
                         item {
                             CustomTextField(
                                 value = formState.interval,
-                                onValueChange = { onUiEvent(ListEntryDetailsUiEvent.IntervalChanged(it)) },
+                                onValueChange = { vm.onIntervalChange(it) },
                                 label = "Interval (N)",
                                 modifier = Modifier.fillMaxWidth(),
                                 imeAction = ImeAction.Next,
@@ -203,18 +227,14 @@ fun ListEntryDetailsScreen(
 
                                 FlowRow(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     ListEntryDetailsViewModel.WEEKDAYS.forEachIndexed { index, day ->
                                         val dayNum = index + 1
                                         TagOption(
                                             tag = day,
                                             selectedTag = if (dayNum in formState.selectedWeekdays) day else "",
-                                            onClick = {
-                                                if (uiState.isEditing) {
-                                                    onUiEvent(ListEntryDetailsUiEvent.SelectedWeekdaysChanged(dayNum))
-                                                }
-                                            },
+                                            onClick = { if (uiState.isEditing) vm.onSelectedWeekdaysChange(dayNum) },
                                         )
                                     }
                                 }
@@ -227,11 +247,11 @@ fun ListEntryDetailsScreen(
                             modifier = Modifier
                                 .height(50.dp)
                                 .padding(bottom = padding.calculateBottomPadding())
-                                .align(Alignment.End),
+                                .align(Alignment.End)
                         ) {
                             Button(
                                 modifier = Modifier.fillMaxWidth(),
-                                onClick = { onUiEvent(ListEntryDetailsUiEvent.SaveClicked) },
+                                onClick = { vm.save { appNavigator?.navigateBack() } },
                             ) {
                                 if (uiState.isSaving) {
                                     CircularProgressIndicator()
@@ -248,8 +268,8 @@ fun ListEntryDetailsScreen(
 
     if (uiState is EntryDetailsUiState.Content && uiState.showDiscardDialog) {
         ConfirmationDialog(
-            onDismiss = { onUiEvent(ListEntryDetailsUiEvent.DismissDiscardDialog) },
-            onConfirm = { onUiEvent(ListEntryDetailsUiEvent.ConfirmDiscard) },
+            onDismiss = { vm.dismissDiscardDialog() },
+            onConfirm = { vm.confirmDiscard() },
             dialogTitle = "Discard changes?",
             dialogMessage = "Your unsaved changes will be lost.",
             dismissButtonMessage = "Keep editing",
@@ -257,16 +277,25 @@ fun ListEntryDetailsScreen(
         )
     }
 
-    if (showImageUploadDialog && entryId != null && familyId != null) {
-        ImageUploadDialog(
-            onDismiss = { onUiEvent(ListEntryDetailsUiEvent.DismissImageUpload) },
-            onConfirm = { onUiEvent(ListEntryDetailsUiEvent.ConfirmImageUpload) },
-            dialogTitle = "Upload entry image",
-            dialogMessage = "Select an image for this entry",
-            imageType = ImageType.RoutineListEntryImage(familyId, entryId),
-            dismissButtonMessage = "Cancel",
-            confirmButtonMessage = "Upload image",
-        )
+    if (uiState is EntryDetailsUiState.Content && uiState.showAlertDialog) {
+        LaunchedEffect(uiState.error) {
+            vm.dismissAlert()
+        }
+        ErrorAlertDialog(uiState.error)
+    }
+
+    if (imageViewModel.showImageUploadDialog && entryId != null) {
+        familyId?.let { familyId ->
+            ImageUploadDialog(
+                onDismiss = { imageViewModel.showImageUploadDialog = false },
+                onConfirm = { imageViewModel.showImageUploadDialog = false },
+                dialogTitle = "Upload entry image",
+                dialogMessage = "Select an image for this entry",
+                imageType = ImageType.RoutineListEntryImage(familyId, entryId),
+                dismissButtonMessage = "Cancel",
+                confirmButtonMessage = "Upload image",
+            )
+        }
     }
 }
 
@@ -274,19 +303,109 @@ fun ListEntryDetailsScreen(
 @Composable
 fun ListEntryDetailsScreenPreview() {
     LifeTogetherTheme {
-        ListEntryDetailsScreen(
-            screenState = EntryDetailsScreenState(
-                uiState = EntryDetailsUiState.Content(isEditing = true),
-                formState = EntryFormState(
-                    name = "Water the plants",
-                    recurrenceUnit = RecurrenceUnit.WEEKS,
-                    interval = "2",
-                    selectedWeekdays = setOf(1, 4),
-                ),
-            ),
-            entryId = null,
-            onUiEvent = {},
-            onNavigationEvent = {},
-        )
+        Scaffold(
+            topBar = {
+                TopBar(
+                    leftIcon = Icon(resId = R.drawable.ic_back_arrow, description = "back arrow"),
+                    onLeftClick = { },
+                    text = "title",
+                )
+            }
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = padding.calculateTopPadding())
+                    .padding(10.dp)
+            ) {
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(180.dp)
+                                .background(Color.LightGray),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text("No image", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+
+                    item {
+                        CustomTextField(
+                            value = "Name",
+                            onValueChange = { },
+                            label = "Name",
+                            modifier = Modifier.fillMaxWidth(),
+                            imeAction = ImeAction.Next,
+                            keyboardType = KeyboardType.Text,
+                            capitalization = true,
+                        )
+                    }
+
+                    item {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            TextSubHeadingMedium("Recurrence")
+                            TagOptionRow(
+                                options = RecurrenceUnit.entries.map { it.name.lowercase() },
+                                selectedOption = RecurrenceUnit.WEEKS.name.lowercase(),
+                                onSelectedOptionChange = {},
+                                showDividers = false,
+                            )
+                        }
+                    }
+
+                    item {
+                        CustomTextField(
+                            value = "",
+                            onValueChange = { },
+                            label = "Interval (N)",
+                            modifier = Modifier.fillMaxWidth(),
+                            imeAction = ImeAction.Next,
+                            keyboardType = KeyboardType.Number,
+                        )
+                    }
+
+                    if (true) {
+                        val weekdays = setOf(1, 4)
+                        item {
+                            TextSubHeadingMedium("Weekdays")
+
+                            val dayNames = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                dayNames.forEachIndexed { index, day ->
+                                    val dayNum = index + 1
+                                    TagOption(
+                                        tag = day,
+                                        selectedTag = if (dayNum in weekdays) day else "",
+                                        onClick = {}
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .padding(bottom = padding.calculateBottomPadding())
+                        .align(Alignment.End)
+                ) {
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {},
+                    ) {
+                        Text(if (false) "Save changes" else "Create")
+                    }
+                }
+            }
+        }
     }
 }

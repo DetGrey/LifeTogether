@@ -24,6 +24,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,18 +34,20 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
-import com.example.lifetogether.domain.sync.SyncKey
+import com.example.lifetogether.domain.observer.ObserverKey
 import com.example.lifetogether.ui.common.ActionSheet
 import com.example.lifetogether.ui.common.ActionSheetItem
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
+import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.list.CompletableBox
-import com.example.lifetogether.ui.common.sync.SyncUpdatingText
+import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.navigation.AppNavigator
@@ -54,14 +59,21 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListDetailsScreen(
-    screenState: ListDetailsScreenState,
-    onUiEvent: (ListDetailsUiEvent) -> Unit,
-    onNavigationEvent: (ListDetailsNavigationEvent) -> Unit,
+    listId: String,
+    appNavigator: AppNavigator? = null,
 ) {
+    val vm: ListDetailsViewModel = hiltViewModel()
+    val screenState by vm.screenState.collectAsState()
     val uiState = screenState.uiState
     val entries = screenState.entries
     val imageBitmaps = screenState.imageBitmaps
     val contentState = uiState as? ListDetailsUiState.Content
+
+    LaunchedEffect(listId) {
+        if (listId.isNotBlank()) {
+            vm.setUp(listId)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -70,20 +82,18 @@ fun ListDetailsScreen(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
                 ),
-                onLeftClick = { onNavigationEvent(ListDetailsNavigationEvent.NavigateBack) },
+                onLeftClick = { appNavigator?.navigateBack() },
                 text = contentState?.listName?.ifBlank { "List" } ?: "List",
                 rightIcon = Icon(
                     resId = R.drawable.ic_overflow_menu,
                     description = "overflow menu",
                 ),
-                onRightClick = { onUiEvent(ListDetailsUiEvent.ToggleActionSheet) },
+                onRightClick = { vm.toggleActionSheet(true) },
             )
         },
         floatingActionButton = {
             if (contentState?.isSelectionModeActive != true) {
-                AddButton(onClick = {
-                    onNavigationEvent(ListDetailsNavigationEvent.NavigateToCreateEntry)
-                })
+                AddButton(onClick = { appNavigator?.navigateToListEntryDetails(listId) })
             }
         },
     ) { padding ->
@@ -107,16 +117,16 @@ fun ListDetailsScreen(
                         .padding(horizontal = 10.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    SyncUpdatingText(
-                        keys = setOf(SyncKey.ROUTINE_LIST_ENTRIES),
+                    ObserverUpdatingText(
+                        keys = setOf(ObserverKey.ROUTINE_LIST_ENTRIES),
                     )
 
                     if (uiState.isSelectionModeActive) {
                         SelectionModeBar(
                             selectedCount = uiState.selectedEntryIds.size,
                             isAllSelected = uiState.isAllEntriesSelected,
-                            onToggleAll = { onUiEvent(ListDetailsUiEvent.ToggleAllEntrySelection) },
-                            onCancel = { onUiEvent(ListDetailsUiEvent.ExitSelectionMode) },
+                            onToggleAll = { vm.toggleAllEntrySelection() },
+                            onCancel = { vm.exitSelectionMode() },
                         )
                     } else {
                         Spacer(modifier = Modifier.height(20.dp))
@@ -144,19 +154,17 @@ fun ListDetailsScreen(
                                     isSelected = uiState.selectedEntryIds.contains(entry.id),
                                     onClick = {
                                         if (uiState.isSelectionModeActive) {
-                                            entry.id?.let { onUiEvent(ListDetailsUiEvent.ToggleEntrySelection(it)) }
+                                            entry.id?.let(vm::toggleEntrySelection)
                                         } else {
-                                            entry.id?.let {
-                                                onNavigationEvent(ListDetailsNavigationEvent.NavigateToEntryDetails(it))
-                                            }
+                                            entry.id?.let { appNavigator?.navigateToListEntryDetails(listId, it) }
                                         }
                                     },
                                     onLongClick = {
                                         if (!uiState.isSelectionModeActive) {
-                                            entry.id?.let { onUiEvent(ListDetailsUiEvent.EnterSelectionMode(it)) }
+                                            entry.id?.let(vm::enterSelectionMode)
                                         }
                                     },
-                                    onComplete = { onUiEvent(ListDetailsUiEvent.CompleteEntry(entry)) },
+                                    onComplete = { vm.completeEntry(entry) },
                                 )
                             }
                         }
@@ -172,7 +180,7 @@ fun ListDetailsScreen(
                 listOf(
                     ActionSheetItem(
                         label = "Delete selected",
-                        onClick = { onUiEvent(ListDetailsUiEvent.RequestDeleteSelected) },
+                        onClick = { vm.requestDeleteSelected() },
                         isDestructive = true,
                         isEnabled = contentState.selectedEntryIds.isNotEmpty(),
                     ),
@@ -183,7 +191,7 @@ fun ListDetailsScreen(
                 listOf(
                     ActionSheetItem(
                         label = "Select entries",
-                        onClick = { onUiEvent(ListDetailsUiEvent.StartSelectionMode) },
+                        onClick = { vm.startSelectionMode() },
                         isEnabled = entries.any { it.id != null },
                     ),
                 )
@@ -191,20 +199,27 @@ fun ListDetailsScreen(
         }
 
         ActionSheet(
-            onDismiss = { onUiEvent(ListDetailsUiEvent.ToggleActionSheet) },
+            onDismiss = { vm.toggleActionSheet(false) },
             actionsList = actions,
         )
     }
 
     if (contentState?.showDeleteSelectedDialog == true) {
         ConfirmationDialog(
-            onDismiss = { onUiEvent(ListDetailsUiEvent.DismissDeleteSelectedDialog) },
-            onConfirm = { onUiEvent(ListDetailsUiEvent.ConfirmDeleteSelected) },
+            onDismiss = { vm.dismissDeleteSelectedDialog() },
+            onConfirm = { vm.confirmDeleteSelected() },
             dialogTitle = "Delete selected entries",
             dialogMessage = "Are you sure you want to delete the selected entries?",
             dismissButtonMessage = "Cancel",
             confirmButtonMessage = "Delete selected",
         )
+    }
+
+    if (contentState?.showAlertDialog == true) {
+        LaunchedEffect(contentState.error) {
+            vm.dismissAlert()
+        }
+        ErrorAlertDialog(contentState.error)
     }
 }
 

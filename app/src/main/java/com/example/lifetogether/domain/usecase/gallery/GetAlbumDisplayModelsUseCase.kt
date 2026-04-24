@@ -2,7 +2,6 @@ package com.example.lifetogether.domain.usecase.gallery
 
 import android.util.Log
 import com.example.lifetogether.domain.repository.GalleryRepository
-import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.ui.model.AlbumUiModel
 import kotlinx.coroutines.FlowPreview
@@ -15,7 +14,7 @@ class GetAlbumDisplayModelsUseCase @Inject constructor(
     private val galleryRepository: GalleryRepository,
 ) {
     @OptIn(FlowPreview::class)
-    operator fun invoke(familyId: String): Flow<Result<List<AlbumUiModel>, AppError>> {
+    operator fun invoke(familyId: String): Flow<Result<List<AlbumUiModel>, String>> {
         Log.d("GetAlbumDisplayModelsUseCase", "invoke")
 
         return combine(

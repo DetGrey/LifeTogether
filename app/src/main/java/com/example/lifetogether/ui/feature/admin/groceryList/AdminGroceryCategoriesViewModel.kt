@@ -1,0 +1,107 @@
+package com.example.lifetogether.ui.feature.admin.groceryList
+
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.lifetogether.domain.model.Category
+import com.example.lifetogether.domain.repository.AdminRepository
+import com.example.lifetogether.domain.repository.CategoryRepository
+import com.example.lifetogether.domain.result.Result
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class AdminGroceryCategoriesViewModel @Inject constructor(
+    private val categoryRepository: CategoryRepository,
+    private val adminRepository: AdminRepository,
+) : ViewModel() {
+    var showDeleteCategoryConfirmationDialog: Boolean by mutableStateOf(false)
+    var selectedCategory: Category? by mutableStateOf(null)
+
+    var showAlertDialog: Boolean by mutableStateOf(false)
+    var error: String by mutableStateOf("")
+    fun toggleAlertDialog() {
+        viewModelScope.launch {
+            delay(3000)
+            showAlertDialog = false
+            error = ""
+        }
+    }
+
+    // ---------------------------------------------------------------- SETUP/FETCH LIST
+    fun setUpCategories() {
+        fetchCategories()
+    }
+
+    // ---------------------------------------------------------------- CATEGORIES
+    private val _groceryCategories = MutableStateFlow<List<Category>>(emptyList())
+    val groceryCategories: StateFlow<List<Category>> = _groceryCategories.asStateFlow()
+
+    private fun fetchCategories() {
+        viewModelScope.launch {
+            categoryRepository.getCategories().collect { result ->
+                when (result) {
+                    is Result.Success -> {
+                        _groceryCategories.value = result.data
+                            .filterNot { it.name == "Uncategorized" }
+                            .sortedBy { it.name }
+                            .let { listOf(Category("❓️", "Uncategorized")) + it }
+                    }
+
+                    is Result.Failure -> {
+                        _groceryCategories.value = emptyList()
+                        error = result.error
+                        showAlertDialog = true
+                    }
+                }
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------- NEW ITEM
+    var newCategory: String by mutableStateOf("")
+
+    // ---------------------------------------------------------------- ADD CATEGORY
+    fun addCategory() {
+        if (newCategory.isEmpty() && !newCategory.contains(" ")) {
+            return
+        }
+
+        val categoryAsList = newCategory.split(" ", limit = 2)
+        val category = Category(emoji = categoryAsList[0], name = categoryAsList[1].trim())
+
+        viewModelScope.launch {
+            val result = adminRepository.addCategory(category)
+            if (result is Result.Success) {
+                newCategory = ""
+            } else if (result is Result.Failure) {
+                println("Error: ${result.error}")
+                error = result.error
+                showAlertDialog = true
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------- DELETE CATEGORY
+    fun deleteCategory() {
+        val category = selectedCategory ?: return
+        viewModelScope.launch {
+            val result = adminRepository.deleteCategory(category)
+
+            if (result is Result.Failure) {
+                println("Error: ${result.error}")
+                error = result.error
+                showAlertDialog = true
+            }
+
+            showDeleteCategoryConfirmationDialog = false
+        }
+    }
+}

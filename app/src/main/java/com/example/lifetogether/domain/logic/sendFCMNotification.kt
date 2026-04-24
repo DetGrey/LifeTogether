@@ -1,7 +1,6 @@
 package com.example.lifetogether.domain.logic
 
 import android.content.Context
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.lifetogether.R
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
@@ -18,8 +17,6 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 
-private const val TAG = "SendFcmNotification"
-
 suspend fun sendFCMNotification(
     context: Context,
     tokens: List<String>,
@@ -32,11 +29,11 @@ suspend fun sendFCMNotification(
     autoCancel: Boolean = true,
     destination: String? = null,
 ) = withContext(Dispatchers.IO) {
-    Log.d(TAG, "Preparing to send notifications. tokenCount=${tokens.size}")
+    println("sendFCMNotification trying to get credentials")
     val credentials = getServiceAccountAccessToken(context)
 
     if (credentials == null) {
-        Log.e(TAG, "Failed to get service account credentials")
+        println("Failed to get service account credentials")
         return@withContext
     }
 
@@ -60,7 +57,7 @@ suspend fun sendFCMNotification(
     var i = 0
     for (token in tokens) {
         i += 1
-        Log.d(TAG, "Sending notification to token $i of ${tokens.size}")
+        println("Sending notification to token $i of ${tokens.size}: $token")
 
         val requestBody = buildJsonObject {
             putJsonObject("message") {
@@ -92,9 +89,9 @@ suspend fun sendFCMNotification(
 
         // Check response
         if (response.statusCode == 200) {
-            Log.d(TAG, "Notification sent successfully for token $i")
+            println("Notification sent successfully!")
         } else {
-            Log.e(TAG, "Failed to send notification for token $i: status=${response.statusCode}")
+            println("Failed to send notification: ${response.statusCode}")
         }
     }
 }

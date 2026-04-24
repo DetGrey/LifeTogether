@@ -1,9 +1,5 @@
 package com.example.lifetogether.data.local.source
 
-import com.example.lifetogether.data.logic.AppErrors
-
-import com.example.lifetogether.domain.result.AppError
-
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
@@ -14,7 +10,6 @@ import com.example.lifetogether.data.local.dao.GalleryMediaDao
 import com.example.lifetogether.data.logic.generateImageThumbnailFromFile
 import com.example.lifetogether.data.logic.generateVideoThumbnailFromFile
 import com.example.lifetogether.data.model.GalleryMediaEntity
-import com.example.lifetogether.di.IoDispatcher
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.enums.MediaType
 import com.example.lifetogether.domain.model.gallery.GalleryImage
@@ -22,7 +17,7 @@ import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
-import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -30,9 +25,8 @@ import javax.inject.Singleton
 
 @Singleton
 class MediaLocalDataSource @Inject constructor(
-    @param:ApplicationContext private val context: Context,
+    @ApplicationContext private val context: Context,
     private val galleryMediaDao: GalleryMediaDao,
-    @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
     companion object {
         private const val TAG = "MediaLocalDataSource"
@@ -203,7 +197,7 @@ class MediaLocalDataSource @Inject constructor(
     fun copyMediaToGalleryFolder(
         mediaFile: File,
         mediaItem: GalleryMedia,
-    ): Result<Unit, AppError> {
+    ): Result<Unit, String> {
         val resolver = context.contentResolver
         var mediaStoreUri: Uri? = null
 
@@ -237,26 +231,27 @@ class MediaLocalDataSource @Inject constructor(
             }
 
             mediaStoreUri = resolver.insert(collectionUri, contentValues)
-                ?: return Result.Failure(AppErrors.storage("Failed to create MediaStore entry"))
+                ?: return Result.Failure("Failed to create MediaStore entry")
 
             resolver.openOutputStream(mediaStoreUri)?.use { outputStream ->
                 mediaFile.inputStream().use { inputStream ->
                     inputStream.copyTo(outputStream)
                 }
-            } ?: return Result.Failure(AppErrors.storage("Failed to open output stream"))
+            } ?: return Result.Failure("Failed to open output stream")
 
             contentValues.clear()
             contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
             resolver.update(mediaStoreUri, contentValues, null, null)
             Result.Success(Unit)
         } catch (e: Exception) {
+            Log.e(TAG, "Error saving media: ${e.message}", e)
             mediaStoreUri?.let { uri ->
                 try {
                     resolver.delete(uri, null, null)
                 } catch (_: Exception) {
                 }
             }
-            Result.Failure(AppErrors.fromThrowable(e))
+            Result.Failure("Failed to save file: ${e.message}")
         }
     }
 
@@ -264,7 +259,7 @@ class MediaLocalDataSource @Inject constructor(
         val entity = galleryMediaDao.getItemByIdDirect(mediaId) ?: return null
         val mediaUri = entity.mediaUri?.toUri() ?: return null
 
-        val tempFile = withContext(ioDispatcher) {
+        val tempFile = withContext(Dispatchers.IO) {
             File.createTempFile("thumb_regen_", "tmp", context.cacheDir)
         }
         return try {

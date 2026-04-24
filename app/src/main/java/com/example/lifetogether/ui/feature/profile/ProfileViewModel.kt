@@ -1,21 +1,20 @@
 package com.example.lifetogether.ui.feature.profile
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.lifetogether.domain.result.Result
+import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.repository.UserRepository
-import com.example.lifetogether.domain.result.Result
-import com.example.lifetogether.domain.result.toUserMessage
-import com.example.lifetogether.ui.common.event.UiCommand
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -24,139 +23,79 @@ class ProfileViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
     private val userRepository: UserRepository,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(ProfileUiState())
-    val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
-
-    private val _commands = Channel<ProfileCommand>(Channel.BUFFERED)
-    val commands: Flow<ProfileCommand> = _commands.receiveAsFlow()
-
-    private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
-    val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
+    private val _userInformation = MutableStateFlow<UserInformation?>(null)
+    val userInformation: StateFlow<UserInformation?> = _userInformation.asStateFlow()
 
     init {
         viewModelScope.launch {
             sessionRepository.sessionState.collect { state ->
-                updateUiState {
-                    it.copy(
-                        userInformation = (state as? SessionState.Authenticated)?.user,
-                    )
-                }
+                _userInformation.value = (state as? SessionState.Authenticated)?.user
             }
         }
     }
 
-    fun onEvent(event: ProfileUiEvent) {
-        when (event) {
-            ProfileUiEvent.AddImageClicked,
-            ProfileUiEvent.ImageUploadDismissed,
-            ProfileUiEvent.ImageUploadConfirmed -> Unit
-
-            ProfileUiEvent.NameClicked -> showNameDialog()
-            ProfileUiEvent.PasswordClicked -> showPasswordDialog()
-            ProfileUiEvent.LogoutClicked -> showLogoutDialog()
-            ProfileUiEvent.DismissConfirmationDialog -> closeConfirmationDialog()
-            ProfileUiEvent.ConfirmConfirmationDialog -> confirmConfirmationDialog()
-            is ProfileUiEvent.NewNameChanged -> updateUiState {
-                it.copy(newName = event.value)
-            }
-        }
-    }
-
-    private fun showNameDialog() {
-        updateUiState {
-            it.copy(
-                showConfirmationDialog = true,
-                confirmationDialogType = ProfileConfirmationType.NAME,
-                newName = it.userInformation?.name.orEmpty(),
-            )
-        }
-    }
-
-    private fun showPasswordDialog() {
-        updateUiState {
-            it.copy(
-                showConfirmationDialog = true,
-                confirmationDialogType = ProfileConfirmationType.PASSWORD,
-                newName = "",
-            )
-        }
-    }
-
-    private fun showLogoutDialog() {
-        updateUiState {
-            it.copy(
-                showConfirmationDialog = true,
-                confirmationDialogType = ProfileConfirmationType.LOGOUT,
-                newName = "",
-            )
-        }
-    }
-
-    private fun closeConfirmationDialog() {
-        updateUiState {
-            it.copy(
-                showConfirmationDialog = false,
-                confirmationDialogType = null,
-                newName = "",
-            )
-        }
-    }
-
-    private fun confirmConfirmationDialog() {
-        when (_uiState.value.confirmationDialogType) {
-            ProfileConfirmationType.LOGOUT -> logout()
-            ProfileConfirmationType.NAME -> changeName()
-            ProfileConfirmationType.PASSWORD -> closeConfirmationDialog()
-            null -> Unit
-        }
-    }
-
-    private fun logout() {
+    // ---------------------------------------------------------------- ERROR
+    var showAlertDialog: Boolean by mutableStateOf(false)
+    var error: String by mutableStateOf("")
+    fun toggleAlertDialog() {
         viewModelScope.launch {
-            when (val result = sessionRepository.signOut()) {
-                is Result.Success -> {
-                    closeConfirmationDialog()
-                    _commands.send(ProfileCommand.NavigateToHome)
-                }
+            delay(3000)
+            showAlertDialog = false
+            error = ""
+        }
+    }
 
-                is Result.Failure -> {
-                    closeConfirmationDialog()
-                    showError(result.error.toUserMessage())
-                }
+    // ---------------------------------------------------------------- CONFIRMATION TYPES
+    enum class ProfileConfirmationType {
+        LOGOUT, NAME, PASSWORD
+    }
+
+    var confirmationDialogType: ProfileConfirmationType? by mutableStateOf(null)
+
+    var showConfirmationDialog: Boolean by mutableStateOf(false)
+
+    fun closeConfirmationDialog() {
+        showConfirmationDialog = false
+        newName = ""
+    }
+
+    // ---------------------------------------------------------------- LOGOUT
+    fun logout(
+        onSuccess: () -> Unit,
+    ) {
+        viewModelScope.launch {
+            val result = sessionRepository.signOut()
+            if (result is Result.Success) {
+                println("ProfileViewModel: Logout successful")
+                onSuccess()
+            } else if (result is Result.Failure) {
+                error = result.error
+                showAlertDialog = true
             }
         }
     }
 
-    private fun changeName() {
-        val state = _uiState.value
-        val name = state.newName.trim()
+    // ---------------------------------------------------------------- CHANGE NAME
+    var newName: String by mutableStateOf("")
+
+    fun changeName() {
+        val name = newName
         if (name.isEmpty()) return
 
-        val userInformation = state.userInformation ?: return
-        val uid = userInformation.uid ?: return
-        val familyId = userInformation.familyId
+        val uid = _userInformation.value?.uid ?: return
+        val familyId = _userInformation.value?.familyId
 
         viewModelScope.launch {
             when (val result = userRepository.changeName(uid, familyId, name)) {
-                is Result.Success -> closeConfirmationDialog()
+                is Result.Success -> {
+                    closeConfirmationDialog()
+                }
                 is Result.Failure -> {
                     closeConfirmationDialog()
-                    showError(result.error.toUserMessage())
+                    error = result.error
+                    showAlertDialog = true
                 }
             }
         }
-    }
-
-    private suspend fun showError(message: String) {
-        _uiCommands.send(
-            UiCommand.ShowSnackbar(
-                message = message,
-                withDismissAction = true,
-            ),
-        )
-    }
-
-    private fun updateUiState(transform: (ProfileUiState) -> ProfileUiState) {
-        _uiState.update(transform)
     }
 }

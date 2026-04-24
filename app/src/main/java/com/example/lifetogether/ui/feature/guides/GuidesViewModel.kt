@@ -1,23 +1,22 @@
 package com.example.lifetogether.ui.feature.guides
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.logic.GuideParser
+import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.GuideRepository
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.result.Result
-import com.example.lifetogether.domain.result.toUserMessage
-import com.example.lifetogether.ui.common.event.UiCommand
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -29,12 +28,6 @@ class GuidesViewModel @Inject constructor(
     private var familyId: String? = null
     private var uid: String? = null
     private var guidesJob: Job? = null
-
-    private val _uiState = MutableStateFlow(GuidesUiState())
-    val uiState: StateFlow<GuidesUiState> = _uiState.asStateFlow()
-
-    private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
-    val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
 
     init {
         viewModelScope.launch {
@@ -51,35 +44,27 @@ class GuidesViewModel @Inject constructor(
                 } else if (state is SessionState.Unauthenticated) {
                     familyId = null
                     uid = null
-                    updateState { GuidesUiState() }
                 }
             }
         }
     }
 
-    fun onEvent(event: GuidesUiEvent) {
-        when (event) {
-            GuidesUiEvent.OpenAddOptionsDialog -> updateState {
-                it.copy(showAddOptionsDialog = true)
-            }
+    private val _guides = MutableStateFlow<List<Guide>>(emptyList())
+    val guides: StateFlow<List<Guide>> = _guides.asStateFlow()
 
-            GuidesUiEvent.CloseAddOptionsDialog -> updateState {
-                it.copy(showAddOptionsDialog = false)
-            }
+    var showAddOptionsDialog: Boolean by mutableStateOf(false)
+    var showImportDialog: Boolean by mutableStateOf(false)
+    var isImporting: Boolean by mutableStateOf(false)
+    var importSummary: String by mutableStateOf("")
 
-            GuidesUiEvent.OpenImportDialog -> updateState {
-                it.copy(
-                    showAddOptionsDialog = false,
-                    showImportDialog = true,
-                    importSummary = "",
-                )
-            }
+    var showAlertDialog: Boolean by mutableStateOf(false)
+    var error: String by mutableStateOf("")
 
-            GuidesUiEvent.CloseImportDialog -> updateState {
-                it.copy(showImportDialog = false)
-            }
-
-            is GuidesUiEvent.ImportGuidesFromJson -> importGuidesFromJson(event.json)
+    fun dismissAlert() {
+        viewModelScope.launch {
+            delay(3000)
+            showAlertDialog = false
+            error = ""
         }
     }
 
@@ -91,29 +76,40 @@ class GuidesViewModel @Inject constructor(
         guidesJob = viewModelScope.launch {
             guideRepository.observeGuides(familyId = familyIdValue, uid = uidValue).collect { result ->
                 when (result) {
-                    is Result.Success -> updateState { it.copy(guides = result.data) }
-                    is Result.Failure -> showError(result.error.toUserMessage())
+                    is Result.Success -> _guides.value = result.data
+                    is Result.Failure -> {
+                        error = result.error
+                        showAlertDialog = true
+                    }
                 }
             }
         }
     }
 
-    private fun importGuidesFromJson(json: String) {
+    fun openAddOptionsDialog() { showAddOptionsDialog = true }
+    fun closeAddOptionsDialog() { showAddOptionsDialog = false }
+
+    fun openImportDialog() {
+        showImportDialog = true
+        showAddOptionsDialog = false
+        importSummary = ""
+    }
+
+    fun closeImportDialog() { showImportDialog = false }
+
+    fun importGuidesFromJson(json: String) {
         val activeFamilyId = familyId
         val activeUid = uid
 
         if (activeFamilyId.isNullOrBlank() || activeUid.isNullOrBlank()) {
-            showError("Missing family or user context for import")
+            error = "Missing family or user context for import"
+            showAlertDialog = true
             return
         }
 
         viewModelScope.launch {
-            updateState {
-                it.copy(
-                    isImporting = true,
-                    importSummary = "",
-                )
-            }
+            isImporting = true
+            importSummary = ""
 
             val parsedGuides = runCatching {
                 GuideParser.parseJsonGuides(
@@ -122,14 +118,16 @@ class GuidesViewModel @Inject constructor(
                     ownerUid = activeUid,
                 )
             }.getOrElse {
-                showError("Could not parse JSON: ${it.message}")
-                updateState { it.copy(isImporting = false) }
+                error = "Could not parse JSON: ${it.message}"
+                showAlertDialog = true
+                isImporting = false
                 return@launch
             }
 
             if (parsedGuides.isEmpty()) {
-                showError("No valid guides were found in the selected file")
-                updateState { it.copy(isImporting = false) }
+                error = "No valid guides were found in the selected file"
+                showAlertDialog = true
+                isImporting = false
                 return@launch
             }
 
@@ -142,27 +140,8 @@ class GuidesViewModel @Inject constructor(
                 }
             }
 
-            updateState {
-                it.copy(
-                    isImporting = false,
-                    importSummary = "Imported $successCount guide(s). Failed: $failCount",
-                )
-            }
+            importSummary = "Imported $successCount guide(s). Failed: $failCount"
+            isImporting = false
         }
-    }
-
-    private fun showError(message: String) {
-        viewModelScope.launch {
-            _uiCommands.send(
-                UiCommand.ShowSnackbar(
-                    message = message,
-                    withDismissAction = true,
-                ),
-            )
-        }
-    }
-
-    private fun updateState(transform: (GuidesUiState) -> GuidesUiState) {
-        _uiState.update(transform)
     }
 }

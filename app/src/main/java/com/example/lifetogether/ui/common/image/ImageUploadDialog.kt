@@ -15,6 +15,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,7 +24,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.model.sealed.UploadState
 
@@ -39,8 +39,8 @@ fun ImageUploadDialog(
 ) {
     val viewModel: ImageUploadViewModel = hiltViewModel()
     val context = LocalContext.current
-    val bitmap by viewModel.bitmap.collectAsStateWithLifecycle()
-    val uploadState by viewModel.uploadState.collectAsStateWithLifecycle()
+    val bitmap by viewModel.bitmap.collectAsState()
+    val uploadState by viewModel.uploadState.collectAsState()
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),

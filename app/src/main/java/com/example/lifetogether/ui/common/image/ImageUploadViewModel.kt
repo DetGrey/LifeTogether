@@ -1,7 +1,5 @@
 package com.example.lifetogether.ui.common.image
 
-import com.example.lifetogether.domain.result.toUserMessage
-
 import android.content.ContentResolver
 import android.content.Context
 import android.graphics.Bitmap
@@ -63,7 +61,7 @@ class ImageUploadViewModel @Inject constructor(
                 is Result.Success -> {
                     _uploadState.value = UploadState.Success
                 }
-                is Result.Failure -> _uploadState.value = UploadState.Failure(result.error.toUserMessage())
+                is Result.Failure -> _uploadState.value = UploadState.Failure(result.error)
             }
         }
     }
