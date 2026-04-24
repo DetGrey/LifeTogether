@@ -1,6 +1,5 @@
 package com.example.lifetogether.ui.feature.recipes
 
-import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,10 +15,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,57 +30,56 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
+import com.example.lifetogether.domain.model.recipe.Instruction
 import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.domain.model.toggleCompleted
 import com.example.lifetogether.ui.common.add.AddNewString
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
+import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
+import com.example.lifetogether.ui.common.dropdown.Dropdown
 import com.example.lifetogether.ui.common.image.ImageUploadDialog
 import com.example.lifetogether.ui.common.list.CompletableCategoryList
 import com.example.lifetogether.ui.common.tagOptionRow.TagOption
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.textfield.EditableTextField
-import com.example.lifetogether.ui.common.dropdown.Dropdown
-import com.example.lifetogether.domain.model.recipe.Instruction
-import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.viewmodel.ImageViewModel
 
 @Composable
 fun RecipeDetailsScreen(
-    uiState: RecipeDetailsUiState,
-    bitmap: Bitmap?,
-    onUiEvent: (RecipeDetailsUiEvent) -> Unit,
-    onNavigationEvent: (RecipeDetailsNavigationEvent) -> Unit,
+    appNavigator: AppNavigator? = null,
+    recipeId: String? = null,
 ) {
-    when (uiState) {
-        RecipeDetailsUiState.Loading -> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator()
-            }
-        }
+    val recipeDetailsViewModel: RecipeDetailsViewModel = hiltViewModel()
+    val imageViewModel: ImageViewModel = hiltViewModel()
 
-        is RecipeDetailsUiState.Content -> RecipeDetailsContent(
-            uiState = uiState,
-            bitmap = bitmap,
-            onUiEvent = onUiEvent,
-            onNavigationEvent = onNavigationEvent,
-        )
+    val recipe by recipeDetailsViewModel.recipe.collectAsState()
+    val familyId by recipeDetailsViewModel.familyId.collectAsState()
+    val bitmap by imageViewModel.bitmap.collectAsState()
+
+    LaunchedEffect(recipeId) {
+        recipeDetailsViewModel.setUp(recipeId)
     }
-}
 
-@Composable
-private fun RecipeDetailsContent(
-    uiState: RecipeDetailsUiState.Content,
-    bitmap: Bitmap?,
-    onUiEvent: (RecipeDetailsUiEvent) -> Unit,
-    onNavigationEvent: (RecipeDetailsNavigationEvent) -> Unit,
-) {
+    LaunchedEffect(familyId, recipeId) {
+        if (!familyId.isNullOrBlank() && recipeId != null) {
+            imageViewModel.collectImageFlow(
+                imageType = ImageType.RecipeImage(familyId!!, recipeId),
+                onError = {
+                    recipeDetailsViewModel.error = it
+                    recipeDetailsViewModel.showAlertDialog = true
+                },
+            )
+        }
+    }
+
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize(),
     ) {
         item {
             Column(
@@ -94,8 +94,9 @@ private fun RecipeDetailsContent(
                 ) {
                     if (bitmap != null) {
                         Image(
-                            modifier = Modifier.fillMaxSize(),
-                            bitmap = bitmap.asImageBitmap(),
+                            modifier = Modifier
+                                .fillMaxSize(),
+                            bitmap = bitmap!!.asImageBitmap(),
                             contentDescription = "recipe image",
                             contentScale = ContentScale.Crop,
                             alpha = 0.7f,
@@ -108,7 +109,7 @@ private fun RecipeDetailsContent(
                             .height(40.dp)
                             .aspectRatio(1f)
                             .clickable {
-                                onNavigationEvent(RecipeDetailsNavigationEvent.NavigateBack)
+                                appNavigator?.navigateBack()
                             }
                             .align(Alignment.TopStart),
                         contentAlignment = Alignment.Center,
@@ -122,26 +123,26 @@ private fun RecipeDetailsContent(
                     Box(
                         modifier = Modifier
                             .padding(end = 10.dp, top = 10.dp)
-                            .height(if (!uiState.editMode && uiState.recipeId != null) 40.dp else 50.dp)
+                            .height(if (!recipeDetailsViewModel.editMode && recipeId != null) 40.dp else 50.dp)
                             .aspectRatio(1f)
                             .clickable(
-                                enabled = if (uiState.editMode) true else uiState.recipeId != null,
+                                enabled = if (recipeDetailsViewModel.editMode) true else if (recipeId != null) true else false,
                             ) {
-                                if (uiState.editMode) {
-                                    onUiEvent(RecipeDetailsUiEvent.AddImageClicked)
-                                } else if (uiState.recipeId != null) {
-                                    onUiEvent(RecipeDetailsUiEvent.DeleteClicked)
+                                if (recipeDetailsViewModel.editMode) {
+                                    imageViewModel.showImageUploadDialog = true
+                                } else if (recipeId != null) {
+                                    recipeDetailsViewModel.showConfirmationDialog = true
                                 }
                             }
                             .align(Alignment.TopEnd),
                         contentAlignment = Alignment.Center,
                     ) {
-                        if (uiState.editMode) {
+                        if (recipeDetailsViewModel.editMode) {
                             Text(
                                 text = if (bitmap != null) "Change image" else "Add image",
                                 textAlign = TextAlign.Right,
                             )
-                        } else if (uiState.recipeId != null) {
+                        } else if (recipeId != null) {
                             Image(
                                 painter = painterResource(id = R.drawable.ic_trashcan_black),
                                 contentDescription = "trashcan icon",
@@ -155,10 +156,10 @@ private fun RecipeDetailsContent(
                             .align(Alignment.BottomStart),
                     ) {
                         EditableTextField(
-                            text = uiState.itemName,
-                            onTextChange = { onUiEvent(RecipeDetailsUiEvent.ItemNameChanged(it)) },
+                            text = recipe.itemName,
+                            onTextChange = { recipe.itemName = it },
                             label = "Recipe name",
-                            isEditable = uiState.editMode,
+                            isEditable = recipeDetailsViewModel.editMode,
                             textStyle = MaterialTheme.typography.displayMedium,
                             color = MaterialTheme.colorScheme.primary,
                         )
@@ -170,7 +171,7 @@ private fun RecipeDetailsContent(
                             .height(40.dp)
                             .aspectRatio(1f)
                             .clickable {
-                                onUiEvent(RecipeDetailsUiEvent.EditClicked)
+                                recipeDetailsViewModel.toggleEditMode()
                             }
                             .align(Alignment.BottomEnd),
                         contentAlignment = Alignment.Center,
@@ -193,14 +194,14 @@ private fun RecipeDetailsContent(
                 verticalArrangement = Arrangement.spacedBy(30.dp),
             ) {
                 EditableTextField(
-                    text = uiState.description,
-                    onTextChange = { onUiEvent(RecipeDetailsUiEvent.DescriptionChanged(it)) },
+                    text = recipe.description,
+                    onTextChange = { recipe.description = it },
                     label = "Description",
-                    isEditable = uiState.editMode,
+                    isEditable = recipeDetailsViewModel.editMode,
                     textStyle = MaterialTheme.typography.bodyLarge,
                 )
 
-                if (uiState.editMode) {
+                if (recipeDetailsViewModel.editMode) {
                     Spacer(modifier = Modifier.height(10.dp))
                 }
 
@@ -213,12 +214,10 @@ private fun RecipeDetailsContent(
                     ) {
                         TextDefault("Preparation time in minutes: ")
                         EditableTextField(
-                            text = uiState.preparationTimeMin,
-                            onTextChange = {
-                                onUiEvent(RecipeDetailsUiEvent.PreparationTimeChanged(it))
-                            },
+                            text = recipeDetailsViewModel.preparationTimeMin,
+                            onTextChange = { recipeDetailsViewModel.preparationTimeMin = it },
                             label = "E.g. 30",
-                            isEditable = uiState.editMode,
+                            isEditable = recipeDetailsViewModel.editMode,
                             textStyle = MaterialTheme.typography.bodySmall,
                             keyboardType = KeyboardType.Number,
                             imeAction = ImeAction.Done,
@@ -227,35 +226,33 @@ private fun RecipeDetailsContent(
 
                     Row(
                         modifier = Modifier
-                            .fillMaxWidth(if (uiState.editMode) 1f else 0.45f)
+                            .fillMaxWidth(if (recipeDetailsViewModel.editMode) 1f else 0.45f)
                             .height(50.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         TextDefault("Servings: ")
-                        if (uiState.editMode) {
+                        if (recipeDetailsViewModel.editMode) {
                             EditableTextField(
-                                text = uiState.servings,
+                                text = recipeDetailsViewModel.servings,
                                 onTextChange = {
-                                    onUiEvent(RecipeDetailsUiEvent.ServingsChanged(it))
+                                    recipeDetailsViewModel.servings = it
                                 },
                                 label = "E.g. 2",
-                                isEditable = uiState.editMode,
+                                isEditable = recipeDetailsViewModel.editMode,
                                 textStyle = MaterialTheme.typography.bodySmall,
                                 keyboardType = KeyboardType.Number,
                                 imeAction = ImeAction.Done,
                             )
                         } else {
                             Dropdown(
-                                selectedValue = uiState.servings,
-                                expanded = uiState.servingsExpanded,
-                                onExpandedChange = {
-                                    onUiEvent(RecipeDetailsUiEvent.ServingsExpandedChanged(it))
-                                },
-                                options = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
-                                    "12", "15", "20", "30", "40"),
+                                selectedValue = recipeDetailsViewModel.servings,
+                                expanded = recipeDetailsViewModel.servingsExpanded,
+                                onExpandedChange = { recipeDetailsViewModel.servingsExpanded = it },
+                                options = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "15", "20", "30", "40"),
                                 label = null,
                                 onValueChangedEvent = {
-                                    onUiEvent(RecipeDetailsUiEvent.ServingsChanged(it))
+                                    recipeDetailsViewModel.servings = it
+                                    recipeDetailsViewModel.ingredientsByServings()
                                 },
                             )
                         }
@@ -269,21 +266,19 @@ private fun RecipeDetailsContent(
                         horizontalArrangement = Arrangement.spacedBy(5.dp),
                     ) {
                         TextDefault("Tags:")
-                        if (uiState.editMode) {
+                        if (recipeDetailsViewModel.editMode) {
                             EditableTextField(
-                                text = uiState.tagsInput,
-                                onTextChange = {
-                                    onUiEvent(RecipeDetailsUiEvent.TagsChanged(it))
-                                },
+                                text = recipeDetailsViewModel.tags,
+                                onTextChange = { recipeDetailsViewModel.tags = it },
                                 label = "E.g. \"dinner pasta\"",
-                                isEditable = uiState.editMode,
+                                isEditable = recipeDetailsViewModel.editMode,
                                 textStyle = MaterialTheme.typography.bodySmall,
                                 keyboardType = KeyboardType.Text,
                                 imeAction = ImeAction.Done,
                                 capitalization = false,
                             )
                         } else {
-                            for (tag in uiState.tags) {
+                            for (tag in recipe.tags) {
                                 TagOption(
                                     tag = tag,
                                     selectedTag = tag,
@@ -293,73 +288,85 @@ private fun RecipeDetailsContent(
                     }
                 }
 
-                if (uiState.editMode) {
+                if (recipeDetailsViewModel.editMode) {
                     Spacer(modifier = Modifier.height(10.dp))
                 }
 
                 Column {
-                    uiState.expandedStates["ingredients"]?.let { expanded ->
+                    recipeDetailsViewModel.expandedStates["ingredients"]?.let { expanded ->
                         CompletableCategoryList(
                             category = Category(
                                 "🍎",
                                 "Ingredients",
                             ),
-                            itemList = if (uiState.editMode) uiState.ingredients else uiState.ingredientsByServings,
+                            itemList = if (recipeDetailsViewModel.editMode) recipe.ingredients else recipeDetailsViewModel.ingredientsByServings,
                             expanded = expanded,
                             onClick = {
-                                onUiEvent(RecipeDetailsUiEvent.ToggleIngredientsExpanded)
+                                println("expanded before $expanded")
+                                recipeDetailsViewModel.toggleExpandedStates("ingredients")
+                                println("expanded after $expanded")
                             },
                             onCompleteToggle = {
-                                onUiEvent(RecipeDetailsUiEvent.IngredientCompletedToggled(it))
+                                if (recipeDetailsViewModel.editMode) {
+                                    recipe.ingredients = recipe.ingredients.toggleCompleted(it.itemName)
+                                } else {
+                                    recipeDetailsViewModel.ingredientsByServings = recipeDetailsViewModel.ingredientsByServings.toggleCompleted(it.itemName)
+                                }
                             },
                         )
                     }
 
-                    if (uiState.editMode) {
+                    if (recipeDetailsViewModel.editMode) {
                         AddNewIngredient(
                             onAddClick = {
-                                onUiEvent(RecipeDetailsUiEvent.AddIngredientClicked(it))
+                                recipeDetailsViewModel.recipeAddNewItemToList(it)
                             },
                         )
                     }
                 }
 
-                if (uiState.editMode) {
+                if (recipeDetailsViewModel.editMode) {
                     Spacer(modifier = Modifier.height(10.dp))
                 }
 
                 Column {
-                    uiState.expandedStates["instructions"]?.let { expanded ->
+                    recipeDetailsViewModel.expandedStates["instructions"]?.let { expanded ->
                         CompletableCategoryList(
                             category = Category(
                                 "✔️",
                                 "Instructions",
                             ),
-                            itemList = uiState.instructions,
+                            itemList = recipe.instructions,
                             expanded = expanded,
                             onClick = {
-                                onUiEvent(RecipeDetailsUiEvent.ToggleInstructionsExpanded)
+                                recipeDetailsViewModel.toggleExpandedStates("instructions")
                             },
                             onCompleteToggle = {
-                                onUiEvent(RecipeDetailsUiEvent.InstructionCompletedToggled(it))
+                                recipe.instructions =
+                                    recipe.instructions.toggleCompleted(it.itemName)
                             },
                         )
 
-                        if (uiState.editMode) {
+                        if (recipeDetailsViewModel.editMode) {
                             AddNewString(
                                 label = "Add new instruction",
                                 onAddClick = {
-                                    onUiEvent(RecipeDetailsUiEvent.AddInstructionClicked(it))
+                                    recipeDetailsViewModel.recipeAddNewItemToList(Instruction(itemName = it))
                                 },
                             )
                         }
                     }
                 }
 
-                if (uiState.editMode) {
+                if (recipeDetailsViewModel.editMode) {
                     Button(
                         onClick = {
-                            onUiEvent(RecipeDetailsUiEvent.SaveClicked)
+                            recipeDetailsViewModel.saveRecipe(
+                                recipeId,
+                                onSuccess = {
+                                    appNavigator?.navigateBack()
+                                },
+                            )
                         },
                     ) {
                         Text("Save")
@@ -368,76 +375,53 @@ private fun RecipeDetailsContent(
             }
         }
     }
-
     Spacer(modifier = Modifier.height(30.dp))
 
-    if (uiState.showDeleteConfirmationDialog && uiState.recipeId != null) {
-        ConfirmationDialog(
-            onDismiss = {
-                onUiEvent(RecipeDetailsUiEvent.DismissDeleteConfirmation)
-            },
-            onConfirm = {
-                onUiEvent(RecipeDetailsUiEvent.ConfirmDeleteConfirmation)
-            },
-            dialogTitle = "Delete recipe",
-            dialogMessage = "Are you sure you want to the recipe?",
-            dismissButtonMessage = "Cancel",
-            confirmButtonMessage = "Delete",
-        )
-    }
-
-    if (uiState.showImageUploadDialog) {
-        val familyId = uiState.familyId
-        val recipeId = uiState.recipeId
-        if (familyId != null && recipeId != null) {
-            ImageUploadDialog(
-                onDismiss = { onUiEvent(RecipeDetailsUiEvent.ImageUploadDismissed) },
-                onConfirm = { onUiEvent(RecipeDetailsUiEvent.ImageUploadConfirmed) },
-                dialogTitle = "Upload recipe image",
-                dialogMessage = "Select an image for your recipe",
-                imageType = ImageType.RecipeImage(familyId, recipeId),
+    // ---------------------------------------------------------------- CONFIRM DELETION OF RECIPE
+    if (recipeDetailsViewModel.showConfirmationDialog) {
+        if (recipeId != null) {
+            ConfirmationDialog(
+                onDismiss = { recipeDetailsViewModel.showConfirmationDialog = false },
+                onConfirm = {
+                    recipeDetailsViewModel.deleteRecipe(
+                        recipeId,
+                        onSuccess = {
+                            appNavigator?.navigateBack()
+                        },
+                    )
+                },
+                dialogTitle = "Delete recipe",
+                dialogMessage = "Are you sure you want to the recipe?",
                 dismissButtonMessage = "Cancel",
-                confirmButtonMessage = "Upload image",
+                confirmButtonMessage = "Delete",
             )
+        } else {
+            recipeDetailsViewModel.showConfirmationDialog = false
         }
     }
-}
 
-@Preview(showBackground = true)
-@Composable
-private fun RecipeDetailsScreenPreview() {
-    LifeTogetherTheme {
-        RecipeDetailsScreen(
-            uiState = RecipeDetailsUiState.Content(
-                recipeId = "recipe-1",
-                familyId = "family-1",
-                itemName = "Tomato Soup",
-                description = "A simple soup.",
-                ingredients = listOf(
-                    com.example.lifetogether.domain.model.recipe.Ingredient(
-                        itemName = "Tomatoes",
-                        amount = 3.0,
-                    ),
-                ),
-                instructions = listOf(
-                    Instruction(itemName = "Blend everything"),
-                ),
-                preparationTimeMin = "30",
-                recipeServings = 2,
-                servings = "2",
-                tagsInput = "Dinner Soup",
-                tags = listOf("Dinner", "Soup"),
-                editMode = false,
-                ingredientsByServings = listOf(
-                    com.example.lifetogether.domain.model.recipe.Ingredient(
-                        itemName = "Tomatoes",
-                        amount = 3.0,
-                    ),
-                ),
-            ),
-            bitmap = null,
-            onUiEvent = {},
-            onNavigationEvent = {},
-        )
+    // ---------------------------------------------------------------- IMAGE UPLOAD DIALOG
+    if (imageViewModel.showImageUploadDialog) {
+        familyId?.let { familyId ->
+            recipeId?.let { recipeId ->
+                ImageUploadDialog(
+                    onDismiss = { imageViewModel.showImageUploadDialog = false },
+                    onConfirm = { imageViewModel.showImageUploadDialog = false },
+                    dialogTitle = "Upload recipe image",
+                    dialogMessage = "Select an image for your recipe",
+                    imageType = ImageType.RecipeImage(familyId, recipeId),
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Upload image",
+                )
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------- SHOW ERROR ALERT
+    if (recipeDetailsViewModel.showAlertDialog) {
+        LaunchedEffect(recipeDetailsViewModel.error) {
+            recipeDetailsViewModel.toggleAlertDialog()
+        }
+        ErrorAlertDialog(recipeDetailsViewModel.error)
     }
 }

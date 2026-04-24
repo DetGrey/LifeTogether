@@ -35,13 +35,13 @@ class UserLocalDataSource @Inject constructor(
 
     suspend fun userHasProfileImage(uid: String): Boolean = (userInformationDao.hasImageData(uid) ?: 0) == 1
 
-    fun observeFamilyInformation(familyId: String): Flow<FamilyEntity> = familyInformationDao.getFamilyInfo(familyId)
+    fun getFamilyInformation(familyId: String): Flow<FamilyEntity> = familyInformationDao.getFamilyInfo(familyId)
 
-    fun observeFamilyMembers(familyId: String): Flow<List<FamilyMemberEntity>> = familyInformationDao.observeFamilyMembers(familyId)
+    fun getFamilyMembers(familyId: String): Flow<List<FamilyMemberEntity>> = familyInformationDao.getFamilyMembers(familyId)
 
-    fun observeProfileImageByteArray(uid: String): Flow<ByteArray?> = userInformationDao.observeImageByteArray(uid)
+    fun getProfileImageByteArray(uid: String): Flow<ByteArray?> = userInformationDao.getImageByteArray(uid)
 
-    fun observeFamilyImageByteArray(familyId: String): Flow<ByteArray?> = familyInformationDao.observeImageByteArray(familyId)
+    fun getFamilyImageByteArray(familyId: String): Flow<ByteArray?> = familyInformationDao.getImageByteArray(familyId)
 
     suspend fun updateFamilyInformation(
         familyInformation: FamilyInformation,

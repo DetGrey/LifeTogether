@@ -1,23 +1,16 @@
 package com.example.lifetogether.domain.usecase.user
 
-import com.example.lifetogether.domain.result.AppError
-
-import android.util.Log
+import com.example.lifetogether.data.repository.UserRepositoryImpl
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
-import com.example.lifetogether.domain.repository.UserRepository
 import com.example.lifetogether.domain.result.Result
 import javax.inject.Inject
 
 class LoginUseCase @Inject constructor(
-    private val userRepository: UserRepository
+    private val userRepositoryImpl: UserRepositoryImpl
 ) {
-    private companion object {
-        const val TAG = "LoginUseCase"
-    }
-
-    suspend operator fun invoke(user: User): Result<UserInformation, AppError> {
-        Log.d(TAG, "invoke")
+    suspend operator fun invoke(user: User): Result<UserInformation, String> {
+        println("LoginUseCase invoked")
         // TODO Handle the login logic and validation here
 //        val userValidationUseCase = UserValidationUseCase()
 //
@@ -31,6 +24,6 @@ class LoginUseCase @Inject constructor(
 //            return Result.Failure("Invalid email.")
 //        }
 
-        return userRepository.login(user)
+        return userRepositoryImpl.login(user)
     }
 }

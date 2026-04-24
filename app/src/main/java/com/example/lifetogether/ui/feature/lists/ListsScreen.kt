@@ -21,29 +21,36 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.lists.ListType
 import com.example.lifetogether.domain.model.lists.UserList
-import com.example.lifetogether.domain.sync.SyncKey
+import com.example.lifetogether.domain.observer.ObserverKey
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
-import com.example.lifetogether.ui.common.sync.SyncUpdatingText
+import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
+import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @Composable
 fun ListsScreen(
-    uiState: ListsUiState,
-    onUiEvent: (ListsUiEvent) -> Unit,
-    onNavigationEvent: (ListsNavigationEvent) -> Unit,
+    appNavigator: AppNavigator? = null,
 ) {
+    val viewModel: ListsViewModel = hiltViewModel()
+    val userLists by viewModel.userLists.collectAsState()
+
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier
@@ -63,29 +70,25 @@ fun ListsScreen(
                             resId = R.drawable.ic_back_arrow,
                             description = "back arrow icon",
                         ),
-                        onLeftClick = { onNavigationEvent(ListsNavigationEvent.NavigateBack) },
+                        onLeftClick = { appNavigator?.navigateBack() },
                         text = "Lists",
                     )
 
-                    SyncUpdatingText(
-                        keys = setOf(SyncKey.USER_LISTS, SyncKey.ROUTINE_LIST_ENTRIES),
+                    ObserverUpdatingText(
+                        keys = setOf(ObserverKey.USER_LISTS, ObserverKey.ROUTINE_LIST_ENTRIES),
                     )
                 }
             }
 
-            if (uiState.userLists.isEmpty()) {
+            if (userLists.isEmpty()) {
                 item {
                     Text(text = "No lists yet. Tap + to create one.")
                 }
             } else {
-                items(uiState.userLists) { list ->
+                items(userLists) { list ->
                     UserListCard(
                         list = list,
-                        onClick = {
-                            list.id?.let {
-                                onNavigationEvent(ListsNavigationEvent.NavigateToListDetails(it))
-                            }
-                        },
+                        onClick = { list.id?.let { appNavigator?.navigateToListDetail(it) } },
                     )
                 }
             }
@@ -97,21 +100,32 @@ fun ListsScreen(
                 .padding(bottom = 30.dp, end = 30.dp),
             contentAlignment = Alignment.BottomEnd,
         ) {
-            AddButton(onClick = { onUiEvent(ListsUiEvent.CreateListClicked) })
+            AddButton(onClick = { viewModel.openCreateDialog() })
         }
     }
 
-    if (uiState.showCreateDialog) {
+    if (viewModel.showAlertDialog) {
+        LaunchedEffect(viewModel.error) {
+            viewModel.dismissAlert()
+        }
+        ErrorAlertDialog(viewModel.error)
+    }
+
+    if (viewModel.showCreateDialog) {
         CreateListDialog(
-            name = uiState.newListName,
-            onNameChange = { onUiEvent(ListsUiEvent.CreateListNameChanged(it)) },
-            type = uiState.newListType,
-            onTypeChange = { onUiEvent(ListsUiEvent.CreateListTypeChanged(it)) },
-            visibility = uiState.newListVisibility,
-            onVisibilityChange = { onUiEvent(ListsUiEvent.CreateListVisibilityChanged(it)) },
-            isSaving = uiState.isSaving,
-            onDismiss = { onUiEvent(ListsUiEvent.CreateDialogDismissed) },
-            onCreate = { onUiEvent(ListsUiEvent.ConfirmCreateListClicked) },
+            name = viewModel.newListName,
+            onNameChange = { viewModel.newListName = it },
+            type = viewModel.newListType,
+            onTypeChange = { viewModel.newListType = it },
+            visibility = viewModel.newListVisibility,
+            onVisibilityChange = { viewModel.newListVisibility = it },
+            isSaving = viewModel.isSaving,
+            onDismiss = { viewModel.showCreateDialog = false },
+            onCreate = {
+                viewModel.createList { newId ->
+                    appNavigator?.navigateToListDetail(newId)
+                }
+            },
         )
     }
 }

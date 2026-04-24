@@ -1,14 +1,11 @@
 package com.example.lifetogether.domain.logic
 
 import android.content.Context
-import android.util.Log
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.auth.oauth2.ServiceAccountCredentials
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.InputStream
-
-private const val TAG = "ServiceAccountAuth"
 
 suspend fun getServiceAccountAccessToken(context: Context): GoogleCredentials? = withContext(Dispatchers.IO) {
     try {
@@ -17,14 +14,17 @@ suspend fun getServiceAccountAccessToken(context: Context): GoogleCredentials? =
         val credentials = ServiceAccountCredentials
             .fromStream(inputStream)
             .createScoped(listOf("https://www.googleapis.com/auth/firebase.messaging"))
-        Log.d(TAG, "Service account credentials loaded")
+
+        println("Credentials: $credentials")
 
         // Refresh the access token on a background thread
         // credentials.refreshAccessToken() // Removed this line
 
         return@withContext credentials
     } catch (e: Exception) {
-        Log.e(TAG, "Error loading service account credentials: ${e.message}", e)
+        println("Error loading service account credentials: ${e.message}")
+        e.printStackTrace()
+        println("Exception type: ${e::class.java.name}") // Print the type of exception
         return@withContext null
     }
 }

@@ -11,20 +11,67 @@ import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.GuideRepository
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.result.Result
-import com.example.lifetogether.domain.result.toUserMessage
-import com.example.lifetogether.ui.common.event.UiCommand
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
+
+data class GuideDetailsUiState(
+    val guide: Guide? = null,
+    val sectionExpandedState: Map<String, Boolean> = emptyMap(),
+    val selectedSectionAmountState: Map<String, Int> = emptyMap(),
+    val isUpdatingVisibility: Boolean = false,
+    val isStartingGuide: Boolean = false,
+    val isDeletingGuide: Boolean = false,
+    val showAlertDialog: Boolean = false,
+    val error: String = "",
+)
+
+internal fun guideSectionKey(
+    section: GuideSection,
+    sectionIndex: Int,
+): String = section.id.ifBlank { "section-$sectionIndex" }
+
+internal fun reconcileSectionExpandedState(
+    sections: List<GuideSection>,
+    existingState: Map<String, Boolean>,
+): Map<String, Boolean> {
+    return buildMap {
+        sections.forEachIndexed { sectionIndex, section ->
+            val sectionKey = guideSectionKey(section, sectionIndex)
+            put(sectionKey, existingState[sectionKey] ?: !section.completed)
+        }
+    }
+}
+
+internal fun defaultSectionAmountIndex(section: GuideSection): Int {
+    val amount = section.amount.coerceAtLeast(1)
+    val completedAmount = section.completedAmount.coerceIn(0, amount)
+    return if (completedAmount >= amount) amount - 1 else completedAmount
+}
+
+internal fun reconcileSelectedSectionAmountState(
+    sections: List<GuideSection>,
+    existingState: Map<String, Int>,
+): Map<String, Int> {
+    return buildMap {
+        sections.forEachIndexed { sectionIndex, section ->
+            val sectionKey = guideSectionKey(section, sectionIndex)
+            val amount = section.amount.coerceAtLeast(1)
+            val fallbackIndex = defaultSectionAmountIndex(section)
+            val selectedIndex = existingState[sectionKey]
+                ?.coerceIn(0, amount - 1)
+                ?: fallbackIndex
+            put(sectionKey, selectedIndex)
+        }
+    }
+}
 
 @HiltViewModel
 class GuideDetailsViewModel @Inject constructor(
@@ -32,6 +79,7 @@ class GuideDetailsViewModel @Inject constructor(
     private val guideRepository: GuideRepository,
 ) : ViewModel() {
     private companion object {
+        const val ALERT_DISMISS_DELAY_MS = 3000L
         const val ERROR_MISSING_GUIDE_ID_FOR_VISIBILITY = "Unable to update visibility. Missing guide id."
         const val ERROR_MISSING_GUIDE_ID_FOR_DELETE = "Unable to delete this guide. Missing guide id."
         const val ERROR_MISSING_GUIDE_ID_FOR_STEP_UPDATE = "Unable to update this step. Missing guide id."
@@ -46,6 +94,7 @@ class GuideDetailsViewModel @Inject constructor(
     private var uid: String? = null
     private var guideId: String? = null
     private var guideJob: Job? = null
+    private var dismissAlertJob: Job? = null
 
     private var pointerCacheGuide: Guide? = null
     private var pointerCacheByStepId: Map<String, GuideLeafPointer> = emptyMap()
@@ -53,12 +102,6 @@ class GuideDetailsViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(GuideDetailsUiState())
     val uiState: StateFlow<GuideDetailsUiState> = _uiState.asStateFlow()
-
-    private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
-    val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
-
-    private val _commands = Channel<GuideDetailsCommand>(Channel.BUFFERED)
-    val commands: Flow<GuideDetailsCommand> = _commands.receiveAsFlow()
 
     init {
         viewModelScope.launch {
@@ -80,22 +123,11 @@ class GuideDetailsViewModel @Inject constructor(
         }
     }
 
-    fun onEvent(event: GuideDetailsUiEvent) {
-        when (event) {
-            is GuideDetailsUiEvent.Initialize -> setUp(event.guideId)
-            GuideDetailsUiEvent.StartOrContinueClicked -> onStartOrContinue()
-            GuideDetailsUiEvent.ResetAllProgressClicked -> resetAllProgress()
-            GuideDetailsUiEvent.ToggleVisibilityClicked -> toggleVisibility()
-            GuideDetailsUiEvent.DeleteGuideClicked -> deleteGuide()
-            is GuideDetailsUiEvent.ToggleSectionExpanded -> toggleSectionExpanded(event.sectionKey)
-            is GuideDetailsUiEvent.SelectSectionAmount -> selectSectionAmount(
-                sectionKey = event.sectionKey,
-                amountIndex = event.amountIndex,
-            )
-            is GuideDetailsUiEvent.ToggleStepCompletion -> toggleStepCompletion(
-                stepId = event.stepId,
-                amountIndex = event.amountIndex,
-            )
+    fun dismissAlert() {
+        dismissAlertJob?.cancel()
+        dismissAlertJob = viewModelScope.launch {
+            delay(ALERT_DISMISS_DELAY_MS)
+            clearError()
         }
     }
 
@@ -143,7 +175,7 @@ class GuideDetailsViewModel @Inject constructor(
                         )
                         applyGuideUpdate(uiGuide = normalizedGuide)
                     }
-                    is Result.Failure -> showError(result.error.toUserMessage())
+                    is Result.Failure -> showError(result.error)
                 }
             }
         }
@@ -165,12 +197,6 @@ class GuideDetailsViewModel @Inject constructor(
 
     fun showDeleteOwnershipError() {
         showOwnershipError(ERROR_ONLY_OWNER_CAN_DELETE)
-    }
-
-    fun canDeleteGuide(): Boolean {
-        val currentGuide = _uiState.value.guide ?: return false
-        val activeUid = uid ?: return false
-        return currentGuide.ownerUid == activeUid
     }
 
     fun toggleVisibility() {
@@ -205,14 +231,10 @@ class GuideDetailsViewModel @Inject constructor(
         )
     }
 
-    fun deleteGuide() {
+    fun deleteGuide(onSuccess: () -> Unit) {
         if (_uiState.value.isDeletingGuide) return
 
         val currentGuide = _uiState.value.guide
-        if (!canDeleteGuide()) {
-            showDeleteOwnershipError()
-            return
-        }
         val currentGuideId = resolveGuideId(currentGuide) ?: run {
             showError(ERROR_MISSING_GUIDE_ID_FOR_DELETE)
             return
@@ -221,13 +243,22 @@ class GuideDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             updateLoadingState(isDeletingGuide = true)
             when (val result = guideRepository.deleteGuide(currentGuideId)) {
-                is Result.Success -> {
-                    _commands.send(GuideDetailsCommand.NavigateBack)
-                }
-                is Result.Failure -> showError(result.error.toUserMessage())
+                is Result.Success -> onSuccess()
+                is Result.Failure -> showError(result.error)
             }
             updateLoadingState(isDeletingGuide = false)
         }
+    }
+
+    fun canToggleStep(stepId: String, amountIndex: Int): Boolean {
+        if (stepId.isBlank()) return false
+        val currentGuide = _uiState.value.guide ?: return false
+        val pointer = pointerForStepId(
+            guide = currentGuide,
+            stepId = stepId,
+            amountIndex = amountIndex,
+        ) ?: return false
+        return GuideProgress.canTogglePointer(currentGuide.sections, pointer)
     }
 
     fun toggleStepCompletion(stepId: String, amountIndex: Int) {
@@ -264,7 +295,7 @@ class GuideDetailsViewModel @Inject constructor(
         persistGuideProgress(updatedGuide)
     }
 
-    fun onStartOrContinue() {
+    fun onStartOrContinue(onNavigate: (String) -> Unit) {
         val currentGuide = _uiState.value.guide ?: return
         val currentGuideId = resolveGuideId(currentGuide) ?: run {
             showError(ERROR_MISSING_GUIDE_ID_FOR_OPEN)
@@ -272,7 +303,7 @@ class GuideDetailsViewModel @Inject constructor(
         }
 
         if (currentGuide.started) {
-            viewModelScope.launch { _commands.send(GuideDetailsCommand.NavigateToGuideStepPlayer) }
+            onNavigate(currentGuideId)
             return
         }
 
@@ -290,7 +321,7 @@ class GuideDetailsViewModel @Inject constructor(
         applyGuideUpdate(uiGuide = updatedGuide)
         persistGuideProgress(updatedGuide) {
             updateLoadingState(isStartingGuide = false)
-            viewModelScope.launch { _commands.send(GuideDetailsCommand.NavigateToGuideStepPlayer) }
+            onNavigate(currentGuideId)
         }
     }
 
@@ -373,7 +404,7 @@ class GuideDetailsViewModel @Inject constructor(
             when (val result = guideRepository.updateGuide(normalizedGuide)) {
                 is Result.Success -> onSuccess()
                 is Result.Failure -> {
-                    showError(result.error.toUserMessage())
+                    showError(result.error)
                     onFailure()
                 }
             }
@@ -459,19 +490,7 @@ class GuideDetailsViewModel @Inject constructor(
                     sections = guide.sections,
                     existingState = state.selectedSectionAmountState,
                 ),
-                canToggleAmountState = buildCanToggleAmountState(guide.sections),
             )
-        }
-    }
-
-    private fun buildCanToggleAmountState(sections: List<GuideSection>): Map<String, Set<Int>> {
-        return buildMap {
-            sections.forEachIndexed { sectionIndex, section ->
-                val sectionKey = guideSectionKey(section, sectionIndex)
-                val amount = section.amount.coerceAtLeast(1)
-                val activeAmountIndex = if (section.completedAmount >= amount) amount - 1 else section.completedAmount
-                put(sectionKey, setOf(activeAmountIndex.coerceIn(0, amount - 1)))
-            }
         }
     }
 
@@ -500,13 +519,15 @@ class GuideDetailsViewModel @Inject constructor(
     }
 
     private fun showError(message: String) {
-        viewModelScope.launch {
-            _uiCommands.send(
-                UiCommand.ShowSnackbar(
-                    message = message,
-                    withDismissAction = true,
-                ),
-            )
+        dismissAlertJob?.cancel()
+        _uiState.update { state ->
+            state.copy(showAlertDialog = true, error = message)
+        }
+    }
+
+    private fun clearError() {
+        _uiState.update { state ->
+            state.copy(showAlertDialog = false, error = "")
         }
     }
 

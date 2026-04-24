@@ -1,7 +1,5 @@
 package com.example.lifetogether.ui.feature.lists.listDetails
 
-import com.example.lifetogether.domain.result.toUserMessage
-
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,16 +11,13 @@ import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.repository.UserListRepository
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.usecase.item.DeleteRoutineListEntriesUseCase
-import com.example.lifetogether.ui.common.event.UiCommand
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -35,6 +30,13 @@ class ListDetailsViewModel @Inject constructor(
     private val userListRepository: UserListRepository,
     private val deleteRoutineListEntriesUseCase: DeleteRoutineListEntriesUseCase,
 ) : ViewModel() {
+
+    data class ListDetailsScreenState(
+        val uiState: ListDetailsUiState = ListDetailsUiState.Loading,
+        val entries: List<RoutineListEntry> = emptyList(),
+        val imageBitmaps: Map<String, Bitmap> = emptyMap(),
+    )
+
     private var familyId: String? = null
     private var uid: String? = null
     private var currentListId: String? = null
@@ -45,9 +47,6 @@ class ListDetailsViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<ListDetailsUiState>(ListDetailsUiState.Loading)
     private val _entries = MutableStateFlow<List<RoutineListEntry>>(emptyList())
     private val _imageBitmaps = MutableStateFlow<Map<String, Bitmap>>(emptyMap())
-
-    private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
-    val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
 
     val screenState: StateFlow<ListDetailsScreenState> = combine(
         _uiState,
@@ -85,6 +84,18 @@ class ListDetailsViewModel @Inject constructor(
         }
     }
 
+    fun dismissAlert() {
+        viewModelScope.launch {
+            delay(3000)
+            updateContentState {
+                it.copy(
+                    showAlertDialog = false,
+                    error = "",
+                )
+            }
+        }
+    }
+
     fun setUp(listId: String) {
         if (currentListId == listId && entriesJob != null) return
         currentListId = listId
@@ -114,7 +125,7 @@ class ListDetailsViewModel @Inject constructor(
                             }
                         }
                     }
-                    is Result.Failure -> showError(result.error.toUserMessage())
+                    is Result.Failure -> showError(result.error)
                 }
             }
         }
@@ -137,7 +148,7 @@ class ListDetailsViewModel @Inject constructor(
                         syncSelectionState(sortedEntries)
                     }
 
-                    is Result.Failure -> showError(result.error.toUserMessage())
+                    is Result.Failure -> showError(result.error)
                 }
             }
         }
@@ -266,7 +277,7 @@ class ListDetailsViewModel @Inject constructor(
                             showDeleteSelectedDialog = false,
                         )
                     }
-                    showError(result.error.toUserMessage())
+                    showError(result.error)
                 }
             }
         }
@@ -277,7 +288,7 @@ class ListDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = userListRepository.updateRoutineListEntry(updatedEntry)) {
                 is Result.Success -> Unit
-                is Result.Failure -> showError(result.error.toUserMessage())
+                is Result.Failure -> showError(result.error)
             }
         }
     }
@@ -357,13 +368,22 @@ class ListDetailsViewModel @Inject constructor(
     }
 
     private fun showError(message: String) {
-        viewModelScope.launch {
-            _uiCommands.send(
-                UiCommand.ShowSnackbar(
-                    message = message,
-                    withDismissAction = true,
-                ),
-            )
+        _uiState.update { state ->
+            when (state) {
+                is ListDetailsUiState.Loading -> {
+                    ListDetailsUiState.Content(
+                        showAlertDialog = true,
+                        error = message,
+                    )
+                }
+
+                is ListDetailsUiState.Content -> {
+                    state.copy(
+                        showAlertDialog = true,
+                        error = message,
+                    )
+                }
+            }
         }
     }
 }

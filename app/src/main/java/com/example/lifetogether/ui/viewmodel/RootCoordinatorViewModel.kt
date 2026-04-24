@@ -3,9 +3,9 @@ package com.example.lifetogether.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.model.session.SessionState
-import com.example.lifetogether.domain.sync.SyncCoordinator
-import com.example.lifetogether.domain.sync.SyncKey
-import com.example.lifetogether.domain.sync.SyncState
+import com.example.lifetogether.domain.observer.ObserverCoordinator
+import com.example.lifetogether.domain.observer.ObserverKey
+import com.example.lifetogether.domain.observer.ObserverSyncState
 import com.example.lifetogether.domain.repository.GuideRepository
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.repository.UserRepository
@@ -21,19 +21,19 @@ import javax.inject.Inject
 @HiltViewModel
 class RootCoordinatorViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
-    private val syncCoordinator: SyncCoordinator,
+    private val observerCoordinator: ObserverCoordinator,
     private val guideRepository: GuideRepository,
     private val userRepository: UserRepository,
 ) : ViewModel() {
 
     val sessionState: StateFlow<SessionState> = sessionRepository.sessionState
 
-    val syncStates: StateFlow<Map<SyncKey, SyncState>> =
-        syncCoordinator.syncStates
-    val activeSyncKeys: StateFlow<Set<SyncKey>> =
-        syncCoordinator.activeSyncKeys
-    val observerHasSyncedOnce: StateFlow<Map<SyncKey, Boolean>> =
-        syncCoordinator.hasSyncedOnce
+    val observerSyncStates: StateFlow<Map<ObserverKey, ObserverSyncState>> =
+        observerCoordinator.observerSyncStates
+    val activeObserverKeys: StateFlow<Set<ObserverKey>> =
+        observerCoordinator.activeObserverKeys
+    val observerHasSyncedOnce: StateFlow<Map<ObserverKey, Boolean>> =
+        observerCoordinator.observerHasSyncedOnce
 
     private var guideProgressSyncJob: Job? = null
     private var lastObserverUid: String? = null
@@ -55,12 +55,12 @@ class RootCoordinatorViewModel @Inject constructor(
         }
     }
 
-    fun acquireObserver(key: SyncKey) {
-        syncCoordinator.acquireSynchronizer(scope = viewModelScope, key = key)
+    fun acquireObserver(key: ObserverKey) {
+        observerCoordinator.acquireObserver(scope = viewModelScope, key = key)
     }
 
-    fun releaseObserver(key: SyncKey) {
-        syncCoordinator.releaseSynchronizer(key)
+    fun releaseObserver(key: ObserverKey) {
+        observerCoordinator.releaseObserver(key)
     }
 
     private fun handleAuthenticated(state: SessionState.Authenticated) {
@@ -79,7 +79,7 @@ class RootCoordinatorViewModel @Inject constructor(
 
         lastObserverUid = uid
         lastObserverFamilyId = familyId
-        syncCoordinator.syncGlobalSynchronizerContext(
+        observerCoordinator.syncGlobalObserverContext(
             scope = viewModelScope,
             uid = uid,
             familyId = familyId,
@@ -136,6 +136,6 @@ class RootCoordinatorViewModel @Inject constructor(
         lastGuideSyncFamilyId = null
         lastFcmUid = null
         lastFcmFamilyId = null
-        syncCoordinator.cancelAllNonAuthSynchronizers()
+        observerCoordinator.cancelAllNonAuthObservers()
     }
 }

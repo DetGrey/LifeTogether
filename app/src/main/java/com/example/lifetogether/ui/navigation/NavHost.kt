@@ -8,9 +8,9 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
-import com.example.lifetogether.ui.feature.admin.groceryList.categories.AdminGroceryCategoriesRoute
-import com.example.lifetogether.ui.feature.admin.groceryList.suggestions.AdminGrocerySuggestionsRoute
-import com.example.lifetogether.ui.feature.family.FamilyRoute
+import com.example.lifetogether.ui.feature.admin.groceryList.AdminGroceryCategoriesRoute
+import com.example.lifetogether.ui.feature.admin.groceryList.AdminGrocerySuggestionsRoute
+import com.example.lifetogether.ui.feature.family.FamilyScreen
 import com.example.lifetogether.ui.feature.gallery.AlbumDetailsRoute
 import com.example.lifetogether.ui.feature.gallery.GalleryGraphObserverRoute
 import com.example.lifetogether.ui.feature.gallery.GalleryScreenRoute
@@ -19,21 +19,21 @@ import com.example.lifetogether.ui.feature.guides.GuidesRoute
 import com.example.lifetogether.ui.feature.lists.listDetails.ListDetailsRoute
 import com.example.lifetogether.ui.feature.lists.entryDetails.ListEntryDetailsRoute
 import com.example.lifetogether.ui.feature.lists.ListsRoute
-import com.example.lifetogether.ui.feature.guides.create.GuideCreateRoute
+import com.example.lifetogether.ui.feature.guides.create.GuideCreateScreen
 import com.example.lifetogether.ui.feature.guides.details.GuideDetailsDestinationRoute
 import com.example.lifetogether.ui.feature.guides.details.GuideStepPlayerDestinationRoute
 import com.example.lifetogether.ui.feature.groceryList.GroceryListRoute
-import com.example.lifetogether.ui.feature.home.HomeRoute
-import com.example.lifetogether.ui.feature.loading.LoadingRoute
-import com.example.lifetogether.ui.feature.login.LoginRoute
-import com.example.lifetogether.ui.feature.profile.ProfileRoute
+import com.example.lifetogether.ui.feature.home.HomeScreen
+import com.example.lifetogether.ui.feature.loading.LoadingScreen
+import com.example.lifetogether.ui.feature.login.LoginScreen
+import com.example.lifetogether.ui.feature.profile.ProfileScreen
 import com.example.lifetogether.ui.feature.recipes.CreateRecipeRoute
 import com.example.lifetogether.ui.feature.recipes.RecipeDetailsRoute
 import com.example.lifetogether.ui.feature.recipes.RecipesRoute
-import com.example.lifetogether.ui.feature.settings.SettingsRoute
-import com.example.lifetogether.ui.feature.signup.SignupRoute
+import com.example.lifetogether.ui.feature.settings.SettingsScreen
+import com.example.lifetogether.ui.feature.signup.SignupScreen
+import com.example.lifetogether.ui.feature.tipTracker.TipStatisticsRoute
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerRoute
-import com.example.lifetogether.ui.feature.tipTracker.statistics.TipStatisticsRoute
 
 @Composable
 fun NavHost(
@@ -78,30 +78,30 @@ fun NavHost(
         }
 
         composable(AppRoutes.LOADING_SCREEN) {
-            LoadingRoute(appNavigator)
+            LoadingScreen(appNavigator)
         }
 
         composable(AppRoutes.HOME_SCREEN) {
-            HomeRoute(appNavigator)
+            HomeScreen(appNavigator)
         }
 
         composable(AppRoutes.PROFILE_SCREEN) {
-            ProfileRoute(appNavigator)
+            ProfileScreen(appNavigator)
         }
 
         composable(AppRoutes.FAMILY_SCREEN) {
-            FamilyRoute(appNavigator)
+            FamilyScreen(appNavigator)
         }
 
         composable(AppRoutes.SETTINGS_SCREEN) {
-            SettingsRoute(appNavigator)
+            SettingsScreen(appNavigator)
         }
 
         composable(AppRoutes.LOGIN_SCREEN) {
-            LoginRoute(appNavigator)
+            LoginScreen(appNavigator)
         }
         composable(AppRoutes.SIGNUP_SCREEN) {
-            SignupRoute(appNavigator)
+            SignupScreen(appNavigator)
         }
 
         composable(AppRoutes.GROCERY_LIST_SCREEN) {
@@ -117,7 +117,7 @@ fun NavHost(
         }
 
         composable(AppRoutes.GUIDE_CREATE_SCREEN) {
-            GuideCreateRoute(appNavigator)
+            GuideCreateScreen(appNavigator)
         }
 
         navigation(

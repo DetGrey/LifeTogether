@@ -68,8 +68,8 @@ class RecipeLocalDataSource @Inject constructor(
 
     suspend fun getRecipeIdsWithImages(familyId: String): Set<String> = recipesDao.getRecipeIdsWithImages(familyId).toSet()
 
-    fun observeImageByteArray(
+    fun getImageByteArray(
         familyId: String,
         recipeId: String,
-    ) = recipesDao.observeImageByteArray(familyId, recipeId)
+    ) = recipesDao.getImageByteArray(familyId, recipeId)
 }
