@@ -1,7 +1,5 @@
 package com.example.lifetogether.ui.viewmodel
 
-import com.example.lifetogether.domain.result.toUserMessage
-
 import android.graphics.Bitmap
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -12,6 +10,7 @@ import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.repository.ImageRepository
 import com.example.lifetogether.domain.result.Result
+import com.example.lifetogether.domain.result.toUserMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,6 +22,10 @@ import javax.inject.Inject
 class ImageViewModel @Inject constructor(
     private val imageRepository: ImageRepository,
 ) : ViewModel() {
+    private companion object {
+        const val NO_BYTE_ARRAY_MESSAGE = "No ByteArray found"
+    }
+
     // ---------------------------------------------------------------- Upload Dialog
     var showImageUploadDialog: Boolean by mutableStateOf(false)
 
@@ -47,7 +50,7 @@ class ImageViewModel @Inject constructor(
                     is Result.Failure -> {
                         _bitmap.value = null
                         println("Error: ${result.error.toUserMessage()}")
-                        if (result.error.toUserMessage() != "No ByteArray found") {
+                        if (result.error.message != NO_BYTE_ARRAY_MESSAGE) {
                             onError(result.error.toUserMessage())
                         }
                     }
