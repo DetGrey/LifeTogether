@@ -8,6 +8,8 @@ import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.common.sync.FeatureSyncLifecycleBinding
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.CreateRecipeNavRoute
+import com.example.lifetogether.ui.navigation.RecipeDetailsNavRoute
 
 @Composable
 fun RecipesRoute(
@@ -28,8 +30,10 @@ fun RecipesRoute(
         onNavigationEvent = { navigationEvent ->
             when (navigationEvent) {
                 RecipesNavigationEvent.NavigateBack -> appNavigator.navigateBack()
+                RecipesNavigationEvent.NavigateToCreateRecipe ->
+                    appNavigator.navigate(CreateRecipeNavRoute)
                 is RecipesNavigationEvent.NavigateToRecipeDetails ->
-                    appNavigator.navigateToRecipeDetails(navigationEvent.recipeId)
+                    appNavigator.navigate(RecipeDetailsNavRoute(navigationEvent.recipeId))
             }
         },
     )

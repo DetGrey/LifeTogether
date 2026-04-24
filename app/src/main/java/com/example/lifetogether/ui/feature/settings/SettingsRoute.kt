@@ -6,6 +6,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.FamilyNavRoute
+import com.example.lifetogether.ui.navigation.ProfileNavRoute
 
 @Composable
 fun SettingsRoute(
@@ -22,8 +24,8 @@ fun SettingsRoute(
         onNavigationEvent = { navigationEvent ->
             when (navigationEvent) {
                 SettingsNavigationEvent.NavigateBack -> appNavigator.navigateBack()
-                SettingsNavigationEvent.NavigateToProfile -> appNavigator.navigateToProfile()
-                SettingsNavigationEvent.NavigateToFamily -> appNavigator.navigateToFamily()
+                SettingsNavigationEvent.NavigateToProfile -> appNavigator.navigate(ProfileNavRoute)
+                SettingsNavigationEvent.NavigateToFamily -> appNavigator.navigate(FamilyNavRoute)
             }
         },
     )

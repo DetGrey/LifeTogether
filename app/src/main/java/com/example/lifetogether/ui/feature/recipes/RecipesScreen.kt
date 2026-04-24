@@ -76,7 +76,11 @@ fun RecipesScreen(
                         RecipeOverview(
                             recipe = recipe,
                             onClick = {
-                                onNavigationEvent(RecipesNavigationEvent.NavigateToRecipeDetails(recipe.id))
+                                recipe.id?.let { recipeId ->
+                                    onNavigationEvent(
+                                        RecipesNavigationEvent.NavigateToRecipeDetails(recipeId)
+                                    )
+                                }
                             },
                         )
                     }
@@ -94,7 +98,7 @@ fun RecipesScreen(
         contentAlignment = Alignment.BottomEnd,
     ) {
         AddButton(onClick = {
-            onNavigationEvent(RecipesNavigationEvent.NavigateToRecipeDetails())
+            onNavigationEvent(RecipesNavigationEvent.NavigateToCreateRecipe)
         })
     }
 }

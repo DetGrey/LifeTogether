@@ -9,6 +9,7 @@ import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.common.sync.FeatureSyncLifecycleBinding
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.ListEntryDetailsNavRoute
 
 @Composable
 fun ListDetailsRoute(
@@ -47,10 +48,10 @@ fun ListDetailsRoute(
             when (navigationEvent) {
                 ListDetailsNavigationEvent.NavigateBack -> appNavigator.navigateBack()
                 ListDetailsNavigationEvent.NavigateToCreateEntry -> {
-                    appNavigator.navigateToListEntryDetails(listId)
+                    appNavigator.navigate(ListEntryDetailsNavRoute(listId))
                 }
                 is ListDetailsNavigationEvent.NavigateToEntryDetails -> {
-                    appNavigator.navigateToListEntryDetails(listId, navigationEvent.entryId)
+                    appNavigator.navigate(ListEntryDetailsNavRoute(listId, navigationEvent.entryId))
                 }
             }
         },

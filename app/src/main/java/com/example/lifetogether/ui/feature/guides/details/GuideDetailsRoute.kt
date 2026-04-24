@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.GuideStepPlayerNavRoute
 
 @Composable
 fun GuideDetailsRoute(
@@ -28,7 +29,7 @@ fun GuideDetailsRoute(
         guideDetailsViewModel.commands.collect { command ->
             when (command) {
                 GuideDetailsCommand.NavigateToGuideStepPlayer -> {
-                    appNavigator?.navigateToGuideStepPlayer()
+                    appNavigator?.navigate(GuideStepPlayerNavRoute(guideId))
                 }
                 GuideDetailsCommand.NavigateBack -> {
                     appNavigator?.navigateBack()

@@ -8,6 +8,8 @@ import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.common.sync.FeatureSyncLifecycleBinding
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.GuideCreateNavRoute
+import com.example.lifetogether.ui.navigation.GuideDetailsNavRoute
 
 @Composable
 fun GuidesRoute(
@@ -25,9 +27,9 @@ fun GuidesRoute(
         onNavigationEvent = { navigationEvent ->
             when (navigationEvent) {
                 GuidesNavigationEvent.NavigateBack -> appNavigator.navigateBack()
-                GuidesNavigationEvent.NavigateToGuideCreate -> appNavigator.navigateToGuideCreate()
+                GuidesNavigationEvent.NavigateToGuideCreate -> appNavigator.navigate(GuideCreateNavRoute)
                 is GuidesNavigationEvent.NavigateToGuideDetails -> {
-                    appNavigator.navigateToGuideDetails(navigationEvent.guideId)
+                    appNavigator.navigate(GuideDetailsNavRoute(navigationEvent.guideId))
                 }
             }
         },

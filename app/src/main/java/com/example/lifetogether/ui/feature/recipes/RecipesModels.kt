@@ -14,5 +14,6 @@ sealed interface RecipesUiEvent {
 
 sealed interface RecipesNavigationEvent {
     data object NavigateBack : RecipesNavigationEvent
-    data class NavigateToRecipeDetails(val recipeId: String? = null) : RecipesNavigationEvent
+    data class NavigateToRecipeDetails(val recipeId: String) : RecipesNavigationEvent
+    data object NavigateToCreateRecipe : RecipesNavigationEvent
 }

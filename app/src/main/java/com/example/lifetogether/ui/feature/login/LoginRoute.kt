@@ -7,6 +7,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.SignupNavRoute
 
 @Composable
 fun LoginRoute(
@@ -31,7 +32,7 @@ fun LoginRoute(
         onNavigationEvent = { navigationEvent ->
             when (navigationEvent) {
                 LoginNavigationEvent.NavigateBack -> appNavigator.navigateBack()
-                LoginNavigationEvent.SignUpClicked -> appNavigator.navigateToSignUp()
+                LoginNavigationEvent.SignUpClicked -> appNavigator.navigate(SignupNavRoute)
             }
         },
     )

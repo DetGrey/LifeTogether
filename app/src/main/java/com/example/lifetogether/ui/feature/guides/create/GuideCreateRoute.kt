@@ -7,6 +7,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.GuideDetailsNavRoute
 
 @Composable
 fun GuideCreateRoute(
@@ -20,7 +21,7 @@ fun GuideCreateRoute(
         viewModel.commands.collect { command ->
             when (command) {
                 is GuideCreateCommand.NavigateToGuideDetails -> {
-                    appNavigator.navigateToGuideDetails(command.guideId)
+                    appNavigator.navigate(GuideDetailsNavRoute(command.guideId))
                 }
             }
         }

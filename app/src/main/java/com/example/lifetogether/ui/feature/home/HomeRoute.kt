@@ -11,7 +11,18 @@ import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.model.session.authenticatedUserOrNull
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.ui.common.event.LocalRootSnackbarHostState
+import com.example.lifetogether.ui.navigation.AdminGroceryCategoriesNavRoute
+import com.example.lifetogether.ui.navigation.AdminGrocerySuggestionsNavRoute
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.GalleryNavRoute
+import com.example.lifetogether.ui.navigation.GroceryListNavRoute
+import com.example.lifetogether.ui.navigation.GuidesNavRoute
+import com.example.lifetogether.ui.navigation.ListsNavRoute
+import com.example.lifetogether.ui.navigation.LoginNavRoute
+import com.example.lifetogether.ui.navigation.ProfileNavRoute
+import com.example.lifetogether.ui.navigation.RecipesNavRoute
+import com.example.lifetogether.ui.navigation.SettingsNavRoute
+import com.example.lifetogether.ui.navigation.TipTrackerNavRoute
 import com.example.lifetogether.ui.viewmodel.ImageViewModel
 import kotlinx.coroutines.launch
 
@@ -72,21 +83,21 @@ fun HomeRoute(
             when (navigationEvent) {
                 HomeNavigationEvent.ProfileClicked -> {
                     if (userInformation != null) {
-                        appNavigator.navigateToProfile()
+                        appNavigator.navigate(ProfileNavRoute)
                     } else {
-                        appNavigator.navigateToLogin()
+                        appNavigator.navigate(LoginNavRoute)
                     }
                 }
 
-                HomeNavigationEvent.SettingsClicked -> appNavigator.navigateToSettings()
+                HomeNavigationEvent.SettingsClicked -> appNavigator.navigate(SettingsNavRoute)
 
                 HomeNavigationEvent.StatusCardClicked -> {
                     when (sessionState) {
                         SessionState.Loading -> Unit
-                        SessionState.Unauthenticated -> appNavigator.navigateToLogin()
+                        SessionState.Unauthenticated -> appNavigator.navigate(LoginNavRoute)
                         is SessionState.Authenticated -> {
                             if (userInformation?.familyId == null) {
-                                appNavigator.navigateToSettings()
+                                appNavigator.navigate(SettingsNavRoute)
                             }
                         }
                     }
@@ -162,13 +173,13 @@ private fun handleTileClick(
     }
 
     when (tile) {
-        HomeTile.GroceryList -> appNavigator.navigateToGroceryList()
-        HomeTile.Recipes -> appNavigator.navigateToRecipes()
-        HomeTile.Guides -> appNavigator.navigateToGuides()
-        HomeTile.Gallery -> appNavigator.navigateToGallery()
-        HomeTile.TipTracker -> appNavigator.navigateToTipTracker()
-        HomeTile.Lists -> appNavigator.navigateToLists()
-        HomeTile.AdminGroceryCategories -> appNavigator.navigateToAdminGroceryCategories()
-        HomeTile.AdminGrocerySuggestions -> appNavigator.navigateToAdminGrocerySuggestions()
+        HomeTile.GroceryList -> appNavigator.navigate(GroceryListNavRoute)
+        HomeTile.Recipes -> appNavigator.navigate(RecipesNavRoute)
+        HomeTile.Guides -> appNavigator.navigate(GuidesNavRoute)
+        HomeTile.Gallery -> appNavigator.navigate(GalleryNavRoute)
+        HomeTile.TipTracker -> appNavigator.navigate(TipTrackerNavRoute)
+        HomeTile.Lists -> appNavigator.navigate(ListsNavRoute)
+        HomeTile.AdminGroceryCategories -> appNavigator.navigate(AdminGroceryCategoriesNavRoute)
+        HomeTile.AdminGrocerySuggestions -> appNavigator.navigate(AdminGrocerySuggestionsNavRoute)
     }
 }

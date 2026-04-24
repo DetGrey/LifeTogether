@@ -9,8 +9,6 @@ import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.viewmodel.ImageViewModel
-import androidx.navigation.NavBackStackEntry
-import com.example.lifetogether.ui.navigation.AppRoutes
 
 @Composable
 fun CreateRecipeRoute(
@@ -24,10 +22,9 @@ fun CreateRecipeRoute(
 
 @Composable
 fun RecipeDetailsRoute(
-    backStackEntry: NavBackStackEntry,
+    recipeId: String,
     appNavigator: AppNavigator,
 ) {
-    val recipeId = backStackEntry.arguments?.getString(AppRoutes.RECIPE_ID_ARG)
     RecipeDetailsDestination(
         recipeId = recipeId,
         appNavigator = appNavigator,

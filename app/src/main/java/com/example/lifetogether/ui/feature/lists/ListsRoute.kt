@@ -9,6 +9,7 @@ import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.common.sync.FeatureSyncLifecycleBinding
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.ListDetailNavRoute
 
 @Composable
 fun ListsRoute(
@@ -22,7 +23,8 @@ fun ListsRoute(
     LaunchedEffect(viewModel) {
         viewModel.commands.collect { command ->
             when (command) {
-                is ListsCommand.NavigateToListDetails -> appNavigator.navigateToListDetail(command.listId)
+                is ListsCommand.NavigateToListDetails ->
+                    appNavigator.navigate(ListDetailNavRoute(command.listId))
             }
         }
     }
@@ -33,7 +35,8 @@ fun ListsRoute(
         onNavigationEvent = { navigationEvent ->
             when (navigationEvent) {
                 ListsNavigationEvent.NavigateBack -> appNavigator.navigateBack()
-                is ListsNavigationEvent.NavigateToListDetails -> appNavigator.navigateToListDetail(navigationEvent.listId)
+                is ListsNavigationEvent.NavigateToListDetails ->
+                    appNavigator.navigate(ListDetailNavRoute(navigationEvent.listId))
             }
         },
     )

@@ -15,7 +15,9 @@ import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.common.sync.FeatureSyncLifecycleBinding
+import com.example.lifetogether.ui.navigation.AlbumMediaNavRoute
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.GalleryMediaNavRoute
 import com.example.lifetogether.ui.navigation.GalleryGraph
 import com.example.lifetogether.ui.viewmodel.RootCoordinatorViewModel
 import com.example.lifetogether.ui.viewmodel.ImageViewModel
@@ -57,7 +59,7 @@ fun GalleryScreenRoute(
             when (navigationEvent) {
                 GalleryNavigationEvent.NavigateBack -> appNavigator.navigateBack()
                 is GalleryNavigationEvent.NavigateToAlbumMedia -> {
-                    appNavigator.navigateToAlbumMedia(navigationEvent.albumId)
+                    appNavigator.navigate(AlbumMediaNavRoute(navigationEvent.albumId))
                 }
             }
         },
@@ -101,7 +103,7 @@ fun AlbumDetailsRoute(
             when (navigationEvent) {
                 AlbumDetailsNavigationEvent.NavigateBack -> appNavigator.navigateBack()
                 is AlbumDetailsNavigationEvent.NavigateToMediaDetails -> {
-                    appNavigator.navigateToGalleryMedia(albumId, navigationEvent.initialIndex)
+                    appNavigator.navigate(GalleryMediaNavRoute(albumId, navigationEvent.initialIndex))
                 }
             }
         },

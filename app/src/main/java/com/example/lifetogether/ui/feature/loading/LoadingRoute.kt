@@ -7,6 +7,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.HomeNavRoute
+import com.example.lifetogether.ui.navigation.LoginNavRoute
 
 @Composable
 fun LoadingRoute(
@@ -17,8 +19,8 @@ fun LoadingRoute(
 
     LaunchedEffect(sessionState) {
         when (sessionState) {
-            is SessionState.Authenticated -> appNavigator.navigateToHome()
-            SessionState.Unauthenticated -> appNavigator.navigateToLogin()
+            is SessionState.Authenticated -> appNavigator.navigate(HomeNavRoute)
+            SessionState.Unauthenticated -> appNavigator.navigate(LoginNavRoute)
             SessionState.Loading -> Unit
         }
     }
