@@ -20,6 +20,15 @@ data class GuideStepPlayerUiState(
     val currentPartProgressText: String = "0 / 0",
     val canGoPrevious: Boolean = false,
     val canGoNext: Boolean = false,
-    val showAlertDialog: Boolean = false,
-    val error: String = "",
 )
+
+sealed interface GuideStepPlayerUiEvent {
+    data class Initialize(val guideId: String) : GuideStepPlayerUiEvent
+    data object PreviousClicked : GuideStepPlayerUiEvent
+    data object CompleteCurrentAndGoNextClicked : GuideStepPlayerUiEvent
+    data object ToggleCurrentStepCompletionClicked : GuideStepPlayerUiEvent
+}
+
+sealed interface GuideStepPlayerNavigationEvent {
+    data object NavigateBack : GuideStepPlayerNavigationEvent
+}

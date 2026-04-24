@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.feature.tipTracker
+package com.example.lifetogether.ui.feature.tipTracker.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background

@@ -1,17 +1,20 @@
 package com.example.lifetogether.ui.feature.login
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.model.User
-import com.example.lifetogether.domain.model.UserInformation
-import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.domain.usecase.user.LoginUseCase
+import com.example.lifetogether.ui.common.event.UiCommand
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -19,26 +22,39 @@ import javax.inject.Inject
 class LoginViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
 ) : ViewModel() {
-    var error: String by mutableStateOf("")
+    private val _uiState = MutableStateFlow(LoginUiState())
+    val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
-    // TEXT FIELDS
-    var email: String by mutableStateOf("")
-    var password: String by mutableStateOf("")
+    private val _commands = Channel<LoginCommand>(Channel.BUFFERED)
+    val commands: Flow<LoginCommand> = _commands.receiveAsFlow()
 
-    fun onLoginClicked(
-        onSuccess: (UserInformation) -> Unit,
-    ) {
-        println("Login clicked")
-        error = ""
+    private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
+    val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
 
+    fun onEvent(event: LoginUiEvent) {
+        when (event) {
+            is LoginUiEvent.EmailChanged -> updateUiState { it.copy(email = event.value) }
+            is LoginUiEvent.PasswordChanged -> updateUiState { it.copy(password = event.value) }
+            LoginUiEvent.LoginClicked -> login()
+        }
+    }
+
+    private fun login() {
+        val state = _uiState.value
         viewModelScope.launch {
-            val loginResult: Result<UserInformation, AppError> = loginUseCase.invoke(User(email, password))
-            if (loginResult is Result.Success) {
-                println("LoginViewModel: Login successful")
-                onSuccess(loginResult.data)
-            } else if (loginResult is Result.Failure) {
-                error = loginResult.error.toUserMessage()
+            when (val loginResult = loginUseCase.invoke(User(state.email, state.password))) {
+                is Result.Success -> _commands.send(LoginCommand.NavigateBackOnSuccess)
+                is Result.Failure -> _uiCommands.send(
+                    UiCommand.ShowSnackbar(
+                        message = loginResult.error.toUserMessage(),
+                        withDismissAction = true,
+                    ),
+                )
             }
         }
+    }
+
+    private fun updateUiState(transform: (LoginUiState) -> LoginUiState) {
+        _uiState.update(transform)
     }
 }

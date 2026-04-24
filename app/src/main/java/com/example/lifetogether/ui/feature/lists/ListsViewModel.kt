@@ -1,10 +1,5 @@
 package com.example.lifetogether.ui.feature.lists
 
-import com.example.lifetogether.domain.result.toUserMessage
-
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.model.enums.Visibility
@@ -14,12 +9,17 @@ import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.repository.UserListRepository
 import com.example.lifetogether.domain.result.Result
+import com.example.lifetogether.domain.result.toUserMessage
+import com.example.lifetogether.ui.common.event.UiCommand
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
@@ -32,6 +32,15 @@ class ListsViewModel @Inject constructor(
     private var familyId: String? = null
     private var uid: String? = null
     private var listsJob: Job? = null
+
+    private val _uiState = MutableStateFlow(ListsUiState())
+    val uiState: StateFlow<ListsUiState> = _uiState.asStateFlow()
+
+    private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
+    val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
+
+    private val _commands = Channel<ListsCommand>(Channel.BUFFERED)
+    val commands: Flow<ListsCommand> = _commands.receiveAsFlow()
 
     init {
         viewModelScope.launch {
@@ -53,24 +62,14 @@ class ListsViewModel @Inject constructor(
         }
     }
 
-    private val _userLists = MutableStateFlow<List<UserList>>(emptyList())
-    val userLists: StateFlow<List<UserList>> = _userLists.asStateFlow()
-
-    // Create-list dialog state
-    var showCreateDialog: Boolean by mutableStateOf(false)
-    var newListName: String by mutableStateOf("")
-    var newListType: ListType by mutableStateOf(ListType.ROUTINE)
-    var newListVisibility: Visibility by mutableStateOf(Visibility.PRIVATE)
-    var isSaving: Boolean by mutableStateOf(false)
-
-    var showAlertDialog: Boolean by mutableStateOf(false)
-    var error: String by mutableStateOf("")
-
-    fun dismissAlert() {
-        viewModelScope.launch {
-            delay(3000)
-            showAlertDialog = false
-            error = ""
+    fun onEvent(event: ListsUiEvent) {
+        when (event) {
+            ListsUiEvent.CreateListClicked -> openCreateDialog()
+            ListsUiEvent.CreateDialogDismissed -> dismissCreateDialog()
+            is ListsUiEvent.CreateListNameChanged -> updateState { it.copy(newListName = event.value) }
+            is ListsUiEvent.CreateListTypeChanged -> updateState { it.copy(newListType = event.value) }
+            is ListsUiEvent.CreateListVisibilityChanged -> updateState { it.copy(newListVisibility = event.value) }
+            ListsUiEvent.ConfirmCreateListClicked -> createList()
         }
     }
 
@@ -82,55 +81,83 @@ class ListsViewModel @Inject constructor(
             userListRepository.observeUserLists(familyId = familyIdValue).collect { result ->
                 when (result) {
                     is Result.Success -> {
-                        _userLists.value = result.data.sortedBy { it.itemName.lowercase() }
+                        updateState { state ->
+                            state.copy(
+                                userLists = result.data.sortedBy { it.itemName.lowercase() },
+                            )
+                        }
                     }
-                    is Result.Failure -> {
-                        error = result.error.toUserMessage()
-                        showAlertDialog = true
-                    }
+
+                    is Result.Failure -> showError(result.error.toUserMessage())
                 }
             }
         }
     }
 
-    fun openCreateDialog() {
-        newListName = ""
-        newListType = ListType.ROUTINE
-        newListVisibility = Visibility.PRIVATE
-        showCreateDialog = true
+    private fun openCreateDialog() {
+        updateState {
+            it.copy(
+                showCreateDialog = true,
+                newListName = "",
+                newListType = ListType.ROUTINE,
+                newListVisibility = Visibility.PRIVATE,
+                isSaving = false,
+            )
+        }
     }
 
-    fun createList(onCreated: (String) -> Unit) {
+    private fun dismissCreateDialog() {
+        updateState { it.copy(showCreateDialog = false) }
+    }
+
+    private fun createList() {
         val activeFamilyId = familyId
         val activeUid = uid
         if (activeFamilyId.isNullOrBlank() || activeUid.isNullOrBlank()) return
-        if (newListName.isBlank()) {
-            error = "Name cannot be empty"
-            showAlertDialog = true
+
+        val currentState = _uiState.value
+        if (currentState.newListName.isBlank()) {
+            showError("Name cannot be empty")
             return
         }
-        isSaving = true
+
+        updateState { it.copy(isSaving = true) }
         viewModelScope.launch {
             val list = UserList(
                 familyId = activeFamilyId,
-                itemName = newListName.trim(),
+                itemName = currentState.newListName.trim(),
                 lastUpdated = Date(),
                 dateCreated = Date(),
-                type = newListType,
-                visibility = newListVisibility,
+                type = currentState.newListType,
+                visibility = currentState.newListVisibility,
                 ownerUid = activeUid,
             )
             when (val result = userListRepository.saveUserList(list)) {
                 is Result.Success -> {
-                    showCreateDialog = false
-                    onCreated(result.data)
+                    updateState { it.copy(showCreateDialog = false, isSaving = false) }
+                    _commands.send(ListsCommand.NavigateToListDetails(result.data))
                 }
+
                 is Result.Failure -> {
-                    error = result.error.toUserMessage()
-                    showAlertDialog = true
+                    updateState { it.copy(isSaving = false) }
+                    showError(result.error.toUserMessage())
                 }
             }
-            isSaving = false
         }
+    }
+
+    private fun showError(message: String) {
+        viewModelScope.launch {
+            _uiCommands.send(
+                UiCommand.ShowSnackbar(
+                    message = message,
+                    withDismissAction = true,
+                ),
+            )
+        }
+    }
+
+    private fun updateState(transform: (ListsUiState) -> ListsUiState) {
+        _uiState.update(transform)
     }
 }

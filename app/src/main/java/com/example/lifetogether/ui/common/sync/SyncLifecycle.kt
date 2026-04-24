@@ -7,7 +7,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -15,6 +14,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.domain.sync.SyncState
 import com.example.lifetogether.ui.viewmodel.RootCoordinatorViewModel
@@ -61,9 +61,9 @@ fun SyncUpdatingText(
     val activity = LocalActivity.current as? ComponentActivity ?: return
     val rootCoordinator: RootCoordinatorViewModel = hiltViewModel(activity)
 
-    val syncStates by rootCoordinator.syncStates.collectAsState()
-    val activeKeys by rootCoordinator.activeSyncKeys.collectAsState()
-    val hasSyncedOnce by rootCoordinator.observerHasSyncedOnce.collectAsState()
+    val syncStates by rootCoordinator.syncStates.collectAsStateWithLifecycle()
+    val activeKeys by rootCoordinator.activeSyncKeys.collectAsStateWithLifecycle()
+    val hasSyncedOnce by rootCoordinator.observerHasSyncedOnce.collectAsStateWithLifecycle()
 
     val activeKeysAwaitingFirstSuccess = keys.filter { key ->
         key in activeKeys &&

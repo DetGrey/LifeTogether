@@ -13,50 +13,35 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon as AppIcon
 import com.example.lifetogether.domain.model.enums.Visibility
+import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.ui.common.OverflowMenu
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
-import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.feature.guides.details.components.GuideHeroCard
 import com.example.lifetogether.ui.feature.guides.details.components.GuideSectionCard
-import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.navigation.GuideStepPlayerNavRoute
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @Composable
 fun GuideDetailsScreen(
-    appNavigator: AppNavigator? = null,
-    guideId: String,
-    guideDetailsViewModel: GuideDetailsViewModel,
+    uiState: GuideDetailsUiState,
+    onUiEvent: (GuideDetailsUiEvent) -> Unit,
+    onNavigationEvent: (GuideDetailsNavigationEvent) -> Unit,
 ) {
-    val uiState by guideDetailsViewModel.uiState.collectAsState()
     val guide = uiState.guide
-
     var showOverflowMenu by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showResetProgressDialog by remember { mutableStateOf(false) }
-
-    LaunchedEffect(guideId) {
-        guideDetailsViewModel.setUp(guideId) //todo don't think this is the best way
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            guideDetailsViewModel.flushPendingChanges()
-        }
-    }
 
     LazyColumn(
         modifier = Modifier
@@ -72,8 +57,7 @@ fun GuideDetailsScreen(
                     description = "back arrow icon",
                 ),
                 onLeftClick = {
-                    guideDetailsViewModel.flushPendingChanges()
-                    appNavigator?.navigateBack()
+                    onNavigationEvent(GuideDetailsNavigationEvent.NavigateBack)
                 },
                 text = "Guide details",
                 rightIcon = AppIcon(
@@ -100,7 +84,6 @@ fun GuideDetailsScreen(
                 }
             }
         } else {
-
             item {
                 GuideHeroCard(guide)
             }
@@ -110,9 +93,7 @@ fun GuideDetailsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !uiState.isStartingGuide,
                     onClick = {
-                        guideDetailsViewModel.onStartOrContinue { _ ->
-                            appNavigator?.navigate(GuideStepPlayerNavRoute(guideId))
-                        }
+                        onUiEvent(GuideDetailsUiEvent.StartOrContinueClicked)
                     },
                 ) {
                     Text(
@@ -154,25 +135,27 @@ fun GuideDetailsScreen(
                             section = section,
                             selectedAmountIndex = selectedAmountIndex,
                             onSelectAmountIndex = { amountIndex ->
-                                guideDetailsViewModel.selectSectionAmount(
-                                    sectionKey = sectionKey,
-                                    amountIndex = amountIndex,
+                                onUiEvent(
+                                    GuideDetailsUiEvent.SelectSectionAmount(
+                                        sectionKey = sectionKey,
+                                        amountIndex = amountIndex,
+                                    ),
                                 )
                             },
                             expanded = isExpanded,
                             onToggleExpanded = {
-                                guideDetailsViewModel.toggleSectionExpanded(sectionKey)
+                                onUiEvent(GuideDetailsUiEvent.ToggleSectionExpanded(sectionKey))
                             },
-                            canToggleStep = { amountIndex, stepId ->
-                                guideDetailsViewModel.canToggleStep(
-                                    stepId = stepId,
-                                    amountIndex = amountIndex,
-                                )
+                            canToggleStep = { amountIndex ->
+                                uiState.canToggleAmountState[sectionKey]
+                                    ?.contains(amountIndex) == true
                             },
                             onToggleStep = { amountIndex, stepId ->
-                                guideDetailsViewModel.toggleStepCompletion(
-                                    stepId = stepId,
-                                    amountIndex = amountIndex,
+                                onUiEvent(
+                                    GuideDetailsUiEvent.ToggleStepCompletion(
+                                        stepId = stepId,
+                                        amountIndex = amountIndex,
+                                    ),
                                 )
                             },
                         )
@@ -183,7 +166,6 @@ fun GuideDetailsScreen(
     }
 
     if (showOverflowMenu && guide != null) {
-        val canModifyGuide = guideDetailsViewModel.canToggleVisibility()
         val visibilityActionLabel = if (guide.visibility == Visibility.FAMILY) {
             "Make private"
         } else {
@@ -199,19 +181,11 @@ fun GuideDetailsScreen(
                 }),
                 mapOf(visibilityActionLabel to {
                     showOverflowMenu = false
-                    if (canModifyGuide) {
-                        guideDetailsViewModel.toggleVisibility()
-                    } else {
-                        guideDetailsViewModel.showVisibilityOwnershipError()
-                    }
+                    onUiEvent(GuideDetailsUiEvent.ToggleVisibilityClicked)
                 }),
                 mapOf("Delete guide" to {
                     showOverflowMenu = false
-                    if (canModifyGuide) {
-                        showDeleteDialog = true
-                    } else {
-                        guideDetailsViewModel.showDeleteOwnershipError()
-                    }
+                    showDeleteDialog = true
                 }),
             ),
         )
@@ -222,7 +196,7 @@ fun GuideDetailsScreen(
             onDismiss = { showResetProgressDialog = false },
             onConfirm = {
                 showResetProgressDialog = false
-                guideDetailsViewModel.resetAllProgress()
+                onUiEvent(GuideDetailsUiEvent.ResetAllProgressClicked)
             },
             dialogTitle = "Reset all progress",
             dialogMessage = "Are you sure you want to reset all progress for this guide?",
@@ -236,9 +210,7 @@ fun GuideDetailsScreen(
             onDismiss = { showDeleteDialog = false },
             onConfirm = {
                 showDeleteDialog = false
-                guideDetailsViewModel.deleteGuide {
-                    appNavigator?.navigateBack()
-                }
+                onUiEvent(GuideDetailsUiEvent.DeleteGuideClicked)
             },
             dialogTitle = "Delete guide",
             dialogMessage = "Are you sure you want to delete this guide?",
@@ -246,11 +218,24 @@ fun GuideDetailsScreen(
             confirmButtonMessage = "Delete guide",
         )
     }
+}
 
-    if (uiState.showAlertDialog) {
-        LaunchedEffect(uiState.error) {
-            guideDetailsViewModel.dismissAlert()
-        }
-        ErrorAlertDialog(uiState.error)
+@Preview(showBackground = true)
+@Composable
+private fun GuideDetailsScreenPreview() {
+    LifeTogetherTheme {
+        GuideDetailsScreen(
+            uiState = GuideDetailsUiState(
+                guide = Guide(
+                    itemName = "Family reset",
+                    description = "A simple weekly reset guide",
+                    visibility = Visibility.FAMILY,
+                    started = true,
+                    sections = emptyList(),
+                ),
+            ),
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
     }
 }

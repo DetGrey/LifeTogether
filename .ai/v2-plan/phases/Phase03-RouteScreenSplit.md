@@ -1,6 +1,6 @@
 # Phase 3 — Route/Screen Split
 
-**Status:** Ready for implementation _(Not started → Grill-me in progress → Ready for implementation → Implementing → Complete)_
+**Status:** Complete
 
 ## Goal
 
@@ -23,6 +23,10 @@ Separate every feature screen into a route composable (Android wiring) and a scr
 - **Shared `SnackbarHost`** wired at the app root with a reusable route-level collector.
 - Naming convention (locked):
 - `UiEvent` means user/UI input flowing into `ViewModel` (for example click, text change, retry tap).
+- `NavigationEvent` means user/UI navigation intent emitted by a screen and handled by the route (not by `ViewModel`).
+- Keep `UiState`, `UiEvent`, `NavigationEvent`, and `Command` together in the feature `Models.kt` file when the feature has one; do not split navigation events into separate files.
+- For screens already migrated in this branch, normalize any remaining model declarations into the feature `Models.kt` file before committing the issue.
+- Leave not-yet-refactored screens alone until their route/screen split issue is active.
 - `Command` means one-shot output emitted from `ViewModel` to UI (for example `ShowSnackbar`).
 - Concrete naming for this phase:
 - shared base type is `UiCommand`
@@ -32,21 +36,35 @@ Separate every feature screen into a route composable (Android wiring) and a scr
 - Feature layers emit typed `Command`s (via `Channel`) — they do not render error dialogs directly.
 - Input API migration is required in this phase: split screens must migrate `ViewModel` input handling to typed `UiEvent` dispatch (`onEvent(event)`), not keep ad-hoc public method callbacks.
 - Per-screen migration contract for this phase:
-- `Screen` emits only `<Feature>UiEvent`.
-- `Route` maps UI callbacks to `viewModel.onEvent(...)`.
+- `Screen` emits `<Feature>UiEvent` and `<Feature>NavigationEvent` through separate callbacks (`onUiEvent`, `onNavigationEvent`).
+- `Route` handles `<Feature>NavigationEvent` directly via `AppNavigator`.
+- `Route` maps `<Feature>UiEvent` to `viewModel.onEvent(...)`.
 - `ViewModel` exposes lifecycle-collected state (`StateFlow<UiState>`) and one-shot commands (`Flow<UiCommand>`).
 - `Screen` never calls `ViewModel` methods directly.
+- For screens with both VM-bound actions and nav-only actions, keep separate callbacks instead of folding navigation into `UiEvent`.
+- Keep `NavigationEvent` in the feature `Models.kt` file alongside the other models when that file exists.
+- Any navigation triggered by `ViewModel` logic is emitted as a `Command`, not a `UiEvent`.
+- `ViewModel` startup work uses `init` when no dynamic route argument is required; explicit load events are reserved for argument-driven/dynamic loads.
+- For complex screens with repeated gating/layout logic, the route may precompute ordered presentation models (for example sections/tiles) so the screen stays declarative and does not repeat access checks.
+- Prefer explicit sealed presentation models over nullable UI strings/flags when the screen has multiple visible states.
+- Snackbar design (locked for Phase 3):
+- Global root-level snackbar styling (single implementation in app root `SnackbarHost`).
+- Error-only visual variant in this phase.
+- Top-floating card placement (top-center), not bottom docked default styling.
+- Visual parity target with existing `ErrorAlertDialog`: rounded card, error container color, white title/body text.
+- Content format: fixed title `"An error occurred"` + error message text.
+- Dismissible + auto-dismiss behavior; retain default snackbar queue behavior for repeated errors.
 - **Snackbar-first error handling:** validation → inline field errors; operation failures → snackbar/banner; blocking dialogs reserved for rare high-severity interruptions only.
 - Each screen has at most one meaningful `Scaffold`; no extra scaffolds just for error handling.
-- Pilot screen: `ui/feature/admin/groceryList/AdminGrocerySuggestionsScreen.kt`.
+- Pilot screen: `ui/feature/admin/groceryList/suggestions/AdminGrocerySuggestionsScreen.kt`.
 
 ## Subphases
 
-- [ ] 3.1 Wire shared `SnackbarHost` at app root; define typed `Command` base / collection helper
-- [ ] 3.2 Pilot split: `AdminGrocerySuggestionsScreen` — route + screen + preview
-- [ ] 3.3 Split remaining feature screens (one by one or grouped by feature)
-- [ ] 3.4 Enforce `collectAsStateWithLifecycle()` across all route layers
-- [ ] 3.5 Migrate `ErrorAlertDialog` usages to snackbar/command pattern
+- [x] 3.1 Wire shared `SnackbarHost` at app root; define typed `Command` base / collection helper
+- [x] 3.2 Pilot split: `AdminGrocerySuggestionsScreen` — route + screen + preview
+- [x] 3.3 Split remaining feature screens (one by one or grouped by feature)
+- [x] 3.4 Enforce `collectAsStateWithLifecycle()` across all route layers
+- [x] 3.5 Migrate `ErrorAlertDialog` usages to snackbar/command pattern
 
 ### 3.1 Implementation detail
 
@@ -103,28 +121,29 @@ Separate every feature screen into a route composable (Android wiring) and a scr
 
 ### Acceptance criteria
 
-- [ ] Shared root `SnackbarHost` is wired once at app root and used by route command collectors
-- [ ] `UiCommand` infrastructure exists in `ui/common/event/` with shared `ShowSnackbar` command
-- [ ] Every split screen follows route/screen separation (`Route` Android wiring, `Screen` plain previewable UI)
-- [ ] Every split screen migrates input handling to typed `<Feature>UiEvent` via `viewModel.onEvent(...)`
-- [ ] Every split screen emits one-shot output via `Flow<UiCommand>` from `ViewModel`
-- [ ] Route layers use `collectAsStateWithLifecycle()` for state collection (no remaining route `collectAsState()` uses)
-- [ ] `ErrorAlertDialog` usage is removed from migrated split screens and replaced by snackbar command handling
-- [ ] `ErrorAlertDialog` file is removed only if no usages remain after migration
-- [ ] All Phase 3 split issues are implemented on the same branch
-- [ ] No PR is opened before all split issues are complete; one consolidated PR is opened at the end
+- [x] Shared root `SnackbarHost` is wired once at app root and used by route command collectors
+- [x] `UiCommand` infrastructure exists in `ui/common/event/` with shared `ShowSnackbar` command
+- [x] Every split screen follows route/screen separation (`Route` Android wiring, `Screen` plain previewable UI)
+- [x] Every split screen migrates input handling to typed `<Feature>UiEvent` via `viewModel.onEvent(...)`
+- [x] Every split screen emits navigation through typed `<Feature>NavigationEvent` handled in route (not forwarded to `ViewModel`)
+- [x] Every split screen emits one-shot output via `Flow<UiCommand>` from `ViewModel`
+- [x] Route layers use `collectAsStateWithLifecycle()` for state collection (no remaining route `collectAsState()` uses)
+- [x] `ErrorAlertDialog` usage is removed from migrated split screens and replaced by snackbar command handling
+- [x] `ErrorAlertDialog` file is removed only if no usages remain after migration
+- [x] All Phase 3 split issues are implemented on the same branch
+- [x] No PR is opened before all split issues are complete; one consolidated PR is opened at the end
 
 ### Test cases
 
-- [ ] Build compiles after setup subphase (shared host + command infra)
-- [ ] Pilot (`AdminGrocerySuggestions`) renders and works with route/screen split and event/command contract
-- [ ] For each feature-group issue, representative screen interactions dispatch `UiEvent` and update UI state correctly
-- [ ] For each migrated screen, operation failure triggers `UiCommand.ShowSnackbar` and snackbar appears via shared host
-- [ ] Inline validation errors remain inline and are not incorrectly converted to snackbar-only feedback
-- [ ] Navigation behaviors remain unchanged after route/screen split across all migrated screens
-- [ ] Existing `@Preview` functions for split screens render without Hilt/`ViewModel` requirements
-- [ ] Search confirms no remaining `collectAsState()` calls in route-layer state collection
-- [ ] Search confirms no remaining `ErrorAlertDialog(` usages in completed migration scope
+- [x] Build compiles after setup subphase (shared host + command infra)
+- [x] Pilot (`AdminGrocerySuggestions`) renders and works with route/screen split and event/command contract
+- [x] For each feature-group issue, representative screen interactions dispatch `UiEvent` and update UI state correctly
+- [x] For each migrated screen, operation failure triggers `UiCommand.ShowSnackbar` and snackbar appears via shared host
+- [x] Inline validation errors remain inline and are not incorrectly converted to snackbar-only feedback
+- [x] Navigation behaviors remain unchanged after route/screen split across all migrated screens
+- [x] Existing `@Preview` functions for split screens render without Hilt/`ViewModel` requirements
+- [x] Search confirms no remaining `collectAsState()` calls in route-layer state collection
+- [x] Search confirms no remaining `ErrorAlertDialog(` usages in completed migration scope
 
 ## GitHub Issues
 

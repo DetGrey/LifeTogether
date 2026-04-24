@@ -18,28 +18,23 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.textfield.CustomTextField
-import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.navigation.SignupNavRoute
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @Composable
 fun LoginScreen(
-    appNavigator: AppNavigator? = null,
+    uiState: LoginUiState,
+    onUiEvent: (LoginUiEvent) -> Unit,
+    onNavigationEvent: (LoginNavigationEvent) -> Unit,
 ) {
-    val loginViewModel: LoginViewModel = hiltViewModel()
-
     Box(
-        modifier = Modifier
-            .fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
     ) {
         LazyColumn(
-            modifier = Modifier
-                .padding(10.dp),
+            modifier = Modifier.padding(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(30.dp),
         ) {
@@ -50,7 +45,7 @@ fun LoginScreen(
                         description = "back arrow icon",
                     ),
                     onLeftClick = {
-                        appNavigator?.navigateBack()
+                        onNavigationEvent(LoginNavigationEvent.NavigateBack)
                     },
                     text = "Login",
                 )
@@ -64,26 +59,22 @@ fun LoginScreen(
                     verticalArrangement = Arrangement.spacedBy(20.dp),
                 ) {
                     CustomTextField(
-                        value = loginViewModel.email,
-                        onValueChange = { value -> loginViewModel.email = value },
+                        value = uiState.email,
+                        onValueChange = { value -> onUiEvent(LoginUiEvent.EmailChanged(value)) },
                         label = "Email",
                         keyboardType = KeyboardType.Email,
                         imeAction = ImeAction.Next,
                     )
                     CustomTextField(
-                        value = loginViewModel.password,
-                        onValueChange = { value -> loginViewModel.password = value },
+                        value = uiState.password,
+                        onValueChange = { value -> onUiEvent(LoginUiEvent.PasswordChanged(value)) },
                         label = "Password",
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Done,
                     )
 
                     Button(onClick = {
-                        loginViewModel.onLoginClicked(
-                            onSuccess = { userInformation ->
-                                appNavigator?.navigateBack()
-                            },
-                        )
+                        onUiEvent(LoginUiEvent.LoginClicked)
                     }) {
                         Text(text = "Login")
                     }
@@ -92,15 +83,8 @@ fun LoginScreen(
                         modifier = Modifier
                             .padding(top = 10.dp)
                             .fillMaxWidth()
-                            .clickable { appNavigator?.navigate(SignupNavRoute) },
+                            .clickable { onNavigationEvent(LoginNavigationEvent.SignUpClicked) },
                         text = "Do you not have an account?\nSign up here",
-                        textAlign = TextAlign.Center,
-                    )
-                    Text(
-                        modifier = Modifier
-                            .padding(top = 10.dp)
-                            .fillMaxWidth(),
-                        text = loginViewModel.error,
                         textAlign = TextAlign.Center,
                     )
                 }
@@ -113,6 +97,13 @@ fun LoginScreen(
 @Composable
 fun LoginScreenPreview() {
     LifeTogetherTheme {
-        LoginScreen()
+        LoginScreen(
+            uiState = LoginUiState(
+                email = "alex@example.com",
+                password = "password123",
+            ),
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
     }
 }

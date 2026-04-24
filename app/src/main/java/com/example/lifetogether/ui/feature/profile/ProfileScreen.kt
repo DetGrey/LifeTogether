@@ -1,5 +1,6 @@
 package com.example.lifetogether.ui.feature.profile
 
+import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -15,9 +16,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,56 +24,37 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.example.lifetogether.BuildConfig
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.toFullDateString
-import com.example.lifetogether.domain.model.ConfirmationDialogDetails
 import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.ConfirmationDialogDetails
+import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
-import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.image.ImageUploadDialog
 import com.example.lifetogether.ui.common.text.TextHeadingLarge
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
-import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.navigation.HomeNavRoute
-import com.example.lifetogether.ui.navigation.SettingsNavRoute
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.viewmodel.ImageViewModel
 
 @Composable
 fun ProfileScreen(
-    appNavigator: AppNavigator? = null,
+    uiState: ProfileUiState,
+    bitmap: Bitmap?,
+    isAdmin: Boolean,
+    showImageUploadDialog: Boolean,
+    onUiEvent: (ProfileUiEvent) -> Unit,
+    onNavigationEvent: (ProfileNavigationEvent) -> Unit,
 ) {
-    val profileViewModel: ProfileViewModel = hiltViewModel()
-    val imageViewModel: ImageViewModel = hiltViewModel()
-
-    val userInformation by profileViewModel.userInformation.collectAsState()
-    val bitmap by imageViewModel.bitmap.collectAsState()
-
-    LaunchedEffect(userInformation?.uid) {
-        userInformation?.uid?.let { uid ->
-            imageViewModel.collectImageFlow(
-                imageType = ImageType.ProfileImage(uid),
-                onError = {
-                    profileViewModel.error = it
-                    profileViewModel.showAlertDialog = true
-                },
-            )
-        }
-    }
+    val userInformation = uiState.userInformation
 
     Box(
-        modifier = Modifier
-            .fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
     ) {
         LazyColumn(
-            modifier = Modifier
-                .padding(10.dp),
+            modifier = Modifier.padding(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(30.dp),
         ) {
@@ -86,7 +65,7 @@ fun ProfileScreen(
                         description = "back arrow icon",
                     ),
                     onLeftClick = {
-                        appNavigator?.navigateBack()
+                        onNavigationEvent(ProfileNavigationEvent.NavigateBack)
                     },
                     text = "Profile",
                     rightIcon = Icon(
@@ -94,20 +73,18 @@ fun ProfileScreen(
                         description = "settings icon",
                     ),
                     onRightClick = {
-                        appNavigator?.navigate(SettingsNavRoute)
+                        onNavigationEvent(ProfileNavigationEvent.NavigateToSettings)
                     },
                 )
             }
 
             item {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center,
                 ) {
                     Box(
-                        modifier = Modifier
-                            .size(250.dp),
+                        modifier = Modifier.size(250.dp),
                         contentAlignment = Alignment.TopEnd,
                     ) {
                         Box(
@@ -119,16 +96,14 @@ fun ProfileScreen(
                         ) {
                             if (bitmap != null) {
                                 Image(
-                                    modifier = Modifier
-                                        .fillMaxSize(),
-                                    bitmap = bitmap!!.asImageBitmap(),
+                                    modifier = Modifier.fillMaxSize(),
+                                    bitmap = bitmap.asImageBitmap(),
                                     contentDescription = "profile picture",
                                     contentScale = ContentScale.Crop,
                                 )
                             } else {
                                 Image(
-                                    modifier = Modifier
-                                        .fillMaxSize(),
+                                    modifier = Modifier.fillMaxSize(),
                                     painter = painterResource(id = R.drawable.profile_picture),
                                     contentDescription = "profile picture",
                                 )
@@ -141,7 +116,7 @@ fun ProfileScreen(
                                 .size(50.dp),
                             contentAlignment = Alignment.Center,
                         ) {
-                            AddButton(onClick = { imageViewModel.showImageUploadDialog = true })
+                            AddButton(onClick = { onUiEvent(ProfileUiEvent.AddImageClicked) })
                         }
                     }
                 }
@@ -164,8 +139,7 @@ fun ProfileScreen(
                         title = "Name",
                         value = userInformation?.name ?: "",
                         onClick = {
-                            profileViewModel.confirmationDialogType = ProfileViewModel.ProfileConfirmationType.NAME
-                            profileViewModel.showConfirmationDialog = true
+                            onUiEvent(ProfileUiEvent.NameClicked)
                         },
                     )
                     ProfileDetails(
@@ -184,7 +158,7 @@ fun ProfileScreen(
                         title = "Birthday",
                         value = userInformation?.birthday?.toFullDateString() ?: "",
                     )
-                    if (userInformation?.uid in BuildConfig.ADMIN_LIST.split(",")) {
+                    if (isAdmin) {
                         ProfileDetails(
                             icon = Icon(
                                 resId = R.drawable.ic_settings,
@@ -202,8 +176,7 @@ fun ProfileScreen(
                         title = "Password",
                         value = "Change password",
                         onClick = {
-                            profileViewModel.confirmationDialogType = ProfileViewModel.ProfileConfirmationType.PASSWORD
-                            profileViewModel.showConfirmationDialog = true
+                            onUiEvent(ProfileUiEvent.PasswordClicked)
                         },
                     )
                     ProfileDetails(
@@ -214,8 +187,7 @@ fun ProfileScreen(
                         title = "Logout",
                         value = "Logout",
                         onClick = {
-                            profileViewModel.confirmationDialogType = ProfileViewModel.ProfileConfirmationType.LOGOUT
-                            profileViewModel.showConfirmationDialog = true
+                            onUiEvent(ProfileUiEvent.LogoutClicked)
                         },
                     )
                 }
@@ -225,55 +197,49 @@ fun ProfileScreen(
                 Spacer(modifier = Modifier.height(30.dp))
             }
         }
-    }
-    // ------------------------------------------------------ DIALOGS
-    if (profileViewModel.showConfirmationDialog) {
-        when (profileViewModel.confirmationDialogType) {
-            ProfileViewModel.ProfileConfirmationType.LOGOUT -> ConfirmationDialog(
-                onDismiss = { profileViewModel.closeConfirmationDialog() },
-                onConfirm = {
-                    profileViewModel.logout(
-                        onSuccess = {
-                            profileViewModel.closeConfirmationDialog()
-                            appNavigator?.navigate(HomeNavRoute)
-                        },
-                    )
-                },
-                dialogTitle = "Logout",
-                dialogMessage = "Are you sure you want to logout?",
-                dismissButtonMessage = "Cancel",
-                confirmButtonMessage = "Logout",
-            )
 
-            ProfileViewModel.ProfileConfirmationType.NAME -> ConfirmationDialogWithTextField(
-                onDismiss = { profileViewModel.closeConfirmationDialog() },
-                onConfirm = { profileViewModel.changeName() },
-                dialogTitle = "Change name",
-                dialogMessage = "Please enter your new name",
-                dismissButtonMessage = "Cancel",
-                confirmButtonMessage = "Change name",
-                textValue = profileViewModel.newName,
-                onTextValueChange = { profileViewModel.newName = it },
-                capitalization = true,
-            )
+        if (uiState.showConfirmationDialog) {
+            when (uiState.confirmationDialogType) {
+                ProfileConfirmationType.LOGOUT -> ConfirmationDialog(
+                    onDismiss = { onUiEvent(ProfileUiEvent.DismissConfirmationDialog) },
+                    onConfirm = { onUiEvent(ProfileUiEvent.ConfirmConfirmationDialog) },
+                    dialogTitle = "Logout",
+                    dialogMessage = "Are you sure you want to logout?",
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Logout",
+                )
 
-            ProfileViewModel.ProfileConfirmationType.PASSWORD -> ConfirmationDialogDetails(
-                dialogTitle = "Change password",
-                dialogMessage = "Are you sure you want change password?", // TODO
-                confirmButtonMessage = "Change password",
-                onConfirm = {}, // TODO
-            )
+                ProfileConfirmationType.NAME -> ConfirmationDialogWithTextField(
+                    onDismiss = { onUiEvent(ProfileUiEvent.DismissConfirmationDialog) },
+                    onConfirm = { onUiEvent(ProfileUiEvent.ConfirmConfirmationDialog) },
+                    dialogTitle = "Change name",
+                    dialogMessage = "Please enter your new name",
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Change name",
+                    textValue = uiState.newName,
+                    onTextValueChange = { value ->
+                        onUiEvent(ProfileUiEvent.NewNameChanged(value))
+                    },
+                    capitalization = true,
+                )
 
-            null -> {}
+                ProfileConfirmationType.PASSWORD -> ConfirmationDialogDetails( //todo should probably have onDismiss
+                    dialogTitle = "Change password",
+                    dialogMessage = "Are you sure you want change password?", // TODO
+                    confirmButtonMessage = "Change password",
+                    onConfirm = {}, // TODO
+                )
+
+                null -> Unit
+            }
         }
     }
 
-    // ---------------------------------------------------------------- IMAGE UPLOAD DIALOG
-    if (imageViewModel.showImageUploadDialog) {
+    if (showImageUploadDialog) {
         userInformation?.uid?.let { uid ->
             ImageUploadDialog(
-                onDismiss = { imageViewModel.showImageUploadDialog = false },
-                onConfirm = { imageViewModel.showImageUploadDialog = false },
+                onDismiss = { onUiEvent(ProfileUiEvent.ImageUploadDismissed) },
+                onConfirm = { onUiEvent(ProfileUiEvent.ImageUploadConfirmed) },
                 dialogTitle = "Upload profile photo",
                 dialogMessage = "Select your new profile photo",
                 imageType = ImageType.ProfileImage(uid),
@@ -282,18 +248,25 @@ fun ProfileScreen(
             )
         }
     }
-
-    // ---------------------------------------------------------------- SHOW ERROR ALERT
-    if (profileViewModel.showAlertDialog) {
-        LaunchedEffect(profileViewModel.error) {
-            profileViewModel.toggleAlertDialog()
-        }
-        ErrorAlertDialog(profileViewModel.error)
-    }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun ProfileScreenPreview() {
-    LifeTogetherTheme {}
+    LifeTogetherTheme {
+        ProfileScreen(
+            uiState = ProfileUiState(
+                userInformation = UserInformation(
+                    uid = "uid-1",
+                    name = "Alex",
+                    email = "alex@example.com",
+                ),
+            ),
+            bitmap = null,
+            isAdmin = true,
+            showImageUploadDialog = false,
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
+    }
 }
