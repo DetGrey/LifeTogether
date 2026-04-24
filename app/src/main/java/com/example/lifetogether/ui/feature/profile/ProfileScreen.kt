@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.toFullDateString
 import com.example.lifetogether.domain.model.Icon
-import com.example.lifetogether.domain.model.ConfirmationDialogDetails
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.ui.common.TopBar
@@ -168,6 +167,7 @@ fun ProfileScreen(
                             value = "Admin",
                         )
                     }
+                    // TODO: Implement password change flow and re-enable this row.
                     ProfileDetails(
                         icon = Icon(
                             resId = R.drawable.ic_password_black,
@@ -175,9 +175,7 @@ fun ProfileScreen(
                         ),
                         title = "Password",
                         value = "Change password",
-                        onClick = {
-                            onUiEvent(ProfileUiEvent.PasswordClicked)
-                        },
+                        enabled = false,
                     )
                     ProfileDetails(
                         icon = Icon(
@@ -221,13 +219,6 @@ fun ProfileScreen(
                         onUiEvent(ProfileUiEvent.NewNameChanged(value))
                     },
                     capitalization = true,
-                )
-
-                ProfileConfirmationType.PASSWORD -> ConfirmationDialogDetails( //todo should probably have onDismiss
-                    dialogTitle = "Change password",
-                    dialogMessage = "Are you sure you want change password?", // TODO
-                    confirmButtonMessage = "Change password",
-                    onConfirm = {}, // TODO
                 )
 
                 null -> Unit

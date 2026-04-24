@@ -33,8 +33,12 @@ fun ProfileDetails(
     icon: Icon,
     title: String,
     value: String,
+    enabled: Boolean = true,
     onClick: (() -> Unit)? = null,
 ) {
+    val clickable = enabled && onClick != null
+    val contentColor = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -42,7 +46,7 @@ fun ProfileDetails(
             .clip(shape = RoundedCornerShape(20))
             .background(color = Color.White)
             .then(
-                if (onClick != null) {
+                if (clickable) {
                     Modifier.clickable { onClick() }
                 } else {
                     Modifier
@@ -60,6 +64,7 @@ fun ProfileDetails(
                         .fillMaxSize(),
                     painter = painterResource(id = icon.resId),
                     contentDescription = icon.description,
+                    tint = contentColor,
                 )
             }
             Box(
@@ -72,6 +77,7 @@ fun ProfileDetails(
                 Text(
                     text = title,
                     textAlign = TextAlign.Center,
+                    color = contentColor,
                 )
             }
             Box(
@@ -84,15 +90,24 @@ fun ProfileDetails(
                     Text(
                         text = value,
                         textAlign = TextAlign.Center,
+                        color = contentColor,
                     )
 
-                    if (onClick != null) {
+                    if (clickable) {
                         Spacer(modifier = Modifier.width(5.dp))
 
                         Text(
                             text = ">",
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colorScheme.secondary,
+                        )
+                    } else if (!enabled) {
+                        Spacer(modifier = Modifier.width(5.dp))
+
+                        Text(
+                            text = ">",
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }

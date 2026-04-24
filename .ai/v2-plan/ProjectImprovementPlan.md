@@ -463,7 +463,7 @@ We should gradually normalize ViewModels around these rules:
 - keep Android framework types out of reusable logic unless truly needed
 - move business logic into repositories or use cases only when it is genuinely reusable or complex
 - delete "passthrough" Use Cases that do nothing but call a single repository method. ViewModels should call the deepened repositories directly for simple data fetching/saving. Use Cases should be strictly reserved for complex business logic, combining multiple repositories, or logic that is heavily reused across multiple ViewModels.
-- separate durable screen state from one-off UI events. ViewModels should expose a `StateFlow<UiState>` for persistent data (like lists and loading spinners) and a separate `Channel<UiEvent>` (exposed as a `Flow`) for fire-and-forget actions (like navigation triggers or showing a Snackbar) to avoid state-clearing boilerplate and rotation bugs.
+- separate durable screen state from one-off UI commands. ViewModels should expose a `StateFlow<UiState>` for persistent data (like lists and loading spinners) and a separate `Channel<UiCommand>` (exposed as a `Flow`) for fire-and-forget actions (like navigation triggers or showing a Snackbar) to avoid state-clearing boilerplate and rotation bugs.
 
 Decision made:
 

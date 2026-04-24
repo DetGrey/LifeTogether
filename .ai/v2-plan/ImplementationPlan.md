@@ -20,7 +20,7 @@ Each phase has its own detail file linked in the table below.
 | [2](phases/Phase02-DataLayer.md)                | Data Layer Deepening                   | Deep repositories, `Result` wrapper, Offline-First/SSOT, data/domain logging cleanup     | XL   | ~4 weeks   |
 | [3](phases/Phase03-RouteScreenSplit.md)         | Route/Screen Split                     | All screens previewable; shared `SnackbarHost`; snackbar-first error handling            | XL   | ~4–6 weeks |
 | [4](phases/Phase04-NavigationTypeSafety.md)     | Navigation Type-Safety                 | All routes migrated to Kotlin Serialization typed routes                                 | M    | ~1 week    |
-| [5](phases/Phase05-ViewModelNormalization.md)   | ViewModel Normalization                | All ViewModels on `UiState` + `UiEvent` pattern; ViewModel/screen logging cleanup        | L    | ~2–3 weeks |
+| [5](phases/Phase05-ViewModelNormalization.md)   | ViewModel Normalization                | All ViewModels on `UiState` + `UiCommand` pattern; ViewModel/screen logging cleanup     | L    | ~2–3 weeks |
 | [6](phases/Phase06-ThemeColorRewrite.md)        | Theme & Color System Rewrite           | Semantic `Color.kt`; 8dp grid; typography and shape tokens enforced                      | M    | ~1–2 weeks |
 | [7](phases/Phase07-ComponentConsolidation.md)   | Shared Component Consolidation         | One canonical text field, dropdown, and date picker; all duplicates removed              | S    | ~3–5 days  |
 | [8](phases/Phase08-M3Alignment.md)              | Native Material 3 Alignment            | Custom component shells replaced with native M3 where justified                          | M    | ~1–2 weeks |

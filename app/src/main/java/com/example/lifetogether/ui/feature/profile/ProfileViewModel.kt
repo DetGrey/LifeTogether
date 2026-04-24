@@ -52,7 +52,6 @@ class ProfileViewModel @Inject constructor(
             ProfileUiEvent.ImageUploadConfirmed -> Unit
 
             ProfileUiEvent.NameClicked -> showNameDialog()
-            ProfileUiEvent.PasswordClicked -> showPasswordDialog()
             ProfileUiEvent.LogoutClicked -> showLogoutDialog()
             ProfileUiEvent.DismissConfirmationDialog -> closeConfirmationDialog()
             ProfileUiEvent.ConfirmConfirmationDialog -> confirmConfirmationDialog()
@@ -68,16 +67,6 @@ class ProfileViewModel @Inject constructor(
                 showConfirmationDialog = true,
                 confirmationDialogType = ProfileConfirmationType.NAME,
                 newName = it.userInformation?.name.orEmpty(),
-            )
-        }
-    }
-
-    private fun showPasswordDialog() {
-        updateUiState {
-            it.copy(
-                showConfirmationDialog = true,
-                confirmationDialogType = ProfileConfirmationType.PASSWORD,
-                newName = "",
             )
         }
     }
@@ -106,7 +95,6 @@ class ProfileViewModel @Inject constructor(
         when (_uiState.value.confirmationDialogType) {
             ProfileConfirmationType.LOGOUT -> logout()
             ProfileConfirmationType.NAME -> changeName()
-            ProfileConfirmationType.PASSWORD -> closeConfirmationDialog()
             null -> Unit
         }
     }

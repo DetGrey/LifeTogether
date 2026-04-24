@@ -12,7 +12,6 @@ data class ProfileUiState(
 enum class ProfileConfirmationType {
     LOGOUT,
     NAME,
-    PASSWORD,
 }
 
 sealed interface ProfileUiEvent {
@@ -20,7 +19,6 @@ sealed interface ProfileUiEvent {
     data object ImageUploadDismissed : ProfileUiEvent
     data object ImageUploadConfirmed : ProfileUiEvent
     data object NameClicked : ProfileUiEvent
-    data object PasswordClicked : ProfileUiEvent
     data object LogoutClicked : ProfileUiEvent
     data object DismissConfirmationDialog : ProfileUiEvent
     data object ConfirmConfirmationDialog : ProfileUiEvent
