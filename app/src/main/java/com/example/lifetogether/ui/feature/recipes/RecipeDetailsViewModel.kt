@@ -1,6 +1,7 @@
 package com.example.lifetogether.ui.feature.recipes
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.model.Completable
 import com.example.lifetogether.domain.model.recipe.Ingredient
@@ -28,9 +29,14 @@ import javax.inject.Inject
 
 @HiltViewModel
 class RecipeDetailsViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
     private val sessionRepository: SessionRepository,
     private val recipeRepository: RecipeRepository,
 ) : ViewModel() {
+    companion object {
+        private const val RECIPE_ID_ARG = "recipeId"
+    }
+
     private val _uiState = MutableStateFlow<RecipeDetailsUiState>(RecipeDetailsUiState.Loading)
     val uiState: StateFlow<RecipeDetailsUiState> = _uiState.asStateFlow()
 
@@ -40,34 +46,30 @@ class RecipeDetailsViewModel @Inject constructor(
     private val _commands = Channel<RecipeDetailsCommand>(Channel.BUFFERED)
     val commands: Flow<RecipeDetailsCommand> = _commands.receiveAsFlow()
 
-    private var pendingRecipeId: String? = null
+    private var pendingRecipeId: String? = savedStateHandle[RECIPE_ID_ARG]
     private var currentFamilyId: String? = null
     private var originalRecipe: Recipe? = null
     private var observeRecipeJob: Job? = null
 
     init {
+        if (pendingRecipeId == null) {
+            _uiState.value = createContentState(editMode = true)
+        }
+
         viewModelScope.launch {
             sessionRepository.sessionState.collect { state ->
                 currentFamilyId = (state as? SessionState.Authenticated)?.user?.familyId
                 updateContent { content ->
                     content.copy(familyId = currentFamilyId)
                 }
-                maybeObserveRecipe()
+
+                val recipeId = pendingRecipeId
+                val familyId = currentFamilyId
+                if (!recipeId.isNullOrBlank() && !familyId.isNullOrBlank()) {
+                    observeRecipe(recipeId = recipeId, familyId = familyId)
+                }
             }
         }
-    }
-
-    fun setUp(recipeId: String?) {
-        pendingRecipeId = recipeId
-        observeRecipeJob?.cancel()
-
-        if (recipeId == null) {
-            originalRecipe = null
-            _uiState.value = createContentState(editMode = true)
-            return
-        }
-
-        maybeObserveRecipe()
     }
 
     fun onEvent(event: RecipeDetailsUiEvent) {
@@ -121,16 +123,6 @@ class RecipeDetailsViewModel @Inject constructor(
             RecipeDetailsUiEvent.ConfirmDeleteConfirmation -> deleteRecipe()
             RecipeDetailsUiEvent.SaveClicked -> saveRecipe()
         }
-    }
-
-    fun onImageError(message: String) {
-        showError(message)
-    }
-
-    private fun maybeObserveRecipe() {
-        val recipeId = pendingRecipeId ?: return
-        val familyId = currentFamilyId ?: return
-        observeRecipe(recipeId = recipeId, familyId = familyId)
     }
 
     private fun observeRecipe(recipeId: String, familyId: String) {

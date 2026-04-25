@@ -94,9 +94,8 @@ fun NavHost(
         }
 
         composable<CreateRecipeNavRoute> { CreateRecipeRoute(appNavigator) }
-        composable<RecipeDetailsNavRoute> { backStackEntry ->
-            val recipeId = backStackEntry.toRoute<RecipeDetailsNavRoute>().recipeId
-            RecipeDetailsRoute(recipeId = recipeId, appNavigator = appNavigator)
+        composable<RecipeDetailsNavRoute> {
+            RecipeDetailsRoute(appNavigator = appNavigator)
         }
 
         navigation<GalleryGraph>(startDestination = GalleryNavRoute::class) {
