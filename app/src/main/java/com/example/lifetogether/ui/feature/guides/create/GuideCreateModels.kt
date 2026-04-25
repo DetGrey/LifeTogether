@@ -9,7 +9,6 @@ data class GuideCreateUiState(
     val description: String = "",
     val visibility: Visibility = Visibility.PRIVATE,
     val sections: List<GuideSection> = emptyList(),
-    val isSaving: Boolean = false,
 )
 
 sealed interface GuideCreateUiEvent {

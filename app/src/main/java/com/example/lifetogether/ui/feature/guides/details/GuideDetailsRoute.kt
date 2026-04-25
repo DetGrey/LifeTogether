@@ -6,22 +6,21 @@ import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.event.CollectUiCommands
+import com.example.lifetogether.ui.common.sync.FeatureSyncLifecycleBinding
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.navigation.GuideStepPlayerNavRoute
 
 @Composable
 fun GuideDetailsRoute(
-    appNavigator: AppNavigator? = null,
-    guideId: String,
-    viewModelStoreOwner: ViewModelStoreOwner? = null,
+    appNavigator: AppNavigator,
+    viewModelStoreOwner: ViewModelStoreOwner,
 ) {
-    val guideDetailsViewModel: GuideDetailsViewModel = if (viewModelStoreOwner != null) {
-        hiltViewModel(viewModelStoreOwner)
-    } else {
-        hiltViewModel()
-    }
+    val guideDetailsViewModel: GuideDetailsViewModel = hiltViewModel(viewModelStoreOwner)
     val uiState by guideDetailsViewModel.uiState.collectAsStateWithLifecycle()
+
+    FeatureSyncLifecycleBinding(keys = setOf(SyncKey.GUIDES))
 
     CollectUiCommands(guideDetailsViewModel.uiCommands)
 
@@ -29,17 +28,14 @@ fun GuideDetailsRoute(
         guideDetailsViewModel.commands.collect { command ->
             when (command) {
                 GuideDetailsCommand.NavigateToGuideStepPlayer -> {
-                    appNavigator?.navigate(GuideStepPlayerNavRoute(guideId))
+                    val guideId = uiState.guide?.id ?: return@collect
+                    appNavigator.navigate(GuideStepPlayerNavRoute(guideId))
                 }
                 GuideDetailsCommand.NavigateBack -> {
-                    appNavigator?.navigateBack()
+                    appNavigator.navigateBack()
                 }
             }
         }
-    }
-
-    LaunchedEffect(guideId) {
-        guideDetailsViewModel.onEvent(GuideDetailsUiEvent.Initialize(guideId))
     }
 
     GuideDetailsScreen(
@@ -49,7 +45,7 @@ fun GuideDetailsRoute(
             when (navigationEvent) {
                 GuideDetailsNavigationEvent.NavigateBack -> {
                     guideDetailsViewModel.flushPendingChanges()
-                    appNavigator?.navigateBack()
+                    appNavigator.navigateBack()
                 }
             }
         },

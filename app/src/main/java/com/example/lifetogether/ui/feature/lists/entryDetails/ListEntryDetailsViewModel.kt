@@ -1,11 +1,10 @@
 package com.example.lifetogether.ui.feature.lists.entryDetails
 
-import com.example.lifetogether.domain.result.toUserMessage
-
 import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.logic.RecurrenceCalculator
@@ -17,6 +16,7 @@ import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.repository.UserListRepository
 import com.example.lifetogether.domain.result.Result
+import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.domain.usecase.image.UploadImageUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -37,6 +37,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ListEntryDetailsViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
     private val sessionRepository: SessionRepository,
     private val userListRepository: UserListRepository,
     private val uploadImageUseCase: UploadImageUseCase,
@@ -48,10 +49,11 @@ class ListEntryDetailsViewModel @Inject constructor(
         val WEEKDAYS: List<String> = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
     }
 
+    private val listId: String = checkNotNull(savedStateHandle["listId"])
+    val entryId: String? = savedStateHandle["entryId"]
+
     private val _familyId = MutableStateFlow<String?>(null)
     val familyId: StateFlow<String?> = _familyId.asStateFlow()
-    private var listId: String? = null
-    private var entryId: String? = null
     private var originalFormState: EntryFormState? = null
 
     private val _uiState = MutableStateFlow<EntryDetailsUiState>(EntryDetailsUiState.Loading)
@@ -69,35 +71,30 @@ class ListEntryDetailsViewModel @Inject constructor(
     )
 
     init {
+        if (entryId == null) {
+            originalFormState = EntryFormState()
+            _uiState.value = EntryDetailsUiState.Content(isEditing = true)
+        }
+
         viewModelScope.launch {
             sessionRepository.sessionState.collect { state ->
-                _familyId.value = (state as? SessionState.Authenticated)?.user?.familyId
+                val newFamilyId = (state as? SessionState.Authenticated)?.user?.familyId
+                val previousFamilyId = _familyId.value
+                _familyId.value = newFamilyId
+
+                if (newFamilyId != null && entryId != null && newFamilyId != previousFamilyId) {
+                    loadEntry(entryId)
+                }
             }
         }
     }
 
-    fun setUp(listId: String, entryId: String?, onLoadFailed: () -> Unit) {
-        val familyIdValue = _familyId.value
-        Log.d("ListEntryDetailsVM", "familyId: $familyIdValue, listId: $listId, entryId: $entryId")
-        if (this.listId == listId && this.entryId == entryId) return
-        this.listId = listId
-        this.entryId = entryId
+    private fun loadEntry(entryIdToLoad: String) {
+        val familyIdValue = _familyId.value ?: return
+        Log.d("ListEntryDetailsVM", "Loading Entry. familyId: $familyIdValue, listId: $listId, entryId: $entryIdToLoad")
 
-        if (entryId == null) {
-            originalFormState = EntryFormState()
-            _uiState.value = EntryDetailsUiState.Content(isEditing = true)
-        } else {
-            _uiState.value = EntryDetailsUiState.Loading
-            loadEntry(entryId, onLoadFailed)
-        }
-    }
-
-    private fun loadEntry(entryId: String, onLoadFailed: () -> Unit) {
-        val familyIdValue = _familyId.value ?: run { onLoadFailed(); return }
-        Log.d("ListEntryDetailsVM", "Loading Entry. familyId: $familyIdValue, listId: $listId, entryId: $entryId")
         viewModelScope.launch {
-            userListRepository.observeRoutineListEntry(entryId).collect { result ->
-                Log.d("ListEntryDetailsScreen", "Result: $result")
+            userListRepository.observeRoutineListEntry(entryIdToLoad).collect { result ->
                 when (result) {
                     is Result.Success -> {
                         val entry = result.data
@@ -111,27 +108,55 @@ class ListEntryDetailsViewModel @Inject constructor(
                         _formState.value = loaded
                         _uiState.value = EntryDetailsUiState.Content()
                     }
-                    is Result.Failure -> onLoadFailed()
+                    is Result.Failure -> {
+                        showError(result.error.toUserMessage())
+                    }
                 }
             }
         }
     }
 
-    fun enterEditMode() {
-        _uiState.update { if (it is EntryDetailsUiState.Content) it.copy(isEditing = true) else it }
-    }
+    fun onUiEvent(event: ListEntryDetailsUiEvent) {
+        when (event) {
+            ListEntryDetailsUiEvent.EnterEditMode ->
+                _uiState.updateContent { it.copy(isEditing = true) }
 
-    fun requestCancelEdit() {
-        _uiState.update { if (it is EntryDetailsUiState.Content) it.copy(showDiscardDialog = true) else it }
+            ListEntryDetailsUiEvent.RequestCancelEdit ->
+                _uiState.updateContent { it.copy(showDiscardDialog = true) }
+
+            ListEntryDetailsUiEvent.DismissDiscardDialog ->
+                _uiState.updateContent { it.copy(showDiscardDialog = false) }
+
+            ListEntryDetailsUiEvent.RequestImageUpload ->
+                _uiState.updateContent { it.copy(showImageUploadDialog = true) }
+
+            ListEntryDetailsUiEvent.DismissImageUpload,
+            ListEntryDetailsUiEvent.ConfirmImageUpload ->
+                _uiState.updateContent { it.copy(showImageUploadDialog = false) }
+
+            ListEntryDetailsUiEvent.ConfirmDiscard -> confirmDiscard()
+
+            is ListEntryDetailsUiEvent.NameChanged ->
+                _formState.update { it.copy(name = event.value) }
+
+            is ListEntryDetailsUiEvent.RecurrenceUnitChanged -> onRecurrenceUnitChange(event.value)
+
+            is ListEntryDetailsUiEvent.IntervalChanged ->
+                _formState.update { it.copy(interval = event.value.filter { c -> c.isDigit() }) }
+
+            is ListEntryDetailsUiEvent.SelectedWeekdaysChanged -> onSelectedWeekdaysChange(event.dayNum)
+
+            ListEntryDetailsUiEvent.SaveClicked -> saveEntry()
+
+            is ListEntryDetailsUiEvent.ImageSelected -> {
+                onImageSelected(event.uri, context.contentResolver)
+            }
+        }
     }
 
     fun confirmDiscard() {
         _formState.value = originalFormState ?: EntryFormState()
         _uiState.update { if (it is EntryDetailsUiState.Content) it.copy(isEditing = false, showDiscardDialog = false) else it }
-    }
-
-    fun dismissDiscardDialog() {
-        _uiState.update { if (it is EntryDetailsUiState.Content) it.copy(showDiscardDialog = false) else it }
     }
 
     private fun showError(message: String) {
@@ -153,9 +178,9 @@ class ListEntryDetailsViewModel @Inject constructor(
         return null
     }
 
-    fun save(onDone: () -> Unit) {
+    fun saveEntry() {
         val activeFamilyId = _familyId.value ?: return showError("Missing family context")
-        val activeListId = listId ?: return showError("Missing list context")
+        val activeListId = listId
 
         validate()?.let { return showError(it) }
 
@@ -187,10 +212,8 @@ class ListEntryDetailsViewModel @Inject constructor(
                                 ImageType.RoutineListEntryImage(activeFamilyId, r.data),
                                 context,
                             )
-                            // Result ignored — entry is already saved; image syncs via Synchronizer
                         }
                         _uiState.update { if (it is EntryDetailsUiState.Content) it.copy(isSaving = false) else it }
-                        onDone()
                     }
                     is Result.Failure -> {
                         _uiState.update { if (it is EntryDetailsUiState.Content) it.copy(isSaving = false) else it }
@@ -216,17 +239,9 @@ class ListEntryDetailsViewModel @Inject constructor(
         _formState.update { it.copy(pendingImageUri = uri, pendingImageBitmap = bitmap) }
     }
 
-    fun onNameChange(value: String) {
-        _formState.update { it.copy(name = value) }
-    }
-
     fun onRecurrenceUnitChange(newUnit: String) {
         if (newUnit !in RECURRENCE_UNIT_STRINGS) return
         _formState.update { it.copy(recurrenceUnit = RecurrenceUnit.fromValue(newUnit)) }
-    }
-
-    fun onIntervalChange(value: String) {
-        _formState.update { it.copy(interval = value.filter { c -> c.isDigit() }) }
     }
 
     fun onSelectedWeekdaysChange(dayNum: Int) {
@@ -237,6 +252,14 @@ class ListEntryDetailsViewModel @Inject constructor(
                 state.selectedWeekdays + dayNum
             }
             state.copy(selectedWeekdays = updated)
+        }
+    }
+
+    private fun MutableStateFlow<EntryDetailsUiState>.updateContent(
+        block: (EntryDetailsUiState.Content) -> EntryDetailsUiState
+    ) {
+        this.update { state ->
+            if (state is EntryDetailsUiState.Content) block(state) else state
         }
     }
 }

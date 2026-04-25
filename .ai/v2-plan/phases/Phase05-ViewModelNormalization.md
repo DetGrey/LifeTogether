@@ -109,7 +109,6 @@ Normalise all feature ViewModels to expose a single `UiState` object for persist
 - `AdminGroceryCategoriesViewModel` should keep its current separate delete-dialog flag and selected category state for now.
 - `AdminGroceryCategoriesViewModel` should keep the current free-form string add-category flow for now.
 - `GroceryListViewModel` should refactor `setUpGroceryList()` into a single cancellable setup path instead of launching repeated collectors on each new family id.
-- `GalleryViewModel` should refactor `observeAlbums()` into a single cancellable setup path instead of launching repeated collectors on each new family id.
 - `ListsViewModel` should group the create-dialog fields into a nested create form model.
 - `ListsViewModel` should explicitly cancel `listsJob` and clear `userLists` on logout/session loss.
 - `ListsViewModel` should keep `ListsCommand.NavigateToListDetails` for create-success navigation.
@@ -122,6 +121,7 @@ Normalise all feature ViewModels to expose a single `UiState` object for persist
 
 ### 5.4 Gallery and Tip Tracker ViewModels
 
+- `GalleryViewModel` should refactor `observeAlbums()` into a single cancellable setup path instead of launching repeated collectors on each new family id.
 - The media-upload cleanup for `MediaUploadViewModel` should also include a cleanup pass on `UploadGalleryMediaItemsUseCase`, because its current `invoke` is too long to absorb the moved prep logic without refactoring
 - `UploadGalleryMediaItemsUseCase` should keep its public API but split the long `invoke(...)` into small private helpers for validation, per-item upload, metadata save, and failure aggregation
 - `MediaUploadViewModel` should be removed as soon as the surrounding files stop using it; do not keep it around after the upload dialog and parent screen state refactor is complete
