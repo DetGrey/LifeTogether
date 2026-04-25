@@ -17,7 +17,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.Date
 import javax.inject.Inject
 
 @HiltViewModel
@@ -59,6 +58,7 @@ class SignUpViewModel @Inject constructor(
             birthday = state.birthday,
         ) //todo there should be a check to make sure they are not null either here or in usecase
 
+        // TODO validate password and confirmPassword locally before calling SignUpUseCase
         viewModelScope.launch {
             when (val result = signUpUseCase.invoke(User(state.email, state.password), userInformation)) {
                 is Result.Success -> _commands.send(SignupCommand.NavigateToProfile)

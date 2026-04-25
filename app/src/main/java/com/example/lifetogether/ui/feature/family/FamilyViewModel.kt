@@ -57,6 +57,7 @@ class FamilyViewModel @Inject constructor(
                         showConfirmationDialog = false,
                         confirmationDialogType = null,
                         memberToRemove = null,
+                        showImageUploadDialog = false,
                     )
                 }
 
@@ -75,9 +76,9 @@ class FamilyViewModel @Inject constructor(
             is FamilyUiEvent.RemoveMemberClicked -> showRemoveMemberConfirmation(event.member)
             FamilyUiEvent.DismissConfirmationDialog -> closeConfirmationDialog()
             FamilyUiEvent.ConfirmConfirmationDialog -> confirmConfirmationDialog()
-            FamilyUiEvent.AddImageClicked,
+            FamilyUiEvent.AddImageClicked -> updateUiState { it.copy(showImageUploadDialog = true) }
             FamilyUiEvent.ImageUploadDismissed,
-            FamilyUiEvent.ImageUploadConfirmed -> Unit
+            FamilyUiEvent.ImageUploadConfirmed -> updateUiState { it.copy(showImageUploadDialog = false) }
         }
     }
 

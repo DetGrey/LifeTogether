@@ -39,6 +39,7 @@ class ProfileViewModel @Inject constructor(
                 updateUiState {
                     it.copy(
                         userInformation = (state as? SessionState.Authenticated)?.user,
+                        showImageUploadDialog = false,
                     )
                 }
             }
@@ -47,9 +48,9 @@ class ProfileViewModel @Inject constructor(
 
     fun onEvent(event: ProfileUiEvent) {
         when (event) {
-            ProfileUiEvent.AddImageClicked,
+            ProfileUiEvent.AddImageClicked -> updateUiState { it.copy(showImageUploadDialog = true) }
             ProfileUiEvent.ImageUploadDismissed,
-            ProfileUiEvent.ImageUploadConfirmed -> Unit
+            ProfileUiEvent.ImageUploadConfirmed -> updateUiState { it.copy(showImageUploadDialog = false) }
 
             ProfileUiEvent.NameClicked -> showNameDialog()
             ProfileUiEvent.LogoutClicked -> showLogoutDialog()

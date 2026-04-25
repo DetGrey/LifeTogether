@@ -3,10 +3,7 @@ package com.example.lifetogether.ui.feature.family
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -33,7 +30,6 @@ fun FamilyRoute(
             snackbarHostState.showSnackbar(message)
         }
     }
-    var showImageUploadDialog by remember { mutableStateOf(false) }
 
     CollectUiCommands(viewModel.uiCommands)
 
@@ -52,15 +48,8 @@ fun FamilyRoute(
     FamilyScreen(
         uiState = uiState,
         bitmap = bitmap,
-        showImageUploadDialog = showImageUploadDialog,
-        onUiEvent = { event ->
-            when (event) {
-                FamilyUiEvent.AddImageClicked -> showImageUploadDialog = true
-                FamilyUiEvent.ImageUploadDismissed,
-                FamilyUiEvent.ImageUploadConfirmed -> showImageUploadDialog = false
-                else -> viewModel.onEvent(event)
-            }
-        },
+        showImageUploadDialog = uiState.showImageUploadDialog,
+        onUiEvent = viewModel::onEvent,
         onNavigationEvent = { navigationEvent ->
             when (navigationEvent) {
                 FamilyNavigationEvent.NavigateBack -> appNavigator.navigateBack()
