@@ -62,7 +62,6 @@ fun Dropdown(
                     text = { Text(text = option) },
                     onClick = {
                         onExpandedChange(false)
-                        println("new value: $option")
                         onValueChangedEvent(option)
                     },
                 )

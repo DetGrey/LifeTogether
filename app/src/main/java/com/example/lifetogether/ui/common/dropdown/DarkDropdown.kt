@@ -7,10 +7,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -56,7 +56,7 @@ fun DarkDropdown(
                 unfocusedIndicatorColor = Color.Transparent,
             ),
             modifier = Modifier
-                .menuAnchor(MenuAnchorType.PrimaryNotEditable, true)
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true)
                 .fillMaxSize(),
         )
 
@@ -72,7 +72,6 @@ fun DarkDropdown(
                     text = { Text(text = option, color = Color.White) },
                     onClick = {
                         onExpandedChange(false)
-                        println("new value: $option")
                         onValueChangedEvent(option)
                     },
                     modifier = Modifier.background(MaterialTheme.colorScheme.onBackground),
