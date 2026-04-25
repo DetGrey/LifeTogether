@@ -40,6 +40,7 @@ fun ListEntryDetailsRoute(
         entryId = entryId,
         familyId = familyId,
         bitmap = bitmap,
+        onImageUpload = viewModel::uploadCurrentEntryImage,
         onUiEvent = viewModel::onUiEvent,
         onNavigationEvent = { navigationEvent ->
             when (navigationEvent) {

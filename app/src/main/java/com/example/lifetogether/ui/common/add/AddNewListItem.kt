@@ -19,7 +19,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,7 +30,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithDropdown
 import com.example.lifetogether.ui.common.textfield.CustomTextField
@@ -95,16 +97,14 @@ private fun ListItemInputBar(
     textFieldLabel: String,
     actionLabel: String,
 ) {
-    val addNewListItemViewModel: AddNewListItemViewModel = hiltViewModel()
-
-    LaunchedEffect(key1 = "init") {
-        addNewListItemViewModel.selectedCategory = "${selectedCategory.emoji} ${selectedCategory.name}"
-    }
-
-    if (categoryList != addNewListItemViewModel.oldCategoryList) {
-        addNewListItemViewModel.oldCategoryList = categoryList
-        addNewListItemViewModel.categoryOptions = categoryList.map { "${it.emoji} ${it.name}" }
-        println("AddNewListItem categoryOptions: ${addNewListItemViewModel.categoryOptions}")
+    var showDialog by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
+    var selectedDialogCategory by remember(selectedCategory, categoryList) {
+        mutableStateOf(
+            categoryList.firstOrNull {
+                (it.emoji == selectedCategory.emoji && it.name == selectedCategory.name)
+            } ?: selectedCategory,
+        )
     }
 
     Box(
@@ -136,7 +136,8 @@ private fun ListItemInputBar(
                             shape = CircleShape,
                         )
                         .clickable {
-                            addNewListItemViewModel.showDialog = true
+                            selectedDialogCategory = selectedCategory
+                            showDialog = true
                         },
                     contentAlignment = Alignment.Center,
                 ) {
@@ -184,44 +185,27 @@ private fun ListItemInputBar(
         }
     }
 
-    if (addNewListItemViewModel.showDialog) {
+    if (showDialog) {
         ConfirmationDialogWithDropdown(
-            onDismiss = { addNewListItemViewModel.showDialog = false },
+            onDismiss = {
+                expanded = false
+                showDialog = false
+            },
             onConfirm = {
-                val string = addNewListItemViewModel.selectedCategory
-                var emojiEndIndex = string.offsetByCodePoints(0, 1)
-                var emoji = string.substring(0, emojiEndIndex)
-
-                var category = categoryList.find { it.emoji == emoji }
-
-                if (category == null) {
-                    emojiEndIndex = string.offsetByCodePoints(0, string.codePointCount(0, string.length).coerceAtMost(2))
-                    emoji = string.substring(0, emojiEndIndex)
-                    category = categoryList.find { it.emoji == emoji }
-                }
-
-                val name = string.substring(emojiEndIndex)
-                println("category list: [$emoji, $name]")
-
-                if (category != null) {
-                    onCategoryChange(category)
-                }
-                addNewListItemViewModel.showDialog = false
+                onCategoryChange(selectedDialogCategory)
+                expanded = false
+                showDialog = false
             },
             dialogTitle = "Change category",
             dialogMessage = "",
             dismissButtonMessage = "Cancel",
             confirmButtonMessage = "Change",
-            selectedValue = addNewListItemViewModel.selectedCategory,
-            expanded = addNewListItemViewModel.changeCategoryExpanded,
-            onExpandedChange = {
-                addNewListItemViewModel.changeCategoryExpanded =
-                    !addNewListItemViewModel.changeCategoryExpanded
-            },
-            options = addNewListItemViewModel.categoryOptions,
-            onValueChange = { string ->
-                addNewListItemViewModel.selectedCategory = string
-            },
+            selectedValue = selectedDialogCategory,
+            expanded = expanded,
+            onExpandedChange = { expanded = it },
+            options = categoryList,
+            onValueChange = { selectedDialogCategory = it },
+            optionLabel = { "${it.emoji} ${it.name}" },
         )
     }
 }

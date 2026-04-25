@@ -90,6 +90,7 @@ fun AlbumDetailsRoute(
     AlbumDetailsScreen(
         uiState = uiState,
         showImageUploadDialog = showImageUploadDialog,
+            onImageUpload = viewModel::uploadGalleryMediaItems,
         onUiEvent = { event ->
             when (event) {
                 AlbumDetailsUiEvent.RequestImageUpload -> showImageUploadDialog = true

@@ -16,6 +16,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,7 +27,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 
 @Composable
@@ -31,7 +34,7 @@ fun AddNewString(
     label: String? = null,
     onAddClick: (String) -> Unit,
 ) {
-    val addNewListItemViewModel: AddNewListItemViewModel = hiltViewModel()
+    var textValue by rememberSaveable { mutableStateOf("") }
 
     Box(
         modifier = Modifier
@@ -51,8 +54,8 @@ fun AddNewString(
                     .fillMaxWidth(0.8f),
             ) {
                 CustomTextField(
-                    value = addNewListItemViewModel.textValue,
-                    onValueChange = { addNewListItemViewModel.textValue = it },
+                    value = textValue,
+                    onValueChange = { textValue = it },
                     label = label,
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Done,
@@ -65,8 +68,8 @@ fun AddNewString(
                     .padding(10.dp)
                     .fillMaxHeight()
                     .clickable {
-                        onAddClick(addNewListItemViewModel.textValue)
-                        addNewListItemViewModel.textValue = ""
+                        onAddClick(textValue)
+                        textValue = ""
                     },
                 verticalAlignment = Alignment.CenterVertically,
             ) {

@@ -16,6 +16,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,7 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.example.lifetogether.domain.model.enums.MeasureType
 import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.ui.common.dropdown.DarkDropdown
 import com.example.lifetogether.ui.common.textfield.CustomTextField
@@ -32,7 +36,23 @@ import com.example.lifetogether.ui.common.textfield.CustomTextField
 fun AddNewIngredient(
     onAddClick: (Ingredient) -> Unit,
 ) {
-    val addNewIngredientViewModel: AddNewIngredientViewModel = hiltViewModel()
+    val measureTypeList = remember { MeasureType.entries }
+    var changeMeasureTypeExpanded by remember { mutableStateOf(false) }
+    var ingredient by remember { mutableStateOf(Ingredient()) }
+    var amount by remember { mutableStateOf("") }
+
+    fun updateIngredient(variable: String, value: String) {
+        when (variable) {
+            "amount" -> ingredient = ingredient.copy(amount = value.toDoubleOrNull() ?: 0.0)
+            "measureType" -> {
+                val selectedType = measureTypeList.find { it.unit == value }
+                if (selectedType != null) {
+                    ingredient = ingredient.copy(measureType = selectedType)
+                }
+            }
+            "itemName" -> ingredient = ingredient.copy(itemName = value)
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -57,8 +77,8 @@ fun AddNewIngredient(
                         .fillMaxWidth(0.8f),
                 ) {
                     CustomTextField(
-                        value = addNewIngredientViewModel.ingredient.itemName,
-                        onValueChange = { addNewIngredientViewModel.updateIngredient("itemName", it) },
+                        value = ingredient.itemName,
+                        onValueChange = { updateIngredient("itemName", it) },
                         label = "Ingredient name...",
                         keyboardType = KeyboardType.Text,
                         imeAction = ImeAction.Done,
@@ -72,9 +92,9 @@ fun AddNewIngredient(
                         .fillMaxWidth(0.4f),
                 ) {
                     CustomTextField(
-                        value = addNewIngredientViewModel.amount,
+                        value = amount,
                         onValueChange = {
-                            addNewIngredientViewModel.amount = it
+                            amount = it
                         },
                         label = "Amount",
                         keyboardType = KeyboardType.Number,
@@ -86,15 +106,15 @@ fun AddNewIngredient(
                         .fillMaxWidth(0.5f),
                 ) {
                     DarkDropdown(
-                        selectedValue = addNewIngredientViewModel.ingredient.measureType.unit,
-                        expanded = addNewIngredientViewModel.changeMeasureTypeExpanded,
+                        selectedValue = ingredient.measureType.unit,
+                        expanded = changeMeasureTypeExpanded,
                         onExpandedChange = {
-                            addNewIngredientViewModel.changeMeasureTypeExpanded = it
+                            changeMeasureTypeExpanded = it
                         },
-                        options = addNewIngredientViewModel.measureTypeList.map { it.unit },
+                        options = measureTypeList.map { it.unit },
                         label = null,
                         onValueChangedEvent = {
-                            addNewIngredientViewModel.updateIngredient("measureType", it)
+                            updateIngredient("measureType", it)
                         },
                     )
                 }
@@ -103,13 +123,13 @@ fun AddNewIngredient(
                         .padding(10.dp)
                         .fillMaxHeight()
                         .clickable {
-                            addNewIngredientViewModel.updateIngredient(
+                            updateIngredient(
                                 "amount",
-                                addNewIngredientViewModel.amount,
+                                amount,
                             )
-                            onAddClick(addNewIngredientViewModel.ingredient)
-                            addNewIngredientViewModel.ingredient = Ingredient()
-                            addNewIngredientViewModel.amount = ""
+                            onAddClick(ingredient)
+                            ingredient = Ingredient()
+                            amount = ""
                         },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {

@@ -12,18 +12,19 @@ import com.example.lifetogether.ui.common.dropdown.Dropdown
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @Composable
-fun ConfirmationDialogWithDropdown(
+fun <T> ConfirmationDialogWithDropdown(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
     dialogTitle: String,
     dialogMessage: String,
     dismissButtonMessage: String,
     confirmButtonMessage: String,
-    selectedValue: String,
+    selectedValue: T,
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
-    options: List<String>,
-    onValueChange: (String) -> Unit,
+    options: List<T>,
+    onValueChange: (T) -> Unit,
+    optionLabel: (T) -> String,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -31,12 +32,14 @@ fun ConfirmationDialogWithDropdown(
         text = {
             Text(text = dialogMessage)
             Dropdown(
-                selectedValue = selectedValue,
+                selectedValue = optionLabel(selectedValue),
                 expanded = expanded,
                 onExpandedChange = onExpandedChange,
-                options = options,
+                options = options.map(optionLabel),
                 label = null,
-                onValueChangedEvent = onValueChange,
+                onValueChangedEvent = { selectedLabel ->
+                    options.firstOrNull { optionLabel(it) == selectedLabel }?.let(onValueChange)
+                },
             )
         },
         dismissButton = {
@@ -86,6 +89,7 @@ fun ConfirmationDialogWithDropdownPreview() {
             onExpandedChange = { },
             options = listOf("Select category", "Cat1", "cat2"),
             onValueChange = {},
+            optionLabel = { it },
         )
     }
 }

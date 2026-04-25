@@ -15,6 +15,7 @@ import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.repository.UserListRepository
+import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.domain.usecase.image.UploadImageUseCase
@@ -253,6 +254,19 @@ class ListEntryDetailsViewModel @Inject constructor(
             }
             state.copy(selectedWeekdays = updated)
         }
+    }
+
+    suspend fun uploadCurrentEntryImage(uri: Uri): Result<Unit, AppError> {
+        val familyIdValue = _familyId.value
+            ?: return Result.Failure(AppError.Validation("Missing family context"))
+        val existingEntryId = entryId
+            ?: return Result.Failure(AppError.Validation("Entry must be created before uploading image"))
+
+        return uploadImageUseCase.invoke(
+            uri = uri,
+            imageType = ImageType.RoutineListEntryImage(familyIdValue, existingEntryId),
+            context = context,
+        )
     }
 
     private fun MutableStateFlow<EntryDetailsUiState>.updateContent(

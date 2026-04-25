@@ -60,6 +60,7 @@ private fun RecipeDetailsDestination(
     RecipeDetailsScreen(
         uiState = uiState,
         bitmap = bitmap,
+        onImageUpload = viewModel::uploadRecipeImage,
         onUiEvent = viewModel::onEvent,
         onNavigationEvent = { navigationEvent ->
             when (navigationEvent) {

@@ -49,6 +49,7 @@ fun FamilyRoute(
         uiState = uiState,
         bitmap = bitmap,
         showImageUploadDialog = uiState.showImageUploadDialog,
+        onImageUpload = viewModel::uploadFamilyImage,
         onUiEvent = viewModel::onEvent,
         onNavigationEvent = { navigationEvent ->
             when (navigationEvent) {

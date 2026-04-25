@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.feature.recipes
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
@@ -7,14 +9,18 @@ import com.example.lifetogether.domain.model.Completable
 import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.domain.model.recipe.Instruction
 import com.example.lifetogether.domain.model.recipe.Recipe
+import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.model.toggleCompleted
 import com.example.lifetogether.domain.repository.RecipeRepository
 import com.example.lifetogether.domain.repository.SessionRepository
+import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
+import com.example.lifetogether.domain.usecase.image.UploadImageUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -32,6 +38,8 @@ class RecipeDetailsViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val sessionRepository: SessionRepository,
     private val recipeRepository: RecipeRepository,
+    private val uploadImageUseCase: UploadImageUseCase,
+    @param:ApplicationContext private val context: Context,
 ) : ViewModel() {
     companion object {
         private const val RECIPE_ID_ARG = "recipeId"
@@ -123,6 +131,20 @@ class RecipeDetailsViewModel @Inject constructor(
             RecipeDetailsUiEvent.ConfirmDeleteConfirmation -> deleteRecipe()
             RecipeDetailsUiEvent.SaveClicked -> saveRecipe()
         }
+    }
+
+    suspend fun uploadRecipeImage(uri: Uri): Result<Unit, AppError> {
+        val content = contentState()
+            ?: return Result.Failure(AppError.Validation("Recipe state not ready"))
+        val familyId = content.familyId
+            ?: return Result.Failure(AppError.Validation("Missing family context"))
+        val recipeId = content.recipeId
+            ?: return Result.Failure(AppError.Validation("Recipe must be saved before uploading an image"))
+        return uploadImageUseCase.invoke(
+            uri = uri,
+            imageType = ImageType.RecipeImage(familyId, recipeId),
+            context = context,
+        )
     }
 
     private fun observeRecipe(recipeId: String, familyId: String) {
