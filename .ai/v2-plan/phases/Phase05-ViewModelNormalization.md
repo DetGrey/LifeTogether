@@ -15,6 +15,12 @@ Normalise all feature ViewModels to expose a single `UiState` object for persist
 
 ## Key Decisions Already Made
 
+### Execution Workflow Override (Agreed During Implementation)
+
+- For the remaining Phase 5 issues after `#57`, implementation work should use one shared phase branch instead of one branch per issue.
+- Do not open per-issue PRs for the remaining Phase 5 issues; create one consolidated PR at the end of Phase 5.
+- Keep issue-level tracking updates (board status, issue checklist/body progress) for each issue even when they share the same phase branch.
+
 - Each ViewModel exposes **one main `UiState` data class** as a `StateFlow`.
 - One-off commands (navigation triggers, snackbar messages) use a **`Channel<UiCommand>` exposed as a `Flow`** — avoids rotation bugs and state-clearing boilerplate.
 - No public mutable fields: dialog flags, raw error strings, ad hoc IDs, and filter selections must move into `UiState` or `UiCommand`.
