@@ -1,6 +1,6 @@
 # Phase 5 — ViewModel Normalization
 
-**Status:** Grill-me in progress _(Not started → Grill-me in progress → Implementing → Complete)_
+**Status:** Implementing _(Not started → Grill-me in progress → Implementing → Complete)_
 
 ## Goal
 
