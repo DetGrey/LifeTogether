@@ -10,12 +10,12 @@ Merge all duplicate shared UI components into one canonical component per type. 
 
 Current duplicates to resolve:
 
-| Canonical target | Duplicates to remove |
-|-----------------|----------------------|
-| One text field | `ui/common/CustomTextField.kt` + `ui/common/textfield/CustomTextField.kt` |
-| One dropdown | `ui/common/DropDown.kt` + `ui/common/dropdown/Dropdown.kt` |
-| One date picker text field | `ui/common/DatePickerTextField.kt` + `ui/common/textfield/DatePickerTextField.kt` |
-| Date picker dialog state | `ui/common/dialog/CustomDatePickerDialog.kt` — remove ViewModel for ephemeral UI state |
+| Canonical target           | Duplicates to remove                                                                   |
+|----------------------------|----------------------------------------------------------------------------------------|
+| One text field             | `ui/common/CustomTextField.kt` + `ui/common/textfield/CustomTextField.kt`              |
+| One dropdown               | `ui/common/DropDown.kt` + `ui/common/dropdown/Dropdown.kt`                             |
+| One date picker text field | `ui/common/DatePickerTextField.kt` + `ui/common/textfield/DatePickerTextField.kt`      |
+| Date picker dialog state   | `ui/common/dialog/CustomDatePickerDialog.kt` — remove ViewModel for ephemeral UI state |
 
 ## Key Decisions Already Made
 
@@ -61,3 +61,4 @@ Create milestone `Phase 7: Shared Component Consolidation` and the following iss
 
 - For each component pair, which variant is the more complete / correct starting point for the canonical version?
 - Are there any other `ui/common/` duplicates not yet identified?
+- Component-specific paddings (like card internal padding) should be added to the theme/token layer from Phase06 so how are the paddings usually and should they be changed to more industry standard values?
