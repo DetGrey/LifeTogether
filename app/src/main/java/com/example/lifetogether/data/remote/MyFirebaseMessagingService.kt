@@ -5,10 +5,16 @@ import androidx.core.app.NotificationCompat
 import com.example.lifetogether.R
 import com.example.lifetogether.ui.feature.notification.NotificationService
 import com.example.lifetogether.util.Constants
+import dagger.hilt.android.AndroidEntryPoint
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class MyFirebaseMessagingService : FirebaseMessagingService() {
+
+    @Inject
+    lateinit var notificationService: NotificationService
 
     // [START receive_message]
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
@@ -29,9 +35,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             val autoCancel = remoteMessage.data["autoCancel"]?.toBoolean()
             val destination = remoteMessage.data["destination"]
 
-            // TODO here goes the logic after receiving data
-            // Create an instance of NotificationService and send the notification
-            val notificationService = NotificationService(applicationContext)
             notificationService.createNotification(
                 channelId = channelId ?: Constants.DEFAULT_CHANNEL,
                 title = title,

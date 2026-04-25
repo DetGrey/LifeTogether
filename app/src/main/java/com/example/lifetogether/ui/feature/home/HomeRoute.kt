@@ -1,7 +1,6 @@
 package com.example.lifetogether.ui.feature.home
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -11,6 +10,7 @@ import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.model.session.authenticatedUserOrNull
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.ui.common.event.LocalRootSnackbarHostState
+import com.example.lifetogether.ui.common.image.rememberObservedImageBitmap
 import com.example.lifetogether.ui.navigation.AdminGroceryCategoriesNavRoute
 import com.example.lifetogether.ui.navigation.AdminGrocerySuggestionsNavRoute
 import com.example.lifetogether.ui.navigation.AppNavigator
@@ -23,7 +23,6 @@ import com.example.lifetogether.ui.navigation.ProfileNavRoute
 import com.example.lifetogether.ui.navigation.RecipesNavRoute
 import com.example.lifetogether.ui.navigation.SettingsNavRoute
 import com.example.lifetogether.ui.navigation.TipTrackerNavRoute
-import com.example.lifetogether.ui.viewmodel.ImageViewModel
 import kotlinx.coroutines.launch
 
 @Composable
@@ -31,13 +30,13 @@ fun HomeRoute(
     appNavigator: AppNavigator,
 ) {
     val homeViewModel: HomeViewModel = hiltViewModel()
-    val imageViewModel: ImageViewModel = hiltViewModel()
-    val bitmap by imageViewModel.bitmap.collectAsStateWithLifecycle()
     val sessionState by homeViewModel.sessionState.collectAsStateWithLifecycle()
     val snackbarHostState = LocalRootSnackbarHostState.current
     val coroutineScope = rememberCoroutineScope()
 
     val userInformation = sessionState.authenticatedUserOrNull
+    val familyImageType = userInformation?.familyId?.let { ImageType.FamilyImage(it) }
+    val bitmap = rememberObservedImageBitmap(familyImageType)
     val isAdmin = userInformation?.uid in BuildConfig.ADMIN_LIST.split(",")
     val displayBitmap = if (userInformation?.familyId != null) bitmap else null
     val sections = buildHomeSections(isAdmin = isAdmin)
@@ -66,15 +65,6 @@ fun HomeRoute(
             userInformation = currentSessionState.user,
             content = content,
         )
-    }
-
-    LaunchedEffect(userInformation?.familyId) {
-        userInformation?.familyId?.let { familyId ->
-            imageViewModel.collectImageFlow(
-                imageType = ImageType.FamilyImage(familyId),
-                onError = { },
-            )
-        }
     }
 
     HomeScreen(

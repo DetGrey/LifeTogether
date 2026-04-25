@@ -42,11 +42,15 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private lateinit var navController: NavHostController
+
+    @Inject
+    lateinit var notificationService: NotificationService
 
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     @OptIn(ExperimentalPermissionsApi::class)
@@ -96,7 +100,6 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    val notificationService = remember { NotificationService(this) }
                     LaunchedEffect(Unit) {
                         notificationService.addNotificationChannels()
                     }

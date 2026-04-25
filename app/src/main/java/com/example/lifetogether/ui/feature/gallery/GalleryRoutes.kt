@@ -1,10 +1,11 @@
 package com.example.lifetogether.ui.feature.gallery
 
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
@@ -13,22 +14,20 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.sync.SyncKey
+import com.example.lifetogether.ui.common.di.rememberSessionRepository
 import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.common.sync.FeatureSyncLifecycleBinding
 import com.example.lifetogether.ui.navigation.AlbumMediaNavRoute
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.navigation.GalleryMediaNavRoute
 import com.example.lifetogether.ui.navigation.GalleryGraph
-import com.example.lifetogether.ui.viewmodel.RootCoordinatorViewModel
-import com.example.lifetogether.ui.viewmodel.ImageViewModel
 
 @Composable
 fun GalleryGraphObserverRoute(
     navController: NavHostController,
 ) {
-    val activity = LocalActivity.current as? ComponentActivity ?: return
-    val rootCoordinator: RootCoordinatorViewModel = hiltViewModel(activity)
-    val sessionState by rootCoordinator.sessionState.collectAsStateWithLifecycle()
+    val sessionRepository = rememberSessionRepository()
+    val sessionState by sessionRepository.sessionState.collectAsStateWithLifecycle()
     val familyId = (sessionState as? SessionState.Authenticated)?.user?.familyId
 
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
@@ -72,7 +71,7 @@ fun AlbumDetailsRoute(
     albumId: String,
 ) {
     val viewModel: AlbumDetailsViewModel = hiltViewModel()
-    val imageViewModel: ImageViewModel = hiltViewModel()
+    var showImageUploadDialog by remember { mutableStateOf(false) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     CollectUiCommands(viewModel.uiCommands)
 
@@ -90,12 +89,12 @@ fun AlbumDetailsRoute(
 
     AlbumDetailsScreen(
         uiState = uiState,
-        showImageUploadDialog = imageViewModel.showImageUploadDialog,
+        showImageUploadDialog = showImageUploadDialog,
         onUiEvent = { event ->
             when (event) {
-                AlbumDetailsUiEvent.RequestImageUpload -> imageViewModel.showImageUploadDialog = true
+                AlbumDetailsUiEvent.RequestImageUpload -> showImageUploadDialog = true
                 AlbumDetailsUiEvent.DismissImageUploadDialog,
-                AlbumDetailsUiEvent.ConfirmImageUploadDialog -> imageViewModel.showImageUploadDialog = false
+                AlbumDetailsUiEvent.ConfirmImageUploadDialog -> showImageUploadDialog = false
                 else -> viewModel.onEvent(event)
             }
         },

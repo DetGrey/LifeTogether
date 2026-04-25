@@ -4,8 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.sync.SyncCoordinator
-import com.example.lifetogether.domain.sync.SyncKey
-import com.example.lifetogether.domain.sync.SyncState
 import com.example.lifetogether.domain.repository.GuideRepository
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.repository.UserRepository
@@ -13,7 +11,6 @@ import com.example.lifetogether.domain.result.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -25,15 +22,6 @@ class RootCoordinatorViewModel @Inject constructor(
     private val guideRepository: GuideRepository,
     private val userRepository: UserRepository,
 ) : ViewModel() {
-
-    val sessionState: StateFlow<SessionState> = sessionRepository.sessionState
-
-    val syncStates: StateFlow<Map<SyncKey, SyncState>> =
-        syncCoordinator.syncStates
-    val activeSyncKeys: StateFlow<Set<SyncKey>> =
-        syncCoordinator.activeSyncKeys
-    val observerHasSyncedOnce: StateFlow<Map<SyncKey, Boolean>> =
-        syncCoordinator.hasSyncedOnce
 
     private var guideProgressSyncJob: Job? = null
     private var lastObserverUid: String? = null
@@ -53,14 +41,6 @@ class RootCoordinatorViewModel @Inject constructor(
                 }
             }
         }
-    }
-
-    fun acquireObserver(key: SyncKey) {
-        syncCoordinator.acquireSynchronizer(scope = viewModelScope, key = key)
-    }
-
-    fun releaseObserver(key: SyncKey) {
-        syncCoordinator.releaseSynchronizer(key)
     }
 
     private fun handleAuthenticated(state: SessionState.Authenticated) {

@@ -5,13 +5,24 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.lifetogether.MainActivity
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.sendFCMNotification
 import com.example.lifetogether.util.Constants
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class NotificationService(private val context: Context) {
+@Singleton
+class NotificationService @Inject constructor(
+    @param:ApplicationContext private val context: Context,
+) {
+    private companion object {
+        const val TAG = "NotificationService"
+    }
+
     private val notificationManager = context.getSystemService(NotificationManager::class.java)
 
     // Method to create the notification channel with customizable parameters
@@ -22,10 +33,10 @@ class NotificationService(private val context: Context) {
         importance: Int = NotificationManager.IMPORTANCE_DEFAULT,
     ) {
         val existingChannel = notificationManager.getNotificationChannel(channelId)
-        println("Existing channel: $existingChannel")
+        Log.d(TAG, "Existing channel: $existingChannel")
         if (existingChannel == null) {
             // Create the channel if it doesn't exist
-            println("Creating notification channel: $channelName")
+            Log.d(TAG, "Creating notification channel: $channelName")
             val channel = NotificationChannel(channelId, channelName, importance).apply {
                 description = channelDescription
             }
@@ -59,7 +70,7 @@ class NotificationService(private val context: Context) {
         autoCancel: Boolean = true,
         destination: String? = null,
     ) {
-        println("Trying to create and send notification: $message")
+        Log.d(TAG, "Trying to create and send notification: $message")
 
         sendFCMNotification(
             context,

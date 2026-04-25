@@ -3,15 +3,18 @@ package com.example.lifetogether.ui.feature.lists.entryDetails
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.common.event.LocalRootSnackbarHostState
+import com.example.lifetogether.ui.common.image.rememberObservedImageBitmap
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.ImageViewModel
-import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 
 @Composable
@@ -21,13 +24,22 @@ fun ListEntryDetailsRoute(
     appNavigator: AppNavigator,
 ) {
     val viewModel: ListEntryDetailsViewModel = hiltViewModel()
-    val imageViewModel: ImageViewModel = hiltViewModel()
     val context = LocalContext.current
     val screenState by viewModel.screenState.collectAsStateWithLifecycle()
     val familyId by viewModel.familyId.collectAsStateWithLifecycle()
-    val bitmap by imageViewModel.bitmap.collectAsStateWithLifecycle()
+    val imageType = if (!familyId.isNullOrBlank() && !entryId.isNullOrBlank()) {
+        ImageType.RoutineListEntryImage(familyId!!, entryId)
+    } else {
+        null
+    }
     val snackbarHostState = LocalRootSnackbarHostState.current
     val coroutineScope = rememberCoroutineScope()
+    val bitmap = rememberObservedImageBitmap(imageType) { message ->
+        coroutineScope.launch {
+            snackbarHostState.showSnackbar(message)
+        }
+    }
+    var showImageUploadDialog by remember { mutableStateOf(false) }
 
     CollectUiCommands(viewModel.uiCommands)
 
@@ -37,25 +49,12 @@ fun ListEntryDetailsRoute(
         }
     }
 
-    LaunchedEffect(familyId, entryId) {
-        if (!familyId.isNullOrBlank() && entryId != null) {
-            imageViewModel.collectImageFlow(
-                imageType = ImageType.RoutineListEntryImage(familyId!!, entryId),
-                onError = { message ->
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar(message)
-                    }
-                },
-            )
-        }
-    }
-
     ListEntryDetailsScreen(
         screenState = screenState,
         entryId = entryId,
         familyId = familyId,
         bitmap = bitmap,
-        showImageUploadDialog = imageViewModel.showImageUploadDialog,
+        showImageUploadDialog = showImageUploadDialog,
         onUiEvent = { event ->
             when (event) {
                 ListEntryDetailsUiEvent.EnterEditMode -> viewModel.enterEditMode()
@@ -70,9 +69,9 @@ fun ListEntryDetailsRoute(
                 is ListEntryDetailsUiEvent.ImageSelected -> {
                     viewModel.onImageSelected(event.uri, context.contentResolver)
                 }
-                ListEntryDetailsUiEvent.RequestImageUpload -> imageViewModel.showImageUploadDialog = true
+                ListEntryDetailsUiEvent.RequestImageUpload -> showImageUploadDialog = true
                 ListEntryDetailsUiEvent.DismissImageUpload,
-                ListEntryDetailsUiEvent.ConfirmImageUpload -> imageViewModel.showImageUploadDialog = false
+                ListEntryDetailsUiEvent.ConfirmImageUpload -> showImageUploadDialog = false
             }
         },
         onNavigationEvent = { navigationEvent ->
