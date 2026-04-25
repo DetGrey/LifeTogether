@@ -12,6 +12,7 @@ sealed interface GroceryListUiEvent {
     data class CategoryExpandedClicked(val categoryName: String) : GroceryListUiEvent
     data object CompletedSectionExpandedClicked : GroceryListUiEvent
     data class ItemCompletedToggled(val item: GroceryItem) : GroceryListUiEvent
+    data class NotificationClicked(val item: GroceryItem) : GroceryListUiEvent
     data object DeleteCompletedClicked : GroceryListUiEvent
     data object DismissDeleteCompletedConfirmation : GroceryListUiEvent
     data object ConfirmDeleteCompletedConfirmation : GroceryListUiEvent

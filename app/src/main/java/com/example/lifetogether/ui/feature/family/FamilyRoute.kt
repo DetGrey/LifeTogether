@@ -3,7 +3,10 @@ package com.example.lifetogether.ui.feature.family
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -11,8 +14,8 @@ import com.example.lifetogether.domain.logic.copyToClipboard
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.common.event.LocalRootSnackbarHostState
+import com.example.lifetogether.ui.common.image.rememberObservedImageBitmap
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.ImageViewModel
 import kotlinx.coroutines.launch
 
 @Composable
@@ -21,26 +24,18 @@ fun FamilyRoute(
 ) {
     val context = LocalContext.current
     val viewModel: FamilyViewModel = hiltViewModel()
-    val imageViewModel: ImageViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val bitmap by imageViewModel.bitmap.collectAsStateWithLifecycle()
+    val imageType = uiState.familyId?.let { ImageType.FamilyImage(it) }
     val snackbarHostState = LocalRootSnackbarHostState.current
     val coroutineScope = rememberCoroutineScope()
-
-    CollectUiCommands(viewModel.uiCommands)
-
-    LaunchedEffect(uiState.familyId) {
-        uiState.familyId?.let { familyId ->
-            imageViewModel.collectImageFlow(
-                imageType = ImageType.FamilyImage(familyId),
-                onError = { message ->
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar(message)
-                    }
-                },
-            )
+    val bitmap = rememberObservedImageBitmap(imageType) { message ->
+        coroutineScope.launch {
+            snackbarHostState.showSnackbar(message)
         }
     }
+    var showImageUploadDialog by remember { mutableStateOf(false) }
+
+    CollectUiCommands(viewModel.uiCommands)
 
     LaunchedEffect(viewModel.commands) {
         viewModel.commands.collect { command ->
@@ -57,12 +52,12 @@ fun FamilyRoute(
     FamilyScreen(
         uiState = uiState,
         bitmap = bitmap,
-        showImageUploadDialog = imageViewModel.showImageUploadDialog,
+        showImageUploadDialog = showImageUploadDialog,
         onUiEvent = { event ->
             when (event) {
-                FamilyUiEvent.AddImageClicked -> imageViewModel.showImageUploadDialog = true
+                FamilyUiEvent.AddImageClicked -> showImageUploadDialog = true
                 FamilyUiEvent.ImageUploadDismissed,
-                FamilyUiEvent.ImageUploadConfirmed -> imageViewModel.showImageUploadDialog = false
+                FamilyUiEvent.ImageUploadConfirmed -> showImageUploadDialog = false
                 else -> viewModel.onEvent(event)
             }
         },

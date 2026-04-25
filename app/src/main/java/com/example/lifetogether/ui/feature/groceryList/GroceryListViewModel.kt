@@ -2,6 +2,7 @@ package com.example.lifetogether.ui.feature.groceryList
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.lifetogether.domain.logic.groceryListNotificationOptions
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
@@ -10,7 +11,10 @@ import com.example.lifetogether.domain.repository.GroceryRepository
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
+import com.example.lifetogether.domain.usecase.notification.SendNotificationUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
+import com.example.lifetogether.ui.navigation.NotificationDestination
+import com.example.lifetogether.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -50,6 +54,7 @@ data class GroceryListUiState(
 class GroceryListViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
     private val groceryRepository: GroceryRepository,
+    private val sendNotificationUseCase: SendNotificationUseCase,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(GroceryListUiState())
     val uiState: StateFlow<GroceryListUiState> = _uiState.asStateFlow()
@@ -78,6 +83,7 @@ class GroceryListViewModel @Inject constructor(
             is GroceryListUiEvent.CategoryExpandedClicked -> toggleCategoryExpanded(event.categoryName)
             GroceryListUiEvent.CompletedSectionExpandedClicked -> toggleCompletedSectionExpanded()
             is GroceryListUiEvent.ItemCompletedToggled -> toggleItemCompleted(event.item)
+            is GroceryListUiEvent.NotificationClicked -> sendGroceryNotification(event.item)
             GroceryListUiEvent.DeleteCompletedClicked -> showDeleteCompletedConfirmation()
             GroceryListUiEvent.DismissDeleteCompletedConfirmation -> dismissDeleteCompletedConfirmation()
             GroceryListUiEvent.ConfirmDeleteCompletedConfirmation -> deleteCompletedItems()
@@ -318,6 +324,20 @@ class GroceryListViewModel @Inject constructor(
                     }
                 }
             }
+        }
+    }
+
+    private fun sendGroceryNotification(item: GroceryItem) {
+        val option = groceryListNotificationOptions(item.itemName, item.category?.emoji ?: "")
+
+        viewModelScope.launch {
+            sendNotificationUseCase(
+                familyId = item.familyId,
+                title = option.title,
+                message = option.message,
+                channelId = Constants.GROCERY_LIST_CHANNEL,
+                destination = NotificationDestination.Grocery,
+            )
         }
     }
 

@@ -7,8 +7,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.ui.common.event.CollectUiCommands
+import com.example.lifetogether.ui.common.image.rememberObservedImageBitmap
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.ImageViewModel
 
 @Composable
 fun CreateRecipeRoute(
@@ -37,9 +37,14 @@ private fun RecipeDetailsDestination(
     appNavigator: AppNavigator,
 ) {
     val viewModel: RecipeDetailsViewModel = hiltViewModel()
-    val imageViewModel: ImageViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val bitmap by imageViewModel.bitmap.collectAsStateWithLifecycle()
+    val recipeImageType = run {
+        val content = uiState as? RecipeDetailsUiState.Content ?: return@run null
+        val familyId = content.familyId ?: return@run null
+        val currentRecipeId = content.recipeId ?: return@run null
+        ImageType.RecipeImage(familyId, currentRecipeId)
+    }
+    val bitmap = rememberObservedImageBitmap(recipeImageType, viewModel::onImageError)
 
     CollectUiCommands(viewModel.uiCommands)
 
@@ -53,19 +58,6 @@ private fun RecipeDetailsDestination(
 
     LaunchedEffect(recipeId) {
         viewModel.setUp(recipeId)
-    }
-
-    LaunchedEffect((uiState as? RecipeDetailsUiState.Content)?.familyId, recipeId) {
-        val content = uiState as? RecipeDetailsUiState.Content ?: return@LaunchedEffect
-        val familyId = content.familyId ?: return@LaunchedEffect
-        val currentRecipeId = content.recipeId ?: return@LaunchedEffect
-
-        imageViewModel.collectImageFlow(
-            imageType = ImageType.RecipeImage(familyId, currentRecipeId),
-            onError = { message ->
-                viewModel.onImageError(message)
-            },
-        )
     }
 
     RecipeDetailsScreen(

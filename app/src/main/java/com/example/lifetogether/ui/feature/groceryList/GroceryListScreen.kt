@@ -101,6 +101,9 @@ fun GroceryListScreen(
                                                 onUiEvent(GroceryListUiEvent.ItemCompletedToggled(item))
                                             }
                                         },
+                                        onBellClick = { item ->
+                                            onUiEvent(GroceryListUiEvent.NotificationClicked(item))
+                                        },
                                     )
                                 }
                             }
@@ -121,6 +124,9 @@ fun GroceryListScreen(
                                     if (item is GroceryItem) {
                                         onUiEvent(GroceryListUiEvent.ItemCompletedToggled(item))
                                     }
+                                },
+                                onBellClick = { item ->
+                                    onUiEvent(GroceryListUiEvent.NotificationClicked(item))
                                 },
                                 onDelete = {
                                     onUiEvent(GroceryListUiEvent.DeleteCompletedClicked)

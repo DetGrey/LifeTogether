@@ -40,7 +40,7 @@ class ListEntryDetailsViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
     private val userListRepository: UserListRepository,
     private val uploadImageUseCase: UploadImageUseCase,
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     companion object {
