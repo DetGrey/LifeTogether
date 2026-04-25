@@ -3,9 +3,6 @@ package com.example.lifetogether.ui.feature.gallery
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
@@ -68,16 +65,10 @@ fun GalleryScreenRoute(
 @Composable
 fun AlbumDetailsRoute(
     appNavigator: AppNavigator,
-    albumId: String,
 ) {
     val viewModel: AlbumDetailsViewModel = hiltViewModel()
-    var showImageUploadDialog by remember { mutableStateOf(false) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     CollectUiCommands(viewModel.uiCommands)
-
-    LaunchedEffect(albumId) {
-        viewModel.setUp(albumId)
-    }
 
     LaunchedEffect(viewModel.commands) {
         viewModel.commands.collect { command ->
@@ -89,20 +80,13 @@ fun AlbumDetailsRoute(
 
     AlbumDetailsScreen(
         uiState = uiState,
-        showImageUploadDialog = showImageUploadDialog,
-            onImageUpload = viewModel::uploadGalleryMediaItems,
-        onUiEvent = { event ->
-            when (event) {
-                AlbumDetailsUiEvent.RequestImageUpload -> showImageUploadDialog = true
-                AlbumDetailsUiEvent.DismissImageUploadDialog,
-                AlbumDetailsUiEvent.ConfirmImageUploadDialog -> showImageUploadDialog = false
-                else -> viewModel.onEvent(event)
-            }
-        },
+        onImageUpload = viewModel::uploadGalleryMediaItems,
+        onUiEvent = viewModel::onUiEvent,
         onNavigationEvent = { navigationEvent ->
             when (navigationEvent) {
                 AlbumDetailsNavigationEvent.NavigateBack -> appNavigator.navigateBack()
                 is AlbumDetailsNavigationEvent.NavigateToMediaDetails -> {
+                    val albumId = uiState.album?.id ?: return@AlbumDetailsScreen
                     appNavigator.navigate(GalleryMediaNavRoute(albumId, navigationEvent.initialIndex))
                 }
             }
@@ -113,16 +97,10 @@ fun AlbumDetailsRoute(
 @Composable
 fun MediaDetailsRoute(
     appNavigator: AppNavigator,
-    albumId: String,
-    initialIndex: Int,
 ) {
     val viewModel: MediaDetailsViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     CollectUiCommands(viewModel.uiCommands)
-
-    LaunchedEffect(albumId, initialIndex) {
-        viewModel.setUp(albumId, initialIndex)
-    }
 
     MediaDetailsScreen(
         uiState = uiState,

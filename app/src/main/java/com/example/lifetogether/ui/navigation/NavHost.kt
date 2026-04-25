@@ -7,7 +7,6 @@ import androidx.compose.runtime.remember
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
-import androidx.navigation.toRoute
 import com.example.lifetogether.ui.feature.admin.groceryList.categories.AdminGroceryCategoriesRoute
 import com.example.lifetogether.ui.feature.admin.groceryList.suggestions.AdminGrocerySuggestionsRoute
 import com.example.lifetogether.ui.feature.family.FamilyRoute
@@ -103,14 +102,8 @@ fun NavHost(
 
         navigation<GalleryGraph>(startDestination = GalleryNavRoute::class) {
             composable<GalleryNavRoute> { GalleryScreenRoute(appNavigator) }
-            composable<AlbumMediaNavRoute> { backStackEntry ->
-                val albumId = backStackEntry.toRoute<AlbumMediaNavRoute>().albumId
-                AlbumDetailsRoute(appNavigator, albumId)
-            }
-            composable<GalleryMediaNavRoute> { backStackEntry ->
-                val route = backStackEntry.toRoute<GalleryMediaNavRoute>()
-                MediaDetailsRoute(appNavigator, route.albumId, route.initialIndex)
-            }
+            composable<AlbumMediaNavRoute> { AlbumDetailsRoute(appNavigator) }
+            composable<GalleryMediaNavRoute> { MediaDetailsRoute(appNavigator) }
         }
 
         composable<ListsNavRoute> { ListsRoute(appNavigator) }

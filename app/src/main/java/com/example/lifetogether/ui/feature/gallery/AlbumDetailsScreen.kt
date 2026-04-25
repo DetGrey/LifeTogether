@@ -51,7 +51,6 @@ import com.example.lifetogether.domain.sync.SyncKey
 @Composable
 fun AlbumDetailsScreen(
     uiState: AlbumDetailsUiState,
-    showImageUploadDialog: Boolean,
     onImageUpload: suspend (List<Uri>) -> Result<Unit, AppError>,
     onUiEvent: (AlbumDetailsUiEvent) -> Unit,
     onNavigationEvent: (AlbumDetailsNavigationEvent) -> Unit,
@@ -218,7 +217,7 @@ fun AlbumDetailsScreen(
         )
     }
 
-    if (showImageUploadDialog) {
+    if (uiState.showImageUploadDialog) {
         if (uiState.familyId != null && uiState.album?.id != null) {
             MediaUploadMultipleDialog(
                 onDismiss = { onUiEvent(AlbumDetailsUiEvent.DismissImageUploadDialog) },

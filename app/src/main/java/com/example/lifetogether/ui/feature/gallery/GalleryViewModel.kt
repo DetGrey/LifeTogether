@@ -11,6 +11,7 @@ import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.domain.usecase.gallery.GetAlbumDisplayModelsUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,6 +35,7 @@ class GalleryViewModel @Inject constructor(
     val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
 
     private val requestedThumbnails = mutableSetOf<String>()
+    private var observeAlbumsJob: Job? = null
     private var familyId: String? = null
 
     init {
@@ -47,6 +49,8 @@ class GalleryViewModel @Inject constructor(
                 } else if (state is SessionState.Unauthenticated) {
                     familyId = null
                     requestedThumbnails.clear()
+                    observeAlbumsJob?.cancel()
+                    observeAlbumsJob = null
                     _uiState.update {
                         it.copy(
                             albums = emptyList(),
@@ -110,7 +114,8 @@ class GalleryViewModel @Inject constructor(
     private fun observeAlbums() {
         val familyIdValue = familyId ?: return
 
-        viewModelScope.launch {
+        observeAlbumsJob?.cancel()
+        observeAlbumsJob = viewModelScope.launch {
             getAlbumDisplayModelsUseCase.invoke(familyIdValue).collect { result ->
                 when (result) {
                     is Result.Success -> {
@@ -123,7 +128,6 @@ class GalleryViewModel @Inject constructor(
                             }
                         }
                     }
-
                     is Result.Failure -> showError(result.error.toUserMessage())
                 }
             }

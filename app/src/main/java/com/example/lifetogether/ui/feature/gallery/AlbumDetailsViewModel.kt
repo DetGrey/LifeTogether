@@ -4,6 +4,7 @@ import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.logic.toFullDateString
@@ -27,6 +28,7 @@ import com.example.lifetogether.ui.common.event.UiCommand
 import com.example.lifetogether.ui.model.MenuAction
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -47,6 +49,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AlbumDetailsViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
     private val sessionRepository: SessionRepository,
     private val galleryRepository: GalleryRepository,
     private val moveMediaToAlbumUseCase: MoveMediaToAlbumUseCase,
@@ -66,8 +69,10 @@ class AlbumDetailsViewModel @Inject constructor(
     val commands: Flow<AlbumDetailsCommand> = _commands.receiveAsFlow()
 
     private val requestedThumbnailIds = mutableSetOf<String>()
+    private var observeAlbumJob: Job? = null
+    private var observeAlbumMediaJob: Job? = null
     private var familyId: String? = null
-    private var albumId: String? = null
+    private val albumId: String? = savedStateHandle["albumId"]
 
     private var syncRetryAttempts = 0
     private val maxSyncRetryAttempts = 3
@@ -79,23 +84,17 @@ class AlbumDetailsViewModel @Inject constructor(
                 if (newFamilyId != null && newFamilyId != familyId) {
                     familyId = newFamilyId
                     _uiState.update { it.copy(familyId = familyId) }
-                    albumId?.let { startFetch() }
+                    syncRetryAttempts = 0
+                    observeAlbum()
+                    observeAlbumMedia()
                 } else if (state is SessionState.Unauthenticated) {
                     familyId = null
+                    observeAlbumJob?.cancel()
+                    observeAlbumMediaJob?.cancel()
+                    observeAlbumJob = null
+                    observeAlbumMediaJob = null
                 }
             }
-        }
-    }
-
-    fun setUp(addedAlbumId: String) {
-        if (albumId == addedAlbumId && familyId != null) return
-
-        albumId = addedAlbumId
-        syncRetryAttempts = 0
-
-        if (familyId != null) {
-            _uiState.update { it.copy(isSyncing = false) }
-            startFetch()
         }
     }
 
@@ -141,7 +140,7 @@ class AlbumDetailsViewModel @Inject constructor(
         return uploadGalleryMediaItemsUseCase.invoke(mediaUploadDataList, context)
     }
 
-    fun onEvent(event: AlbumDetailsUiEvent) {
+    fun onUiEvent(event: AlbumDetailsUiEvent) {
         when (event) {
             AlbumDetailsUiEvent.RetryFetchAlbumMedia -> retryFetchAlbumMedia()
             AlbumDetailsUiEvent.ToggleOverflowMenu -> toggleOverflowMenu()
@@ -149,9 +148,13 @@ class AlbumDetailsViewModel @Inject constructor(
             AlbumDetailsUiEvent.ToggleAllMediaSelection -> toggleAllMediaSelection()
             is AlbumDetailsUiEvent.ToggleMediaSelection -> toggleMediaSelection(event.mediaId)
             is AlbumDetailsUiEvent.EnterSelectionMode -> enterSelectionMode(event.mediaId)
-            AlbumDetailsUiEvent.RequestImageUpload -> Unit
-            AlbumDetailsUiEvent.DismissImageUploadDialog -> Unit
-            AlbumDetailsUiEvent.ConfirmImageUploadDialog -> Unit
+            AlbumDetailsUiEvent.RequestImageUpload -> _uiState.update {
+                it.copy(showImageUploadDialog = true)
+            }
+            AlbumDetailsUiEvent.DismissImageUploadDialog,
+            AlbumDetailsUiEvent.ConfirmImageUploadDialog ->  _uiState.update {
+                it.copy(showImageUploadDialog = false)
+            }
             is AlbumDetailsUiEvent.StartOverflowAction -> startOverflowAction(event.action)
             AlbumDetailsUiEvent.DismissOverflowMenuActionDialog -> dismissOverflowMenuActionDialog()
             is AlbumDetailsUiEvent.SetActionDialogText -> setActionDialogText(event.text)
@@ -164,16 +167,12 @@ class AlbumDetailsViewModel @Inject constructor(
         }
     }
 
-    private fun startFetch() {
-        observeAlbum()
-        observeAlbumMedia()
-    }
-
     private fun observeAlbum() {
         val familyIdValue = familyId ?: return
         val albumIdValue = albumId ?: return
 
-        viewModelScope.launch {
+        observeAlbumJob?.cancel()
+        observeAlbumJob = viewModelScope.launch {
             galleryRepository.observeAlbumById(familyIdValue, albumIdValue).collect { result ->
                 when (result) {
                     is Result.Success -> {
@@ -196,7 +195,8 @@ class AlbumDetailsViewModel @Inject constructor(
         val familyIdValue = familyId ?: return
         val albumIdValue = albumId ?: return
 
-        viewModelScope.launch {
+        observeAlbumMediaJob?.cancel()
+        observeAlbumMediaJob = viewModelScope.launch {
             val expectedCount = _uiState.value.album?.count ?: 0
             if (expectedCount > 0 && _uiState.value.media.isEmpty()) {
                 _uiState.update { it.copy(isSyncing = true) }
