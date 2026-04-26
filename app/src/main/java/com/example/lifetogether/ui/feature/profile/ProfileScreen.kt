@@ -103,7 +103,7 @@ fun ProfileScreen(
                             } else {
                                 Image(
                                     modifier = Modifier.fillMaxSize(),
-                                    painter = painterResource(id = R.drawable.profile_picture),
+                                    painter = painterResource(id = R.drawable.ic_avatar),
                                     contentDescription = "profile picture",
                                 )
                             }
@@ -143,7 +143,7 @@ fun ProfileScreen(
                     )
                     ProfileDetails(
                         icon = Icon(
-                            resId = R.drawable.ic_email_black,
+                            resId = R.drawable.ic_email,
                             description = "at sign icon",
                         ),
                         title = "Email",
@@ -151,7 +151,7 @@ fun ProfileScreen(
                     )
                     ProfileDetails(
                         icon = Icon(
-                            resId = R.drawable.ic_cake_black,
+                            resId = R.drawable.ic_cake,
                             description = "cake icon",
                         ),
                         title = "Birthday",
@@ -170,7 +170,7 @@ fun ProfileScreen(
                     // TODO: Implement password change flow and re-enable this row.
                     ProfileDetails(
                         icon = Icon(
-                            resId = R.drawable.ic_password_black,
+                            resId = R.drawable.ic_password,
                             description = "password icon",
                         ),
                         title = "Password",
@@ -179,7 +179,7 @@ fun ProfileScreen(
                     )
                     ProfileDetails(
                         icon = Icon(
-                            resId = R.drawable.ic_logout_black,
+                            resId = R.drawable.ic_logout,
                             description = "logout icon",
                         ),
                         title = "Logout",

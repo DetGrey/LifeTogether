@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -142,9 +143,10 @@ private fun RecipeDetailsContent(
                                 textAlign = TextAlign.Right,
                             )
                         } else if (uiState.recipeId != null) {
-                            Image(
-                                painter = painterResource(id = R.drawable.ic_trashcan_black),
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_trashcan),
                                 contentDescription = "trashcan icon",
+                                tint = Color.Black,
                             )
                         }
                     }
@@ -175,9 +177,10 @@ private fun RecipeDetailsContent(
                             .align(Alignment.BottomEnd),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_edit_black),
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_edit),
                             contentDescription = "edit icon",
+                            tint = Color.Black,
                         )
                     }
                 }

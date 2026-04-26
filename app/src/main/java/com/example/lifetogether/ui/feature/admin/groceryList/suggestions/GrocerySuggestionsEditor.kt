@@ -1,7 +1,6 @@
 package com.example.lifetogether.ui.feature.admin.groceryList.suggestions
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,10 +14,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
@@ -97,11 +98,12 @@ fun CategoryHeader(
                 maxLines = 1,
             )
 
-            Image(
+            Icon(
                 painter = painterResource(
                     id = if (isExpanded) R.drawable.ic_expanded else R.drawable.ic_expand,
                 ),
                 contentDescription = if (isExpanded) "Collapse" else "Expand",
+                tint = Color.Black,
             )
         }
         HorizontalDivider(
@@ -135,16 +137,18 @@ fun GrocerySuggestionRow(
                 text = suggestion.approxPrice.priceToString(),
             )
         }
-        Image(
-            painter = painterResource(id = R.drawable.ic_edit_black),
+        Icon(
+            painter = painterResource(id = R.drawable.ic_edit),
             contentDescription = "edit icon",
+            tint = androidx.compose.ui.graphics.Color.Black,
             modifier = Modifier
                 .fillMaxHeight(0.9f)
                 .clickable { onEdit() },
         )
-        Image(
-            painter = painterResource(id = R.drawable.ic_trashcan_black),
+        Icon(
+            painter = painterResource(id = R.drawable.ic_trashcan),
             contentDescription = "trashcan icon",
+            tint = androidx.compose.ui.graphics.Color.Black,
             modifier = Modifier
                 .fillMaxHeight(0.9f)
                 .clickable { onDelete() },

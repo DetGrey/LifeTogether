@@ -1,6 +1,5 @@
 package com.example.lifetogether.ui.feature.settings
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Text
@@ -53,7 +53,11 @@ fun SettingsItem(
                     .aspectRatio(1f)
                     .weight(1f),
             ) {
-                Image(painter = painterResource(id = icon.resId), contentDescription = icon.description)
+                Icon(
+                    painter = painterResource(id = icon.resId),
+                    contentDescription = icon.description,
+                    tint = Color.Black,
+                )
             }
 
             Column(

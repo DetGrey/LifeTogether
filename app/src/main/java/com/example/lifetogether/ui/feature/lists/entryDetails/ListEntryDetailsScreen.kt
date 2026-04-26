@@ -72,7 +72,7 @@ fun ListEntryDetailsScreen(
                 leftIcon = Icon(resId = R.drawable.ic_back_arrow, description = "back arrow"),
                 onLeftClick = { onNavigationEvent(ListEntryDetailsNavigationEvent.NavigateBack) },
                 text = title,
-                rightIcon = if (isExistingEntry) Icon(resId = R.drawable.ic_edit_black, description = "edit entry") else null,
+                rightIcon = if (isExistingEntry) Icon(resId = R.drawable.ic_edit, description = "edit entry") else null,
                 onRightClick = if (isExistingEntry) {
                     if ((uiState as? EntryDetailsUiState.Content)?.isEditing == true) {
                         { onUiEvent(ListEntryDetailsUiEvent.RequestCancelEdit) }

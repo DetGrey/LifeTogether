@@ -71,3 +71,7 @@ Create milestone `Phase 6: Theme & Color System Rewrite` and the following issue
 
 - `[Phase 6] Rewrite theme system — colors, shapes, typography, and token layer`
 - `[Phase 6] Sweep all composables for magic numbers, raw color references, and icon asset cleanup`
+
+## TODO
+
+There is an extra task of changing the UI composables to use the correct colours to look nice. E.g. FeatureOverview are cards that use onBackground which is not correct.

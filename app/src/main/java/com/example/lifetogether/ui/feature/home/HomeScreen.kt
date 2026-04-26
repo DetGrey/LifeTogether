@@ -59,7 +59,7 @@ fun HomeScreen(
             item {
                 TopBar(
                     leftIcon = Icon(
-                        resId = R.drawable.ic_profile_picture_black,
+                        resId = R.drawable.ic_profile_picture,
                         description = "profile picture icon",
                     ),
                     onLeftClick = {
