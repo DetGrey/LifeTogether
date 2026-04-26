@@ -1,6 +1,6 @@
 # Phase 6 — Theme & Color System Rewrite
 
-**Status:** Not started _(Not started → Grill-me in progress → Implementing → Complete)_
+**Status:** Grill-me finished _(Not started → Grill-me in progress → Implementing → Complete)_
 
 ## Goal
 
@@ -19,13 +19,18 @@ Rewrite `Color.kt` to use private raw colors mapped to semantic Material 3 roles
 
 - **Private Raw Colors:** Raw hex colors must be `private` in `Color.kt`; UI accesses colors only through `MaterialTheme.colorScheme`.
 - **Light Mode Readiness:** Light mode is deferred to a future phase, but the architecture (semantic mapping via `colorScheme`) must be set up so that slotting in a `LightColorScheme` later is trivial.
-- **Neutral Typography:** Text and headings use neutral `onSurface` / `onSurfaceVariant` — never vibrant brand colors.
-- **Tinted Surfaces:** Pure black (`#000000`) is banned for backgrounds. Foundational background must be a deep charcoal with a subtle purple tint (e.g. `#120E15`). Elevated elements use progressively lighter tinted shades.
-- **10% Vibrancy Rule:** The saturated brand primary (`#7E1E80`) is used for at most 10% of screen real estate — primary CTAs, active toggles, primary FABs only.
-- **Muted Containers:** Large active areas (selected cards, bottom nav) use desaturated dark lavender variants of brand purple.
-- **Desaturated Semantic Colors:** Pure red and pure green are banned for error/success states; use pastel/dusty variants that meet WCAG contrast.
+- **Color Mapping (Dark Mode Base):**
+    - *Backgrounds:* `background` & `surface` = `#120E15` (Deep tinted charcoal); `surfaceVariant` = `#1E1822`.
+    - *Neutral Text:* `onSurface` & `onBackground` = `#E6E1E5`; `onSurfaceVariant` = `#CAC4D0`.
+    - *Primary (10% Vibrancy Rule):* `primary` = `#7E1E80` (Saturated brand purple); `onPrimary` = `#FFFFFF`.
+    - *Primary Containers (Muted Active Areas):* `primaryContainer` = `#3A233D`; `onPrimaryContainer` = `#E2DCE6` (Crisp silver-lilac).
+    - *Secondary (Accent):* `secondary` = `#4DB6AC` (Soft dusty teal); `secondaryContainer` = `#004F4F`; `onSecondaryContainer` = `#A6F4EA`.
+    - *Semantic States:* `error` = `#F2B8B5` (Pastel red); `onError` = `#601410`.
+- **Typography & Custom Fonts:**
+    - Expressive/Header text (`Display`, `Headline`, `Title`) uses **Montserrat Alternates**.
+    - Functional text (`Body`, `Label`) uses **Lato**.
+    - Only `MaterialTheme.typography` styles inside feature composables. No arbitrary `fontSize`, `fontWeight`, or `fontFamily`.
 - **8dp Baseline Grid:** All spacing, padding, and dimensions must use multiples of 8dp. Half-steps (4dp) are allowed only for tight internal component spacing. Arbitrary values like `10.dp` or `15.dp` are banned.
-- **Typography:** Only `MaterialTheme.typography` styles inside feature composables. No arbitrary `fontSize`, `fontWeight`, or `fontFamily`.
 - **Shape Tokens:** No ad hoc `RoundedCornerShape(Xdp)` in feature screens. Use `MaterialTheme.shapes`. Primary action buttons use `shapes.extraLarge` or `CircleShape`; cards/containers use `shapes.medium` or `shapes.large`.
 - **App-specific Token Layer:** Strictly foundational. Limited to generic `Spacing` (multiples of 8dp + 4dp half-step) and basic `Sizing` (e.g., 24dp for icons, 48dp for minimum touch targets). Component-specific paddings (like card internal padding) are deferred to Phase 7.
 
@@ -44,6 +49,7 @@ Rewrite `Color.kt` to use private raw colors mapped to semantic Material 3 roles
 ### Acceptance criteria
 - `Color.kt` exposes zero public raw `Color` values.
 - `Theme.kt` fully maps semantic tokens for `DarkColorScheme`.
+- Custom fonts (Montserrat Alternates, Lato) are correctly mapped to M3 Typography scales.
 - A foundational token layer exists and is accessible for standardized `Spacing` and `Sizing`.
 - Zero raw color references (`Color(0xFF...)` or `Color.Black`) exist in `ui/feature/` or `ui/common/`.
 - Zero arbitrary `.dp` or `.sp` values exist in feature screens (exceptions allowed for standard 1dp borders/dividers or explicit fractional aspect ratios).
@@ -52,7 +58,7 @@ Rewrite `Color.kt` to use private raw colors mapped to semantic Material 3 roles
 ### Test cases
 - **Static Analysis (Colors):** Search the codebase for `Color(0x` or `Color.` inside `ui/feature` and `ui/common`. The search must return zero results.
 - **Static Analysis (Spacing):** Search the codebase for ad-hoc sizing like `10.dp`, `15.dp`, etc. All padding and spacing should reference the new token layer (e.g., `Spacing.Medium`).
-- **Visual QA:** Boot the app in Dark Mode. Verify that backgrounds use the tinted charcoal, vibrant primary colors are limited to CTAs, and semantic error/success states use desaturated colors.
+- **Visual QA:** Boot the app in Dark Mode. Verify that backgrounds use the tinted charcoal, vibrant primary colors are limited to CTAs, secondary teal pops nicely against the purple, and semantic error states use desaturated colors. Verify header fonts correctly apply Montserrat Alternates and body fonts apply Lato.
 
 ## GitHub Issues
 
