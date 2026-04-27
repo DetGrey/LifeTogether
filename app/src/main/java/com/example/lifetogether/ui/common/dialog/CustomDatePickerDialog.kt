@@ -7,11 +7,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.setValue
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.ViewModel
 import java.time.LocalDate
 import java.util.Date
 
@@ -22,22 +17,21 @@ fun CustomDatePickerDialog(
     onDismiss: () -> Unit,
     onDateSelected: (Date) -> Unit,
 ) {
-    val datePickerDialogViewModel: DatePickerDialogViewModel = hiltViewModel()
-
     val currentYear = LocalDate.now().year
 
-    val datePickerState =
-        rememberDatePickerState(
-            initialSelectedDateMillis = selectedDate?.time,
-            initialDisplayedMonthMillis = selectedDate?.time ?: System.currentTimeMillis(),
-            yearRange = 1920..currentYear,
-        )
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = selectedDate?.time,
+        initialDisplayedMonthMillis = selectedDate?.time ?: System.currentTimeMillis(),
+        yearRange = 1920..currentYear,
+    )
 
     DatePickerDialog(
         onDismissRequest = { onDismiss() },
         confirmButton = {
             TextButton(
-                onClick = { onDateSelected(Date(datePickerDialogViewModel.selectedDate)) },
+                onClick = {
+                    onDateSelected(Date(datePickerState.selectedDateMillis ?: System.currentTimeMillis()))
+                },
                 enabled = datePickerState.selectedDateMillis != null,
             ) {
                 Text(text = "Confirm")
@@ -49,14 +43,6 @@ fun CustomDatePickerDialog(
             }
         },
     ) {
-        // Setting the selected date
-        datePickerState.selectedDateMillis?.let { millis ->
-            datePickerDialogViewModel.selectedDate = millis
-        }
         DatePicker(state = datePickerState)
     }
-}
-
-class DatePickerDialogViewModel : ViewModel() {
-    var selectedDate by mutableLongStateOf(System.currentTimeMillis())
 }

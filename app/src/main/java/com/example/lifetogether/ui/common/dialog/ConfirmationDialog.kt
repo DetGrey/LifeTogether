@@ -1,5 +1,6 @@
 package com.example.lifetogether.ui.common.dialog
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -15,11 +16,17 @@ fun ConfirmationDialog(
     dialogMessage: String,
     dismissButtonMessage: String,
     confirmButtonMessage: String,
+    content: @Composable () -> Unit = {},
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = dialogTitle) },
-        text = { Text(text = dialogMessage) },
+        text = {
+            Column {
+                Text(text = dialogMessage)
+                content()
+            }
+        },
         dismissButton = {
             Button(
                 onClick = onDismiss,

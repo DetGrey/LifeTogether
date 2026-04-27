@@ -38,7 +38,6 @@ import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.common.dialog.CustomAlertDialog
-import com.example.lifetogether.ui.common.dialog.CustomConfirmationDialog
 import com.example.lifetogether.ui.common.image.MediaUploadMultipleDialog
 import com.example.lifetogether.ui.common.list.CompletableBox
 import com.example.lifetogether.ui.common.text.TextDefault
@@ -280,7 +279,7 @@ fun AlbumDetailsScreen(
                     }
 
                     MenuAction.SelectionActions.MOVE -> {
-                        CustomConfirmationDialog(
+                        ConfirmationDialog(
                             onDismiss = { onUiEvent(AlbumDetailsUiEvent.DismissOverflowMenuActionDialog) },
                             onConfirm = { onUiEvent(AlbumDetailsUiEvent.ConfirmMoveSelectedMedia) },
                             dialogTitle = "Move to another album",
