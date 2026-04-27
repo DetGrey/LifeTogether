@@ -132,9 +132,8 @@ private fun DayCell(day: TipTrackerCalendarDay) {
             day.totalText?.let { totalText ->
                 Text(
                     text = totalText,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary,
-                    fontSize = 18.sp,
                     modifier = Modifier
                         .padding(top = 4.dp)
                         .align(Alignment.Center),

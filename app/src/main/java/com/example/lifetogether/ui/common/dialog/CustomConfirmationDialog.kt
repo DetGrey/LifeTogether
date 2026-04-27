@@ -7,8 +7,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
-
 @Composable
 fun CustomConfirmationDialog(
     onDismiss: () -> Unit,
@@ -33,7 +31,7 @@ fun CustomConfirmationDialog(
                 onClick = onDismiss,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.onBackground,
-                    contentColor = Color.White,
+                    contentColor = MaterialTheme.colorScheme.background,
                 ),
             ) {
                 Text(
@@ -47,7 +45,7 @@ fun CustomConfirmationDialog(
                 onClick = onConfirm,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = Color.White,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
                 ),
             ) {
                 Text(

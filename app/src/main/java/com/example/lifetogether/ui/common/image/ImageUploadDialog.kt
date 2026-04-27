@@ -23,11 +23,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.logic.toBitmap
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.model.sealed.UploadState
 import com.example.lifetogether.domain.result.Result
@@ -71,7 +71,7 @@ fun ImageUploadDialog(
             ) {
                 Text(text = dialogMessage)
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
 
                 Button(onClick = { launcher.launch("image/*") }) {
                     Text(text = "Add Photo")
@@ -109,7 +109,7 @@ fun ImageUploadDialog(
                 onClick = onDismiss,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.onBackground,
-                    contentColor = Color.White,
+                    contentColor = MaterialTheme.colorScheme.background,
                 ),
             ) {
                 Text(
@@ -146,7 +146,7 @@ fun ImageUploadDialog(
                 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = Color.White,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
                 ),
             ) {
                 Text(

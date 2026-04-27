@@ -19,11 +19,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -71,7 +71,7 @@ fun GrocerySuggestionsEditor(
                 }
 
                 // Add spacing after an expanded section
-                item { Spacer(modifier = Modifier.height(8.dp)) }
+                item { Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small)) }
             }
         }
     }
@@ -106,7 +106,7 @@ fun CategoryHeader(
                     id = if (isExpanded) R.drawable.ic_expanded else R.drawable.ic_expand,
                 ),
                 contentDescription = if (isExpanded) "Collapse" else "Expand",
-                tint = Color.Black,
+                tint = MaterialTheme.colorScheme.onSurface,
             )
         }
         HorizontalDivider(

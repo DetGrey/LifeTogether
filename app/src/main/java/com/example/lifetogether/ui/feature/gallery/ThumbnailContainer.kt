@@ -1,6 +1,5 @@
 package com.example.lifetogether.ui.feature.gallery
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
@@ -8,14 +7,12 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -41,8 +38,8 @@ fun ThumbnailContainer(
     Box(
         modifier = Modifier
             .aspectRatio(1f)
-            .clip(RoundedCornerShape(10))
-            .background(MaterialTheme.colorScheme.onBackground)
+            .clip(MaterialTheme.shapes.small)
+            .background(MaterialTheme.colorScheme.tertiaryContainer)
             .combinedClickable(
                 onClick = { onClick() },
                 onLongClick = { onLongClick() }
@@ -84,7 +81,7 @@ fun ThumbnailContainer(
                     .padding(bottom = 5.dp, end = 7.dp),
                 contentAlignment = Alignment.BottomEnd,
             ) {
-                TextDefault(duration.durationToString(), color = Color.White)
+                TextDefault(duration.durationToString(), color = MaterialTheme.colorScheme.onTertiaryContainer)
             }
         }
         if (isSelectionMode) {

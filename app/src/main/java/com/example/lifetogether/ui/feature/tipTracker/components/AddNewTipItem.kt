@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,6 +28,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.logic.toDayOfMonthString
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.ui.common.dialog.CustomDatePickerDialog
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -71,7 +71,7 @@ fun AddNewTipItem(
                         .border(
                             width = 4.dp,
                             color = MaterialTheme.colorScheme.secondary,
-                            shape = RoundedCornerShape(10.dp),
+                            shape = MaterialTheme.shapes.small,
                         )
                         .clickable {
                             showDialog = true
@@ -103,7 +103,7 @@ fun AddNewTipItem(
             ) {
                 Text(text = "Add", color = MaterialTheme.colorScheme.secondary)
 
-                Spacer(modifier = Modifier.width(5.dp))
+                Spacer(modifier = Modifier.width(LifeTogetherTokens.spacing.xSmall))
 
                 Text(
                     text = ">",

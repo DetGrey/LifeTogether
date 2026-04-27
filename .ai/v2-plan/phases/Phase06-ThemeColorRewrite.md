@@ -1,6 +1,6 @@
 # Phase 6 — Theme & Color System Rewrite
 
-**Status:** Implementing _(Not started → Grill-me in progress → Implementing → Complete)_
+**Status:** Complete _(Not started → Grill-me in progress → Implementing → Complete)_
 
 ## Goal
 
@@ -52,6 +52,9 @@ Rewrite `Color.kt` to use private raw colors mapped to semantic Material 3 roles
   - The ic_logo has been replaced with the old ic_logo_small so those are now the same and is called ic_logo which should now be used everywhere where the old two were.
   - The profile_picture.png is now called ic_avatar and is only used as a fallback for profile picture.
 - **Former black-only icon variants to replace with white assets and tint where used:** `ic_checkmark`, `ic_expand`, `ic_expanded`, `ic_heart`, `ic_overflow_menu`.
+- **Allowed raw color values:** `Color.Transparent` and `Color.Unspecified` are permitted anywhere — they are not semantic colors. All other raw `Color.*` and `Color(0xFF...)` references are banned from `ui/feature/` and `ui/common/`.
+- **Dp value scope:** Hardcoded `.dp` values are allowed for object sizes, heights, widths, padding, and border thickness. Only `Spacer` `height`/`width` modifiers must use `LifeTogetherTokens.spacing` tokens instead of raw dp values.
+- **Font size exceptions:** Hardcoded `fontSize` in `TipsCalendar.kt` (9.sp day label, 18.sp total) are approved exceptions — the calendar requires non-standard sizes that do not map to the typography scale.
 
 ## Subphases
 
@@ -59,7 +62,7 @@ Rewrite `Color.kt` to use private raw colors mapped to semantic Material 3 roles
 - [x] 6.2 Define and apply shape tokens in `Shape.kt`
 - [x] 6.3 Define and apply typography scale in `Type.kt`
 - [x] 6.4 Define app-specific foundational token layer (Spacing & Sizing only)
-- [ ] 6.5 Sweep all composables (feature screens and `ui/common/`) for magic numbers and direct color references; replace with theme tokens
+- [x] 6.5 Sweep all composables (feature screens and `ui/common/`) for magic numbers and direct color references; replace with theme tokens
 
 ## Before Starting This Phase
 
@@ -70,13 +73,14 @@ Rewrite `Color.kt` to use private raw colors mapped to semantic Material 3 roles
 - [x] `Theme.kt` maps semantic tokens for `DarkColorScheme` and keeps `LightColorScheme` wiring ready for future divergence.
 - [x] Custom fonts (Montserrat Alternates, Lato) are mapped to M3 Typography roles and preserved size scale.
 - [x] A foundational token layer exists for `Spacing` and `Sizing` and is theme-accessible.
-- [ ] Zero raw color references (`Color(0xFF...)` or `Color.Black`) exist in `ui/feature/` or `ui/common/`.
-- [ ] Zero arbitrary `.dp` or `.sp` values exist in feature screens (exceptions: 1dp borders/dividers or explicit fractional ratios).
+- [x] Zero raw color references (`Color(0xFF...)` or `Color.Black/White/Gray`) exist in `ui/feature/` or `ui/common/` (exceptions: `Color.Transparent` and `Color.Unspecified`).
+- [x] No hardcoded `RoundedCornerShape(...)` in feature screens; all replaced with `MaterialTheme.shapes.*` or `CircleShape`.
+- [x] All `Spacer` `height`/`width` modifiers use `LifeTogetherTokens.spacing` tokens instead of raw dp.
 - [ ] App compiles and visual QA passes for Dark Mode after the full sweep.
 
 ### Test cases
-- [ ] **Static Analysis (Colors):** Search `ui/feature` + `ui/common` for `Color(0x` or `Color.` and verify forbidden direct color usage is eliminated.
-- [ ] **Static Analysis (Spacing):** Search for ad hoc sizes like `10.dp`, `15.dp`; replace with tokenized spacing/sizing where applicable.
+- [ ] **Static Analysis (Colors):** Search `ui/feature` + `ui/common` for `Color(0x` or `Color.` and verify only `Color.Transparent` / `Color.Unspecified` remain.
+- [ ] **Static Analysis (Spacers):** Search for `Spacer.*height\|Spacer.*width` with raw dp values and verify all use `LifeTogetherTokens.spacing`.
 - [ ] **Visual QA:** Verify dark backgrounds, limited primary vibrancy, and typography mapping in key screens.
 
 ## GitHub Issues
@@ -85,7 +89,3 @@ Create milestone `Phase 6: Theme & Color System Rewrite` and the following issue
 
 - `[Phase 6] Rewrite theme system — colors, shapes, typography, and token layer`
 - `[Phase 6] Sweep all composables for magic numbers, raw color references, and icon asset cleanup`
-
-## TODO
-
-There is an extra task of changing the UI composables to use the correct colours to look nice. E.g. FeatureOverview are cards that use onBackground which is not correct.

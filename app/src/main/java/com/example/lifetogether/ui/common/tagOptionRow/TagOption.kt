@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,12 +31,12 @@ fun TagOption(
             .height(30.dp)
             .background(
                 color = if (selected) MaterialTheme.colorScheme.secondary else Color.Transparent,
-                shape = RoundedCornerShape(50)
+                shape = CircleShape
             )
             .border(
                 width = 2.dp,
                 color = if (selected) Color.Transparent else MaterialTheme.colorScheme.onBackground,
-                shape = RoundedCornerShape(50),
+                shape = CircleShape,
             )
             .clickable(
                 enabled = onClick != null,

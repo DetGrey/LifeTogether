@@ -6,7 +6,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.ui.common.dropdown.Dropdown
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -47,7 +46,7 @@ fun <T> ConfirmationDialogWithDropdown(
                 onClick = onDismiss,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.onBackground,
-                    contentColor = Color.White,
+                    contentColor = MaterialTheme.colorScheme.background,
                 ),
             ) {
                 Text(
@@ -61,7 +60,7 @@ fun <T> ConfirmationDialogWithDropdown(
                 onClick = onConfirm,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = Color.White,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
                 ),
             ) {
                 Text(

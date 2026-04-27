@@ -31,13 +31,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.domain.logic.getVideoThumbnail
 import com.example.lifetogether.domain.logic.isImageUri
 import com.example.lifetogether.domain.logic.isVideoUri
@@ -103,18 +104,18 @@ fun MediaUploadMultipleDialog(
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(text = dialogMessage)
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
                 Button(onClick = { launcher.launch("*/*") }) {
                     Text(text = "Add Photos & Videos")
                 }
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
                 LazyRow {
                     items(selectedMediaUris) { uri ->
                         Box(
                             modifier = Modifier
                                 .size(75.dp)
                                 .clip(RectangleShape)
-                                .background(Color.Gray),
+                                .background(MaterialTheme.colorScheme.surfaceVariant),
                             contentAlignment = Alignment.Center,
                         ) {
                             if (isImageUri(context, uri)) {
@@ -137,14 +138,14 @@ fun MediaUploadMultipleDialog(
                                     Icon(
                                         imageVector = Icons.Filled.PlayArrow,
                                         contentDescription = "Video Icon",
-                                        tint = Color.White,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
                             } else {
-                                Text("?", color = Color.White)
+                                Text("?", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(LifeTogetherTokens.spacing.small))
                     }
                 }
 

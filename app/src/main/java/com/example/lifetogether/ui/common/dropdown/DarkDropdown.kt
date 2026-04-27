@@ -50,8 +50,8 @@ fun DarkDropdown(
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = MaterialTheme.colorScheme.onBackground,
                 unfocusedContainerColor = MaterialTheme.colorScheme.onBackground,
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
+                focusedTextColor = MaterialTheme.colorScheme.background,
+                unfocusedTextColor = MaterialTheme.colorScheme.background,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
             ),
@@ -69,7 +69,7 @@ fun DarkDropdown(
         ) {
             options.forEach { option: String ->
                 DropdownMenuItem(
-                    text = { Text(text = option, color = Color.White) },
+                    text = { Text(text = option, color = MaterialTheme.colorScheme.background) },
                     onClick = {
                         onExpandedChange(false)
                         onValueChangedEvent(option)
