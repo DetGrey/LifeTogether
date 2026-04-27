@@ -21,10 +21,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.ui.common.text.TextDefault
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.util.UNCATEGORIZED_CATEGORY
 import com.example.lifetogether.util.priceToString
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -140,7 +143,7 @@ fun GrocerySuggestionRow(
         Icon(
             painter = painterResource(id = R.drawable.ic_edit),
             contentDescription = "edit icon",
-            tint = androidx.compose.ui.graphics.Color.Black,
+            tint = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier
                 .fillMaxHeight(0.9f)
                 .clickable { onEdit() },
@@ -148,10 +151,27 @@ fun GrocerySuggestionRow(
         Icon(
             painter = painterResource(id = R.drawable.ic_trashcan),
             contentDescription = "trashcan icon",
-            tint = androidx.compose.ui.graphics.Color.Black,
+            tint = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier
                 .fillMaxHeight(0.9f)
                 .clickable { onDelete() },
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun Preview() {
+    LifeTogetherTheme {
+        GrocerySuggestionRow(
+            suggestion = GrocerySuggestion(
+                id = "1",
+                category = UNCATEGORIZED_CATEGORY,
+                suggestionName = "Broccoli",
+                approxPrice = 17.5f,
+            ),
+            onEdit = {},
+            onDelete = {}
         )
     }
 }

@@ -18,7 +18,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -36,14 +35,14 @@ fun ProfileDetails(
     onClick: (() -> Unit)? = null,
 ) {
     val clickable = enabled && onClick != null
-    val contentColor = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+    val contentColor = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(50.dp)
             .clip(shape = MaterialTheme.shapes.large)
-            .background(color = Color.White)
+            .background(color = MaterialTheme.colorScheme.surfaceVariant)
             .then(
                 if (clickable) {
                     Modifier.clickable { onClick() }
@@ -63,7 +62,7 @@ fun ProfileDetails(
                         .fillMaxSize(),
                     painter = painterResource(id = icon.resId),
                     contentDescription = icon.description,
-                    tint = contentColor,
+                    tint = MaterialTheme.colorScheme.onSecondary,
                 )
             }
             Box(

@@ -24,11 +24,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.model.enums.MeasureType
 import com.example.lifetogether.domain.model.recipe.Ingredient
-import com.example.lifetogether.ui.common.dropdown.DarkDropdown
+import com.example.lifetogether.ui.common.dropdown.Dropdown
 import com.example.lifetogether.ui.common.textfield.CustomTextField
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
@@ -58,7 +60,7 @@ fun AddNewIngredient(
             .fillMaxWidth()
             .height(130.dp)
             .clip(shape = MaterialTheme.shapes.medium)
-            .background(color = MaterialTheme.colorScheme.onBackground),
+            .background(color = MaterialTheme.colorScheme.primaryContainer),
         contentAlignment = Alignment.CenterStart,
     ) {
         Column(
@@ -104,7 +106,7 @@ fun AddNewIngredient(
                     modifier = Modifier
                         .fillMaxWidth(0.5f),
                 ) {
-                    DarkDropdown(
+                    Dropdown(
                         selectedValue = ingredient.measureType.unit,
                         expanded = changeMeasureTypeExpanded,
                         onExpandedChange = {
@@ -132,7 +134,7 @@ fun AddNewIngredient(
                         },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(text = "Add", color = MaterialTheme.colorScheme.onBackground)
+                    Text(text = "Add", color = MaterialTheme.colorScheme.secondary)
 
                     Spacer(modifier = Modifier.width(LifeTogetherTokens.spacing.xSmall))
 
@@ -143,5 +145,15 @@ fun AddNewIngredient(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun Preview() {
+    LifeTogetherTheme {
+        AddNewIngredient(
+            onAddClick = {}
+        )
     }
 }

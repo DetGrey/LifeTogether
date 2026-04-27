@@ -24,14 +24,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.logic.toDayOfMonthString
 import com.example.lifetogether.ui.common.dialog.CustomDatePickerDialog
 import com.example.lifetogether.ui.common.textfield.CustomTextField
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import java.util.Date
 
 @Composable
@@ -48,8 +48,10 @@ fun AddNewTipItem(
         modifier = Modifier
             .fillMaxWidth()
             .height(60.dp)
-            .clip(shape = MaterialTheme.shapes.large)
-            .background(color = MaterialTheme.colorScheme.onBackground),
+            .background(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = MaterialTheme.shapes.medium
+            ),
         contentAlignment = Alignment.CenterStart,
     ) {
         Row(
@@ -76,7 +78,7 @@ fun AddNewTipItem(
                         },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(text = dateValue.toDayOfMonthString(), color = Color.White)
+                    Text(text = dateValue.toDayOfMonthString(), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
 
 //                VerticalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.secondary, modifier = Modifier.padding(vertical = 10.dp))
@@ -99,7 +101,7 @@ fun AddNewTipItem(
                     },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(text = "Add", color = Color.White)
+                Text(text = "Add", color = MaterialTheme.colorScheme.secondary)
 
                 Spacer(modifier = Modifier.width(5.dp))
 
@@ -121,6 +123,20 @@ fun AddNewTipItem(
                 onDateChange(it)
                 showDialog = false
             },
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ListEntryCardDailyPreview() {
+    LifeTogetherTheme {
+        AddNewTipItem(
+            textValue = "133",
+            onTextChange = {},
+            onAddClick = {},
+            dateValue = Date(),
+            onDateChange = {},
         )
     }
 }

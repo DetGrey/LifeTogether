@@ -51,7 +51,7 @@ fun TagOption(
     ) {
         Text(
             text = tag,
-            color = if (selected) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.background,
+            color = if (selected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onBackground,
         )
     }
 }

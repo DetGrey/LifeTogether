@@ -11,7 +11,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -27,6 +26,7 @@ import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.util.UNCATEGORIZED_CATEGORY
 
 @Composable
 fun AdminGrocerySuggestionsScreen(
@@ -65,7 +65,7 @@ fun AdminGrocerySuggestionsScreen(
                 modifier = Modifier.padding(horizontal = 5.dp),
                 text = "Add a new suggestion by choosing the category (emoji) and writing the suggestion name.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.Black,
+                color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Center,
             )
 
@@ -162,7 +162,7 @@ fun AdminGrocerySuggestionsScreenPreview() {
         AdminGrocerySuggestionsScreen(
             uiState = AdminGrocerySuggestionsUiState(
                 groceryCategories = listOf(
-                    Category(emoji = "❓️", name = "Uncategorized"),
+                    UNCATEGORIZED_CATEGORY,
                     category,
                 ),
                 grocerySuggestions = listOf(

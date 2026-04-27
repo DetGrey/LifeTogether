@@ -43,7 +43,7 @@ fun SettingsItem(
             .fillMaxWidth()
             .height(75.dp)
             .clip(shape = MaterialTheme.shapes.large)
-            .background(MaterialTheme.colorScheme.onBackground),
+            .background(MaterialTheme.colorScheme.primaryContainer),
     ) {
         Row {
             Box(
@@ -55,7 +55,7 @@ fun SettingsItem(
                 Icon(
                     painter = painterResource(id = icon.resId),
                     contentDescription = icon.description,
-                    tint = MaterialTheme.colorScheme.background,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
 
@@ -75,7 +75,7 @@ fun SettingsItem(
                             },
                         ),
                     text = if (titleClickable != null) "$title >" else title,
-                    color = if (titleClickable != null) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.background,
+                    color = if (titleClickable != null) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onPrimaryContainer,
                 )
 
                 if (link != null) {
@@ -90,7 +90,7 @@ fun SettingsItem(
                                 },
                             ),
                         text = "$link >",
-                        color = if (linkClickable != null) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.background,
+                        color = if (linkClickable != null) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onPrimaryContainer,
                     )
                 }
             }

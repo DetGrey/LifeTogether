@@ -43,8 +43,10 @@ fun Dropdown(
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             },
             colors = TextFieldDefaults.colors(
-                focusedContainerColor = MaterialTheme.colorScheme.background,
-                unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                unfocusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                focusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                unfocusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
             ),
             modifier = Modifier
                 .menuAnchor()

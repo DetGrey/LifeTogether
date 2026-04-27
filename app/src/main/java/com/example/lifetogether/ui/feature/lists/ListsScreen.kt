@@ -11,19 +11,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
@@ -34,6 +32,9 @@ import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
+import com.example.lifetogether.ui.common.text.TextDefault
+import com.example.lifetogether.ui.common.text.TextHeadingMedium
+import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
@@ -74,7 +75,7 @@ fun ListsScreen(
 
             if (uiState.userLists.isEmpty()) {
                 item {
-                    Text(text = "No lists yet. Tap + to create one.")
+                    TextDefault(text = "No lists yet. Tap + to create one.")
                 }
             } else {
                 items(uiState.userLists) { list ->
@@ -123,7 +124,7 @@ private fun UserListCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.onBackground, MaterialTheme.shapes.large)
+            .background(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.large)
             .clickable { onClick() }
             .padding(LifeTogetherTokens.spacing.medium),
     ) {
@@ -136,19 +137,16 @@ private fun UserListCard(
                 Text(
                     text = list.type.name.lowercase().replaceFirstChar { it.uppercase() },
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.background,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
                 Text(
                     text = if (list.visibility == Visibility.FAMILY) "Family" else "Private",
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.background,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
-            Text(
+            TextHeadingMedium(
                 text = list.itemName,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.background,
-                fontWeight = FontWeight.Bold,
             )
         }
     }
@@ -169,21 +167,23 @@ private fun CreateListDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Create new list") },
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium)) {
-                TextField(
+                CustomTextField(
                     value = name,
                     onValueChange = onNameChange,
-                    label = { Text("Name") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                    label = "Name",
+                    imeAction = ImeAction.Next,
+                    keyboardType = KeyboardType.Text
+//                    singleLine = true, //todo add these
+//                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences
                 )
 
                 Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
                     Text("Type", style = MaterialTheme.typography.labelLarge)
                     Row(horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
-                        ListType.entries.forEach { listType ->
+                        ListType.entries.forEach { listType -> //todo use TagOption instead
                             val selected = type == listType
                             if (selected) {
                                 Button(onClick = {}) {

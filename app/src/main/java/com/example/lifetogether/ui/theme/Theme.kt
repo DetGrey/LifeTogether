@@ -2,6 +2,7 @@ package com.example.lifetogether.ui.theme
 
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
@@ -38,7 +39,7 @@ fun LifeTogetherTheme(
             colorScheme = colorScheme,
             typography = AppTypography,
             shapes = AppShapes,
-            content = content,
+            content = { Surface { content() } },
         )
     }
 }

@@ -38,7 +38,7 @@ fun RecipeOverview(
             .fillMaxWidth()
             .height(80.dp)
             .clip(shape = MaterialTheme.shapes.large)
-            .background(color = MaterialTheme.colorScheme.onBackground)
+            .background(color = MaterialTheme.colorScheme.primaryContainer)
             .padding(horizontal = LifeTogetherTokens.spacing.medium, vertical = LifeTogetherTokens.spacing.small)
             .clickable { recipe.id?.let { onClick(it) } },
         contentAlignment = Alignment.CenterStart,
@@ -53,7 +53,7 @@ fun RecipeOverview(
                 Text(
                     text = recipe.itemName,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.secondary,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

@@ -46,7 +46,9 @@ fun HomeScreen(
     }
 
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .background(MaterialTheme.colorScheme.background)
+            .fillMaxSize(),
     ) {
         LazyColumn(
             modifier = Modifier
@@ -82,7 +84,7 @@ fun HomeScreen(
                         .fillMaxWidth()
                         .height(200.dp)
                         .clip(shape = MaterialTheme.shapes.large)
-                        .background(color = MaterialTheme.colorScheme.onBackground),
+                        .background(color = MaterialTheme.colorScheme.surfaceVariant),
                 ) {
                     val bitmap = content?.bitmap
                     if (bitmap != null) {
@@ -130,7 +132,7 @@ fun HomeScreen(
 
                         FlowRow(
                             maxItemsInEachRow = section.maxItemsInEachRow,
-                            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),
+                            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                             horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                         ) {
                             section.items.forEach { item ->

@@ -26,6 +26,7 @@ import android.net.Uri
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.family.FamilyInformation
+import com.example.lifetogether.domain.model.family.FamilyMember
 import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.ui.common.TopBar
@@ -90,7 +91,7 @@ fun FamilyScreen(
                                     .padding(top = LifeTogetherTokens.spacing.medium)
                                     .height(200.dp)
                                     .clip(shape = MaterialTheme.shapes.large)
-                                    .background(color = MaterialTheme.colorScheme.onBackground),
+                                    .background(color = MaterialTheme.colorScheme.surfaceVariant),
                             ) {
                                 if (bitmap != null) {
                                     Image(
@@ -233,7 +234,9 @@ fun FamilyScreenPreview() {
                 uid = "uid-1",
                 familyInformation = FamilyInformation(
                     familyId = "family-123",
-                    members = emptyList(),
+                    members = listOf(
+                        FamilyMember(name = "Ane")
+                    ),
                 ),
             ),
             bitmap = null,

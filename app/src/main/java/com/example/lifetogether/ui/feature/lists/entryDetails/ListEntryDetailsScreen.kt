@@ -41,6 +41,7 @@ import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.image.ImageUploadDialog
 import com.example.lifetogether.ui.common.tagOptionRow.TagOption
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
+import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -114,7 +115,10 @@ fun ListEntryDetailsScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(180.dp)
-                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    .background(
+                                        MaterialTheme.colorScheme.surfaceVariant,
+                                        MaterialTheme.shapes.extraLarge
+                                    )
                                     .clickable(enabled = uiState.isEditing) {
                                         if (isExistingEntry) {
                                             onUiEvent(ListEntryDetailsUiEvent.RequestImageUpload)
@@ -132,9 +136,8 @@ fun ListEntryDetailsScreen(
                                         contentScale = ContentScale.Crop,
                                     )
                                 } else {
-                                    Text(
+                                    TextDefault(
                                         text = if (uiState.isEditing) "Tap to add image" else "No image",
-                                        style = MaterialTheme.typography.bodySmall,
                                     )
                                 }
 

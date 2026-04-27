@@ -62,6 +62,7 @@ fun ItemCategoryList(
                     Text(
                         text = category.name,
                         style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
                 Row {
@@ -80,7 +81,7 @@ fun ItemCategoryList(
                     )
                 }
             }
-            HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.primary)
+            HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.primaryContainer)
         }
         if (expanded) {
             Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))

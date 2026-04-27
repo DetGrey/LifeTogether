@@ -12,7 +12,7 @@ import androidx.compose.ui.text.style.TextOverflow
 fun TextDefault(
     text: String,
     modifier: Modifier = Modifier,
-    color: Color = MaterialTheme.colorScheme.primary,
+    color: Color = MaterialTheme.colorScheme.onBackground,
     textAlign: TextAlign = TextAlign.Unspecified,
     maxLines: Int = Int.MAX_VALUE,
 ) {

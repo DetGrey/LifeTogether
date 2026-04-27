@@ -67,9 +67,7 @@ fun AdminGroceryCategoriesScreen(
             }
 
             item {
-                SyncUpdatingText(
-                    keys = setOf(SyncKey.GROCERY_CATEGORIES),
-                )
+                SyncUpdatingText(keys = setOf(SyncKey.GROCERY_CATEGORIES))
 
                 Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
 
@@ -77,13 +75,14 @@ fun AdminGroceryCategoriesScreen(
                     modifier = Modifier.padding(horizontal = 5.dp),
                     text = "Add new category as a string with an emoji and a name with whitespace between e.g. \"\uD83C\uDF5E Bakery\"",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.background,
+                    color = MaterialTheme.colorScheme.onBackground,
                     textAlign = TextAlign.Center,
                 )
 
                 Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.medium))
 
                 TextHeadingMedium("Grocery categories")
+
                 if (uiState.groceryCategories.isNotEmpty()) {
                     ListEditorContainer(
                         uiState.groceryCategories.map { category -> "${category.emoji} ${category.name}" },
@@ -111,7 +110,7 @@ fun AdminGroceryCategoriesScreen(
                     .fillMaxWidth()
                     .height(60.dp)
                     .clip(shape = RoundedCornerShape(LifeTogetherTokens.spacing.large))
-                    .background(color = MaterialTheme.colorScheme.onBackground),
+                    .background(color = MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.CenterStart,
             ) {
                 Row(
@@ -140,7 +139,7 @@ fun AdminGroceryCategoriesScreen(
                             },
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(text = "Add", color = MaterialTheme.colorScheme.onBackground)
+                        Text(text = "Add", color = MaterialTheme.colorScheme.secondary)
 
                         Spacer(modifier = Modifier.width(LifeTogetherTokens.spacing.xSmall))
 
@@ -168,7 +167,7 @@ fun AdminGroceryCategoriesScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun AdminGroceryCategoriesScreenPreview() {
+private fun AdminGroceryCategoriesScreenPreview() {
     LifeTogetherTheme {
         AdminGroceryCategoriesScreen(
             uiState = AdminGroceryCategoriesUiState(
@@ -176,6 +175,7 @@ fun AdminGroceryCategoriesScreenPreview() {
                     Category("❓️", "Uncategorized"),
                     Category("🥦", "Vegetables"),
                 ),
+                newCategory = "❓Frozen"
             ),
             onUiEvent = {},
             onNavigationEvent = {},

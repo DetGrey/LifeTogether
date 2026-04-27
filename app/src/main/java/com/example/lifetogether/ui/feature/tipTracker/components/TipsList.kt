@@ -56,7 +56,7 @@ fun TipsList(
                         .fillMaxWidth()
                         .height(45.dp)
                         .background(
-                            MaterialTheme.colorScheme.surface,
+                            MaterialTheme.colorScheme.surfaceVariant,
                             MaterialTheme.shapes.large
                         )
                         .padding(horizontal = LifeTogetherTokens.spacing.small, vertical = LifeTogetherTokens.spacing.xSmall),
@@ -76,7 +76,7 @@ fun TipsList(
                             Text(
                                 text = "${tipItem.amount} ${tipItem.currency}",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
@@ -97,7 +97,7 @@ fun TipsList(
                                 Icon(
                                     painter = painterResource(id = R.drawable.ic_trashcan),
                                     contentDescription = "Delete icon",
-                                        tint = MaterialTheme.colorScheme.onSurface,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }

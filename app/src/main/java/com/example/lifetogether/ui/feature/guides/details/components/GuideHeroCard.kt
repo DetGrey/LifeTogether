@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.enums.Visibility
+import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 
 @Composable
@@ -28,11 +29,7 @@ fun GuideHeroCard(guide: Guide) {
             TextSubHeadingMedium(guide.itemName)
 
             if (guide.description.isNotBlank()) {
-                Text(
-                    text = guide.description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
+                TextDefault(text = guide.description)
             }
 
             Text(

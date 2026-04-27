@@ -12,17 +12,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.GuideProgress
 import com.example.lifetogether.domain.model.guides.GuideSection
+import com.example.lifetogether.domain.model.guides.GuideStep
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
+import com.example.lifetogether.ui.common.text.TextDefault
+import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @Composable
 fun GuideSectionCard(
@@ -54,7 +57,7 @@ fun GuideSectionCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.onBackground, MaterialTheme.shapes.large)
+            .background(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.large)
             .padding(14.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -66,21 +69,18 @@ fun GuideSectionCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
+                    TextSubHeadingMedium(
                         text = buildString {
                             append(section.title)
                             if (section.amount > 1) {
                                 append(" (x${section.amount})")
                             }
                         },
-                        color = MaterialTheme.colorScheme.background,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
-                    Text(
+                    TextDefault(
                         text = "${progress.first}/${progress.second} steps completed • ${selectedAmountProgress.first}/${selectedAmountProgress.second} in selected part",
-                        color = MaterialTheme.colorScheme.background,
-                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
                 }
 
@@ -88,21 +88,21 @@ fun GuideSectionCard(
                     modifier = Modifier.height(25.dp),
                     painter = painterResource(id = if (expanded) R.drawable.ic_expanded else R.drawable.ic_expand),
                     contentDescription = if (expanded) "collapse section" else "expand section",
-                    tint = MaterialTheme.colorScheme.background,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
 
             LinearProgressIndicator(
                 modifier = Modifier.fillMaxWidth(),
                 progress = { progressPercent / 100f },
-                trackColor = MaterialTheme.colorScheme.background.copy(alpha = 0.3f),
+                trackColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f),
             )
 
             if (!section.comment.isNullOrBlank()) {
                 CommentBubble(
                     comment = section.comment,
-                    textColor = MaterialTheme.colorScheme.background,
-                    surfaceColor = MaterialTheme.colorScheme.background.copy(alpha = 0.14f),
+                    textColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    surfaceColor = MaterialTheme.colorScheme.surfaceVariant,
                     label = "Section note",
                     indentLevel = 0,
                 )
@@ -118,6 +118,7 @@ fun GuideSectionCard(
                             onSelectAmountIndex(selectedIndex)
                         }
                     },
+                    showDividers = false
                 )
             }
 
@@ -125,7 +126,7 @@ fun GuideSectionCard(
                 val canToggleSelectedAmount = canToggleStep(normalizedSelectedAmountIndex)
                 GuideStepRows(
                     steps = selectedAmountSteps,
-                    textColor = MaterialTheme.colorScheme.background,
+                    textColor = MaterialTheme.colorScheme.onPrimaryContainer,
                     indentLevel = 0,
                     canToggleStep = canToggleSelectedAmount,
                     onToggleStep = { stepId ->
@@ -134,5 +135,30 @@ fun GuideSectionCard(
                 )
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun Preview() {
+    LifeTogetherTheme {
+        GuideSectionCard(
+            section = GuideSection(
+                title = "Title",
+                subtitle = "subtitle",
+                amount = 10,
+                completedAmount = 4,
+                comment = "comment......",
+                steps = listOf(
+                    GuideStep()
+                )
+            ),
+            selectedAmountIndex = 1,
+            onSelectAmountIndex = {},
+            expanded = true,
+            onToggleStep = { _, _ -> },
+            canToggleStep = { true },
+            onToggleExpanded = {},
+        )
     }
 }

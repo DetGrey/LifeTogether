@@ -62,6 +62,7 @@ fun TopBar(
                 Icon(
                     painter = painterResource(id = leftIcon.resId),
                     contentDescription = leftIcon.description,
+                    tint = MaterialTheme.colorScheme.onBackground,
                 )
             }
 
@@ -82,6 +83,7 @@ fun TopBar(
                     Icon(
                         painter = painterResource(id = rightIcon.resId),
                         contentDescription = rightIcon.description,
+                        tint = MaterialTheme.colorScheme.onBackground,
                     )
                 } else {
                     // Add a placeholder content (e.g., Spacer) here
@@ -96,6 +98,7 @@ fun TopBar(
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onBackground
             )
         }
     }

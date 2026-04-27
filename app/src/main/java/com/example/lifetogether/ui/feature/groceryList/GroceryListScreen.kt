@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,9 +22,12 @@ import com.example.lifetogether.ui.common.add.AddNewListItem
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.list.ItemCategoryList
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
+import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
+import com.example.lifetogether.util.UNCATEGORIZED_CATEGORY
+import com.example.lifetogether.util.UNCATEGORIZED_CATEGORY_NAME
 import com.example.lifetogether.util.priceToString
 
 @Composable
@@ -67,7 +70,7 @@ fun GroceryListScreen(
                     )
 
                     if (uiState.groceryList.isEmpty()) {
-                        Text(text = "No items on the list yet")
+                        TextDefault(text = "No items on the list yet")
                     } else {
                         uiState.expectedTotalPrice?.let {
                             Column(
@@ -76,9 +79,11 @@ fun GroceryListScreen(
                             ) {
                                 TextSubHeadingMedium(
                                     text = "Expected total price:",
+                                    color = MaterialTheme.colorScheme.secondary,
                                 )
                                 TextSubHeadingMedium(
                                     text = it.priceToString(true),
+                                    color = MaterialTheme.colorScheme.secondary,
                                 )
                             }
                         }
@@ -187,10 +192,57 @@ fun GroceryListScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun GroceryListScreenPreview() {
+private fun GroceryListScreenPreview() {
     LifeTogetherTheme {
         GroceryListScreen(
             uiState = GroceryListUiState(),
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun GroceryListScreenPreview2() {
+    LifeTogetherTheme {
+        GroceryListScreen(
+            uiState = GroceryListUiState(
+                groceryList = listOf(
+                    GroceryItem(
+                        id = "4",
+                        itemName = "Apple",
+                        approxPrice = 12.0F
+                    ),
+                    GroceryItem(
+                        id = "5",
+                        itemName = "Apple",
+                    ),
+                ),
+                categorizedItems = mapOf(
+                    UNCATEGORIZED_CATEGORY to listOf(
+                        GroceryItem(
+                            id = "1",
+                            itemName = "Apple",
+                            approxPrice = 12.0F
+                        ),
+                        GroceryItem(
+                            id = "2",
+                            itemName = "Banana",
+                        ),
+                    )
+                ),
+                completedItems = listOf(
+                    GroceryItem(
+                        id = "3",
+                        itemName = "Banana",
+                    )
+                ),
+                expectedTotalPrice = 40.0F,
+                categoryExpandedStates = mapOf(
+                    UNCATEGORIZED_CATEGORY_NAME to true
+                )
+            ),
             onUiEvent = {},
             onNavigationEvent = {},
         )

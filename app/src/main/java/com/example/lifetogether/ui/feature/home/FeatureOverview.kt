@@ -36,7 +36,7 @@ fun FlowRowScope.FeatureOverview(
             .then(if (fullWidth) Modifier.fillMaxWidth() else Modifier.weight(1f))
             .fillMaxRowHeight()
             .background(
-                MaterialTheme.colorScheme.onBackground,
+                MaterialTheme.colorScheme.primaryContainer,
                 MaterialTheme.shapes.large
             )
             .padding(LifeTogetherTokens.spacing.small)
@@ -48,10 +48,15 @@ fun FlowRowScope.FeatureOverview(
             painter = painterResource(id = icon.resId),
             contentDescription = icon.description,
             modifier = Modifier.height(50.dp),
+            tint = MaterialTheme.colorScheme.onPrimaryContainer,
         )
 
 //        TextHeadingMedium(text = title)
-        TextSubHeadingMedium(text = title, alignCenter = true)
+        TextSubHeadingMedium(
+            text = title,
+            alignCenter = true,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+        )
     }
 }
 

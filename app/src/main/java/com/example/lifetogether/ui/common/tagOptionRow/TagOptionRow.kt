@@ -12,6 +12,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun TagOptionRow(
@@ -25,9 +26,9 @@ fun TagOptionRow(
         modifier = Modifier.fillMaxWidth(),
     ) {
         if (showDividers) {
-            HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.primary)
+            HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.surfaceVariant)
         }
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
 
         if (center) {
             Row(
@@ -64,9 +65,9 @@ fun TagOptionRow(
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
         if (showDividers) {
-            HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.primary)
+            HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.surfaceVariant)
         }
     }
 }

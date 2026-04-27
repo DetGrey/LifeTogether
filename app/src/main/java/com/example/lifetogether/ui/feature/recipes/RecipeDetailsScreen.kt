@@ -24,7 +24,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -96,7 +95,7 @@ private fun RecipeDetailsContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp)
-                        .background(Color.White),
+                        .background(MaterialTheme.colorScheme.tertiary),
                 ) {
                     if (bitmap != null) {
                         Image(
@@ -122,6 +121,7 @@ private fun RecipeDetailsContent(
                         Icon(
                             painter = painterResource(id = R.drawable.ic_back_arrow),
                             contentDescription = "back arrow icon",
+                            tint = MaterialTheme.colorScheme.background,
                         )
                     }
 
@@ -151,7 +151,7 @@ private fun RecipeDetailsContent(
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_trashcan),
                                 contentDescription = "trashcan icon",
-                                tint = Color.Black,
+                                tint = MaterialTheme.colorScheme.background,
                             )
                         }
                     }
@@ -185,7 +185,7 @@ private fun RecipeDetailsContent(
                         Icon(
                             painter = painterResource(id = R.drawable.ic_edit),
                             contentDescription = "edit icon",
-                            tint = Color.Black,
+                            tint = MaterialTheme.colorScheme.background,
                         )
                     }
                 }

@@ -20,6 +20,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
@@ -79,7 +80,7 @@ fun LoginScreen(
                         Text(text = "Login")
                     }
 
-                    Text(
+                    TextDefault(
                         modifier = Modifier
                             .padding(top = LifeTogetherTokens.spacing.small)
                             .fillMaxWidth()

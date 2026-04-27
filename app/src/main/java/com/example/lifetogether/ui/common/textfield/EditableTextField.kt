@@ -22,7 +22,7 @@ fun EditableTextField(
     label: String,
     isEditable: Boolean,
     textStyle: TextStyle = MaterialTheme.typography.bodyMedium,
-    color: Color = Color.Black,
+    color: Color = MaterialTheme.colorScheme.onBackground,
     keyboardType: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Done,
     capitalization: Boolean = true,

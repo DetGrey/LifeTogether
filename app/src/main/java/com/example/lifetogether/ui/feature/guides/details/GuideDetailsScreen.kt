@@ -27,6 +27,7 @@ import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.ui.common.OverflowMenu
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
+import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.feature.guides.details.components.GuideHeroCard
 import com.example.lifetogether.ui.feature.guides.details.components.GuideSectionCard
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -116,9 +117,8 @@ fun GuideDetailsScreen(
                             )
                             .padding(14.dp),
                     ) {
-                        Text(
+                        TextDefault(
                             text = "No sections yet",
-                            style = MaterialTheme.typography.bodyMedium,
                         )
                     }
                 }

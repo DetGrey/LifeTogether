@@ -55,9 +55,7 @@ fun RecipesScreen(
 
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
-                    SyncUpdatingText(
-                        keys = setOf(SyncKey.RECIPES),
-                    )
+                    SyncUpdatingText(keys = setOf(SyncKey.RECIPES))
 
                     TagOptionRow(
                         options = uiState.tagsList,

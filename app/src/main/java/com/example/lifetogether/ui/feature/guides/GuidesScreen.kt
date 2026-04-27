@@ -45,6 +45,7 @@ import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.domain.sync.SyncKey
+import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @Composable
@@ -115,9 +116,7 @@ fun GuidesScreen(
                         text = "Guides",
                     )
 
-                    SyncUpdatingText(
-                        keys = setOf(SyncKey.GUIDES),
-                    )
+                    SyncUpdatingText(keys = setOf(SyncKey.GUIDES))
                 }
             }
 
@@ -304,7 +303,7 @@ private fun GuideOverviewCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.onBackground, MaterialTheme.shapes.large)
+            .background(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.large)
             .clickable { onClick() }
             .padding(14.dp),
     ) {
@@ -317,40 +316,37 @@ private fun GuideOverviewCard(
                 Text(
                     text = if (guide.visibility == Visibility.FAMILY) "Family shared" else "Private",
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.background,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
                 Text(
                     text = if (guide.started) "In progress" else "Not started",
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.background,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                     fontWeight = FontWeight.SemiBold,
                 )
             }
 
-            Text(
+            TextHeadingMedium(
                 text = guide.itemName,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.background,
-                fontWeight = FontWeight.Bold,
             )
             if (guide.description.isNotBlank()) {
                 Text(
                     text = guide.description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.background,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
 
             LinearProgressIndicator(
                 modifier = Modifier.fillMaxWidth(),
                 progress = { progressPercent },
-                trackColor = MaterialTheme.colorScheme.background.copy(alpha = 0.3f),
+                trackColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f),
             )
 
             Text(
                 text = "Sections: $completedSections/${guide.sections.size}  •  Steps: $sectionProgress/$sectionTotal",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.background,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
         }
     }

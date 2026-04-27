@@ -23,6 +23,8 @@ fun CompletableBox(
     isCompleted: Boolean,
     onCompleteToggle: () -> Unit,
     isEnabled: Boolean = true,
+    color: Color = MaterialTheme.colorScheme.primaryContainer,
+    tint: Color = MaterialTheme.colorScheme.onPrimaryContainer,
 ) {
     Box(
         modifier = Modifier
@@ -31,13 +33,13 @@ fun CompletableBox(
             .clip(shape = CircleShape)
             .border(
                 width = 2.dp,
-                color = MaterialTheme.colorScheme.secondary,
+                color = color,
                 shape = CircleShape,
             )
             .clickable(enabled = isEnabled) { onCompleteToggle() }
             .then(
                 if (isCompleted) {
-                    Modifier.background(color = MaterialTheme.colorScheme.secondary)
+                    Modifier.background(color = color)
                 } else {
                     Modifier
                 },
@@ -48,7 +50,7 @@ fun CompletableBox(
             Icon(
                 painter = painterResource(id = R.drawable.ic_checkmark),
                 contentDescription = "checkmark icon",
-                tint = Color.Black,
+                tint = tint,
             )
         }
     }

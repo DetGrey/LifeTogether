@@ -65,9 +65,7 @@ fun TipTrackerScreen(
 
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
-                    SyncUpdatingText(
-                        keys = setOf(SyncKey.TIP_TRACKER),
-                    )
+                    SyncUpdatingText(keys = setOf(SyncKey.TIP_TRACKER))
 
                     if (content.tips.isNotEmpty()) {
                         TagOptionRow(
@@ -154,6 +152,24 @@ private fun TipTrackerScreenPreview() {
                     TipItem(amount = 120f, date = Date()),
                 ),
                 groupedTips = mapOf("01. January 2026" to listOf(TipItem(amount = 120f, date = Date()))),
+            ),
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TipTrackerScreenListPreview() {
+    LifeTogetherTheme {
+        TipTrackerScreen(
+            uiState = TipTrackerUiState.Content(
+                tips = listOf(
+                    TipItem(amount = 120f, date = Date()),
+                ),
+                groupedTips = mapOf("01. January 2026" to listOf(TipItem(amount = 120f, date = Date()))),
+                overviewOption = "List"
             ),
             onUiEvent = {},
             onNavigationEvent = {},

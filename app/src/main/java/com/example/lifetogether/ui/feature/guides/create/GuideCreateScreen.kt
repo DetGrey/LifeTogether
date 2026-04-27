@@ -12,7 +12,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
@@ -21,6 +20,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
@@ -30,6 +31,8 @@ import com.example.lifetogether.domain.model.guides.GuideSection
 import com.example.lifetogether.domain.model.guides.GuideStepType
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dropdown.Dropdown
+import com.example.lifetogether.ui.common.text.TextDefault
+import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @Composable
@@ -63,20 +66,24 @@ fun GuideCreateScreen(
         }
 
         item {
-            TextField(
+            CustomTextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = uiState.title,
                 onValueChange = { onUiEvent(GuideCreateUiEvent.TitleChanged(it)) },
-                label = { Text("Title") },
+                label = "Title",
+                imeAction = ImeAction.Next,
+                keyboardType = KeyboardType.Text
             )
         }
 
         item {
-            TextField(
+            CustomTextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = uiState.description,
                 onValueChange = { onUiEvent(GuideCreateUiEvent.DescriptionChanged(it)) },
-                label = { Text("Description") },
+                label = "Description",
+                imeAction = ImeAction.Next,
+                keyboardType = KeyboardType.Text
             )
         }
 
@@ -106,9 +113,8 @@ fun GuideCreateScreen(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Text(
+                TextDefault(
                     text = "Sections (optional)",
-                    style = MaterialTheme.typography.titleSmall,
                 )
 
                 Row(
@@ -116,17 +122,21 @@ fun GuideCreateScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    TextField(
+                    CustomTextField(
                         modifier = Modifier.weight(1f),
                         value = newSectionTitle,
                         onValueChange = { newSectionTitle = it },
-                        label = { Text("Section title") },
+                        label = "Section title",
+                        imeAction = ImeAction.Next,
+                        keyboardType = KeyboardType.Text
                     )
-                    TextField(
-                        modifier = Modifier.weight(0.45f),
+                    CustomTextField(
+                        modifier = Modifier.weight(0.5f),
                         value = newSectionAmount,
                         onValueChange = { newSectionAmount = it.filter { char -> char.isDigit() } },
-                        label = { Text("Amount") },
+                        label = "Amount",
+                        imeAction = ImeAction.Next,
+                        keyboardType = KeyboardType.Text
                     )
                     Button(
                         onClick = {
@@ -147,7 +157,7 @@ fun GuideCreateScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.onBackground, MaterialTheme.shapes.medium)
+                        .background(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.medium)
                         .padding(12.dp),
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -159,7 +169,7 @@ fun GuideCreateScreen(
                                 }
                             },
                             style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.background,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
                         )
 
                         var numberedIndex = 1
@@ -175,18 +185,19 @@ fun GuideCreateScreen(
                                 GuideStepType.SUBSECTION -> "Subsection: ${step.title.ifBlank { step.name }}"
                                 GuideStepType.UNKNOWN -> step.content
                             }
-                            Text(
+                            TextDefault(
                                 text = stepText,
-                                color = MaterialTheme.colorScheme.background,
-                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
                             )
                         }
 
-                        TextField(
+                        CustomTextField(
                             modifier = Modifier.fillMaxWidth(),
                             value = stepDrafts[section.id] ?: "",
                             onValueChange = { stepDrafts[section.id] = it },
-                            label = { Text("Add step") },
+                            label = "Step name",
+                            imeAction = ImeAction.Next,
+                            keyboardType = KeyboardType.Text
                         )
 
                         var stepTypeExpanded by remember(section.id) { mutableStateOf(false) }

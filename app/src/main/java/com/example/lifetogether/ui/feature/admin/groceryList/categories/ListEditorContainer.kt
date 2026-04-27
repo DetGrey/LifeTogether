@@ -36,7 +36,7 @@ fun ListEditorContainer(
                 .padding(LifeTogetherTokens.spacing.small),
             verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
         ) {
-            HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.primary)
+            HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.primaryContainer)
             for (item in list) {
                 Row(
                     modifier = Modifier
@@ -53,7 +53,7 @@ fun ListEditorContainer(
                         modifier = Modifier.clickable { onDelete(item) },
                     )
                 }
-                HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.primary)
+                HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.primaryContainer)
             }
         }
     }

@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
@@ -105,9 +106,7 @@ fun ListDetailsScreen(
                         .padding(horizontal = LifeTogetherTokens.spacing.small),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    SyncUpdatingText(
-                        keys = setOf(SyncKey.ROUTINE_LIST_ENTRIES),
-                    )
+                    SyncUpdatingText(keys = setOf(SyncKey.ROUTINE_LIST_ENTRIES))
 
                     if (uiState.isSelectionModeActive) {
                         SelectionModeBar(
@@ -260,11 +259,11 @@ private fun ListEntryCard(
             .fillMaxWidth()
             .border(
                 width = if (isSelected) 2.dp else 0.dp,
-                color = if (isSelected) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.background.copy(alpha = 0f),
+                color = if (isSelected) MaterialTheme.colorScheme.tertiary else Color.Transparent,
                 shape = MaterialTheme.shapes.large,
             )
             .background(
-                color = MaterialTheme.colorScheme.onBackground,
+                color = MaterialTheme.colorScheme.primaryContainer,
                 shape = MaterialTheme.shapes.large,
             )
             .combinedClickable(
@@ -282,6 +281,8 @@ private fun ListEntryCard(
                     isCompleted = false,
                     onCompleteToggle = onComplete,
                     isEnabled = !isSelectionMode,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    tint = MaterialTheme.colorScheme.primaryContainer,
                 )
                 TextHeadingMedium(
                     text = entry.itemName,
@@ -296,13 +297,13 @@ private fun ListEntryCard(
                 Column(modifier = Modifier.padding(top = 6.dp)) {
                     TextDefault(
                         text = "Every ${entry.interval} ${entry.recurrenceUnit.value}",
-                        color = MaterialTheme.colorScheme.background,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
 
                     entry.nextDate?.let { nextDate ->
                         TextDefault(
                             text = "Next: ${dateFormat.format(nextDate)}",
-                            color = MaterialTheme.colorScheme.background,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
                         )
                     }
                 }
@@ -327,6 +328,35 @@ private fun ListEntryCard(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ListEntryScreenLoadingPreview() {
+    LifeTogetherTheme {
+        ListDetailsScreen(
+            screenState = ListDetailsScreenState(),
+            onUiEvent = {},
+            onNavigationEvent = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ListEntryScreenPreview() {
+    LifeTogetherTheme {
+        ListDetailsScreen(
+            screenState = ListDetailsScreenState(
+                uiState = ListDetailsUiState.Content("Name"),
+                entries = listOf(RoutineListEntry(
+                    itemName = "Water avocado plants"
+                ))
+            ),
+            onUiEvent = {},
+            onNavigationEvent = {}
+        )
     }
 }
 

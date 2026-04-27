@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -27,11 +28,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithDropdown
 import com.example.lifetogether.ui.common.textfield.CustomTextField
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
+import com.example.lifetogether.util.UNCATEGORIZED_CATEGORY
 
 @Composable
 fun AddNewListItem(
@@ -111,7 +115,7 @@ private fun ListItemInputBar(
             .fillMaxWidth()
             .height(60.dp)
             .clip(shape = MaterialTheme.shapes.large)
-            .background(color = MaterialTheme.colorScheme.onBackground),
+            .background(color = MaterialTheme.colorScheme.primaryContainer),
         contentAlignment = Alignment.CenterStart,
     ) {
         Row(
@@ -131,7 +135,7 @@ private fun ListItemInputBar(
                         .clip(shape = CircleShape)
                         .border(
                             width = 2.dp,
-                            color = MaterialTheme.colorScheme.secondary,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
                             shape = CircleShape,
                         )
                         .clickable {
@@ -172,7 +176,7 @@ private fun ListItemInputBar(
                     },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(text = actionLabel, color = MaterialTheme.colorScheme.onBackground)
+                Text(text = actionLabel, color = MaterialTheme.colorScheme.secondary)
 
                 Spacer(modifier = Modifier.width(LifeTogetherTokens.spacing.xSmall))
 
@@ -206,5 +210,34 @@ private fun ListItemInputBar(
             onValueChange = { selectedDialogCategory = it },
             optionLabel = { "${it.emoji} ${it.name}" },
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun Preview() {
+    LifeTogetherTheme {
+        Column {
+            AddNewListItem(
+                textValue = "Apple",
+                onTextChange = { },
+                priceValue = "1.5",
+                onPriceChange = { },
+                onAddClick = { },
+                categoryList = listOf(),
+                selectedCategory = UNCATEGORIZED_CATEGORY,
+                onCategoryChange = { },
+            )
+            EditListItem(
+                textValue = "Banana",
+                onTextChange = { },
+                priceValue = "",
+                onPriceChange = { },
+                onSaveClick = { },
+                categoryList = listOf(),
+                selectedCategory = UNCATEGORIZED_CATEGORY,
+                onCategoryChange = { },
+            )
+        }
     }
 }

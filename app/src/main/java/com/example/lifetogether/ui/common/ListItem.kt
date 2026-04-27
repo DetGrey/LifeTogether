@@ -3,6 +3,7 @@ package com.example.lifetogether.ui.common
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -50,7 +51,10 @@ fun ListItem(
 
     Row(
         modifier = Modifier
-            .padding(horizontal = LifeTogetherTokens.spacing.small, vertical = LifeTogetherTokens.spacing.xSmall)
+            .padding(
+                horizontal = LifeTogetherTokens.spacing.small,
+                vertical = LifeTogetherTokens.spacing.xSmall
+            )
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
@@ -70,7 +74,8 @@ fun ListItem(
                 text = text,
                 style = MaterialTheme.typography.bodyLarge,
                 textDecoration = if (item.completed) TextDecoration.LineThrough else TextDecoration.None,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+
             )
 
         }
@@ -105,20 +110,36 @@ fun ListItem(
 @Composable
 fun ListItemPreview() {
     LifeTogetherTheme {
-        ListItem(
-            GroceryItem(
-                familyId = "dsuaihfao",
-                category = Category(
-                    "🍎",
-                    "Fruits and vegetables",
+        Column {
+            ListItem(
+                GroceryItem(
+                    familyId = "dsuaihfao",
+                    category = Category(
+                        "🍎",
+                        "Fruits and vegetables",
+                    ),
+                    itemName = "Potatoes",
+                    lastUpdated = Date(System.currentTimeMillis()),
+                    completed = true,
                 ),
-                itemName = "Potatoes",
-                lastUpdated = Date(System.currentTimeMillis()),
-                completed = true,
-            ),
-            trailingText = "9 kr.",
-            onCompleteToggle = {},
-            onBellClick = {}
-        )
+                trailingText = "9 kr.",
+                onCompleteToggle = {},
+                onBellClick = {}
+            )
+            ListItem(
+                GroceryItem(
+                    category = Category(
+                        "🍎",
+                        "Fruits and vegetables",
+                    ),
+                    itemName = "Tomato",
+                    lastUpdated = Date(System.currentTimeMillis()),
+                    completed = false,
+                ),
+                trailingText = "9 kr.",
+                onCompleteToggle = {},
+                onBellClick = {}
+            )
+        }
     }
 }

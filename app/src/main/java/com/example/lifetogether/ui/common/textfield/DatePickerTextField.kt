@@ -32,9 +32,10 @@ fun DatePickerTextField(
         onValueChange = { },
         label = { Text(label) },
         colors = TextFieldDefaults.colors(
-            disabledContainerColor = MaterialTheme.colorScheme.onBackground,
-            disabledLabelColor = MaterialTheme.colorScheme.background,
-            disabledTextColor = MaterialTheme.colorScheme.background,
+            focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+            disabledContainerColor = MaterialTheme.colorScheme.primaryContainer,
+            disabledLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            disabledTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
         ),
         enabled = false,
     )
