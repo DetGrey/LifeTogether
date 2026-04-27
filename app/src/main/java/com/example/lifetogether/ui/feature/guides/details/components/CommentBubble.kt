@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,7 +26,7 @@ fun CommentBubble(
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = ((indentLevel * 18) + 40).dp)
-            .background(surfaceColor, RoundedCornerShape(12.dp))
+            .background(surfaceColor, MaterialTheme.shapes.small)
             .padding(10.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {

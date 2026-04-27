@@ -10,7 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.UserInformation
@@ -19,6 +18,7 @@ import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun SettingsScreen(
@@ -32,9 +32,9 @@ fun SettingsScreen(
         modifier = Modifier.fillMaxSize(),
     ) {
         LazyColumn(
-            modifier = Modifier.padding(10.dp),
+            modifier = Modifier.padding(LifeTogetherTokens.spacing.small),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(30.dp),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
         ) {
             item {
                 TopBar(
@@ -51,7 +51,7 @@ fun SettingsScreen(
 
             item {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(15.dp),
+                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
                 ) {
                     SettingsItem(
                         icon = Icon(R.drawable.ic_profile_picture, "profile icon"),

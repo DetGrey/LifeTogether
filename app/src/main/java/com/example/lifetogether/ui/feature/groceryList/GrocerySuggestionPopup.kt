@@ -16,11 +16,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.util.priceToString
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun GrocerySuggestionPopup(
@@ -33,28 +33,28 @@ fun GrocerySuggestionPopup(
             .height((75 + 30 * (suggestions.size - 1)).dp)
             .background(
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.9f),
-                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
+                shape = RoundedCornerShape(topStart = LifeTogetherTokens.spacing.large, topEnd = LifeTogetherTokens.spacing.large, bottomStart = 0.dp, bottomEnd = 0.dp)
             )
-            .padding(horizontal = 20.dp)
-            .padding(top = 15.dp),
+            .padding(horizontal = LifeTogetherTokens.spacing.medium)
+            .padding(top = LifeTogetherTokens.spacing.medium),
         contentAlignment = Alignment.CenterStart,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
         ) {
             for (suggestion in suggestions) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { onClick(suggestion) },
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)
                 ) {
                     Text(
                         modifier = Modifier.fillMaxWidth(0.45f),
                         text = "${suggestion.category?.emoji} ${suggestion.category?.name}",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.background,
                         style = MaterialTheme.typography.bodyMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -62,7 +62,7 @@ fun GrocerySuggestionPopup(
                     Text(
                         modifier = Modifier.weight(1f),
                         text = suggestion.suggestionName,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.background,
                         style = MaterialTheme.typography.bodyMedium,
                         maxLines = 1,
                     )
@@ -71,7 +71,7 @@ fun GrocerySuggestionPopup(
                             modifier = Modifier
                                 .fillMaxWidth(0.3f),
                             text = it.priceToString(),
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.background,
                             style = MaterialTheme.typography.bodySmall,
                             maxLines = 1,
                         )

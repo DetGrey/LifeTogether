@@ -20,7 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -36,6 +35,7 @@ import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun AdminGroceryCategoriesScreen(
@@ -48,10 +48,10 @@ fun AdminGroceryCategoriesScreen(
     ) {
         LazyColumn(
             modifier = Modifier
-                .padding(10.dp)
-                .padding(bottom = 60.dp),
+                .padding(LifeTogetherTokens.spacing.small)
+                .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(30.dp),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
         ) {
             item {
                 TopBar(
@@ -71,17 +71,17 @@ fun AdminGroceryCategoriesScreen(
                     keys = setOf(SyncKey.GROCERY_CATEGORIES),
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
 
                 Text(
                     modifier = Modifier.padding(horizontal = 5.dp),
                     text = "Add new category as a string with an emoji and a name with whitespace between e.g. \"\uD83C\uDF5E Bakery\"",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.background,
                     textAlign = TextAlign.Center,
                 )
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.medium))
 
                 TextHeadingMedium("Grocery categories")
                 if (uiState.groceryCategories.isNotEmpty()) {
@@ -103,14 +103,14 @@ fun AdminGroceryCategoriesScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(10.dp),
+                .padding(LifeTogetherTokens.spacing.small),
             contentAlignment = Alignment.BottomCenter,
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(60.dp)
-                    .clip(shape = RoundedCornerShape(20))
+                    .clip(shape = RoundedCornerShape(LifeTogetherTokens.spacing.large))
                     .background(color = MaterialTheme.colorScheme.onBackground),
                 contentAlignment = Alignment.CenterStart,
             ) {
@@ -133,16 +133,16 @@ fun AdminGroceryCategoriesScreen(
                     }
                     Row(
                         modifier = Modifier
-                            .padding(10.dp)
+                            .padding(LifeTogetherTokens.spacing.small)
                             .fillMaxHeight()
                             .clickable {
                                 onUiEvent(AdminGroceryCategoriesUiEvent.AddCategoryClicked)
                             },
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(text = "Add", color = Color.White)
+                        Text(text = "Add", color = MaterialTheme.colorScheme.onBackground)
 
-                        Spacer(modifier = Modifier.width(5.dp))
+                        Spacer(modifier = Modifier.width(LifeTogetherTokens.spacing.xSmall))
 
                         Text(
                             text = ">",

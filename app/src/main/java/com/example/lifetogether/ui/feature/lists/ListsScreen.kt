@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -26,7 +25,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.enums.Visibility
@@ -37,6 +35,7 @@ import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun ListsScreen(
@@ -48,15 +47,15 @@ fun ListsScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(10.dp)
-                .padding(bottom = 80.dp),
+                .padding(LifeTogetherTokens.spacing.small)
+                .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
         ) {
             item {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                 ) {
                     TopBar(
                         leftIcon = Icon(
@@ -94,7 +93,7 @@ fun ListsScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = 30.dp, end = 30.dp),
+                .padding(bottom = LifeTogetherTokens.spacing.xLarge, end = LifeTogetherTokens.spacing.xLarge),
             contentAlignment = Alignment.BottomEnd,
         ) {
             AddButton(onClick = { onUiEvent(ListsUiEvent.CreateListClicked) })
@@ -124,11 +123,11 @@ private fun UserListCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.onBackground, RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.onBackground, MaterialTheme.shapes.large)
             .clickable { onClick() }
-            .padding(14.dp),
+            .padding(LifeTogetherTokens.spacing.medium),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -171,7 +170,7 @@ private fun CreateListDialog(
         onDismissRequest = onDismiss,
         title = { Text("Create new list") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium)) {
                 TextField(
                     value = name,
                     onValueChange = onNameChange,
@@ -181,9 +180,9 @@ private fun CreateListDialog(
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                 )
 
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
                     Text("Type", style = MaterialTheme.typography.labelLarge)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
                         ListType.entries.forEach { listType ->
                             val selected = type == listType
                             if (selected) {
@@ -199,9 +198,9 @@ private fun CreateListDialog(
                     }
                 }
 
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
                     Text("Visibility", style = MaterialTheme.typography.labelLarge)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
                         Visibility.entries.forEach { vis ->
                             val selected = visibility == vis
                             if (selected) {
@@ -236,8 +235,8 @@ private fun CreateListDialog(
 fun UserListCardPreview() {
     LifeTogetherTheme {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(LifeTogetherTokens.spacing.medium),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
         ) {
             UserListCard(
                 list = UserList(

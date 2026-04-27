@@ -7,12 +7,12 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
@@ -43,8 +43,8 @@ fun Dropdown(
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             },
             colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
+                focusedContainerColor = MaterialTheme.colorScheme.background,
+                unfocusedContainerColor = MaterialTheme.colorScheme.background,
             ),
             modifier = Modifier
                 .menuAnchor()

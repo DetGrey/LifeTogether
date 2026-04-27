@@ -22,6 +22,7 @@ import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.domain.sync.SyncKey
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -36,9 +37,9 @@ fun GalleryScreen(
     ) {
         LazyColumn(
             modifier = Modifier
-                .padding(10.dp),
+                .padding(LifeTogetherTokens.spacing.small),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(30.dp),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
         ) {
             item {
                 TopBar(
@@ -63,7 +64,7 @@ fun GalleryScreen(
                         FlowRow(
                             modifier = Modifier.fillMaxWidth(),
                             maxItemsInEachRow = 2,
-                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                         ) {
                             for (album in uiState.albums) {
                                 AlbumContainer(
@@ -86,7 +87,7 @@ fun GalleryScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(bottom = 30.dp, end = 30.dp),
+            .padding(bottom = LifeTogetherTokens.spacing.xLarge, end = LifeTogetherTokens.spacing.xLarge),
         contentAlignment = Alignment.BottomEnd,
     ) {
         AddButton(onClick = {

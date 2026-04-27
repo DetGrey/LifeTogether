@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun TagOption(
@@ -34,7 +35,7 @@ fun TagOption(
             )
             .border(
                 width = 2.dp,
-                color = if (selected) Color.Transparent else Color.Black,
+                color = if (selected) Color.Transparent else MaterialTheme.colorScheme.onBackground,
                 shape = RoundedCornerShape(50),
             )
             .clickable(
@@ -44,13 +45,13 @@ fun TagOption(
                     onClick(tag)
                 }
             }
-            .padding(top = 2.dp, bottom = 5.dp)
-            .padding(horizontal = if (tag.length < 5) 20.dp else 15.dp),
+            .padding(top = 2.dp, bottom = LifeTogetherTokens.spacing.xSmall)
+            .padding(horizontal = if (tag.length < 5) LifeTogetherTokens.spacing.large else LifeTogetherTokens.spacing.medium),
         contentAlignment = Alignment.CenterStart,
     ) {
         Text(
             text = tag,
-            color = if (selected) Color.White else Color.Black,
+            color = if (selected) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.background,
         )
     }
 }

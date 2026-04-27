@@ -304,7 +304,7 @@ private fun GuideOverviewCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.onBackground, RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.onBackground, MaterialTheme.shapes.large)
             .clickable { onClick() }
             .padding(14.dp),
     ) {

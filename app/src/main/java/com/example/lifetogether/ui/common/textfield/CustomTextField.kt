@@ -2,7 +2,6 @@ package com.example.lifetogether.ui.common.textfield
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -41,7 +40,7 @@ fun CustomTextField(
         modifier = modifier
             .fillMaxWidth()
             .height(60.dp)
-            .clip(shape = RoundedCornerShape(20)),
+            .clip(shape = MaterialTheme.shapes.large),
         value = value,
         onValueChange = {
             onValueChange(it)

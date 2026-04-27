@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -55,7 +54,7 @@ fun GuideSectionCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.onBackground, RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.onBackground, MaterialTheme.shapes.large)
             .padding(14.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {

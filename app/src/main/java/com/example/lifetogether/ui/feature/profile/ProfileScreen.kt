@@ -37,6 +37,7 @@ import com.example.lifetogether.ui.common.image.ImageUploadDialog
 import com.example.lifetogether.ui.common.text.TextHeadingLarge
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun ProfileScreen(
@@ -53,9 +54,9 @@ fun ProfileScreen(
         modifier = Modifier.fillMaxSize(),
     ) {
         LazyColumn(
-            modifier = Modifier.padding(10.dp),
+            modifier = Modifier.padding(LifeTogetherTokens.spacing.small),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(30.dp),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
         ) {
             item {
                 TopBar(
@@ -111,8 +112,8 @@ fun ProfileScreen(
 
                         Box(
                             modifier = Modifier
-                                .padding(end = 10.dp)
-                                .size(50.dp),
+                                .padding(end = LifeTogetherTokens.spacing.small)
+                                .size(LifeTogetherTokens.spacing.xxxLarge),
                             contentAlignment = Alignment.Center,
                         ) {
                             AddButton(onClick = { onUiEvent(ProfileUiEvent.AddImageClicked) })
@@ -120,13 +121,13 @@ fun ProfileScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
                 TextHeadingLarge(text = userInformation?.name ?: "")
             }
 
             item {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(15.dp),
+                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
                 ) {
                     TextHeadingMedium(text = "Personal details")
 
@@ -192,7 +193,7 @@ fun ProfileScreen(
             }
 
             item {
-                Spacer(modifier = Modifier.height(30.dp))
+                Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.xLarge))
             }
         }
 

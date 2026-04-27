@@ -315,7 +315,7 @@ fun AlbumDetailsScreen(
     }
 
     uiState.downloadMessage?.let { message ->
-        CustomAlertDialog(
+        CustomAlertDialog( //todo should be the global show error
             title = if (uiState.isDownloading) "Downloading..." else "Finished downloading",
             details = message,
             extraContent = {

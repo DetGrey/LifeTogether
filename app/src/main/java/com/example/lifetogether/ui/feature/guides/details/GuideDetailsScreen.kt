@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -113,7 +112,7 @@ fun GuideDetailsScreen(
                             .fillMaxWidth()
                             .background(
                                 color = MaterialTheme.colorScheme.surfaceVariant,
-                                shape = RoundedCornerShape(16.dp),
+                                shape = MaterialTheme.shapes.medium,
                             )
                             .padding(14.dp),
                     ) {

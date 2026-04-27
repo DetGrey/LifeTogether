@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.TipItem
@@ -23,6 +22,7 @@ import com.example.lifetogether.ui.feature.tipTracker.components.AddNewTipItem
 import com.example.lifetogether.ui.feature.tipTracker.components.TipsCalendar
 import com.example.lifetogether.ui.feature.tipTracker.components.TipsList
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import java.util.Date
 
 @Composable
@@ -38,33 +38,33 @@ fun TipTrackerScreen(
     ) {
         LazyColumn(
             modifier = Modifier
-                .padding(10.dp)
-                .padding(bottom = 60.dp),
+                .padding(LifeTogetherTokens.spacing.small)
+                .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(30.dp),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
         ) {
             item {
-                    TopBar(
-                        leftIcon = Icon(
-                            resId = R.drawable.ic_back_arrow,
-                            description = "back arrow icon",
-                        ),
-                        onLeftClick = {
-                            onNavigationEvent(TipTrackerNavigationEvent.NavigateBack)
-                        },
-                        text = "Tip Tracker",
-                        rightIcon = Icon(
-                            resId = R.drawable.ic_statistics,
-                            description = "back arrow icon",
-                        ),
-                        onRightClick = {
-                            onNavigationEvent(TipTrackerNavigationEvent.NavigateToStatistics)
-                        },
-                    )
-                }
+                TopBar(
+                    leftIcon = Icon(
+                        resId = R.drawable.ic_back_arrow,
+                        description = "back arrow icon",
+                    ),
+                    onLeftClick = {
+                        onNavigationEvent(TipTrackerNavigationEvent.NavigateBack)
+                    },
+                    text = "Tip Tracker",
+                    rightIcon = Icon(
+                        resId = R.drawable.ic_statistics,
+                        description = "back arrow icon",
+                    ),
+                    onRightClick = {
+                        onNavigationEvent(TipTrackerNavigationEvent.NavigateToStatistics)
+                    },
+                )
+            }
 
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
                     SyncUpdatingText(
                         keys = setOf(SyncKey.TIP_TRACKER),
                     )
@@ -112,7 +112,7 @@ fun TipTrackerScreen(
     // ---------------------------------------------------------------- ADD NEW TIP ITEM
     Box(
         modifier = Modifier
-            .padding(10.dp)
+            .padding(LifeTogetherTokens.spacing.small)
             .fillMaxSize(),
         contentAlignment = Alignment.BottomCenter,
     ) {

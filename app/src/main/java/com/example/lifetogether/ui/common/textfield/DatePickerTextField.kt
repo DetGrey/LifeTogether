@@ -3,7 +3,6 @@ package com.example.lifetogether.ui.common.textfield
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -27,7 +26,7 @@ fun DatePickerTextField(
         modifier = Modifier
             .fillMaxWidth()
             .height(60.dp)
-            .clip(shape = RoundedCornerShape(20))
+            .clip(shape = MaterialTheme.shapes.large)
             .clickable { onClick() },
         value = date?.toFullDateString() ?: "",
         onValueChange = { },

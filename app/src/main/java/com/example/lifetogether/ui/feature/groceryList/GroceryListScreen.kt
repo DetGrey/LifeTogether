@@ -1,7 +1,5 @@
 package com.example.lifetogether.ui.feature.groceryList
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,13 +11,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.grocery.GroceryItem
-import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.add.AddNewListItem
@@ -28,6 +24,7 @@ import com.example.lifetogether.ui.common.list.ItemCategoryList
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.util.priceToString
 
 @Composable
@@ -41,10 +38,10 @@ fun GroceryListScreen(
     ) {
         LazyColumn(
             modifier = Modifier
-                .padding(10.dp)
-                .padding(bottom = 60.dp),
+                .padding(LifeTogetherTokens.spacing.small)
+                .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(30.dp),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
         ) {
             item {
                 TopBar(
@@ -60,7 +57,7 @@ fun GroceryListScreen(
             }
 
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
                     SyncUpdatingText(
                         keys = setOf(
                             SyncKey.GROCERY_LIST,
@@ -141,8 +138,8 @@ fun GroceryListScreen(
         if (uiState.currentGrocerySuggestions.isNotEmpty()) {
             Box(
                 modifier = Modifier
-                    .padding(10.dp)
-                    .padding(bottom = 30.dp)
+                    .padding(LifeTogetherTokens.spacing.small)
+                    .padding(bottom = LifeTogetherTokens.spacing.xLarge)
                     .fillMaxSize(),
                 contentAlignment = Alignment.BottomCenter,
             ) {
@@ -157,7 +154,7 @@ fun GroceryListScreen(
 
         Box(
             modifier = Modifier
-                .padding(10.dp)
+                .padding(LifeTogetherTokens.spacing.small)
                 .fillMaxSize(),
             contentAlignment = Alignment.BottomCenter,
         ) {

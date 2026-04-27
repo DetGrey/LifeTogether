@@ -17,12 +17,12 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun LoginScreen(
@@ -34,9 +34,9 @@ fun LoginScreen(
         modifier = Modifier.fillMaxSize(),
     ) {
         LazyColumn(
-            modifier = Modifier.padding(10.dp),
+            modifier = Modifier.padding(LifeTogetherTokens.spacing.small),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(30.dp),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
         ) {
             item {
                 TopBar(
@@ -54,9 +54,9 @@ fun LoginScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth(0.8f)
-                        .padding(vertical = 30.dp),
+                        .padding(vertical = LifeTogetherTokens.spacing.xLarge),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
                 ) {
                     CustomTextField(
                         value = uiState.email,
@@ -81,7 +81,7 @@ fun LoginScreen(
 
                     Text(
                         modifier = Modifier
-                            .padding(top = 10.dp)
+                            .padding(top = LifeTogetherTokens.spacing.small)
                             .fillMaxWidth()
                             .clickable { onNavigationEvent(LoginNavigationEvent.SignUpClicked) },
                         text = "Do you not have an account?\nSign up here",

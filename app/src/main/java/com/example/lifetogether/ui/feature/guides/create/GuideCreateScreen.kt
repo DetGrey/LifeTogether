@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -148,7 +147,7 @@ fun GuideCreateScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.onBackground, RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.onBackground, MaterialTheme.shapes.medium)
                         .padding(12.dp),
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

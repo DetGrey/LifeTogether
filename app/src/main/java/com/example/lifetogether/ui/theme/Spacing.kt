@@ -14,6 +14,7 @@ data class SpacingTokens(
     val xLarge: Dp = 32.dp,
     val xxLarge: Dp = 40.dp,
     val xxxLarge: Dp = 48.dp,
+    val bottomInsetMedium: Dp = 60.dp,
     val bottomInsetLarge: Dp = 80.dp,
 )
 

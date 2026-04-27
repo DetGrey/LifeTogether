@@ -22,6 +22,7 @@ import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.sync.SyncKey
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun RecipesScreen(
@@ -35,9 +36,9 @@ fun RecipesScreen(
     ) {
         LazyColumn(
             modifier = Modifier
-                .padding(10.dp),
+                .padding(LifeTogetherTokens.spacing.small),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(30.dp),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
         ) {
             item {
                 TopBar(
@@ -53,7 +54,7 @@ fun RecipesScreen(
             }
 
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
                     SyncUpdatingText(
                         keys = setOf(SyncKey.RECIPES),
                     )
@@ -70,7 +71,7 @@ fun RecipesScreen(
 
             item {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                 ) {
                     for (recipe in uiState.recipes) {
                         RecipeOverview(
@@ -94,7 +95,7 @@ fun RecipesScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(bottom = 30.dp, end = 30.dp),
+            .padding(bottom = LifeTogetherTokens.spacing.xLarge, end = LifeTogetherTokens.spacing.xLarge),
         contentAlignment = Alignment.BottomEnd,
     ) {
         AddButton(onClick = {

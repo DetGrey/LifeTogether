@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.logic.minToHourMinString
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun RecipeOverview(
@@ -37,9 +37,9 @@ fun RecipeOverview(
         modifier = Modifier
             .fillMaxWidth()
             .height(80.dp)
-            .clip(shape = RoundedCornerShape(20))
+            .clip(shape = MaterialTheme.shapes.large)
             .background(color = MaterialTheme.colorScheme.onBackground)
-            .padding(horizontal = 15.dp, vertical = 10.dp)
+            .padding(horizontal = LifeTogetherTokens.spacing.medium, vertical = LifeTogetherTokens.spacing.small)
             .clickable { recipe.id?.let { onClick(it) } },
         contentAlignment = Alignment.CenterStart,
     ) {

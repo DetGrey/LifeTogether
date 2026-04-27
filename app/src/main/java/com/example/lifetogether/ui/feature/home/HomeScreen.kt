@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,10 +20,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.UserInformation
@@ -32,6 +31,7 @@ import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.LoveButton
 import com.example.lifetogether.ui.common.text.TextDisplayLarge
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -50,11 +50,10 @@ fun HomeScreen(
     ) {
         LazyColumn(
             modifier = Modifier
-                .padding(10.dp)
-                .padding(bottom = 60.dp)
-            ,
+                .padding(LifeTogetherTokens.spacing.small)
+                .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(20.dp),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
         ) {
             item {
                 TopBar(
@@ -82,7 +81,7 @@ fun HomeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp)
-                        .clip(shape = RoundedCornerShape(20))
+                        .clip(shape = MaterialTheme.shapes.large)
                         .background(color = MaterialTheme.colorScheme.onBackground),
                 ) {
                     val bitmap = content?.bitmap
@@ -104,12 +103,12 @@ fun HomeScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(75.dp)
-                                .clip(shape = RoundedCornerShape(20))
+                                .clip(shape = MaterialTheme.shapes.large)
                                 .background(MaterialTheme.colorScheme.tertiary)
                                 .clickable {
                                     onNavigationEvent(HomeNavigationEvent.StatusCardClicked)
                                 }
-                                .padding(horizontal = 20.dp),
+                                .padding(horizontal = LifeTogetherTokens.spacing.medium),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(text = statusCard.text)
@@ -123,7 +122,7 @@ fun HomeScreen(
             content?.sections?.forEach { section ->
                 item {
                     Column(
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                     ) {
                         if (section.title != null) {
                             TextDisplayLarge(section.title)
@@ -131,8 +130,8 @@ fun HomeScreen(
 
                         FlowRow(
                             maxItemsInEachRow = section.maxItemsInEachRow,
-                            verticalArrangement = Arrangement.spacedBy(5.dp),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),
+                            horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                         ) {
                             section.items.forEach { item ->
                                 when (item) {

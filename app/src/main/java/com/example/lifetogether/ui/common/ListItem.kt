@@ -14,7 +14,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -27,6 +26,7 @@ import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.ui.common.list.CompletableBox
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import java.text.DecimalFormat
 import java.util.Date
 
@@ -50,14 +50,14 @@ fun ListItem(
 
     Row(
         modifier = Modifier
-            .padding(horizontal = 10.dp, vertical = 5.dp)
+            .padding(horizontal = LifeTogetherTokens.spacing.small, vertical = LifeTogetherTokens.spacing.xSmall)
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
             modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
             verticalAlignment = Alignment.CenterVertically
         ) {
             CompletableBox(
@@ -92,10 +92,10 @@ fun ListItem(
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                painter = painterResource(id = R.drawable.ic_bell),
-                contentDescription = "bell notification icon",
-                tint = Color.Black,
-            )
+                    painter = painterResource(id = R.drawable.ic_bell),
+                    contentDescription = "bell notification icon",
+                    tint = MaterialTheme.colorScheme.onBackground,
+                )
             }
         }
     }

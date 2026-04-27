@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -26,7 +25,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
@@ -45,8 +43,8 @@ import com.example.lifetogether.ui.common.list.CompletableBox
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
-import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -104,7 +102,7 @@ fun ListDetailsScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding)
-                        .padding(horizontal = 10.dp),
+                        .padding(horizontal = LifeTogetherTokens.spacing.small),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     SyncUpdatingText(
@@ -119,7 +117,7 @@ fun ListDetailsScreen(
                             onCancel = { onUiEvent(ListDetailsUiEvent.ExitSelectionMode) },
                         )
                     } else {
-                        Spacer(modifier = Modifier.height(20.dp))
+                        Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.medium))
                     }
 
                     if (entries.isEmpty()) {
@@ -133,8 +131,8 @@ fun ListDetailsScreen(
                         LazyColumn(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(bottom = 10.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                                .padding(bottom = LifeTogetherTokens.spacing.small),
+                            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
                         ) {
                             items(entries) { entry ->
                                 ListEntryCard(
@@ -218,12 +216,12 @@ private fun SelectionModeBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 10.dp, bottom = 20.dp),
+            .padding(top = LifeTogetherTokens.spacing.small, bottom = LifeTogetherTokens.spacing.medium),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             CompletableBox(
@@ -262,23 +260,23 @@ private fun ListEntryCard(
             .fillMaxWidth()
             .border(
                 width = if (isSelected) 2.dp else 0.dp,
-                color = if (isSelected) MaterialTheme.colorScheme.tertiary else Color.Transparent,
-                shape = RoundedCornerShape(20.dp),
+                color = if (isSelected) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.background.copy(alpha = 0f),
+                shape = MaterialTheme.shapes.large,
             )
             .background(
                 color = MaterialTheme.colorScheme.onBackground,
-                shape = RoundedCornerShape(20.dp),
+                shape = MaterialTheme.shapes.large,
             )
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick,
             )
-            .padding(14.dp),
+            .padding(LifeTogetherTokens.spacing.medium),
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),
             ) {
                 CompletableBox(
                     isCompleted = false,
@@ -298,23 +296,23 @@ private fun ListEntryCard(
                 Column(modifier = Modifier.padding(top = 6.dp)) {
                     TextDefault(
                         text = "Every ${entry.interval} ${entry.recurrenceUnit.value}",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.background,
                     )
 
                     entry.nextDate?.let { nextDate ->
                         TextDefault(
                             text = "Next: ${dateFormat.format(nextDate)}",
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.background,
                         )
                     }
                 }
 
                 Box(
                     modifier = Modifier
-                        .size(60.dp)
+                        .size(LifeTogetherTokens.sizing.avatarMedium)
                         .background(
                             color = MaterialTheme.colorScheme.tertiary,
-                            shape = RoundedCornerShape(16.dp),
+                            shape = MaterialTheme.shapes.medium,
                         ),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -337,8 +335,8 @@ private fun ListEntryCard(
 fun ListEntryCardDailyPreview() {
     LifeTogetherTheme {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(LifeTogetherTokens.spacing.medium),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
         ) {
             ListEntryCard(
                 entry = RoutineListEntry(

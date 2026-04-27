@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.FlowRowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,6 +21,7 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -37,12 +37,12 @@ fun FlowRowScope.FeatureOverview(
             .fillMaxRowHeight()
             .background(
                 MaterialTheme.colorScheme.onBackground,
-                RoundedCornerShape(20)
-                )
-            .padding(10.dp)
+                MaterialTheme.shapes.large
+            )
+            .padding(LifeTogetherTokens.spacing.small)
             .clickable { onClick() },
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         androidx.compose.material3.Icon(
             painter = painterResource(id = icon.resId),
@@ -63,8 +63,8 @@ fun FeatureOverviewPreview() {
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
             maxItemsInEachRow = 3,
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+            horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
         ) {
             FeatureOverview(
                 "Grocery list",
