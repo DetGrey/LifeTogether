@@ -114,7 +114,7 @@ private fun RecipeDetailsContent(
                             .align(Alignment.TopStart),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Image(
+                        Icon(
                             painter = painterResource(id = R.drawable.ic_back_arrow),
                             contentDescription = "back arrow icon",
                         )

@@ -1,6 +1,5 @@
 package com.example.lifetogether.ui.feature.home
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -45,7 +44,7 @@ fun FlowRowScope.FeatureOverview(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Image(
+        androidx.compose.material3.Icon(
             painter = painterResource(id = icon.resId),
             contentDescription = icon.description,
             modifier = Modifier.height(50.dp),

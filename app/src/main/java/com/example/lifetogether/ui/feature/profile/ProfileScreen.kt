@@ -101,7 +101,7 @@ fun ProfileScreen(
                                     contentScale = ContentScale.Crop,
                                 )
                             } else {
-                                Image(
+                                androidx.compose.material3.Icon(
                                     modifier = Modifier.fillMaxSize(),
                                     painter = painterResource(id = R.drawable.ic_avatar),
                                     contentDescription = "profile picture",
