@@ -1,6 +1,7 @@
 package com.example.lifetogether.ui.feature.recipes
 
 import android.graphics.Bitmap
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -34,7 +35,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
-import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.domain.result.AppError
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.ui.common.add.AddNewString
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.image.ImageUploadDialog
@@ -50,6 +52,7 @@ import com.example.lifetogether.ui.theme.LifeTogetherTheme
 fun RecipeDetailsScreen(
     uiState: RecipeDetailsUiState,
     bitmap: Bitmap?,
+    onImageUpload: suspend (Uri) -> Result<Unit, AppError>,
     onUiEvent: (RecipeDetailsUiEvent) -> Unit,
     onNavigationEvent: (RecipeDetailsNavigationEvent) -> Unit,
 ) {
@@ -66,6 +69,7 @@ fun RecipeDetailsScreen(
         is RecipeDetailsUiState.Content -> RecipeDetailsContent(
             uiState = uiState,
             bitmap = bitmap,
+            onImageUpload = onImageUpload,
             onUiEvent = onUiEvent,
             onNavigationEvent = onNavigationEvent,
         )
@@ -76,6 +80,7 @@ fun RecipeDetailsScreen(
 private fun RecipeDetailsContent(
     uiState: RecipeDetailsUiState.Content,
     bitmap: Bitmap?,
+    onImageUpload: suspend (Uri) -> Result<Unit, AppError>,
     onUiEvent: (RecipeDetailsUiEvent) -> Unit,
     onNavigationEvent: (RecipeDetailsNavigationEvent) -> Unit,
 ) {
@@ -390,15 +395,13 @@ private fun RecipeDetailsContent(
     }
 
     if (uiState.showImageUploadDialog) {
-        val familyId = uiState.familyId
-        val recipeId = uiState.recipeId
-        if (familyId != null && recipeId != null) {
+        if (uiState.familyId != null && uiState.recipeId != null) {
             ImageUploadDialog(
                 onDismiss = { onUiEvent(RecipeDetailsUiEvent.ImageUploadDismissed) },
                 onConfirm = { onUiEvent(RecipeDetailsUiEvent.ImageUploadConfirmed) },
+                onUpload = onImageUpload,
                 dialogTitle = "Upload recipe image",
                 dialogMessage = "Select an image for your recipe",
-                imageType = ImageType.RecipeImage(familyId, recipeId),
                 dismissButtonMessage = "Cancel",
                 confirmButtonMessage = "Upload image",
             )
@@ -439,6 +442,7 @@ private fun RecipeDetailsScreenPreview() {
                 ),
             ),
             bitmap = null,
+            onImageUpload = { Result.Success(Unit) },
             onUiEvent = {},
             onNavigationEvent = {},
         )

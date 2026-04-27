@@ -1,8 +1,7 @@
 package com.example.lifetogether.ui.feature.lists.listDetails
 
-import com.example.lifetogether.domain.result.toUserMessage
-
 import android.graphics.Bitmap
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.logic.RecurrenceCalculator
@@ -12,6 +11,7 @@ import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.repository.UserListRepository
 import com.example.lifetogether.domain.result.Result
+import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.domain.usecase.item.DeleteRoutineListEntriesUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -31,13 +31,15 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ListDetailsViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
     private val sessionRepository: SessionRepository,
     private val userListRepository: UserListRepository,
     private val deleteRoutineListEntriesUseCase: DeleteRoutineListEntriesUseCase,
 ) : ViewModel() {
+    val listId: String = checkNotNull(savedStateHandle["listId"])
+
     private var familyId: String? = null
     private var uid: String? = null
-    private var currentListId: String? = null
     private var entriesJob: Job? = null
     private var listsJob: Job? = null
     private val imageJobs: MutableMap<String, Job> = mutableMapOf()
@@ -76,7 +78,7 @@ class ListDetailsViewModel @Inject constructor(
                 ) {
                     familyId = newFamilyId
                     uid = newUid
-                    currentListId?.let { startFetch(it) }
+                    observeListDetails()
                 } else if (state is SessionState.Unauthenticated) {
                     familyId = null
                     uid = null
@@ -85,14 +87,7 @@ class ListDetailsViewModel @Inject constructor(
         }
     }
 
-    fun setUp(listId: String) {
-        if (currentListId == listId && entriesJob != null) return
-        currentListId = listId
-        _uiState.value = ListDetailsUiState.Loading
-        startFetch(listId)
-    }
-
-    private fun startFetch(listId: String) {
+    private fun observeListDetails() {
         val familyIdValue = familyId ?: return
 
         listsJob?.cancel()

@@ -22,10 +22,12 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import android.net.Uri
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.family.FamilyInformation
-import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.domain.result.AppError
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
@@ -41,6 +43,7 @@ fun FamilyScreen(
     uiState: FamilyUiState,
     bitmap: Bitmap?,
     showImageUploadDialog: Boolean,
+    onImageUpload: suspend (Uri) -> Result<Unit, AppError>,
     onUiEvent: (FamilyUiEvent) -> Unit,
     onNavigationEvent: (FamilyNavigationEvent) -> Unit,
 ) {
@@ -206,18 +209,16 @@ fun FamilyScreen(
             }
         }
 
-        if (showImageUploadDialog) {
-            familyId?.let {
-                ImageUploadDialog(
-                    onDismiss = { onUiEvent(FamilyUiEvent.ImageUploadDismissed) },
-                    onConfirm = { onUiEvent(FamilyUiEvent.ImageUploadConfirmed) },
-                    dialogTitle = "Upload family image",
-                    dialogMessage = "Select your new family image",
-                    imageType = ImageType.FamilyImage(it),
-                    dismissButtonMessage = "Cancel",
-                    confirmButtonMessage = "Upload image",
-                )
-            }
+        if (showImageUploadDialog && familyId != null) {
+            ImageUploadDialog(
+                onDismiss = { onUiEvent(FamilyUiEvent.ImageUploadDismissed) },
+                onConfirm = { onUiEvent(FamilyUiEvent.ImageUploadConfirmed) },
+                onUpload = onImageUpload,
+                dialogTitle = "Upload family image",
+                dialogMessage = "Select your new family image",
+                dismissButtonMessage = "Cancel",
+                confirmButtonMessage = "Upload image",
+            )
         }
     }
 }
@@ -237,6 +238,7 @@ fun FamilyScreenPreview() {
             ),
             bitmap = null,
             showImageUploadDialog = false,
+            onImageUpload = { Result.Success(Unit) },
             onUiEvent = {},
             onNavigationEvent = {},
         )

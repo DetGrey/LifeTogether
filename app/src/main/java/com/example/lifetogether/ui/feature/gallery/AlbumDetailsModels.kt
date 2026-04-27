@@ -13,6 +13,7 @@ data class AlbumDetailsUiState(
     val isSyncing: Boolean = false,
     val showOverflowMenu: Boolean = false,
     val showOverflowMenuActionDialog: Boolean = false,
+    val showImageUploadDialog: Boolean = false,
     val overflowMenuAction: MenuAction? = null,
     val actionDialogText: String = "",
     val isPartialLoad: Boolean = false,

@@ -1,14 +1,20 @@
 package com.example.lifetogether.ui.feature.profile
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.repository.UserRepository
+import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
+import com.example.lifetogether.domain.usecase.image.UploadImageUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +29,8 @@ import javax.inject.Inject
 class ProfileViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
     private val userRepository: UserRepository,
+    private val uploadImageUseCase: UploadImageUseCase,
+    @param:ApplicationContext private val context: Context,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
@@ -39,6 +47,7 @@ class ProfileViewModel @Inject constructor(
                 updateUiState {
                     it.copy(
                         userInformation = (state as? SessionState.Authenticated)?.user,
+                        showImageUploadDialog = false,
                     )
                 }
             }
@@ -47,9 +56,9 @@ class ProfileViewModel @Inject constructor(
 
     fun onEvent(event: ProfileUiEvent) {
         when (event) {
-            ProfileUiEvent.AddImageClicked,
+            ProfileUiEvent.AddImageClicked -> updateUiState { it.copy(showImageUploadDialog = true) }
             ProfileUiEvent.ImageUploadDismissed,
-            ProfileUiEvent.ImageUploadConfirmed -> Unit
+            ProfileUiEvent.ImageUploadConfirmed -> updateUiState { it.copy(showImageUploadDialog = false) }
 
             ProfileUiEvent.NameClicked -> showNameDialog()
             ProfileUiEvent.LogoutClicked -> showLogoutDialog()
@@ -59,6 +68,16 @@ class ProfileViewModel @Inject constructor(
                 it.copy(newName = event.value)
             }
         }
+    }
+
+    suspend fun uploadProfileImage(uri: Uri): Result<Unit, AppError> {
+        val uid = _uiState.value.userInformation?.uid
+            ?: return Result.Failure(AppError.Validation("Missing user context"))
+        return uploadImageUseCase.invoke(
+            uri = uri,
+            imageType = ImageType.ProfileImage(uid),
+            context = context,
+        )
     }
 
     private fun showNameDialog() {

@@ -1,19 +1,26 @@
 package com.example.lifetogether.ui.feature.recipes
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.model.Completable
 import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.domain.model.recipe.Instruction
 import com.example.lifetogether.domain.model.recipe.Recipe
+import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.model.toggleCompleted
 import com.example.lifetogether.domain.repository.RecipeRepository
 import com.example.lifetogether.domain.repository.SessionRepository
+import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
+import com.example.lifetogether.domain.usecase.image.UploadImageUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -28,9 +35,16 @@ import javax.inject.Inject
 
 @HiltViewModel
 class RecipeDetailsViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
     private val sessionRepository: SessionRepository,
     private val recipeRepository: RecipeRepository,
+    private val uploadImageUseCase: UploadImageUseCase,
+    @param:ApplicationContext private val context: Context,
 ) : ViewModel() {
+    companion object {
+        private const val RECIPE_ID_ARG = "recipeId"
+    }
+
     private val _uiState = MutableStateFlow<RecipeDetailsUiState>(RecipeDetailsUiState.Loading)
     val uiState: StateFlow<RecipeDetailsUiState> = _uiState.asStateFlow()
 
@@ -40,34 +54,30 @@ class RecipeDetailsViewModel @Inject constructor(
     private val _commands = Channel<RecipeDetailsCommand>(Channel.BUFFERED)
     val commands: Flow<RecipeDetailsCommand> = _commands.receiveAsFlow()
 
-    private var pendingRecipeId: String? = null
+    private var pendingRecipeId: String? = savedStateHandle[RECIPE_ID_ARG]
     private var currentFamilyId: String? = null
     private var originalRecipe: Recipe? = null
     private var observeRecipeJob: Job? = null
 
     init {
+        if (pendingRecipeId == null) {
+            _uiState.value = createContentState(editMode = true)
+        }
+
         viewModelScope.launch {
             sessionRepository.sessionState.collect { state ->
                 currentFamilyId = (state as? SessionState.Authenticated)?.user?.familyId
                 updateContent { content ->
                     content.copy(familyId = currentFamilyId)
                 }
-                maybeObserveRecipe()
+
+                val recipeId = pendingRecipeId
+                val familyId = currentFamilyId
+                if (!recipeId.isNullOrBlank() && !familyId.isNullOrBlank()) {
+                    observeRecipe(recipeId = recipeId, familyId = familyId)
+                }
             }
         }
-    }
-
-    fun setUp(recipeId: String?) {
-        pendingRecipeId = recipeId
-        observeRecipeJob?.cancel()
-
-        if (recipeId == null) {
-            originalRecipe = null
-            _uiState.value = createContentState(editMode = true)
-            return
-        }
-
-        maybeObserveRecipe()
     }
 
     fun onEvent(event: RecipeDetailsUiEvent) {
@@ -123,14 +133,18 @@ class RecipeDetailsViewModel @Inject constructor(
         }
     }
 
-    fun onImageError(message: String) {
-        showError(message)
-    }
-
-    private fun maybeObserveRecipe() {
-        val recipeId = pendingRecipeId ?: return
-        val familyId = currentFamilyId ?: return
-        observeRecipe(recipeId = recipeId, familyId = familyId)
+    suspend fun uploadRecipeImage(uri: Uri): Result<Unit, AppError> {
+        val content = contentState()
+            ?: return Result.Failure(AppError.Validation("Recipe state not ready"))
+        val familyId = content.familyId
+            ?: return Result.Failure(AppError.Validation("Missing family context"))
+        val recipeId = content.recipeId
+            ?: return Result.Failure(AppError.Validation("Recipe must be saved before uploading an image"))
+        return uploadImageUseCase.invoke(
+            uri = uri,
+            imageType = ImageType.RecipeImage(familyId, recipeId),
+            context = context,
+        )
     }
 
     private fun observeRecipe(recipeId: String, familyId: String) {

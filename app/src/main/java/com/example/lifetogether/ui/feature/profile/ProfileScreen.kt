@@ -1,6 +1,7 @@
 package com.example.lifetogether.ui.feature.profile
 
 import android.graphics.Bitmap
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -28,7 +29,8 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.toFullDateString
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.UserInformation
-import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.domain.result.AppError
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
@@ -45,6 +47,7 @@ fun ProfileScreen(
     bitmap: Bitmap?,
     isAdmin: Boolean,
     showImageUploadDialog: Boolean,
+    onImageUpload: suspend (Uri) -> Result<Unit, AppError>,
     onUiEvent: (ProfileUiEvent) -> Unit,
     onNavigationEvent: (ProfileNavigationEvent) -> Unit,
 ) {
@@ -227,18 +230,16 @@ fun ProfileScreen(
         }
     }
 
-    if (showImageUploadDialog) {
-        userInformation?.uid?.let { uid ->
-            ImageUploadDialog(
-                onDismiss = { onUiEvent(ProfileUiEvent.ImageUploadDismissed) },
-                onConfirm = { onUiEvent(ProfileUiEvent.ImageUploadConfirmed) },
-                dialogTitle = "Upload profile photo",
-                dialogMessage = "Select your new profile photo",
-                imageType = ImageType.ProfileImage(uid),
-                dismissButtonMessage = "Cancel",
-                confirmButtonMessage = "Upload photo",
-            )
-        }
+    if (showImageUploadDialog && userInformation?.uid != null) {
+        ImageUploadDialog(
+            onDismiss = { onUiEvent(ProfileUiEvent.ImageUploadDismissed) },
+            onConfirm = { onUiEvent(ProfileUiEvent.ImageUploadConfirmed) },
+            onUpload = onImageUpload,
+            dialogTitle = "Upload profile photo",
+            dialogMessage = "Select your new profile photo",
+            dismissButtonMessage = "Cancel",
+            confirmButtonMessage = "Upload photo",
+        )
     }
 }
 
@@ -257,6 +258,7 @@ fun ProfileScreenPreview() {
             bitmap = null,
             isAdmin = true,
             showImageUploadDialog = false,
+            onImageUpload = { Result.Success(Unit) },
             onUiEvent = {},
             onNavigationEvent = {},
         )

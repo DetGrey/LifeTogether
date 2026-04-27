@@ -18,6 +18,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,9 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.domain.logic.toDayOfMonthString
-import com.example.lifetogether.ui.common.add.AddNewListItemViewModel
 import com.example.lifetogether.ui.common.dialog.CustomDatePickerDialog
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import java.util.Date
@@ -40,7 +42,7 @@ fun AddNewTipItem(
     dateValue: Date,
     onDateChange: (Date) -> Unit,
 ) {
-    val addNewListItemViewModel: AddNewListItemViewModel = hiltViewModel()
+    var showDialog by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -70,7 +72,7 @@ fun AddNewTipItem(
                             shape = RoundedCornerShape(10.dp),
                         )
                         .clickable {
-                            addNewListItemViewModel.showDialog = true
+                            showDialog = true
                         },
                     contentAlignment = Alignment.Center,
                 ) {
@@ -109,15 +111,15 @@ fun AddNewTipItem(
         }
     }
 
-    if (addNewListItemViewModel.showDialog) {
+    if (showDialog) {
         CustomDatePickerDialog(
             selectedDate = dateValue,
             onDismiss = {
-                addNewListItemViewModel.showDialog = false
+                showDialog = false
             },
             onDateSelected = {
                 onDateChange(it)
-                addNewListItemViewModel.showDialog = false
+                showDialog = false
             },
         )
     }

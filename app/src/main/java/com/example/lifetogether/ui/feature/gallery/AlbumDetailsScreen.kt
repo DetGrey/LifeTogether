@@ -25,11 +25,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import android.net.Uri
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
-import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.domain.result.AppError
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.ui.common.OverflowMenu
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
@@ -49,7 +51,7 @@ import com.example.lifetogether.domain.sync.SyncKey
 @Composable
 fun AlbumDetailsScreen(
     uiState: AlbumDetailsUiState,
-    showImageUploadDialog: Boolean,
+    onImageUpload: suspend (List<Uri>) -> Result<Unit, AppError>,
     onUiEvent: (AlbumDetailsUiEvent) -> Unit,
     onNavigationEvent: (AlbumDetailsNavigationEvent) -> Unit,
 ) {
@@ -215,19 +217,17 @@ fun AlbumDetailsScreen(
         )
     }
 
-    if (showImageUploadDialog) {
-        uiState.familyId?.let { familyId ->
-            uiState.album?.id?.let { albumId ->
-                MediaUploadMultipleDialog(
-                    onDismiss = { onUiEvent(AlbumDetailsUiEvent.DismissImageUploadDialog) },
-                    onConfirm = { onUiEvent(AlbumDetailsUiEvent.ConfirmImageUploadDialog) },
-                    dialogTitle = "Upload images",
-                    dialogMessage = "Select the images to upload",
-                    imageType = ImageType.GalleryMedia(familyId, albumId, null),
-                    dismissButtonMessage = "Cancel",
-                    confirmButtonMessage = "Upload images",
-                )
-            }
+    if (uiState.showImageUploadDialog) {
+        if (uiState.familyId != null && uiState.album?.id != null) {
+            MediaUploadMultipleDialog(
+                onDismiss = { onUiEvent(AlbumDetailsUiEvent.DismissImageUploadDialog) },
+                onConfirm = { onUiEvent(AlbumDetailsUiEvent.ConfirmImageUploadDialog) },
+                onUpload = onImageUpload,
+                dialogTitle = "Upload images",
+                dialogMessage = "Select the images to upload",
+                dismissButtonMessage = "Cancel",
+                confirmButtonMessage = "Upload images",
+            )
         }
     }
 

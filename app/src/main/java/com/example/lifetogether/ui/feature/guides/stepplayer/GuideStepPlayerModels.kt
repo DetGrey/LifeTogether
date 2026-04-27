@@ -23,7 +23,6 @@ data class GuideStepPlayerUiState(
 )
 
 sealed interface GuideStepPlayerUiEvent {
-    data class Initialize(val guideId: String) : GuideStepPlayerUiEvent
     data object PreviousClicked : GuideStepPlayerUiEvent
     data object CompleteCurrentAndGoNextClicked : GuideStepPlayerUiEvent
     data object ToggleCurrentStepCompletionClicked : GuideStepPlayerUiEvent

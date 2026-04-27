@@ -8,6 +8,8 @@ import com.example.lifetogether.domain.repository.GroceryRepository
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.ui.common.event.UiCommand
+import com.example.lifetogether.util.UNCATEGORIZED_CATEGORY
+import com.example.lifetogether.util.UNCATEGORIZED_CATEGORY_NAME
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -57,7 +59,7 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
                         updateUiState { state ->
                             state.copy(
                                 groceryCategories = result.data
-                                    .filterNot { it.name == UNCATEGORIZED_NAME }
+                                    .filterNot { it.name == UNCATEGORIZED_CATEGORY_NAME }
                                     .sortedBy { it.name }
                                     .let { listOf(UNCATEGORIZED_CATEGORY) + it },
                             )
@@ -145,7 +147,6 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
         updateUiState { state ->
             state.copy(
                 editingSuggestionId = suggestion.id,
-                isEditMode = true,
                 newSuggestionText = suggestion.suggestionName,
                 newSuggestionPrice = suggestion.approxPrice?.toString().orEmpty(),
                 newSuggestionCategory = suggestion.category ?: UNCATEGORIZED_CATEGORY,
@@ -157,7 +158,6 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
         updateUiState { state ->
             state.copy(
                 editingSuggestionId = null,
-                isEditMode = false,
                 newSuggestionCategory = UNCATEGORIZED_CATEGORY,
                 newSuggestionText = "",
                 newSuggestionPrice = "",
@@ -203,18 +203,14 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
 
     private fun saveEditedGrocerySuggestion() {
         val state = _uiState.value
-        if (!state.isEditMode) {
+        val editingSuggestionId = state.editingSuggestionId
+
+        if (editingSuggestionId.isNullOrBlank()) {
             return
         }
 
         if (state.newSuggestionText.isEmpty()) {
             showError("Please enter a suggestion first")
-            return
-        }
-
-        val editingSuggestionId = state.editingSuggestionId
-        if (editingSuggestionId.isNullOrBlank()) {
-            showError("Missing suggestion id")
             return
         }
 

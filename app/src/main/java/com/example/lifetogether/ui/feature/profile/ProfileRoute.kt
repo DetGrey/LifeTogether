@@ -3,10 +3,7 @@ package com.example.lifetogether.ui.feature.profile
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.BuildConfig
@@ -25,6 +22,7 @@ fun ProfileRoute(
 ) {
     val viewModel: ProfileViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
     val imageType = uiState.userInformation?.uid?.let { ImageType.ProfileImage(it) }
     val snackbarHostState = LocalRootSnackbarHostState.current
     val coroutineScope = rememberCoroutineScope()
@@ -33,7 +31,6 @@ fun ProfileRoute(
             snackbarHostState.showSnackbar(message)
         }
     }
-    var showImageUploadDialog by remember { mutableStateOf(false) }
     val isAdmin = uiState.userInformation?.uid in BuildConfig.ADMIN_LIST.split(",")
 
     CollectUiCommands(viewModel.uiCommands)
@@ -50,15 +47,9 @@ fun ProfileRoute(
         uiState = uiState,
         bitmap = bitmap,
         isAdmin = isAdmin,
-        showImageUploadDialog = showImageUploadDialog,
-        onUiEvent = { event ->
-            when (event) {
-                ProfileUiEvent.AddImageClicked -> showImageUploadDialog = true
-                ProfileUiEvent.ImageUploadDismissed,
-                ProfileUiEvent.ImageUploadConfirmed -> showImageUploadDialog = false
-                else -> viewModel.onEvent(event)
-            }
-        },
+        showImageUploadDialog = uiState.showImageUploadDialog,
+        onImageUpload = viewModel::uploadProfileImage,
+        onUiEvent = viewModel::onEvent,
         onNavigationEvent = { navigationEvent ->
             when (navigationEvent) {
                 ProfileNavigationEvent.NavigateBack -> appNavigator.navigateBack()

@@ -14,7 +14,6 @@ data class GuideDetailsUiState(
 )
 
 sealed interface GuideDetailsUiEvent {
-    data class Initialize(val guideId: String) : GuideDetailsUiEvent
     data object StartOrContinueClicked : GuideDetailsUiEvent
     data object ResetAllProgressClicked : GuideDetailsUiEvent
     data object ToggleVisibilityClicked : GuideDetailsUiEvent

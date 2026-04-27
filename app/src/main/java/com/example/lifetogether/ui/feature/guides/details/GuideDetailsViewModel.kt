@@ -1,5 +1,6 @@
 package com.example.lifetogether.ui.feature.guides.details
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.logic.GuideLeafPointer
@@ -28,23 +29,13 @@ import javax.inject.Inject
 
 @HiltViewModel
 class GuideDetailsViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
     private val sessionRepository: SessionRepository,
     private val guideRepository: GuideRepository,
 ) : ViewModel() {
-    private companion object {
-        const val ERROR_MISSING_GUIDE_ID_FOR_VISIBILITY = "Unable to update visibility. Missing guide id."
-        const val ERROR_MISSING_GUIDE_ID_FOR_DELETE = "Unable to delete this guide. Missing guide id."
-        const val ERROR_MISSING_GUIDE_ID_FOR_STEP_UPDATE = "Unable to update this step. Missing guide id."
-        const val ERROR_MISSING_GUIDE_ID_FOR_OPEN = "Unable to open this guide. Missing guide id."
-        const val ERROR_MISSING_GUIDE_ID_FOR_RESET = "Unable to reset progress. Missing guide id."
-        const val ERROR_MISSING_GUIDE_ID_FOR_SAVE = "Unable to save guide changes. Missing guide id."
-        const val ERROR_ONLY_OWNER_CAN_CHANGE_VISIBILITY = "Only the owner can change visibility"
-        const val ERROR_ONLY_OWNER_CAN_DELETE = "Only the owner can delete this guide"
-    }
-
+    private val guideId: String = checkNotNull(savedStateHandle["guideId"])
     private var familyId: String? = null
     private var uid: String? = null
-    private var guideId: String? = null
     private var guideJob: Job? = null
 
     private var pointerCacheGuide: Guide? = null
@@ -71,7 +62,7 @@ class GuideDetailsViewModel @Inject constructor(
                 ) {
                     familyId = newFamilyId
                     uid = newUid
-                    guideId?.let { startGuideJob(it) }
+                    observeGuide()
                 } else if (state is SessionState.Unauthenticated) {
                     familyId = null
                     uid = null
@@ -82,7 +73,6 @@ class GuideDetailsViewModel @Inject constructor(
 
     fun onEvent(event: GuideDetailsUiEvent) {
         when (event) {
-            is GuideDetailsUiEvent.Initialize -> setUp(event.guideId)
             GuideDetailsUiEvent.StartOrContinueClicked -> onStartOrContinue()
             GuideDetailsUiEvent.ResetAllProgressClicked -> resetAllProgress()
             GuideDetailsUiEvent.ToggleVisibilityClicked -> toggleVisibility()
@@ -99,34 +89,9 @@ class GuideDetailsViewModel @Inject constructor(
         }
     }
 
-    fun setUp(guideId: String) {
-        val isNewGuide = this.guideId != guideId
-        if (isNewGuide) {
-            this.guideId = guideId
-            invalidatePointerCache()
-            _uiState.update { state ->
-                state.copy(
-                    guide = null,
-                    sectionExpandedState = emptyMap(),
-                    selectedSectionAmountState = emptyMap(),
-                    isUpdatingVisibility = false,
-                    isStartingGuide = false,
-                    isDeletingGuide = false,
-                )
-            }
-        }
-        if (familyId != null && uid != null) {
-            startGuideJob(guideId)
-        }
-    }
-
-    private fun startGuideJob(guideId: String) {
+    private fun observeGuide() {
         val familyIdValue = familyId ?: return
         val uidValue = uid ?: return
-
-        if (this.guideId == guideId && guideJob?.isActive == true &&
-            familyId == familyIdValue && uid == uidValue
-        ) return
 
         guideJob?.cancel()
         guideJob = viewModelScope.launch {
@@ -155,18 +120,6 @@ class GuideDetailsViewModel @Inject constructor(
         return currentGuide.ownerUid == activeUid
     }
 
-    fun showOwnershipError(message: String) {
-        showError(message)
-    }
-
-    fun showVisibilityOwnershipError() {
-        showOwnershipError(ERROR_ONLY_OWNER_CAN_CHANGE_VISIBILITY)
-    }
-
-    fun showDeleteOwnershipError() {
-        showOwnershipError(ERROR_ONLY_OWNER_CAN_DELETE)
-    }
-
     fun canDeleteGuide(): Boolean {
         val currentGuide = _uiState.value.guide ?: return false
         val activeUid = uid ?: return false
@@ -179,14 +132,11 @@ class GuideDetailsViewModel @Inject constructor(
         if (_uiState.value.isUpdatingVisibility) return
 
         if (!canToggleVisibility()) {
-            showVisibilityOwnershipError()
+            showError("Only the owner can change visibility")
             return
         }
 
-        val currentGuideId = resolveGuideId(currentGuide) ?: run {
-            showError(ERROR_MISSING_GUIDE_ID_FOR_VISIBILITY)
-            return
-        }
+        val currentGuideId = resolveGuideId(currentGuide)
 
         val newVisibility = if (currentGuide.visibility == Visibility.FAMILY)
             Visibility.PRIVATE else Visibility.FAMILY
@@ -210,13 +160,10 @@ class GuideDetailsViewModel @Inject constructor(
 
         val currentGuide = _uiState.value.guide
         if (!canDeleteGuide()) {
-            showDeleteOwnershipError()
+            showError("Only the owner can delete this guide")
             return
         }
-        val currentGuideId = resolveGuideId(currentGuide) ?: run {
-            showError(ERROR_MISSING_GUIDE_ID_FOR_DELETE)
-            return
-        }
+        val currentGuideId = resolveGuideId(currentGuide)
 
         viewModelScope.launch {
             updateLoadingState(isDeletingGuide = true)
@@ -234,10 +181,7 @@ class GuideDetailsViewModel @Inject constructor(
         if (stepId.isBlank()) return
 
         val currentGuide = _uiState.value.guide ?: return
-        val currentGuideId = resolveGuideId(currentGuide) ?: run {
-            showError(ERROR_MISSING_GUIDE_ID_FOR_STEP_UPDATE)
-            return
-        }
+        val currentGuideId = resolveGuideId(currentGuide)
 
         val pointer = pointerForStepId(
             guide = currentGuide,
@@ -266,10 +210,7 @@ class GuideDetailsViewModel @Inject constructor(
 
     fun onStartOrContinue() {
         val currentGuide = _uiState.value.guide ?: return
-        val currentGuideId = resolveGuideId(currentGuide) ?: run {
-            showError(ERROR_MISSING_GUIDE_ID_FOR_OPEN)
-            return
-        }
+        val currentGuideId = resolveGuideId(currentGuide)
 
         if (currentGuide.started) {
             viewModelScope.launch { _commands.send(GuideDetailsCommand.NavigateToGuideStepPlayer) }
@@ -296,10 +237,7 @@ class GuideDetailsViewModel @Inject constructor(
 
     fun resetAllProgress() {
         val currentGuide = _uiState.value.guide ?: return
-        val currentGuideId = resolveGuideId(currentGuide) ?: run {
-            showError(ERROR_MISSING_GUIDE_ID_FOR_RESET)
-            return
-        }
+        val currentGuideId = resolveGuideId(currentGuide)
 
         val updatedGuide = currentGuide.copy(
             id = currentGuideId,
@@ -362,11 +300,7 @@ class GuideDetailsViewModel @Inject constructor(
     }
 
     private fun persistGuideUpdate(guide: Guide, onSuccess: () -> Unit, onFailure: () -> Unit) {
-        val resolvedGuideId = resolveGuideId(guide) ?: run {
-            showError(ERROR_MISSING_GUIDE_ID_FOR_SAVE)
-            onFailure()
-            return
-        }
+        val resolvedGuideId = resolveGuideId(guide)
         val normalizedGuide = if (guide.id == resolvedGuideId) guide else guide.copy(id = resolvedGuideId)
 
         viewModelScope.launch {
@@ -383,13 +317,12 @@ class GuideDetailsViewModel @Inject constructor(
     fun flushPendingChanges() {
         val activeFamilyId = familyId ?: return
         val activeUid = uid ?: return
-        val activeGuideId = guideId
         viewModelScope.launch {
             guideRepository.syncPendingGuideProgress(
                 familyId = activeFamilyId,
                 uid = activeUid,
                 force = true,
-                guideId = activeGuideId,
+                guideId = guideId,
             )
         }
     }
@@ -442,8 +375,8 @@ class GuideDetailsViewModel @Inject constructor(
         return if (guide.id == resolvedId) guide else guide.copy(id = resolvedId)
     }
 
-    private fun resolveGuideId(guide: Guide?): String? {
-        return guide?.id?.takeIf { it.isNotBlank() } ?: guideId?.takeIf { it.isNotBlank() }
+    private fun resolveGuideId(guide: Guide?): String {
+        return guide?.id?.takeIf { it.isNotBlank() } ?: guideId
     }
 
     private fun updateGuideState(guide: Guide) {

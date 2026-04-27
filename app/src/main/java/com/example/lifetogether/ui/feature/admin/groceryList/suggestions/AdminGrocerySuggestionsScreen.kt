@@ -96,7 +96,7 @@ fun AdminGrocerySuggestionsScreen(
             .padding(10.dp),
         contentAlignment = Alignment.BottomCenter,
     ) {
-        if (uiState.isEditMode) {
+        if (uiState.editingSuggestionId != null) {
             EditListItem(
                 textValue = uiState.newSuggestionText,
                 onTextChange = { value ->

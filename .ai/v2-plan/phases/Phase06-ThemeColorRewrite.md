@@ -4,7 +4,7 @@
 
 ## Goal
 
-Rewrite `Color.kt` to use private raw colors mapped to semantic Material 3 roles. Enforce the 8dp baseline grid, a strict typography scale, shape tokens, and a small app-specific token layer for spacing and sizing. Eliminate all magic numbers and direct color references from feature screens.
+Rewrite `Color.kt` to use private raw colors mapped to semantic Material 3 roles. Enforce the 8dp baseline grid, a strict typography scale, shape tokens, and a small app-specific token layer for foundational spacing and sizing. Eliminate all magic numbers and direct color references from feature screens.
 
 ## Scope
 
@@ -18,6 +18,22 @@ Rewrite `Color.kt` to use private raw colors mapped to semantic Material 3 roles
 
 ## Key Decisions Already Made
 
+- **Private Raw Colors:** Raw hex colors must be `private` in `Color.kt`; UI accesses colors only through `MaterialTheme.colorScheme`.
+- **Light Mode Readiness:** Light mode is deferred to a future phase, but the architecture (semantic mapping via `colorScheme`) must be set up so that slotting in a `LightColorScheme` later is trivial.
+- **Color Mapping (Dark Mode Base):**
+    - *Backgrounds:* `background` & `surface` = `#120E15` (Deep tinted charcoal); `surfaceVariant` = `#1E1822`.
+    - *Neutral Text:* `onSurface` & `onBackground` = `#E6E1E5`; `onSurfaceVariant` = `#CAC4D0`.
+    - *Primary (10% Vibrancy Rule):* `primary` = `#7E1E80` (Saturated brand purple); `onPrimary` = `#FFFFFF`.
+    - *Primary Containers (Muted Active Areas):* `primaryContainer` = `#3A233D`; `onPrimaryContainer` = `#E2DCE6` (Crisp silver-lilac).
+    - *Secondary (Accent):* `secondary` = `#4DB6AC` (Soft dusty teal); `secondaryContainer` = `#004F4F`; `onSecondaryContainer` = `#A6F4EA`.
+    - *Semantic States:* `error` = `#F2B8B5` (Pastel red); `onError` = `#601410`.
+- **Typography & Custom Fonts:**
+    - Expressive/Header text (`Display`, `Headline`, `Title`) uses **Montserrat Alternates**.
+    - Functional text (`Body`, `Label`) uses **Lato**.
+    - Only `MaterialTheme.typography` styles inside feature composables. No arbitrary `fontSize`, `fontWeight`, or `fontFamily`.
+- **8dp Baseline Grid:** All spacing, padding, and dimensions must use multiples of 8dp. Half-steps (4dp) are allowed only for tight internal component spacing. Arbitrary values like `10.dp` or `15.dp` are banned.
+- **Shape Tokens:** No ad hoc `RoundedCornerShape(Xdp)` in feature screens. Use `MaterialTheme.shapes`. Primary action buttons use `shapes.extraLarge` or `CircleShape`; cards/containers use `shapes.medium` or `shapes.large`.
+- **App-specific Token Layer:** Strictly foundational. Limited to generic `Spacing` (multiples of 8dp + 4dp half-step) and basic `Sizing` (e.g., 24dp for icons, 48dp for minimum touch targets). Component-specific paddings (like card internal padding) are deferred to Phase 7.
 - Raw hex colors must be `private` in `Color.kt`; UI accesses colors only through `MaterialTheme.colorScheme`.
 - Palette naming uses explicit theme scope (`DarkPalette`/`LightPalette`) instead of ambiguous `Raw...` names.
 - Text and headings use neutral `onSurface` / `onSurfaceVariant` — never vibrant brand colors.
@@ -39,17 +55,15 @@ Rewrite `Color.kt` to use private raw colors mapped to semantic Material 3 roles
 
 ## Subphases
 
-- [x] 6.1 Rewrite `Color.kt` — private raw colors + semantic `DarkColorScheme` mapping (light structure retained for later divergence)
+- [x] 6.1 Rewrite `Color.kt` — private raw colors + `DarkColorScheme` semantic mapping (structured to easily support Light Mode later)
 - [x] 6.2 Define and apply shape tokens in `Shape.kt`
 - [x] 6.3 Define and apply typography scale in `Type.kt`
-- [x] 6.4 Define app-specific token layer (spacing, sizing)
-- [ ] 6.5 Sweep all composables (feature screens and `ui/common/`) for magic numbers, direct color references, and icon asset cleanup; fix
+- [x] 6.4 Define app-specific foundational token layer (Spacing & Sizing only)
+- [ ] 6.5 Sweep all composables (feature screens and `ui/common/`) for magic numbers and direct color references; replace with theme tokens
 
 ## Before Starting This Phase
 
 > **[Run `/grill-me`](../../skills/grill-me/grill-me.md)** with this file to stress-test the plan, finalise the subphases above, and fill in the sections below before writing any code.
->
-> All **Open Questions** at the bottom of this file must be answered and the section removed before implementation begins.
 
 ### Acceptance criteria
 - [x] `Color.kt` exposes zero public raw `Color` values.

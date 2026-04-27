@@ -2,12 +2,7 @@ package com.example.lifetogether.ui.feature.admin.groceryList.suggestions
 
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
-
-internal const val UNCATEGORIZED_NAME = "Uncategorized"
-internal val UNCATEGORIZED_CATEGORY = Category(
-    emoji = "❓️",
-    name = UNCATEGORIZED_NAME,
-)
+import com.example.lifetogether.util.UNCATEGORIZED_CATEGORY
 
 data class AdminGrocerySuggestionsUiState(
     val showDeleteCategoryConfirmationDialog: Boolean = false,
@@ -19,7 +14,6 @@ data class AdminGrocerySuggestionsUiState(
     val newSuggestionPrice: String = "",
     val newSuggestionCategory: Category = UNCATEGORIZED_CATEGORY,
     val editingSuggestionId: String? = null,
-    val isEditMode: Boolean = false,
 )
 
 sealed interface AdminGrocerySuggestionsUiEvent {

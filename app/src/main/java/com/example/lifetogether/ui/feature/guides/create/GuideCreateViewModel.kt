@@ -159,31 +159,46 @@ class GuideCreateViewModel @Inject constructor(
             showError("Please connect to a family first")
             return
         }
-
         if (currentState.title.trim().isEmpty()) {
             showError("Please enter a title")
             return
         }
 
-        val normalizedSections = currentState.sections
+        val guide = buildGuideFromState(
+            familyId = activeFamilyId,
+            uid = activeUid,
+            state = currentState,
+        )
+
+        persistGuide(guide)
+    }
+
+    private fun buildGuideFromState(
+        familyId: String,
+        uid: String,
+        state: GuideCreateUiState,
+    ): Guide {
+        val normalizedSections = state.sections
             .mapIndexed { index, section ->
                 GuideProgress.updateSectionCompletion(
                     section.copy(orderNumber = index + 1),
                 )
             }
 
-        val guide = Guide(
-            familyId = activeFamilyId,
-            itemName = currentState.title.trim(),
-            description = currentState.description.trim(),
+        return Guide(
+            familyId = familyId,
+            itemName = state.title.trim(),
+            description = state.description.trim(),
             lastUpdated = Date(),
-            visibility = currentState.visibility,
-            ownerUid = activeUid,
+            visibility = state.visibility,
+            ownerUid = uid,
             started = false,
             sections = normalizedSections,
             resume = null,
         )
+    }
 
+    private fun persistGuide(guide: Guide) {
         viewModelScope.launch {
             when (val result = guideRepository.saveGuide(guide)) {
                 is Result.Success -> {

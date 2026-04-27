@@ -1,7 +1,6 @@
 package com.example.lifetogether.ui.feature.lists.listDetails
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -13,20 +12,15 @@ import com.example.lifetogether.ui.navigation.ListEntryDetailsNavRoute
 
 @Composable
 fun ListDetailsRoute(
-    listId: String,
     appNavigator: AppNavigator,
 ) {
     FeatureSyncLifecycleBinding(keys = setOf(SyncKey.USER_LISTS, SyncKey.ROUTINE_LIST_ENTRIES))
 
     val viewModel: ListDetailsViewModel = hiltViewModel()
     val screenState by viewModel.screenState.collectAsStateWithLifecycle()
-    CollectUiCommands(viewModel.uiCommands)
+    val listId = viewModel.listId
 
-    LaunchedEffect(listId) {
-        if (listId.isNotBlank()) {
-            viewModel.setUp(listId)
-        }
-    }
+    CollectUiCommands(viewModel.uiCommands)
 
     ListDetailsScreen(
         screenState = screenState,

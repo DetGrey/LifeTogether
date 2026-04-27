@@ -10,6 +10,7 @@ sealed interface EntryDetailsUiState {
         val isEditing: Boolean = false,
         val showDiscardDialog: Boolean = false,
         val isSaving: Boolean = false,
+        val showImageUploadDialog: Boolean = false,
     ) : EntryDetailsUiState
 }
 

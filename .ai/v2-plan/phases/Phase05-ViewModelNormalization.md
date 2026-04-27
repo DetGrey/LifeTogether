@@ -15,6 +15,12 @@ Normalise all feature ViewModels to expose a single `UiState` object for persist
 
 ## Key Decisions Already Made
 
+### Execution Workflow Override (Agreed During Implementation)
+
+- For the remaining Phase 5 issues after `#57`, implementation work should use one shared phase branch instead of one branch per issue.
+- Do not open per-issue PRs for the remaining Phase 5 issues; create one consolidated PR at the end of Phase 5.
+- Keep issue-level tracking updates (board status, issue checklist/body progress) for each issue even when they share the same phase branch.
+
 - Each ViewModel exposes **one main `UiState` data class** as a `StateFlow`.
 - One-off commands (navigation triggers, snackbar messages) use a **`Channel<UiCommand>` exposed as a `Flow`** — avoids rotation bugs and state-clearing boilerplate.
 - No public mutable fields: dialog flags, raw error strings, ad hoc IDs, and filter selections must move into `UiState` or `UiCommand`.
@@ -103,7 +109,6 @@ Normalise all feature ViewModels to expose a single `UiState` object for persist
 - `AdminGroceryCategoriesViewModel` should keep its current separate delete-dialog flag and selected category state for now.
 - `AdminGroceryCategoriesViewModel` should keep the current free-form string add-category flow for now.
 - `GroceryListViewModel` should refactor `setUpGroceryList()` into a single cancellable setup path instead of launching repeated collectors on each new family id.
-- `GalleryViewModel` should refactor `observeAlbums()` into a single cancellable setup path instead of launching repeated collectors on each new family id.
 - `ListsViewModel` should group the create-dialog fields into a nested create form model.
 - `ListsViewModel` should explicitly cancel `listsJob` and clear `userLists` on logout/session loss.
 - `ListsViewModel` should keep `ListsCommand.NavigateToListDetails` for create-success navigation.
@@ -116,6 +121,7 @@ Normalise all feature ViewModels to expose a single `UiState` object for persist
 
 ### 5.4 Gallery and Tip Tracker ViewModels
 
+- `GalleryViewModel` should refactor `observeAlbums()` into a single cancellable setup path instead of launching repeated collectors on each new family id.
 - The media-upload cleanup for `MediaUploadViewModel` should also include a cleanup pass on `UploadGalleryMediaItemsUseCase`, because its current `invoke` is too long to absorb the moved prep logic without refactoring
 - `UploadGalleryMediaItemsUseCase` should keep its public API but split the long `invoke(...)` into small private helpers for validation, per-item upload, metadata save, and failure aggregation
 - `MediaUploadViewModel` should be removed as soon as the surrounding files stop using it; do not keep it around after the upload dialog and parent screen state refactor is complete

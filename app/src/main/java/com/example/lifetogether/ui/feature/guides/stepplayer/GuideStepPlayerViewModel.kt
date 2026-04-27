@@ -1,6 +1,7 @@
 package com.example.lifetogether.ui.feature.guides.stepplayer
 
 import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.logic.GuideLeafPointer
@@ -28,6 +29,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class GuideStepPlayerViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
     private val sessionRepository: SessionRepository,
     private val guideRepository: GuideRepository,
 ) : ViewModel() {
@@ -41,9 +43,10 @@ class GuideStepPlayerViewModel @Inject constructor(
         COMPLETE_IF_NEEDED,
     }
 
+    private val guideId: String = checkNotNull(savedStateHandle["guideId"])
+
     private var familyId: String? = null
     private var uid: String? = null
-    private var guideId: String? = null
     private var guideJob: Job? = null
     private var guidePersistJob: Job? = null
     private var pendingGuide: Guide? = null
@@ -67,7 +70,7 @@ class GuideStepPlayerViewModel @Inject constructor(
                 ) {
                     familyId = newFamilyId
                     uid = newUid
-                    guideId?.let { startGuideJob(it) }
+                    observeGuide()
                 } else if (state is SessionState.Unauthenticated) {
                     familyId = null
                     uid = null
@@ -78,38 +81,20 @@ class GuideStepPlayerViewModel @Inject constructor(
 
     fun onEvent(event: GuideStepPlayerUiEvent) {
         when (event) {
-            is GuideStepPlayerUiEvent.Initialize -> setUp(event.guideId)
             GuideStepPlayerUiEvent.PreviousClicked -> goToPreviousStep()
             GuideStepPlayerUiEvent.CompleteCurrentAndGoNextClicked -> completeCurrentAndGoNext()
             GuideStepPlayerUiEvent.ToggleCurrentStepCompletionClicked -> toggleCurrentStepCompletion()
         }
     }
 
-    fun setUp(guideId: String) {
-        val isNewGuide = this.guideId != guideId
-        if (isNewGuide) {
-            this.guideId = guideId
-            currentPointerIndex = -1
-            cancelPendingGuidePersistence()
-        }
-        if (familyId != null && uid != null) {
-            startGuideJob(guideId)
-        }
-    }
-
-    private fun startGuideJob(guideId: String) {
+    private fun observeGuide() {
         val familyIdValue = familyId ?: return
         val uidValue = uid ?: return
 
-        if (this.guideId == guideId && guideJob?.isActive == true) {
-            Log.d(TAG, "startGuideJob skipped: active job for same context")
-            return
-        }
-
-        Log.d(TAG, "startGuideJob familyId=$familyIdValue guideId=$guideId")
+        Log.d(TAG, "observeGuide familyId=$familyIdValue guideId=$guideId")
         guideJob?.cancel()
         guideJob = viewModelScope.launch {
-            Log.d(TAG, "startGuideJob subscribing to local guide flow for guideId=$guideId")
+            Log.d(TAG, "observeGuide subscribing to local guide flow for guideId=$guideId")
             guideRepository.observeGuideById(
                 familyId = familyIdValue,
                 id = guideId,
@@ -267,14 +252,13 @@ class GuideStepPlayerViewModel @Inject constructor(
         flushPendingGuidePersistence(immediate = true)
         val activeFamilyId = familyId
         val activeUid = uid
-        val activeGuideId = guideId
         if (!activeFamilyId.isNullOrBlank() && !activeUid.isNullOrBlank()) {
             viewModelScope.launch {
                 guideRepository.syncPendingGuideProgress(
                     familyId = activeFamilyId,
                     uid = activeUid,
                     force = true,
-                    guideId = activeGuideId,
+                    guideId = guideId,
                 )
             }
         }
@@ -289,12 +273,6 @@ class GuideStepPlayerViewModel @Inject constructor(
         pendingGuide = null
         Log.d(TAG, "flushPendingGuidePersistence persisting cached guideId=${latestGuide.id}")
         persistGuide(latestGuide, forceUpload = immediate)
-    }
-
-    private fun cancelPendingGuidePersistence() {
-        guidePersistJob?.cancel()
-        guidePersistJob = null
-        pendingGuide = null
     }
 
     private fun persistGuide(guide: Guide, forceUpload: Boolean = false) {
@@ -319,16 +297,12 @@ class GuideStepPlayerViewModel @Inject constructor(
     }
 
     private fun normalizeGuideForPersistence(guide: Guide): Guide? {
-        val resolvedGuideId = resolveGuideId(guide) ?: run {
-            Log.e(TAG, "persistGuide failed: missing guide id in guide=${guide.id} cachedGuideId=$guideId")
-            showError("Unable to save guide progress. Missing guide id.")
-            return null
-        }
+        val resolvedGuideId = resolveGuideId(guide)
         return if (guide.id == resolvedGuideId) guide else guide.copy(id = resolvedGuideId)
     }
 
-    private fun resolveGuideId(guide: Guide): String? {
-        return guide.id?.takeIf { it.isNotBlank() } ?: guideId?.takeIf { it.isNotBlank() }
+    private fun resolveGuideId(guide: Guide): String {
+        return guide.id?.takeIf { it.isNotBlank() } ?: guideId
     }
 
     private fun showError(message: String) {
@@ -420,5 +394,4 @@ class GuideStepPlayerViewModel @Inject constructor(
         if (section == null || section.amount <= 1) return ""
         return "Part ${pointer.sectionAmountIndex + 1}/${section.amount}"
     }
-
 }

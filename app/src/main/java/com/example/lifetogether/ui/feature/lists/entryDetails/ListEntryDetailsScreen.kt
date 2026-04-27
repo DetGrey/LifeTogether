@@ -34,7 +34,8 @@ import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
-import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.domain.result.AppError
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.image.ImageUploadDialog
@@ -52,6 +53,7 @@ fun ListEntryDetailsScreen(
     familyId: String? = null,
     bitmap: Bitmap? = null,
     showImageUploadDialog: Boolean = false,
+    onImageUpload: suspend (Uri) -> Result<Unit, AppError> = { Result.Success(Unit) },
     onUiEvent: (ListEntryDetailsUiEvent) -> Unit,
     onNavigationEvent: (ListEntryDetailsNavigationEvent) -> Unit,
 ) {
@@ -261,9 +263,9 @@ fun ListEntryDetailsScreen(
         ImageUploadDialog(
             onDismiss = { onUiEvent(ListEntryDetailsUiEvent.DismissImageUpload) },
             onConfirm = { onUiEvent(ListEntryDetailsUiEvent.ConfirmImageUpload) },
+            onUpload = onImageUpload,
             dialogTitle = "Upload entry image",
             dialogMessage = "Select an image for this entry",
-            imageType = ImageType.RoutineListEntryImage(familyId, entryId),
             dismissButtonMessage = "Cancel",
             confirmButtonMessage = "Upload image",
         )
