@@ -1,12 +1,11 @@
 package com.example.lifetogether.ui.feature.guides.stepplayer.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -41,31 +40,31 @@ fun GuideStepCard(
 
     val modifier = if (emphasized) Modifier.height(275.dp) else Modifier
 
-    Box(
+    Card(
         modifier = modifier
             .fillMaxWidth()
-            .background(cardColor, MaterialTheme.shapes.large)
             .padding(LifeTogetherTokens.spacing.medium),
+        colors = CardDefaults.cardColors(containerColor = cardColor),
+        shape = MaterialTheme.shapes.large,
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
-            TextSubHeadingMedium(
-                text = header,
+        TextSubHeadingMedium(
+            text = header,
+            color = textColor,
+        )
+        Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
+        if (step == null) {
+            TextDefault(
+                text = "No step available",
                 color = textColor,
             )
-            if (step == null) {
-                TextDefault(
-                    text = "No step available",
-                    color = textColor,
-                )
-            } else {
-                GuideStepCardBody(
-                    step = step,
-                    stepNumber = stepNumber,
-                    textColor = textColor,
-                    roundGroupLabel = roundGroupLabel,
-                    roundGroupMeta = roundGroupMeta,
-                )
-            }
+        } else {
+            GuideStepCardBody(
+                step = step,
+                stepNumber = stepNumber,
+                textColor = textColor,
+                roundGroupLabel = roundGroupLabel,
+                roundGroupMeta = roundGroupMeta,
+            )
         }
     }
 }

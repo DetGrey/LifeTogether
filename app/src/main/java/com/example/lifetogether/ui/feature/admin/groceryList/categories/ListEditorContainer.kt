@@ -2,7 +2,6 @@ package com.example.lifetogether.ui.feature.admin.groceryList.categories
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,34 +26,30 @@ fun ListEditorContainer(
     list: List<String>,
     onDelete: (String) -> Unit,
 ) {
-    Box(
+    Column(
         modifier = Modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .padding(LifeTogetherTokens.spacing.small),
+        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
     ) {
-        Column(
-            modifier = Modifier
-                .padding(LifeTogetherTokens.spacing.small),
-            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
-        ) {
-            HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.primaryContainer)
-            for (item in list) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(LifeTogetherTokens.sizing.iconMedium),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    TextDefault(item)
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_trashcan),
-                        contentDescription = "trashcan icon",
-                        tint = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.clickable { onDelete(item) },
-                    )
-                }
-                HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.primaryContainer)
+        HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.primaryContainer)
+        for (item in list) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(LifeTogetherTokens.sizing.iconMedium),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextDefault(item)
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_trashcan),
+                    contentDescription = "trashcan icon",
+                    tint = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.clickable { onDelete(item) },
+                )
             }
+            HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.primaryContainer)
         }
     }
 }

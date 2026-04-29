@@ -122,7 +122,7 @@ Phase 8 excludes non-visual plumbing such as `ViewModel`s, routes, DI helpers, e
 - [x] 8.2 Rebuild alert, confirmation, and upload surfaces on native dialog/sheet primitives: `CustomAlertDialog`, residual `ErrorAlertDialog`, `ConfirmationDialogWithTextField`, `ConfirmationDialogWithDropdown`, `ImageUploadDialog`, `MediaUploadMultipleDialog`, and the media-details bottom panel
 - [x] 8.3 Standardize every non-loading screen on `Scaffold(topBar = { AppTopBar(...) })`, move `subText` into `HomeScreen` content, and keep loading as the only full-screen exception
 - [x] 8.4 Review and normalize shared row/chip/action helpers: `ListItem`, `CompletableBox`, `TagOptionRow`/`TagOption`, `OverflowMenu`, `ActionSheet`, `LoveButton`, `CountdownRow`, and `FeatureOverview`
-- [ ] 8.5 Rebuild feature-local cards and layout helpers on native card/surface/grid primitives: guide cards, tip-tracker cards, guide step rows, grocery editors, and `AddNewTipItem`
+- [x] 8.5 Rebuild feature-local cards and layout helpers on native card/surface/grid primitives: guide cards, tip-tracker cards, guide step rows, grocery editors, and `AddNewTipItem`
 
 ## Before Starting This Phase
 
@@ -138,7 +138,7 @@ Phase 8 excludes non-visual plumbing such as `ViewModel`s, routes, DI helpers, e
 - [x] Shared alert presentation uses one snackbar/banner family for both error and normal alerts, with the existing top-center host behavior.
 - [x] Shared confirmation and upload surfaces are rebuilt from native dialog primitives and the shared input/select wrappers.
 - [x] Shared helper rows and chips are either kept as canonical wrappers on native primitives or inlined where they are single-use.
-- [ ] Feature-local cards and layout helpers remain feature-local but are rebuilt on native card/surface/grid primitives where appropriate.
+- [x] Feature-local cards and layout helpers remain feature-local but are rebuilt on native card/surface/grid primitives where appropriate.
 - [ ] `TextDefault` and the other typography helpers remain available as the shared text API and continue to render consistently after the alignment work.
 
 ### Test cases
@@ -148,8 +148,8 @@ Phase 8 excludes non-visual plumbing such as `ViewModel`s, routes, DI helpers, e
 - [x] Verify the shared alert snackbar renders both error and normal alert variants with the same host placement and dismissal behavior.
 - [x] Verify the revised dialog flows still allow selecting text, dropdown values, and dates before confirming.
 - [ ] Verify media detail screens still render the image/video area and the new bottom-panel behavior correctly.
-- [ ] Verify feature-local guide and tip-tracker card screens still render correctly after the native-primitive rebuilds.
-- [ ] Verify every updated component preview still compiles and reflects the intended native M3 styling.
+- [x] Verify feature-local guide and tip-tracker card screens still render correctly after the native-primitive rebuilds.
+- [x] Verify every updated component preview still compiles and reflects the intended native M3 styling.
 
 ## GitHub Issues
 

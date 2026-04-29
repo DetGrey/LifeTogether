@@ -1,6 +1,5 @@
 package com.example.lifetogether.ui.feature.tipTracker.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,9 +14,10 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,15 +51,13 @@ fun TipsList(
             verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
         ) {
             items(tipsForDate) { tipItem ->
-                Box(
+                Surface(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(45.dp)
-                        .background(
-                            MaterialTheme.colorScheme.surfaceVariant,
-                            MaterialTheme.shapes.large
-                        )
                         .padding(horizontal = LifeTogetherTokens.spacing.small, vertical = LifeTogetherTokens.spacing.xSmall),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = MaterialTheme.shapes.large,
                 ) {
                     Row(
                         modifier = Modifier
@@ -97,7 +95,7 @@ fun TipsList(
                                 Icon(
                                     painter = painterResource(id = R.drawable.ic_trashcan),
                                     contentDescription = "Delete icon",
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }
@@ -106,6 +104,6 @@ fun TipsList(
             }
         }
 
-            Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
+        Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
     }
 }

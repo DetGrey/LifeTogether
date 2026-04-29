@@ -1,6 +1,5 @@
 package com.example.lifetogether.ui.feature.tipTracker.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Surface
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,15 +44,12 @@ fun AddNewTipItem(
 ) {
     var showDialog by remember { mutableStateOf(false) }
 
-    Box(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .height(60.dp)
-            .background(
-                color = MaterialTheme.colorScheme.primaryContainer,
-                shape = MaterialTheme.shapes.medium
-            ),
-        contentAlignment = Alignment.CenterStart,
+            .height(60.dp),
+        color = MaterialTheme.colorScheme.primaryContainer,
+        shape = MaterialTheme.shapes.medium,
     ) {
         Row(
             modifier = Modifier

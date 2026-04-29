@@ -1,14 +1,14 @@
 package com.example.lifetogether.ui.feature.guides.details.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -55,13 +55,15 @@ fun GuideSectionCard(
         "Part ${amountIndex + 1} (${amountProgress.first}/${amountProgress.second})"
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.large)
-            .padding(LifeTogetherTokens.spacing.medium),
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        shape = MaterialTheme.shapes.large,
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
+        Column(
+            modifier = Modifier.padding(LifeTogetherTokens.spacing.medium),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+        ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

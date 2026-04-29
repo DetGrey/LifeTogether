@@ -1,10 +1,11 @@
 package com.example.lifetogether.ui.feature.guides.details.components
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,12 +21,14 @@ import com.example.lifetogether.ui.theme.LifeTogetherTokens
 fun GuideHeroCard(guide: Guide) {
     val completedSections = guide.sections.count { it.completed }
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(LifeTogetherTokens.spacing.medium),
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
+        Column(
+            modifier = Modifier.padding(LifeTogetherTokens.spacing.medium),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+        ) {
             TextSubHeadingMedium(guide.itemName)
 
             if (guide.description.isNotBlank()) {
