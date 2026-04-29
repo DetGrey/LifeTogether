@@ -19,8 +19,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.ui.common.dialog.DatePickerDialog
 import com.example.lifetogether.ui.common.TopBar
-import com.example.lifetogether.ui.common.dialog.CustomDatePickerDialog
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.common.textfield.DatePickerTextField
@@ -120,7 +120,7 @@ fun SignupScreen(
         }
 
         if (uiState.showBirthdayPicker) {
-            CustomDatePickerDialog(
+            DatePickerDialog(
                 selectedDate = uiState.birthday,
                 onDateSelected = { date ->
                     onUiEvent(SignupUiEvent.BirthdaySelected(date))

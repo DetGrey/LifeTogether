@@ -28,10 +28,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.logic.toDayOfMonthString
-import com.example.lifetogether.ui.theme.LifeTogetherTokens
-import com.example.lifetogether.ui.common.dialog.CustomDatePickerDialog
+import com.example.lifetogether.ui.common.dialog.DatePickerDialog
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import java.util.Date
 
 @Composable
@@ -114,7 +114,7 @@ fun AddNewTipItem(
     }
 
     if (showDialog) {
-        CustomDatePickerDialog(
+        DatePickerDialog(
             selectedDate = dateValue,
             onDismiss = {
                 showDialog = false

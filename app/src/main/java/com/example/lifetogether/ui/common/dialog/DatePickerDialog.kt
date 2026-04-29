@@ -12,7 +12,7 @@ import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomDatePickerDialog(
+fun DatePickerDialog(
     selectedDate: Date?,
     onDismiss: () -> Unit,
     onDateSelected: (Date) -> Unit,
@@ -26,7 +26,7 @@ fun CustomDatePickerDialog(
     )
 
     DatePickerDialog(
-        onDismissRequest = { onDismiss() },
+        onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(
                 onClick = {
@@ -38,7 +38,7 @@ fun CustomDatePickerDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = { onDismiss() }) {
+            TextButton(onClick = onDismiss) {
                 Text(text = "Dismiss")
             }
         },
