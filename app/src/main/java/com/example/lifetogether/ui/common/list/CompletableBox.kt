@@ -23,8 +23,8 @@ fun CompletableBox(
     isCompleted: Boolean,
     onCompleteToggle: () -> Unit,
     isEnabled: Boolean = true,
-    color: Color = MaterialTheme.colorScheme.primaryContainer,
-    tint: Color = MaterialTheme.colorScheme.onPrimaryContainer,
+    color: Color = MaterialTheme.colorScheme.primary,
+    tint: Color = MaterialTheme.colorScheme.onPrimary,
 ) {
     Box(
         modifier = Modifier

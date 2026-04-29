@@ -1,6 +1,6 @@
 # Phase 8 — Native Material 3 Alignment
 
-**Status:** Grill-me in progress _(Not started → Grill-me in progress → Implementing → Complete)_
+**Status:** Implementing _(Not started → Grill-me in progress → Implementing → Complete)_
 
 ## Goal
 
@@ -120,8 +120,8 @@ Phase 8 excludes non-visual plumbing such as `ViewModel`s, routes, DI helpers, e
 
 - [x] 8.1 Rebuild the shared input family on native M3 controls with centralized defaults: `CustomTextField`, `DatePickerTextField`, `EditableTextField`, `Dropdown`, and the canonical add FAB wrapper
 - [x] 8.2 Rebuild alert, confirmation, and upload surfaces on native dialog/sheet primitives: `CustomAlertDialog`, residual `ErrorAlertDialog`, `ConfirmationDialogWithTextField`, `ConfirmationDialogWithDropdown`, `ImageUploadDialog`, `MediaUploadMultipleDialog`, and the media-details bottom panel
-- [ ] 8.3 Standardize every non-loading screen on `Scaffold(topBar = { AppTopBar(...) })`, move `subText` into `HomeScreen` content, and keep loading as the only full-screen exception
-- [ ] 8.4 Review and normalize shared row/chip/action helpers: `ListItem`, `CompletableBox`, `TagOptionRow`/`TagOption`, `OverflowMenu`, `ActionSheet`, `LoveButton`, `CountdownRow`, and `FeatureOverview`
+- [x] 8.3 Standardize every non-loading screen on `Scaffold(topBar = { AppTopBar(...) })`, move `subText` into `HomeScreen` content, and keep loading as the only full-screen exception
+- [x] 8.4 Review and normalize shared row/chip/action helpers: `ListItem`, `CompletableBox`, `TagOptionRow`/`TagOption`, `OverflowMenu`, `ActionSheet`, `LoveButton`, `CountdownRow`, and `FeatureOverview`
 - [ ] 8.5 Rebuild feature-local cards and layout helpers on native card/surface/grid primitives: guide cards, tip-tracker cards, guide step rows, grocery editors, and `AddNewTipItem`
 
 ## Before Starting This Phase
@@ -137,7 +137,7 @@ Phase 8 excludes non-visual plumbing such as `ViewModel`s, routes, DI helpers, e
 - [x] Shared input controls use native M3 primitives plus centralized styling, without repeating color or shape overrides at every call site.
 - [x] Shared alert presentation uses one snackbar/banner family for both error and normal alerts, with the existing top-center host behavior.
 - [x] Shared confirmation and upload surfaces are rebuilt from native dialog primitives and the shared input/select wrappers.
-- [ ] Shared helper rows and chips are either kept as canonical wrappers on native primitives or inlined where they are single-use.
+- [x] Shared helper rows and chips are either kept as canonical wrappers on native primitives or inlined where they are single-use.
 - [ ] Feature-local cards and layout helpers remain feature-local but are rebuilt on native card/surface/grid primitives where appropriate.
 - [ ] `TextDefault` and the other typography helpers remain available as the shared text API and continue to render consistently after the alignment work.
 

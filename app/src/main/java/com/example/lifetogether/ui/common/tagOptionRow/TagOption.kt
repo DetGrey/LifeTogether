@@ -1,23 +1,18 @@
 package com.example.lifetogether.ui.common.tagOptionRow
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun TagOption(
@@ -26,34 +21,32 @@ fun TagOption(
     onClick: ((String) -> Unit)? = null,
 ) {
     val selected: Boolean = selectedTag == tag
-    Box(
-        modifier = Modifier
-            .height(30.dp)
-            .background(
-                color = if (selected) MaterialTheme.colorScheme.secondary else Color.Transparent,
-                shape = CircleShape
+    FilterChip(
+        modifier = Modifier.height(30.dp),
+        selected = selected,
+        enabled = onClick != null,
+        onClick = { onClick?.invoke(tag) },
+        colors = FilterChipDefaults.filterChipColors(
+            containerColor = Color.Transparent,
+            labelColor = MaterialTheme.colorScheme.onBackground,
+            selectedContainerColor = MaterialTheme.colorScheme.secondary,
+            selectedLabelColor = MaterialTheme.colorScheme.onSecondary,
+        ),
+        border = FilterChipDefaults.filterChipBorder(
+            borderColor = MaterialTheme.colorScheme.onBackground,
+            selectedBorderColor = Color.Transparent,
+            enabled = onClick != null,
+            selected = selected,
+        ),
+        label = {
+            Text(
+                text = tag,
+                color = if (selected) MaterialTheme.colorScheme.onSecondary
+                    else MaterialTheme.colorScheme.onBackground,
             )
-            .border(
-                width = 2.dp,
-                color = if (selected) Color.Transparent else MaterialTheme.colorScheme.onBackground,
-                shape = CircleShape,
-            )
-            .clickable(
-                enabled = onClick != null,
-            ) {
-                if (onClick != null) {
-                    onClick(tag)
-                }
-            }
-            .padding(top = 2.dp, bottom = LifeTogetherTokens.spacing.xSmall)
-            .padding(horizontal = if (tag.length < 5) LifeTogetherTokens.spacing.large else LifeTogetherTokens.spacing.medium),
-        contentAlignment = Alignment.CenterStart,
-    ) {
-        Text(
-            text = tag,
-            color = if (selected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onBackground,
-        )
-    }
+        },
+        shape = CircleShape,
+    )
 }
 
 @Preview(showBackground = true)
@@ -63,11 +56,13 @@ fun ListEntryDetailsScreenPreview() {
         Column {
             TagOption(
                 tag = "Mon",
-                selectedTag = ""
+                selectedTag = "",
+                onClick = {},
             )
             TagOption(
-                tag = "Tag",
-                selectedTag = "Tag"
+                tag = "Mon",
+                selectedTag = "Mon",
+                onClick = {},
             )
         }
     }
