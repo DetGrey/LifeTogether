@@ -1,7 +1,6 @@
 package com.example.lifetogether.ui.feature.settings
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -43,96 +42,93 @@ fun SettingsScreen(
             )
         },
     ) { padding ->
-        Box(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
+                .padding(padding)
+                .padding(LifeTogetherTokens.spacing.small),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
         ) {
-            LazyColumn(
-                modifier = Modifier.padding(LifeTogetherTokens.spacing.small),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
-            ) {
-                item {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
-                    ) {
+            item {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+                ) {
+                    SettingsItem(
+                        icon = Icon(R.drawable.ic_profile_picture, "profile icon"),
+                        title = userInformationState?.name ?: "Username",
+                        link = "Edit my profile",
+                        linkClickable = {
+                            onNavigationEvent(SettingsNavigationEvent.NavigateToProfile)
+                        },
+                    )
+
+                    if (userInformationState?.familyId is String) {
                         SettingsItem(
-                            icon = Icon(R.drawable.ic_profile_picture, "profile icon"),
-                            title = userInformationState?.name ?: "Username",
-                            link = "Edit my profile",
+                            icon = Icon(R.drawable.ic_family, "family icon"),
+                            title = "My family",
+                            link = "Edit family",
                             linkClickable = {
-                                onNavigationEvent(SettingsNavigationEvent.NavigateToProfile)
+                                onNavigationEvent(SettingsNavigationEvent.NavigateToFamily)
                             },
                         )
-
-                        if (userInformationState?.familyId is String) {
-                            SettingsItem(
-                                icon = Icon(R.drawable.ic_family, "family icon"),
-                                title = "My family",
-                                link = "Edit family",
-                                linkClickable = {
-                                    onNavigationEvent(SettingsNavigationEvent.NavigateToFamily)
-                                },
-                            )
-                        } else {
-                            SettingsItem(
-                                icon = Icon(R.drawable.ic_family, "family icon"),
-                                title = "Join a family",
-                                titleClickable = {
-                                    onUiEvent(SettingsUiEvent.JoinFamilyClicked)
-                                },
-                                link = "Create new family",
-                                linkClickable = {
-                                    onUiEvent(SettingsUiEvent.CreateNewFamilyClicked)
-                                },
-                            )
-                        }
-
+                    } else {
                         SettingsItem(
-                            icon = Icon(R.drawable.ic_bell, "bell icon"),
-                            title = "Notifications",
-                            link = "Manage notifications",
-                            linkClickable = null,
+                            icon = Icon(R.drawable.ic_family, "family icon"),
+                            title = "Join a family",
+                            titleClickable = {
+                                onUiEvent(SettingsUiEvent.JoinFamilyClicked)
+                            },
+                            link = "Create new family",
+                            linkClickable = {
+                                onUiEvent(SettingsUiEvent.CreateNewFamilyClicked)
+                            },
                         )
                     }
+
+                    SettingsItem(
+                        icon = Icon(R.drawable.ic_bell, "bell icon"),
+                        title = "Notifications",
+                        link = "Manage notifications",
+                        linkClickable = null,
+                    )
                 }
             }
+        }
 
-            if (uiState.showConfirmationDialog) {
-                when (uiState.confirmationDialogType) {
-                    SettingsConfirmationTypes.JOIN_FAMILY -> ConfirmationDialogWithTextField(
-                        onDismiss = {
-                            onUiEvent(SettingsUiEvent.DismissConfirmationDialog)
-                        },
-                        onConfirm = {
-                            onUiEvent(SettingsUiEvent.ConfirmJoinFamily)
-                        },
-                        dialogTitle = "Join a family",
-                        dialogMessage = "Please add the family id to join",
-                        dismissButtonMessage = "Cancel",
-                        confirmButtonMessage = "Join",
-                        textValue = uiState.addedFamilyId,
-                        onTextValueChange = { value ->
-                            onUiEvent(SettingsUiEvent.AddedFamilyIdChanged(value))
-                        },
-                    )
+        if (uiState.showConfirmationDialog) {
+            when (uiState.confirmationDialogType) {
+                SettingsConfirmationTypes.JOIN_FAMILY -> ConfirmationDialogWithTextField(
+                    onDismiss = {
+                        onUiEvent(SettingsUiEvent.DismissConfirmationDialog)
+                    },
+                    onConfirm = {
+                        onUiEvent(SettingsUiEvent.ConfirmJoinFamily)
+                    },
+                    dialogTitle = "Join a family",
+                    dialogMessage = "Please add the family id to join",
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Join",
+                    textValue = uiState.addedFamilyId,
+                    onTextValueChange = { value ->
+                        onUiEvent(SettingsUiEvent.AddedFamilyIdChanged(value))
+                    },
+                )
 
-                    SettingsConfirmationTypes.NEW_FAMILY -> ConfirmationDialog(
-                        onDismiss = {
-                            onUiEvent(SettingsUiEvent.DismissConfirmationDialog)
-                        },
-                        onConfirm = {
-                            onUiEvent(SettingsUiEvent.ConfirmCreateNewFamily)
-                        },
-                        dialogTitle = "Create new family",
-                        dialogMessage = "Are you sure you want to create a new family?",
-                        dismissButtonMessage = "Cancel",
-                        confirmButtonMessage = "Create",
-                    )
+                SettingsConfirmationTypes.NEW_FAMILY -> ConfirmationDialog(
+                    onDismiss = {
+                        onUiEvent(SettingsUiEvent.DismissConfirmationDialog)
+                    },
+                    onConfirm = {
+                        onUiEvent(SettingsUiEvent.ConfirmCreateNewFamily)
+                    },
+                    dialogTitle = "Create new family",
+                    dialogMessage = "Are you sure you want to create a new family?",
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Create",
+                )
 
-                    null -> Unit
-                }
+                null -> Unit
             }
         }
     }

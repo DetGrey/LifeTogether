@@ -1,7 +1,6 @@
 package com.example.lifetogether.ui.feature.recipes
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -47,48 +46,44 @@ fun RecipesScreen(
             })
         },
     ) { padding ->
-        Box(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
+                .padding(padding)
+                .padding(LifeTogetherTokens.spacing.small)
+                .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
         ) {
-            LazyColumn(
-                modifier = Modifier
-                    .padding(LifeTogetherTokens.spacing.small)
-                    .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
-            ) {
-                item {
-                    Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
-                        SyncUpdatingText(keys = setOf(SyncKey.RECIPES))
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
+                    SyncUpdatingText(keys = setOf(SyncKey.RECIPES))
 
-                        TagOptionRow(
-                            options = uiState.tagsList,
-                            selectedOption = uiState.selectedTag,
-                            onSelectedOptionChange = {
-                                onUiEvent(RecipesUiEvent.TagSelected(it))
+                    TagOptionRow(
+                        options = uiState.tagsList,
+                        selectedOption = uiState.selectedTag,
+                        onSelectedOptionChange = {
+                            onUiEvent(RecipesUiEvent.TagSelected(it))
+                        },
+                    )
+                }
+            }
+
+            item {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                ) {
+                    for (recipe in uiState.recipes) {
+                        RecipeOverview(
+                            recipe = recipe,
+                            onClick = {
+                                recipe.id?.let { recipeId ->
+                                    onNavigationEvent(
+                                        RecipesNavigationEvent.NavigateToRecipeDetails(recipeId)
+                                    )
+                                }
                             },
                         )
-                    }
-                }
-
-                item {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
-                    ) {
-                        for (recipe in uiState.recipes) {
-                            RecipeOverview(
-                                recipe = recipe,
-                                onClick = {
-                                    recipe.id?.let { recipeId ->
-                                        onNavigationEvent(
-                                            RecipesNavigationEvent.NavigateToRecipeDetails(recipeId)
-                                        )
-                                    }
-                                },
-                            )
-                        }
                     }
                 }
             }

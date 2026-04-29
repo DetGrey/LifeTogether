@@ -109,34 +109,33 @@ fun GuidesScreen(
             AddButton(onClick = { onUiEvent(GuidesUiEvent.OpenAddOptionsDialog) })
         },
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(LifeTogetherTokens.spacing.small)
-                    .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
-            ) {
-                item {
-                    SyncUpdatingText(keys = setOf(SyncKey.GUIDES))
-                }
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(LifeTogetherTokens.spacing.small)
+                .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+        ) {
+            item {
+                SyncUpdatingText(keys = setOf(SyncKey.GUIDES))
+            }
 
-                if (uiState.guides.isEmpty()) {
-                    item {
-                        Text(text = "No guides yet. Tap + to create or import one.")
-                    }
-                } else {
-                    items(uiState.guides) { guide ->
-                        GuideOverviewCard(
-                            guide = guide,
-                            onClick = {
-                                guide.id?.let {
-                                    onNavigationEvent(GuidesNavigationEvent.NavigateToGuideDetails(it))
-                                }
-                            },
-                        )
-                    }
+            if (uiState.guides.isEmpty()) {
+                item {
+                    Text(text = "No guides yet. Tap + to create or import one.")
+                }
+            } else {
+                items(uiState.guides) { guide ->
+                    GuideOverviewCard(
+                        guide = guide,
+                        onClick = {
+                            guide.id?.let {
+                                onNavigationEvent(GuidesNavigationEvent.NavigateToGuideDetails(it))
+                            }
+                        },
+                    )
                 }
             }
         }

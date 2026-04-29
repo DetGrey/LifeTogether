@@ -1,7 +1,6 @@
 package com.example.lifetogether.ui.feature.gallery
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -49,41 +48,37 @@ fun GalleryScreen(
             })
         },
     ) { padding ->
-        Box(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
+                .padding(padding)
+                .padding(LifeTogetherTokens.spacing.small),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
         ) {
-            LazyColumn(
-                modifier = Modifier
-                    .padding(LifeTogetherTokens.spacing.small),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
-            ) {
-                item {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        SyncUpdatingText(
-                            keys = setOf(SyncKey.GALLERY_ALBUMS, SyncKey.GALLERY_MEDIA),
-                        )
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SyncUpdatingText(
+                        keys = setOf(SyncKey.GALLERY_ALBUMS, SyncKey.GALLERY_MEDIA),
+                    )
 
-                        if (uiState.albums.isEmpty()) {
-                            Text(text = "No albums created. Press + to create one.")
-                        } else {
-                            FlowRow(
-                                modifier = Modifier.fillMaxWidth(),
-                                maxItemsInEachRow = 2,
-                                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
-                            ) {
-                                for (album in uiState.albums) {
-                                    AlbumContainer(
-                                        album.name,
-                                        album.mediaCount,
-                                        album.thumbnail?.toBitmap(),
-                                        onClick = {
-                                            onNavigationEvent(GalleryNavigationEvent.NavigateToAlbumMedia(album.id))
-                                        },
-                                    )
-                                }
+                    if (uiState.albums.isEmpty()) {
+                        Text(text = "No albums created. Press + to create one.")
+                    } else {
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            maxItemsInEachRow = 2,
+                            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                        ) {
+                            for (album in uiState.albums) {
+                                AlbumContainer(
+                                    album.name,
+                                    album.mediaCount,
+                                    album.thumbnail?.toBitmap(),
+                                    onClick = {
+                                        onNavigationEvent(GalleryNavigationEvent.NavigateToAlbumMedia(album.id))
+                                    },
+                                )
                             }
                         }
                     }

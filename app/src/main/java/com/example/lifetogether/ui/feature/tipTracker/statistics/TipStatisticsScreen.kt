@@ -1,7 +1,6 @@
 package com.example.lifetogether.ui.feature.tipTracker.statistics
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -51,80 +50,76 @@ fun TipStatisticsScreen(
             )
         },
     ) { padding ->
-        Box(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
+                .padding(padding)
+                .padding(LifeTogetherTokens.spacing.small)
+                .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
         ) {
-            LazyColumn(
-                modifier = Modifier
-                    .padding(LifeTogetherTokens.spacing.small)
-                    .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
-            ) {
-                item {
-                    if (content.tips.isNotEmpty()) {
-                        TagOptionRow(
-                            options = listOf("Week", "Month", "Year", "All"),
-                            selectedOption = content.timePeriod,
-                            onSelectedOptionChange = {
-                                onUiEvent(TipTrackerUiEvent.TimePeriodSelected(it))
-                            },
-                            center = true,
-                        )
-                        StatsCard(
-                            title = when (content.timePeriod) {
-                                "Week" -> "This week"
-                                "Month" -> "This month"
-                                "Year" -> "This year"
-                                else -> "All time"
-                            },
-                            total = when (content.timePeriod) {
-                                "Week" -> content.stats.weeklyTotal.toString()
-                                "Month" -> content.stats.monthlyTotal.toString()
-                                "Year" -> content.stats.yearlyTotal.toString()
-                                else -> content.stats.total.toString()
-                            },
-                            average = when (content.timePeriod) {
-                                "Week" -> content.stats.weeklyAverage.toString()
-                                "Month" -> content.stats.monthlyAverage.toString()
-                                "Year" -> content.stats.yearlyAverage.toString()
-                                else -> content.stats.totalAverage.toString()
-                            },
-                        )
-                    }
+            item {
+                if (content.tips.isNotEmpty()) {
+                    TagOptionRow(
+                        options = listOf("Week", "Month", "Year", "All"),
+                        selectedOption = content.timePeriod,
+                        onSelectedOptionChange = {
+                            onUiEvent(TipTrackerUiEvent.TimePeriodSelected(it))
+                        },
+                        center = true,
+                    )
+                    StatsCard(
+                        title = when (content.timePeriod) {
+                            "Week" -> "This week"
+                            "Month" -> "This month"
+                            "Year" -> "This year"
+                            else -> "All time"
+                        },
+                        total = when (content.timePeriod) {
+                            "Week" -> content.stats.weeklyTotal.toString()
+                            "Month" -> content.stats.monthlyTotal.toString()
+                            "Year" -> content.stats.yearlyTotal.toString()
+                            else -> content.stats.total.toString()
+                        },
+                        average = when (content.timePeriod) {
+                            "Week" -> content.stats.weeklyAverage.toString()
+                            "Month" -> content.stats.monthlyAverage.toString()
+                            "Year" -> content.stats.yearlyAverage.toString()
+                            else -> content.stats.totalAverage.toString()
+                        },
+                    )
                 }
-                // TODO check if the item is still there if highest tip is null because I don't want the spacedBy to be there always
-                item {
-                    content.stats.highestTip?.let { tip ->
-                        TextSubHeadingMedium("Highest tip", color = MaterialTheme.colorScheme.primary)
-                        TextDefault(
-                            text = "Tip amount: ${tip.amount}",
-                            color = MaterialTheme.colorScheme.secondary,
-                            textAlign = TextAlign.Center,
-                        )
-                        TextDefault(
-                            text = "Date: ${tip.date.toFullDateString()}",
-                            color = MaterialTheme.colorScheme.secondary,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
+            }
+            // TODO check if the item is still there if highest tip is null because I don't want the spacedBy to be there always
+            item {
+                content.stats.highestTip?.let { tip ->
+                    TextSubHeadingMedium("Highest tip", color = MaterialTheme.colorScheme.primary)
+                    TextDefault(
+                        text = "Tip amount: ${tip.amount}",
+                        color = MaterialTheme.colorScheme.secondary,
+                        textAlign = TextAlign.Center,
+                    )
+                    TextDefault(
+                        text = "Date: ${tip.date.toFullDateString()}",
+                        color = MaterialTheme.colorScheme.secondary,
+                        textAlign = TextAlign.Center,
+                    )
                 }
-                item {
-                    content.stats.bestMonth?.let { bestMonth ->
-                        TextSubHeadingMedium("Best month", color = MaterialTheme.colorScheme.primary)
-                        TextDefault(
-                            text = "Tip amount: ${bestMonth.second}",
-                            color = MaterialTheme.colorScheme.secondary,
-                            textAlign = TextAlign.Center,
-                        )
-                        TextDefault(
-                            text = "Month: ${bestMonth.first}",
-                            color = MaterialTheme.colorScheme.secondary,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
+            }
+            item {
+                content.stats.bestMonth?.let { bestMonth ->
+                    TextSubHeadingMedium("Best month", color = MaterialTheme.colorScheme.primary)
+                    TextDefault(
+                        text = "Tip amount: ${bestMonth.second}",
+                        color = MaterialTheme.colorScheme.secondary,
+                        textAlign = TextAlign.Center,
+                    )
+                    TextDefault(
+                        text = "Month: ${bestMonth.first}",
+                        color = MaterialTheme.colorScheme.secondary,
+                        textAlign = TextAlign.Center,
+                    )
                 }
             }
         }

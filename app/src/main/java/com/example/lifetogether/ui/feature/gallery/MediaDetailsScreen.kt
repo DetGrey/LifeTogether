@@ -15,6 +15,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -63,26 +64,8 @@ fun MediaDetailsScreen(
         animationSpec = spring(stiffness = Spring.StiffnessLow),
     )
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .pointerInput(containerSize) {
-                detectVerticalDragGestures(
-                    onVerticalDrag = { _, dragAmount ->
-                        onUiEvent(MediaDetailsUiEvent.VerticalDrag(dragAmount, containerSize.height))
-                    },
-                    onDragEnd = {
-                        onUiEvent(MediaDetailsUiEvent.DragEnd(containerSize.height))
-                    },
-                )
-            },
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
+    Scaffold(
+        topBar = {
             TopBar(
                 leftIcon = Icon(
                     resId = R.drawable.ic_back_arrow,
@@ -101,68 +84,90 @@ fun MediaDetailsScreen(
                 ),
                 onRightClick = { onUiEvent(MediaDetailsUiEvent.ToggleOverflowMenu) },
             )
-
-            SyncUpdatingText(
-                keys = setOf(SyncKey.GALLERY_ALBUMS, SyncKey.GALLERY_MEDIA),
-            )
-
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier
-                    .fillMaxSize(),
-                pageSpacing = 16.dp,
-                beyondViewportPageCount = 1,
-            ) { page ->
-                val media = mediaList[page]
-
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    when (media) {
-                        is GalleryImage -> {
-                            media.mediaUri?.let {
-                                DisplayImageFromUri(it, media.itemName)
-                            }
+        },
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .pointerInput(containerSize) {
+                    detectVerticalDragGestures(
+                        onVerticalDrag = { _, dragAmount ->
+                            onUiEvent(MediaDetailsUiEvent.VerticalDrag(dragAmount, containerSize.height))
+                        },
+                        onDragEnd = {
+                            onUiEvent(MediaDetailsUiEvent.DragEnd(containerSize.height))
                         }
+                    )
+                },
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                SyncUpdatingText(
+                    keys = setOf(SyncKey.GALLERY_ALBUMS, SyncKey.GALLERY_MEDIA),
+                )
 
-                        is GalleryVideo -> {
-                            media.mediaUri?.let { uri ->
-                                DisplayVideoFromUri(
-                                    videoUri = uri,
-                                    autoPlay = false,
-                                    useController = true,
-                                    modifier = Modifier.fillMaxSize(),
-                                    keepScreenOn = true,
-                                )
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    pageSpacing = 16.dp,
+                    beyondViewportPageCount = 1,
+                ) { page ->
+                    val media = mediaList[page]
+
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        when (media) {
+                            is GalleryImage -> {
+                                media.mediaUri?.let {
+                                    DisplayImageFromUri(it, media.itemName)
+                                }
+                            }
+
+                            is GalleryVideo -> {
+                                media.mediaUri?.let { uri ->
+                                    DisplayVideoFromUri(
+                                        videoUri = uri,
+                                        autoPlay = false,
+                                        useController = true,
+                                        modifier = Modifier.fillMaxSize(),
+                                        keepScreenOn = true,
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
-        }
 
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.4f) // This is our panel height
-                .align(Alignment.BottomCenter)
-                .offset {
-                    IntOffset(
-                        x = 0,
-                        y = (animatedOffset + (containerSize.height * 0.4f)).roundToInt(),
-                    )
-                },
-            shape = MaterialTheme.shapes.extraLarge.copy(
-                bottomStart = CornerSize(0.dp),
-                bottomEnd = CornerSize(0.dp),
-            ),
-            color = MaterialTheme.colorScheme.surface,
-        ) {
-            mediaList.getOrNull(pagerState.currentPage)?.let {
-                MediaDetailsPanelContent(it)
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.4f) // This is our panel height
+                    .align(Alignment.BottomCenter)
+                    .offset {
+                        IntOffset(
+                            x = 0,
+                            y = (animatedOffset + (containerSize.height * 0.4f)).roundToInt(),
+                        )
+                    },
+                shape = MaterialTheme.shapes.extraLarge.copy(
+                    bottomStart = CornerSize(0.dp),
+                    bottomEnd = CornerSize(0.dp),
+                ),
+                color = MaterialTheme.colorScheme.surface,
+            ) {
+                mediaList.getOrNull(pagerState.currentPage)?.let {
+                    MediaDetailsPanelContent(it)
+                }
             }
         }
-
     }
 
     if (uiState.showOverflowMenu) {

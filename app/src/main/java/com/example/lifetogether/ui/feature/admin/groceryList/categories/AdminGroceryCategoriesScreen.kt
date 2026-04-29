@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -43,28 +44,29 @@ fun AdminGroceryCategoriesScreen(
     onUiEvent: (AdminGroceryCategoriesUiEvent) -> Unit,
     onNavigationEvent: (AdminGroceryCategoriesNavigationEvent) -> Unit,
 ) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-    ) {
+    Scaffold(
+        topBar = {
+            TopBar(
+                leftIcon = Icon(
+                    resId = R.drawable.ic_back_arrow,
+                    description = "back arrow icon",
+                ),
+                onLeftClick = {
+                    onNavigationEvent(AdminGroceryCategoriesNavigationEvent.NavigateBack)
+                },
+                text = "Edit grocery list",
+            )
+        },
+    ) { padding ->
         LazyColumn(
             modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
                 .padding(LifeTogetherTokens.spacing.small)
                 .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
         ) {
-            item {
-                TopBar(
-                    leftIcon = Icon(
-                        resId = R.drawable.ic_back_arrow,
-                        description = "back arrow icon",
-                    ),
-                    onLeftClick = {
-                        onNavigationEvent(AdminGroceryCategoriesNavigationEvent.NavigateBack)
-                    },
-                    text = "Edit grocery list",
-                )
-            }
 
             item {
                 SyncUpdatingText(keys = setOf(SyncKey.GROCERY_CATEGORIES))

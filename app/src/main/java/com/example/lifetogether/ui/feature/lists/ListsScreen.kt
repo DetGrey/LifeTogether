@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -44,33 +45,32 @@ fun ListsScreen(
     onUiEvent: (ListsUiEvent) -> Unit,
     onNavigationEvent: (ListsNavigationEvent) -> Unit,
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    Scaffold(
+        topBar = {
+            TopBar(
+                leftIcon = Icon(
+                    resId = R.drawable.ic_back_arrow,
+                    description = "back arrow icon",
+                ),
+                onLeftClick = { onNavigationEvent(ListsNavigationEvent.NavigateBack) },
+                text = "Lists",
+            )
+        },
+        floatingActionButton = {
+            AddButton(onClick = { onUiEvent(ListsUiEvent.CreateListClicked) })
+        },
+    ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(padding)
                 .padding(LifeTogetherTokens.spacing.small)
                 .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
         ) {
             item {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
-                ) {
-                    TopBar(
-                        leftIcon = Icon(
-                            resId = R.drawable.ic_back_arrow,
-                            description = "back arrow icon",
-                        ),
-                        onLeftClick = { onNavigationEvent(ListsNavigationEvent.NavigateBack) },
-                        text = "Lists",
-                    )
-
-                    SyncUpdatingText(
-                        keys = setOf(SyncKey.USER_LISTS, SyncKey.ROUTINE_LIST_ENTRIES),
-                    )
-                }
+                SyncUpdatingText(keys = setOf(SyncKey.USER_LISTS, SyncKey.ROUTINE_LIST_ENTRIES))
             }
 
             if (uiState.userLists.isEmpty()) {
@@ -91,28 +91,19 @@ fun ListsScreen(
             }
         }
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = LifeTogetherTokens.spacing.xLarge, end = LifeTogetherTokens.spacing.xLarge),
-            contentAlignment = Alignment.BottomEnd,
-        ) {
-            AddButton(onClick = { onUiEvent(ListsUiEvent.CreateListClicked) })
+        if (uiState.showCreateDialog) {
+            CreateListDialog(
+                name = uiState.newListName,
+                onNameChange = { onUiEvent(ListsUiEvent.CreateListNameChanged(it)) },
+                type = uiState.newListType,
+                onTypeChange = { onUiEvent(ListsUiEvent.CreateListTypeChanged(it)) },
+                visibility = uiState.newListVisibility,
+                onVisibilityChange = { onUiEvent(ListsUiEvent.CreateListVisibilityChanged(it)) },
+                isSaving = uiState.isSaving,
+                onDismiss = { onUiEvent(ListsUiEvent.CreateDialogDismissed) },
+                onCreate = { onUiEvent(ListsUiEvent.ConfirmCreateListClicked) },
+            )
         }
-    }
-
-    if (uiState.showCreateDialog) {
-        CreateListDialog(
-            name = uiState.newListName,
-            onNameChange = { onUiEvent(ListsUiEvent.CreateListNameChanged(it)) },
-            type = uiState.newListType,
-            onTypeChange = { onUiEvent(ListsUiEvent.CreateListTypeChanged(it)) },
-            visibility = uiState.newListVisibility,
-            onVisibilityChange = { onUiEvent(ListsUiEvent.CreateListVisibilityChanged(it)) },
-            isSaving = uiState.isSaving,
-            onDismiss = { onUiEvent(ListsUiEvent.CreateDialogDismissed) },
-            onCreate = { onUiEvent(ListsUiEvent.ConfirmCreateListClicked) },
-        )
     }
 }
 

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -34,16 +35,8 @@ fun AdminGrocerySuggestionsScreen(
     onUiEvent: (AdminGrocerySuggestionsUiEvent) -> Unit,
     onNavigationEvent: (AdminGrocerySuggestionsNavigationEvent) -> Unit,
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize(),
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(10.dp)
-                .padding(bottom = 60.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
+    Scaffold(
+        topBar = {
             TopBar(
                 leftIcon = Icon(
                     resId = R.drawable.ic_back_arrow,
@@ -54,7 +47,15 @@ fun AdminGrocerySuggestionsScreen(
                 },
                 text = "Edit grocery list",
             )
-
+        },
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .padding(10.dp)
+                .padding(bottom = 60.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             SyncUpdatingText(
                 keys = setOf(SyncKey.GROCERY_CATEGORIES, SyncKey.GROCERY_SUGGESTIONS),
             )
@@ -88,69 +89,69 @@ fun AdminGrocerySuggestionsScreen(
                 )
             }
         }
-    }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(10.dp),
-        contentAlignment = Alignment.BottomCenter,
-    ) {
-        if (uiState.editingSuggestionId != null) {
-            EditListItem(
-                textValue = uiState.newSuggestionText,
-                onTextChange = { value ->
-                    onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionTextChanged(value))
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(10.dp),
+            contentAlignment = Alignment.BottomCenter,
+        ) {
+            if (uiState.editingSuggestionId != null) {
+                EditListItem(
+                    textValue = uiState.newSuggestionText,
+                    onTextChange = { value ->
+                        onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionTextChanged(value))
+                    },
+                    priceValue = uiState.newSuggestionPrice,
+                    onPriceChange = { value ->
+                        onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionPriceChanged(value))
+                    },
+                    onSaveClick = {
+                        onUiEvent(AdminGrocerySuggestionsUiEvent.ClickSaveSuggestion)
+                    },
+                    categoryList = uiState.groceryCategories,
+                    selectedCategory = uiState.newSuggestionCategory,
+                    onCategoryChange = { category ->
+                        onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionCategoryChanged(category))
+                    },
+                )
+            } else {
+                AddNewListItem(
+                    textValue = uiState.newSuggestionText,
+                    onTextChange = { value ->
+                        onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionTextChanged(value))
+                    },
+                    priceValue = uiState.newSuggestionPrice,
+                    onPriceChange = { value ->
+                        onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionPriceChanged(value))
+                    },
+                    onAddClick = {
+                        onUiEvent(AdminGrocerySuggestionsUiEvent.ClickAddSuggestion)
+                    },
+                    categoryList = uiState.groceryCategories,
+                    selectedCategory = uiState.newSuggestionCategory,
+                    onCategoryChange = { category ->
+                        onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionCategoryChanged(category))
+                    },
+                )
+            }
+        }
+
+        val selectedSuggestion = uiState.selectedSuggestion
+        if (uiState.showDeleteCategoryConfirmationDialog && selectedSuggestion != null) {
+            ConfirmationDialog(
+                onDismiss = {
+                    onUiEvent(AdminGrocerySuggestionsUiEvent.DismissDeleteSuggestionDialog)
                 },
-                priceValue = uiState.newSuggestionPrice,
-                onPriceChange = { value ->
-                    onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionPriceChanged(value))
+                onConfirm = {
+                    onUiEvent(AdminGrocerySuggestionsUiEvent.ConfirmDeleteSuggestion)
                 },
-                onSaveClick = {
-                    onUiEvent(AdminGrocerySuggestionsUiEvent.ClickSaveSuggestion)
-                },
-                categoryList = uiState.groceryCategories,
-                selectedCategory = uiState.newSuggestionCategory,
-                onCategoryChange = { category ->
-                    onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionCategoryChanged(category))
-                },
-            )
-        } else {
-            AddNewListItem(
-                textValue = uiState.newSuggestionText,
-                onTextChange = { value ->
-                    onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionTextChanged(value))
-                },
-                priceValue = uiState.newSuggestionPrice,
-                onPriceChange = { value ->
-                    onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionPriceChanged(value))
-                },
-                onAddClick = {
-                    onUiEvent(AdminGrocerySuggestionsUiEvent.ClickAddSuggestion)
-                },
-                categoryList = uiState.groceryCategories,
-                selectedCategory = uiState.newSuggestionCategory,
-                onCategoryChange = { category ->
-                    onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionCategoryChanged(category))
-                },
+                dialogTitle = "Delete category?",
+                dialogMessage = "Are you sure you want to delete the category: \"${selectedSuggestion.category?.emoji} ${selectedSuggestion.category?.name} - ${selectedSuggestion.suggestionName}\"?",
+                dismissButtonMessage = "Cancel",
+                confirmButtonMessage = "Delete",
             )
         }
-    }
-
-    val selectedSuggestion = uiState.selectedSuggestion
-    if (uiState.showDeleteCategoryConfirmationDialog && selectedSuggestion != null) {
-        ConfirmationDialog(
-            onDismiss = {
-                onUiEvent(AdminGrocerySuggestionsUiEvent.DismissDeleteSuggestionDialog)
-            },
-            onConfirm = {
-                onUiEvent(AdminGrocerySuggestionsUiEvent.ConfirmDeleteSuggestion)
-            },
-            dialogTitle = "Delete category?",
-            dialogMessage = "Are you sure you want to delete the category: \"${selectedSuggestion.category?.emoji} ${selectedSuggestion.category?.name} - ${selectedSuggestion.suggestionName}\"?",
-            dismissButtonMessage = "Cancel",
-            confirmButtonMessage = "Delete",
-        )
     }
 }
 

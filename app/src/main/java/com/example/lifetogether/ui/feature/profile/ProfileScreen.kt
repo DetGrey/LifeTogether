@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,34 +55,35 @@ fun ProfileScreen(
 ) {
     val userInformation = uiState.userInformation
 
-    Box(
-        modifier = Modifier.fillMaxSize(),
-    ) {
+    Scaffold(
+        topBar = {
+            TopBar(
+                leftIcon = Icon(
+                    resId = R.drawable.ic_back_arrow,
+                    description = "back arrow icon",
+                ),
+                onLeftClick = {
+                    onNavigationEvent(ProfileNavigationEvent.NavigateBack)
+                },
+                text = "Profile",
+                rightIcon = Icon(
+                    resId = R.drawable.ic_settings,
+                    description = "settings icon",
+                ),
+                onRightClick = {
+                    onNavigationEvent(ProfileNavigationEvent.NavigateToSettings)
+                },
+            )
+        },
+    ) { padding ->
         LazyColumn(
-            modifier = Modifier.padding(LifeTogetherTokens.spacing.small),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(LifeTogetherTokens.spacing.small),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
         ) {
-            item {
-                TopBar(
-                    leftIcon = Icon(
-                        resId = R.drawable.ic_back_arrow,
-                        description = "back arrow icon",
-                    ),
-                    onLeftClick = {
-                        onNavigationEvent(ProfileNavigationEvent.NavigateBack)
-                    },
-                    text = "Profile",
-                    rightIcon = Icon(
-                        resId = R.drawable.ic_settings,
-                        description = "settings icon",
-                    ),
-                    onRightClick = {
-                        onNavigationEvent(ProfileNavigationEvent.NavigateToSettings)
-                    },
-                )
-            }
-
             item {
                 Box(
                     modifier = Modifier.fillMaxWidth(),
@@ -201,34 +203,34 @@ fun ProfileScreen(
                 Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.xLarge))
             }
         }
+    }
 
-        if (uiState.showConfirmationDialog) {
-            when (uiState.confirmationDialogType) {
-                ProfileConfirmationType.LOGOUT -> ConfirmationDialog(
-                    onDismiss = { onUiEvent(ProfileUiEvent.DismissConfirmationDialog) },
-                    onConfirm = { onUiEvent(ProfileUiEvent.ConfirmConfirmationDialog) },
-                    dialogTitle = "Logout",
-                    dialogMessage = "Are you sure you want to logout?",
-                    dismissButtonMessage = "Cancel",
-                    confirmButtonMessage = "Logout",
-                )
+    if (uiState.showConfirmationDialog) {
+        when (uiState.confirmationDialogType) {
+            ProfileConfirmationType.LOGOUT -> ConfirmationDialog(
+                onDismiss = { onUiEvent(ProfileUiEvent.DismissConfirmationDialog) },
+                onConfirm = { onUiEvent(ProfileUiEvent.ConfirmConfirmationDialog) },
+                dialogTitle = "Logout",
+                dialogMessage = "Are you sure you want to logout?",
+                dismissButtonMessage = "Cancel",
+                confirmButtonMessage = "Logout",
+            )
 
-                ProfileConfirmationType.NAME -> ConfirmationDialogWithTextField(
-                    onDismiss = { onUiEvent(ProfileUiEvent.DismissConfirmationDialog) },
-                    onConfirm = { onUiEvent(ProfileUiEvent.ConfirmConfirmationDialog) },
-                    dialogTitle = "Change name",
-                    dialogMessage = "Please enter your new name",
-                    dismissButtonMessage = "Cancel",
-                    confirmButtonMessage = "Change name",
-                    textValue = uiState.newName,
-                    onTextValueChange = { value ->
-                        onUiEvent(ProfileUiEvent.NewNameChanged(value))
-                    },
-                    capitalization = true,
-                )
+            ProfileConfirmationType.NAME -> ConfirmationDialogWithTextField(
+                onDismiss = { onUiEvent(ProfileUiEvent.DismissConfirmationDialog) },
+                onConfirm = { onUiEvent(ProfileUiEvent.ConfirmConfirmationDialog) },
+                dialogTitle = "Change name",
+                dialogMessage = "Please enter your new name",
+                dismissButtonMessage = "Cancel",
+                confirmButtonMessage = "Change name",
+                textValue = uiState.newName,
+                onTextValueChange = { value ->
+                    onUiEvent(ProfileUiEvent.NewNameChanged(value))
+                },
+                capitalization = true,
+            )
 
-                null -> Unit
-            }
+            null -> Unit
         }
     }
 
