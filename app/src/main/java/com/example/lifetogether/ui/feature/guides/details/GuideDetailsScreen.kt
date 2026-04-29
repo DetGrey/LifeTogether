@@ -7,10 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,6 +25,7 @@ import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.ui.common.OverflowMenu
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
+import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.feature.guides.details.components.GuideHeroCard
 import com.example.lifetogether.ui.feature.guides.details.components.GuideSectionCard
@@ -89,21 +88,16 @@ fun GuideDetailsScreen(
             }
 
             item {
-                Button(
+                PrimaryButton(
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = !uiState.isStartingGuide,
-                    onClick = {
-                        onUiEvent(GuideDetailsUiEvent.StartOrContinueClicked)
+                    text = when {
+                        uiState.isStartingGuide -> "Starting..."
+                        guide.started -> "Continue where you left off"
+                        else -> "Start guide"
                     },
-                ) {
-                    Text(
-                        text = when {
-                            uiState.isStartingGuide -> "Starting..."
-                            guide.started -> "Continue where you left off"
-                            else -> "Start guide"
-                        },
-                    )
-                }
+                    enabled = !uiState.isStartingGuide,
+                    onClick = { onUiEvent(GuideDetailsUiEvent.StartOrContinueClicked) },
+                )
             }
 
             if (guide.sections.isEmpty()) {

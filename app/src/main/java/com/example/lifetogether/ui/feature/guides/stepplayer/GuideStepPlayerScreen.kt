@@ -6,8 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -16,6 +14,8 @@ import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.button.PrimaryButton
+import com.example.lifetogether.ui.common.button.SecondaryButton
 import com.example.lifetogether.ui.feature.guides.stepplayer.components.GuideStepCard
 import com.example.lifetogether.ui.feature.guides.stepplayer.components.StepPlayerOverviewCard
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -66,45 +66,38 @@ fun GuideStepPlayerScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Button(
+                SecondaryButton(
                     modifier = Modifier.weight(1f),
+                    text = "Previous",
                     enabled = uiState.canGoPrevious,
                     onClick = { onUiEvent(GuideStepPlayerUiEvent.PreviousClicked) },
-                ) {
-                    Text("Previous")
-                }
+                )
 
-                Button(
+                PrimaryButton(
                     modifier = Modifier.weight(1.35f),
+                    text = when {
+                        uiState.currentStepCompleted && uiState.canGoNext -> "Next step"
+                        uiState.currentStepCompleted -> "Completed"
+                        uiState.canGoNext -> "Complete + next"
+                        else -> "Complete step"
+                    },
                     enabled = canPrimaryAction,
                     onClick = { onUiEvent(GuideStepPlayerUiEvent.CompleteCurrentAndGoNextClicked) },
-                ) {
-                    Text(
-                        text = when {
-                            uiState.currentStepCompleted && uiState.canGoNext -> "Next step"
-                            uiState.currentStepCompleted -> "Completed"
-                            uiState.canGoNext -> "Complete + next"
-                            else -> "Complete step"
-                        },
-                    )
-                }
+                )
             }
         }
 
         item {
-            Button(
+            PrimaryButton(
                 modifier = Modifier.fillMaxWidth(),
+                text = if (uiState.currentStepCompleted) {
+                    "Mark current step incomplete"
+                } else {
+                    "Mark current step complete"
+                },
                 enabled = uiState.currentStep != null && uiState.canToggleCurrentStep,
                 onClick = { onUiEvent(GuideStepPlayerUiEvent.ToggleCurrentStepCompletionClicked) },
-            ) {
-                Text(
-                    text = if (uiState.currentStepCompleted) {
-                        "Mark current step incomplete"
-                    } else {
-                        "Mark current step complete"
-                    },
-                )
-            }
+            )
         }
 
         if (uiState.nextStep != null) {

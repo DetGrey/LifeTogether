@@ -12,10 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -30,6 +28,8 @@ import com.example.lifetogether.domain.model.lists.ListType
 import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.button.PrimaryButton
+import com.example.lifetogether.ui.common.button.SecondaryButton
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.common.text.TextDefault
@@ -186,13 +186,15 @@ private fun CreateListDialog(
                         ListType.entries.forEach { listType -> //todo use TagOption instead
                             val selected = type == listType
                             if (selected) {
-                                Button(onClick = {}) {
-                                    Text(listType.name.lowercase().replaceFirstChar { it.uppercase() })
-                                }
+                                PrimaryButton(
+                                    text = listType.name.lowercase().replaceFirstChar { it.uppercase() },
+                                    onClick = {},
+                                )
                             } else {
-                                OutlinedButton(onClick = { onTypeChange(listType) }) {
-                                    Text(listType.name.lowercase().replaceFirstChar { it.uppercase() })
-                                }
+                                SecondaryButton(
+                                    text = listType.name.lowercase().replaceFirstChar { it.uppercase() },
+                                    onClick = { onTypeChange(listType) },
+                                )
                             }
                         }
                     }
@@ -204,13 +206,15 @@ private fun CreateListDialog(
                         Visibility.entries.forEach { vis ->
                             val selected = visibility == vis
                             if (selected) {
-                                Button(onClick = {}) {
-                                    Text(vis.name.lowercase().replaceFirstChar { it.uppercase() })
-                                }
+                                PrimaryButton(
+                                    text = vis.name.lowercase().replaceFirstChar { it.uppercase() },
+                                    onClick = {},
+                                )
                             } else {
-                                OutlinedButton(onClick = { onVisibilityChange(vis) }) {
-                                    Text(vis.name.lowercase().replaceFirstChar { it.uppercase() })
-                                }
+                                SecondaryButton(
+                                    text = vis.name.lowercase().replaceFirstChar { it.uppercase() },
+                                    onClick = { onVisibilityChange(vis) },
+                                )
                             }
                         }
                     }
@@ -221,11 +225,17 @@ private fun CreateListDialog(
             if (isSaving) {
                 CircularProgressIndicator()
             } else {
-                Button(onClick = onCreate) { Text("Create") }
+                PrimaryButton(
+                    text = "Create",
+                    onClick = onCreate,
+                )
             }
         },
         dismissButton = {
-            OutlinedButton(onClick = onDismiss) { Text("Cancel") }
+            SecondaryButton(
+                text = "Cancel",
+                onClick = onDismiss,
+            )
         },
     )
 }

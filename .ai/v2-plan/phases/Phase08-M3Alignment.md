@@ -20,8 +20,8 @@ Phase 8 excludes non-visual plumbing such as `ViewModel`s, routes, DI helpers, e
 
 - `ui/common/TopBar.kt` -> native top app bars, defaulting to `CenterAlignedTopAppBar`
 - `ui/common/dialog/CustomAlertDialog.kt` -> shared snackbar/banner family
-- `ui/common/dialog/ErrorAlertDialog.kt` -> shared snackbar/banner family for any residual error states
-- `ui/common/dialog/CustomDatePickerDialog.kt` -> native `DatePickerDialog` with remembered dialog state
+- `ui/common/dialog/ErrorAlertDialog.kt` -> already removed in prior work; no remaining file
+- `ui/common/dialog/DatePickerDialog.kt` -> native `DatePickerDialog` with remembered dialog state
 - `ui/common/textfield/CustomTextField.kt` -> native `TextField` with shared theme defaults
 - `ui/common/textfield/DatePickerTextField.kt` -> read-only `TextField` plus the shared date picker dialog pattern
 - `ui/common/textfield/EditableTextField.kt` -> keep only if the editable/static split remains clearer than a single family wrapper
@@ -61,8 +61,8 @@ Phase 8 excludes non-visual plumbing such as `ViewModel`s, routes, DI helpers, e
 |----------------------------------------------|---------------------------------------|-------------------------------------------------------|
 | `ui/common/TopBar.kt`                        | `CenterAlignedTopAppBar`              | Default target; exceptions allowed per screen         |
 | `ui/common/dialog/CustomAlertDialog.kt`      | Snackbar/banner alert variant         | Replace with the shared snackbar family; remove shell |
-| `ui/common/dialog/ErrorAlertDialog.kt`       | Snackbar / banner (from Phase 3)      | Mostly migrated in Phase 3; any residual cleaned here |
-| `ui/common/dialog/CustomDatePickerDialog.kt` | `DatePickerDialog` + remembered state | ViewModel removed in Phase 7; native shell here       |
+| `ui/common/dialog/ErrorAlertDialog.kt`       | Snackbar / banner (from Phase 3)      | Already removed; no remaining file                    |
+| `ui/common/dialog/DatePickerDialog.kt`       | `DatePickerDialog` + remembered state | Native shared picker helper                            |
 | `ui/common/button/AddButton.kt`              | `FloatingActionButton`                | Same icon/color everywhere; can become canonical FAB  |
 
 ## Key Decisions Already Made
@@ -120,8 +120,8 @@ Phase 8 excludes non-visual plumbing such as `ViewModel`s, routes, DI helpers, e
 
 _To be finalised during the pre-implementation grill-me session._
 
-- [ ] 8.1 Rebuild the shared input family on native M3 controls with centralized defaults: `CustomTextField`, `DatePickerTextField`, `EditableTextField`, `Dropdown`, and the canonical add FAB wrapper
-- [ ] 8.2 Rebuild alert, confirmation, and upload surfaces on native dialog/sheet primitives: `CustomAlertDialog`, residual `ErrorAlertDialog`, `ConfirmationDialogWithTextField`, `ConfirmationDialogWithDropdown`, `ImageUploadDialog`, `MediaUploadMultipleDialog`, and the media-details bottom panel
+- [x] 8.1 Rebuild the shared input family on native M3 controls with centralized defaults: `CustomTextField`, `DatePickerTextField`, `EditableTextField`, `Dropdown`, and the canonical add FAB wrapper
+- [x] 8.2 Rebuild alert, confirmation, and upload surfaces on native dialog/sheet primitives: `CustomAlertDialog`, residual `ErrorAlertDialog`, `ConfirmationDialogWithTextField`, `ConfirmationDialogWithDropdown`, `ImageUploadDialog`, `MediaUploadMultipleDialog`, and the media-details bottom panel
 - [ ] 8.3 Standardize every non-loading screen on `Scaffold(topBar = { AppTopBar(...) })`, move `subText` into `HomeScreen` content, and keep loading as the only full-screen exception
 - [ ] 8.4 Review and normalize shared row/chip/action helpers: `ListItem`, `CompletableBox`, `TagOptionRow`/`TagOption`, `OverflowMenu`, `ActionSheet`, `LoveButton`, `CountdownRow`, and `FeatureOverview`
 - [ ] 8.5 Rebuild feature-local cards and layout helpers on native card/surface/grid primitives: guide cards, tip-tracker cards, guide step rows, grocery editors, and `AddNewTipItem`
@@ -136,9 +136,9 @@ _To be finalised during the pre-implementation grill-me session._
 
 - [ ] Every non-loading screen uses `Scaffold` with `AppTopBar` in `topBar`.
 - [ ] `HomeScreen` renders `subText` in content instead of the shared top-bar contract.
-- [ ] Shared input controls use native M3 primitives plus centralized styling, without repeating color or shape overrides at every call site.
-- [ ] Shared alert presentation uses one snackbar/banner family for both error and normal alerts, with the existing top-center host behavior.
-- [ ] Shared confirmation and upload surfaces are rebuilt from native dialog primitives and the shared input/select wrappers.
+- [x] Shared input controls use native M3 primitives plus centralized styling, without repeating color or shape overrides at every call site.
+- [x] Shared alert presentation uses one snackbar/banner family for both error and normal alerts, with the existing top-center host behavior.
+- [x] Shared confirmation and upload surfaces are rebuilt from native dialog primitives and the shared input/select wrappers.
 - [ ] Shared helper rows and chips are either kept as canonical wrappers on native primitives or inlined where they are single-use.
 - [ ] Feature-local cards and layout helpers remain feature-local but are rebuilt on native card/surface/grid primitives where appropriate.
 - [ ] `TextDefault` and the other typography helpers remain available as the shared text API and continue to render consistently after the alignment work.
@@ -146,9 +146,9 @@ _To be finalised during the pre-implementation grill-me session._
 ### Test cases
 
 - [ ] Manually inspect representative scaffolded screens to confirm `AppTopBar`, padding, and bottom actions all still match the existing app visual language.
-- [ ] Verify a representative text-field screen, dropdown screen, and date-input flow still work with the native-backed wrappers.
-- [ ] Verify the shared alert snackbar renders both error and normal alert variants with the same host placement and dismissal behavior.
-- [ ] Verify the revised dialog flows still allow selecting text, dropdown values, and dates before confirming.
+- [x] Verify a representative text-field screen, dropdown screen, and date-input flow still work with the native-backed wrappers.
+- [x] Verify the shared alert snackbar renders both error and normal alert variants with the same host placement and dismissal behavior.
+- [x] Verify the revised dialog flows still allow selecting text, dropdown values, and dates before confirming.
 - [ ] Verify media detail screens still render the image/video area and the new bottom-panel behavior correctly.
 - [ ] Verify feature-local guide and tip-tracker card screens still render correctly after the native-primitive rebuilds.
 - [ ] Verify every updated component preview still compiles and reflects the intended native M3 styling.

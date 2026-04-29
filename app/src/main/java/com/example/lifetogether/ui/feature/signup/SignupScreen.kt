@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,6 +19,7 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.dialog.DatePickerDialog
 import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.common.textfield.DatePickerTextField
@@ -99,13 +98,10 @@ fun SignupScreen(
                         imeAction = ImeAction.Done,
                     )
 
-                    Button(
-                        onClick = {
-                            onUiEvent(SignupUiEvent.SignUpClicked)
-                        },
-                    ) {
-                        Text(text = "Sign up")
-                    }
+                    PrimaryButton(
+                        text = "Sign up",
+                        onClick = { onUiEvent(SignupUiEvent.SignUpClicked) },
+                    )
 
                     TextDefault(
                         modifier = Modifier

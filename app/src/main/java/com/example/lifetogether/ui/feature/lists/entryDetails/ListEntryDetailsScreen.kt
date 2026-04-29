@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -39,6 +38,7 @@ import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.image.ImageUploadDialog
+import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.tagOptionRow.TagOption
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.common.text.TextDefault
@@ -234,15 +234,14 @@ fun ListEntryDetailsScreen(
                                 .padding(bottom = padding.calculateBottomPadding())
                                 .align(Alignment.End),
                         ) {
-                            Button(
-                                modifier = Modifier.fillMaxWidth(),
-                                onClick = { onUiEvent(ListEntryDetailsUiEvent.SaveClicked) },
-                            ) {
-                                if (uiState.isSaving) {
-                                    CircularProgressIndicator()
-                                } else {
-                                    Text(if (isExistingEntry) "Save changes" else "Create")
-                                }
+                            if (uiState.isSaving) {
+                                CircularProgressIndicator()
+                            } else {
+                                PrimaryButton(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    text = if (isExistingEntry) "Save changes" else "Create",
+                                    onClick = { onUiEvent(ListEntryDetailsUiEvent.SaveClicked) },
+                                )
                             }
                         }
                     }

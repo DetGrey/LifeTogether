@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +38,7 @@ import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.ui.common.add.AddNewString
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.image.ImageUploadDialog
+import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.list.CompletableCategoryList
 import com.example.lifetogether.ui.common.tagOptionRow.TagOption
 import com.example.lifetogether.ui.common.text.TextDefault
@@ -365,13 +365,10 @@ private fun RecipeDetailsContent(
                 }
 
                 if (uiState.editMode) {
-                    Button(
-                        onClick = {
-                            onUiEvent(RecipeDetailsUiEvent.SaveClicked)
-                        },
-                    ) {
-                        Text("Save")
-                    }
+                    PrimaryButton(
+                        text = "Save",
+                        onClick = { onUiEvent(RecipeDetailsUiEvent.SaveClicked) },
+                    )
                 }
             }
         }

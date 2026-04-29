@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +40,8 @@ import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.button.PrimaryButton
+import com.example.lifetogether.ui.common.button.SecondaryButton
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.domain.sync.SyncKey
@@ -152,32 +153,29 @@ fun GuidesScreen(
             onDismissRequest = { onUiEvent(GuidesUiEvent.CloseAddOptionsDialog) },
             title = { Text("Add guide") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Button(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = {
-                            onUiEvent(GuidesUiEvent.CloseAddOptionsDialog)
-                            onNavigationEvent(GuidesNavigationEvent.NavigateToGuideCreate)
-                        },
-                    ) {
-                        Text("Create guide manually")
-                    }
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        PrimaryButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = "Create guide manually",
+                            onClick = {
+                                onUiEvent(GuidesUiEvent.CloseAddOptionsDialog)
+                                onNavigationEvent(GuidesNavigationEvent.NavigateToGuideCreate)
+                            },
+                        )
 
-                    Button(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = {
-                            onUiEvent(GuidesUiEvent.OpenImportDialog)
-                        },
-                    ) {
-                        Text("Upload JSON file")
+                        SecondaryButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = "Upload JSON file",
+                            onClick = { onUiEvent(GuidesUiEvent.OpenImportDialog) },
+                        )
                     }
-                }
             },
             confirmButton = {},
             dismissButton = {
-                Button(onClick = { onUiEvent(GuidesUiEvent.CloseAddOptionsDialog) }) {
-                    Text("Close")
-                }
+                SecondaryButton(
+                    text = "Close",
+                    onClick = { onUiEvent(GuidesUiEvent.CloseAddOptionsDialog) },
+                )
             },
         )
     }
@@ -199,34 +197,31 @@ fun GuidesScreen(
                             .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.small)
                             .padding(10.dp),
                     ) {
-                        Text(
-                            text = guideTemplate.take(500),
-                            maxLines = 12,
+                    Text(
+                        text = guideTemplate.take(500),
+                        maxLines = 12,
                             overflow = TextOverflow.Ellipsis,
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
 
-                    Button(
+                    SecondaryButton(
                         modifier = Modifier.fillMaxWidth(),
-                        onClick = {
-                            createGuideTemplateLauncher.launch("guide_template.json")
-                        },
-                    ) {
-                        Text("Download guide template")
-                    }
+                        text = "Download guide template",
+                        onClick = { createGuideTemplateLauncher.launch("guide_template.json") },
+                    )
 
-                    Button(
+                    SecondaryButton(
                         modifier = Modifier.fillMaxWidth(),
+                        text = "Download guide progress template",
                         onClick = {
                             createGuideProgressTemplateLauncher.launch("guide_progress_template.json")
                         },
-                    ) {
-                        Text("Download guide progress template")
-                    }
+                    )
 
-                    Button(
+                    PrimaryButton(
                         modifier = Modifier.fillMaxWidth(),
+                        text = "Choose JSON file",
                         onClick = {
                             openJsonLauncher.launch(
                                 arrayOf(
@@ -236,9 +231,7 @@ fun GuidesScreen(
                                 ),
                             )
                         },
-                    ) {
-                        Text("Choose JSON file")
-                    }
+                    )
 
                     if (uiState.isImporting) {
                         RowWithCenteredLoader()
@@ -254,14 +247,16 @@ fun GuidesScreen(
                 }
             },
             confirmButton = {
-                Button(onClick = { onUiEvent(GuidesUiEvent.CloseImportDialog) }) {
-                    Text("Done")
-                }
+                PrimaryButton(
+                    text = "Done",
+                    onClick = { onUiEvent(GuidesUiEvent.CloseImportDialog) },
+                )
             },
             dismissButton = {
-                Button(onClick = { onUiEvent(GuidesUiEvent.CloseImportDialog) }) {
-                    Text("Cancel")
-                }
+                SecondaryButton(
+                    text = "Cancel",
+                    onClick = { onUiEvent(GuidesUiEvent.CloseImportDialog) },
+                )
             },
         )
     }
