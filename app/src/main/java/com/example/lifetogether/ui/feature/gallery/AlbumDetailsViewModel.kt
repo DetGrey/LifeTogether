@@ -25,6 +25,7 @@ import com.example.lifetogether.domain.usecase.gallery.GetAlbumDisplayModelsUseC
 import com.example.lifetogether.domain.usecase.item.MoveMediaToAlbumUseCase
 import com.example.lifetogether.domain.usecase.image.UploadGalleryMediaItemsUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
+import com.example.lifetogether.ui.common.snackbar.SnackbarSeverity
 import com.example.lifetogether.ui.model.MenuAction
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -351,28 +352,31 @@ class AlbumDetailsViewModel @Inject constructor(
             ).collect { progress ->
                 when (progress) {
                     is SaveProgress.Loading -> {
-                        _uiState.update {
-                            it.copy(
-                                isDownloading = true,
-                                downloadMessage = "Downloading ${progress.current} of ${progress.total}",
-                            )
-                        }
+                        showProgress(
+                            title = "Downloading...",
+                            message = "Downloading ${progress.current} of ${progress.total}",
+                        )
                     }
 
                     is SaveProgress.Finished -> {
                         if (progress.failureCount == 0) {
                             dismissOverflowMenuActionDialog()
-                            val message = "Downloaded ${progress.successCount} item"
-                            _uiState.update { it.copy(downloadMessage = message) }
+                            val itemLabel = if (progress.successCount == 1) "item" else "items"
+                            showProgress(
+                                title = "Download complete",
+                                message = "Downloaded ${progress.successCount} $itemLabel",
+                                showProgress = false,
+                            )
                             delay(2000)
-                            _uiState.update { it.copy(downloadMessage = null, isDownloading = false) }
+                            hideProgress()
                         } else {
+                            hideProgress()
                             showError("Failed to download media")
                         }
                     }
 
                     is SaveProgress.Error -> {
-                        _uiState.update { it.copy(isDownloading = false, downloadMessage = null) }
+                        hideProgress()
                         showError(progress.message)
                     }
                 }
@@ -736,6 +740,29 @@ class AlbumDetailsViewModel @Inject constructor(
                     withDismissAction = true,
                 ),
             )
+        }
+    }
+
+    private fun showProgress(
+        title: String,
+        message: String,
+        showProgress: Boolean = false,
+    ) {
+        viewModelScope.launch {
+            _uiCommands.send(
+                UiCommand.ShowProgressSnackbar(
+                    title = title,
+                    message = message,
+                    severity = SnackbarSeverity.Info,
+                    showProgress = showProgress,
+                ),
+            )
+        }
+    }
+
+    private fun hideProgress() {
+        viewModelScope.launch {
+            _uiCommands.send(UiCommand.HideProgressSnackbar)
         }
     }
 

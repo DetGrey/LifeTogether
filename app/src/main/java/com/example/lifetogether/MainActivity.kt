@@ -21,7 +21,10 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -29,9 +32,12 @@ import androidx.core.view.WindowCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.example.lifetogether.ui.common.ErrorStyledSnackbar
-import com.example.lifetogether.ui.feature.notification.NotificationService
+import com.example.lifetogether.ui.common.event.LocalProgressSnackbarController
 import com.example.lifetogether.ui.common.event.LocalRootSnackbarHostState
+import com.example.lifetogether.ui.common.event.ProgressSnackbarController
+import com.example.lifetogether.ui.common.snackbar.AppSnackbar
+import com.example.lifetogether.ui.common.snackbar.AppSnackbarVisuals
+import com.example.lifetogether.ui.feature.notification.NotificationService
 import com.example.lifetogether.ui.navigation.NavHost
 import com.example.lifetogether.ui.navigation.routeFromDestinationString
 import com.example.lifetogether.ui.theme.AppTypography
@@ -87,6 +93,18 @@ class MainActivity : ComponentActivity() {
                     val navControllerState = rememberNavController()
                     navController = navControllerState
                     val rootSnackbarHostState = remember { SnackbarHostState() }
+                    var progressSnackbarVisuals by remember { mutableStateOf<AppSnackbarVisuals?>(null) }
+                    val progressSnackbarController = remember {
+                        object : ProgressSnackbarController {
+                            override fun show(visuals: AppSnackbarVisuals) {
+                                progressSnackbarVisuals = visuals
+                            }
+
+                            override fun hide() {
+                                progressSnackbarVisuals = null
+                            }
+                        }
+                    }
 
                     LaunchedEffect(destination, navControllerState) {
                         if (destination != null) {
@@ -100,7 +118,10 @@ class MainActivity : ComponentActivity() {
 
                     // Makes the default Text style bodyMedium instead of bodyLarge
                     ProvideTextStyle(value = AppTypography.bodyMedium) {
-                        CompositionLocalProvider(LocalRootSnackbarHostState provides rootSnackbarHostState) {
+                        CompositionLocalProvider(
+                            LocalRootSnackbarHostState provides rootSnackbarHostState,
+                            LocalProgressSnackbarController provides progressSnackbarController,
+                        ) {
                             Scaffold(
                                 snackbarHost = {
                                     Box(
@@ -113,7 +134,7 @@ class MainActivity : ComponentActivity() {
                                             hostState = rootSnackbarHostState,
                                             modifier = Modifier.fillMaxWidth(),
                                             snackbar = { data ->
-                                                ErrorStyledSnackbar(data)
+                                                AppSnackbar(data)
                                             },
                                         )
                                     }
@@ -121,13 +142,27 @@ class MainActivity : ComponentActivity() {
                                 containerColor = MaterialTheme.colorScheme.background,
                                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize(),
-                                ) {
+                                Box(modifier = Modifier.fillMaxSize()) {
                                     NavHost(
                                         navController = navControllerState,
                                     )
+
+                                    progressSnackbarVisuals?.let { visuals ->
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .padding(16.dp),
+                                            contentAlignment = Alignment.TopCenter,
+                                        ) {
+                                            AppSnackbar(
+                                                title = visuals.title ?: "Downloading...",
+                                                message = visuals.message,
+                                                severity = visuals.severity,
+                                                showProgress = visuals.showProgress,
+                                                onDismiss = { progressSnackbarVisuals = null },
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }

@@ -3,46 +3,46 @@ package com.example.lifetogether.ui.feature.gallery
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CornerSize
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 import com.example.lifetogether.R
+import com.example.lifetogether.domain.logic.durationToString
 import com.example.lifetogether.domain.logic.toAbbreviatedDateString
+import com.example.lifetogether.domain.logic.toDateTimeString
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.gallery.GalleryImage
+import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.ui.common.OverflowMenu
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
-import com.example.lifetogether.ui.common.dialog.CustomAlertDialog
 import com.example.lifetogether.ui.common.image.DisplayImageFromUri
 import com.example.lifetogether.ui.common.image.DisplayVideoFromUri
-import com.example.lifetogether.ui.common.image.MediaInfoPanel
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
+import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.model.MenuAction
 import com.example.lifetogether.domain.sync.SyncKey
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MediaDetailsScreen(
     uiState: MediaDetailsUiState,
@@ -141,37 +141,30 @@ fun MediaDetailsScreen(
             }
         }
 
-        Box(
+        Surface(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(0.4f) // This is our panel height
                 .align(Alignment.BottomCenter)
-                .graphicsLayer {
-                    translationY = animatedOffset + (size.height) // Offset it by its own height to hide it
-                }
-                .clip(MaterialTheme.shapes.extraLarge.copy(bottomStart = CornerSize(0.dp), bottomEnd = CornerSize(0.dp)))
-                .background(MaterialTheme.colorScheme.surface),
+                .offset {
+                    IntOffset(
+                        x = 0,
+                        y = (animatedOffset + (containerSize.height * 0.4f)).roundToInt(),
+                    )
+                },
+            shape = MaterialTheme.shapes.extraLarge.copy(
+                bottomStart = CornerSize(0.dp),
+                bottomEnd = CornerSize(0.dp),
+            ),
+            color = MaterialTheme.colorScheme.surface,
         ) {
             mediaList.getOrNull(pagerState.currentPage)?.let {
-                MediaInfoPanel(it)
+                MediaDetailsPanelContent(it)
             }
         }
+
     }
 
-    // ---------------------------------------------------------------- DOWNLOAD
-    uiState.downloadMessage?.let { message ->
-        CustomAlertDialog(
-            title = if (uiState.isDownloading) "Downloading..." else "Finished downloading",
-            details = message,
-            extraContent = {
-                if (uiState.isDownloading) {
-                    CircularProgressIndicator()
-                }
-            },
-        )
-    }
-
-    // ---------------------------------------------------------------- OVERFLOW MENU
     if (uiState.showOverflowMenu) {
         OverflowMenu(
             onDismiss = { onUiEvent(MediaDetailsUiEvent.ToggleOverflowMenu) },
@@ -181,7 +174,6 @@ fun MediaDetailsScreen(
         )
     }
 
-    // ---------------------------------------------------------------- OVERFLOW MENU ACTIONS DIALOG
     if (uiState.showOverflowMenuActionDialog && uiState.overflowMenuAction != null) {
         when (uiState.overflowMenuAction) {
             MenuAction.MediaDetailsActions.DOWNLOAD -> {
@@ -198,6 +190,26 @@ fun MediaDetailsScreen(
                     confirmButtonMessage = "Delete",
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun MediaDetailsPanelContent(media: GalleryMedia) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        TextDefault(
+            text = media.dateCreated?.toDateTimeString() ?: "Unknown date",
+        )
+
+        if (media is GalleryVideo) {
+            TextDefault(
+                text = media.duration?.durationToString() ?: "Unknown duration",
+            )
         }
     }
 }

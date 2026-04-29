@@ -43,13 +43,15 @@ All v2 work lives on the `architecture-improvement` branch:
 ## Commit Message Convention
 
 ```
-[Phase N] Short description of what this commit does
+[Phase N] [N.X] Short description of what this commit does
 ```
 
 Examples:
-- `[Phase 1] Add SessionRepository interface and Hilt singleton`
-- `[Phase 3] Split AdminGrocerySuggestionsScreen into route and screen`
-- `[Phase 6] Rewrite Color.kt with private raw colors and semantic mapping`
+- `[Phase 1] [1.1] Add SessionRepository interface and Hilt singleton`
+- `[Phase 3] [3.2] Split AdminGrocerySuggestionsScreen into route and screen`
+- `[Phase 6] [6.4] Rewrite Color.kt with private raw colors and semantic mapping`
+
+When a commit spans a grouped issue or a small range of subphases, use the relevant subphase tag or range in the same format, for example `[Phase 8] [8.1] ...` or `[Phase 8] [8.1-8.2] ...`.
 
 ---
 

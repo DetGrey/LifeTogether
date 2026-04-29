@@ -11,6 +11,7 @@ import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.domain.usecase.gallery.DeleteMediaUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
+import com.example.lifetogether.ui.common.snackbar.SnackbarSeverity
 import com.example.lifetogether.ui.model.MenuAction
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -111,33 +112,30 @@ class MediaDetailsViewModel @Inject constructor(
             ).collect { progress ->
                 when (progress) {
                     is SaveProgress.Loading -> {
-                        _uiState.update {
-                            it.copy(
-                                isDownloading = true,
-                                downloadMessage = "Downloading ${progress.current} of ${progress.total}",
-                            )
-                        }
+                        showProgress(
+                            title = "Downloading...",
+                            message = "Downloading ${progress.current} of ${progress.total}",
+                        )
                     }
 
                     is SaveProgress.Finished -> {
                         if (progress.failureCount == 0) {
                             dismissOverflowMenuActionDialog()
-                            val message = if (progress.failureCount == 0) {
-                                "Downloaded 1 item"
-                            } else {
-                                "Downloaded ${progress.successCount} of ${progress.successCount + progress.failureCount} items"
-                            }
-
-                            _uiState.update { it.copy(downloadMessage = message) }
+                            showProgress(
+                                title = "Download complete",
+                                message = "Downloaded 1 item",
+                                showProgress = false,
+                            )
                             delay(2000)
-                            _uiState.update { it.copy(downloadMessage = null, isDownloading = false) }
+                            hideProgress()
                         } else {
+                            hideProgress()
                             showError("Failed to download media")
                         }
                     }
 
                     is SaveProgress.Error -> {
-                        _uiState.update { it.copy(isDownloading = false, downloadMessage = null) }
+                        hideProgress()
                         showError(progress.message)
                     }
                 }
@@ -217,6 +215,29 @@ class MediaDetailsViewModel @Inject constructor(
                     withDismissAction = true,
                 ),
             )
+        }
+    }
+
+    private fun showProgress(
+        title: String,
+        message: String,
+        showProgress: Boolean = false,
+    ) {
+        viewModelScope.launch {
+            _uiCommands.send(
+                UiCommand.ShowProgressSnackbar(
+                    title = title,
+                    message = message,
+                    severity = SnackbarSeverity.Info,
+                    showProgress = showProgress,
+                ),
+            )
+        }
+    }
+
+    private fun hideProgress() {
+        viewModelScope.launch {
+            _uiCommands.send(UiCommand.HideProgressSnackbar)
         }
     }
 }

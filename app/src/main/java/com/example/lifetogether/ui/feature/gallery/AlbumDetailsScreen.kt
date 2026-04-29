@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.pullToRefresh
@@ -37,7 +36,6 @@ import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
-import com.example.lifetogether.ui.common.dialog.CustomAlertDialog
 import com.example.lifetogether.ui.common.image.MediaUploadMultipleDialog
 import com.example.lifetogether.ui.common.list.CompletableBox
 import com.example.lifetogether.ui.common.text.TextDefault
@@ -313,15 +311,4 @@ fun AlbumDetailsScreen(
         }
     }
 
-    uiState.downloadMessage?.let { message ->
-        CustomAlertDialog( //todo should be the global show error
-            title = if (uiState.isDownloading) "Downloading..." else "Finished downloading",
-            details = message,
-            extraContent = {
-                if (uiState.isDownloading) {
-                    CircularProgressIndicator()
-                }
-            },
-        )
-    }
 }
