@@ -2,7 +2,6 @@ package com.example.lifetogether.ui.feature.gallery
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -17,9 +16,10 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
-import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,6 +43,7 @@ import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.model.MenuAction
 import com.example.lifetogether.domain.sync.SyncKey
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -54,22 +55,8 @@ fun AlbumDetailsScreen(
 ) {
     val pullToRefreshState = rememberPullToRefreshState()
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .pullToRefresh(
-                state = pullToRefreshState,
-                isRefreshing = uiState.isRefreshing,
-                onRefresh = { onUiEvent(AlbumDetailsUiEvent.RetryFetchAlbumMedia) },
-            ),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
+    Scaffold(
+        topBar = {
             TopBar(
                 leftIcon = Icon(
                     resId = R.drawable.ic_back_arrow,
@@ -83,121 +70,133 @@ fun AlbumDetailsScreen(
                 ),
                 onRightClick = { onUiEvent(AlbumDetailsUiEvent.ToggleOverflowMenu) },
             )
-
-            SyncUpdatingText(
-                keys = setOf(SyncKey.GALLERY_ALBUMS, SyncKey.GALLERY_MEDIA),
-            )
-            when (uiState.isSelectionModeActive) {
-                true -> {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(20.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
+        },
+        floatingActionButton = {
+            AddButton(onClick = { onUiEvent(AlbumDetailsUiEvent.RequestImageUpload) })
+        },
+    ) { padding ->
+        PullToRefreshBox(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            state = pullToRefreshState,
+            isRefreshing = uiState.isRefreshing,
+            onRefresh = { onUiEvent(AlbumDetailsUiEvent.RetryFetchAlbumMedia) },
+            indicator = {
+                PullToRefreshDefaults.Indicator(
+                    state = pullToRefreshState,
+                    isRefreshing = uiState.isRefreshing,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                )
+            },
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(LifeTogetherTokens.spacing.small),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+            ) {
+                SyncUpdatingText(
+                    keys = setOf(SyncKey.GALLERY_ALBUMS, SyncKey.GALLERY_MEDIA),
+                )
+                when (uiState.isSelectionModeActive) {
+                    true -> {
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(20.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            CompletableBox(
-                                isCompleted = uiState.isAllMediaSelected,
-                                onCompleteToggle = {
-                                    onUiEvent(AlbumDetailsUiEvent.ToggleAllMediaSelection)
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                CompletableBox(
+                                    isCompleted = uiState.isAllMediaSelected,
+                                    onCompleteToggle = {
+                                        onUiEvent(AlbumDetailsUiEvent.ToggleAllMediaSelection)
+                                    },
+                                )
+                                TextDefault(text = "All")
+                            }
+                            val selectedMediaCount = uiState.selectedMedia.size
+                            TextDefault(text = "$selectedMediaCount selected")
+                            TextDefault(
+                                text = "Cancel",
+                                modifier = Modifier.clickable {
+                                    onUiEvent(AlbumDetailsUiEvent.ToggleSelectionMode)
                                 },
                             )
-                            TextDefault(text = "All")
                         }
-                        val selectedMediaCount = uiState.selectedMedia.size
-                        TextDefault(text = "$selectedMediaCount selected")
+                    }
+
+                    false -> Spacer(modifier = Modifier.height(20.dp))
+                }
+
+                if (uiState.media.isEmpty()) {
+                    if (uiState.isSyncing) {
+                        TextDefault(text = "Syncing media…")
+                    } else {
+                        TextDefault(text = "No images in this album. Press + to create one.")
+                    }
+                } else {
+                    if (uiState.isPartialLoad) {
                         TextDefault(
-                            text = "Cancel",
-                            modifier = Modifier.clickable {
-                                onUiEvent(AlbumDetailsUiEvent.ToggleSelectionMode)
-                            },
+                            text = "⚠ Only ${uiState.media.size} of ${uiState.album?.count} items loaded. Pull to refresh to retry.",
+                            modifier = Modifier.padding(vertical = LifeTogetherTokens.spacing.small),
                         )
                     }
-                }
+                    LazyVerticalGrid(
+                        modifier = Modifier
+                            .padding(LifeTogetherTokens.spacing.small)
+                            .fillMaxWidth(),
+                        columns = GridCells.Fixed(2),
+                        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                        horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                    ) {
+                        uiState.groupedMedia.forEach { (dateKey, itemsInDay) ->
+                            item(span = { GridItemSpan(maxLineSpan) }) {
+                                TextSubHeadingMedium(dateKey)
+                            }
 
-                false -> Spacer(modifier = Modifier.height(20.dp))
-            }
+                            items(itemsInDay) { media ->
+                                val thumbnail = uiState.thumbnails[media.id]
+                                val isVideo = media is GalleryVideo
+                                val duration = (media as? GalleryVideo)?.duration
+                                val globalIndex = uiState.media.indexOf(media)
 
-            if (uiState.media.isEmpty()) {
-                if (uiState.isSyncing) {
-                    TextDefault(text = "Syncing media…")
-                } else {
-                    TextDefault(text = "No images in this album. Press + to create one.")
-                }
-            } else {
-                if (uiState.isPartialLoad) {
-                    TextDefault(
-                        text = "⚠ Only ${uiState.media.size} of ${uiState.album?.count} items loaded. Pull to refresh to retry.",
-                        modifier = Modifier.padding(vertical = 10.dp),
-                    )
-                }
-                LazyVerticalGrid(
-                    modifier = Modifier
-                        .padding(10.dp)
-                        .fillMaxWidth(),
-                    columns = GridCells.Fixed(2),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    uiState.groupedMedia.forEach { (dateKey, itemsInDay) ->
-                        item(span = { GridItemSpan(maxLineSpan) }) {
-                            TextSubHeadingMedium(dateKey)
-                        }
-
-                        items(itemsInDay) { media ->
-                            val thumbnail = uiState.thumbnails[media.id]
-                            val isVideo = media is GalleryVideo
-                            val duration = (media as? GalleryVideo)?.duration
-                            val globalIndex = uiState.media.indexOf(media)
-
-                            ThumbnailContainer(
-                                thumbnail = thumbnail,
-                                isVideo = isVideo,
-                                duration = duration,
-                                onClick = {
-                                    if (uiState.isSelectionModeActive) {
+                                ThumbnailContainer(
+                                    thumbnail = thumbnail,
+                                    isVideo = isVideo,
+                                    duration = duration,
+                                    onClick = {
+                                        if (uiState.isSelectionModeActive) {
+                                            onUiEvent(AlbumDetailsUiEvent.ToggleMediaSelection(media.id))
+                                        } else {
+                                            onNavigationEvent(
+                                                AlbumDetailsNavigationEvent.NavigateToMediaDetails(globalIndex),
+                                            )
+                                        }
+                                    },
+                                    onLongClick = {
+                                        if (!uiState.isSelectionModeActive) {
+                                            onUiEvent(AlbumDetailsUiEvent.EnterSelectionMode(media.id))
+                                        }
+                                    },
+                                    isSelectionMode = uiState.isSelectionModeActive,
+                                    isSelected = uiState.selectedMedia.contains(media.id),
+                                    onSelectionToggle = {
                                         onUiEvent(AlbumDetailsUiEvent.ToggleMediaSelection(media.id))
-                                    } else {
-                                        onNavigationEvent(
-                                            AlbumDetailsNavigationEvent.NavigateToMediaDetails(globalIndex),
-                                        )
-                                    }
-                                },
-                                onLongClick = {
-                                    if (!uiState.isSelectionModeActive) {
-                                        onUiEvent(AlbumDetailsUiEvent.EnterSelectionMode(media.id))
-                                    }
-                                },
-                                isSelectionMode = uiState.isSelectionModeActive,
-                                isSelected = uiState.selectedMedia.contains(media.id),
-                                onSelectionToggle = {
-                                    onUiEvent(AlbumDetailsUiEvent.ToggleMediaSelection(media.id))
-                                },
-                            )
+                                    },
+                                )
+                            }
                         }
                     }
                 }
             }
         }
-
-        PullToRefreshDefaults.Indicator(
-            state = pullToRefreshState,
-            isRefreshing = uiState.isRefreshing,
-            modifier = Modifier.align(Alignment.TopCenter),
-        )
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(bottom = 30.dp, end = 30.dp),
-        contentAlignment = Alignment.BottomEnd,
-    ) {
-        AddButton(onClick = { onUiEvent(AlbumDetailsUiEvent.RequestImageUpload) })
     }
 
     if (uiState.showOverflowMenu) {
@@ -288,7 +287,7 @@ fun AlbumDetailsScreen(
                                 FlowRow(
                                     modifier = Modifier.fillMaxWidth(),
                                     maxItemsInEachRow = 2,
-                                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                                 ) {
                                     for (album in uiState.albums) {
                                         AlbumContainer(

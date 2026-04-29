@@ -20,6 +20,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -32,7 +33,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.GuideProgress
@@ -47,6 +47,7 @@ import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun GuidesScreen(
@@ -91,60 +92,53 @@ fun GuidesScreen(
         onUiEvent(GuidesUiEvent.ImportGuidesFromJson(content))
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(10.dp)
-                .padding(bottom = 80.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            item {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    TopBar(
-                        leftIcon = Icon(
-                            resId = R.drawable.ic_back_arrow,
-                            description = "back arrow icon",
-                        ),
-                        onLeftClick = {
-                            onNavigationEvent(GuidesNavigationEvent.NavigateBack)
-                        },
-                        text = "Guides",
-                    )
-
+    Scaffold(
+        topBar = {
+            TopBar(
+                leftIcon = Icon(
+                    resId = R.drawable.ic_back_arrow,
+                    description = "back arrow icon",
+                ),
+                onLeftClick = {
+                    onNavigationEvent(GuidesNavigationEvent.NavigateBack)
+                },
+                text = "Guides",
+            )
+        },
+        floatingActionButton = {
+            AddButton(onClick = { onUiEvent(GuidesUiEvent.OpenAddOptionsDialog) })
+        },
+    ) { padding ->
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(LifeTogetherTokens.spacing.small)
+                    .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+            ) {
+                item {
                     SyncUpdatingText(keys = setOf(SyncKey.GUIDES))
                 }
-            }
 
-            if (uiState.guides.isEmpty()) {
-                item {
-                    Text(text = "No guides yet. Tap + to create or import one.")
-                }
-            } else {
-                items(uiState.guides) { guide ->
-                    GuideOverviewCard(
-                        guide = guide,
-                        onClick = {
-                            guide.id?.let {
-                                onNavigationEvent(GuidesNavigationEvent.NavigateToGuideDetails(it))
-                            }
-                        },
-                    )
+                if (uiState.guides.isEmpty()) {
+                    item {
+                        Text(text = "No guides yet. Tap + to create or import one.")
+                    }
+                } else {
+                    items(uiState.guides) { guide ->
+                        GuideOverviewCard(
+                            guide = guide,
+                            onClick = {
+                                guide.id?.let {
+                                    onNavigationEvent(GuidesNavigationEvent.NavigateToGuideDetails(it))
+                                }
+                            },
+                        )
+                    }
                 }
             }
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = 30.dp, end = 30.dp),
-            contentAlignment = Alignment.BottomEnd,
-        ) {
-            AddButton(onClick = { onUiEvent(GuidesUiEvent.OpenAddOptionsDialog) })
         }
     }
 
@@ -153,7 +147,7 @@ fun GuidesScreen(
             onDismissRequest = { onUiEvent(GuidesUiEvent.CloseAddOptionsDialog) },
             title = { Text("Add guide") },
             text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
                         PrimaryButton(
                             modifier = Modifier.fillMaxWidth(),
                             text = "Create guide manually",
@@ -185,7 +179,7 @@ fun GuidesScreen(
             onDismissRequest = { onUiEvent(GuidesUiEvent.CloseImportDialog) },
             title = { Text("Import guides from JSON") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
                     Text(
                         text = "Upload a JSON object or array using the guide schema. " +
                             "Guide IDs are assigned by Firestore automatically, while section/step IDs are regenerated.",
@@ -195,7 +189,7 @@ fun GuidesScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.small)
-                            .padding(10.dp),
+                            .padding(LifeTogetherTokens.spacing.small),
                     ) {
                     Text(
                         text = guideTemplate.take(500),
@@ -299,9 +293,9 @@ private fun GuideOverviewCard(
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.large)
             .clickable { onClick() }
-            .padding(14.dp),
+            .padding(LifeTogetherTokens.spacing.medium),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -349,7 +343,7 @@ private fun GuideOverviewCard(
 @Composable
 private fun RowWithCenteredLoader() {
     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(modifier = Modifier.size(28.dp))
+        CircularProgressIndicator(modifier = Modifier.size(LifeTogetherTokens.sizing.iconMedium))
     }
 }
 

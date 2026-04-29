@@ -1,32 +1,21 @@
 package com.example.lifetogether.ui.common
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
-import com.example.lifetogether.ui.common.text.TextDisplayLarge
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopBar(
     leftIcon: Icon,
@@ -34,30 +23,18 @@ fun TopBar(
     text: String,
     rightIcon: Icon? = null,
     onRightClick: (() -> Unit)? = null,
-    subText: String? = null,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .systemBarsPadding(),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Bottom,
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight(0.8f)
-                    .aspectRatio(1f)
-                    .clickable {
-                        if (onLeftClick != null) {
-                            onLeftClick()
-                        }
-                    },
-                contentAlignment = Alignment.Center,
+    CenterAlignedTopAppBar(
+        title = {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.titleLarge,
+                maxLines = 1,
+            )
+        },
+        navigationIcon = {
+            IconButton(
+                onClick = { onLeftClick?.invoke() },
             ) {
                 Icon(
                     painter = painterResource(id = leftIcon.resId),
@@ -65,43 +42,28 @@ fun TopBar(
                     tint = MaterialTheme.colorScheme.onBackground,
                 )
             }
-
-            TextDisplayLarge(text = text)
-
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight(0.8f)
-                    .aspectRatio(1f)
-                    .clickable {
-                        if (onRightClick != null) {
-                            onRightClick()
-                        }
-                    },
-                contentAlignment = Alignment.Center,
-            ) {
-                if (rightIcon != null) {
+        },
+        actions = {
+            if (rightIcon != null) {
+                IconButton(
+                    onClick = { onRightClick?.invoke() },
+                ) {
                     Icon(
                         painter = painterResource(id = rightIcon.resId),
                         contentDescription = rightIcon.description,
                         tint = MaterialTheme.colorScheme.onBackground,
                     )
-                } else {
-                    // Add a placeholder content (e.g., Spacer) here
-                    Spacer(modifier = Modifier.fillMaxSize())
                 }
             }
-        }
-
-        if (subText != null) {
-            Text(
-                text = subText,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-        }
-    }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background,
+            scrolledContainerColor = Color.Unspecified,
+            navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
+            titleContentColor = MaterialTheme.colorScheme.onBackground,
+            actionIconContentColor = MaterialTheme.colorScheme.onBackground
+        ),
+    )
 }
 
 @Preview(showBackground = true)
@@ -118,7 +80,6 @@ fun TopBarPreview() {
                 resId = R.drawable.ic_settings,
                 description = "",
             ),
-            subText = "x days together",
         )
     }
 }

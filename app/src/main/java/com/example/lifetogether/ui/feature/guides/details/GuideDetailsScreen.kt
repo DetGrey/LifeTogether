@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,14 +43,8 @@ fun GuideDetailsScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showResetProgressDialog by remember { mutableStateOf(false) }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        item {
+    Scaffold(
+        topBar = {
             TopBar(
                 leftIcon = AppIcon(
                     resId = R.drawable.ic_back_arrow,
@@ -69,89 +64,98 @@ fun GuideDetailsScreen(
                     }
                 },
             )
-        }
-
-        if (guide == null) {
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 24.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-        } else {
-            item {
-                GuideHeroCard(guide)
-            }
-
-            item {
-                PrimaryButton(
-                    modifier = Modifier.fillMaxWidth(),
-                    text = when {
-                        uiState.isStartingGuide -> "Starting..."
-                        guide.started -> "Continue where you left off"
-                        else -> "Start guide"
-                    },
-                    enabled = !uiState.isStartingGuide,
-                    onClick = { onUiEvent(GuideDetailsUiEvent.StartOrContinueClicked) },
-                )
-            }
-
-            if (guide.sections.isEmpty()) {
+        },
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            if (guide == null) {
                 item {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(
-                                color = MaterialTheme.colorScheme.surfaceVariant,
-                                shape = MaterialTheme.shapes.medium,
-                            )
-                            .padding(14.dp),
+                            .padding(top = 24.dp),
+                        contentAlignment = Alignment.Center,
                     ) {
-                        TextDefault(
-                            text = "No sections yet",
-                        )
+                        CircularProgressIndicator()
                     }
                 }
             } else {
-                guide.sections.forEachIndexed { sectionIndex, section ->
-                    val sectionKey = guideSectionKey(section, sectionIndex)
-                    val isExpanded = uiState.sectionExpandedState[sectionKey] ?: true
-                    val selectedAmountIndex = uiState.selectedSectionAmountState[sectionKey]
-                        ?: defaultSectionAmountIndex(section)
+                item {
+                    GuideHeroCard(guide)
+                }
 
-                    item(key = sectionKey) {
-                        GuideSectionCard(
-                            section = section,
-                            selectedAmountIndex = selectedAmountIndex,
-                            onSelectAmountIndex = { amountIndex ->
-                                onUiEvent(
-                                    GuideDetailsUiEvent.SelectSectionAmount(
-                                        sectionKey = sectionKey,
-                                        amountIndex = amountIndex,
-                                    ),
+                item {
+                    PrimaryButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = when {
+                            uiState.isStartingGuide -> "Starting..."
+                            guide.started -> "Continue where you left off"
+                            else -> "Start guide"
+                        },
+                        enabled = !uiState.isStartingGuide,
+                        onClick = { onUiEvent(GuideDetailsUiEvent.StartOrContinueClicked) },
+                    )
+                }
+
+                if (guide.sections.isEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                    shape = MaterialTheme.shapes.medium,
                                 )
-                            },
-                            expanded = isExpanded,
-                            onToggleExpanded = {
-                                onUiEvent(GuideDetailsUiEvent.ToggleSectionExpanded(sectionKey))
-                            },
-                            canToggleStep = { amountIndex ->
-                                uiState.canToggleAmountState[sectionKey]
-                                    ?.contains(amountIndex) == true
-                            },
-                            onToggleStep = { amountIndex, stepId ->
-                                onUiEvent(
-                                    GuideDetailsUiEvent.ToggleStepCompletion(
-                                        stepId = stepId,
-                                        amountIndex = amountIndex,
-                                    ),
-                                )
-                            },
-                        )
+                                .padding(14.dp),
+                        ) {
+                            TextDefault(
+                                text = "No sections yet",
+                            )
+                        }
+                    }
+                } else {
+                    guide.sections.forEachIndexed { sectionIndex, section ->
+                        val sectionKey = guideSectionKey(section, sectionIndex)
+                        val isExpanded = uiState.sectionExpandedState[sectionKey] ?: true
+                        val selectedAmountIndex = uiState.selectedSectionAmountState[sectionKey]
+                            ?: defaultSectionAmountIndex(section)
+
+                        item(key = sectionKey) {
+                            GuideSectionCard(
+                                section = section,
+                                selectedAmountIndex = selectedAmountIndex,
+                                onSelectAmountIndex = { amountIndex ->
+                                    onUiEvent(
+                                        GuideDetailsUiEvent.SelectSectionAmount(
+                                            sectionKey = sectionKey,
+                                            amountIndex = amountIndex,
+                                        ),
+                                    )
+                                },
+                                expanded = isExpanded,
+                                onToggleExpanded = {
+                                    onUiEvent(GuideDetailsUiEvent.ToggleSectionExpanded(sectionKey))
+                                },
+                                canToggleStep = { amountIndex ->
+                                    uiState.canToggleAmountState[sectionKey]
+                                        ?.contains(amountIndex) == true
+                                },
+                                onToggleStep = { amountIndex, stepId ->
+                                    onUiEvent(
+                                        GuideDetailsUiEvent.ToggleStepCompletion(
+                                            stepId = stepId,
+                                            amountIndex = amountIndex,
+                                        ),
+                                    )
+                                },
+                            )
+                        }
                     }
                 }
             }

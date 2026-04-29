@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Text
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,68 +32,64 @@ fun GalleryScreen(
     onUiEvent: (GalleryUiEvent) -> Unit,
     onNavigationEvent: (GalleryNavigationEvent) -> Unit,
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize(),
-    ) {
-        LazyColumn(
+    Scaffold(
+        topBar = {
+            TopBar(
+                leftIcon = Icon(
+                    resId = R.drawable.ic_back_arrow,
+                    description = "back arrow icon",
+                ),
+                onLeftClick = { onNavigationEvent(GalleryNavigationEvent.NavigateBack) },
+                text = "Albums",
+            )
+        },
+        floatingActionButton = {
+            AddButton(onClick = {
+                onUiEvent(GalleryUiEvent.OpenNewAlbumDialog)
+            })
+        },
+    ) { padding ->
+        Box(
             modifier = Modifier
-                .padding(LifeTogetherTokens.spacing.small),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
+                .fillMaxSize()
+                .padding(padding),
         ) {
-            item {
-                TopBar(
-                    leftIcon = Icon(
-                        resId = R.drawable.ic_back_arrow,
-                        description = "back arrow icon",
-                    ),
-                    onLeftClick = { onNavigationEvent(GalleryNavigationEvent.NavigateBack) },
-                    text = "Albums",
-                )
-            }
+            LazyColumn(
+                modifier = Modifier
+                    .padding(LifeTogetherTokens.spacing.small),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
+            ) {
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        SyncUpdatingText(
+                            keys = setOf(SyncKey.GALLERY_ALBUMS, SyncKey.GALLERY_MEDIA),
+                        )
 
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SyncUpdatingText(
-                        keys = setOf(SyncKey.GALLERY_ALBUMS, SyncKey.GALLERY_MEDIA),
-                    )
-
-                    if (uiState.albums.isEmpty()) {
-                        Text(text = "No albums created. Press + to create one.")
-                    } else {
-                        FlowRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            maxItemsInEachRow = 2,
-                            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
-                        ) {
-                            for (album in uiState.albums) {
-                                AlbumContainer(
-                                    album.name,
-                                    album.mediaCount,
-                                    album.thumbnail?.toBitmap(),
-                                    onClick = {
-                                        onNavigationEvent(GalleryNavigationEvent.NavigateToAlbumMedia(album.id))
-                                    },
-                                )
+                        if (uiState.albums.isEmpty()) {
+                            Text(text = "No albums created. Press + to create one.")
+                        } else {
+                            FlowRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                maxItemsInEachRow = 2,
+                                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                            ) {
+                                for (album in uiState.albums) {
+                                    AlbumContainer(
+                                        album.name,
+                                        album.mediaCount,
+                                        album.thumbnail?.toBitmap(),
+                                        onClick = {
+                                            onNavigationEvent(GalleryNavigationEvent.NavigateToAlbumMedia(album.id))
+                                        },
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
         }
-    }
-
-    // ---------------------------------------------------------------- ADD NEW IMAGE
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(bottom = LifeTogetherTokens.spacing.xLarge, end = LifeTogetherTokens.spacing.xLarge),
-        contentAlignment = Alignment.BottomEnd,
-    ) {
-        AddButton(onClick = {
-            onUiEvent(GalleryUiEvent.OpenNewAlbumDialog)
-        })
     }
 
     if (uiState.showNewAlbumDialog) {

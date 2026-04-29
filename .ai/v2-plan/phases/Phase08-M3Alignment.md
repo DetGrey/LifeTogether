@@ -118,8 +118,6 @@ Phase 8 excludes non-visual plumbing such as `ViewModel`s, routes, DI helpers, e
 
 ## Subphases
 
-_To be finalised during the pre-implementation grill-me session._
-
 - [x] 8.1 Rebuild the shared input family on native M3 controls with centralized defaults: `CustomTextField`, `DatePickerTextField`, `EditableTextField`, `Dropdown`, and the canonical add FAB wrapper
 - [x] 8.2 Rebuild alert, confirmation, and upload surfaces on native dialog/sheet primitives: `CustomAlertDialog`, residual `ErrorAlertDialog`, `ConfirmationDialogWithTextField`, `ConfirmationDialogWithDropdown`, `ImageUploadDialog`, `MediaUploadMultipleDialog`, and the media-details bottom panel
 - [ ] 8.3 Standardize every non-loading screen on `Scaffold(topBar = { AppTopBar(...) })`, move `subText` into `HomeScreen` content, and keep loading as the only full-screen exception

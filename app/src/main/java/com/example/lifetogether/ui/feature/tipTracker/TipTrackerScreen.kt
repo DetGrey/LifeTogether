@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,113 +33,114 @@ fun TipTrackerScreen(
     onNavigationEvent: (TipTrackerNavigationEvent) -> Unit,
 ) {
     val content = uiState as TipTrackerUiState.Content
-    Box(
-        modifier = Modifier
-            .fillMaxSize(),
-    ) {
-        LazyColumn(
+    Scaffold(
+        topBar = {
+            TopBar(
+                leftIcon = Icon(
+                    resId = R.drawable.ic_back_arrow,
+                    description = "back arrow icon",
+                ),
+                onLeftClick = {
+                    onNavigationEvent(TipTrackerNavigationEvent.NavigateBack)
+                },
+                text = "Tip Tracker",
+                rightIcon = Icon(
+                    resId = R.drawable.ic_statistics,
+                    description = "back arrow icon",
+                ),
+                onRightClick = {
+                    onNavigationEvent(TipTrackerNavigationEvent.NavigateToStatistics)
+                },
+            )
+        },
+    ) { padding ->
+        Box(
             modifier = Modifier
-                .padding(LifeTogetherTokens.spacing.small)
-                .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
+                .fillMaxSize()
+                .padding(padding),
         ) {
-            item {
-                TopBar(
-                    leftIcon = Icon(
-                        resId = R.drawable.ic_back_arrow,
-                        description = "back arrow icon",
-                    ),
-                    onLeftClick = {
-                        onNavigationEvent(TipTrackerNavigationEvent.NavigateBack)
-                    },
-                    text = "Tip Tracker",
-                    rightIcon = Icon(
-                        resId = R.drawable.ic_statistics,
-                        description = "back arrow icon",
-                    ),
-                    onRightClick = {
-                        onNavigationEvent(TipTrackerNavigationEvent.NavigateToStatistics)
-                    },
-                )
-            }
+            LazyColumn(
+                modifier = Modifier
+                    .padding(LifeTogetherTokens.spacing.small)
+                    .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
+            ) {
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
+                        SyncUpdatingText(keys = setOf(SyncKey.TIP_TRACKER))
 
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
-                    SyncUpdatingText(keys = setOf(SyncKey.TIP_TRACKER))
+                        if (content.tips.isNotEmpty()) {
+                            TagOptionRow(
+                                options = listOf("Calendar", "List"),
+                                selectedOption = content.overviewOption,
+                                onSelectedOptionChange = {
+                                    onUiEvent(TipTrackerUiEvent.OverviewOptionSelected(it))
+                                },
+                                center = true,
+                            )
+                            when (content.overviewOption) {
+                                "Calendar" -> {
+                                    TipsCalendar(
+                                        calendar = content.calendar,
+                                        onPreviousMonthClick = {
+                                            onUiEvent(TipTrackerUiEvent.PreviousMonthClicked)
+                                        },
+                                        onCurrentMonthClick = {
+                                            onUiEvent(TipTrackerUiEvent.CurrentMonthClicked)
+                                        },
+                                        onNextMonthClick = {
+                                            onUiEvent(TipTrackerUiEvent.NextMonthClicked)
+                                        },
+                                    )
+                                }
 
-                    if (content.tips.isNotEmpty()) {
-                        TagOptionRow(
-                            options = listOf("Calendar", "List"),
-                            selectedOption = content.overviewOption,
-                            onSelectedOptionChange = {
-                                onUiEvent(TipTrackerUiEvent.OverviewOptionSelected(it))
-                            },
-                            center = true,
-                        )
-                        when (content.overviewOption) {
-                            "Calendar" -> {
-                                TipsCalendar(
-                                    calendar = content.calendar,
-                                    onPreviousMonthClick = {
-                                        onUiEvent(TipTrackerUiEvent.PreviousMonthClicked)
-                                    },
-                                    onCurrentMonthClick = {
-                                        onUiEvent(TipTrackerUiEvent.CurrentMonthClicked)
-                                    },
-                                    onNextMonthClick = {
-                                        onUiEvent(TipTrackerUiEvent.NextMonthClicked)
-                                    },
-                                )
-                            }
-
-                            "List" -> {
-                                TipsList(
-                                    content.groupedTips,
-                                    onDeleteClick = {
-                                        onUiEvent(TipTrackerUiEvent.DeleteTipClicked(it))
-                                    },
-                                )
+                                "List" -> {
+                                    TipsList(
+                                        content.groupedTips,
+                                        onDeleteClick = {
+                                            onUiEvent(TipTrackerUiEvent.DeleteTipClicked(it))
+                                        },
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
+
+            Box(
+                modifier = Modifier
+                    .padding(LifeTogetherTokens.spacing.small)
+                    .fillMaxSize(),
+                contentAlignment = Alignment.BottomCenter,
+            ) {
+                AddNewTipItem(
+                    textValue = content.newItemAmount,
+                    onTextChange = { onUiEvent(TipTrackerUiEvent.NewItemAmountChanged(it)) },
+                    onAddClick = {
+                        onUiEvent(TipTrackerUiEvent.AddItemClicked)
+                    },
+                    dateValue = content.newItemDate,
+                    onDateChange = {
+                        onUiEvent(TipTrackerUiEvent.NewItemDateChanged(it))
+                    },
+                )
+            }
+
+            if (content.showConfirmationDialog && content.selectedTip != null) {
+                ConfirmationDialog(
+                    onDismiss = { onUiEvent(TipTrackerUiEvent.DismissDeleteConfirmation) },
+                    onConfirm = {
+                        onUiEvent(TipTrackerUiEvent.ConfirmDeleteConfirmation)
+                    },
+                    dialogTitle = "Delete tip",
+                    dialogMessage = "Are you sure you want to delete this tip?",
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Delete",
+                )
+            }
         }
-    }
-
-    // ---------------------------------------------------------------- ADD NEW TIP ITEM
-    Box(
-        modifier = Modifier
-            .padding(LifeTogetherTokens.spacing.small)
-            .fillMaxSize(),
-        contentAlignment = Alignment.BottomCenter,
-    ) {
-        AddNewTipItem(
-            textValue = content.newItemAmount,
-            onTextChange = { onUiEvent(TipTrackerUiEvent.NewItemAmountChanged(it)) },
-            onAddClick = {
-                onUiEvent(TipTrackerUiEvent.AddItemClicked)
-            },
-            dateValue = content.newItemDate,
-            onDateChange = {
-                onUiEvent(TipTrackerUiEvent.NewItemDateChanged(it))
-            },
-        )
-    }
-
-    // ---------------------------------------------------------------- CONFIRM DELETION OF COMPLETED ITEMS
-    if (content.showConfirmationDialog && content.selectedTip != null) {
-        ConfirmationDialog(
-            onDismiss = { onUiEvent(TipTrackerUiEvent.DismissDeleteConfirmation) },
-            onConfirm = {
-                onUiEvent(TipTrackerUiEvent.ConfirmDeleteConfirmation)
-            },
-            dialogTitle = "Delete tip",
-            dialogMessage = "Are you sure you want to delete this tip?",
-            dismissButtonMessage = "Cancel",
-            confirmButtonMessage = "Delete",
-        )
     }
 }
 

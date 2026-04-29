@@ -13,12 +13,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.asImageBitmap
@@ -39,25 +42,24 @@ fun HomeScreen(
     uiState: HomeUiState,
     onNavigationEvent: (HomeNavigationEvent) -> Unit,
 ) {
-    val content = when (uiState) {
-        HomeUiState.Loading -> null
-        is HomeUiState.Unauthenticated -> uiState.content
-        is HomeUiState.Authenticated -> uiState.content
-    }
-
-    Box(
-        modifier = Modifier
-            .background(MaterialTheme.colorScheme.background)
-            .fillMaxSize(),
-    ) {
-        LazyColumn(
+    if (uiState == HomeUiState.Loading) {
+        Box(
             modifier = Modifier
-                .padding(LifeTogetherTokens.spacing.small)
-                .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+                .background(MaterialTheme.colorScheme.background)
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center,
         ) {
-            item {
+            CircularProgressIndicator()
+        }
+    } else {
+        val content = when (uiState) {
+            is HomeUiState.Unauthenticated -> uiState.content
+            is HomeUiState.Authenticated -> uiState.content
+            HomeUiState.Loading -> error("Loading is handled above")
+        }
+
+        Scaffold(
+            topBar = {
                 TopBar(
                     leftIcon = Icon(
                         resId = R.drawable.ic_profile_picture,
@@ -74,92 +76,116 @@ fun HomeScreen(
                     onRightClick = {
                         onNavigationEvent(HomeNavigationEvent.SettingsClicked)
                     },
-                    subText = "x days together",
                 )
-            }
-
-            item {
-                Box(
+            },
+        ) { padding ->
+            Box(
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.background)
+                    .fillMaxSize()
+                    .padding(padding),
+            ) {
+                LazyColumn(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .clip(shape = MaterialTheme.shapes.large)
-                        .background(color = MaterialTheme.colorScheme.surfaceVariant),
+                        .padding(LifeTogetherTokens.spacing.small)
+                        .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
                 ) {
-                    val bitmap = content?.bitmap
-                    if (bitmap != null) {
-                        Image(
-                            modifier = Modifier.fillMaxSize(),
-                            bitmap = bitmap.asImageBitmap(),
-                            contentDescription = "family image",
-                            contentScale = ContentScale.Crop,
+                    item {
+                        Text(
+                            text = "x days together",
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
                         )
                     }
-                }
-            }
 
-            item {
-                when (val statusCard = content?.statusCard) {
-                    is HomeStatusCard.Message -> {
+                    item {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(75.dp)
+                                .height(200.dp)
                                 .clip(shape = MaterialTheme.shapes.large)
-                                .background(MaterialTheme.colorScheme.tertiary)
-                                .clickable {
-                                    onNavigationEvent(HomeNavigationEvent.StatusCardClicked)
-                                }
-                                .padding(horizontal = LifeTogetherTokens.spacing.medium),
-                            contentAlignment = Alignment.Center,
+                                .background(color = MaterialTheme.colorScheme.surfaceVariant),
                         ) {
-                            Text(text = statusCard.text)
+                            val bitmap = content.bitmap
+                            if (bitmap != null) {
+                                Image(
+                                    modifier = Modifier.fillMaxSize(),
+                                    bitmap = bitmap.asImageBitmap(),
+                                    contentDescription = "family image",
+                                    contentScale = ContentScale.Crop,
+                                )
+                            }
                         }
                     }
 
-                    HomeStatusCard.None, null -> Unit
-                }
-            }
+                    item {
+                        when (val statusCard = content.statusCard) {
+                            is HomeStatusCard.Message -> {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(75.dp)
+                                        .clip(shape = MaterialTheme.shapes.large)
+                                        .background(MaterialTheme.colorScheme.tertiary)
+                                        .clickable {
+                                            onNavigationEvent(HomeNavigationEvent.StatusCardClicked)
+                                        }
+                                        .padding(horizontal = LifeTogetherTokens.spacing.medium),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(text = statusCard.text)
+                                }
+                            }
 
-            content?.sections?.forEach { section ->
-                item {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
-                    ) {
-                        if (section.title != null) {
-                            TextDisplayLarge(section.title)
+                            HomeStatusCard.None -> Unit
                         }
+                    }
 
-                        FlowRow(
-                            maxItemsInEachRow = section.maxItemsInEachRow,
-                            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
-                            horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
-                        ) {
-                            section.items.forEach { item ->
-                                when (item) {
-                                    is HomeSectionItem.Tile -> FeatureOverview(
-                                        title = item.tile.title,
-                                        onClick = {
-                                            onNavigationEvent(HomeNavigationEvent.TileClicked(item.tile))
-                                        },
-                                        icon = item.tile.icon,
-                                    )
+                    content.sections.forEach { section ->
+                        item {
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                            ) {
+                                if (section.title != null) {
+                                    TextDisplayLarge(section.title)
+                                }
 
-                                    HomeSectionItem.Break -> Spacer(
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .height(0.dp),
-                                    )
+                                FlowRow(
+                                    maxItemsInEachRow = section.maxItemsInEachRow,
+                                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                                    horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                                ) {
+                                    section.items.forEach { item ->
+                                        when (item) {
+                                            is HomeSectionItem.Tile -> FeatureOverview(
+                                                title = item.tile.title,
+                                                onClick = {
+                                                    onNavigationEvent(HomeNavigationEvent.TileClicked(item.tile))
+                                                },
+                                                icon = item.tile.icon,
+                                            )
+
+                                            HomeSectionItem.Break -> Spacer(
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .height(0.dp),
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
+
+                LoveButton()
             }
         }
     }
-
-    LoveButton()
 }
 
 @Preview(showBackground = true)
