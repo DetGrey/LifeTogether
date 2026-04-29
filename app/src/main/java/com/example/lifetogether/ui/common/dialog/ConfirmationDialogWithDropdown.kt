@@ -2,14 +2,12 @@ package com.example.lifetogether.ui.common.dialog
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.lifetogether.ui.common.button.PrimaryButton
+import com.example.lifetogether.ui.common.button.SecondaryButton
 import com.example.lifetogether.ui.common.dropdown.Dropdown
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -51,32 +49,16 @@ fun <T> ConfirmationDialogWithDropdown(
             }
         },
         dismissButton = {
-            Button(
+            SecondaryButton(
+                text = dismissButtonMessage,
                 onClick = onDismiss,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.onBackground,
-                    contentColor = MaterialTheme.colorScheme.background,
-                ),
-            ) {
-                Text(
-                    text = dismissButtonMessage,
-                    style = MaterialTheme.typography.labelMedium,
-                )
-            }
+            )
         },
         confirmButton = {
-            Button(
+            PrimaryButton(
+                text = confirmButtonMessage,
                 onClick = onConfirm,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                ),
-            ) {
-                Text(
-                    text = confirmButtonMessage,
-                    style = MaterialTheme.typography.labelMedium,
-                )
-            }
+            )
         },
     )
 }

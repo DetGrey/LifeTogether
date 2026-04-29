@@ -18,7 +18,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -38,6 +37,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
+import com.example.lifetogether.ui.common.button.PrimaryButton
+import com.example.lifetogether.ui.common.button.SecondaryButton
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.domain.logic.getVideoThumbnail
 import com.example.lifetogether.domain.logic.isImageUri
@@ -105,9 +106,10 @@ fun MediaUploadMultipleDialog(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(text = dialogMessage)
                 Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
-                Button(onClick = { launcher.launch("*/*") }) {
-                    Text(text = "Add Photos & Videos")
-                }
+                PrimaryButton(
+                    text = "Add Photos & Videos",
+                    onClick = { launcher.launch("*/*") },
+                )
                 Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
                 LazyRow {
                     items(selectedMediaUris) { uri ->
@@ -166,20 +168,22 @@ fun MediaUploadMultipleDialog(
             }
         },
         dismissButton = {
-            Button(onClick = onDismiss) {
-                Text(text = dismissButtonMessage)
-            }
+            SecondaryButton(
+                text = dismissButtonMessage,
+                onClick = onDismiss,
+            )
         },
         confirmButton = {
-            Button(
+            PrimaryButton(
+                text = confirmButtonMessage,
                 onClick = {
                     if (uploadState is UploadState.Uploading) {
-                        return@Button
+                        return@PrimaryButton
                     }
 
                     if (selectedMediaUris.isEmpty()) {
                         uploadState = UploadState.Failure("No files selected.")
-                        return@Button
+                        return@PrimaryButton
                     }
 
                     uploadState = UploadState.Uploading
@@ -206,9 +210,7 @@ fun MediaUploadMultipleDialog(
                         }
                     }
                 },
-            ) {
-                Text(text = confirmButtonMessage)
-            }
+            )
         },
     )
 }

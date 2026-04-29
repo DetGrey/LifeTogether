@@ -10,10 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -26,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.lifetogether.ui.common.button.PrimaryButton
+import com.example.lifetogether.ui.common.button.SecondaryButton
 import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.domain.result.AppError
@@ -73,9 +72,10 @@ fun ImageUploadDialog(
 
                 Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
 
-                Button(onClick = { launcher.launch("image/*") }) {
-                    Text(text = "Add Photo")
-                }
+                PrimaryButton(
+                    text = "Add Photo",
+                    onClick = { launcher.launch("image/*") },
+                )
 
                 bitmap?.let { btm ->
                     error = ""
@@ -105,21 +105,14 @@ fun ImageUploadDialog(
             }
         },
         dismissButton = {
-            Button(
+            SecondaryButton(
+                text = dismissButtonMessage,
                 onClick = onDismiss,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.onBackground,
-                    contentColor = MaterialTheme.colorScheme.background,
-                ),
-            ) {
-                Text(
-                    text = dismissButtonMessage,
-                    style = MaterialTheme.typography.labelMedium,
-                )
-            }
+            )
         },
         confirmButton = {
-            Button(
+            PrimaryButton(
+                text = confirmButtonMessage,
                 onClick = {
                     val uri = selectedImageUri
                     if (uri != null) {
@@ -144,16 +137,7 @@ fun ImageUploadDialog(
                         error = "Please choose an image first"
                     }
                 },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                ),
-            ) {
-                Text(
-                    text = confirmButtonMessage,
-                    style = MaterialTheme.typography.labelMedium,
-                )
-            }
+            )
         },
     )
 }
