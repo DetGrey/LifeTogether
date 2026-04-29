@@ -200,7 +200,7 @@ private fun ListItemInputBar(
                 showDialog = false
             },
             dialogTitle = "Change category",
-            dialogMessage = "",
+            dialogMessage = "Choose a category from the dropdown below",
             dismissButtonMessage = "Cancel",
             confirmButtonMessage = "Change",
             selectedValue = selectedDialogCategory,

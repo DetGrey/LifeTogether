@@ -1,15 +1,12 @@
 package com.example.lifetogether.ui.common.button
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -20,14 +17,17 @@ import com.example.lifetogether.ui.theme.LifeTogetherTheme
 fun AddButton(
     onClick: () -> Unit,
 ) {
-    Box(
-        modifier = Modifier
-            .size(60.dp)
-            .clip(shape = CircleShape)
-            .background(color = MaterialTheme.colorScheme.tertiary)
-            .clickable { onClick() },
+    FloatingActionButton(
+        onClick = onClick,
+        modifier = Modifier.size(60.dp),
+        containerColor = MaterialTheme.colorScheme.tertiary,
+        contentColor = MaterialTheme.colorScheme.onTertiary,
+        shape = CircleShape,
     ) {
-        Image(painter = painterResource(id = R.drawable.ic_plus), contentDescription = "plus icon")
+        Icon(
+            painter = painterResource(id = R.drawable.ic_plus),
+            contentDescription = "Add",
+        )
     }
 }
 

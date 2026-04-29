@@ -1,22 +1,17 @@
 package com.example.lifetogether.ui.common.textfield
 
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @Composable
@@ -35,44 +30,26 @@ fun CustomTextField(
     if (keyboardType == KeyboardType.Password) {
         visualTransformation = PasswordVisualTransformation()
     }
+    val textStyle = if (smaller) MaterialTheme.typography.bodySmall
+        else MaterialTheme.typography.bodyMedium
 
     TextField(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(60.dp)
-            .clip(shape = MaterialTheme.shapes.large),
+        modifier = modifier.inputFieldModifier(),
         value = value,
         onValueChange = {
             onValueChange(it)
         },
         enabled = enabled,
         label = if (label != null) {
-            {
-                Text(
-                    label,
-                    style = if (smaller) MaterialTheme.typography.bodySmall
-                            else MaterialTheme.typography.bodyMedium
-                )
-            }
-        } else {
-            null
-        },
+            { Text(text = label, style = textStyle) }
+        } else null,
         visualTransformation = visualTransformation,
         keyboardOptions = KeyboardOptions(
             capitalization = if (capitalization) KeyboardCapitalization.Sentences else KeyboardCapitalization.None,
             keyboardType = keyboardType,
             imeAction = imeAction,
         ),
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-            unfocusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-            focusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            unfocusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            focusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            focusedIndicatorColor = MaterialTheme.colorScheme.secondary,
-            cursorColor = MaterialTheme.colorScheme.secondary,
-        ),
+        colors = filledTextFieldColors(),
         isError = false, // TODO https://medium.com/@rzmeneghelo/how-to-validate-fields-using-jetpack-compose-in-android-43be70597e82
     )
 }

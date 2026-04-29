@@ -1,5 +1,8 @@
 package com.example.lifetogether.ui.common.dialog
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -8,7 +11,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.ui.common.dropdown.Dropdown
+import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun <T> ConfirmationDialogWithDropdown(
@@ -29,17 +34,21 @@ fun <T> ConfirmationDialogWithDropdown(
         onDismissRequest = onDismiss,
         title = { Text(text = dialogTitle) },
         text = {
-            Text(text = dialogMessage)
-            Dropdown(
-                selectedValue = optionLabel(selectedValue),
-                expanded = expanded,
-                onExpandedChange = onExpandedChange,
-                options = options.map(optionLabel),
-                label = null,
-                onValueChangedEvent = { selectedLabel ->
-                    options.firstOrNull { optionLabel(it) == selectedLabel }?.let(onValueChange)
-                },
-            )
+            Column(
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium)
+            ) {
+                TextDefault(text = dialogMessage)
+                Dropdown(
+                    selectedValue = optionLabel(selectedValue),
+                    expanded = expanded,
+                    onExpandedChange = onExpandedChange,
+                    options = options.map(optionLabel),
+                    label = null,
+                    onValueChangedEvent = { selectedLabel ->
+                        options.firstOrNull { optionLabel(it) == selectedLabel }?.let(onValueChange)
+                    },
+                )
+            }
         },
         dismissButton = {
             Button(

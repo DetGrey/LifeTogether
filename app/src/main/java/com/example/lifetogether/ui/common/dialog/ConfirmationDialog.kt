@@ -1,5 +1,6 @@
 package com.example.lifetogether.ui.common.dialog
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -7,6 +8,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun ConfirmationDialog(
@@ -22,7 +24,9 @@ fun ConfirmationDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = dialogTitle) },
         text = {
-            Column {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium)
+            ) {
                 Text(text = dialogMessage)
                 content()
             }

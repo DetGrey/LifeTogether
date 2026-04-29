@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.common.dialog
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -11,6 +13,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun ConfirmationDialogWithTextField(
@@ -29,15 +32,19 @@ fun ConfirmationDialogWithTextField(
         onDismissRequest = onDismiss,
         title = { Text(text = dialogTitle) },
         text = {
-            Text(text = dialogMessage)
-            CustomTextField(
-                value = textValue,
-                onValueChange = onTextValueChange,
-                label = null,
-                keyboardType = keyboardType,
-                imeAction = ImeAction.Done,
-                capitalization = capitalization,
-            )
+            Column(
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium)
+            ) {
+                Text(text = dialogMessage)
+                CustomTextField(
+                    value = textValue,
+                    onValueChange = onTextValueChange,
+                    label = null,
+                    keyboardType = keyboardType,
+                    imeAction = ImeAction.Done,
+                    capitalization = capitalization,
+                )
+            }
         },
         dismissButton = {
             Button(
