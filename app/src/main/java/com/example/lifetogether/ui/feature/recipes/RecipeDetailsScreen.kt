@@ -46,6 +46,7 @@ import com.example.lifetogether.ui.common.textfield.EditableTextField
 import com.example.lifetogether.ui.common.dropdown.Dropdown
 import com.example.lifetogether.domain.model.recipe.Instruction
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun RecipeDetailsScreen(
@@ -89,7 +90,7 @@ private fun RecipeDetailsContent(
         item {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(30.dp),
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
             ) {
                 Box(
                     modifier = Modifier
@@ -109,7 +110,7 @@ private fun RecipeDetailsContent(
 
                     Box(
                         modifier = Modifier
-                            .padding(start = 10.dp, top = 10.dp)
+                            .padding(start = LifeTogetherTokens.spacing.small, top = LifeTogetherTokens.spacing.small)
                             .height(40.dp)
                             .aspectRatio(1f)
                             .clickable {
@@ -127,7 +128,7 @@ private fun RecipeDetailsContent(
 
                     Box(
                         modifier = Modifier
-                            .padding(end = 10.dp, top = 10.dp)
+                            .padding(end = LifeTogetherTokens.spacing.small, top = LifeTogetherTokens.spacing.small)
                             .height(if (!uiState.editMode && uiState.recipeId != null) 40.dp else 50.dp)
                             .aspectRatio(1f)
                             .clickable(
@@ -158,7 +159,7 @@ private fun RecipeDetailsContent(
 
                     Box(
                         modifier = Modifier
-                            .padding(start = 10.dp, end = 40.dp)
+                            .padding(start = LifeTogetherTokens.spacing.small, end = LifeTogetherTokens.spacing.xxLarge)
                             .align(Alignment.BottomStart),
                     ) {
                         EditableTextField(
@@ -173,7 +174,7 @@ private fun RecipeDetailsContent(
 
                     Box(
                         modifier = Modifier
-                            .padding(bottom = 5.dp)
+                            .padding(bottom = LifeTogetherTokens.spacing.xSmall)
                             .height(40.dp)
                             .aspectRatio(1f)
                             .clickable {
@@ -196,9 +197,9 @@ private fun RecipeDetailsContent(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(10.dp),
+                    .padding(LifeTogetherTokens.spacing.small),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(30.dp),
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
             ) {
                 EditableTextField(
                     text = uiState.description,
@@ -209,7 +210,7 @@ private fun RecipeDetailsContent(
                 )
 
                 if (uiState.editMode) {
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
                 }
 
                 Column {
@@ -274,7 +275,7 @@ private fun RecipeDetailsContent(
                             .fillMaxWidth()
                             .height(50.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),
                     ) {
                         TextDefault("Tags:")
                         if (uiState.editMode) {

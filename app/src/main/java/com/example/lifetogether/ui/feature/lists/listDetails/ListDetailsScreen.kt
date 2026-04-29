@@ -294,7 +294,7 @@ private fun ListEntryCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Column(modifier = Modifier.padding(top = 6.dp)) {
+                Column(modifier = Modifier.padding(top = LifeTogetherTokens.spacing.xSmall)) {
                     TextDefault(
                         text = "Every ${entry.interval} ${entry.recurrenceUnit.value}",
                         color = MaterialTheme.colorScheme.onPrimaryContainer,

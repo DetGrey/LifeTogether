@@ -15,10 +15,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.feature.guides.stepplayer.GuideStepPlayerUiState
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun StepPlayerOverviewCard(uiState: GuideStepPlayerUiState) {
@@ -26,18 +26,18 @@ fun StepPlayerOverviewCard(uiState: GuideStepPlayerUiState) {
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.large)
-            .padding(14.dp),
+            .padding(LifeTogetherTokens.spacing.medium),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(5.dp)
+                horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)
             ) {
                 TextHeadingMedium(uiState.sectionTitle)
 
                 Text(
-                    modifier = Modifier.padding(top = 2.dp),
+                    modifier = Modifier.padding(top = LifeTogetherTokens.spacing.xSmall),
                     text = "(${uiState.sectionSubtitle})",
                     style = MaterialTheme.typography.bodySmall,
                 )

@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun ProfileDetails(
@@ -69,7 +70,7 @@ fun ProfileDetails(
                 modifier = Modifier
                     .fillMaxWidth(0.4f)
                     .fillMaxHeight()
-                    .padding(start = 20.dp),
+                    .padding(start = LifeTogetherTokens.spacing.large),
                 contentAlignment = Alignment.CenterStart,
             ) {
                 Text(
@@ -81,7 +82,7 @@ fun ProfileDetails(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(end = 20.dp),
+                    .padding(end = LifeTogetherTokens.spacing.large),
                 contentAlignment = Alignment.CenterEnd,
             ) {
                 Row {
@@ -92,7 +93,7 @@ fun ProfileDetails(
                     )
 
                     if (clickable) {
-                        Spacer(modifier = Modifier.width(5.dp))
+                        Spacer(modifier = Modifier.width(LifeTogetherTokens.spacing.xSmall))
 
                         Text(
                             text = ">",
@@ -100,7 +101,7 @@ fun ProfileDetails(
                             color = MaterialTheme.colorScheme.secondary,
                         )
                     } else if (!enabled) {
-                        Spacer(modifier = Modifier.width(5.dp))
+                        Spacer(modifier = Modifier.width(LifeTogetherTokens.spacing.xSmall))
 
                         Text(
                             text = ">",

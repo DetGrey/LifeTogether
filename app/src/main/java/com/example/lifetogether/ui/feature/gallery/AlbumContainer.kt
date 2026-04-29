@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.ui.common.text.TextBodyLarge
 import com.example.lifetogether.ui.common.text.TextDefault
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun AlbumContainer(
@@ -36,7 +37,7 @@ fun AlbumContainer(
     Column(
         modifier = Modifier
             .fillMaxWidth(0.5f)
-            .padding(10.dp)
+            .padding(LifeTogetherTokens.spacing.small)
             .clickable { onClick() },
         horizontalAlignment = Alignment.Start,
     ) {
@@ -65,12 +66,12 @@ fun AlbumContainer(
         TextBodyLarge(
             text = albumName,
             modifier = Modifier
-                .padding(start = 5.dp),
+                .padding(start = LifeTogetherTokens.spacing.xSmall),
         )
 
         TextDefault(
             text = count.toString(),
-            modifier = Modifier.padding(start = 5.dp),
+            modifier = Modifier.padding(start = LifeTogetherTokens.spacing.xSmall),
         )
     }
 }

@@ -33,14 +33,14 @@ fun FlowRowScope.FeatureOverview(
 ) {
     Column(
         modifier = Modifier
+            .clickable { onClick() }
             .then(if (fullWidth) Modifier.fillMaxWidth() else Modifier.weight(1f))
             .fillMaxRowHeight()
             .background(
                 MaterialTheme.colorScheme.primaryContainer,
                 MaterialTheme.shapes.large
             )
-            .padding(LifeTogetherTokens.spacing.small)
-            .clickable { onClick() },
+            .padding(LifeTogetherTokens.spacing.small),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {

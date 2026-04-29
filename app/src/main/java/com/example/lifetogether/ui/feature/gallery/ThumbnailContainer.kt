@@ -16,13 +16,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.durationToString
 import com.example.lifetogether.ui.common.list.CompletableBox
 import com.example.lifetogether.ui.common.text.TextDefault
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun ThumbnailContainer(
@@ -75,22 +75,22 @@ fun ThumbnailContainer(
             }
         }
         if (duration != null) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = 5.dp, end = 7.dp),
-                contentAlignment = Alignment.BottomEnd,
-            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = LifeTogetherTokens.spacing.xSmall, end = LifeTogetherTokens.spacing.small),
+                    contentAlignment = Alignment.BottomEnd,
+                ) {
                 TextDefault(duration.durationToString(), color = MaterialTheme.colorScheme.onTertiaryContainer)
             }
         }
         if (isSelectionMode) {
-            Box(
-                modifier = Modifier
-                    .size(50.dp)
-                    .align(Alignment.TopStart)
-                    .padding(5.dp),
-            ) {
+                Box(
+                    modifier = Modifier
+                        .size(LifeTogetherTokens.sizing.touchTargetMinimum)
+                        .align(Alignment.TopStart)
+                        .padding(LifeTogetherTokens.spacing.xSmall),
+                ) {
                 CompletableBox(
                     isCompleted = isSelected,
                     onCompleteToggle = onSelectionToggle,

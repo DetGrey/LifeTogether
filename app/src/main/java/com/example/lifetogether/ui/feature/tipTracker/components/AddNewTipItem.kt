@@ -65,7 +65,7 @@ fun AddNewTipItem(
             ) {
                 Box(
                     modifier = Modifier
-                        .padding(10.dp)
+                        .padding(LifeTogetherTokens.spacing.small)
                         .fillMaxHeight()
                         .aspectRatio(1f, true)
                         .border(
@@ -94,7 +94,7 @@ fun AddNewTipItem(
 
             Row(
                 modifier = Modifier
-                    .padding(10.dp)
+                    .padding(LifeTogetherTokens.spacing.small)
                     .fillMaxHeight()
                     .clickable {
                         onAddClick()

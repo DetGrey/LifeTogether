@@ -23,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.enums.Visibility
@@ -115,7 +114,7 @@ fun GuideCreateScreen(
             item {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                 ) {
                     TextDefault(
                         text = "Sections (optional)",
@@ -123,7 +122,7 @@ fun GuideCreateScreen(
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         CustomTextField(
@@ -161,9 +160,9 @@ fun GuideCreateScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.medium)
-                            .padding(12.dp),
+                            .padding(LifeTogetherTokens.spacing.medium),
                     ) {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
                             Text(
                                 text = buildString {
                                     append(section.title)

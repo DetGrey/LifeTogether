@@ -25,6 +25,7 @@ import com.example.lifetogether.domain.model.guides.GuideStep
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @Composable
@@ -58,17 +59,17 @@ fun GuideSectionCard(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.large)
-            .padding(14.dp),
+            .padding(LifeTogetherTokens.spacing.medium),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { onToggleExpanded() },
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
                     TextSubHeadingMedium(
                         text = buildString {
                             append(section.title)

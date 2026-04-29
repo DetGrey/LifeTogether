@@ -18,7 +18,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon as AppIcon
 import com.example.lifetogether.domain.model.enums.Visibility
@@ -30,6 +29,7 @@ import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.feature.guides.details.components.GuideHeroCard
 import com.example.lifetogether.ui.feature.guides.details.components.GuideSectionCard
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @Composable
@@ -70,16 +70,16 @@ fun GuideDetailsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 10.dp),
+                .padding(horizontal = LifeTogetherTokens.spacing.small),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
         ) {
             if (guide == null) {
                 item {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 24.dp),
+                            .padding(top = LifeTogetherTokens.spacing.large),
                         contentAlignment = Alignment.Center,
                     ) {
                         CircularProgressIndicator()
@@ -112,7 +112,7 @@ fun GuideDetailsScreen(
                                     color = MaterialTheme.colorScheme.surfaceVariant,
                                     shape = MaterialTheme.shapes.medium,
                                 )
-                                .padding(14.dp),
+                                .padding(LifeTogetherTokens.spacing.medium),
                         ) {
                             TextDefault(
                                 text = "No sections yet",

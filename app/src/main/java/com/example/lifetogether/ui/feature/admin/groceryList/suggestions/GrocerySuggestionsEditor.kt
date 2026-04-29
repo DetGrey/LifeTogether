@@ -44,7 +44,7 @@ fun GrocerySuggestionsEditor(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(LifeTogetherTokens.spacing.medium),
     ) {
         grouped.forEach { (categoryName, items) ->
             val isExpanded = expandedCategories.contains(categoryName)
@@ -89,7 +89,7 @@ fun CategoryHeader(
             .fillMaxWidth()
             .height(40.dp)
             .clickable { onToggle() }
-            .padding(vertical = 8.dp),
+            .padding(vertical = LifeTogetherTokens.spacing.small),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -110,7 +110,7 @@ fun CategoryHeader(
             )
         }
         HorizontalDivider(
-            modifier = Modifier.padding(top = 8.dp),
+            modifier = Modifier.padding(top = LifeTogetherTokens.spacing.small),
             thickness = 2.dp,
             color = MaterialTheme.colorScheme.primary,
         )
@@ -127,7 +127,11 @@ fun GrocerySuggestionRow(
         modifier = Modifier
             .fillMaxWidth()
             .height(40.dp)
-            .padding(start = 16.dp, top = 2.dp, bottom = 2.dp),
+            .padding(
+                start = LifeTogetherTokens.spacing.medium,
+                top = LifeTogetherTokens.spacing.xSmall,
+                bottom = LifeTogetherTokens.spacing.xSmall,
+            ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         TextDefault(

@@ -45,6 +45,7 @@ import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -103,11 +104,11 @@ fun ListEntryDetailsScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(top = padding.calculateTopPadding())
-                        .padding(10.dp),
+                        .padding(LifeTogetherTokens.spacing.small),
                 ) {
                     LazyColumn(
                         modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
                     ) {
                         item {
                             val displayBitmap = if (isExistingEntry) bitmap else formState.pendingImageBitmap
@@ -145,12 +146,12 @@ fun ListEntryDetailsScreen(
                                     Box(
                                         modifier = Modifier
                                             .align(Alignment.BottomEnd)
-                                            .padding(8.dp)
+                                            .padding(LifeTogetherTokens.spacing.small)
                                             .background(
                                                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
                                                 shape = MaterialTheme.shapes.small,
                                             )
-                                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                                            .padding(horizontal = LifeTogetherTokens.spacing.small, vertical = LifeTogetherTokens.spacing.xSmall),
                                     ) {
                                         Text(
                                             text = if (displayBitmap != null) "Change image" else "Add image",
@@ -175,7 +176,7 @@ fun ListEntryDetailsScreen(
                         }
 
                         item {
-                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
                                 TextSubHeadingMedium("Recurrence")
                                 TagOptionRow(
                                     options = RecurrenceUnit.entries.map { it.name.lowercase() },
@@ -207,8 +208,8 @@ fun ListEntryDetailsScreen(
                                 TextSubHeadingMedium("Weekdays")
 
                                 FlowRow(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),
                                 ) {
                                     ListEntryDetailsViewModel.WEEKDAYS.forEachIndexed { index, day ->
                                         val dayNum = index + 1

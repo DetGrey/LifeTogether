@@ -27,6 +27,7 @@ import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerCalendarDay
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerCalendarState
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun TipsCalendar(
@@ -38,8 +39,8 @@ fun TipsCalendar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(25.dp),
+            .padding(vertical = LifeTogetherTokens.spacing.medium),
+        horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.large),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         TextDefault(
@@ -78,7 +79,7 @@ fun TipsCalendar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 5.dp),
+            .padding(vertical = LifeTogetherTokens.spacing.xSmall),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
@@ -100,9 +101,9 @@ fun TipsCalendar(
         modifier = Modifier
             .fillMaxWidth()
             .height(calendar.gridHeight)
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+            .padding(LifeTogetherTokens.spacing.medium),
+        horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
     ) {
         items(items = calendar.days, key = { it.label }) { day ->
             DayCell(day = day)
@@ -124,7 +125,7 @@ private fun DayCell(day: TipTrackerCalendarDay) {
                 text = day.label,
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .padding(top = 2.dp, start = 4.dp),
+                    .padding(top = LifeTogetherTokens.spacing.xSmall, start = LifeTogetherTokens.spacing.xSmall),
                 fontSize = 9.sp,
                 color = MaterialTheme.colorScheme.onBackground
             )
@@ -135,7 +136,7 @@ private fun DayCell(day: TipTrackerCalendarDay) {
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
-                        .padding(top = 4.dp)
+                        .padding(top = LifeTogetherTokens.spacing.xSmall)
                         .align(Alignment.Center),
                 )
             }

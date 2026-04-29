@@ -26,6 +26,7 @@ import com.example.lifetogether.ui.common.add.EditListItem
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.util.UNCATEGORIZED_CATEGORY
 
@@ -52,8 +53,8 @@ fun AdminGrocerySuggestionsScreen(
         Column(
             modifier = Modifier
                 .padding(padding)
-                .padding(10.dp)
-                .padding(bottom = 60.dp),
+                    .padding(LifeTogetherTokens.spacing.small)
+                    .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             SyncUpdatingText(
@@ -63,7 +64,7 @@ fun AdminGrocerySuggestionsScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                modifier = Modifier.padding(horizontal = 5.dp),
+                modifier = Modifier.padding(horizontal = LifeTogetherTokens.spacing.xSmall),
                 text = "Add a new suggestion by choosing the category (emoji) and writing the suggestion name.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onBackground,
@@ -93,7 +94,7 @@ fun AdminGrocerySuggestionsScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(10.dp),
+                .padding(LifeTogetherTokens.spacing.small),
             contentAlignment = Alignment.BottomCenter,
         ) {
             if (uiState.editingSuggestionId != null) {

@@ -36,7 +36,7 @@ fun TagOptionRow(
                 horizontalArrangement = Arrangement.Center,
             ) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                 ) {
                     for (tag in options) {
                         TagOption(
@@ -51,7 +51,7 @@ fun TagOptionRow(
             LazyRow {
                 item {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                     ) {
                         for (tag in options) {
                             TagOption(

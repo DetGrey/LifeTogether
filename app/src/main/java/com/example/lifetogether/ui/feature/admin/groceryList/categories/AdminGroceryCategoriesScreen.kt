@@ -74,7 +74,7 @@ fun AdminGroceryCategoriesScreen(
                 Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
 
                 Text(
-                    modifier = Modifier.padding(horizontal = 5.dp),
+                    modifier = Modifier.padding(horizontal = LifeTogetherTokens.spacing.xSmall),
                     text = "Add new category as a string with an emoji and a name with whitespace between e.g. \"\uD83C\uDF5E Bakery\"",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onBackground,

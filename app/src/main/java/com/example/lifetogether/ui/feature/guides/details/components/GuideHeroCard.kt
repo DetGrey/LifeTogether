@@ -10,11 +10,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun GuideHeroCard(guide: Guide) {
@@ -23,9 +23,9 @@ fun GuideHeroCard(guide: Guide) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(LifeTogetherTokens.spacing.medium),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
             TextSubHeadingMedium(guide.itemName)
 
             if (guide.description.isNotBlank()) {

@@ -48,7 +48,7 @@ fun TipsList(
                 .height(50.dp)
                 .padding(horizontal = LifeTogetherTokens.spacing.medium),
             horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
         ) {
             items(tipsForDate) { tipItem ->
                 Box(
@@ -64,7 +64,7 @@ fun TipsList(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(8.dp),
+                            .padding(LifeTogetherTokens.spacing.small),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Row(

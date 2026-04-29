@@ -12,7 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun CommentBubble(
@@ -25,11 +25,11 @@ fun CommentBubble(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = ((indentLevel * 18) + 40).dp)
+            .padding(start = (LifeTogetherTokens.spacing.large * indentLevel) + LifeTogetherTokens.spacing.xxLarge)
             .background(surfaceColor, MaterialTheme.shapes.small)
-            .padding(10.dp),
+            .padding(LifeTogetherTokens.spacing.small),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,

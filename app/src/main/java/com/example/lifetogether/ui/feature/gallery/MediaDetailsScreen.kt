@@ -43,6 +43,7 @@ import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.model.MenuAction
 import com.example.lifetogether.domain.sync.SyncKey
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun MediaDetailsScreen(
@@ -104,7 +105,7 @@ fun MediaDetailsScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(10.dp),
+                    .padding(LifeTogetherTokens.spacing.small),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 SyncUpdatingText(
@@ -204,7 +205,7 @@ private fun MediaDetailsPanelContent(media: GalleryMedia) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(24.dp),
+            .padding(LifeTogetherTokens.spacing.large),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         TextDefault(

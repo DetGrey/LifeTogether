@@ -115,7 +115,7 @@ fun ActionSheet(
                     HorizontalDivider(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 4.dp)
+                            .padding(vertical = LifeTogetherTokens.spacing.xSmall)
                             .height(1.dp),
                     )
                 }

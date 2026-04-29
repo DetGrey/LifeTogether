@@ -10,10 +10,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.model.guides.GuideStep
 import com.example.lifetogether.domain.model.guides.GuideStepType
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun GuideSubStepList(
@@ -23,8 +23,8 @@ fun GuideSubStepList(
 ) {
     var numberedIndex = 1
     Column(
-        modifier = Modifier.padding(start = (indentLevel * 14).dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        modifier = Modifier.padding(start = LifeTogetherTokens.spacing.medium * indentLevel),
+        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)
     ) {
         steps.forEach { step ->
             when (step.type) {
@@ -55,7 +55,7 @@ fun GuideSubStepList(
                 GuideStepType.SUBSECTION -> {
                     Text(
                         text = guideStepSubsectionLabel(step),
-                        modifier = Modifier.padding(start = (indentLevel * 14).dp),
+                        modifier = Modifier.padding(start = LifeTogetherTokens.spacing.medium * indentLevel),
                         color = textColor,
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold,
@@ -69,7 +69,7 @@ fun GuideSubStepList(
                     } else if (step.content.isNotBlank()) {
                         Text(
                             text = step.content,
-                            modifier = Modifier.padding(start = ((indentLevel + 1) * 14).dp),
+                            modifier = Modifier.padding(start = LifeTogetherTokens.spacing.medium * (indentLevel + 1)),
                             color = textColor,
                             style = MaterialTheme.typography.bodySmall,
                         )

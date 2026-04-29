@@ -27,7 +27,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -42,6 +41,7 @@ import com.example.lifetogether.ui.navigation.NavHost
 import com.example.lifetogether.ui.navigation.routeFromDestinationString
 import com.example.lifetogether.ui.theme.AppTypography
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.ui.viewmodel.RootCoordinatorViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
@@ -127,7 +127,7 @@ class MainActivity : ComponentActivity() {
                                     Box(
                                         modifier = Modifier
                                             .fillMaxSize()
-                                            .padding(16.dp),
+                                            .padding(LifeTogetherTokens.spacing.medium),
                                         contentAlignment = Alignment.TopCenter,
                                     ) {
                                         SnackbarHost(
@@ -151,7 +151,7 @@ class MainActivity : ComponentActivity() {
                                         Box(
                                             modifier = Modifier
                                                 .fillMaxSize()
-                                                .padding(16.dp),
+                                                .padding(LifeTogetherTokens.spacing.medium),
                                             contentAlignment = Alignment.TopCenter,
                                         ) {
                                             AppSnackbar(
