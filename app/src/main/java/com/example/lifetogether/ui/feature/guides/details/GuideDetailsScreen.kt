@@ -22,7 +22,8 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon as AppIcon
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.guides.Guide
-import com.example.lifetogether.ui.common.OverflowMenu
+import com.example.lifetogether.ui.common.ActionSheet
+import com.example.lifetogether.ui.common.ActionSheetItem
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.button.PrimaryButton
@@ -169,21 +170,32 @@ fun GuideDetailsScreen(
             "Share with family"
         }
 
-        OverflowMenu(
+        ActionSheet(
             onDismiss = { showOverflowMenu = false },
             actionsList = listOf(
-                mapOf("Reset all progress" to {
-                    showOverflowMenu = false
-                    showResetProgressDialog = true
-                }),
-                mapOf(visibilityActionLabel to {
-                    showOverflowMenu = false
-                    onUiEvent(GuideDetailsUiEvent.ToggleVisibilityClicked)
-                }),
-                mapOf("Delete guide" to {
-                    showOverflowMenu = false
-                    showDeleteDialog = true
-                }),
+                ActionSheetItem(
+                    label = "Reset all progress",
+                    onClick = {
+                        showOverflowMenu = false
+                        showResetProgressDialog = true
+                    },
+                    isDestructive = true,
+                ),
+                ActionSheetItem(
+                    label = visibilityActionLabel,
+                    onClick = {
+                        showOverflowMenu = false
+                        onUiEvent(GuideDetailsUiEvent.ToggleVisibilityClicked)
+                    },
+                ),
+                ActionSheetItem(
+                    label = "Delete guide",
+                    onClick = {
+                        showOverflowMenu = false
+                        showDeleteDialog = true
+                    },
+                    isDestructive = true,
+                ),
             ),
         )
     }

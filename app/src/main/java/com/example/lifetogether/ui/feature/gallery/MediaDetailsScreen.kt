@@ -34,7 +34,8 @@ import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
-import com.example.lifetogether.ui.common.OverflowMenu
+import com.example.lifetogether.ui.common.ActionSheet
+import com.example.lifetogether.ui.common.ActionSheetItem
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.image.DisplayImageFromUri
@@ -172,10 +173,14 @@ fun MediaDetailsScreen(
     }
 
     if (uiState.showOverflowMenu) {
-        OverflowMenu(
+        ActionSheet(
             onDismiss = { onUiEvent(MediaDetailsUiEvent.ToggleOverflowMenu) },
             actionsList = MenuAction.MediaDetailsActions.entries.map {
-                mapOf(it.label to { onUiEvent(MediaDetailsUiEvent.StartOverflowAction(it)) })
+                ActionSheetItem(
+                    label = it.label,
+                    onClick = { onUiEvent(MediaDetailsUiEvent.StartOverflowAction(it)) },
+                    isDestructive = it == MenuAction.MediaDetailsActions.DELETE,
+                )
             },
         )
     }

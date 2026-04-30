@@ -116,6 +116,35 @@ Phase 8 excludes non-visual plumbing such as `ViewModel`s, routes, DI helpers, e
 - Before replacing any component, check whether desired visual result can be achieved through shared theme tokens alone.
 - Component policy order: (1) native M3 + theme tokens → (2) one canonical shared wrapper if truly needed → (3) feature-specific custom only if the first two are not enough.
 
+## Grill Outcomes
+
+The following component decisions have been explicitly agreed and should be treated as settled unless a later implementation issue forces a re-open:
+
+- `ListItem` stays as the canonical shared row wrapper.
+- `CompletableBox` stays as the canonical completion toggle wrapper.
+- `TagOption` and `TagOptionRow` stay as the canonical shared chip-row wrapper.
+- `FeatureOverview` becomes a native `Card` tile.
+- `RecipeOverview` becomes a native `Card` tile.
+- `AlbumContainer` becomes a native `Card` tile.
+- `GrocerySuggestionPopup` becomes a native `Card`-based suggestion surface.
+- `AddNewListItem` and `EditListItem` use a native `Card` shell and keep the inline text + `>` action, not a filled button.
+- `AddNewString` uses the same native `Card` shell and keeps the inline text + `>` action.
+- `AddNewTipItem` uses the same native `Card` family while keeping its one-row layout, date trigger, and inline text + `>` action.
+- `AddNewIngredient` uses the same native `Card` family and keeps its current layout logic.
+- `ItemCategoryList` and `CompletableCategoryList` stay as shared category wrappers around `ListItem`.
+- `GuideStepRowText`, `GuideStepCardBody`, and `GuideStepRows` stay as feature-local text/layout helpers.
+- `CommentBubble` stays as a feature-local compact surface built on native primitives.
+- `StatsCard`, `TipsList`, `TipsCalendar`, `ListEditorContainer`, and `GrocerySuggestionsEditor` stay feature-local and are rebuilt on native primitives.
+- `ProfileDetails` becomes a native `Card` row.
+- `SettingsItem` becomes a native `Card` row.
+- `OverflowMenu` remains in the codebase for now, but the app should use `ActionSheet` for new action-surface usage.
+- `GuideDetailsScreen`, `AlbumDetailsScreen`, and `MediaDetailsScreen` now use `ActionSheet` for their action surfaces while keeping `OverflowMenu` only as the legacy shell.
+- `AddNewIngredient`, `RecipeOverview`, `AlbumContainer`, and the other tile-like surfaces should not change their general layout, only their native shell.
+- The add/edit rows keep their current visual language, including the shared colors, spacing, and the inline text + `>` affordance.
+- The tip entry row keeps its current visual language, including the date trigger and one-row structure.
+- `ThumbnailContainer` stays custom because it is a layered media helper, not a simple card tile.
+- `GrocerySuggestionPopup` becomes a native `Card`-based suggestion surface.
+
 ## Subphases
 
 - [x] 8.1 Rebuild the shared input family on native M3 controls with centralized defaults: `CustomTextField`, `DatePickerTextField`, `EditableTextField`, `Dropdown`, and the canonical add FAB wrapper
@@ -132,8 +161,8 @@ Phase 8 excludes non-visual plumbing such as `ViewModel`s, routes, DI helpers, e
 
 ### Acceptance criteria
 
-- [ ] Every non-loading screen uses `Scaffold` with `AppTopBar` in `topBar`.
-- [ ] `HomeScreen` renders `subText` in content instead of the shared top-bar contract.
+- [x] Every non-loading screen uses `Scaffold` with `AppTopBar` in `topBar`.
+- [x] `HomeScreen` renders `subText` in content instead of the shared top-bar contract.
 - [x] Shared input controls use native M3 primitives plus centralized styling, without repeating color or shape overrides at every call site.
 - [x] Shared alert presentation uses one snackbar/banner family for both error and normal alerts, with the existing top-center host behavior.
 - [x] Shared confirmation and upload surfaces are rebuilt from native dialog primitives and the shared input/select wrappers.

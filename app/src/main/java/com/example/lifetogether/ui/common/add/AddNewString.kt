@@ -1,17 +1,15 @@
 package com.example.lifetogether.ui.common.add
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,7 +19,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -32,40 +29,37 @@ import com.example.lifetogether.ui.theme.LifeTogetherTokens
 fun AddNewString(
     label: String? = null,
     onAddClick: (String) -> Unit,
-) {
+    ) {
     var textValue by rememberSaveable { mutableStateOf("") }
 
-    Box(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(60.dp)
-            .clip(shape = MaterialTheme.shapes.large)
-            .background(color = MaterialTheme.colorScheme.onBackground),
-        contentAlignment = Alignment.CenterStart,
+            .height(60.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.onBackground),
+        shape = MaterialTheme.shapes.large,
     ) {
         Row(
             modifier = Modifier
-                .fillMaxSize(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+                .fillMaxWidth()
+                .padding(horizontal = LifeTogetherTokens.spacing.small),
+            horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
+            CustomTextField(
                 modifier = Modifier
-                    .fillMaxWidth(0.8f),
-            ) {
-                CustomTextField(
-                    value = textValue,
-                    onValueChange = { textValue = it },
-                    label = label,
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Done,
-                    capitalization = true,
-                )
-            }
+                    .weight(1f),
+                value = textValue,
+                onValueChange = { textValue = it },
+                label = label,
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Done,
+                capitalization = true,
+            )
 
             Row(
                 modifier = Modifier
                     .padding(LifeTogetherTokens.spacing.small)
-                    .fillMaxHeight()
                     .clickable {
                         onAddClick(textValue)
                         textValue = ""

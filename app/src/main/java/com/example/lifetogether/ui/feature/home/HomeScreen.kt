@@ -175,7 +175,7 @@ fun HomeScreen(
                             ) {
                                 section.items.forEach { item ->
                                     when (item) {
-                                        is HomeSectionItem.Tile -> FeatureOverview(
+                                        is HomeSectionItem.Tile -> FeatureCard(
                                             title = item.tile.title,
                                             onClick = {
                                                 onNavigationEvent(HomeNavigationEvent.TileClicked(item.tile))

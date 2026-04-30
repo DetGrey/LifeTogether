@@ -70,7 +70,7 @@ fun GalleryScreen(
                             verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                         ) {
                             for (album in uiState.albums) {
-                                AlbumContainer(
+                                AlbumCard(
                                     album.name,
                                     album.mediaCount,
                                     album.thumbnail?.toBitmap(),

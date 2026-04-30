@@ -31,7 +31,8 @@ import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
-import com.example.lifetogether.ui.common.OverflowMenu
+import com.example.lifetogether.ui.common.ActionSheet
+import com.example.lifetogether.ui.common.ActionSheetItem
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
@@ -205,10 +206,19 @@ fun AlbumDetailsScreen(
             false -> MenuAction.AlbumActions.entries
         }
 
-        OverflowMenu(
+        ActionSheet(
             onDismiss = { onUiEvent(AlbumDetailsUiEvent.ToggleOverflowMenu) },
             actionsList = actions.map {
-                mapOf(it.label to { onUiEvent(AlbumDetailsUiEvent.StartOverflowAction(it)) })
+                ActionSheetItem(
+                    label = it.label,
+                    onClick = { onUiEvent(AlbumDetailsUiEvent.StartOverflowAction(it)) },
+                    isDestructive = when (it) {
+                        MenuAction.AlbumActions.DELETE,
+                        MenuAction.SelectionActions.DELETE -> true
+
+                        else -> false
+                    },
+                )
             },
         )
     }
@@ -290,7 +300,7 @@ fun AlbumDetailsScreen(
                                     verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                                 ) {
                                     for (album in uiState.albums) {
-                                        AlbumContainer(
+                                        AlbumCard(
                                             album.name,
                                             album.mediaCount,
                                             album.thumbnail?.toBitmap(),

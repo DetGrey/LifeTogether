@@ -2,50 +2,47 @@ package com.example.lifetogether.ui.feature.gallery
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.ui.common.text.TextBodyLarge
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
-fun AlbumContainer(
+fun AlbumCard(
     albumName: String,
     count: Int = 0,
     bitmap: Bitmap? = null,
     onClick: () -> Unit = {},
 ) {
-    Column(
+    Card(
         modifier = Modifier
             .fillMaxWidth(0.5f)
             .padding(LifeTogetherTokens.spacing.small)
             .clickable { onClick() },
-        horizontalAlignment = Alignment.Start,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.onBackground),
+        shape = MaterialTheme.shapes.large,
     ) {
         Box(
             modifier = Modifier
-                .aspectRatio(1f) // Maintain aspect ratio
-                .clip(shape = MaterialTheme.shapes.large)
-                .background(MaterialTheme.colorScheme.onBackground),
+                .aspectRatio(1f),
             contentAlignment = Alignment.Center,
         ) {
             if (bitmap != null) {
@@ -62,7 +59,7 @@ fun AlbumContainer(
                 )
             }
         }
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
         TextBodyLarge(
             text = albumName,
             modifier = Modifier

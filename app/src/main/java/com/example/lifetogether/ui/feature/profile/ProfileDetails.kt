@@ -5,19 +5,19 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -38,12 +38,10 @@ fun ProfileDetails(
     val clickable = enabled && onClick != null
     val contentColor = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant
 
-    Box(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
             .height(50.dp)
-            .clip(shape = MaterialTheme.shapes.large)
-            .background(color = MaterialTheme.colorScheme.surfaceVariant)
             .then(
                 if (clickable) {
                     Modifier.clickable { onClick() }
@@ -51,8 +49,12 @@ fun ProfileDetails(
                     Modifier
                 },
             ),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        shape = MaterialTheme.shapes.large,
     ) {
-        Row {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+        ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(0.12f)
@@ -69,7 +71,6 @@ fun ProfileDetails(
             Box(
                 modifier = Modifier
                     .fillMaxWidth(0.4f)
-                    .fillMaxHeight()
                     .padding(start = LifeTogetherTokens.spacing.large),
                 contentAlignment = Alignment.CenterStart,
             ) {
@@ -81,7 +82,7 @@ fun ProfileDetails(
             }
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .weight(1f)
                     .padding(end = LifeTogetherTokens.spacing.large),
                 contentAlignment = Alignment.CenterEnd,
             ) {

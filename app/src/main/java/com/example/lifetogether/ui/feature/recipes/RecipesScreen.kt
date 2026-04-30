@@ -74,7 +74,7 @@ fun RecipesScreen(
                     verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                 ) {
                     for (recipe in uiState.recipes) {
-                        RecipeOverview(
+                        RecipeCard(
                             recipe = recipe,
                             onClick = {
                                 recipe.id?.let { recipeId ->
