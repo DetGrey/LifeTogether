@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.FlowRowScope
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -42,6 +43,7 @@ fun FlowRowScope.FeatureCard(
     ) {
         Column(
             modifier = Modifier
+                .fillMaxSize()
                 .padding(LifeTogetherTokens.spacing.small),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
@@ -50,7 +52,7 @@ fun FlowRowScope.FeatureCard(
                 painter = painterResource(id = icon.resId),
                 contentDescription = icon.description,
                 modifier = Modifier.height(50.dp),
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                tint = MaterialTheme.colorScheme.tertiary,
             )
 
 //        TextHeadingMedium(text = title)
