@@ -2,7 +2,6 @@ package com.example.lifetogether.ui.feature.gallery
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -16,27 +15,31 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
-import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
+import android.net.Uri
 import com.example.lifetogether.R
+import com.example.lifetogether.domain.model.gallery.Album
+import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
-import com.example.lifetogether.domain.model.sealed.ImageType
-import com.example.lifetogether.ui.common.OverflowMenu
+import com.example.lifetogether.domain.result.AppError
+import com.example.lifetogether.domain.result.Result
+import com.example.lifetogether.ui.common.ActionSheet
+import com.example.lifetogether.ui.common.ActionSheetItem
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
-import com.example.lifetogether.ui.common.dialog.CustomAlertDialog
-import com.example.lifetogether.ui.common.dialog.CustomConfirmationDialog
 import com.example.lifetogether.ui.common.image.MediaUploadMultipleDialog
 import com.example.lifetogether.ui.common.list.CompletableBox
 import com.example.lifetogether.ui.common.text.TextDefault
@@ -44,33 +47,21 @@ import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.model.MenuAction
 import com.example.lifetogether.domain.sync.SyncKey
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun AlbumDetailsScreen(
     uiState: AlbumDetailsUiState,
-    showImageUploadDialog: Boolean,
+    onImageUpload: suspend (List<Uri>) -> Result<Unit, AppError>,
     onUiEvent: (AlbumDetailsUiEvent) -> Unit,
     onNavigationEvent: (AlbumDetailsNavigationEvent) -> Unit,
 ) {
     val pullToRefreshState = rememberPullToRefreshState()
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .pullToRefresh(
-                state = pullToRefreshState,
-                isRefreshing = uiState.isRefreshing,
-                onRefresh = { onUiEvent(AlbumDetailsUiEvent.RetryFetchAlbumMedia) },
-            ),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
+    Scaffold(
+        topBar = {
             TopBar(
                 leftIcon = Icon(
                     resId = R.drawable.ic_back_arrow,
@@ -84,121 +75,134 @@ fun AlbumDetailsScreen(
                 ),
                 onRightClick = { onUiEvent(AlbumDetailsUiEvent.ToggleOverflowMenu) },
             )
-
-            SyncUpdatingText(
-                keys = setOf(SyncKey.GALLERY_ALBUMS, SyncKey.GALLERY_MEDIA),
-            )
-            when (uiState.isSelectionModeActive) {
-                true -> {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(20.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
+        },
+        floatingActionButton = {
+            AddButton(onClick = { onUiEvent(AlbumDetailsUiEvent.RequestImageUpload) })
+        },
+    ) { padding ->
+        PullToRefreshBox(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            state = pullToRefreshState,
+            isRefreshing = uiState.isRefreshing,
+            onRefresh = { onUiEvent(AlbumDetailsUiEvent.RetryFetchAlbumMedia) },
+            indicator = {
+                PullToRefreshDefaults.Indicator(
+                    state = pullToRefreshState,
+                    isRefreshing = uiState.isRefreshing,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                )
+            },
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(LifeTogetherTokens.spacing.small),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+            ) {
+                SyncUpdatingText(
+                    keys = setOf(SyncKey.GALLERY_ALBUMS, SyncKey.GALLERY_MEDIA),
+                )
+                when (uiState.isSelectionModeActive) {
+                    true -> {
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(20.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            CompletableBox(
-                                isCompleted = uiState.isAllMediaSelected,
-                                onCompleteToggle = {
-                                    onUiEvent(AlbumDetailsUiEvent.ToggleAllMediaSelection)
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                CompletableBox(
+                                    isCompleted = uiState.isAllMediaSelected,
+                                    onCompleteToggle = {
+                                        onUiEvent(AlbumDetailsUiEvent.ToggleAllMediaSelection)
+                                    },
+                                )
+                                TextDefault(text = "All")
+                            }
+                            val selectedMediaCount = uiState.selectedMedia.size
+                            TextDefault(text = "$selectedMediaCount selected")
+                            TextDefault(
+                                text = "Cancel",
+                                modifier = Modifier.clickable {
+                                    onUiEvent(AlbumDetailsUiEvent.ToggleSelectionMode)
                                 },
                             )
-                            TextDefault(text = "All")
                         }
-                        val selectedMediaCount = uiState.selectedMedia.size
-                        TextDefault(text = "$selectedMediaCount selected")
+                    }
+
+                    false -> Spacer(modifier = Modifier.height(20.dp))
+                }
+
+                if (uiState.media.isEmpty()) {
+                    if (uiState.isSyncing) {
+                        TextDefault(text = "Syncing media…")
+                    } else {
+                        TextDefault(text = "No images in this album. Press + to create one.")
+                    }
+                } else {
+                    if (uiState.isPartialLoad) {
                         TextDefault(
-                            text = "Cancel",
-                            modifier = Modifier.clickable {
-                                onUiEvent(AlbumDetailsUiEvent.ToggleSelectionMode)
-                            },
+                            text = "⚠ Only ${uiState.media.size} of ${uiState.album?.count} items loaded. Pull to refresh to retry.",
+                            modifier = Modifier.padding(vertical = LifeTogetherTokens.spacing.small),
                         )
                     }
-                }
+                    LazyVerticalGrid(
+                        modifier = Modifier
+                            .padding(LifeTogetherTokens.spacing.small)
+                            .fillMaxWidth(),
+                        columns = GridCells.Fixed(2),
+                        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                        horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                    ) {
+                        uiState.groupedMedia.forEach { (dateKey, itemsInDay) ->
+                            item(span = { GridItemSpan(maxLineSpan) }) {
+                                TextSubHeadingMedium(dateKey)
+                            }
 
-                false -> Spacer(modifier = Modifier.height(20.dp))
-            }
+                            items(itemsInDay) { media ->
+                                val thumbnail = uiState.thumbnails[media.id]
+                                val isVideo = media is GalleryVideo
+                                val duration = (media as? GalleryVideo)?.duration
+                                val globalIndex = uiState.media.indexOf(media)
 
-            if (uiState.media.isEmpty()) {
-                if (uiState.isSyncing) {
-                    TextDefault(text = "Syncing media…")
-                } else {
-                    TextDefault(text = "No images in this album. Press + to create one.")
-                }
-            } else {
-                if (uiState.isPartialLoad) {
-                    TextDefault(
-                        text = "⚠ Only ${uiState.media.size} of ${uiState.album?.count} items loaded. Pull to refresh to retry.",
-                        modifier = Modifier.padding(vertical = 10.dp),
-                    )
-                }
-                LazyVerticalGrid(
-                    modifier = Modifier
-                        .padding(10.dp)
-                        .fillMaxWidth(),
-                    columns = GridCells.Fixed(2),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    uiState.groupedMedia.forEach { (dateKey, itemsInDay) ->
-                        item(span = { GridItemSpan(maxLineSpan) }) {
-                            TextSubHeadingMedium(dateKey)
-                        }
-
-                        items(itemsInDay) { media ->
-                            val thumbnail = uiState.thumbnails[media.id]
-                            val isVideo = media is GalleryVideo
-                            val duration = (media as? GalleryVideo)?.duration
-                            val globalIndex = uiState.media.indexOf(media)
-
-                            ThumbnailContainer(
-                                thumbnail = thumbnail,
-                                isVideo = isVideo,
-                                duration = duration,
-                                onClick = {
-                                    if (uiState.isSelectionModeActive) {
+                                ThumbnailContainer(
+                                    thumbnail = thumbnail,
+                                    isVideo = isVideo,
+                                    duration = duration,
+                                    onClick = {
+                                        if (uiState.isSelectionModeActive) {
+                                            onUiEvent(AlbumDetailsUiEvent.ToggleMediaSelection(media.id))
+                                        } else {
+                                            onNavigationEvent(
+                                                AlbumDetailsNavigationEvent.NavigateToMediaDetails(globalIndex),
+                                            )
+                                        }
+                                    },
+                                    onLongClick = {
+                                        if (!uiState.isSelectionModeActive) {
+                                            onUiEvent(AlbumDetailsUiEvent.EnterSelectionMode(media.id))
+                                        }
+                                    },
+                                    isSelectionMode = uiState.isSelectionModeActive,
+                                    isSelected = uiState.selectedMedia.contains(media.id),
+                                    onSelectionToggle = {
                                         onUiEvent(AlbumDetailsUiEvent.ToggleMediaSelection(media.id))
-                                    } else {
-                                        onNavigationEvent(
-                                            AlbumDetailsNavigationEvent.NavigateToMediaDetails(globalIndex),
-                                        )
-                                    }
-                                },
-                                onLongClick = {
-                                    if (!uiState.isSelectionModeActive) {
-                                        onUiEvent(AlbumDetailsUiEvent.EnterSelectionMode(media.id))
-                                    }
-                                },
-                                isSelectionMode = uiState.isSelectionModeActive,
-                                isSelected = uiState.selectedMedia.contains(media.id),
-                                onSelectionToggle = {
-                                    onUiEvent(AlbumDetailsUiEvent.ToggleMediaSelection(media.id))
-                                },
-                            )
-                        }
-                    }
+                                    },
+                                )
+        }
+    }
+}
+
                 }
             }
         }
-
-        PullToRefreshDefaults.Indicator(
-            state = pullToRefreshState,
-            isRefreshing = uiState.isRefreshing,
-            modifier = Modifier.align(Alignment.TopCenter),
-        )
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(bottom = 30.dp, end = 30.dp),
-        contentAlignment = Alignment.BottomEnd,
-    ) {
-        AddButton(onClick = { onUiEvent(AlbumDetailsUiEvent.RequestImageUpload) })
     }
 
     if (uiState.showOverflowMenu) {
@@ -207,27 +211,34 @@ fun AlbumDetailsScreen(
             false -> MenuAction.AlbumActions.entries
         }
 
-        OverflowMenu(
+        ActionSheet(
             onDismiss = { onUiEvent(AlbumDetailsUiEvent.ToggleOverflowMenu) },
             actionsList = actions.map {
-                mapOf(it.label to { onUiEvent(AlbumDetailsUiEvent.StartOverflowAction(it)) })
+                ActionSheetItem(
+                    label = it.label,
+                    onClick = { onUiEvent(AlbumDetailsUiEvent.StartOverflowAction(it)) },
+                    isDestructive = when (it) {
+                        MenuAction.AlbumActions.DELETE,
+                        MenuAction.SelectionActions.DELETE -> true
+
+                        else -> false
+                    },
+                )
             },
         )
     }
 
-    if (showImageUploadDialog) {
-        uiState.familyId?.let { familyId ->
-            uiState.album?.id?.let { albumId ->
-                MediaUploadMultipleDialog(
-                    onDismiss = { onUiEvent(AlbumDetailsUiEvent.DismissImageUploadDialog) },
-                    onConfirm = { onUiEvent(AlbumDetailsUiEvent.ConfirmImageUploadDialog) },
-                    dialogTitle = "Upload images",
-                    dialogMessage = "Select the images to upload",
-                    imageType = ImageType.GalleryMedia(familyId, albumId, null),
-                    dismissButtonMessage = "Cancel",
-                    confirmButtonMessage = "Upload images",
-                )
-            }
+    if (uiState.showImageUploadDialog) {
+        if (uiState.familyId != null && uiState.album?.id != null) {
+            MediaUploadMultipleDialog(
+                onDismiss = { onUiEvent(AlbumDetailsUiEvent.DismissImageUploadDialog) },
+                onConfirm = { onUiEvent(AlbumDetailsUiEvent.ConfirmImageUploadDialog) },
+                onUpload = onImageUpload,
+                dialogTitle = "Upload images",
+                dialogMessage = "Select the images to upload",
+                dismissButtonMessage = "Cancel",
+                confirmButtonMessage = "Upload images",
+            )
         }
     }
 
@@ -280,7 +291,7 @@ fun AlbumDetailsScreen(
                     }
 
                     MenuAction.SelectionActions.MOVE -> {
-                        CustomConfirmationDialog(
+                        ConfirmationDialog(
                             onDismiss = { onUiEvent(AlbumDetailsUiEvent.DismissOverflowMenuActionDialog) },
                             onConfirm = { onUiEvent(AlbumDetailsUiEvent.ConfirmMoveSelectedMedia) },
                             dialogTitle = "Move to another album",
@@ -291,10 +302,10 @@ fun AlbumDetailsScreen(
                                 FlowRow(
                                     modifier = Modifier.fillMaxWidth(),
                                     maxItemsInEachRow = 2,
-                                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                                 ) {
                                     for (album in uiState.albums) {
-                                        AlbumContainer(
+                                        AlbumCard(
                                             album.name,
                                             album.mediaCount,
                                             album.thumbnail?.toBitmap(),
@@ -314,15 +325,37 @@ fun AlbumDetailsScreen(
         }
     }
 
-    uiState.downloadMessage?.let { message ->
-        CustomAlertDialog(
-            title = if (uiState.isDownloading) "Downloading..." else "Finished downloading",
-            details = message,
-            extraContent = {
-                if (uiState.isDownloading) {
-                    CircularProgressIndicator()
-                }
-            },
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AlbumDetailsScreenPreview() {
+    LifeTogetherTheme {
+        val sampleMedia = GalleryImage(
+            id = "media-1",
+            familyId = "family-1",
+            itemName = "Kitchen shelf",
+            lastUpdated = java.util.Date(1_717_200_000_000),
+            albumId = "album-1",
+            dateCreated = java.util.Date(1_717_200_000_000),
+        )
+
+        AlbumDetailsScreen(
+            uiState = AlbumDetailsUiState(
+                album = Album(
+                    id = "album-1",
+                    familyId = "family-1",
+                    itemName = "Weekend trip",
+                    lastUpdated = java.util.Date(1_717_200_000_000),
+                    count = 1,
+                ),
+                media = listOf(sampleMedia),
+                groupedMedia = listOf("Today" to listOf(sampleMedia)),
+                thumbnails = emptyMap(),
+            ),
+            onImageUpload = { Result.Success(Unit) },
+            onUiEvent = {},
+            onNavigationEvent = {},
         )
     }
 }

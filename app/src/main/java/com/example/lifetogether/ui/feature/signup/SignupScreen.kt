@@ -2,14 +2,12 @@ package com.example.lifetogether.ui.feature.signup
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,14 +15,16 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.ui.common.dialog.DatePickerDialog
 import com.example.lifetogether.ui.common.TopBar
-import com.example.lifetogether.ui.common.dialog.CustomDatePickerDialog
+import com.example.lifetogether.ui.common.button.PrimaryButton
+import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.common.textfield.DatePickerTextField
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun SignupScreen(
@@ -32,34 +32,35 @@ fun SignupScreen(
     onUiEvent: (SignupUiEvent) -> Unit,
     onNavigationEvent: (SignupNavigationEvent) -> Unit,
 ) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-    ) {
+    Scaffold(
+        topBar = {
+            TopBar(
+                leftIcon = Icon(
+                    resId = R.drawable.ic_back_arrow,
+                    description = "back arrow icon",
+                ),
+                onLeftClick = {
+                    onNavigationEvent(SignupNavigationEvent.NavigateBack)
+                },
+                text = "Sign up",
+            )
+        },
+    ) { padding ->
         LazyColumn(
-            modifier = Modifier.padding(10.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(LifeTogetherTokens.spacing.small),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(30.dp),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
         ) {
-            item {
-                TopBar(
-                    leftIcon = Icon(
-                        resId = R.drawable.ic_back_arrow,
-                        description = "back arrow icon",
-                    ),
-                    onLeftClick = {
-                        onNavigationEvent(SignupNavigationEvent.NavigateBack)
-                    },
-                    text = "Sign up",
-                )
-            }
-
             item {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth(0.8f)
-                        .padding(vertical = 30.dp),
+                        .padding(vertical = LifeTogetherTokens.spacing.xLarge),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
                 ) {
                     CustomTextField(
                         value = uiState.name,
@@ -98,17 +99,14 @@ fun SignupScreen(
                         imeAction = ImeAction.Done,
                     )
 
-                    Button(
-                        onClick = {
-                            onUiEvent(SignupUiEvent.SignUpClicked)
-                        },
-                    ) {
-                        Text(text = "Sign up")
-                    }
+                    PrimaryButton(
+                        text = "Sign up",
+                        onClick = { onUiEvent(SignupUiEvent.SignUpClicked) },
+                    )
 
-                    Text(
+                    TextDefault(
                         modifier = Modifier
-                            .padding(top = 10.dp)
+                            .padding(top = LifeTogetherTokens.spacing.small)
                             .fillMaxWidth()
                             .clickable { onNavigationEvent(SignupNavigationEvent.LoginClicked) },
                         text = "Do you already have an account?\nLogin here",
@@ -119,7 +117,7 @@ fun SignupScreen(
         }
 
         if (uiState.showBirthdayPicker) {
-            CustomDatePickerDialog(
+            DatePickerDialog(
                 selectedDate = uiState.birthday,
                 onDateSelected = { date ->
                     onUiEvent(SignupUiEvent.BirthdaySelected(date))

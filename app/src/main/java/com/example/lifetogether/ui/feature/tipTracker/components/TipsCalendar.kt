@@ -14,14 +14,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -29,6 +27,7 @@ import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerCalendarDay
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerCalendarState
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun TipsCalendar(
@@ -40,8 +39,8 @@ fun TipsCalendar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(25.dp),
+            .padding(vertical = LifeTogetherTokens.spacing.medium),
+        horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.large),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         TextDefault(
@@ -49,7 +48,7 @@ fun TipsCalendar(
             modifier = Modifier
                 .weight(1f)
                 .clickable { onPreviousMonthClick() },
-            color = MaterialTheme.colorScheme.secondary,
+            color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.End,
         )
         TextDefault(
@@ -57,7 +56,7 @@ fun TipsCalendar(
             modifier = Modifier
                 .weight(1f)
                 .clickable { onCurrentMonthClick() },
-            color = MaterialTheme.colorScheme.secondary,
+            color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
         )
         TextDefault(
@@ -65,7 +64,7 @@ fun TipsCalendar(
             modifier = Modifier
                 .weight(1f)
                 .clickable { onNextMonthClick() },
-            color = MaterialTheme.colorScheme.secondary,
+            color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Start,
         )
     }
@@ -80,7 +79,7 @@ fun TipsCalendar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 5.dp),
+            .padding(vertical = LifeTogetherTokens.spacing.xSmall),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
@@ -102,9 +101,9 @@ fun TipsCalendar(
         modifier = Modifier
             .fillMaxWidth()
             .height(calendar.gridHeight)
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+            .padding(LifeTogetherTokens.spacing.medium),
+        horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
     ) {
         items(items = calendar.days, key = { it.label }) { day ->
             DayCell(day = day)
@@ -114,30 +113,30 @@ fun TipsCalendar(
 
 @Composable
 private fun DayCell(day: TipTrackerCalendarDay) {
-    Box(
+    Surface(
         modifier = Modifier
             .aspectRatio(1f)
-            .clip(RoundedCornerShape(10.dp))
-            .border(2.dp, Color(0xFF007A7A), RoundedCornerShape(10.dp)),
-        contentAlignment = Alignment.Center,
+            .border(2.dp, MaterialTheme.colorScheme.onBackground, MaterialTheme.shapes.small),
+        color = MaterialTheme.colorScheme.background,
+        shape = MaterialTheme.shapes.small,
     ) {
         Box(modifier = Modifier.aspectRatio(1f)) {
             Text(
                 text = day.label,
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .padding(top = 2.dp, start = 4.dp),
+                    .padding(top = LifeTogetherTokens.spacing.xSmall, start = LifeTogetherTokens.spacing.xSmall),
                 fontSize = 9.sp,
+                color = MaterialTheme.colorScheme.onBackground
             )
 
             day.totalText?.let { totalText ->
                 Text(
                     text = totalText,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary,
-                    fontSize = 18.sp,
                     modifier = Modifier
-                        .padding(top = 4.dp)
+                        .padding(top = LifeTogetherTokens.spacing.xSmall)
                         .align(Alignment.Center),
                 )
             }

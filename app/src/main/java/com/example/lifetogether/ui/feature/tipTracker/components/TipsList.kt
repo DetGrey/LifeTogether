@@ -1,7 +1,5 @@
 package com.example.lifetogether.ui.feature.tipTracker.components
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,20 +14,20 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun TipsList(
@@ -37,34 +35,34 @@ fun TipsList(
     onDeleteClick: (TipItem) -> Unit,
 ) {
     groupedTips.forEach { (dateString, tipsForDate) ->
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.large))
 
         TextSubHeadingMedium(dateString, color = MaterialTheme.colorScheme.primary) // Show the date heading
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp)
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+                .padding(horizontal = LifeTogetherTokens.spacing.medium),
+            horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
         ) {
             items(tipsForDate) { tipItem ->
-                Box(
+                Surface(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(45.dp)
-                        .clip(RoundedCornerShape(20))
-                        .background(Color.White)
-                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                        .padding(horizontal = LifeTogetherTokens.spacing.small, vertical = LifeTogetherTokens.spacing.xSmall),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = MaterialTheme.shapes.large,
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(8.dp),
+                            .padding(LifeTogetherTokens.spacing.small),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Row(
@@ -76,7 +74,7 @@ fun TipsList(
                             Text(
                                 text = "${tipItem.amount} ${tipItem.currency}",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.secondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
@@ -94,9 +92,10 @@ fun TipsList(
                                     .clickable { onDeleteClick(tipItem) },
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.ic_trashcan_black),
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_trashcan),
                                     contentDescription = "Delete icon",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }
@@ -105,6 +104,6 @@ fun TipsList(
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
     }
 }

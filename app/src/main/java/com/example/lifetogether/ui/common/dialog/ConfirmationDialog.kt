@@ -1,12 +1,13 @@
 package com.example.lifetogether.ui.common.dialog
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
+import com.example.lifetogether.ui.common.button.PrimaryButton
+import com.example.lifetogether.ui.common.button.SecondaryButton
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun ConfirmationDialog(
@@ -16,38 +17,30 @@ fun ConfirmationDialog(
     dialogMessage: String,
     dismissButtonMessage: String,
     confirmButtonMessage: String,
+    content: @Composable () -> Unit = {},
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = dialogTitle) },
-        text = { Text(text = dialogMessage) },
-        dismissButton = {
-            Button(
-                onClick = onDismiss,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.onBackground,
-                    contentColor = Color.White,
-                ),
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium)
             ) {
-                Text(
-                    text = dismissButtonMessage,
-                    style = MaterialTheme.typography.labelMedium,
-                )
+                Text(text = dialogMessage)
+                content()
             }
         },
+        dismissButton = {
+            SecondaryButton(
+                text = dismissButtonMessage,
+                onClick = onDismiss,
+            )
+        },
         confirmButton = {
-            Button(
+            PrimaryButton(
+                text = confirmButtonMessage,
                 onClick = onConfirm,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = Color.White,
-                ),
-            ) {
-                Text(
-                    text = confirmButtonMessage,
-                    style = MaterialTheme.typography.labelMedium,
-                )
-            }
+            )
         },
     )
 }

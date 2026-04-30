@@ -1,8 +1,6 @@
 package com.example.lifetogether.ui.feature.recipes
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,41 +10,63 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.example.lifetogether.domain.model.enums.MeasureType
 import com.example.lifetogether.domain.model.recipe.Ingredient
-import com.example.lifetogether.ui.common.dropdown.DarkDropdown
+import com.example.lifetogether.ui.common.dropdown.Dropdown
 import com.example.lifetogether.ui.common.textfield.CustomTextField
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun AddNewIngredient(
     onAddClick: (Ingredient) -> Unit,
 ) {
-    val addNewIngredientViewModel: AddNewIngredientViewModel = hiltViewModel()
+    val measureTypeList = remember { MeasureType.entries }
+    var changeMeasureTypeExpanded by remember { mutableStateOf(false) }
+    var ingredient by remember { mutableStateOf(Ingredient()) }
+    var amount by remember { mutableStateOf("") }
 
-    Box(
+    fun updateIngredient(variable: String, value: String) {
+        when (variable) {
+            "amount" -> ingredient = ingredient.copy(amount = value.toDoubleOrNull() ?: 0.0)
+            "measureType" -> {
+                val selectedType = measureTypeList.find { it.unit == value }
+                if (selectedType != null) {
+                    ingredient = ingredient.copy(measureType = selectedType)
+                }
+            }
+            "itemName" -> ingredient = ingredient.copy(itemName = value)
+        }
+    }
+
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(130.dp)
-            .clip(shape = RoundedCornerShape(20))
-            .background(color = MaterialTheme.colorScheme.onBackground),
-        contentAlignment = Alignment.CenterStart,
+            .height(130.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+        ),
+        shape = MaterialTheme.shapes.medium,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 20.dp),
-
+                .padding(horizontal = LifeTogetherTokens.spacing.medium),
         ) {
             Row(
                 modifier = Modifier
@@ -57,8 +77,8 @@ fun AddNewIngredient(
                         .fillMaxWidth(0.8f),
                 ) {
                     CustomTextField(
-                        value = addNewIngredientViewModel.ingredient.itemName,
-                        onValueChange = { addNewIngredientViewModel.updateIngredient("itemName", it) },
+                        value = ingredient.itemName,
+                        onValueChange = { updateIngredient("itemName", it) },
                         label = "Ingredient name...",
                         keyboardType = KeyboardType.Text,
                         imeAction = ImeAction.Done,
@@ -72,9 +92,9 @@ fun AddNewIngredient(
                         .fillMaxWidth(0.4f),
                 ) {
                     CustomTextField(
-                        value = addNewIngredientViewModel.amount,
+                        value = amount,
                         onValueChange = {
-                            addNewIngredientViewModel.amount = it
+                            amount = it
                         },
                         label = "Amount",
                         keyboardType = KeyboardType.Number,
@@ -85,37 +105,37 @@ fun AddNewIngredient(
                     modifier = Modifier
                         .fillMaxWidth(0.5f),
                 ) {
-                    DarkDropdown(
-                        selectedValue = addNewIngredientViewModel.ingredient.measureType.unit,
-                        expanded = addNewIngredientViewModel.changeMeasureTypeExpanded,
+                    Dropdown(
+                        selectedValue = ingredient.measureType.unit,
+                        expanded = changeMeasureTypeExpanded,
                         onExpandedChange = {
-                            addNewIngredientViewModel.changeMeasureTypeExpanded = it
+                            changeMeasureTypeExpanded = it
                         },
-                        options = addNewIngredientViewModel.measureTypeList.map { it.unit },
+                        options = measureTypeList.map { it.unit },
                         label = null,
                         onValueChangedEvent = {
-                            addNewIngredientViewModel.updateIngredient("measureType", it)
+                            updateIngredient("measureType", it)
                         },
                     )
                 }
                 Row(
                     modifier = Modifier
-                        .padding(10.dp)
+                        .padding(LifeTogetherTokens.spacing.small)
                         .fillMaxHeight()
                         .clickable {
-                            addNewIngredientViewModel.updateIngredient(
+                            updateIngredient(
                                 "amount",
-                                addNewIngredientViewModel.amount,
+                                amount,
                             )
-                            onAddClick(addNewIngredientViewModel.ingredient)
-                            addNewIngredientViewModel.ingredient = Ingredient()
-                            addNewIngredientViewModel.amount = ""
+                            onAddClick(ingredient)
+                            ingredient = Ingredient()
+                            amount = ""
                         },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(text = "Add", color = Color.White)
+                    Text(text = "Add", color = MaterialTheme.colorScheme.secondary)
 
-                    Spacer(modifier = Modifier.width(5.dp))
+                    Spacer(modifier = Modifier.width(LifeTogetherTokens.spacing.xSmall))
 
                     Text(
                         text = ">",
@@ -124,5 +144,15 @@ fun AddNewIngredient(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun Preview() {
+    LifeTogetherTheme {
+        AddNewIngredient(
+            onAddClick = {}
+        )
     }
 }

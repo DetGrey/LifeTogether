@@ -10,6 +10,7 @@ data class FamilyUiState(
     val showConfirmationDialog: Boolean = false,
     val confirmationDialogType: FamilyConfirmationType? = null,
     val memberToRemove: FamilyMember? = null,
+    val showImageUploadDialog: Boolean = false,
 )
 
 enum class FamilyConfirmationType {

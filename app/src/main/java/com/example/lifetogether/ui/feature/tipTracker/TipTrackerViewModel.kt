@@ -51,10 +51,11 @@ class TipTrackerViewModel @Inject constructor(
                 val newFamilyId = (state as? SessionState.Authenticated)?.user?.familyId
                 if (newFamilyId != familyId) {
                     familyId = newFamilyId
-                    observeTips(newFamilyId)
+                    observeTips()
                 } else if (state is SessionState.Unauthenticated) {
                     familyId = null
-                    observeTips(null)
+                    tipsJob?.cancel()
+                    tipsJob = null
                 }
             }
         }
@@ -102,15 +103,16 @@ class TipTrackerViewModel @Inject constructor(
         }
     }
 
-    private fun observeTips(familyId: String?) {
+    private fun observeTips() {
         tipsJob?.cancel()
-        if (familyId.isNullOrBlank()) {
+        val familyIdValue = familyId
+        if (familyIdValue.isNullOrBlank()) {
             updateContent { TipTrackerUiState.Content() }
             return
         }
 
         tipsJob = viewModelScope.launch {
-            tipTrackerRepository.observeTips(familyId).collect { result ->
+            tipTrackerRepository.observeTips(familyIdValue).collect { result ->
                 when (result) {
                     is Result.Success -> handleTipsSuccess(result.data)
                     is Result.Failure -> showError(result.error.toUserMessage())

@@ -1,6 +1,7 @@
 package com.example.lifetogether.ui.feature.recipes
 
 import android.graphics.Bitmap
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,14 +16,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -33,10 +33,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
-import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.domain.result.AppError
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.ui.common.add.AddNewString
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.image.ImageUploadDialog
+import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.list.CompletableCategoryList
 import com.example.lifetogether.ui.common.tagOptionRow.TagOption
 import com.example.lifetogether.ui.common.text.TextDefault
@@ -44,11 +46,13 @@ import com.example.lifetogether.ui.common.textfield.EditableTextField
 import com.example.lifetogether.ui.common.dropdown.Dropdown
 import com.example.lifetogether.domain.model.recipe.Instruction
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun RecipeDetailsScreen(
     uiState: RecipeDetailsUiState,
     bitmap: Bitmap?,
+    onImageUpload: suspend (Uri) -> Result<Unit, AppError>,
     onUiEvent: (RecipeDetailsUiEvent) -> Unit,
     onNavigationEvent: (RecipeDetailsNavigationEvent) -> Unit,
 ) {
@@ -65,6 +69,7 @@ fun RecipeDetailsScreen(
         is RecipeDetailsUiState.Content -> RecipeDetailsContent(
             uiState = uiState,
             bitmap = bitmap,
+            onImageUpload = onImageUpload,
             onUiEvent = onUiEvent,
             onNavigationEvent = onNavigationEvent,
         )
@@ -75,6 +80,7 @@ fun RecipeDetailsScreen(
 private fun RecipeDetailsContent(
     uiState: RecipeDetailsUiState.Content,
     bitmap: Bitmap?,
+    onImageUpload: suspend (Uri) -> Result<Unit, AppError>,
     onUiEvent: (RecipeDetailsUiEvent) -> Unit,
     onNavigationEvent: (RecipeDetailsNavigationEvent) -> Unit,
 ) {
@@ -84,13 +90,13 @@ private fun RecipeDetailsContent(
         item {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(30.dp),
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp)
-                        .background(Color.White),
+                        .background(MaterialTheme.colorScheme.tertiary),
                 ) {
                     if (bitmap != null) {
                         Image(
@@ -104,7 +110,7 @@ private fun RecipeDetailsContent(
 
                     Box(
                         modifier = Modifier
-                            .padding(start = 10.dp, top = 10.dp)
+                            .padding(start = LifeTogetherTokens.spacing.small, top = LifeTogetherTokens.spacing.small)
                             .height(40.dp)
                             .aspectRatio(1f)
                             .clickable {
@@ -113,15 +119,16 @@ private fun RecipeDetailsContent(
                             .align(Alignment.TopStart),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Image(
+                        Icon(
                             painter = painterResource(id = R.drawable.ic_back_arrow),
                             contentDescription = "back arrow icon",
+                            tint = MaterialTheme.colorScheme.background,
                         )
                     }
 
                     Box(
                         modifier = Modifier
-                            .padding(end = 10.dp, top = 10.dp)
+                            .padding(end = LifeTogetherTokens.spacing.small, top = LifeTogetherTokens.spacing.small)
                             .height(if (!uiState.editMode && uiState.recipeId != null) 40.dp else 50.dp)
                             .aspectRatio(1f)
                             .clickable(
@@ -142,16 +149,17 @@ private fun RecipeDetailsContent(
                                 textAlign = TextAlign.Right,
                             )
                         } else if (uiState.recipeId != null) {
-                            Image(
-                                painter = painterResource(id = R.drawable.ic_trashcan_black),
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_trashcan),
                                 contentDescription = "trashcan icon",
+                                tint = MaterialTheme.colorScheme.background,
                             )
                         }
                     }
 
                     Box(
                         modifier = Modifier
-                            .padding(start = 10.dp, end = 40.dp)
+                            .padding(start = LifeTogetherTokens.spacing.small, end = LifeTogetherTokens.spacing.xxLarge)
                             .align(Alignment.BottomStart),
                     ) {
                         EditableTextField(
@@ -166,7 +174,7 @@ private fun RecipeDetailsContent(
 
                     Box(
                         modifier = Modifier
-                            .padding(bottom = 5.dp)
+                            .padding(bottom = LifeTogetherTokens.spacing.xSmall)
                             .height(40.dp)
                             .aspectRatio(1f)
                             .clickable {
@@ -175,9 +183,10 @@ private fun RecipeDetailsContent(
                             .align(Alignment.BottomEnd),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_edit_black),
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_edit),
                             contentDescription = "edit icon",
+                            tint = MaterialTheme.colorScheme.background,
                         )
                     }
                 }
@@ -188,9 +197,9 @@ private fun RecipeDetailsContent(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(10.dp),
+                    .padding(LifeTogetherTokens.spacing.small),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(30.dp),
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
             ) {
                 EditableTextField(
                     text = uiState.description,
@@ -201,7 +210,7 @@ private fun RecipeDetailsContent(
                 )
 
                 if (uiState.editMode) {
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
                 }
 
                 Column {
@@ -266,7 +275,7 @@ private fun RecipeDetailsContent(
                             .fillMaxWidth()
                             .height(50.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),
                     ) {
                         TextDefault("Tags:")
                         if (uiState.editMode) {
@@ -357,13 +366,10 @@ private fun RecipeDetailsContent(
                 }
 
                 if (uiState.editMode) {
-                    Button(
-                        onClick = {
-                            onUiEvent(RecipeDetailsUiEvent.SaveClicked)
-                        },
-                    ) {
-                        Text("Save")
-                    }
+                    PrimaryButton(
+                        text = "Save",
+                        onClick = { onUiEvent(RecipeDetailsUiEvent.SaveClicked) },
+                    )
                 }
             }
         }
@@ -387,15 +393,13 @@ private fun RecipeDetailsContent(
     }
 
     if (uiState.showImageUploadDialog) {
-        val familyId = uiState.familyId
-        val recipeId = uiState.recipeId
-        if (familyId != null && recipeId != null) {
+        if (uiState.familyId != null && uiState.recipeId != null) {
             ImageUploadDialog(
                 onDismiss = { onUiEvent(RecipeDetailsUiEvent.ImageUploadDismissed) },
                 onConfirm = { onUiEvent(RecipeDetailsUiEvent.ImageUploadConfirmed) },
+                onUpload = onImageUpload,
                 dialogTitle = "Upload recipe image",
                 dialogMessage = "Select an image for your recipe",
-                imageType = ImageType.RecipeImage(familyId, recipeId),
                 dismissButtonMessage = "Cancel",
                 confirmButtonMessage = "Upload image",
             )
@@ -436,6 +440,7 @@ private fun RecipeDetailsScreenPreview() {
                 ),
             ),
             bitmap = null,
+            onImageUpload = { Result.Success(Unit) },
             onUiEvent = {},
             onNavigationEvent = {},
         )

@@ -1,5 +1,6 @@
 package com.example.lifetogether.ui.common.image
 
+import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -17,58 +18,83 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.rememberAsyncImagePainter
+import com.example.lifetogether.ui.common.button.PrimaryButton
+import com.example.lifetogether.ui.common.button.SecondaryButton
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
+import com.example.lifetogether.domain.logic.getVideoThumbnail
 import com.example.lifetogether.domain.logic.isImageUri
 import com.example.lifetogether.domain.logic.isVideoUri
-import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.model.sealed.UploadState
+import com.example.lifetogether.domain.result.Result
+import com.example.lifetogether.domain.result.toUserMessage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun MediaUploadMultipleDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
+    onUpload: suspend (List<Uri>) -> Result<Unit, AppError>,
     dialogTitle: String,
     dialogMessage: String,
-    imageType: ImageType.GalleryMedia,
     dismissButtonMessage: String,
     confirmButtonMessage: String,
 ) {
-    val viewModel: MediaUploadViewModel = hiltViewModel()
     val context = LocalContext.current
-    val selectedMediaUris by viewModel.selectedMediaUris.collectAsStateWithLifecycle()
-    val videoThumbnails by viewModel.videoThumbnails.collectAsStateWithLifecycle()
-    val uploadState by viewModel.uploadState.collectAsStateWithLifecycle()
+    val coroutineScope = rememberCoroutineScope()
+
+    var selectedMediaUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
+    var videoThumbnails by remember { mutableStateOf<Map<Uri, Bitmap?>>(emptyMap()) }
+    var uploadState by remember { mutableStateOf<UploadState>(UploadState.Idle) }
+    var error by remember { mutableStateOf("") }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents(),
     ) { uris: List<Uri>? ->
         uris?.let { selectedUris ->
-            // Filter the URIs here
             val validMediaUris = selectedUris.filter { uri ->
                 val mimeType = context.contentResolver.getType(uri)
                 mimeType?.startsWith("image/") == true || mimeType?.startsWith("video/") == true
             }
             if (validMediaUris.isNotEmpty()) {
-                viewModel.setSelectedMediaUris(validMediaUris, context)
-            } else {
-                // Handle case where no valid images or videos were selected
+                selectedMediaUris = validMediaUris
+                uploadState = UploadState.Idle
+                error = ""
+
+                val currentUrisSet = validMediaUris.toSet()
+                videoThumbnails = videoThumbnails.filterKeys { it in currentUrisSet }
+
+                validMediaUris.forEach { uri ->
+                    if (isVideoUri(context, uri) && !videoThumbnails.containsKey(uri)) {
+                        coroutineScope.launch(Dispatchers.IO) {
+                            val thumbnail = getVideoThumbnail(context, uri)
+                            withContext(Dispatchers.Main) {
+                                videoThumbnails = videoThumbnails + (uri to thumbnail)
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -79,18 +105,19 @@ fun MediaUploadMultipleDialog(
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(text = dialogMessage)
-                Spacer(modifier = Modifier.height(10.dp))
-                Button(onClick = { launcher.launch("*/*") }) {
-                    Text(text = "Add Photos & Videos")
-                }
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
+                PrimaryButton(
+                    text = "Add Photos & Videos",
+                    onClick = { launcher.launch("*/*") },
+                )
+                Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
                 LazyRow {
                     items(selectedMediaUris) { uri ->
                         Box(
                             modifier = Modifier
                                 .size(75.dp)
                                 .clip(RectangleShape)
-                                .background(Color.Gray),
+                                .background(MaterialTheme.colorScheme.surfaceVariant),
                             contentAlignment = Alignment.Center,
                         ) {
                             if (isImageUri(context, uri)) {
@@ -110,20 +137,17 @@ fun MediaUploadMultipleDialog(
                                         contentScale = ContentScale.Crop,
                                     )
                                 } else {
-                                    // Show a placeholder or loading for video thumbnail
                                     Icon(
                                         imageVector = Icons.Filled.PlayArrow,
                                         contentDescription = "Video Icon",
-                                        tint = Color.White,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
-                                    // Could also show a mini CircularProgressIndicator here while thumbnail generates
                                 }
                             } else {
-                                // Fallback for unknown types or if type detection fails
-                                Text("?", color = Color.White)
+                                Text("?", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(LifeTogetherTokens.spacing.small))
                     }
                 }
 
@@ -131,28 +155,62 @@ fun MediaUploadMultipleDialog(
                     is UploadState.Uploading -> CircularProgressIndicator()
                     is UploadState.Success -> {
                         Text(text = "Upload Successful")
-                        viewModel.resetViewModel()
-                        onConfirm()
                     }
                     is UploadState.Failure -> {
                         Text(text = "Upload Failed: ${(uploadState as UploadState.Failure).error}")
-                        onDismiss()
                     }
                     else -> {}
+                }
+
+                if (error.isNotBlank()) {
+                    Text(text = error)
                 }
             }
         },
         dismissButton = {
-            Button(onClick = onDismiss) {
-                Text(text = dismissButtonMessage)
-            }
+            SecondaryButton(
+                text = dismissButtonMessage,
+                onClick = onDismiss,
+            )
         },
         confirmButton = {
-            Button(
-                onClick = { viewModel.uploadMediaItems(imageType.familyId, imageType.albumId, context) },
-            ) {
-                Text(text = confirmButtonMessage)
-            }
+            PrimaryButton(
+                text = confirmButtonMessage,
+                onClick = {
+                    if (uploadState is UploadState.Uploading) {
+                        return@PrimaryButton
+                    }
+
+                    if (selectedMediaUris.isEmpty()) {
+                        uploadState = UploadState.Failure("No files selected.")
+                        return@PrimaryButton
+                    }
+
+                    uploadState = UploadState.Uploading
+                    error = ""
+
+                    coroutineScope.launch(Dispatchers.IO) {
+                        when (val result = onUpload(selectedMediaUris)) {
+                            is Result.Success -> {
+                                withContext(Dispatchers.Main) {
+                                    uploadState = UploadState.Success
+                                    selectedMediaUris = emptyList()
+                                    videoThumbnails = emptyMap()
+                                    onConfirm()
+                                }
+                            }
+
+                            is Result.Failure -> {
+                                val message = result.error.toUserMessage()
+                                withContext(Dispatchers.Main) {
+                                    error = message
+                                    uploadState = UploadState.Failure(message)
+                                }
+                            }
+                        }
+                    }
+                },
+            )
         },
     )
 }

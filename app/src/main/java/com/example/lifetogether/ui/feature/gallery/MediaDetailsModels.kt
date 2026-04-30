@@ -6,8 +6,6 @@ import com.example.lifetogether.ui.model.MenuAction
 data class MediaDetailsUiState(
     val mediaList: List<GalleryMedia> = emptyList(),
     val currentIndex: Int = 0,
-    val isDownloading: Boolean = false,
-    val downloadMessage: String? = null,
     val showOverflowMenu: Boolean = false,
     val showOverflowMenuActionDialog: Boolean = false,
     val overflowMenuAction: MenuAction.MediaDetailsActions? = null,

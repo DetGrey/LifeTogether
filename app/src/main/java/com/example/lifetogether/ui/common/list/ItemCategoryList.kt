@@ -1,6 +1,5 @@
 package com.example.lifetogether.ui.common.list
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +24,7 @@ import com.example.lifetogether.domain.model.CompletableItem
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.ui.common.ListItem
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.ui.theme.bodyFontFamily
 import com.example.lifetogether.util.priceToString
 import java.util.Date
@@ -38,17 +39,19 @@ fun ItemCategoryList(
     onBellClick: ((GroceryItem) -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
 ) {
-    Column {
+    Column(
+        modifier = Modifier.padding(vertical = LifeTogetherTokens.spacing.medium)
+    ) {
         Column(
             modifier = Modifier
-                .padding(horizontal = 5.dp)
+                .padding(horizontal = LifeTogetherTokens.spacing.xSmall)
                 .clickable { onClick() },
-            verticalArrangement = Arrangement.spacedBy(5.dp),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(25.dp),
+                    .height(LifeTogetherTokens.sizing.iconMedium),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Row {
@@ -61,26 +64,29 @@ fun ItemCategoryList(
                     Text(
                         text = category.name,
                         style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.tertiary
                     )
                 }
                 Row {
                     if (onDelete != null) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_trashcan_black),
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_trashcan),
                             contentDescription = "trashcan icon",
+                            tint = MaterialTheme.colorScheme.onBackground,
                             modifier = Modifier.clickable { onDelete() },
                         )
                     }
-                    Image(
+                    Icon(
                         painter = painterResource(id = if (expanded) R.drawable.ic_expanded else R.drawable.ic_expand),
                         contentDescription = "expand or expanded icon",
+                        tint = MaterialTheme.colorScheme.onBackground,
                     )
                 }
             }
-            HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.primary)
+            HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.primaryContainer)
         }
         if (expanded) {
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
             Column {
                 itemList.forEach { item ->
                     ListItem(
@@ -100,7 +106,6 @@ fun ItemCategoryList(
                 }
             }
         }
-        Spacer(modifier = Modifier.height(30.dp))
     }
 }
 

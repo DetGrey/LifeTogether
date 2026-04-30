@@ -1,5 +1,6 @@
 package com.example.lifetogether.ui.feature.gallery
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.model.SaveProgress
@@ -10,10 +11,12 @@ import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.domain.usecase.gallery.DeleteMediaUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
+import com.example.lifetogether.ui.common.snackbar.SnackbarSeverity
 import com.example.lifetogether.ui.model.MenuAction
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +28,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MediaDetailsViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
     private val sessionRepository: SessionRepository,
     private val galleryRepository: GalleryRepository,
     private val deleteMediaUseCase: DeleteMediaUseCase,
@@ -36,27 +40,24 @@ class MediaDetailsViewModel @Inject constructor(
     val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
 
     private var familyId: String? = null
-    private var albumId: String? = null
+    private var loadAlbumMediaJob: Job? = null
+    private val albumId: String? = savedStateHandle["albumId"]
+    private val initialIndex: Int = savedStateHandle["initialIndex"] ?: 0
 
     init {
+        _uiState.update { it.copy(currentIndex = initialIndex) }
         viewModelScope.launch {
             sessionRepository.sessionState.collect { state ->
                 val newFamilyId = (state as? SessionState.Authenticated)?.user?.familyId
                 if (newFamilyId != null && newFamilyId != familyId) {
                     familyId = newFamilyId
-                    albumId?.let { loadAlbumMedia() }
+                    observeAlbumMedia()
                 } else if (state is SessionState.Unauthenticated) {
                     familyId = null
+                    loadAlbumMediaJob?.cancel()
+                    loadAlbumMediaJob = null
                 }
             }
-        }
-    }
-
-    fun setUp(addedAlbumId: String, addedInitialIndex: Int) {
-        albumId = addedAlbumId
-        _uiState.update { it.copy(currentIndex = addedInitialIndex) }
-        if (familyId != null) {
-            loadAlbumMedia()
         }
     }
 
@@ -72,25 +73,25 @@ class MediaDetailsViewModel @Inject constructor(
         }
     }
 
-    private fun loadAlbumMedia() {
+    private fun observeAlbumMedia() {
         val familyIdValue = familyId ?: return
         val albumIdValue = albumId ?: return
 
-        viewModelScope.launch {
-            galleryRepository.observeAlbumMedia(familyIdValue, albumIdValue)
-                .collect { result ->
-                    when (result) {
-                        is Result.Success -> {
-                            _uiState.update {
-                                it.copy(
-                                    mediaList = result.data,
-                                )
-                            }
+        loadAlbumMediaJob?.cancel()
+        loadAlbumMediaJob = viewModelScope.launch {
+            galleryRepository.observeAlbumMedia(familyIdValue, albumIdValue).collect { result ->
+                when (result) {
+                    is Result.Success -> {
+                        _uiState.update {
+                            it.copy(
+                                mediaList = result.data,
+                            )
                         }
-
-                        is Result.Failure -> showError(result.error.toUserMessage())
                     }
+
+                    is Result.Failure -> showError(result.error.toUserMessage())
                 }
+            }
         }
     }
 
@@ -111,33 +112,30 @@ class MediaDetailsViewModel @Inject constructor(
             ).collect { progress ->
                 when (progress) {
                     is SaveProgress.Loading -> {
-                        _uiState.update {
-                            it.copy(
-                                isDownloading = true,
-                                downloadMessage = "Downloading ${progress.current} of ${progress.total}",
-                            )
-                        }
+                        showProgress(
+                            title = "Downloading...",
+                            message = "Downloading ${progress.current} of ${progress.total}",
+                        )
                     }
 
                     is SaveProgress.Finished -> {
                         if (progress.failureCount == 0) {
                             dismissOverflowMenuActionDialog()
-                            val message = if (progress.failureCount == 0) {
-                                "Downloaded 1 item"
-                            } else {
-                                "Downloaded ${progress.successCount} of ${progress.successCount + progress.failureCount} items"
-                            }
-
-                            _uiState.update { it.copy(downloadMessage = message) }
+                            showProgress(
+                                title = "Download complete",
+                                message = "Downloaded 1 item",
+                                showProgress = false,
+                            )
                             delay(2000)
-                            _uiState.update { it.copy(downloadMessage = null, isDownloading = false) }
+                            hideProgress()
                         } else {
+                            hideProgress()
                             showError("Failed to download media")
                         }
                     }
 
                     is SaveProgress.Error -> {
-                        _uiState.update { it.copy(isDownloading = false, downloadMessage = null) }
+                        hideProgress()
                         showError(progress.message)
                     }
                 }
@@ -183,6 +181,7 @@ class MediaDetailsViewModel @Inject constructor(
             )
         }
     }
+
     // ---------------------------------------------------------------- DRAG
     // TODO this was changed from 0.4f just to make it look nice but probably means some part is not showing
     private fun getMaxOffset(totalHeight: Int) = -totalHeight * 0.35f
@@ -207,7 +206,8 @@ class MediaDetailsViewModel @Inject constructor(
         }
         _uiState.update { it.copy(offsetY = snapTarget) }
     }
-    fun showError(message: String) {
+
+    private fun showError(message: String) {
         viewModelScope.launch {
             _uiCommands.send(
                 UiCommand.ShowSnackbar(
@@ -215,6 +215,29 @@ class MediaDetailsViewModel @Inject constructor(
                     withDismissAction = true,
                 ),
             )
+        }
+    }
+
+    private fun showProgress(
+        title: String,
+        message: String,
+        showProgress: Boolean = false,
+    ) {
+        viewModelScope.launch {
+            _uiCommands.send(
+                UiCommand.ShowProgressSnackbar(
+                    title = title,
+                    message = message,
+                    severity = SnackbarSeverity.Info,
+                    showProgress = showProgress,
+                ),
+            )
+        }
+    }
+
+    private fun hideProgress() {
+        viewModelScope.launch {
+            _uiCommands.send(UiCommand.HideProgressSnackbar)
         }
     }
 }

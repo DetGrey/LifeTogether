@@ -2,12 +2,12 @@ package com.example.lifetogether.ui.feature.guides
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.logic.GuideParser
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.GuideRepository
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
+import com.example.lifetogether.domain.usecase.guide.ImportGuidesUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -25,6 +25,7 @@ import javax.inject.Inject
 class GuidesViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
     private val guideRepository: GuideRepository,
+    private val importGuidesUseCase: ImportGuidesUseCase,
 ) : ViewModel() {
     private var familyId: String? = null
     private var uid: String? = null
@@ -115,38 +116,19 @@ class GuidesViewModel @Inject constructor(
                 )
             }
 
-            val parsedGuides = runCatching {
-                GuideParser.parseJsonGuides(
-                    json = json,
-                    familyId = activeFamilyId,
-                    ownerUid = activeUid,
-                )
-            }.getOrElse {
-                showError("Could not parse JSON: ${it.message}")
-                updateState { it.copy(isImporting = false) }
-                return@launch
-            }
-
-            if (parsedGuides.isEmpty()) {
-                showError("No valid guides were found in the selected file")
-                updateState { it.copy(isImporting = false) }
-                return@launch
-            }
-
-            var successCount = 0
-            var failCount = 0
-            parsedGuides.forEach { guide ->
-                when (guideRepository.saveGuide(guide)) {
-                    is Result.Success -> successCount += 1
-                    is Result.Failure -> failCount += 1
+            when (val result = importGuidesUseCase(json, activeFamilyId, activeUid)) {
+                is Result.Success -> {
+                    updateState {
+                        it.copy(
+                            isImporting = false,
+                            importSummary = "Imported ${result.data.successCount} guide(s). Failed: ${result.data.failureCount}",
+                        )
+                    }
                 }
-            }
-
-            updateState {
-                it.copy(
-                    isImporting = false,
-                    importSummary = "Imported $successCount guide(s). Failed: $failCount",
-                )
+                is Result.Failure -> {
+                    updateState { it.copy(isImporting = false) }
+                    showError(result.error.toUserMessage())
+                }
             }
         }
     }

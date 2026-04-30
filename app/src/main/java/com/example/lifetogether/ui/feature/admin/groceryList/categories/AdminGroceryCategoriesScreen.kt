@@ -15,12 +15,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -36,6 +36,7 @@ import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun AdminGroceryCategoriesScreen(
@@ -43,47 +44,47 @@ fun AdminGroceryCategoriesScreen(
     onUiEvent: (AdminGroceryCategoriesUiEvent) -> Unit,
     onNavigationEvent: (AdminGroceryCategoriesNavigationEvent) -> Unit,
 ) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-    ) {
+    Scaffold(
+        topBar = {
+            TopBar(
+                leftIcon = Icon(
+                    resId = R.drawable.ic_back_arrow,
+                    description = "back arrow icon",
+                ),
+                onLeftClick = {
+                    onNavigationEvent(AdminGroceryCategoriesNavigationEvent.NavigateBack)
+                },
+                text = "Edit grocery list",
+            )
+        },
+    ) { padding ->
         LazyColumn(
             modifier = Modifier
-                .padding(10.dp)
-                .padding(bottom = 60.dp),
+                .fillMaxSize()
+                .padding(padding)
+                .padding(LifeTogetherTokens.spacing.small)
+                .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(30.dp),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
         ) {
-            item {
-                TopBar(
-                    leftIcon = Icon(
-                        resId = R.drawable.ic_back_arrow,
-                        description = "back arrow icon",
-                    ),
-                    onLeftClick = {
-                        onNavigationEvent(AdminGroceryCategoriesNavigationEvent.NavigateBack)
-                    },
-                    text = "Edit grocery list",
-                )
-            }
 
             item {
-                SyncUpdatingText(
-                    keys = setOf(SyncKey.GROCERY_CATEGORIES),
-                )
+                SyncUpdatingText(keys = setOf(SyncKey.GROCERY_CATEGORIES))
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
 
                 Text(
-                    modifier = Modifier.padding(horizontal = 5.dp),
+                    modifier = Modifier.padding(horizontal = LifeTogetherTokens.spacing.xSmall),
                     text = "Add new category as a string with an emoji and a name with whitespace between e.g. \"\uD83C\uDF5E Bakery\"",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.onBackground,
                     textAlign = TextAlign.Center,
                 )
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.medium))
 
                 TextHeadingMedium("Grocery categories")
+
                 if (uiState.groceryCategories.isNotEmpty()) {
                     ListEditorContainer(
                         uiState.groceryCategories.map { category -> "${category.emoji} ${category.name}" },
@@ -103,15 +104,15 @@ fun AdminGroceryCategoriesScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(10.dp),
+                .padding(LifeTogetherTokens.spacing.small),
             contentAlignment = Alignment.BottomCenter,
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(60.dp)
-                    .clip(shape = RoundedCornerShape(20))
-                    .background(color = MaterialTheme.colorScheme.onBackground),
+                    .clip(shape = RoundedCornerShape(LifeTogetherTokens.spacing.large))
+                    .background(color = MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.CenterStart,
             ) {
                 Row(
@@ -133,16 +134,16 @@ fun AdminGroceryCategoriesScreen(
                     }
                     Row(
                         modifier = Modifier
-                            .padding(10.dp)
+                            .padding(LifeTogetherTokens.spacing.small)
                             .fillMaxHeight()
                             .clickable {
                                 onUiEvent(AdminGroceryCategoriesUiEvent.AddCategoryClicked)
                             },
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(text = "Add", color = Color.White)
+                        Text(text = "Add", color = MaterialTheme.colorScheme.secondary)
 
-                        Spacer(modifier = Modifier.width(5.dp))
+                        Spacer(modifier = Modifier.width(LifeTogetherTokens.spacing.xSmall))
 
                         Text(
                             text = ">",
@@ -168,7 +169,7 @@ fun AdminGroceryCategoriesScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun AdminGroceryCategoriesScreenPreview() {
+private fun AdminGroceryCategoriesScreenPreview() {
     LifeTogetherTheme {
         AdminGroceryCategoriesScreen(
             uiState = AdminGroceryCategoriesUiState(
@@ -176,6 +177,7 @@ fun AdminGroceryCategoriesScreenPreview() {
                     Category("❓️", "Uncategorized"),
                     Category("🥦", "Vegetables"),
                 ),
+                newCategory = "❓Frozen"
             ),
             onUiEvent = {},
             onNavigationEvent = {},

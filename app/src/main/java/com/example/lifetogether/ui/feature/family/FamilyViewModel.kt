@@ -1,15 +1,21 @@
 package com.example.lifetogether.ui.feature.family
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.model.family.FamilyMember
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.FamilyRepository
 import com.example.lifetogether.domain.repository.SessionRepository
+import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
+import com.example.lifetogether.domain.usecase.image.UploadImageUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -25,6 +31,8 @@ import javax.inject.Inject
 class FamilyViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
     private val familyRepository: FamilyRepository,
+    private val uploadImageUseCase: UploadImageUseCase,
+    @param:ApplicationContext private val context: Context,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(FamilyUiState())
     val uiState: StateFlow<FamilyUiState> = _uiState.asStateFlow()
@@ -57,6 +65,7 @@ class FamilyViewModel @Inject constructor(
                         showConfirmationDialog = false,
                         confirmationDialogType = null,
                         memberToRemove = null,
+                        showImageUploadDialog = false,
                     )
                 }
 
@@ -75,10 +84,20 @@ class FamilyViewModel @Inject constructor(
             is FamilyUiEvent.RemoveMemberClicked -> showRemoveMemberConfirmation(event.member)
             FamilyUiEvent.DismissConfirmationDialog -> closeConfirmationDialog()
             FamilyUiEvent.ConfirmConfirmationDialog -> confirmConfirmationDialog()
-            FamilyUiEvent.AddImageClicked,
+            FamilyUiEvent.AddImageClicked -> updateUiState { it.copy(showImageUploadDialog = true) }
             FamilyUiEvent.ImageUploadDismissed,
-            FamilyUiEvent.ImageUploadConfirmed -> Unit
+            FamilyUiEvent.ImageUploadConfirmed -> updateUiState { it.copy(showImageUploadDialog = false) }
         }
+    }
+
+    suspend fun uploadFamilyImage(uri: Uri): Result<Unit, AppError> {
+        val familyId = _uiState.value.familyId
+            ?: return Result.Failure(AppError.Validation("Missing family context"))
+        return uploadImageUseCase.invoke(
+            uri = uri,
+            imageType = ImageType.FamilyImage(familyId),
+            context = context,
+        )
     }
 
     private fun observeFamilyInformation(familyId: String?) {

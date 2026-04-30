@@ -1,6 +1,6 @@
 # Phase 5 — ViewModel Normalization
 
-**Status:** Implementing _(Not started → Grill-me in progress → Implementing → Complete)_
+**Status:** Complete _(Not started → Grill-me in progress → Implementing → Complete)_
 
 ## Goal
 
@@ -14,6 +14,12 @@ Normalise all feature ViewModels to expose a single `UiState` object for persist
 - Any remaining `println(...)` calls in ViewModels and screens (replace with `Log.d`)
 
 ## Key Decisions Already Made
+
+### Execution Workflow Override (Agreed During Implementation)
+
+- For the remaining Phase 5 issues after `#57`, implementation work should use one shared phase branch instead of one branch per issue.
+- Do not open per-issue PRs for the remaining Phase 5 issues; create one consolidated PR at the end of Phase 5.
+- Keep issue-level tracking updates (board status, issue checklist/body progress) for each issue even when they share the same phase branch.
 
 - Each ViewModel exposes **one main `UiState` data class** as a `StateFlow`.
 - One-off commands (navigation triggers, snackbar messages) use a **`Channel<UiCommand>` exposed as a `Flow`** — avoids rotation bugs and state-clearing boilerplate.
@@ -103,7 +109,6 @@ Normalise all feature ViewModels to expose a single `UiState` object for persist
 - `AdminGroceryCategoriesViewModel` should keep its current separate delete-dialog flag and selected category state for now.
 - `AdminGroceryCategoriesViewModel` should keep the current free-form string add-category flow for now.
 - `GroceryListViewModel` should refactor `setUpGroceryList()` into a single cancellable setup path instead of launching repeated collectors on each new family id.
-- `GalleryViewModel` should refactor `observeAlbums()` into a single cancellable setup path instead of launching repeated collectors on each new family id.
 - `ListsViewModel` should group the create-dialog fields into a nested create form model.
 - `ListsViewModel` should explicitly cancel `listsJob` and clear `userLists` on logout/session loss.
 - `ListsViewModel` should keep `ListsCommand.NavigateToListDetails` for create-success navigation.
@@ -116,6 +121,7 @@ Normalise all feature ViewModels to expose a single `UiState` object for persist
 
 ### 5.4 Gallery and Tip Tracker ViewModels
 
+- `GalleryViewModel` should refactor `observeAlbums()` into a single cancellable setup path instead of launching repeated collectors on each new family id.
 - The media-upload cleanup for `MediaUploadViewModel` should also include a cleanup pass on `UploadGalleryMediaItemsUseCase`, because its current `invoke` is too long to absorb the moved prep logic without refactoring
 - `UploadGalleryMediaItemsUseCase` should keep its public API but split the long `invoke(...)` into small private helpers for validation, per-item upload, metadata save, and failure aggregation
 - `MediaUploadViewModel` should be removed as soon as the surrounding files stop using it; do not keep it around after the upload dialog and parent screen state refactor is complete
@@ -147,26 +153,26 @@ Normalise all feature ViewModels to expose a single `UiState` object for persist
 
 _To be finalised during the pre-implementation grill-me session._
 
-- [ ] 5.0 Shared utility foundation:
+- [x] 5.0 Shared utility foundation:
   - `RootCoordinatorViewModel`
   - `NotificationViewModel`
   - `ImageViewModel`
   - shared sync/image/notification cleanup
   - keep this as its own cross-cutting issue, separate from the feature ViewModel subphases below
-- [ ] 5.1 Review and trim recipe ViewModels:
+- [x] 5.1 Review and trim recipe ViewModels:
   - `RecipesViewModel`
   - `RecipeDetailsViewModel`
   - verify the pair already follows the target `UiState` / `UiEvent` / `UiCommand` shape
   - remove any remaining setup/state ownership that is still ad hoc
   - prefer `SavedStateHandle` for `RecipeDetailsViewModel` route arguments and remove `setUp(recipeId)` if the route can supply the argument cleanly
-- [ ] 5.2 Normalise family/auth ViewModels:
+- [x] 5.2 Normalise family/auth ViewModels:
   - `FamilyViewModel`
   - `ProfileViewModel`
   - `LoginViewModel`
   - `SignUpViewModel`
   - `SettingsViewModel`
   - `LoadingViewModel`
-- [ ] 5.3 Normalise guides/grocery/list ViewModels:
+- [x] 5.3 Normalise guides/grocery/list ViewModels:
   - `GuidesViewModel`
   - `GuideCreateViewModel`
   - `GuideDetailsViewModel`
@@ -177,12 +183,12 @@ _To be finalised during the pre-implementation grill-me session._
   - `ListsViewModel`
   - `ListDetailsViewModel`
   - `ListEntryDetailsViewModel`
-- [ ] 5.4 Normalise gallery/tip tracker helper ViewModels:
+- [x] 5.4 Normalise gallery/tip tracker helper ViewModels:
   - `GalleryViewModel`
   - `AlbumDetailsViewModel`
   - `MediaDetailsViewModel`
   - `TipTrackerViewModel`
-- [ ] 5.5 Normalise local component/helper ViewModels:
+- [x] 5.5 Normalise local component/helper ViewModels:
   - `AddNewIngredientViewModel`
   - `AddNewListItemViewModel`
   - `ImageUploadViewModel`
@@ -193,7 +199,7 @@ _To be finalised during the pre-implementation grill-me session._
   - `RootCoordinatorViewModel`
   - `HomeViewModel`
   - `LoadingViewModel`
-- [ ] 5.6 Logging cleanup across ViewModels and screens
+- [x] 5.6 Logging cleanup across ViewModels and screens
 
 ## Before Starting This Phase
 
@@ -202,14 +208,14 @@ _To be finalised during the pre-implementation grill-me session._
 > All **Open Questions** at the bottom of this file must be answered and the section removed before implementation begins.
 
 ### Acceptance criteria
-- [ ] Every in-scope ViewModel exposes one clear `UiState` owner or is intentionally removed/merged into a better abstraction.
-- [ ] Feature ViewModels that need route arguments use `SavedStateHandle` or clean route-prepared initialization instead of ad hoc `setUp(...)` calls.
-- [ ] No in-scope ViewModel exposes public mutable fields for dialogs, IDs, filters, or other screen state.
-- [ ] One-off UI effects use `UiCommand` or a feature-specific command only where that is actually needed.
-- [ ] Shared utility concerns use the shared foundation layer decided in `5.0` instead of per-screen ad hoc wiring.
-- [ ] `NotificationViewModel`, `VideoPlayerViewModel`, `AddNewListItemViewModel`, and `AddNewIngredientViewModel` are gone if their responsibilities can be moved to better abstractions.
-- [ ] `ImageViewModel` and `MediaUploadViewModel` are either removed or clearly reduced to the smallest temporary compatibility layer needed for the phase.
-- [ ] `println(...)` calls are removed from ViewModels and screens.
+- [x] Every in-scope ViewModel exposes one clear `UiState` owner or is intentionally removed/merged into a better abstraction.
+- [x] Feature ViewModels that need route arguments use `SavedStateHandle` or clean route-prepared initialization instead of ad hoc `setUp(...)` calls.
+- [x] No in-scope ViewModel exposes public mutable fields for dialogs, IDs, filters, or other screen state.
+- [x] One-off UI effects use `UiCommand` or a feature-specific command only where that is actually needed.
+- [x] Shared utility concerns use the shared foundation layer decided in `5.0` instead of per-screen ad hoc wiring.
+- [x] `NotificationViewModel`, `VideoPlayerViewModel`, `AddNewListItemViewModel`, and `AddNewIngredientViewModel` are gone if their responsibilities can be moved to better abstractions.
+- [x] `ImageViewModel` and `MediaUploadViewModel` are either removed or clearly reduced to the smallest temporary compatibility layer needed for the phase.
+- [x] `println(...)` calls are removed from ViewModels and screens.
 - [ ] The refactors preserve the existing visible behavior of the screens that remain in scope.
 - [ ] The phase file contains one clear note block per subphase instead of one long mixed decision list.
 

@@ -16,12 +16,12 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 data class ActionSheetItem(
     val label: String,
@@ -37,9 +37,9 @@ fun OverflowMenu(
 ) {
     Box(
         modifier = Modifier
-            .padding(top = 50.dp)
+            .padding(top = LifeTogetherTokens.spacing.xxxLarge)
             .fillMaxSize()
-            .padding(10.dp)
+            .padding(LifeTogetherTokens.spacing.small)
             .clickable {
                 onDismiss()
             },
@@ -49,14 +49,14 @@ fun OverflowMenu(
                 .width(125.dp)
                 .align(Alignment.TopEnd)
                 .background(MaterialTheme.colorScheme.onBackground)
-                .padding(10.dp),
+                .padding(LifeTogetherTokens.spacing.small),
         ) {
             Column {
                 actionsList.forEachIndexed { index, actionMap ->
                     actionMap.forEach { (name, onActionClick) ->
                         TextDefault(
                             text = name,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.background,
                             modifier = Modifier.clickable {
                                 onActionClick()
                             },
@@ -65,8 +65,8 @@ fun OverflowMenu(
                             HorizontalDivider(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(top = 10.dp, bottom = 5.dp)
-                                    .height(5.dp),
+                                    .padding(top = LifeTogetherTokens.spacing.small, bottom = LifeTogetherTokens.spacing.xSmall)
+                                    .height(LifeTogetherTokens.spacing.xSmall),
                             )
                         }
                     }
@@ -88,13 +88,13 @@ fun ActionSheet(
     ) {
         Column(
             modifier = Modifier
-                .padding(horizontal = 20.dp, vertical = 8.dp)
-                .padding(bottom = 30.dp),
+                .padding(horizontal = LifeTogetherTokens.spacing.medium, vertical = LifeTogetherTokens.spacing.small)
+                .padding(bottom = LifeTogetherTokens.spacing.large + LifeTogetherTokens.spacing.small),
         ) {
             actionsList.forEachIndexed { index, action ->
                 val textColor = when {
                     action.isDestructive -> MaterialTheme.colorScheme.error
-                    else -> Color.White
+                    else -> MaterialTheme.colorScheme.background
                 }
 
                 TextDefault(
@@ -108,14 +108,14 @@ fun ActionSheet(
                         .clickable(enabled = action.isEnabled) {
                             action.onClick()
                         }
-                        .padding(vertical = 12.dp),
+                        .padding(vertical = LifeTogetherTokens.spacing.small + LifeTogetherTokens.spacing.xSmall),
                 )
 
                 if (index < actionsList.lastIndex) {
                     HorizontalDivider(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 4.dp)
+                            .padding(vertical = LifeTogetherTokens.spacing.xSmall)
                             .height(1.dp),
                     )
                 }

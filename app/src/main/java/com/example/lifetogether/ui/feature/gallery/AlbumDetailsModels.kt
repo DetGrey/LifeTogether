@@ -13,6 +13,7 @@ data class AlbumDetailsUiState(
     val isSyncing: Boolean = false,
     val showOverflowMenu: Boolean = false,
     val showOverflowMenuActionDialog: Boolean = false,
+    val showImageUploadDialog: Boolean = false,
     val overflowMenuAction: MenuAction? = null,
     val actionDialogText: String = "",
     val isPartialLoad: Boolean = false,
@@ -21,8 +22,6 @@ data class AlbumDetailsUiState(
     val selectedMedia: Set<String> = emptySet(),
     val isAllMediaSelected: Boolean = false,
     val albums: List<AlbumUiModel> = emptyList(),
-    val isDownloading: Boolean = false,
-    val downloadMessage: String? = null,
     val familyId: String? = null,
 )
 

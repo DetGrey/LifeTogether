@@ -1,16 +1,15 @@
 package com.example.lifetogether.ui.feature.tipTracker.statistics
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.toFullDateString
@@ -26,6 +25,7 @@ import com.example.lifetogether.ui.feature.tipTracker.TipTrackerStats
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerUiEvent
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerUiState
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import java.util.Date
 
 @Composable
@@ -36,30 +36,29 @@ fun TipStatisticsScreen(
 ) {
     val content = uiState as TipTrackerUiState.Content
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize(),
-    ) {
+    Scaffold(
+        topBar = {
+            TopBar(
+                leftIcon = Icon(
+                    resId = R.drawable.ic_back_arrow,
+                    description = "back arrow icon",
+                ),
+                onLeftClick = {
+                    onNavigationEvent(TipTrackerNavigationEvent.NavigateBack)
+                },
+                text = "Tip Statistics",
+            )
+        },
+    ) { padding ->
         LazyColumn(
             modifier = Modifier
-                .padding(10.dp)
-                .padding(bottom = 60.dp),
+                .fillMaxSize()
+                .padding(padding)
+                .padding(LifeTogetherTokens.spacing.small)
+                .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(30.dp),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
         ) {
-            item {
-                    TopBar(
-                        leftIcon = Icon(
-                            resId = R.drawable.ic_back_arrow,
-                            description = "back arrow icon",
-                        ),
-                        onLeftClick = {
-                            onNavigationEvent(TipTrackerNavigationEvent.NavigateBack)
-                        },
-                        text = "Tip Statistics",
-                    )
-                }
-
             item {
                 if (content.tips.isNotEmpty()) {
                     TagOptionRow(

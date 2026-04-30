@@ -102,7 +102,7 @@ fun GuideStepRoundText(
         },
         modifier = modifier,
         color = textColor,
-        style = MaterialTheme.typography.bodySmall,
+        style = MaterialTheme.typography.bodyMedium,
         textDecoration = textDecoration,
     )
 }
@@ -119,7 +119,7 @@ fun GuideStepNumberedText(
         text = "$index. $text",
         modifier = modifier,
         color = textColor,
-        style = MaterialTheme.typography.bodySmall,
+        style = MaterialTheme.typography.bodyMedium,
         textDecoration = textDecoration,
     )
 }
@@ -144,7 +144,7 @@ fun GuideStepSubsectionText(
         },
         modifier = modifier,
         color = textColor,
-        style = MaterialTheme.typography.bodySmall,
+        style = MaterialTheme.typography.bodyMedium,
         textDecoration = textDecoration,
     )
 }

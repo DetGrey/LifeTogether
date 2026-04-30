@@ -1,24 +1,23 @@
 package com.example.lifetogether.ui.common
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem as M3ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Completable
@@ -26,6 +25,7 @@ import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.ui.common.list.CompletableBox
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import java.text.DecimalFormat
 import java.util.Date
 
@@ -47,76 +47,94 @@ fun ListItem(
         text = "$formattedAmount ${item.measureType.unit} ${item.itemName}"
     }
 
-    Row(
+    M3ListItem(
         modifier = Modifier
-            .padding(horizontal = 10.dp, vertical = 5.dp)
+            .padding(
+                horizontal = LifeTogetherTokens.spacing.small,
+                vertical = LifeTogetherTokens.spacing.xSmall
+            )
             .fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(
-            modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        leadingContent = {
             CompletableBox(
                 isCompleted = item.completed,
                 onCompleteToggle = onCompleteToggle,
             )
-
+        },
+        headlineContent = {
             Text(
-                modifier = Modifier.weight(1f),
                 text = text,
                 style = MaterialTheme.typography.bodyLarge,
                 textDecoration = if (item.completed) TextDecoration.LineThrough else TextDecoration.None,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                maxLines = 1,
             )
-
-        }
-
-        trailingText?.let {
-            Text(
-                text = it,
-                style = MaterialTheme.typography.bodyLarge,
-                textDecoration = if (item.completed) TextDecoration.LineThrough else TextDecoration.None,
-            )
-        }
-
-        if (item is GroceryItem && onBellClick != null) {
-            Box(
-                modifier = Modifier
-                    .height(30.dp)
-                    .aspectRatio(1f)
-                    .clickable { onBellClick() },
-                contentAlignment = Alignment.Center,
+        },
+        trailingContent = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_bell_black),
-                    contentDescription = "bell notification icon",
-                )
+                trailingText?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyLarge,
+                        textDecoration = if (item.completed) TextDecoration.LineThrough else TextDecoration.None,
+                    )
+                }
+
+                if (item is GroceryItem && onBellClick != null) {
+                    IconButton(
+                        onClick = onBellClick,
+                        modifier = Modifier.padding(start = LifeTogetherTokens.spacing.xSmall),
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_bell),
+                            contentDescription = "bell notification icon",
+                            tint = MaterialTheme.colorScheme.onBackground,
+                        )
+                    }
+                }
             }
-        }
-    }
+        },
+        colors = ListItemDefaults.colors(
+            containerColor = Color.Transparent,
+        ),
+    )
 }
 
 @Preview(showBackground = true)
 @Composable
 fun ListItemPreview() {
     LifeTogetherTheme {
-        ListItem(
-            GroceryItem(
-                familyId = "dsuaihfao",
-                category = Category(
-                    "🍎",
-                    "Fruits and vegetables",
+        Column {
+            ListItem(
+                GroceryItem(
+                    familyId = "dsuaihfao",
+                    category = Category(
+                        "🍎",
+                        "Fruits and vegetables",
+                    ),
+                    itemName = "Potatoes",
+                    lastUpdated = Date(System.currentTimeMillis()),
+                    completed = true,
                 ),
-                itemName = "Potatoes",
-                lastUpdated = Date(System.currentTimeMillis()),
-                completed = true,
-            ),
-            trailingText = "9 kr.",
-            onCompleteToggle = {},
-            onBellClick = {}
-        )
+                trailingText = "9 kr.",
+                onCompleteToggle = {},
+                onBellClick = {}
+            )
+            ListItem(
+                GroceryItem(
+                    category = Category(
+                        "🍎",
+                        "Fruits and vegetables",
+                    ),
+                    itemName = "Tomato",
+                    lastUpdated = Date(System.currentTimeMillis()),
+                    completed = false,
+                ),
+                trailingText = "9 kr.",
+                onCompleteToggle = {},
+                onBellClick = {}
+            )
+        }
     }
 }

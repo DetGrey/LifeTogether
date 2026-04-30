@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -34,15 +33,19 @@ import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
-import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.domain.result.AppError
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.image.ImageUploadDialog
+import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.tagOptionRow.TagOption
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
+import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -52,6 +55,7 @@ fun ListEntryDetailsScreen(
     familyId: String? = null,
     bitmap: Bitmap? = null,
     showImageUploadDialog: Boolean = false,
+    onImageUpload: suspend (Uri) -> Result<Unit, AppError> = { Result.Success(Unit) },
     onUiEvent: (ListEntryDetailsUiEvent) -> Unit,
     onNavigationEvent: (ListEntryDetailsNavigationEvent) -> Unit,
 ) {
@@ -72,7 +76,7 @@ fun ListEntryDetailsScreen(
                 leftIcon = Icon(resId = R.drawable.ic_back_arrow, description = "back arrow"),
                 onLeftClick = { onNavigationEvent(ListEntryDetailsNavigationEvent.NavigateBack) },
                 text = title,
-                rightIcon = if (isExistingEntry) Icon(resId = R.drawable.ic_edit_black, description = "edit entry") else null,
+                rightIcon = if (isExistingEntry) Icon(resId = R.drawable.ic_edit, description = "edit entry") else null,
                 onRightClick = if (isExistingEntry) {
                     if ((uiState as? EntryDetailsUiState.Content)?.isEditing == true) {
                         { onUiEvent(ListEntryDetailsUiEvent.RequestCancelEdit) }
@@ -100,11 +104,11 @@ fun ListEntryDetailsScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(top = padding.calculateTopPadding())
-                        .padding(10.dp),
+                        .padding(LifeTogetherTokens.spacing.small),
                 ) {
                     LazyColumn(
                         modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
                     ) {
                         item {
                             val displayBitmap = if (isExistingEntry) bitmap else formState.pendingImageBitmap
@@ -112,7 +116,10 @@ fun ListEntryDetailsScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(180.dp)
-                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    .background(
+                                        MaterialTheme.colorScheme.surfaceVariant,
+                                        MaterialTheme.shapes.extraLarge
+                                    )
                                     .clickable(enabled = uiState.isEditing) {
                                         if (isExistingEntry) {
                                             onUiEvent(ListEntryDetailsUiEvent.RequestImageUpload)
@@ -130,9 +137,8 @@ fun ListEntryDetailsScreen(
                                         contentScale = ContentScale.Crop,
                                     )
                                 } else {
-                                    Text(
+                                    TextDefault(
                                         text = if (uiState.isEditing) "Tap to add image" else "No image",
-                                        style = MaterialTheme.typography.bodySmall,
                                     )
                                 }
 
@@ -140,12 +146,12 @@ fun ListEntryDetailsScreen(
                                     Box(
                                         modifier = Modifier
                                             .align(Alignment.BottomEnd)
-                                            .padding(8.dp)
+                                            .padding(LifeTogetherTokens.spacing.small)
                                             .background(
                                                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
                                                 shape = MaterialTheme.shapes.small,
                                             )
-                                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                                            .padding(horizontal = LifeTogetherTokens.spacing.small, vertical = LifeTogetherTokens.spacing.xSmall),
                                     ) {
                                         Text(
                                             text = if (displayBitmap != null) "Change image" else "Add image",
@@ -170,7 +176,7 @@ fun ListEntryDetailsScreen(
                         }
 
                         item {
-                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
                                 TextSubHeadingMedium("Recurrence")
                                 TagOptionRow(
                                     options = RecurrenceUnit.entries.map { it.name.lowercase() },
@@ -202,8 +208,8 @@ fun ListEntryDetailsScreen(
                                 TextSubHeadingMedium("Weekdays")
 
                                 FlowRow(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),
                                 ) {
                                     ListEntryDetailsViewModel.WEEKDAYS.forEachIndexed { index, day ->
                                         val dayNum = index + 1
@@ -229,15 +235,14 @@ fun ListEntryDetailsScreen(
                                 .padding(bottom = padding.calculateBottomPadding())
                                 .align(Alignment.End),
                         ) {
-                            Button(
-                                modifier = Modifier.fillMaxWidth(),
-                                onClick = { onUiEvent(ListEntryDetailsUiEvent.SaveClicked) },
-                            ) {
-                                if (uiState.isSaving) {
-                                    CircularProgressIndicator()
-                                } else {
-                                    Text(if (isExistingEntry) "Save changes" else "Create")
-                                }
+                            if (uiState.isSaving) {
+                                CircularProgressIndicator()
+                            } else {
+                                PrimaryButton(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    text = if (isExistingEntry) "Save changes" else "Create",
+                                    onClick = { onUiEvent(ListEntryDetailsUiEvent.SaveClicked) },
+                                )
                             }
                         }
                     }
@@ -261,9 +266,9 @@ fun ListEntryDetailsScreen(
         ImageUploadDialog(
             onDismiss = { onUiEvent(ListEntryDetailsUiEvent.DismissImageUpload) },
             onConfirm = { onUiEvent(ListEntryDetailsUiEvent.ConfirmImageUpload) },
+            onUpload = onImageUpload,
             dialogTitle = "Upload entry image",
             dialogMessage = "Select an image for this entry",
-            imageType = ImageType.RoutineListEntryImage(familyId, entryId),
             dismissButtonMessage = "Cancel",
             confirmButtonMessage = "Upload image",
         )

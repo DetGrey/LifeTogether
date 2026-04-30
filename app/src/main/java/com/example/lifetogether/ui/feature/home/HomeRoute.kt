@@ -3,12 +3,12 @@ package com.example.lifetogether.ui.feature.home
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.BuildConfig
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.model.session.authenticatedUserOrNull
 import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.ui.common.di.rememberSessionRepository
 import com.example.lifetogether.ui.common.event.LocalRootSnackbarHostState
 import com.example.lifetogether.ui.common.image.rememberObservedImageBitmap
 import com.example.lifetogether.ui.navigation.AdminGroceryCategoriesNavRoute
@@ -29,8 +29,9 @@ import kotlinx.coroutines.launch
 fun HomeRoute(
     appNavigator: AppNavigator,
 ) {
-    val homeViewModel: HomeViewModel = hiltViewModel()
-    val sessionState by homeViewModel.sessionState.collectAsStateWithLifecycle()
+    val sessionRepository = rememberSessionRepository()
+    val sessionState by sessionRepository.sessionState.collectAsStateWithLifecycle()
+
     val snackbarHostState = LocalRootSnackbarHostState.current
     val coroutineScope = rememberCoroutineScope()
 

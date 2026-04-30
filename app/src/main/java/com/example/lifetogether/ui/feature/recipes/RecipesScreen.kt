@@ -1,17 +1,14 @@
 package com.example.lifetogether.ui.feature.recipes
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
 import com.example.lifetogether.ui.common.button.AddButton
@@ -22,6 +19,7 @@ import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.sync.SyncKey
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun RecipesScreen(
@@ -29,34 +27,37 @@ fun RecipesScreen(
     onUiEvent: (RecipesUiEvent) -> Unit,
     onNavigationEvent: (RecipesNavigationEvent) -> Unit,
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize(),
-    ) {
+    Scaffold(
+        topBar = {
+            TopBar(
+                leftIcon = Icon(
+                    resId = R.drawable.ic_back_arrow,
+                    description = "back arrow icon",
+                ),
+                onLeftClick = {
+                    onNavigationEvent(RecipesNavigationEvent.NavigateBack)
+                },
+                text = "Recipes",
+            )
+        },
+        floatingActionButton = {
+            AddButton(onClick = {
+                onNavigationEvent(RecipesNavigationEvent.NavigateToCreateRecipe)
+            })
+        },
+    ) { padding ->
         LazyColumn(
             modifier = Modifier
-                .padding(10.dp),
+                .fillMaxSize()
+                .padding(padding)
+                .padding(LifeTogetherTokens.spacing.small)
+                .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(30.dp),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
         ) {
             item {
-                TopBar(
-                    leftIcon = Icon(
-                        resId = R.drawable.ic_back_arrow,
-                        description = "back arrow icon",
-                    ),
-                    onLeftClick = {
-                        onNavigationEvent(RecipesNavigationEvent.NavigateBack)
-                    },
-                    text = "Recipes",
-                )
-            }
-
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SyncUpdatingText(
-                        keys = setOf(SyncKey.RECIPES),
-                    )
+                Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
+                    SyncUpdatingText(keys = setOf(SyncKey.RECIPES))
 
                     TagOptionRow(
                         options = uiState.tagsList,
@@ -70,10 +71,10 @@ fun RecipesScreen(
 
             item {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                 ) {
                     for (recipe in uiState.recipes) {
-                        RecipeOverview(
+                        RecipeCard(
                             recipe = recipe,
                             onClick = {
                                 recipe.id?.let { recipeId ->
@@ -85,21 +86,8 @@ fun RecipesScreen(
                         )
                     }
                 }
-
-                Spacer(modifier = Modifier.height(70.dp))
             }
         }
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(bottom = 30.dp, end = 30.dp),
-        contentAlignment = Alignment.BottomEnd,
-    ) {
-        AddButton(onClick = {
-            onNavigationEvent(RecipesNavigationEvent.NavigateToCreateRecipe)
-        })
     }
 }
 

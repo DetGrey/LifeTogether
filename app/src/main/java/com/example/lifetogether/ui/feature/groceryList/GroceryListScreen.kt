@@ -1,7 +1,5 @@
 package com.example.lifetogether.ui.feature.groceryList
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,25 +7,28 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.grocery.GroceryItem
-import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.add.AddNewListItem
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.list.ItemCategoryList
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
+import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
+import com.example.lifetogether.util.UNCATEGORIZED_CATEGORY
+import com.example.lifetogether.util.UNCATEGORIZED_CATEGORY_NAME
 import com.example.lifetogether.util.priceToString
 
 @Composable
@@ -36,31 +37,30 @@ fun GroceryListScreen(
     onUiEvent: (GroceryListUiEvent) -> Unit,
     onNavigationEvent: (GroceryListNavigationEvent) -> Unit,
 ) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-    ) {
+    Scaffold(
+        topBar = {
+            TopBar(
+                leftIcon = Icon(
+                    resId = R.drawable.ic_back_arrow,
+                    description = "back arrow icon",
+                ),
+                onLeftClick = {
+                    onNavigationEvent(GroceryListNavigationEvent.NavigateBack)
+                },
+                text = "Grocery list",
+            )
+        },
+    ) { padding ->
         LazyColumn(
             modifier = Modifier
-                .padding(10.dp)
-                .padding(bottom = 60.dp),
+                .padding(padding)
+                .padding(LifeTogetherTokens.spacing.small)
+                .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(30.dp),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
         ) {
             item {
-                TopBar(
-                    leftIcon = Icon(
-                        resId = R.drawable.ic_back_arrow,
-                        description = "back arrow icon",
-                    ),
-                    onLeftClick = {
-                        onNavigationEvent(GroceryListNavigationEvent.NavigateBack)
-                    },
-                    text = "Grocery list",
-                )
-            }
-
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
                     SyncUpdatingText(
                         keys = setOf(
                             SyncKey.GROCERY_LIST,
@@ -70,7 +70,7 @@ fun GroceryListScreen(
                     )
 
                     if (uiState.groceryList.isEmpty()) {
-                        Text(text = "No items on the list yet")
+                        TextDefault(text = "No items on the list yet")
                     } else {
                         uiState.expectedTotalPrice?.let {
                             Column(
@@ -79,9 +79,11 @@ fun GroceryListScreen(
                             ) {
                                 TextSubHeadingMedium(
                                     text = "Expected total price:",
+                                    color = MaterialTheme.colorScheme.secondary,
                                 )
                                 TextSubHeadingMedium(
                                     text = it.priceToString(true),
+                                    color = MaterialTheme.colorScheme.secondary,
                                 )
                             }
                         }
@@ -141,8 +143,8 @@ fun GroceryListScreen(
         if (uiState.currentGrocerySuggestions.isNotEmpty()) {
             Box(
                 modifier = Modifier
-                    .padding(10.dp)
-                    .padding(bottom = 30.dp)
+                    .padding(LifeTogetherTokens.spacing.small)
+                    .padding(bottom = LifeTogetherTokens.spacing.xLarge)
                     .fillMaxSize(),
                 contentAlignment = Alignment.BottomCenter,
             ) {
@@ -157,7 +159,7 @@ fun GroceryListScreen(
 
         Box(
             modifier = Modifier
-                .padding(10.dp)
+                .padding(LifeTogetherTokens.spacing.small)
                 .fillMaxSize(),
             contentAlignment = Alignment.BottomCenter,
         ) {
@@ -190,10 +192,57 @@ fun GroceryListScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun GroceryListScreenPreview() {
+private fun GroceryListScreenPreview() {
     LifeTogetherTheme {
         GroceryListScreen(
             uiState = GroceryListUiState(),
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun GroceryListScreenPreview2() {
+    LifeTogetherTheme {
+        GroceryListScreen(
+            uiState = GroceryListUiState(
+                groceryList = listOf(
+                    GroceryItem(
+                        id = "4",
+                        itemName = "Apple",
+                        approxPrice = 12.0F
+                    ),
+                    GroceryItem(
+                        id = "5",
+                        itemName = "Apple",
+                    ),
+                ),
+                categorizedItems = mapOf(
+                    UNCATEGORIZED_CATEGORY to listOf(
+                        GroceryItem(
+                            id = "1",
+                            itemName = "Apple",
+                            approxPrice = 12.0F
+                        ),
+                        GroceryItem(
+                            id = "2",
+                            itemName = "Banana",
+                        ),
+                    )
+                ),
+                completedItems = listOf(
+                    GroceryItem(
+                        id = "3",
+                        itemName = "Banana",
+                    )
+                ),
+                expectedTotalPrice = 40.0F,
+                categoryExpandedStates = mapOf(
+                    UNCATEGORIZED_CATEGORY_NAME to true
+                )
+            ),
             onUiEvent = {},
             onNavigationEvent = {},
         )

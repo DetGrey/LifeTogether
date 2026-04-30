@@ -1,19 +1,17 @@
 package com.example.lifetogether.ui.feature.guides.details.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun CommentBubble(
@@ -23,14 +21,17 @@ fun CommentBubble(
     label: String,
     indentLevel: Int,
 ) {
-    Box(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = ((indentLevel * 18) + 40).dp)
-            .background(surfaceColor, RoundedCornerShape(12.dp))
-            .padding(10.dp),
+            .padding(start = (LifeTogetherTokens.spacing.large * indentLevel) + LifeTogetherTokens.spacing.xxLarge),
+        color = surfaceColor,
+        shape = MaterialTheme.shapes.small,
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(
+            modifier = Modifier.padding(LifeTogetherTokens.spacing.small),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),
+        ) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,

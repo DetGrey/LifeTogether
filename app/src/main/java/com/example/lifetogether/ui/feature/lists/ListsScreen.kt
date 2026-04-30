@@ -11,22 +11,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.enums.Visibility
@@ -34,9 +29,15 @@ import com.example.lifetogether.domain.model.lists.ListType
 import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.button.PrimaryButton
+import com.example.lifetogether.ui.common.button.SecondaryButton
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
+import com.example.lifetogether.ui.common.text.TextDefault
+import com.example.lifetogether.ui.common.text.TextHeadingMedium
+import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun ListsScreen(
@@ -44,38 +45,37 @@ fun ListsScreen(
     onUiEvent: (ListsUiEvent) -> Unit,
     onNavigationEvent: (ListsNavigationEvent) -> Unit,
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    Scaffold(
+        topBar = {
+            TopBar(
+                leftIcon = Icon(
+                    resId = R.drawable.ic_back_arrow,
+                    description = "back arrow icon",
+                ),
+                onLeftClick = { onNavigationEvent(ListsNavigationEvent.NavigateBack) },
+                text = "Lists",
+            )
+        },
+        floatingActionButton = {
+            AddButton(onClick = { onUiEvent(ListsUiEvent.CreateListClicked) })
+        },
+    ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(10.dp)
-                .padding(bottom = 80.dp),
+                .padding(padding)
+                .padding(LifeTogetherTokens.spacing.small)
+                .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
         ) {
             item {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    TopBar(
-                        leftIcon = Icon(
-                            resId = R.drawable.ic_back_arrow,
-                            description = "back arrow icon",
-                        ),
-                        onLeftClick = { onNavigationEvent(ListsNavigationEvent.NavigateBack) },
-                        text = "Lists",
-                    )
-
-                    SyncUpdatingText(
-                        keys = setOf(SyncKey.USER_LISTS, SyncKey.ROUTINE_LIST_ENTRIES),
-                    )
-                }
+                SyncUpdatingText(keys = setOf(SyncKey.USER_LISTS, SyncKey.ROUTINE_LIST_ENTRIES))
             }
 
             if (uiState.userLists.isEmpty()) {
                 item {
-                    Text(text = "No lists yet. Tap + to create one.")
+                    TextDefault(text = "No lists yet. Tap + to create one.")
                 }
             } else {
                 items(uiState.userLists) { list ->
@@ -91,28 +91,19 @@ fun ListsScreen(
             }
         }
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = 30.dp, end = 30.dp),
-            contentAlignment = Alignment.BottomEnd,
-        ) {
-            AddButton(onClick = { onUiEvent(ListsUiEvent.CreateListClicked) })
+        if (uiState.showCreateDialog) {
+            CreateListDialog(
+                name = uiState.newListName,
+                onNameChange = { onUiEvent(ListsUiEvent.CreateListNameChanged(it)) },
+                type = uiState.newListType,
+                onTypeChange = { onUiEvent(ListsUiEvent.CreateListTypeChanged(it)) },
+                visibility = uiState.newListVisibility,
+                onVisibilityChange = { onUiEvent(ListsUiEvent.CreateListVisibilityChanged(it)) },
+                isSaving = uiState.isSaving,
+                onDismiss = { onUiEvent(ListsUiEvent.CreateDialogDismissed) },
+                onCreate = { onUiEvent(ListsUiEvent.ConfirmCreateListClicked) },
+            )
         }
-    }
-
-    if (uiState.showCreateDialog) {
-        CreateListDialog(
-            name = uiState.newListName,
-            onNameChange = { onUiEvent(ListsUiEvent.CreateListNameChanged(it)) },
-            type = uiState.newListType,
-            onTypeChange = { onUiEvent(ListsUiEvent.CreateListTypeChanged(it)) },
-            visibility = uiState.newListVisibility,
-            onVisibilityChange = { onUiEvent(ListsUiEvent.CreateListVisibilityChanged(it)) },
-            isSaving = uiState.isSaving,
-            onDismiss = { onUiEvent(ListsUiEvent.CreateDialogDismissed) },
-            onCreate = { onUiEvent(ListsUiEvent.ConfirmCreateListClicked) },
-        )
     }
 }
 
@@ -124,11 +115,11 @@ private fun UserListCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.onBackground, RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.large)
             .clickable { onClick() }
-            .padding(14.dp),
+            .padding(LifeTogetherTokens.spacing.medium),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -137,19 +128,16 @@ private fun UserListCard(
                 Text(
                     text = list.type.name.lowercase().replaceFirstChar { it.uppercase() },
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.background,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
                 Text(
                     text = if (list.visibility == Visibility.FAMILY) "Family" else "Private",
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.background,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
-            Text(
+            TextHeadingMedium(
                 text = list.itemName,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.background,
-                fontWeight = FontWeight.Bold,
             )
         }
     }
@@ -170,48 +158,54 @@ private fun CreateListDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Create new list") },
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                TextField(
+            Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium)) {
+                CustomTextField(
                     value = name,
                     onValueChange = onNameChange,
-                    label = { Text("Name") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                    label = "Name",
+                    imeAction = ImeAction.Next,
+                    keyboardType = KeyboardType.Text
+//                    singleLine = true, //todo add these
+//                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences
                 )
 
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
                     Text("Type", style = MaterialTheme.typography.labelLarge)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        ListType.entries.forEach { listType ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
+                        ListType.entries.forEach { listType -> //todo use TagOption instead
                             val selected = type == listType
                             if (selected) {
-                                Button(onClick = {}) {
-                                    Text(listType.name.lowercase().replaceFirstChar { it.uppercase() })
-                                }
+                                PrimaryButton(
+                                    text = listType.name.lowercase().replaceFirstChar { it.uppercase() },
+                                    onClick = {},
+                                )
                             } else {
-                                OutlinedButton(onClick = { onTypeChange(listType) }) {
-                                    Text(listType.name.lowercase().replaceFirstChar { it.uppercase() })
-                                }
+                                SecondaryButton(
+                                    text = listType.name.lowercase().replaceFirstChar { it.uppercase() },
+                                    onClick = { onTypeChange(listType) },
+                                )
                             }
                         }
                     }
                 }
 
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
                     Text("Visibility", style = MaterialTheme.typography.labelLarge)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
                         Visibility.entries.forEach { vis ->
                             val selected = visibility == vis
                             if (selected) {
-                                Button(onClick = {}) {
-                                    Text(vis.name.lowercase().replaceFirstChar { it.uppercase() })
-                                }
+                                PrimaryButton(
+                                    text = vis.name.lowercase().replaceFirstChar { it.uppercase() },
+                                    onClick = {},
+                                )
                             } else {
-                                OutlinedButton(onClick = { onVisibilityChange(vis) }) {
-                                    Text(vis.name.lowercase().replaceFirstChar { it.uppercase() })
-                                }
+                                SecondaryButton(
+                                    text = vis.name.lowercase().replaceFirstChar { it.uppercase() },
+                                    onClick = { onVisibilityChange(vis) },
+                                )
                             }
                         }
                     }
@@ -222,11 +216,17 @@ private fun CreateListDialog(
             if (isSaving) {
                 CircularProgressIndicator()
             } else {
-                Button(onClick = onCreate) { Text("Create") }
+                PrimaryButton(
+                    text = "Create",
+                    onClick = onCreate,
+                )
             }
         },
         dismissButton = {
-            OutlinedButton(onClick = onDismiss) { Text("Cancel") }
+            SecondaryButton(
+                text = "Cancel",
+                onClick = onDismiss,
+            )
         },
     )
 }
@@ -236,8 +236,8 @@ private fun CreateListDialog(
 fun UserListCardPreview() {
     LifeTogetherTheme {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(LifeTogetherTokens.spacing.medium),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
         ) {
             UserListCard(
                 list = UserList(

@@ -16,12 +16,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,7 +33,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.GuideProgress
@@ -42,10 +40,14 @@ import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.button.PrimaryButton
+import com.example.lifetogether.ui.common.button.SecondaryButton
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.domain.sync.SyncKey
+import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun GuidesScreen(
@@ -90,35 +92,34 @@ fun GuidesScreen(
         onUiEvent(GuidesUiEvent.ImportGuidesFromJson(content))
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Scaffold(
+        topBar = {
+            TopBar(
+                leftIcon = Icon(
+                    resId = R.drawable.ic_back_arrow,
+                    description = "back arrow icon",
+                ),
+                onLeftClick = {
+                    onNavigationEvent(GuidesNavigationEvent.NavigateBack)
+                },
+                text = "Guides",
+            )
+        },
+        floatingActionButton = {
+            AddButton(onClick = { onUiEvent(GuidesUiEvent.OpenAddOptionsDialog) })
+        },
+    ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(10.dp)
-                .padding(bottom = 80.dp),
+                .padding(padding)
+                .padding(LifeTogetherTokens.spacing.small)
+                .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
         ) {
             item {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    TopBar(
-                        leftIcon = Icon(
-                            resId = R.drawable.ic_back_arrow,
-                            description = "back arrow icon",
-                        ),
-                        onLeftClick = {
-                            onNavigationEvent(GuidesNavigationEvent.NavigateBack)
-                        },
-                        text = "Guides",
-                    )
-
-                    SyncUpdatingText(
-                        keys = setOf(SyncKey.GUIDES),
-                    )
-                }
+                SyncUpdatingText(keys = setOf(SyncKey.GUIDES))
             }
 
             if (uiState.guides.isEmpty()) {
@@ -138,15 +139,6 @@ fun GuidesScreen(
                 }
             }
         }
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = 30.dp, end = 30.dp),
-            contentAlignment = Alignment.BottomEnd,
-        ) {
-            AddButton(onClick = { onUiEvent(GuidesUiEvent.OpenAddOptionsDialog) })
-        }
     }
 
     if (uiState.showAddOptionsDialog) {
@@ -154,32 +146,29 @@ fun GuidesScreen(
             onDismissRequest = { onUiEvent(GuidesUiEvent.CloseAddOptionsDialog) },
             title = { Text("Add guide") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Button(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = {
-                            onUiEvent(GuidesUiEvent.CloseAddOptionsDialog)
-                            onNavigationEvent(GuidesNavigationEvent.NavigateToGuideCreate)
-                        },
-                    ) {
-                        Text("Create guide manually")
-                    }
+                    Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
+                        PrimaryButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = "Create guide manually",
+                            onClick = {
+                                onUiEvent(GuidesUiEvent.CloseAddOptionsDialog)
+                                onNavigationEvent(GuidesNavigationEvent.NavigateToGuideCreate)
+                            },
+                        )
 
-                    Button(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = {
-                            onUiEvent(GuidesUiEvent.OpenImportDialog)
-                        },
-                    ) {
-                        Text("Upload JSON file")
+                        SecondaryButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = "Upload JSON file",
+                            onClick = { onUiEvent(GuidesUiEvent.OpenImportDialog) },
+                        )
                     }
-                }
             },
             confirmButton = {},
             dismissButton = {
-                Button(onClick = { onUiEvent(GuidesUiEvent.CloseAddOptionsDialog) }) {
-                    Text("Close")
-                }
+                SecondaryButton(
+                    text = "Close",
+                    onClick = { onUiEvent(GuidesUiEvent.CloseAddOptionsDialog) },
+                )
             },
         )
     }
@@ -189,7 +178,7 @@ fun GuidesScreen(
             onDismissRequest = { onUiEvent(GuidesUiEvent.CloseImportDialog) },
             title = { Text("Import guides from JSON") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
                     Text(
                         text = "Upload a JSON object or array using the guide schema. " +
                             "Guide IDs are assigned by Firestore automatically, while section/step IDs are regenerated.",
@@ -198,37 +187,34 @@ fun GuidesScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(10.dp))
-                            .padding(10.dp),
+                            .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.small)
+                            .padding(LifeTogetherTokens.spacing.small),
                     ) {
-                        Text(
-                            text = guideTemplate.take(500),
-                            maxLines = 12,
+                    Text(
+                        text = guideTemplate.take(500),
+                        maxLines = 12,
                             overflow = TextOverflow.Ellipsis,
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
 
-                    Button(
+                    SecondaryButton(
                         modifier = Modifier.fillMaxWidth(),
-                        onClick = {
-                            createGuideTemplateLauncher.launch("guide_template.json")
-                        },
-                    ) {
-                        Text("Download guide template")
-                    }
+                        text = "Download guide template",
+                        onClick = { createGuideTemplateLauncher.launch("guide_template.json") },
+                    )
 
-                    Button(
+                    SecondaryButton(
                         modifier = Modifier.fillMaxWidth(),
+                        text = "Download guide progress template",
                         onClick = {
                             createGuideProgressTemplateLauncher.launch("guide_progress_template.json")
                         },
-                    ) {
-                        Text("Download guide progress template")
-                    }
+                    )
 
-                    Button(
+                    PrimaryButton(
                         modifier = Modifier.fillMaxWidth(),
+                        text = "Choose JSON file",
                         onClick = {
                             openJsonLauncher.launch(
                                 arrayOf(
@@ -238,9 +224,7 @@ fun GuidesScreen(
                                 ),
                             )
                         },
-                    ) {
-                        Text("Choose JSON file")
-                    }
+                    )
 
                     if (uiState.isImporting) {
                         RowWithCenteredLoader()
@@ -256,14 +240,16 @@ fun GuidesScreen(
                 }
             },
             confirmButton = {
-                Button(onClick = { onUiEvent(GuidesUiEvent.CloseImportDialog) }) {
-                    Text("Done")
-                }
+                PrimaryButton(
+                    text = "Done",
+                    onClick = { onUiEvent(GuidesUiEvent.CloseImportDialog) },
+                )
             },
             dismissButton = {
-                Button(onClick = { onUiEvent(GuidesUiEvent.CloseImportDialog) }) {
-                    Text("Cancel")
-                }
+                SecondaryButton(
+                    text = "Cancel",
+                    onClick = { onUiEvent(GuidesUiEvent.CloseImportDialog) },
+                )
             },
         )
     }
@@ -304,11 +290,11 @@ private fun GuideOverviewCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.onBackground, RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.large)
             .clickable { onClick() }
-            .padding(14.dp),
+            .padding(LifeTogetherTokens.spacing.medium),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -317,40 +303,37 @@ private fun GuideOverviewCard(
                 Text(
                     text = if (guide.visibility == Visibility.FAMILY) "Family shared" else "Private",
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.background,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
                 Text(
                     text = if (guide.started) "In progress" else "Not started",
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.background,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                     fontWeight = FontWeight.SemiBold,
                 )
             }
 
-            Text(
+            TextHeadingMedium(
                 text = guide.itemName,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.background,
-                fontWeight = FontWeight.Bold,
             )
             if (guide.description.isNotBlank()) {
                 Text(
                     text = guide.description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.background,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
 
             LinearProgressIndicator(
                 modifier = Modifier.fillMaxWidth(),
                 progress = { progressPercent },
-                trackColor = MaterialTheme.colorScheme.background.copy(alpha = 0.3f),
+                trackColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f),
             )
 
             Text(
                 text = "Sections: $completedSections/${guide.sections.size}  •  Steps: $sectionProgress/$sectionTotal",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.background,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
         }
     }
@@ -359,7 +342,7 @@ private fun GuideOverviewCard(
 @Composable
 private fun RowWithCenteredLoader() {
     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(modifier = Modifier.size(28.dp))
+        CircularProgressIndicator(modifier = Modifier.size(LifeTogetherTokens.sizing.iconMedium))
     }
 }
 

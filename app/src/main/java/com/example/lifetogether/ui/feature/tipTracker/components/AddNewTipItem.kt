@@ -1,6 +1,5 @@
 package com.example.lifetogether.ui.feature.tipTracker.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,22 +13,25 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.domain.logic.toDayOfMonthString
-import com.example.lifetogether.ui.common.CustomTextField
-import com.example.lifetogether.ui.common.add.AddNewListItemViewModel
-import com.example.lifetogether.ui.common.dialog.CustomDatePickerDialog
+import com.example.lifetogether.ui.common.dialog.DatePickerDialog
+import com.example.lifetogether.ui.common.textfield.CustomTextField
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import java.util.Date
 
 @Composable
@@ -40,15 +42,14 @@ fun AddNewTipItem(
     dateValue: Date,
     onDateChange: (Date) -> Unit,
 ) {
-    val addNewListItemViewModel: AddNewListItemViewModel = hiltViewModel()
+    var showDialog by remember { mutableStateOf(false) }
 
-    Box(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .height(60.dp)
-            .clip(shape = RoundedCornerShape(20))
-            .background(color = MaterialTheme.colorScheme.onBackground),
-        contentAlignment = Alignment.CenterStart,
+            .height(60.dp),
+        color = MaterialTheme.colorScheme.primaryContainer,
+        shape = MaterialTheme.shapes.medium,
     ) {
         Row(
             modifier = Modifier
@@ -61,20 +62,20 @@ fun AddNewTipItem(
             ) {
                 Box(
                     modifier = Modifier
-                        .padding(10.dp)
+                        .padding(LifeTogetherTokens.spacing.small)
                         .fillMaxHeight()
                         .aspectRatio(1f, true)
                         .border(
                             width = 4.dp,
                             color = MaterialTheme.colorScheme.secondary,
-                            shape = RoundedCornerShape(10.dp),
+                            shape = MaterialTheme.shapes.small,
                         )
                         .clickable {
-                            addNewListItemViewModel.showDialog = true
+                            showDialog = true
                         },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(text = dateValue.toDayOfMonthString(), color = Color.White)
+                    Text(text = dateValue.toDayOfMonthString(), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
 
 //                VerticalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.secondary, modifier = Modifier.padding(vertical = 10.dp))
@@ -90,16 +91,16 @@ fun AddNewTipItem(
 
             Row(
                 modifier = Modifier
-                    .padding(10.dp)
+                    .padding(LifeTogetherTokens.spacing.small)
                     .fillMaxHeight()
                     .clickable {
                         onAddClick()
                     },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(text = "Add", color = Color.White)
+                Text(text = "Add", color = MaterialTheme.colorScheme.secondary)
 
-                Spacer(modifier = Modifier.width(5.dp))
+                Spacer(modifier = Modifier.width(LifeTogetherTokens.spacing.xSmall))
 
                 Text(
                     text = ">",
@@ -109,16 +110,30 @@ fun AddNewTipItem(
         }
     }
 
-    if (addNewListItemViewModel.showDialog) {
-        CustomDatePickerDialog(
+    if (showDialog) {
+        DatePickerDialog(
             selectedDate = dateValue,
             onDismiss = {
-                addNewListItemViewModel.showDialog = false
+                showDialog = false
             },
             onDateSelected = {
                 onDateChange(it)
-                addNewListItemViewModel.showDialog = false
+                showDialog = false
             },
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ListEntryCardDailyPreview() {
+    LifeTogetherTheme {
+        AddNewTipItem(
+            textValue = "133",
+            onTextChange = {},
+            onAddClick = {},
+            dateValue = Date(),
+            onDateChange = {},
         )
     }
 }

@@ -5,6 +5,7 @@ import com.example.lifetogether.domain.model.UserInformation
 data class ProfileUiState(
     val userInformation: UserInformation? = null,
     val showConfirmationDialog: Boolean = false,
+    val showImageUploadDialog: Boolean = false,
     val confirmationDialogType: ProfileConfirmationType? = null,
     val newName: String = "",
 )

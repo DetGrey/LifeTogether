@@ -7,7 +7,6 @@ import androidx.compose.runtime.remember
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
-import androidx.navigation.toRoute
 import com.example.lifetogether.ui.feature.admin.groceryList.categories.AdminGroceryCategoriesRoute
 import com.example.lifetogether.ui.feature.admin.groceryList.suggestions.AdminGrocerySuggestionsRoute
 import com.example.lifetogether.ui.feature.family.FamilyRoute
@@ -18,8 +17,8 @@ import com.example.lifetogether.ui.feature.gallery.MediaDetailsRoute
 import com.example.lifetogether.ui.feature.groceryList.GroceryListRoute
 import com.example.lifetogether.ui.feature.guides.GuidesRoute
 import com.example.lifetogether.ui.feature.guides.create.GuideCreateRoute
-import com.example.lifetogether.ui.feature.guides.details.GuideDetailsDestinationRoute
-import com.example.lifetogether.ui.feature.guides.details.GuideStepPlayerDestinationRoute
+import com.example.lifetogether.ui.feature.guides.details.GuideDetailsRoute
+import com.example.lifetogether.ui.feature.guides.stepplayer.GuideStepPlayerRoute
 import com.example.lifetogether.ui.feature.home.HomeRoute
 import com.example.lifetogether.ui.feature.lists.ListsRoute
 import com.example.lifetogether.ui.feature.lists.entryDetails.ListEntryDetailsRoute
@@ -74,52 +73,42 @@ fun NavHost(
 
         navigation<GuideGraph>(startDestination = GuideDetailsNavRoute::class) {
             composable<GuideDetailsNavRoute> { backStackEntry ->
-                val guideId = backStackEntry.toRoute<GuideDetailsNavRoute>().guideId
-                GuideDetailsDestinationRoute(
-                    navController = navController,
-                    backStackEntry = backStackEntry,
-                    guideId = guideId,
+                val guideGraphEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry<GuideGraph>()
+                }
+
+                GuideDetailsRoute(
                     appNavigator = appNavigator,
+                    viewModelStoreOwner = guideGraphEntry,
                 )
             }
+
             composable<GuideStepPlayerNavRoute> { backStackEntry ->
-                val guideId = backStackEntry.toRoute<GuideStepPlayerNavRoute>().guideId
-                GuideStepPlayerDestinationRoute(
-                    navController = navController,
-                    backStackEntry = backStackEntry,
-                    guideId = guideId,
+                val guideGraphEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry<GuideGraph>()
+                }
+
+                GuideStepPlayerRoute(
                     appNavigator = appNavigator,
+                    viewModelStoreOwner = guideGraphEntry,
                 )
             }
         }
 
         composable<CreateRecipeNavRoute> { CreateRecipeRoute(appNavigator) }
-        composable<RecipeDetailsNavRoute> { backStackEntry ->
-            val recipeId = backStackEntry.toRoute<RecipeDetailsNavRoute>().recipeId
-            RecipeDetailsRoute(recipeId = recipeId, appNavigator = appNavigator)
+        composable<RecipeDetailsNavRoute> {
+            RecipeDetailsRoute(appNavigator = appNavigator)
         }
 
         navigation<GalleryGraph>(startDestination = GalleryNavRoute::class) {
             composable<GalleryNavRoute> { GalleryScreenRoute(appNavigator) }
-            composable<AlbumMediaNavRoute> { backStackEntry ->
-                val albumId = backStackEntry.toRoute<AlbumMediaNavRoute>().albumId
-                AlbumDetailsRoute(appNavigator, albumId)
-            }
-            composable<GalleryMediaNavRoute> { backStackEntry ->
-                val route = backStackEntry.toRoute<GalleryMediaNavRoute>()
-                MediaDetailsRoute(appNavigator, route.albumId, route.initialIndex)
-            }
+            composable<AlbumMediaNavRoute> { AlbumDetailsRoute(appNavigator) }
+            composable<GalleryMediaNavRoute> { MediaDetailsRoute(appNavigator) }
         }
 
         composable<ListsNavRoute> { ListsRoute(appNavigator) }
-        composable<ListDetailNavRoute> { backStackEntry ->
-            val listId = backStackEntry.toRoute<ListDetailNavRoute>().listId
-            ListDetailsRoute(listId = listId, appNavigator = appNavigator)
-        }
-        composable<ListEntryDetailsNavRoute> { backStackEntry ->
-            val route = backStackEntry.toRoute<ListEntryDetailsNavRoute>()
-            ListEntryDetailsRoute(listId = route.listId, entryId = route.entryId, appNavigator = appNavigator)
-        }
+        composable<ListDetailNavRoute> { ListDetailsRoute(appNavigator = appNavigator) }
+        composable<ListEntryDetailsNavRoute> { ListEntryDetailsRoute(appNavigator = appNavigator) }
 
         navigation<TipTrackerGraph>(startDestination = TipTrackerNavRoute::class) {
             composable<TipTrackerNavRoute> { backStackEntry ->

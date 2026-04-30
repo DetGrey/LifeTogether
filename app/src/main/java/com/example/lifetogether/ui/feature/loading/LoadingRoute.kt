@@ -3,9 +3,9 @@ package com.example.lifetogether.ui.feature.loading
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.ui.common.di.rememberSessionRepository
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.navigation.HomeNavRoute
 import com.example.lifetogether.ui.navigation.LoginNavRoute
@@ -14,8 +14,8 @@ import com.example.lifetogether.ui.navigation.LoginNavRoute
 fun LoadingRoute(
     appNavigator: AppNavigator,
 ) {
-    val loadingViewModel: LoadingViewModel = hiltViewModel()
-    val sessionState by loadingViewModel.sessionState.collectAsStateWithLifecycle()
+    val sessionRepository = rememberSessionRepository()
+    val sessionState by sessionRepository.sessionState.collectAsStateWithLifecycle()
 
     LaunchedEffect(sessionState) {
         when (sessionState) {

@@ -13,8 +13,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,10 +23,13 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import android.net.Uri
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.family.FamilyInformation
-import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.domain.model.family.FamilyMember
+import com.example.lifetogether.domain.result.AppError
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
@@ -35,12 +38,14 @@ import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.feature.profile.ProfileDetails
 import com.example.lifetogether.ui.feature.settings.SettingsItem
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun FamilyScreen(
     uiState: FamilyUiState,
     bitmap: Bitmap?,
     showImageUploadDialog: Boolean,
+    onImageUpload: suspend (Uri) -> Result<Unit, AppError>,
     onUiEvent: (FamilyUiEvent) -> Unit,
     onNavigationEvent: (FamilyNavigationEvent) -> Unit,
 ) {
@@ -49,30 +54,31 @@ fun FamilyScreen(
     val uid = uiState.uid
     val members = familyInformation?.members.orEmpty()
 
-    Box(
-        modifier = Modifier.fillMaxSize(),
-    ) {
+    Scaffold(
+        topBar = {
+            TopBar(
+                leftIcon = Icon(
+                    resId = R.drawable.ic_back_arrow,
+                    description = "back arrow icon",
+                ),
+                onLeftClick = {
+                    onNavigationEvent(FamilyNavigationEvent.NavigateBack)
+                },
+                text = "Family",
+            )
+        },
+    ) { padding ->
         LazyColumn(
-            modifier = Modifier.padding(10.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(LifeTogetherTokens.spacing.small),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(30.dp),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
         ) {
             item {
-                TopBar(
-                    leftIcon = Icon(
-                        resId = R.drawable.ic_back_arrow,
-                        description = "back arrow icon",
-                    ),
-                    onLeftClick = {
-                        onNavigationEvent(FamilyNavigationEvent.NavigateBack)
-                    },
-                    text = "Family",
-                )
-            }
-
-            item {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(15.dp),
+                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
                 ) {
                     Box(
                         modifier = Modifier.fillMaxWidth(),
@@ -84,10 +90,10 @@ fun FamilyScreen(
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(top = 15.dp)
+                                    .padding(top = LifeTogetherTokens.spacing.medium)
                                     .height(200.dp)
-                                    .clip(shape = RoundedCornerShape(20))
-                                    .background(color = MaterialTheme.colorScheme.onBackground),
+                                    .clip(shape = MaterialTheme.shapes.large)
+                                    .background(color = MaterialTheme.colorScheme.surfaceVariant),
                             ) {
                                 if (bitmap != null) {
                                     Image(
@@ -100,7 +106,7 @@ fun FamilyScreen(
                             }
 
                             Box(
-                                modifier = Modifier.size(50.dp),
+                                modifier = Modifier.size(LifeTogetherTokens.sizing.touchTargetMinimum),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 AddButton(onClick = { onUiEvent(FamilyUiEvent.AddImageClicked) })
@@ -126,7 +132,7 @@ fun FamilyScreen(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.medium))
 
                     TextHeadingMedium(text = "Settings")
 
@@ -160,65 +166,63 @@ fun FamilyScreen(
             }
 
             item {
-                Spacer(modifier = Modifier.height(30.dp))
+                Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.xLarge))
             }
         }
+    }
 
-        if (uiState.showConfirmationDialog) {
-            when (uiState.confirmationDialogType) {
-                FamilyConfirmationType.LEAVE_FAMILY -> ConfirmationDialog(
-                    onDismiss = { onUiEvent(FamilyUiEvent.DismissConfirmationDialog) },
-                    onConfirm = { onUiEvent(FamilyUiEvent.ConfirmConfirmationDialog) },
-                    dialogTitle = "Leave family",
-                    dialogMessage = "Are you sure you want to leave the family?",
-                    dismissButtonMessage = "Cancel",
-                    confirmButtonMessage = "Leave",
-                )
+    if (uiState.showConfirmationDialog) {
+        when (uiState.confirmationDialogType) {
+            FamilyConfirmationType.LEAVE_FAMILY -> ConfirmationDialog(
+                onDismiss = { onUiEvent(FamilyUiEvent.DismissConfirmationDialog) },
+                onConfirm = { onUiEvent(FamilyUiEvent.ConfirmConfirmationDialog) },
+                dialogTitle = "Leave family",
+                dialogMessage = "Are you sure you want to leave the family?",
+                dismissButtonMessage = "Cancel",
+                confirmButtonMessage = "Leave",
+            )
 
-                FamilyConfirmationType.ADD_MEMBER -> ConfirmationDialog(
-                    onDismiss = { onUiEvent(FamilyUiEvent.DismissConfirmationDialog) },
-                    onConfirm = { onUiEvent(FamilyUiEvent.ConfirmConfirmationDialog) },
-                    dialogTitle = "Share family ID",
-                    dialogMessage = "Family ID: $familyId",
-                    dismissButtonMessage = "Cancel",
-                    confirmButtonMessage = "Copy",
-                )
+            FamilyConfirmationType.ADD_MEMBER -> ConfirmationDialog(
+                onDismiss = { onUiEvent(FamilyUiEvent.DismissConfirmationDialog) },
+                onConfirm = { onUiEvent(FamilyUiEvent.ConfirmConfirmationDialog) },
+                dialogTitle = "Share family ID",
+                dialogMessage = "Family ID: $familyId",
+                dismissButtonMessage = "Cancel",
+                confirmButtonMessage = "Copy",
+            )
 
-                FamilyConfirmationType.REMOVE_MEMBER -> ConfirmationDialog(
-                    onDismiss = { onUiEvent(FamilyUiEvent.DismissConfirmationDialog) },
-                    onConfirm = { onUiEvent(FamilyUiEvent.ConfirmConfirmationDialog) },
-                    dialogTitle = "Remove member",
-                    dialogMessage = "Are you sure you want to remove ${uiState.memberToRemove?.name} from the family?",
-                    dismissButtonMessage = "Cancel",
-                    confirmButtonMessage = "Remove",
-                )
+            FamilyConfirmationType.REMOVE_MEMBER -> ConfirmationDialog(
+                onDismiss = { onUiEvent(FamilyUiEvent.DismissConfirmationDialog) },
+                onConfirm = { onUiEvent(FamilyUiEvent.ConfirmConfirmationDialog) },
+                dialogTitle = "Remove member",
+                dialogMessage = "Are you sure you want to remove ${uiState.memberToRemove?.name} from the family?",
+                dismissButtonMessage = "Cancel",
+                confirmButtonMessage = "Remove",
+            )
 
-                FamilyConfirmationType.DELETE_FAMILY -> ConfirmationDialog(
-                    onDismiss = { onUiEvent(FamilyUiEvent.DismissConfirmationDialog) },
-                    onConfirm = { onUiEvent(FamilyUiEvent.ConfirmConfirmationDialog) },
-                    dialogTitle = "Delete family",
-                    dialogMessage = "Are you sure you want to delete the family?",
-                    dismissButtonMessage = "Cancel",
-                    confirmButtonMessage = "Delete",
-                )
+            FamilyConfirmationType.DELETE_FAMILY -> ConfirmationDialog(
+                onDismiss = { onUiEvent(FamilyUiEvent.DismissConfirmationDialog) },
+                onConfirm = { onUiEvent(FamilyUiEvent.ConfirmConfirmationDialog) },
+                dialogTitle = "Delete family",
+                dialogMessage = "Are you sure you want to delete the family?",
+                dismissButtonMessage = "Cancel",
+                confirmButtonMessage = "Delete",
+            )
 
-                null -> Unit
-            }
+            null -> Unit
         }
+    }
 
-        if (showImageUploadDialog) {
-            familyId?.let {
-                ImageUploadDialog(
-                    onDismiss = { onUiEvent(FamilyUiEvent.ImageUploadDismissed) },
-                    onConfirm = { onUiEvent(FamilyUiEvent.ImageUploadConfirmed) },
-                    dialogTitle = "Upload family image",
-                    dialogMessage = "Select your new family image",
-                    imageType = ImageType.FamilyImage(it),
-                    dismissButtonMessage = "Cancel",
-                    confirmButtonMessage = "Upload image",
-                )
-            }
-        }
+    if (showImageUploadDialog && familyId != null) {
+        ImageUploadDialog(
+            onDismiss = { onUiEvent(FamilyUiEvent.ImageUploadDismissed) },
+            onConfirm = { onUiEvent(FamilyUiEvent.ImageUploadConfirmed) },
+            onUpload = onImageUpload,
+            dialogTitle = "Upload family image",
+            dialogMessage = "Select your new family image",
+            dismissButtonMessage = "Cancel",
+            confirmButtonMessage = "Upload image",
+        )
     }
 }
 
@@ -232,11 +236,14 @@ fun FamilyScreenPreview() {
                 uid = "uid-1",
                 familyInformation = FamilyInformation(
                     familyId = "family-123",
-                    members = emptyList(),
+                    members = listOf(
+                        FamilyMember(name = "Ane")
+                    ),
                 ),
             ),
             bitmap = null,
             showImageUploadDialog = false,
+            onImageUpload = { Result.Success(Unit) },
             onUiEvent = {},
             onNavigationEvent = {},
         )
