@@ -120,8 +120,14 @@ Phase 8 excludes non-visual plumbing such as `ViewModel`s, routes, DI helpers, e
 
 The following component decisions have been explicitly agreed and should be treated as settled unless a later implementation issue forces a re-open:
 
+- Ignored for this phase review:
+  - `OverflowMenu`
+  - `AddNewListItem`
+  - `AddNewString`
+  - `AddNewTipItem`
+  - `StepToggleRow`
 - `ListItem` stays as the canonical shared row wrapper.
-- `CompletableBox` stays as the canonical completion toggle wrapper.
+- `CompletableBox` stays as the canonical completion toggle wrapper, but it should be rebuilt as a separate circle-shaped native M3-backed composable rather than deleted.
 - `TagOption` and `TagOptionRow` stay as the canonical shared chip-row wrapper.
 - `FeatureOverview` becomes a native `Card` tile.
 - `RecipeOverview` becomes a native `Card` tile.
@@ -144,6 +150,9 @@ The following component decisions have been explicitly agreed and should be trea
 - The tip entry row keeps its current visual language, including the date trigger and one-row structure.
 - `ThumbnailContainer` stays custom because it is a layered media helper, not a simple card tile.
 - `GrocerySuggestionPopup` becomes a native `Card`-based suggestion surface.
+- `ListItem` should be updated to lean on native Material 3 row primitives, while keeping the public shared wrapper API and its current appearance.
+- `CompletableBox` should be updated to lean on a native Material 3 checkbox-style control, while keeping the wrapper as a separate composable.
+- `SettingsItem` and `ProfileDetails` should stay separate components. They are close in structure, but their color treatment and element positioning are intentionally different enough that a shared shell is not worth the visual risk.
 
 ## Subphases
 
