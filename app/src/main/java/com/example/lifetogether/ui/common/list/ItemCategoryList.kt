@@ -39,7 +39,9 @@ fun ItemCategoryList(
     onBellClick: ((GroceryItem) -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
 ) {
-    Column {
+    Column(
+        modifier = Modifier.padding(vertical = LifeTogetherTokens.spacing.medium)
+    ) {
         Column(
             modifier = Modifier
                 .padding(horizontal = LifeTogetherTokens.spacing.xSmall)
@@ -62,7 +64,7 @@ fun ItemCategoryList(
                     Text(
                         text = category.name,
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.tertiary
                     )
                 }
                 Row {
@@ -104,7 +106,6 @@ fun ItemCategoryList(
                 }
             }
         }
-        Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.xLarge))
     }
 }
 

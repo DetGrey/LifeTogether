@@ -21,22 +21,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.ui.common.textfield.CustomTextField
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun AddNewString(
     label: String? = null,
     onAddClick: (String) -> Unit,
-    ) {
+) {
     var textValue by rememberSaveable { mutableStateOf("") }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .height(60.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.onBackground),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
         shape = MaterialTheme.shapes.large,
     ) {
         Row(
@@ -76,5 +78,14 @@ fun AddNewString(
                 )
             }
         }
+    }
+}
+@Preview(showBackground = true)
+@Composable
+private fun Preview() {
+    LifeTogetherTheme {
+        AddNewString(
+            "He"
+        ) { }
     }
 }

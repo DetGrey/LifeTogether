@@ -3,7 +3,9 @@ package com.example.lifetogether.ui.feature.gallery
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,14 +17,15 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
 import com.example.lifetogether.ui.common.text.TextBodyLarge
 import com.example.lifetogether.ui.common.text.TextDefault
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
@@ -32,18 +35,17 @@ fun AlbumCard(
     bitmap: Bitmap? = null,
     onClick: () -> Unit = {},
 ) {
-    Card(
+    Column(
         modifier = Modifier
             .fillMaxWidth(0.5f)
             .padding(LifeTogetherTokens.spacing.small)
             .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.onBackground),
-        shape = MaterialTheme.shapes.large,
     ) {
-        Box(
+        Card(
             modifier = Modifier
                 .aspectRatio(1f),
-            contentAlignment = Alignment.Center,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            shape = MaterialTheme.shapes.large,
         ) {
             if (bitmap != null) {
                 Image(
@@ -70,5 +72,22 @@ fun AlbumCard(
             text = count.toString(),
             modifier = Modifier.padding(start = LifeTogetherTokens.spacing.xSmall),
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AlbumCardPreview() {
+    LifeTogetherTheme {
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            maxItemsInEachRow = 2,
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+        ) {
+            AlbumCard(
+                albumName = "Weekend trip",
+                count = 12,
+            )
+        }
     }
 }

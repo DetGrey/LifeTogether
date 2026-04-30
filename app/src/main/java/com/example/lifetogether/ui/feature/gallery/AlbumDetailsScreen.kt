@@ -24,8 +24,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
 import android.net.Uri
 import com.example.lifetogether.R
+import com.example.lifetogether.domain.model.gallery.Album
+import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
@@ -44,6 +47,7 @@ import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.model.MenuAction
 import com.example.lifetogether.domain.sync.SyncKey
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
@@ -192,9 +196,10 @@ fun AlbumDetailsScreen(
                                         onUiEvent(AlbumDetailsUiEvent.ToggleMediaSelection(media.id))
                                     },
                                 )
-                            }
-                        }
-                    }
+        }
+    }
+}
+
                 }
             }
         }
@@ -320,4 +325,37 @@ fun AlbumDetailsScreen(
         }
     }
 
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AlbumDetailsScreenPreview() {
+    LifeTogetherTheme {
+        val sampleMedia = GalleryImage(
+            id = "media-1",
+            familyId = "family-1",
+            itemName = "Kitchen shelf",
+            lastUpdated = java.util.Date(1_717_200_000_000),
+            albumId = "album-1",
+            dateCreated = java.util.Date(1_717_200_000_000),
+        )
+
+        AlbumDetailsScreen(
+            uiState = AlbumDetailsUiState(
+                album = Album(
+                    id = "album-1",
+                    familyId = "family-1",
+                    itemName = "Weekend trip",
+                    lastUpdated = java.util.Date(1_717_200_000_000),
+                    count = 1,
+                ),
+                media = listOf(sampleMedia),
+                groupedMedia = listOf("Today" to listOf(sampleMedia)),
+                thumbnails = emptyMap(),
+            ),
+            onImageUpload = { Result.Success(Unit) },
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
+    }
 }

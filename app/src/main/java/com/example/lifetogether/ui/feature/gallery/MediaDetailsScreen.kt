@@ -25,6 +25,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
 import kotlin.math.roundToInt
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.durationToString
@@ -44,7 +45,9 @@ import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.model.MenuAction
 import com.example.lifetogether.domain.sync.SyncKey
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
+import java.util.Date
 
 @Composable
 fun MediaDetailsScreen(
@@ -222,5 +225,38 @@ private fun MediaDetailsPanelContent(media: GalleryMedia) {
                 text = media.duration?.durationToString() ?: "Unknown duration",
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun MediaDetailsScreenPreview() {
+    LifeTogetherTheme {
+        MediaDetailsScreen(
+            uiState = MediaDetailsUiState(
+                mediaList = listOf(
+                    GalleryImage(
+                        id = "media-1",
+                        familyId = "family-1",
+                        itemName = "Kitchen shelf",
+                        lastUpdated = Date(1_717_200_000_000),
+                        albumId = "album-1",
+                        dateCreated = Date(1_717_200_000_000),
+                    ),
+                    GalleryVideo(
+                        id = "media-2",
+                        familyId = "family-1",
+                        itemName = "Living room",
+                        lastUpdated = Date(1_717_200_000_000),
+                        albumId = "album-1",
+                        dateCreated = Date(1_717_200_000_000),
+                        duration = 42_000L,
+                    ),
+                ),
+                currentIndex = 0,
+            ),
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
     }
 }

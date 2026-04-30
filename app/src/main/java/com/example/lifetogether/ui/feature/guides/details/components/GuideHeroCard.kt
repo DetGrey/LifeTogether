@@ -11,11 +11,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.domain.model.guides.Guide
+import com.example.lifetogether.domain.model.guides.GuideSection
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
+import java.util.Date
 
 @Composable
 fun GuideHeroCard(guide: Guide) {
@@ -52,5 +56,37 @@ fun GuideHeroCard(guide: Guide) {
                 fontWeight = FontWeight.SemiBold,
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun GuideHeroCardPreview() {
+    LifeTogetherTheme {
+        GuideHeroCard(
+            guide = Guide(
+                id = "guide-1",
+                familyId = "family-1",
+                itemName = "Weekend cleaning",
+                lastUpdated = Date(1_717_200_000_000),
+                description = "A short guide for cleaning the apartment together.",
+                visibility = Visibility.FAMILY,
+                started = true,
+                sections = listOf(
+                    GuideSection(
+                        id = "section-1",
+                        orderNumber = 1,
+                        title = "Kitchen",
+                        completed = true,
+                    ),
+                    GuideSection(
+                        id = "section-2",
+                        orderNumber = 2,
+                        title = "Living room",
+                        completed = false,
+                    ),
+                ),
+            ),
+        )
     }
 }

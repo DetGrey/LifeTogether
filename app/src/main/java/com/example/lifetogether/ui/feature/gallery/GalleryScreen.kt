@@ -13,6 +13,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.model.Icon
@@ -21,7 +22,10 @@ import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.domain.sync.SyncKey
+import com.example.lifetogether.ui.model.AlbumUiModel
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
+import java.util.Date
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -57,9 +61,7 @@ fun GalleryScreen(
         ) {
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
-                    SyncUpdatingText(
-                        keys = setOf(SyncKey.GALLERY_ALBUMS, SyncKey.GALLERY_MEDIA),
-                    )
+                    SyncUpdatingText(keys = setOf(SyncKey.GALLERY_ALBUMS, SyncKey.GALLERY_MEDIA))
 
                     if (uiState.albums.isEmpty()) {
                         Text(text = "No albums created. Press + to create one.")
@@ -97,6 +99,35 @@ fun GalleryScreen(
             textValue = uiState.newAlbumName,
             onTextValueChange = { onUiEvent(GalleryUiEvent.NewAlbumNameChanged(it)) },
             capitalization = true,
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun GalleryScreenPreview() {
+    LifeTogetherTheme {
+        GalleryScreen(
+            uiState = GalleryUiState(
+                albums = listOf(
+                    AlbumUiModel(
+                        id = "album-1",
+                        familyId = "family-1",
+                        name = "Weekend trip",
+                        lastUpdated = Date(1_717_200_000_000),
+                        mediaCount = 12,
+                    ),
+                    AlbumUiModel(
+                        id = "album-2",
+                        familyId = "family-1",
+                        name = "Kitchen ideas",
+                        lastUpdated = Date(1_717_200_000_000),
+                        mediaCount = 4,
+                    ),
+                ),
+            ),
+            onUiEvent = {},
+            onNavigationEvent = {},
         )
     }
 }
