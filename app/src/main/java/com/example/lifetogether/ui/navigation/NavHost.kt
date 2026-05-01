@@ -1,9 +1,13 @@
 package com.example.lifetogether.ui.navigation
 
 import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
@@ -34,6 +38,9 @@ import com.example.lifetogether.ui.feature.signup.SignupRoute
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerRoute
 import com.example.lifetogether.ui.feature.tipTracker.statistics.TipStatisticsRoute
 
+private const val RouteTransitionDurationMillis = 350
+private const val RouteTransitionFadeInitialAlpha = 0.92f
+
 @Composable
 fun NavHost(
     navController: NavHostController,
@@ -45,16 +52,16 @@ fun NavHost(
         navController = navController,
         startDestination = LoadingNavRoute,
         enterTransition = {
-            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, animationSpec = tween(200))
+            routeEnterTransition(AnimatedContentTransitionScope.SlideDirection.Left)
         },
         exitTransition = {
-            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, animationSpec = tween(200))
+            routeExitTransition(AnimatedContentTransitionScope.SlideDirection.Left)
         },
         popEnterTransition = {
-            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right, animationSpec = tween(200))
+            routeEnterTransition(AnimatedContentTransitionScope.SlideDirection.Right)
         },
         popExitTransition = {
-            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, animationSpec = tween(200))
+            routeExitTransition(AnimatedContentTransitionScope.SlideDirection.Right)
         },
     ) {
         composable<AdminGroceryCategoriesNavRoute> { AdminGroceryCategoriesRoute(appNavigator) }
@@ -122,3 +129,35 @@ fun NavHost(
         }
     }
 }
+
+private fun routeTransitionSpec() =
+    tween<Float>(
+        durationMillis = RouteTransitionDurationMillis,
+        easing = FastOutSlowInEasing,
+    )
+
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.routeEnterTransition(
+    direction: AnimatedContentTransitionScope.SlideDirection,
+) = slideIntoContainer(
+    direction,
+    animationSpec = tween(
+        durationMillis = RouteTransitionDurationMillis,
+        easing = FastOutSlowInEasing,
+    ),
+) + fadeIn(
+    animationSpec = routeTransitionSpec(),
+    initialAlpha = RouteTransitionFadeInitialAlpha,
+)
+
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.routeExitTransition(
+    direction: AnimatedContentTransitionScope.SlideDirection,
+) = slideOutOfContainer(
+    direction,
+    animationSpec = tween(
+        durationMillis = RouteTransitionDurationMillis,
+        easing = FastOutSlowInEasing,
+    ),
+) + fadeOut(
+    animationSpec = routeTransitionSpec(),
+    targetAlpha = RouteTransitionFadeInitialAlpha,
+)
