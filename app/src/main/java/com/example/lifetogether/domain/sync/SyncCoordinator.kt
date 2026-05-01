@@ -14,14 +14,7 @@ import com.example.lifetogether.domain.usecase.sync.SyncRecipesUseCase
 import com.example.lifetogether.domain.usecase.sync.SyncTipTrackerUseCase
 import com.example.lifetogether.domain.usecase.sync.SyncUserInformationUseCase
 import com.example.lifetogether.domain.usecase.sync.SyncStartHandle
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -65,20 +58,6 @@ class SyncCoordinator @Inject constructor(
     private val activeSyncHandles: MutableMap<SyncKey, SyncStartHandle> = mutableMapOf()
     private val activeSyncContexts: MutableMap<SyncKey, SyncContext> = mutableMapOf()
     private val syncRefCounts: MutableMap<SyncKey, Int> = mutableMapOf()
-    private val firstSuccessMonitorJobs: MutableMap<SyncKey, Job> = mutableMapOf()
-
-    private val _syncStates =
-        MutableStateFlow(SyncKey.entries.associateWith { SyncState.IDLE })
-    val syncStates: StateFlow<Map<SyncKey, SyncState>> =
-        _syncStates.asStateFlow()
-
-    private val _activeSyncKeys = MutableStateFlow<Set<SyncKey>>(emptySet())
-    val activeSyncKeys: StateFlow<Set<SyncKey>> = _activeSyncKeys.asStateFlow()
-
-    private val _hasSyncedOnce =
-        MutableStateFlow(SyncKey.entries.associateWith { false })
-    val hasSyncedOnce: StateFlow<Map<SyncKey, Boolean>> =
-        _hasSyncedOnce.asStateFlow()
 
     fun syncGlobalSynchronizerContext(
         scope: CoroutineScope,
@@ -160,32 +139,10 @@ class SyncCoordinator @Inject constructor(
 
         stopSynchronizer(key)
 
-        val handle = createSynchronizerHandle(scope, key, context) ?: run {
-            _syncStates.update { it + (key to SyncState.IDLE) }
-            return
-        }
+        val handle = createSynchronizerHandle(scope, key, context) ?: return
 
         activeSyncContexts[key] = context
         activeSyncHandles[key] = handle
-        _activeSyncKeys.update { it + key }
-        _syncStates.update { it + (key to SyncState.UPDATING) }
-
-        firstSuccessMonitorJobs[key] = scope.launch {
-            try {
-                val firstSuccessResult = handle.firstSuccess.await()
-                val nextState = if (firstSuccessResult.isSuccess) {
-                    _hasSyncedOnce.update { it + (key to true) }
-                    SyncState.READY
-                } else {
-                    SyncState.FAILED
-                }
-                _syncStates.update { it + (key to nextState) }
-            } catch (_: CancellationException) {
-                // Synchronizer was stopped before first success.
-            } catch (_: Throwable) {
-                _syncStates.update { it + (key to SyncState.FAILED) }
-            }
-        }
     }
 
     private fun createSynchronizerHandle(
@@ -270,10 +227,7 @@ class SyncCoordinator @Inject constructor(
     }
 
     private fun stopSynchronizer(key: SyncKey) {
-        firstSuccessMonitorJobs.remove(key)?.cancel()
         activeSyncHandles.remove(key)?.job?.cancel()
         activeSyncContexts.remove(key)
-        _activeSyncKeys.update { it - key }
-        _syncStates.update { it + (key to SyncState.IDLE) }
     }
 }

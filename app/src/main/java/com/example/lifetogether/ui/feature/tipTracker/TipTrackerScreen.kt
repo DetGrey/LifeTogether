@@ -16,9 +16,7 @@ import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
-import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
-import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.feature.tipTracker.components.AddNewTipItem
 import com.example.lifetogether.ui.feature.tipTracker.components.TipsCalendar
 import com.example.lifetogether.ui.feature.tipTracker.components.TipsList
@@ -65,8 +63,6 @@ fun TipTrackerScreen(
         ) {
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
-                    SyncUpdatingText(keys = setOf(SyncKey.TIP_TRACKER))
-
                     if (content.tips.isNotEmpty()) {
                         TagOptionRow(
                             options = listOf("Calendar", "List"),

@@ -19,12 +19,10 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
-import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.add.AddNewListItem
 import com.example.lifetogether.ui.common.add.EditListItem
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
-import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -57,12 +55,6 @@ fun AdminGrocerySuggestionsScreen(
                     .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            SyncUpdatingText(
-                keys = setOf(SyncKey.GROCERY_CATEGORIES, SyncKey.GROCERY_SUGGESTIONS),
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
             Text(
                 modifier = Modifier.padding(horizontal = LifeTogetherTokens.spacing.xSmall),
                 text = "Add a new suggestion by choosing the category (emoji) and writing the suggestion name.",
