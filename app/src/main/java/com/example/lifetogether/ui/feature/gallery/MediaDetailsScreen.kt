@@ -41,10 +41,8 @@ import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.image.DisplayImageFromUri
 import com.example.lifetogether.ui.common.image.DisplayVideoFromUri
-import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.model.MenuAction
-import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import java.util.Date
@@ -112,10 +110,6 @@ fun MediaDetailsScreen(
                     .padding(LifeTogetherTokens.spacing.small),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                SyncUpdatingText(
-                    keys = setOf(SyncKey.GALLERY_ALBUMS, SyncKey.GALLERY_MEDIA),
-                )
-
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier

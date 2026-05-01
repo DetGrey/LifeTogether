@@ -15,13 +15,6 @@ enum class SyncKey {
     ROUTINE_LIST_ENTRIES,
 }
 
-enum class SyncState {
-    IDLE,
-    UPDATING,
-    READY,
-    FAILED,
-}
-
 data class SyncContext(
     val uid: String? = null,
     val familyId: String? = null,

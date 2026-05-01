@@ -17,12 +17,10 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.grocery.GroceryItem
-import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.add.AddNewListItem
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.list.ItemCategoryList
-import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -61,14 +59,6 @@ fun GroceryListScreen(
         ) {
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
-                    SyncUpdatingText(
-                        keys = setOf(
-                            SyncKey.GROCERY_LIST,
-                            SyncKey.GROCERY_CATEGORIES,
-                            SyncKey.GROCERY_SUGGESTIONS,
-                        ),
-                    )
-
                     if (uiState.groceryList.isEmpty()) {
                         TextDefault(text = "No items on the list yet")
                     } else {

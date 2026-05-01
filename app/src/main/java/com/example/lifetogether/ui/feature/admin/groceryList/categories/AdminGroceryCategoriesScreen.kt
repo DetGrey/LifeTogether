@@ -29,10 +29,8 @@ import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Icon
-import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
-import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -69,10 +67,6 @@ fun AdminGroceryCategoriesScreen(
         ) {
 
             item {
-                SyncUpdatingText(keys = setOf(SyncKey.GROCERY_CATEGORIES))
-
-                Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
-
                 Text(
                     modifier = Modifier.padding(horizontal = LifeTogetherTokens.spacing.xSmall),
                     text = "Add new category as a string with an emoji and a name with whitespace between e.g. \"\uD83C\uDF5E Bakery\"",

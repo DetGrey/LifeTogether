@@ -1,7 +1,6 @@
 package com.example.lifetogether.ui.feature.gallery
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,8 +19,6 @@ import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
-import com.example.lifetogether.ui.common.sync.SyncUpdatingText
-import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.model.AlbumUiModel
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
@@ -60,27 +57,23 @@ fun GalleryScreen(
             verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
         ) {
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
-                    SyncUpdatingText(keys = setOf(SyncKey.GALLERY_ALBUMS, SyncKey.GALLERY_MEDIA))
-
-                    if (uiState.albums.isEmpty()) {
-                        Text(text = "No albums created. Press + to create one.")
-                    } else {
-                        FlowRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            maxItemsInEachRow = 2,
-                            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
-                        ) {
-                            for (album in uiState.albums) {
-                                AlbumCard(
-                                    album.name,
-                                    album.mediaCount,
-                                    album.thumbnail?.toBitmap(),
-                                    onClick = {
-                                        onNavigationEvent(GalleryNavigationEvent.NavigateToAlbumMedia(album.id))
-                                    },
-                                )
-                            }
+                if (uiState.albums.isEmpty()) {
+                    Text(text = "No albums created. Press + to create one.")
+                } else {
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        maxItemsInEachRow = 2,
+                        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                    ) {
+                        for (album in uiState.albums) {
+                            AlbumCard(
+                                album.name,
+                                album.mediaCount,
+                                album.thumbnail?.toBitmap(),
+                                onClick = {
+                                    onNavigationEvent(GalleryNavigationEvent.NavigateToAlbumMedia(album.id))
+                                },
+                            )
                         }
                     }
                 }
