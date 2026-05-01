@@ -26,7 +26,7 @@ class RecipesViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
     private val recipeRepository: RecipeRepository,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(RecipesUiState())
+    private val _uiState = MutableStateFlow<RecipesUiState>(RecipesUiState.Loading)
     val uiState: StateFlow<RecipesUiState> = _uiState.asStateFlow()
 
     private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
@@ -59,13 +59,7 @@ class RecipesViewModel @Inject constructor(
 
         if (familyId.isNullOrBlank()) {
             allRecipes = emptyList()
-            updateUiState {
-                it.copy(
-                    recipes = emptyList(),
-                    tagsList = listOf("All"),
-                    selectedTag = "All",
-                )
-            }
+            _uiState.value = RecipesUiState.Loading
             return
         }
 
@@ -74,18 +68,21 @@ class RecipesViewModel @Inject constructor(
                 when (result) {
                     is Result.Success -> {
                         allRecipes = result.data
-                        updateRecipesState()
+                        val contentState = currentContentState()
+                        if (contentState == null) {
+                            _uiState.value = RecipesUiState.Content(
+                                recipes = applyTagFilter(result.data, "All"),
+                                tagsList = buildTagsList(result.data),
+                                selectedTag = "All",
+                            )
+                        } else {
+                            updateRecipesContent()
+                        }
                     }
 
                     is Result.Failure -> {
                         allRecipes = emptyList()
-                        updateUiState {
-                            it.copy(
-                                recipes = emptyList(),
-                                tagsList = listOf("All"),
-                                selectedTag = "All",
-                            )
-                        }
+                        _uiState.value = RecipesUiState.Loading
                         showError(result.error.toUserMessage())
                     }
                 }
@@ -94,30 +91,39 @@ class RecipesViewModel @Inject constructor(
     }
 
     private fun selectTag(tag: String) {
-        updateUiState { state ->
+        updateRecipesContent { state ->
             state.copy(selectedTag = tag)
         }
-        updateRecipesState()
+        updateRecipesContent()
     }
 
-    private fun updateRecipesState() {
-        val state = _uiState.value
-        val filteredRecipes = if (state.selectedTag == "All") {
-            allRecipes
-        } else {
-            allRecipes.filter { recipe ->
-                recipe.tags.any { recipeTag ->
-                    recipeTag.equals(state.selectedTag, ignoreCase = true)
-                }
-            }
-        }.sortedBy { it.itemName.lowercase() }
-
-        updateUiState {
-            it.copy(
+    private fun updateRecipesContent(transform: ((RecipesUiState.Content) -> RecipesUiState.Content)? = null) {
+        _uiState.update { state ->
+            val contentState = state as? RecipesUiState.Content ?: return@update state
+            val updatedState = transform?.invoke(contentState) ?: contentState
+            val filteredRecipes = applyTagFilter(allRecipes, updatedState.selectedTag)
+            updatedState.copy(
                 recipes = filteredRecipes,
                 tagsList = buildTagsList(allRecipes),
             )
         }
+    }
+
+    private fun currentContentState(): RecipesUiState.Content? {
+        return _uiState.value as? RecipesUiState.Content
+    }
+
+    private fun applyTagFilter(recipes: List<Recipe>, selectedTag: String): List<Recipe> {
+        val filtered = if (selectedTag == "All") {
+            recipes
+        } else {
+            recipes.filter { recipe ->
+                recipe.tags.any { recipeTag ->
+                    recipeTag.equals(selectedTag, ignoreCase = true)
+                }
+            }
+        }
+        return filtered.sortedBy { it.itemName.lowercase() }
     }
 
     private fun buildTagsList(recipes: List<Recipe>): List<String> {
@@ -143,7 +149,4 @@ class RecipesViewModel @Inject constructor(
         }
     }
 
-    private fun updateUiState(transform: (RecipesUiState) -> RecipesUiState) {
-        _uiState.update(transform)
-    }
 }

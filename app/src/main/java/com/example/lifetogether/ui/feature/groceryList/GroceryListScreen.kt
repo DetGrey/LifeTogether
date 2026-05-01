@@ -21,6 +21,7 @@ import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.add.AddNewListItem
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.list.ItemCategoryList
+import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -35,6 +36,8 @@ fun GroceryListScreen(
     onUiEvent: (GroceryListUiEvent) -> Unit,
     onNavigationEvent: (GroceryListNavigationEvent) -> Unit,
 ) {
+    val contentState = uiState as? GroceryListUiState.Content
+
     Scaffold(
         topBar = {
             TopBar(
@@ -49,44 +52,79 @@ fun GroceryListScreen(
             )
         },
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .padding(padding)
-                .padding(LifeTogetherTokens.spacing.small)
-                .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
-        ) {
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
-                    if (uiState.groceryList.isEmpty()) {
-                        TextDefault(text = "No items on the list yet")
-                    } else {
-                        uiState.expectedTotalPrice?.let {
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                TextSubHeadingMedium(
-                                    text = "Expected total price:",
-                                    color = MaterialTheme.colorScheme.secondary,
-                                )
-                                TextSubHeadingMedium(
-                                    text = it.priceToString(true),
-                                    color = MaterialTheme.colorScheme.secondary,
-                                )
-                            }
-                        }
+        when (uiState) {
+            GroceryListUiState.Loading -> {
+                Skeletons.ListDetail(
+                    modifier = Modifier
+                        .padding(padding)
+                        .padding(LifeTogetherTokens.spacing.small)
+                        .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
+                )
+            }
 
-                        uiState.categorizedItems.forEach { (category, groceryItems) ->
-                            if (groceryItems.isNotEmpty()) {
-                                uiState.categoryExpandedStates[category.name]?.let { expanded ->
+            is GroceryListUiState.Content -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .padding(padding)
+                        .padding(LifeTogetherTokens.spacing.small)
+                        .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
+                ) {
+                    item {
+                        Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
+                            if (contentState?.groceryList.orEmpty().isEmpty()) {
+                                TextDefault(text = "No items on the list yet")
+                            } else {
+                                contentState?.expectedTotalPrice?.let {
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                    ) {
+                                        TextSubHeadingMedium(
+                                            text = "Expected total price:",
+                                            color = MaterialTheme.colorScheme.secondary,
+                                        )
+                                        TextSubHeadingMedium(
+                                            text = it.priceToString(true),
+                                            color = MaterialTheme.colorScheme.secondary,
+                                        )
+                                    }
+                                }
+
+                                contentState?.categorizedItems.orEmpty().forEach { (category, groceryItems) ->
+                                    if (groceryItems.isNotEmpty()) {
+                                        contentState?.categoryExpandedStates?.get(category.name)?.let { expanded ->
+                                            ItemCategoryList(
+                                                category = category,
+                                                itemList = groceryItems,
+                                                expanded = expanded,
+                                                onClick = {
+                                                    onUiEvent(GroceryListUiEvent.CategoryExpandedClicked(category.name))
+                                                },
+                                                onCompleteToggle = { item ->
+                                                    if (item is GroceryItem) {
+                                                        onUiEvent(GroceryListUiEvent.ItemCompletedToggled(item))
+                                                    }
+                                                },
+                                                onBellClick = { item ->
+                                                    onUiEvent(GroceryListUiEvent.NotificationClicked(item))
+                                                },
+                                            )
+                                        }
+                                    }
+                                }
+
+                                if (contentState?.completedItems.orEmpty().isNotEmpty()) {
                                     ItemCategoryList(
-                                        category = category,
-                                        itemList = groceryItems,
-                                        expanded = expanded,
+                                        category = Category(
+                                            emoji = "✔️",
+                                            name = "Completed",
+                                        ),
+                                        itemList = contentState?.completedItems.orEmpty(),
+                                        expanded = contentState?.completedSectionExpanded == true,
                                         onClick = {
-                                            onUiEvent(GroceryListUiEvent.CategoryExpandedClicked(category.name))
+                                            onUiEvent(GroceryListUiEvent.CompletedSectionExpandedClicked)
                                         },
                                         onCompleteToggle = { item ->
                                             if (item is GroceryItem) {
@@ -96,41 +134,19 @@ fun GroceryListScreen(
                                         onBellClick = { item ->
                                             onUiEvent(GroceryListUiEvent.NotificationClicked(item))
                                         },
+                                        onDelete = {
+                                            onUiEvent(GroceryListUiEvent.DeleteCompletedClicked)
+                                        },
                                     )
                                 }
                             }
-                        }
-
-                        if (uiState.completedItems.isNotEmpty()) {
-                            ItemCategoryList(
-                                category = Category(
-                                    emoji = "✔️",
-                                    name = "Completed",
-                                ),
-                                itemList = uiState.completedItems,
-                                expanded = uiState.completedSectionExpanded,
-                                onClick = {
-                                    onUiEvent(GroceryListUiEvent.CompletedSectionExpandedClicked)
-                                },
-                                onCompleteToggle = { item ->
-                                    if (item is GroceryItem) {
-                                        onUiEvent(GroceryListUiEvent.ItemCompletedToggled(item))
-                                    }
-                                },
-                                onBellClick = { item ->
-                                    onUiEvent(GroceryListUiEvent.NotificationClicked(item))
-                                },
-                                onDelete = {
-                                    onUiEvent(GroceryListUiEvent.DeleteCompletedClicked)
-                                },
-                            )
                         }
                     }
                 }
             }
         }
 
-        if (uiState.currentGrocerySuggestions.isNotEmpty()) {
+        if (contentState?.currentGrocerySuggestions.orEmpty().isNotEmpty()) {
             Box(
                 modifier = Modifier
                     .padding(LifeTogetherTokens.spacing.small)
@@ -139,7 +155,7 @@ fun GroceryListScreen(
                 contentAlignment = Alignment.BottomCenter,
             ) {
                 GrocerySuggestionPopup(
-                    suggestions = uiState.currentGrocerySuggestions,
+                    suggestions = contentState?.currentGrocerySuggestions.orEmpty(),
                     onClick = { suggestion ->
                         onUiEvent(GroceryListUiEvent.SuggestionClicked(suggestion))
                     },
@@ -154,20 +170,20 @@ fun GroceryListScreen(
             contentAlignment = Alignment.BottomCenter,
         ) {
             AddNewListItem(
-                textValue = uiState.newItemText,
+                textValue = contentState?.newItemText.orEmpty(),
                 onTextChange = { onUiEvent(GroceryListUiEvent.NewItemTextChanged(it)) },
-                priceValue = uiState.newItemPrice,
+                priceValue = contentState?.newItemPrice.orEmpty(),
                 onPriceChange = { onUiEvent(GroceryListUiEvent.NewItemPriceChanged(it)) },
                 onAddClick = { onUiEvent(GroceryListUiEvent.AddItemClicked) },
-                categoryList = uiState.groceryCategories,
-                selectedCategory = uiState.newItemCategory,
+                categoryList = contentState?.groceryCategories.orEmpty(),
+                selectedCategory = contentState?.newItemCategory ?: UNCATEGORIZED_CATEGORY,
                 onCategoryChange = { newCategory ->
                     onUiEvent(GroceryListUiEvent.NewItemCategoryChanged(newCategory))
                 },
             )
         }
 
-        if (uiState.showConfirmationDialog) {
+        if (contentState?.showConfirmationDialog == true) {
             ConfirmationDialog(
                 onDismiss = { onUiEvent(GroceryListUiEvent.DismissDeleteCompletedConfirmation) },
                 onConfirm = { onUiEvent(GroceryListUiEvent.ConfirmDeleteCompletedConfirmation) },
@@ -185,7 +201,7 @@ fun GroceryListScreen(
 private fun GroceryListScreenPreview() {
     LifeTogetherTheme {
         GroceryListScreen(
-            uiState = GroceryListUiState(),
+            uiState = GroceryListUiState.Loading,
             onUiEvent = {},
             onNavigationEvent = {},
         )
@@ -197,7 +213,7 @@ private fun GroceryListScreenPreview() {
 private fun GroceryListScreenPreview2() {
     LifeTogetherTheme {
         GroceryListScreen(
-            uiState = GroceryListUiState(
+            uiState = GroceryListUiState.Content(
                 groceryList = listOf(
                     GroceryItem(
                         id = "4",

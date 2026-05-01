@@ -43,6 +43,7 @@ import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.button.SecondaryButton
 import com.example.lifetogether.ui.common.button.AddButton
+import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
@@ -54,6 +55,8 @@ fun GuidesScreen(
     onNavigationEvent: (GuidesNavigationEvent) -> Unit,
 ) {
     val context = LocalContext.current
+    val contentState = uiState as? GuidesUiState.Content
+    val isLoading = uiState is GuidesUiState.Loading
     var guideTemplate by remember { mutableStateOf("") }
     var guideProgressTemplate by remember { mutableStateOf("") }
 
@@ -104,38 +107,54 @@ fun GuidesScreen(
             )
         },
         floatingActionButton = {
-            AddButton(onClick = { onUiEvent(GuidesUiEvent.OpenAddOptionsDialog) })
+            if (!isLoading) {
+                AddButton(
+                    onClick = { onUiEvent(GuidesUiEvent.OpenAddOptionsDialog) },
+                )
+            }
         },
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(LifeTogetherTokens.spacing.small)
-                .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
-        ) {
-            if (uiState.guides.isEmpty()) {
-                item {
-                    Text(text = "No guides yet. Tap + to create or import one.")
-                }
-            } else {
-                items(uiState.guides) { guide ->
-                    GuideOverviewCard(
-                        guide = guide,
-                        onClick = {
-                            guide.id?.let {
-                                onNavigationEvent(GuidesNavigationEvent.NavigateToGuideDetails(it))
-                            }
-                        },
-                    )
+        when (uiState) {
+            GuidesUiState.Loading -> {
+                Skeletons.ListDetail(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
+                )
+            }
+            is GuidesUiState.Content -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(LifeTogetherTokens.spacing.small)
+                        .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+                ) {
+                    if (contentState?.guides.orEmpty().isEmpty()) {
+                        item {
+                            Text(text = "No guides yet. Tap + to create or import one.")
+                        }
+                    } else {
+                        items(contentState?.guides.orEmpty()) { guide ->
+                            GuideOverviewCard(
+                                guide = guide,
+                                onClick = {
+                                    guide.id?.let {
+                                        onNavigationEvent(GuidesNavigationEvent.NavigateToGuideDetails(it))
+                                    }
+                                },
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 
-    if (uiState.showAddOptionsDialog) {
+    if (contentState?.showAddOptionsDialog == true) {
         AlertDialog(
             onDismissRequest = { onUiEvent(GuidesUiEvent.CloseAddOptionsDialog) },
             title = { Text("Add guide") },
@@ -167,7 +186,7 @@ fun GuidesScreen(
         )
     }
 
-    if (uiState.showImportDialog) {
+    if (contentState?.showImportDialog == true) {
         AlertDialog(
             onDismissRequest = { onUiEvent(GuidesUiEvent.CloseImportDialog) },
             title = { Text("Import guides from JSON") },
@@ -181,7 +200,10 @@ fun GuidesScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.small)
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant,
+                                MaterialTheme.shapes.small
+                            )
                             .padding(LifeTogetherTokens.spacing.small),
                     ) {
                     Text(
@@ -220,13 +242,13 @@ fun GuidesScreen(
                         },
                     )
 
-                    if (uiState.isImporting) {
+                    if (contentState.isImporting) {
                         RowWithCenteredLoader()
                     }
 
-                    if (uiState.importSummary.isNotEmpty()) {
+                    if (contentState.importSummary.isNotEmpty()) {
                         Text(
-                            text = uiState.importSummary,
+                            text = contentState.importSummary,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold,
                         )
@@ -254,7 +276,7 @@ fun GuidesScreen(
 private fun GuidesScreenPreview() {
     LifeTogetherTheme {
         GuidesScreen(
-            uiState = GuidesUiState(
+            uiState = GuidesUiState.Content(
                 guides = listOf(
                     Guide(
                         itemName = "Family reset",

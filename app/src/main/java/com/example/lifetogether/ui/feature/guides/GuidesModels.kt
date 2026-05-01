@@ -2,14 +2,18 @@ package com.example.lifetogether.ui.feature.guides
 
 import com.example.lifetogether.domain.model.guides.Guide
 
-data class GuidesUiState(
-    val guides: List<Guide> = emptyList(),
-    val showAddOptionsDialog: Boolean = false,
-    val showImportDialog: Boolean = false,
-    val isImporting: Boolean = false,
-    val importSummary: String = "",
-) {
-    val isEmpty: Boolean get() = guides.isEmpty()
+sealed interface GuidesUiState {
+    data object Loading : GuidesUiState
+
+    data class Content(
+        val guides: List<Guide> = emptyList(),
+        val showAddOptionsDialog: Boolean = false,
+        val showImportDialog: Boolean = false,
+        val isImporting: Boolean = false,
+        val importSummary: String = "",
+    ) : GuidesUiState {
+        val isEmpty: Boolean get() = guides.isEmpty()
+    }
 }
 
 sealed interface GuidesUiEvent {

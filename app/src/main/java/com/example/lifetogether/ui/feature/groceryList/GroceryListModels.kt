@@ -5,22 +5,25 @@ import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.util.UNCATEGORIZED_CATEGORY
 
-data class GroceryListUiState(
-    val showConfirmationDialog: Boolean = false,
-    val isLoading: Boolean = true,
-    val groceryList: List<GroceryItem> = emptyList(),
-    val completedItems: List<GroceryItem> = emptyList(),
-    val categorizedItems: Map<Category, List<GroceryItem>> = emptyMap(),
-    val groceryCategories: List<Category> = emptyList(),
-    val categoryExpandedStates: Map<String, Boolean> = emptyMap(),
-    val completedSectionExpanded: Boolean = false,
-    val expectedTotalPrice: Float? = null,
-    val newItemText: String = "",
-    val newItemPrice: String = "",
-    val newItemCategory: Category = UNCATEGORIZED_CATEGORY,
-    val allGrocerySuggestions: List<GrocerySuggestion> = emptyList(),
-    val currentGrocerySuggestions: List<GrocerySuggestion> = emptyList(),
-)
+sealed interface GroceryListUiState {
+    data object Loading : GroceryListUiState
+
+    data class Content(
+        val showConfirmationDialog: Boolean = false,
+        val groceryList: List<GroceryItem> = emptyList(),
+        val completedItems: List<GroceryItem> = emptyList(),
+        val categorizedItems: Map<Category, List<GroceryItem>> = emptyMap(),
+        val groceryCategories: List<Category> = emptyList(),
+        val categoryExpandedStates: Map<String, Boolean> = emptyMap(),
+        val completedSectionExpanded: Boolean = false,
+        val expectedTotalPrice: Float? = null,
+        val newItemText: String = "",
+        val newItemPrice: String = "",
+        val newItemCategory: Category = UNCATEGORIZED_CATEGORY,
+        val allGrocerySuggestions: List<GrocerySuggestion> = emptyList(),
+        val currentGrocerySuggestions: List<GrocerySuggestion> = emptyList(),
+    ) : GroceryListUiState
+}
 
 sealed interface GroceryListNavigationEvent {
     data object NavigateBack : GroceryListNavigationEvent

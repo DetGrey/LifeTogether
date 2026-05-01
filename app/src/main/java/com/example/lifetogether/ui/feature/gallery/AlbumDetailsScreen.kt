@@ -1,5 +1,6 @@
 package com.example.lifetogether.ui.feature.gallery
 
+import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,21 +17,20 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
-import android.net.Uri
+import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
-import com.example.lifetogether.domain.model.gallery.Album
-import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.gallery.Album
+import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
@@ -42,6 +42,7 @@ import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.common.image.MediaUploadMultipleDialog
 import com.example.lifetogether.ui.common.list.CompletableBox
+import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.model.MenuAction
@@ -52,6 +53,48 @@ import com.example.lifetogether.ui.theme.LifeTogetherTokens
 @Composable
 fun AlbumDetailsScreen(
     uiState: AlbumDetailsUiState,
+    onImageUpload: suspend (List<Uri>) -> Result<Unit, AppError>,
+    onUiEvent: (AlbumDetailsUiEvent) -> Unit,
+    onNavigationEvent: (AlbumDetailsNavigationEvent) -> Unit,
+) {
+    when (uiState) {
+        AlbumDetailsUiState.Loading -> {
+            Scaffold(
+                topBar = {
+                    TopBar(
+                        leftIcon = Icon(
+                            resId = R.drawable.ic_back_arrow,
+                            description = "back arrow icon",
+                        ),
+                        onLeftClick = { onNavigationEvent(AlbumDetailsNavigationEvent.NavigateBack) },
+                        text = "Album images",
+                    )
+                },
+            ) { padding ->
+                Skeletons.GridCollection(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
+                )
+            }
+        }
+
+        is AlbumDetailsUiState.Content -> {
+            AlbumDetailsContent(
+                uiState = uiState,
+                onImageUpload = onImageUpload,
+                onUiEvent = onUiEvent,
+                onNavigationEvent = onNavigationEvent,
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@Composable
+private fun AlbumDetailsContent(
+    uiState: AlbumDetailsUiState.Content,
     onImageUpload: suspend (List<Uri>) -> Result<Unit, AppError>,
     onUiEvent: (AlbumDetailsUiEvent) -> Unit,
     onNavigationEvent: (AlbumDetailsNavigationEvent) -> Unit,
@@ -191,10 +234,9 @@ fun AlbumDetailsScreen(
                                         onUiEvent(AlbumDetailsUiEvent.ToggleMediaSelection(media.id))
                                     },
                                 )
-        }
-    }
-}
-
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -319,7 +361,19 @@ fun AlbumDetailsScreen(
             else -> Unit
         }
     }
+}
 
+@Preview(showBackground = true)
+@Composable
+private fun AlbumDetailsScreenLoadingPreview() {
+    LifeTogetherTheme {
+        AlbumDetailsScreen(
+            uiState = AlbumDetailsUiState.Loading,
+            onImageUpload = { Result.Success(Unit) },
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
+    }
 }
 
 @Preview(showBackground = true)
@@ -336,7 +390,7 @@ private fun AlbumDetailsScreenPreview() {
         )
 
         AlbumDetailsScreen(
-            uiState = AlbumDetailsUiState(
+            uiState = AlbumDetailsUiState.Content(
                 album = Album(
                     id = "album-1",
                     familyId = "family-1",

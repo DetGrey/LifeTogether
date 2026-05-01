@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -41,6 +40,7 @@ import com.example.lifetogether.ui.common.image.ImageUploadDialog
 import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.tagOptionRow.TagOption
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
+import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.common.textfield.CustomTextField
@@ -89,13 +89,15 @@ fun ListEntryDetailsScreen(
     ) { padding ->
         when (uiState) {
             is EntryDetailsUiState.Loading -> {
-                Box(
+                Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(top = padding.calculateTopPadding()),
-                    contentAlignment = Alignment.Center,
+                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
                 ) {
-                    CircularProgressIndicator()
+                    Skeletons.FormEdit(
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             }
 

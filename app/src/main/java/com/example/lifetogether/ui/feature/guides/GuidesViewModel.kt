@@ -31,7 +31,7 @@ class GuidesViewModel @Inject constructor(
     private var uid: String? = null
     private var guidesJob: Job? = null
 
-    private val _uiState = MutableStateFlow(GuidesUiState())
+    private val _uiState = MutableStateFlow<GuidesUiState>(GuidesUiState.Loading)
     val uiState: StateFlow<GuidesUiState> = _uiState.asStateFlow()
 
     private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
@@ -52,7 +52,7 @@ class GuidesViewModel @Inject constructor(
                 } else if (state is SessionState.Unauthenticated) {
                     familyId = null
                     uid = null
-                    updateState { GuidesUiState() }
+                    _uiState.value = GuidesUiState.Loading
                 }
             }
         }
@@ -60,15 +60,15 @@ class GuidesViewModel @Inject constructor(
 
     fun onEvent(event: GuidesUiEvent) {
         when (event) {
-            GuidesUiEvent.OpenAddOptionsDialog -> updateState {
+            GuidesUiEvent.OpenAddOptionsDialog -> updateContentState {
                 it.copy(showAddOptionsDialog = true)
             }
 
-            GuidesUiEvent.CloseAddOptionsDialog -> updateState {
+            GuidesUiEvent.CloseAddOptionsDialog -> updateContentState {
                 it.copy(showAddOptionsDialog = false)
             }
 
-            GuidesUiEvent.OpenImportDialog -> updateState {
+            GuidesUiEvent.OpenImportDialog -> updateContentState {
                 it.copy(
                     showAddOptionsDialog = false,
                     showImportDialog = true,
@@ -76,7 +76,7 @@ class GuidesViewModel @Inject constructor(
                 )
             }
 
-            GuidesUiEvent.CloseImportDialog -> updateState {
+            GuidesUiEvent.CloseImportDialog -> updateContentState {
                 it.copy(showImportDialog = false)
             }
 
@@ -92,7 +92,13 @@ class GuidesViewModel @Inject constructor(
         guidesJob = viewModelScope.launch {
             guideRepository.observeGuides(familyId = familyIdValue, uid = uidValue).collect { result ->
                 when (result) {
-                    is Result.Success -> updateState { it.copy(guides = result.data) }
+                    is Result.Success -> {
+                        if (_uiState.value is GuidesUiState.Loading) {
+                            _uiState.value = GuidesUiState.Content(guides = result.data)
+                        } else {
+                            updateContentState { it.copy(guides = result.data) }
+                        }
+                    }
                     is Result.Failure -> showError(result.error.toUserMessage())
                 }
             }
@@ -109,7 +115,7 @@ class GuidesViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            updateState {
+            updateContentState {
                 it.copy(
                     isImporting = true,
                     importSummary = "",
@@ -118,7 +124,7 @@ class GuidesViewModel @Inject constructor(
 
             when (val result = importGuidesUseCase(json, activeFamilyId, activeUid)) {
                 is Result.Success -> {
-                    updateState {
+                    updateContentState {
                         it.copy(
                             isImporting = false,
                             importSummary = "Imported ${result.data.successCount} guide(s). Failed: ${result.data.failureCount}",
@@ -126,7 +132,7 @@ class GuidesViewModel @Inject constructor(
                     }
                 }
                 is Result.Failure -> {
-                    updateState { it.copy(isImporting = false) }
+                    updateContentState { it.copy(isImporting = false) }
                     showError(result.error.toUserMessage())
                 }
             }
@@ -144,7 +150,10 @@ class GuidesViewModel @Inject constructor(
         }
     }
 
-    private fun updateState(transform: (GuidesUiState) -> GuidesUiState) {
-        _uiState.update(transform)
+    private fun updateContentState(transform: (GuidesUiState.Content) -> GuidesUiState.Content) {
+        _uiState.update { state ->
+            val contentState = state as? GuidesUiState.Content ?: return@update state
+            transform(contentState)
+        }
     }
 }

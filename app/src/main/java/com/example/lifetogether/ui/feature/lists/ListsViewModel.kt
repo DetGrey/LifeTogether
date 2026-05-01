@@ -33,7 +33,7 @@ class ListsViewModel @Inject constructor(
     private var uid: String? = null
     private var listsJob: Job? = null
 
-    private val _uiState = MutableStateFlow(ListsUiState())
+    private val _uiState = MutableStateFlow<ListsUiState>(ListsUiState.Loading)
     val uiState: StateFlow<ListsUiState> = _uiState.asStateFlow()
 
     private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
@@ -57,6 +57,7 @@ class ListsViewModel @Inject constructor(
                 } else if (state is SessionState.Unauthenticated) {
                     familyId = null
                     uid = null
+                    _uiState.value = ListsUiState.Loading
                 }
             }
         }
@@ -66,9 +67,9 @@ class ListsViewModel @Inject constructor(
         when (event) {
             ListsUiEvent.CreateListClicked -> openCreateDialog()
             ListsUiEvent.CreateDialogDismissed -> dismissCreateDialog()
-            is ListsUiEvent.CreateListNameChanged -> updateState { it.copy(newListName = event.value) }
-            is ListsUiEvent.CreateListTypeChanged -> updateState { it.copy(newListType = event.value) }
-            is ListsUiEvent.CreateListVisibilityChanged -> updateState { it.copy(newListVisibility = event.value) }
+            is ListsUiEvent.CreateListNameChanged -> updateContentState { it.copy(newListName = event.value) }
+            is ListsUiEvent.CreateListTypeChanged -> updateContentState { it.copy(newListType = event.value) }
+            is ListsUiEvent.CreateListVisibilityChanged -> updateContentState { it.copy(newListVisibility = event.value) }
             ListsUiEvent.ConfirmCreateListClicked -> createList()
         }
     }
@@ -81,8 +82,13 @@ class ListsViewModel @Inject constructor(
             userListRepository.observeUserLists(familyId = familyIdValue).collect { result ->
                 when (result) {
                     is Result.Success -> {
-                        updateState { state ->
+                        updateContentState { state ->
                             state.copy(
+                                userLists = result.data.sortedBy { it.itemName.lowercase() },
+                            )
+                        }
+                        if (_uiState.value is ListsUiState.Loading) {
+                            _uiState.value = ListsUiState.Content(
                                 userLists = result.data.sortedBy { it.itemName.lowercase() },
                             )
                         }
@@ -95,7 +101,7 @@ class ListsViewModel @Inject constructor(
     }
 
     private fun openCreateDialog() {
-        updateState {
+        updateContentState {
             it.copy(
                 showCreateDialog = true,
                 newListName = "",
@@ -107,7 +113,7 @@ class ListsViewModel @Inject constructor(
     }
 
     private fun dismissCreateDialog() {
-        updateState { it.copy(showCreateDialog = false) }
+        updateContentState { it.copy(showCreateDialog = false) }
     }
 
     private fun createList() {
@@ -115,13 +121,13 @@ class ListsViewModel @Inject constructor(
         val activeUid = uid
         if (activeFamilyId.isNullOrBlank() || activeUid.isNullOrBlank()) return
 
-        val currentState = _uiState.value
+        val currentState = currentContentState() ?: return
         if (currentState.newListName.isBlank()) {
             showError("Name cannot be empty")
             return
         }
 
-        updateState { it.copy(isSaving = true) }
+        updateContentState { it.copy(isSaving = true) }
         viewModelScope.launch {
             val list = UserList(
                 familyId = activeFamilyId,
@@ -134,12 +140,12 @@ class ListsViewModel @Inject constructor(
             )
             when (val result = userListRepository.saveUserList(list)) {
                 is Result.Success -> {
-                    updateState { it.copy(showCreateDialog = false, isSaving = false) }
+                    updateContentState { it.copy(showCreateDialog = false, isSaving = false) }
                     _commands.send(ListsCommand.NavigateToListDetails(result.data))
                 }
 
                 is Result.Failure -> {
-                    updateState { it.copy(isSaving = false) }
+                    updateContentState { it.copy(isSaving = false) }
                     showError(result.error.toUserMessage())
                 }
             }
@@ -157,7 +163,14 @@ class ListsViewModel @Inject constructor(
         }
     }
 
-    private fun updateState(transform: (ListsUiState) -> ListsUiState) {
-        _uiState.update(transform)
+    private fun updateContentState(transform: (ListsUiState.Content) -> ListsUiState.Content) {
+        _uiState.update { state ->
+            val contentState = state as? ListsUiState.Content ?: return@update state
+            transform(contentState)
+        }
+    }
+
+    private fun currentContentState(): ListsUiState.Content? {
+        return _uiState.value as? ListsUiState.Content
     }
 }

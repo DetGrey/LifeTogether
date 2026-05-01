@@ -3,15 +3,19 @@ package com.example.lifetogether.ui.feature.guides.details
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.guides.GuideSection
 
-data class GuideDetailsUiState(
-    val guide: Guide? = null,
-    val sectionExpandedState: Map<String, Boolean> = emptyMap(),
-    val selectedSectionAmountState: Map<String, Int> = emptyMap(),
-    val canToggleAmountState: Map<String, Set<Int>> = emptyMap(),
-    val isUpdatingVisibility: Boolean = false,
-    val isStartingGuide: Boolean = false,
-    val isDeletingGuide: Boolean = false,
-)
+sealed interface GuideDetailsUiState {
+    data object Loading : GuideDetailsUiState
+
+    data class Content(
+        val guide: Guide? = null,
+        val sectionExpandedState: Map<String, Boolean> = emptyMap(),
+        val selectedSectionAmountState: Map<String, Int> = emptyMap(),
+        val canToggleAmountState: Map<String, Set<Int>> = emptyMap(),
+        val isUpdatingVisibility: Boolean = false,
+        val isStartingGuide: Boolean = false,
+        val isDeletingGuide: Boolean = false,
+    ) : GuideDetailsUiState
+}
 
 sealed interface GuideDetailsUiEvent {
     data object StartOrContinueClicked : GuideDetailsUiEvent

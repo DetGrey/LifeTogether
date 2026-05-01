@@ -15,6 +15,7 @@ import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
+import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -25,6 +26,9 @@ fun RecipesScreen(
     onUiEvent: (RecipesUiEvent) -> Unit,
     onNavigationEvent: (RecipesNavigationEvent) -> Unit,
 ) {
+    val contentState = uiState as? RecipesUiState.Content
+    val isLoading = uiState is RecipesUiState.Loading
+
     Scaffold(
         topBar = {
             TopBar(
@@ -39,45 +43,62 @@ fun RecipesScreen(
             )
         },
         floatingActionButton = {
-            AddButton(onClick = {
-                onNavigationEvent(RecipesNavigationEvent.NavigateToCreateRecipe)
-            })
+            if (!isLoading) {
+                AddButton(
+                    onClick = {
+                        onNavigationEvent(RecipesNavigationEvent.NavigateToCreateRecipe)
+                    }
+                )
+            }
         },
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(LifeTogetherTokens.spacing.small)
-                .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
-        ) {
-            item {
-                TagOptionRow(
-                    options = uiState.tagsList,
-                    selectedOption = uiState.selectedTag,
-                    onSelectedOptionChange = {
-                        onUiEvent(RecipesUiEvent.TagSelected(it))
-                    },
+        when (uiState) {
+            RecipesUiState.Loading -> {
+                Skeletons.ListDetail(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
                 )
             }
 
-            item {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+            is RecipesUiState.Content -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(LifeTogetherTokens.spacing.small)
+                        .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
                 ) {
-                    for (recipe in uiState.recipes) {
-                        RecipeCard(
-                            recipe = recipe,
-                            onClick = {
-                                recipe.id?.let { recipeId ->
-                                    onNavigationEvent(
-                                        RecipesNavigationEvent.NavigateToRecipeDetails(recipeId)
-                                    )
-                                }
+                    item {
+                        TagOptionRow(
+                            options = contentState?.tagsList.orEmpty(),
+                            selectedOption = contentState?.selectedTag.orEmpty(),
+                            onSelectedOptionChange = {
+                                onUiEvent(RecipesUiEvent.TagSelected(it))
                             },
                         )
+                    }
+
+                    item {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                        ) {
+                            for (recipe in contentState?.recipes.orEmpty()) {
+                                RecipeCard(
+                                    recipe = recipe,
+                                    onClick = {
+                                        recipe.id?.let { recipeId ->
+                                            onNavigationEvent(
+                                                RecipesNavigationEvent.NavigateToRecipeDetails(recipeId)
+                                            )
+                                        }
+                                    },
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -90,7 +111,7 @@ fun RecipesScreen(
 private fun RecipesScreenPreview() {
     LifeTogetherTheme {
         RecipesScreen(
-            uiState = RecipesUiState(
+            uiState = RecipesUiState.Content(
                 recipes = listOf(
                     Recipe(
                         id = "1",

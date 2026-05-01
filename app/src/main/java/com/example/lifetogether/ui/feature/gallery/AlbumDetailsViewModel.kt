@@ -60,7 +60,7 @@ class AlbumDetailsViewModel @Inject constructor(
     private val uploadGalleryMediaItemsUseCase: UploadGalleryMediaItemsUseCase,
     @param:ApplicationContext private val context: Context,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(AlbumDetailsUiState())
+    private val _uiState = MutableStateFlow<AlbumDetailsUiState>(AlbumDetailsUiState.Loading)
     val uiState: StateFlow<AlbumDetailsUiState> = _uiState.asStateFlow()
 
     private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
@@ -84,8 +84,9 @@ class AlbumDetailsViewModel @Inject constructor(
                 val newFamilyId = (state as? SessionState.Authenticated)?.user?.familyId
                 if (newFamilyId != null && newFamilyId != familyId) {
                     familyId = newFamilyId
-                    _uiState.update { it.copy(familyId = familyId) }
+                    _uiState.value = AlbumDetailsUiState.Loading
                     syncRetryAttempts = 0
+                    requestedThumbnailIds.clear()
                     observeAlbum()
                     observeAlbumMedia()
                 } else if (state is SessionState.Unauthenticated) {
@@ -94,6 +95,7 @@ class AlbumDetailsViewModel @Inject constructor(
                     observeAlbumMediaJob?.cancel()
                     observeAlbumJob = null
                     observeAlbumMediaJob = null
+                    _uiState.value = AlbumDetailsUiState.Loading
                 }
             }
         }
@@ -149,13 +151,9 @@ class AlbumDetailsViewModel @Inject constructor(
             AlbumDetailsUiEvent.ToggleAllMediaSelection -> toggleAllMediaSelection()
             is AlbumDetailsUiEvent.ToggleMediaSelection -> toggleMediaSelection(event.mediaId)
             is AlbumDetailsUiEvent.EnterSelectionMode -> enterSelectionMode(event.mediaId)
-            AlbumDetailsUiEvent.RequestImageUpload -> _uiState.update {
-                it.copy(showImageUploadDialog = true)
-            }
+            AlbumDetailsUiEvent.RequestImageUpload -> updateContentState { it.copy(showImageUploadDialog = true) }
             AlbumDetailsUiEvent.DismissImageUploadDialog,
-            AlbumDetailsUiEvent.ConfirmImageUploadDialog ->  _uiState.update {
-                it.copy(showImageUploadDialog = false)
-            }
+            AlbumDetailsUiEvent.ConfirmImageUploadDialog -> updateContentState { it.copy(showImageUploadDialog = false) }
             is AlbumDetailsUiEvent.StartOverflowAction -> startOverflowAction(event.action)
             AlbumDetailsUiEvent.DismissOverflowMenuActionDialog -> dismissOverflowMenuActionDialog()
             is AlbumDetailsUiEvent.SetActionDialogText -> setActionDialogText(event.text)
@@ -178,9 +176,10 @@ class AlbumDetailsViewModel @Inject constructor(
                 when (result) {
                     is Result.Success -> {
                         val album = result.data
-                        _uiState.update { state ->
+                        updateContentState { state ->
                             state.copy(
                                 album = album,
+                                familyId = familyIdValue,
                                 isSyncing = album.count > 0 && state.media.isEmpty(),
                             )
                         }
@@ -198,9 +197,9 @@ class AlbumDetailsViewModel @Inject constructor(
 
         observeAlbumMediaJob?.cancel()
         observeAlbumMediaJob = viewModelScope.launch {
-            val expectedCount = _uiState.value.album?.count ?: 0
-            if (expectedCount > 0 && _uiState.value.media.isEmpty()) {
-                _uiState.update { it.copy(isSyncing = true) }
+            val expectedCount = currentContentState()?.album?.count ?: 0
+            if (expectedCount > 0 && currentContentState()?.media.orEmpty().isEmpty()) {
+                updateContentState { it.copy(isSyncing = true) }
             }
 
             galleryRepository.observeAlbumMedia(familyIdValue, albumIdValue).collect { result ->
@@ -214,7 +213,7 @@ class AlbumDetailsViewModel @Inject constructor(
 
     private fun handleMediaSuccess(items: List<GalleryMedia>) {
         if (items.isNotEmpty()) {
-            _uiState.update {
+            updateContentState {
                 it.copy(
                     media = items,
                     isSyncing = false,
@@ -229,9 +228,9 @@ class AlbumDetailsViewModel @Inject constructor(
                 }
             }
 
-            val expectedCount = _uiState.value.album?.count ?: 0
+            val expectedCount = currentContentState()?.album?.count ?: 0
             if (expectedCount > items.size && syncRetryAttempts < maxSyncRetryAttempts) {
-                _uiState.update { it.copy(isSyncing = true, isPartialLoad = true) }
+                updateContentState { it.copy(isSyncing = true, isPartialLoad = true) }
                 syncRetryAttempts += 1
                 viewModelScope.launch {
                     delay(3000)
@@ -239,44 +238,44 @@ class AlbumDetailsViewModel @Inject constructor(
                 }
                 return
             } else if (expectedCount > items.size) {
-                _uiState.update { it.copy(isPartialLoad = true, isSyncing = false, isRefreshing = false) }
+                updateContentState { it.copy(isPartialLoad = true, isSyncing = false, isRefreshing = false) }
                 return
             }
 
             syncRetryAttempts = 0
-            _uiState.update { it.copy(isPartialLoad = false, isRefreshing = false) }
+            updateContentState { it.copy(isPartialLoad = false, isRefreshing = false) }
             return
         }
 
-        val expectedCount = _uiState.value.album?.count ?: 0
+        val expectedCount = currentContentState()?.album?.count ?: 0
         if (expectedCount > 0 && syncRetryAttempts < maxSyncRetryAttempts) {
-            _uiState.update { it.copy(isSyncing = true) }
+            updateContentState { it.copy(isSyncing = true) }
             syncRetryAttempts += 1
             viewModelScope.launch {
                 delay(2000)
                 observeAlbumMedia()
             }
         } else {
-            _uiState.update { it.copy(isSyncing = false) }
+            updateContentState { it.copy(isSyncing = false) }
         }
     }
 
     private fun groupMedia() {
-        val grouped = uiState.value.media
+        val grouped = currentContentState()?.media.orEmpty()
             .sortedByDescending { it.dateCreated }
             .groupBy { it.dateCreated?.toFullDateString() ?: "Unknown Date" }
             .toList()
 
-        _uiState.update { it.copy(groupedMedia = grouped) }
+        updateContentState { it.copy(groupedMedia = grouped) }
     }
 
     private fun handleMediaFailure(message: String) {
-        _uiState.update { it.copy(isSyncing = false, isRefreshing = false) }
+        updateContentState { it.copy(isSyncing = false, isRefreshing = false) }
         showError(message)
     }
 
     private fun retryFetchAlbumMedia() {
-        _uiState.update { it.copy(isRefreshing = true) }
+        updateContentState { it.copy(isRefreshing = true) }
         syncRetryAttempts = 0
         observeAlbumMedia()
     }
@@ -285,7 +284,7 @@ class AlbumDetailsViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             when (val result = galleryRepository.getAlbumMediaThumbnail(mediaId)) {
                 is Result.Success -> {
-                    _uiState.update { state ->
+                    updateContentState { state ->
                         state.copy(thumbnails = state.thumbnails + (mediaId to result.data))
                     }
                 }
@@ -296,8 +295,9 @@ class AlbumDetailsViewModel @Inject constructor(
     }
 
     private fun renameAlbum() {
-        val newName = _uiState.value.actionDialogText.trim()
-        val currentAlbum = _uiState.value.album
+        val contentState = currentContentState() ?: return
+        val newName = contentState.actionDialogText.trim()
+        val currentAlbum = contentState.album
 
         if (newName.isEmpty()) {
             showError("Album name cannot be empty")
@@ -313,7 +313,7 @@ class AlbumDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = galleryRepository.updateAlbum(updatedAlbum)) {
                 is Result.Success -> {
-                    _uiState.update { it.copy(album = updatedAlbum) }
+                    updateContentState { it.copy(album = updatedAlbum) }
                     dismissOverflowMenuActionDialog()
                 }
 
@@ -323,10 +323,11 @@ class AlbumDetailsViewModel @Inject constructor(
     }
 
     private fun deleteAlbum() {
-        val albumIdValue = uiState.value.album?.id ?: return
+        val contentState = currentContentState() ?: return
+        val albumIdValue = contentState.album?.id ?: return
 
         viewModelScope.launch {
-            when (val result = deleteAlbumUseCase.invoke(albumIdValue, uiState.value.media)) {
+            when (val result = deleteAlbumUseCase.invoke(albumIdValue, contentState.media)) {
                 is Result.Success -> {
                     dismissOverflowMenuActionDialog()
                     sendCommand(AlbumDetailsCommand.NavigateBack)
@@ -339,7 +340,7 @@ class AlbumDetailsViewModel @Inject constructor(
 
     private fun downloadSelectedMedia() {
         val familyIdValue = familyId
-        val selectedMedia = _uiState.value.selectedMedia.toList()
+        val selectedMedia = currentContentState()?.selectedMedia.orEmpty().toList()
         if (selectedMedia.isEmpty() || familyIdValue == null) {
             showError("Media data not available")
             return
@@ -392,7 +393,7 @@ class AlbumDetailsViewModel @Inject constructor(
                 when (result) {
                     is Result.Success -> {
                         val possibleAlbums = result.data.filterNot { it.id == albumId }
-                        _uiState.update { it.copy(albums = possibleAlbums, showOverflowMenuActionDialog = true) }
+                        updateContentState { it.copy(albums = possibleAlbums, showOverflowMenuActionDialog = true) }
 
                         possibleAlbums.forEach { model ->
                             if (model.thumbnail == null && !requestedThumbnailIds.contains(model.id)) {
@@ -410,8 +411,9 @@ class AlbumDetailsViewModel @Inject constructor(
 
     private fun moveSelectedMediaToAlbum(newAlbumId: String) {
         val oldAlbumId = albumId ?: return
-        val selectedMedia = _uiState.value.selectedMedia
-        if (selectedMedia.isEmpty() || newAlbumId == _uiState.value.album?.id || newAlbumId.isEmpty()) return
+        val contentState = currentContentState() ?: return
+        val selectedMedia = contentState.selectedMedia
+        if (selectedMedia.isEmpty() || newAlbumId == contentState.album?.id || newAlbumId.isEmpty()) return
 
         viewModelScope.launch {
             when (val result = moveMediaToAlbumUseCase.invoke(selectedMedia, newAlbumId, oldAlbumId)) {
@@ -627,8 +629,9 @@ class AlbumDetailsViewModel @Inject constructor(
     }
 
     private fun deleteSelectedMedia() {
-        val albumIdValue = uiState.value.album?.id ?: return
-        val selectedMedia = uiState.value.media.filter { it.id in uiState.value.selectedMedia }
+        val contentState = currentContentState() ?: return
+        val albumIdValue = contentState.album?.id ?: return
+        val selectedMedia = contentState.media.filter { it.id in contentState.selectedMedia }
 
         if (selectedMedia.isEmpty()) return
 
@@ -645,7 +648,7 @@ class AlbumDetailsViewModel @Inject constructor(
     }
 
     private fun toggleSelectionMode() {
-        _uiState.update { state ->
+        updateContentState { state ->
             val newSelectionMode = !state.isSelectionModeActive
             state.copy(
                 isSelectionModeActive = newSelectionMode,
@@ -656,21 +659,22 @@ class AlbumDetailsViewModel @Inject constructor(
     }
 
     private fun toggleOverflowMenu(show: Boolean? = null) {
-        _uiState.update { it.copy(showOverflowMenu = show ?: !it.showOverflowMenu) }
+        updateContentState { it.copy(showOverflowMenu = show ?: !it.showOverflowMenu) }
     }
 
     private fun enterSelectionMode(mediaId: String?) {
         if (mediaId == null) return
-        if (!_uiState.value.isSelectionModeActive) {
+        if (currentContentState()?.isSelectionModeActive != true) {
             toggleSelectionMode()
         }
         toggleMediaSelection(mediaId)
     }
 
     private fun toggleAllMediaSelection() {
-        when (_uiState.value.isAllMediaSelected) {
+        val contentState = currentContentState() ?: return
+        when (contentState.isAllMediaSelected) {
             true -> {
-                _uiState.update {
+                updateContentState {
                     it.copy(
                         selectedMedia = emptySet(),
                         isAllMediaSelected = false,
@@ -680,7 +684,7 @@ class AlbumDetailsViewModel @Inject constructor(
             }
 
             false -> {
-                _uiState.update { state ->
+                updateContentState { state ->
                     state.copy(
                         selectedMedia = state.media.mapNotNull { it.id }.toSet(),
                         isAllMediaSelected = true,
@@ -692,20 +696,21 @@ class AlbumDetailsViewModel @Inject constructor(
 
     private fun toggleMediaSelection(mediaId: String?) {
         if (mediaId == null) return
+        val contentState = currentContentState() ?: return
 
-        if (_uiState.value.selectedMedia.contains(mediaId)) {
-            _uiState.update { state ->
+        if (contentState.selectedMedia.contains(mediaId)) {
+            updateContentState { state ->
                 state.copy(selectedMedia = state.selectedMedia - mediaId)
             }
         } else {
-            _uiState.update { state ->
+            updateContentState { state ->
                 state.copy(selectedMedia = state.selectedMedia + mediaId)
             }
         }
     }
 
     private fun startOverflowAction(action: MenuAction) {
-        _uiState.update {
+        updateContentState {
             it.copy(
                 overflowMenuAction = action,
                 showOverflowMenu = false,
@@ -714,12 +719,12 @@ class AlbumDetailsViewModel @Inject constructor(
         if (action == MenuAction.SelectionActions.MOVE) {
             observeAlbums()
         } else {
-            _uiState.update { it.copy(showOverflowMenuActionDialog = true) }
+            updateContentState { it.copy(showOverflowMenuActionDialog = true) }
         }
     }
 
     private fun dismissOverflowMenuActionDialog() {
-        _uiState.update {
+        updateContentState {
             it.copy(
                 showOverflowMenuActionDialog = false,
                 overflowMenuAction = null,
@@ -729,7 +734,21 @@ class AlbumDetailsViewModel @Inject constructor(
     }
 
     private fun setActionDialogText(text: String) {
-        _uiState.update { it.copy(actionDialogText = text) }
+        updateContentState { it.copy(actionDialogText = text) }
+    }
+
+    private fun updateContentState(transform: (AlbumDetailsUiState.Content) -> AlbumDetailsUiState.Content) {
+        _uiState.update { state ->
+            val contentState = when (state) {
+                is AlbumDetailsUiState.Loading -> AlbumDetailsUiState.Content(familyId = familyId)
+                is AlbumDetailsUiState.Content -> state
+            }
+            transform(contentState)
+        }
+    }
+
+    private fun currentContentState(): AlbumDetailsUiState.Content? {
+        return _uiState.value as? AlbumDetailsUiState.Content
     }
 
     private fun showError(message: String) {

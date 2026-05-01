@@ -28,7 +28,10 @@ fun GuideDetailsRoute(
         guideDetailsViewModel.commands.collect { command ->
             when (command) {
                 GuideDetailsCommand.NavigateToGuideStepPlayer -> {
-                    val guideId = uiState.guide?.id ?: return@collect
+                    val guideId = (guideDetailsViewModel.uiState.value as? GuideDetailsUiState.Content)
+                        ?.guide
+                        ?.id
+                        ?: return@collect
                     appNavigator.navigate(GuideStepPlayerNavRoute(guideId))
                 }
                 GuideDetailsCommand.NavigateBack -> {
