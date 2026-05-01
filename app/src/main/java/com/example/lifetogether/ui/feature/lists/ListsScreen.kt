@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -27,12 +26,10 @@ import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.lists.ListType
 import com.example.lifetogether.domain.model.lists.UserList
-import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.button.SecondaryButton
 import com.example.lifetogether.ui.common.button.AddButton
-import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.common.textfield.CustomTextField
@@ -69,10 +66,6 @@ fun ListsScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
         ) {
-            item {
-                SyncUpdatingText(keys = setOf(SyncKey.USER_LISTS, SyncKey.ROUTINE_LIST_ENTRIES))
-            }
-
             if (uiState.userLists.isEmpty()) {
                 item {
                     TextDefault(text = "No lists yet. Tap + to create one.")
@@ -213,14 +206,11 @@ private fun CreateListDialog(
             }
         },
         confirmButton = {
-            if (isSaving) {
-                CircularProgressIndicator()
-            } else {
-                PrimaryButton(
-                    text = "Create",
-                    onClick = onCreate,
-                )
-            }
+            PrimaryButton(
+                text = "Create",
+                onClick = onCreate,
+                loading = isSaving,
+            )
         },
         dismissButton = {
             SecondaryButton(

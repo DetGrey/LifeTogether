@@ -94,12 +94,8 @@ fun GuideDetailsScreen(
                 item {
                     PrimaryButton(
                         modifier = Modifier.fillMaxWidth(),
-                        text = when {
-                            uiState.isStartingGuide -> "Starting..."
-                            guide.started -> "Continue where you left off"
-                            else -> "Start guide"
-                        },
-                        enabled = !uiState.isStartingGuide,
+                        text = if (guide.started) "Continue where you left off" else "Start guide",
+                        loading = uiState.isStartingGuide,
                         onClick = { onUiEvent(GuideDetailsUiEvent.StartOrContinueClicked) },
                     )
                 }

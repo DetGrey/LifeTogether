@@ -210,6 +210,7 @@ fun MediaUploadMultipleDialog(
                         }
                     }
                 },
+                loading = uploadState is UploadState.Uploading,
             )
         },
     )

@@ -235,15 +235,12 @@ fun ListEntryDetailsScreen(
                                 .padding(bottom = padding.calculateBottomPadding())
                                 .align(Alignment.End),
                         ) {
-                            if (uiState.isSaving) {
-                                CircularProgressIndicator()
-                            } else {
-                                PrimaryButton(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    text = if (isExistingEntry) "Save changes" else "Create",
-                                    onClick = { onUiEvent(ListEntryDetailsUiEvent.SaveClicked) },
-                                )
-                            }
+                            PrimaryButton(
+                                modifier = Modifier.fillMaxWidth(),
+                                text = if (isExistingEntry) "Save changes" else "Create",
+                                onClick = { onUiEvent(ListEntryDetailsUiEvent.SaveClicked) },
+                                loading = uiState.isSaving,
+                            )
                         }
                     }
                 }

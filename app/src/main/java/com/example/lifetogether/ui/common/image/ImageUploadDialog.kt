@@ -137,6 +137,7 @@ fun ImageUploadDialog(
                         error = "Please choose an image first"
                     }
                 },
+                loading = uploadState is UploadState.Uploading,
             )
         },
     )
