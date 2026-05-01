@@ -41,7 +41,7 @@ object Skeletons {
             verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
         ) {
             SkeletonLine(
-                modifier = Modifier.fillMaxWidth(0.56f),
+                modifier = Modifier.fillMaxWidth(0.52f),
                 height = 24.dp,
             )
 
@@ -50,27 +50,51 @@ object Skeletons {
                 height = 14.dp,
             )
 
+            repeat(5) {
+                SkeletonSurface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp),
+                    shape = MaterialTheme.shapes.large,
+                )
+            }
+        }
+    }
+
+    @Composable
+    fun SectionDetail(
+        modifier: Modifier = Modifier,
+    ) {
+        Column(
+            modifier = modifier.padding(LifeTogetherTokens.spacing.small),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+        ) {
+            SkeletonLine(
+                modifier = Modifier.fillMaxWidth(0.58f),
+                height = 24.dp,
+            )
+
             SkeletonSurface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(192.dp),
+                    .height(180.dp),
                 shape = MaterialTheme.shapes.extraLarge,
             )
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
-            ) {
-                SkeletonPill(modifier = Modifier.weight(1f))
-                SkeletonPill(modifier = Modifier.weight(1f))
-            }
-
-            SkeletonLine(
-                modifier = Modifier.fillMaxWidth(0.74f),
+            SkeletonSurface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                shape = MaterialTheme.shapes.large,
             )
 
             repeat(3) {
-                SkeletonDetailCard()
+                SkeletonSurface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(88.dp),
+                    shape = MaterialTheme.shapes.large,
+                )
             }
         }
     }
@@ -127,6 +151,53 @@ object Skeletons {
     }
 
     @Composable
+    fun GalleryGrid(
+        modifier: Modifier = Modifier,
+    ) {
+        Column(
+            modifier = modifier.padding(LifeTogetherTokens.spacing.small),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+        ) {
+            SkeletonLine(
+                modifier = Modifier.fillMaxWidth(0.44f),
+                height = 24.dp,
+            )
+
+            SkeletonLine(
+                modifier = Modifier.fillMaxWidth(0.32f),
+                height = 14.dp,
+            )
+
+            SkeletonSurface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(24.dp),
+                shape = MaterialTheme.shapes.large,
+            )
+
+            repeat(4) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                ) {
+                    SkeletonSurface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(112.dp),
+                        shape = MaterialTheme.shapes.large,
+                    )
+                    SkeletonSurface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(112.dp),
+                        shape = MaterialTheme.shapes.large,
+                    )
+                }
+            }
+        }
+    }
+
+    @Composable
     fun GridCollection(
         modifier: Modifier = Modifier,
     ) {
@@ -174,16 +245,6 @@ object Skeletons {
             }
         }
     }
-}
-
-@Composable
-private fun SkeletonDetailCard() {
-    SkeletonSurface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(88.dp),
-        shape = MaterialTheme.shapes.large,
-    )
 }
 
 @Composable
@@ -269,9 +330,25 @@ private fun ListDetailSkeletonPreview() {
 
 @Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
+private fun SectionDetailSkeletonPreview() {
+    LifeTogetherTheme {
+        Skeletons.SectionDetail()
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
+@Composable
 private fun FormEditSkeletonPreview() {
     LifeTogetherTheme {
         Skeletons.FormEdit()
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
+@Composable
+private fun GalleryGridSkeletonPreview() {
+    LifeTogetherTheme {
+        Skeletons.GalleryGrid()
     }
 }
 

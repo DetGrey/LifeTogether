@@ -292,6 +292,17 @@ private fun GuidesScreenPreview() {
         )
     }
 }
+@Preview(showBackground = true)
+@Composable
+private fun GuidesScreenLoadingPreview() {
+    LifeTogetherTheme {
+        GuidesScreen(
+            uiState = GuidesUiState.Loading,
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
+    }
+}
 
 @Composable
 private fun GuideOverviewCard(

@@ -69,7 +69,7 @@ fun GuideDetailsScreen(
     ) { padding ->
         when (uiState) {
             GuideDetailsUiState.Loading -> {
-                Skeletons.ListDetail(
+                Skeletons.SectionDetail(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -86,7 +86,7 @@ fun GuideDetailsScreen(
                     val guide = uiState.guide
                     if (guide == null) {
                         item {
-                            Skeletons.ListDetail(
+                            Skeletons.SectionDetail(
                                 modifier = Modifier.fillMaxWidth(),
                             )
                         }

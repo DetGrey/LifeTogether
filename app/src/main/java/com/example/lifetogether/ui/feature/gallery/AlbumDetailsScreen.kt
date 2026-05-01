@@ -71,7 +71,7 @@ fun AlbumDetailsScreen(
                     )
                 },
             ) { padding ->
-                Skeletons.GridCollection(
+                Skeletons.GalleryGrid(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding)
