@@ -1,6 +1,6 @@
 # Phase 9 — Motion, Loading & Interaction Patterns
 
-**Status:** Grill-me finished _(Not started → Grill-me in progress → Implementing → Complete)_
+**Status:** Implementing _(Not started → Grill-me in progress → Implementing → Complete)_
 
 ## Goal
 
@@ -64,7 +64,7 @@ Standardise how UI elements appear, how loading states are communicated, how nav
 - Content-heavy detail and edit routes should be migrated to skeleton-based loading; the app-launch auth gate remains a dedicated full-screen loading screen.
 - Define one shared loading shell for exceptional full-screen loading cases instead of building isolated one-off shells.
 - The shared loading shell should stay minimal rather than adding branded illustration or title treatment.
-- Skeleton recipes should use fixed token-based sizes rather than proportional sizing.
+- Skeleton recipes should use fixed token-based sizes rather than proportional sizing where possible; the reusable recipes should still match the average screen family they stand in for.
 - Skeleton shimmer timing should be tuned independently from navigation motion timing.
 - Every skeleton recipe should shimmer rather than mixing static and animated placeholder styles.
 - Skeleton recipes may compress vertically on compact screens while preserving the same overall structure.
@@ -107,9 +107,12 @@ Standardise how UI elements appear, how loading states are communicated, how nav
 - The shared skeleton family should expose a fixed set of recipe variants rather than being open-ended composition.
 - The fixed skeleton recipe variants should live under one `Skeletons` API surface.
 - Screen-specific skeletons are still allowed only when a screen has a genuinely unusual shape that cannot be expressed cleanly with the shared recipes.
-- The first standardized recipe should be a vertical list/detail layout with a header area, optional avatar or thumbnail block, and stacked row placeholders.
-- A second standardized recipe should cover form/edit layouts with a title area, text-line placeholders, and an action row.
-- A third standardized recipe should cover grid/collection layouts for gallery, calendar, and tile-based surfaces.
+- The fixed recipe set now includes a simple feed/list layout, a section/detail layout, a form/edit layout, a gallery/grid layout, and a tile-based grid/collection layout.
+- The feed/list recipe should fit screens that mostly render repeated cards in a vertical list.
+- The section/detail recipe should fit screens that have a header or hero area plus stacked content sections.
+- The form/edit recipe should cover edit screens with a header, fields, and action row.
+- The gallery/grid recipe should cover album/media surfaces with a 2-column image grid and lightweight chrome.
+- The grid/collection recipe should cover home/dashboard tile surfaces.
 - The reusable recipes should mirror the real screen density closely rather than using a loose generic density.
 - The shimmer animation should be consistent across all skeleton recipes.
 - Text-line placeholders should vary in length rather than using one uniform width.
@@ -162,7 +165,7 @@ _To be finalised during the pre-implementation grill-me session._
 
 ### 9.3 Design and implement the skeleton loader component; migrate all loading screens
 
-- Build a shared `Skeletons` API surface with fixed variants for list/detail, form/edit, and grid/collection layouts.
+- Build a shared `Skeletons` API surface with fixed variants for feed/list, section/detail, form/edit, gallery/grid, and grid/collection layouts.
 - Reuse the same skeleton system for initial load states and in-place section placeholders.
 - Migrate every explicit spinner-based loading screen in the app to the new skeleton system where the screen is a data-loading surface.
 - Keep empty states, error states, dialog spinners, pull-to-refresh spinners, save spinners, and download progress feedback in their current separate patterns.
@@ -194,7 +197,7 @@ _To be finalised during the pre-implementation grill-me session._
 ### Acceptance criteria
 - [ ] `SyncUpdatingText` and its coordinator-side support state are removed from the app.
 - [ ] The global route transition is centralized, applied to top-level and nested routes, and uses the same subtle slide + crossfade everywhere.
-- [ ] The shared `Skeletons` API exists with fixed variants for list/detail, form/edit, and grid/collection, and it is used for both full-load and in-place placeholders.
+- [ ] The shared `Skeletons` API exists with fixed variants for feed/list, section/detail, form/edit, gallery/grid, and grid/collection, and it is used for both full-load and in-place placeholders.
 - [ ] All explicit spinner-based loading screens are migrated away from blocking full-screen spinners where the screen is a data-loading surface.
 - [ ] Error states, empty states, dialog spinners, pull-to-refresh spinners, save spinners, and download progress snackbars remain distinct from skeleton loading.
 - [ ] Harsh `AnimatedVisibility` and `animateContentSize` gaps are reduced across the app.
@@ -204,7 +207,7 @@ _To be finalised during the pre-implementation grill-me session._
 - [ ] `:app:compileDebugKotlin` passes after the changes.
 - [ ] No `SyncUpdatingText` references remain in the codebase.
 - [ ] A representative top-level route and nested route both show the shared navigation transition in push and pop directions.
-- [ ] A representative list/detail screen, form/edit screen, and grid/collection screen all show the new skeleton treatment during initial load.
+- [ ] A representative feed/list screen, section/detail screen, form/edit screen, gallery/grid screen, and grid/collection screen all show the new skeleton treatment during initial load.
 - [ ] A representative in-place placeholder blends into its surrounding content rather than looking like a separate loading panel.
 - [ ] Pull-to-refresh still shows the native pull-to-refresh spinner.
 - [ ] Save actions still show inline progress near the action and download flows still show progress snackbars.
