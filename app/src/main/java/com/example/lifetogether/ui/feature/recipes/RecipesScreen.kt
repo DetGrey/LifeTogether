@@ -11,15 +11,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
-import com.example.lifetogether.ui.common.button.AddButton
-import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.domain.model.Icon
-import com.example.lifetogether.ui.common.sync.SyncUpdatingText
-import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
-import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.domain.model.recipe.Recipe
-import com.example.lifetogether.domain.sync.SyncKey
+import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.button.AddButton
+import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @Composable
 fun RecipesScreen(
@@ -56,17 +54,13 @@ fun RecipesScreen(
             verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
         ) {
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
-                    SyncUpdatingText(keys = setOf(SyncKey.RECIPES))
-
-                    TagOptionRow(
-                        options = uiState.tagsList,
-                        selectedOption = uiState.selectedTag,
-                        onSelectedOptionChange = {
-                            onUiEvent(RecipesUiEvent.TagSelected(it))
-                        },
-                    )
-                }
+                TagOptionRow(
+                    options = uiState.tagsList,
+                    selectedOption = uiState.selectedTag,
+                    onSelectedOptionChange = {
+                        onUiEvent(RecipesUiEvent.TagSelected(it))
+                    },
+                )
             }
 
             item {

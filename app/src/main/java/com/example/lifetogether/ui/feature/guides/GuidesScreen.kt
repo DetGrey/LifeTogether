@@ -43,8 +43,6 @@ import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.button.SecondaryButton
 import com.example.lifetogether.ui.common.button.AddButton
-import com.example.lifetogether.ui.common.sync.SyncUpdatingText
-import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
@@ -118,10 +116,6 @@ fun GuidesScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
         ) {
-            item {
-                SyncUpdatingText(keys = setOf(SyncKey.GUIDES))
-            }
-
             if (uiState.guides.isEmpty()) {
                 item {
                     Text(text = "No guides yet. Tap + to create or import one.")

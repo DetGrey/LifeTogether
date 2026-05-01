@@ -34,14 +34,12 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
-import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.ActionSheet
 import com.example.lifetogether.ui.common.ActionSheetItem
 import com.example.lifetogether.ui.common.TopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.list.CompletableBox
-import com.example.lifetogether.ui.common.sync.SyncUpdatingText
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -106,8 +104,6 @@ fun ListDetailsScreen(
                         .padding(horizontal = LifeTogetherTokens.spacing.small),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    SyncUpdatingText(keys = setOf(SyncKey.ROUTINE_LIST_ENTRIES))
-
                     if (uiState.isSelectionModeActive) {
                         SelectionModeBar(
                             selectedCount = uiState.selectedEntryIds.size,
