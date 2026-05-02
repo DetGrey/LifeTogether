@@ -1,5 +1,10 @@
 package com.example.lifetogether.ui.feature.guides.details.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -125,7 +130,11 @@ fun GuideSectionCard(
                 )
             }
 
-            if (expanded) {
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut(),
+            ) {
                 val canToggleSelectedAmount = canToggleStep(normalizedSelectedAmountIndex)
                 GuideStepRows(
                     steps = selectedAmountSteps,

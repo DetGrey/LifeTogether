@@ -4,6 +4,9 @@ import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -230,7 +233,11 @@ fun ListEntryDetailsScreen(
                         }
                     }
 
-                    if (uiState.isEditing) {
+                    AnimatedVisibility(
+                        visible = uiState.isEditing,
+                        enter = fadeIn(),
+                        exit = fadeOut(),
+                    ) {
                         Box(
                             modifier = Modifier
                                 .height(50.dp)

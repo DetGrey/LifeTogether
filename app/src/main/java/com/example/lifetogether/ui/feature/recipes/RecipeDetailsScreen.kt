@@ -2,6 +2,9 @@ package com.example.lifetogether.ui.feature.recipes
 
 import android.graphics.Bitmap
 import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -321,7 +324,11 @@ private fun RecipeDetailsContent(
                         )
                     }
 
-                    if (uiState.editMode) {
+                    AnimatedVisibility(
+                        visible = uiState.editMode,
+                        enter = fadeIn(),
+                        exit = fadeOut(),
+                    ) {
                         AddNewIngredient(
                             onAddClick = {
                                 onUiEvent(RecipeDetailsUiEvent.AddIngredientClicked(it))
@@ -351,7 +358,11 @@ private fun RecipeDetailsContent(
                             },
                         )
 
-                        if (uiState.editMode) {
+                        AnimatedVisibility(
+                            visible = uiState.editMode,
+                            enter = fadeIn(),
+                            exit = fadeOut(),
+                        ) {
                             AddNewString(
                                 label = "Add new instruction",
                                 onAddClick = {
@@ -362,7 +373,11 @@ private fun RecipeDetailsContent(
                     }
                 }
 
-                if (uiState.editMode) {
+                AnimatedVisibility(
+                    visible = uiState.editMode,
+                    enter = fadeIn(),
+                    exit = fadeOut(),
+                ) {
                     PrimaryButton(
                         text = "Save",
                         onClick = { onUiEvent(RecipeDetailsUiEvent.SaveClicked) },

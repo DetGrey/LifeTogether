@@ -1,6 +1,10 @@
 package com.example.lifetogether.ui.feature.lists.listDetails
 
 import android.graphics.Bitmap
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -101,15 +105,21 @@ fun ListDetailsScreen(
                         .padding(horizontal = LifeTogetherTokens.spacing.small),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    if (uiState.isSelectionModeActive) {
-                        SelectionModeBar(
-                            selectedCount = uiState.selectedEntryIds.size,
-                            isAllSelected = uiState.isAllEntriesSelected,
-                            onToggleAll = { onUiEvent(ListDetailsUiEvent.ToggleAllEntrySelection) },
-                            onCancel = { onUiEvent(ListDetailsUiEvent.ExitSelectionMode) },
-                        )
-                    } else {
-                        Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.medium))
+                    AnimatedContent(
+                        targetState = uiState.isSelectionModeActive,
+                        transitionSpec = { fadeIn() togetherWith fadeOut() },
+                        label = "selection_mode_bar",
+                    ) { selectionActive ->
+                        if (selectionActive) {
+                            SelectionModeBar(
+                                selectedCount = uiState.selectedEntryIds.size,
+                                isAllSelected = uiState.isAllEntriesSelected,
+                                onToggleAll = { onUiEvent(ListDetailsUiEvent.ToggleAllEntrySelection) },
+                                onCancel = { onUiEvent(ListDetailsUiEvent.ExitSelectionMode) },
+                            )
+                        } else {
+                            Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.medium))
+                        }
                     }
 
                     if (entries.isEmpty()) {

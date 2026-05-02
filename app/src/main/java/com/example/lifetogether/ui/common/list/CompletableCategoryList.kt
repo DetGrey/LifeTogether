@@ -1,5 +1,10 @@
 package com.example.lifetogether.ui.common.list
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -33,7 +38,7 @@ fun CompletableCategoryList(
     onCompleteToggle: (Completable) -> Unit,
     onDelete: (() -> Unit)? = null,
 ) {
-    Column {
+    Column(modifier = Modifier.padding(bottom = LifeTogetherTokens.spacing.xLarge)) {
         Column(
             modifier = Modifier
                     .padding(horizontal = LifeTogetherTokens.spacing.xSmall)
@@ -76,9 +81,13 @@ fun CompletableCategoryList(
             }
             HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.primary)
         }
-        if (expanded) {
-                Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut(),
+        ) {
             Column {
+                Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
                 itemList.forEach { item ->
                     ListItem(
                         item = item,
@@ -88,6 +97,5 @@ fun CompletableCategoryList(
                 }
             }
         }
-            Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.xLarge))
     }
 }
