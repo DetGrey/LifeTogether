@@ -4,6 +4,9 @@ import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -242,11 +245,21 @@ fun GuidesScreen(
                         },
                     )
 
-                    if (contentState.isImporting) {
-                        RowWithCenteredLoader()
+                    AnimatedVisibility(
+                        visible = contentState.isImporting,
+                        enter = fadeIn(),
+                        exit = fadeOut(),
+                    ) {
+                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(modifier = Modifier.size(LifeTogetherTokens.sizing.iconMedium))
+                        }
                     }
 
-                    if (contentState.importSummary.isNotEmpty()) {
+                    AnimatedVisibility(
+                        visible = contentState.importSummary.isNotEmpty(),
+                        enter = fadeIn(),
+                        exit = fadeOut(),
+                    ) {
                         Text(
                             text = contentState.importSummary,
                             color = MaterialTheme.colorScheme.primary,
@@ -259,6 +272,8 @@ fun GuidesScreen(
                 PrimaryButton(
                     text = "Done",
                     onClick = { onUiEvent(GuidesUiEvent.CloseImportDialog) },
+                    enabled = !contentState.isImporting,
+                    loading = contentState.isImporting,
                 )
             },
             dismissButton = {
@@ -363,13 +378,6 @@ private fun GuideOverviewCard(
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
         }
-    }
-}
-
-@Composable
-private fun RowWithCenteredLoader() {
-    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(modifier = Modifier.size(LifeTogetherTokens.sizing.iconMedium))
     }
 }
 

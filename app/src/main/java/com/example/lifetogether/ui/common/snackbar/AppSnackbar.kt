@@ -1,5 +1,8 @@
 package com.example.lifetogether.ui.common.snackbar
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -154,12 +157,18 @@ private fun AppSnackbarContent(
             style = MaterialTheme.typography.bodyLarge,
             color = colors.contentColor,
         )
-        if (showProgress) {
-            Spacer(modifier = Modifier.size(LifeTogetherTokens.spacing.small))
-            CircularProgressIndicator(
-                modifier = Modifier.size(24.dp),
-                color = colors.contentColor,
-            )
+        AnimatedVisibility(
+            visible = showProgress,
+            enter = fadeIn(),
+            exit = fadeOut(),
+        ) {
+            Column {
+                Spacer(modifier = Modifier.size(LifeTogetherTokens.spacing.small))
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = colors.contentColor,
+                )
+            }
         }
         Text(
             text = message,

@@ -1,5 +1,8 @@
 package com.example.lifetogether.ui.feature.gallery
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
@@ -84,13 +87,17 @@ fun ThumbnailContainer(
                 TextDefault(duration.durationToString(), color = MaterialTheme.colorScheme.onTertiaryContainer)
             }
         }
-        if (isSelectionMode) {
-                Box(
-                    modifier = Modifier
-                        .size(LifeTogetherTokens.sizing.touchTargetMinimum)
-                        .align(Alignment.TopStart)
-                        .padding(LifeTogetherTokens.spacing.xSmall),
-                ) {
+        AnimatedVisibility(
+            visible = isSelectionMode,
+            enter = fadeIn(),
+            exit = fadeOut(),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(LifeTogetherTokens.sizing.touchTargetMinimum)
+                    .align(Alignment.TopStart)
+                    .padding(LifeTogetherTokens.spacing.xSmall),
+            ) {
                 CompletableBox(
                     isCompleted = isSelected,
                     onCompleteToggle = onSelectionToggle,

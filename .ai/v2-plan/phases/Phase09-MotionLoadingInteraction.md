@@ -140,8 +140,6 @@ Standardise how UI elements appear, how loading states are communicated, how nav
 
 ## Subphases
 
-_To be finalised during the pre-implementation grill-me session._
-
 - [ ] 9.1 Remove `SyncUpdatingText` and simplify the sync lifecycle
 - [ ] 9.2 Define and apply the global navigation transition
 - [ ] 9.3 Design and implement the skeleton loader component; migrate all loading screens

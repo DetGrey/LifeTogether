@@ -1,5 +1,10 @@
 package com.example.lifetogether.ui.feature.guides.stepplayer
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -103,14 +108,20 @@ fun GuideStepPlayerScreen(
                 )
             }
 
-            if (uiState.nextStep != null) {
-                item {
-                    GuideStepCard(
-                        header = "Up next",
-                        step = uiState.nextStep,
-                        stepNumber = (uiState.currentStepNumber + 1).coerceAtMost(uiState.totalSteps),
-                        emphasized = false,
-                    )
+            item {
+                AnimatedVisibility(
+                    visible = uiState.nextStep != null,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut(),
+                ) {
+                    uiState.nextStep?.let { nextStep ->
+                        GuideStepCard(
+                            header = "Up next",
+                            step = nextStep,
+                            stepNumber = (uiState.currentStepNumber + 1).coerceAtMost(uiState.totalSteps),
+                            emphasized = false,
+                        )
+                    }
                 }
             }
         }

@@ -1,5 +1,10 @@
 package com.example.lifetogether.ui.feature.admin.groceryList.suggestions
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -12,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -62,17 +66,23 @@ fun GrocerySuggestionsEditor(
             }
 
             // --- ITEMS (Visible only if expanded) ---
-            if (isExpanded) {
-                items(items, key = { it.id ?: it.suggestionName }) { suggestion ->
-                    GrocerySuggestionRow(
-                        suggestion = suggestion,
-                        onEdit = { onEditItem(suggestion) },
-                        onDelete = { onDeleteItem(suggestion) },
-                    )
+            item {
+                AnimatedVisibility(
+                    visible = isExpanded,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut(),
+                ) {
+                    Column {
+                        items.forEach { suggestion ->
+                            GrocerySuggestionRow(
+                                suggestion = suggestion,
+                                onEdit = { onEditItem(suggestion) },
+                                onDelete = { onDeleteItem(suggestion) },
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
+                    }
                 }
-
-                // Add spacing after an expanded section
-                item { Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small)) }
             }
         }
     }

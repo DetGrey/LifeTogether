@@ -22,6 +22,9 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -162,7 +165,11 @@ fun MediaUploadMultipleDialog(
                     else -> {}
                 }
 
-                if (error.isNotBlank()) {
+                AnimatedVisibility(
+                    visible = error.isNotBlank(),
+                    enter = fadeIn(),
+                    exit = fadeOut(),
+                ) {
                     Text(text = error)
                 }
             }
