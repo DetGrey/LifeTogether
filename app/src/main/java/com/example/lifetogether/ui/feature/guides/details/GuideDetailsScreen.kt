@@ -23,7 +23,7 @@ import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.ui.common.ActionSheet
 import com.example.lifetogether.ui.common.ActionSheetItem
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.text.TextDefault
@@ -46,7 +46,7 @@ fun GuideDetailsScreen(
 
     Scaffold(
         topBar = {
-            TopBar(
+            AppTopBar(
                 leftIcon = AppIcon(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",

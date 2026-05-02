@@ -17,7 +17,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.textfield.CustomTextField
@@ -32,7 +32,7 @@ fun LoginScreen(
 ) {
     Scaffold(
         topBar = {
-            TopBar(
+            AppTopBar(
                 leftIcon = Icon(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",

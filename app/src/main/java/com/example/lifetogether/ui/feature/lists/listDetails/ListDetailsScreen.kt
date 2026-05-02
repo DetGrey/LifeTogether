@@ -39,7 +39,7 @@ import com.example.lifetogether.domain.model.lists.RecurrenceUnit
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.ui.common.ActionSheet
 import com.example.lifetogether.ui.common.ActionSheetItem
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.list.CompletableBox
@@ -66,7 +66,7 @@ fun ListDetailsScreen(
 
     Scaffold(
         topBar = {
-            TopBar(
+            AppTopBar(
                 leftIcon = Icon(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",

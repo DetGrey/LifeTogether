@@ -1,6 +1,6 @@
 # Phase 9 — Motion, Loading & Interaction Patterns
 
-**Status:** Implementing _(Not started → Grill-me in progress → Implementing → Complete)_
+**Status:** Complete _(Not started → Grill-me in progress → Implementing → Complete)_
 
 ## Goal
 
@@ -70,8 +70,7 @@ Standardise how UI elements appear, how loading states are communicated, how nav
 - Skeleton recipes may compress vertically on compact screens while preserving the same overall structure.
 - Image- and media-heavy loading areas should get dedicated skeleton treatment rather than relying only on current image placeholders.
 - Media skeleton blocks should also be standardized rather than left as ad hoc generic boxes.
-- Primary actions on skeleton-loading screens should remain visible but disabled until content is ready.
-- Disabled actions on loading screens should keep their labels rather than being replaced by skeleton placeholders.
+- Primary action FABs on skeleton-loading screens are hidden during loading rather than shown in a disabled state.
 - Every explicit spinner-based loading screen in the app should be migrated during Phase 9, not only the content-heavy examples identified earlier.
 - Compact spinner patterns inside modals and dialogs should stay as spinners rather than being converted to skeletons.
 - Loading states should remain distinct from empty states rather than using one combined empty/loading skeleton variant.
@@ -140,12 +139,12 @@ Standardise how UI elements appear, how loading states are communicated, how nav
 
 ## Subphases
 
-- [ ] 9.1 Remove `SyncUpdatingText` and simplify the sync lifecycle
-- [ ] 9.2 Define and apply the global navigation transition
-- [ ] 9.3 Design and implement the skeleton loader component; migrate all loading screens
-- [ ] 9.4 Audit and fix all harsh `AnimatedVisibility` / `animateContentSize` gaps
-- [ ] 9.5 Define specific UX rules for delete, save, and confirm interactions
-- [ ] 9.6 Implement standardised interaction patterns across all features
+- [x] 9.1 Remove `SyncUpdatingText` and simplify the sync lifecycle
+- [x] 9.2 Define and apply the global navigation transition
+- [x] 9.3 Design and implement the skeleton loader component; migrate all loading screens
+- [x] 9.4 Audit and fix all harsh `AnimatedVisibility` / `animateContentSize` gaps
+- [x] 9.5 Define specific UX rules for delete, save, and confirm interactions
+- [x] 9.6 Implement standardised interaction patterns across all features
 
 ### 9.1 Remove `SyncUpdatingText` and simplify the sync lifecycle
 
@@ -193,13 +192,13 @@ Standardise how UI elements appear, how loading states are communicated, how nav
 > All **Open Questions** at the bottom of this file must be answered and the section removed before implementation begins.
 
 ### Acceptance criteria
-- [ ] `SyncUpdatingText` and its coordinator-side support state are removed from the app.
-- [ ] The global route transition is centralized, applied to top-level and nested routes, and uses the same subtle slide + crossfade everywhere.
-- [ ] The shared `Skeletons` API exists with fixed variants for feed/list, section/detail, form/edit, gallery/grid, and grid/collection, and it is used for both full-load and in-place placeholders.
-- [ ] All explicit spinner-based loading screens are migrated away from blocking full-screen spinners where the screen is a data-loading surface.
-- [ ] Error states, empty states, dialog spinners, pull-to-refresh spinners, save spinners, and download progress snackbars remain distinct from skeleton loading.
-- [ ] Harsh `AnimatedVisibility` and `animateContentSize` gaps are reduced across the app.
-- [ ] Delete, save, and confirm behaviors follow the agreed dialog/conservative/snackbar rules consistently.
+- [x] `SyncUpdatingText` and its coordinator-side support state are removed from the app.
+- [x] The global route transition is centralized, applied to top-level and nested routes, and uses the same subtle slide + crossfade everywhere.
+- [x] The shared `Skeletons` API exists with fixed variants for feed/list, section/detail, form/edit, gallery/grid, and grid/collection, and it is used for both full-load and in-place placeholders.
+- [x] All explicit spinner-based loading screens are migrated away from blocking full-screen spinners where the screen is a data-loading surface.
+- [x] Error states, empty states, dialog spinners, pull-to-refresh spinners, save spinners, and download progress snackbars remain distinct from skeleton loading.
+- [x] Harsh `AnimatedVisibility` and `animateContentSize` gaps are reduced across the app.
+- [x] Delete, save, and confirm behaviors follow the agreed dialog/conservative/snackbar rules consistently.
 
 ### Test cases
 - [ ] `:app:compileDebugKotlin` passes after the changes.

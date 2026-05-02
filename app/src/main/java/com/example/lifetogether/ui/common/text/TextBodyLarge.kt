@@ -10,12 +10,12 @@ import androidx.compose.ui.graphics.Color
 fun TextBodyLarge(
     text: String,
     modifier: Modifier = Modifier,
-    color: Color? = null,
+    color: Color = MaterialTheme.colorScheme.onBackground,
 ) {
     Text(
         text = text,
         style = MaterialTheme.typography.bodyLarge,
-        color = color ?: MaterialTheme.colorScheme.primary,
+        color = color,
         modifier = modifier,
     )
 }

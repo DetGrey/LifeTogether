@@ -57,7 +57,7 @@ fun AddNewIngredient(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(130.dp),
+            .height(140.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
         ),
@@ -66,58 +66,42 @@ fun AddNewIngredient(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = LifeTogetherTokens.spacing.medium),
+                .padding(horizontal = LifeTogetherTokens.spacing.medium)
+                .padding(bottom = LifeTogetherTokens.spacing.small),
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxHeight(0.5f),
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(0.8f),
-                ) {
-                    CustomTextField(
-                        value = ingredient.itemName,
-                        onValueChange = { updateIngredient("itemName", it) },
-                        label = "Ingredient name...",
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Done,
-                    )
-                }
-            }
+            CustomTextField(
+                value = ingredient.itemName,
+                onValueChange = { updateIngredient("itemName", it) },
+                label = "Ingredient name...",
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Done,
+            )
 
             Row {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(0.4f),
-                ) {
-                    CustomTextField(
-                        value = amount,
-                        onValueChange = {
-                            amount = it
-                        },
-                        label = "Amount",
-                        keyboardType = KeyboardType.Number,
-                        imeAction = ImeAction.Done,
-                    )
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(0.5f),
-                ) {
-                    Dropdown(
-                        selectedValue = ingredient.measureType.unit,
-                        expanded = changeMeasureTypeExpanded,
-                        onExpandedChange = {
-                            changeMeasureTypeExpanded = it
-                        },
-                        options = measureTypeList.map { it.unit },
-                        label = null,
-                        onValueChangedEvent = {
-                            updateIngredient("measureType", it)
-                        },
-                    )
-                }
+                CustomTextField(
+                    value = amount,
+                    onValueChange = {
+                        amount = it
+                    },
+                    label = "Amount",
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done,
+                    modifier = Modifier.weight(1f)
+                )
+
+                Dropdown(
+                    selectedValue = ingredient.measureType.unit,
+                    expanded = changeMeasureTypeExpanded,
+                    onExpandedChange = {
+                        changeMeasureTypeExpanded = it
+                    },
+                    options = measureTypeList.map { it.unit },
+                    label = null,
+                    onValueChangedEvent = {
+                        updateIngredient("measureType", it)
+                    },
+                    modifier = Modifier.weight(1f)
+                )
                 Row(
                     modifier = Modifier
                         .padding(LifeTogetherTokens.spacing.small)

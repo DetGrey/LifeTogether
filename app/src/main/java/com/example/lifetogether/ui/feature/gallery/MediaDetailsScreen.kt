@@ -37,7 +37,7 @@ import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.ui.common.ActionSheet
 import com.example.lifetogether.ui.common.ActionSheetItem
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.image.DisplayImageFromUri
 import com.example.lifetogether.ui.common.image.DisplayVideoFromUri
@@ -69,7 +69,7 @@ fun MediaDetailsScreen(
 
     Scaffold(
         topBar = {
-            TopBar(
+            AppTopBar(
                 leftIcon = Icon(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",

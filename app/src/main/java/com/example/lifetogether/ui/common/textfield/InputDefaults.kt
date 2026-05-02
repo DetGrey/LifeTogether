@@ -21,6 +21,12 @@ fun Modifier.inputFieldModifier(): Modifier {
 }
 
 @Composable
+fun Modifier.editableInputFieldModifier(): Modifier {
+    return fillMaxWidth()
+        .clip(shape = MaterialTheme.shapes.large)
+}
+
+@Composable
 fun filledTextFieldColors(): TextFieldColors {
     return TextFieldDefaults.colors(
         focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -32,9 +38,9 @@ fun filledTextFieldColors(): TextFieldColors {
         focusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
         unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
         disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        focusedIndicatorColor = MaterialTheme.colorScheme.secondary,
-        unfocusedIndicatorColor = MaterialTheme.colorScheme.secondary,
-        disabledIndicatorColor = MaterialTheme.colorScheme.secondary,
+        focusedIndicatorColor = MaterialTheme.colorScheme.surfaceVariant,
+        unfocusedIndicatorColor = MaterialTheme.colorScheme.surfaceVariant,
+        disabledIndicatorColor = MaterialTheme.colorScheme.surfaceVariant,
         cursorColor = MaterialTheme.colorScheme.secondary,
         errorCursorColor = MaterialTheme.colorScheme.error,
     )
@@ -54,9 +60,9 @@ fun transparentTextFieldColors(
         focusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
         unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
         disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        focusedIndicatorColor = MaterialTheme.colorScheme.secondary,
-        unfocusedIndicatorColor = MaterialTheme.colorScheme.secondary,
-        disabledIndicatorColor = MaterialTheme.colorScheme.secondary,
+        focusedIndicatorColor =Color.Transparent,
+        unfocusedIndicatorColor = Color.Transparent,
+        disabledIndicatorColor = Color.Transparent,
         cursorColor = textColor,
         errorCursorColor = MaterialTheme.colorScheme.error,
     )

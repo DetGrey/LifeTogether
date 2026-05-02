@@ -22,7 +22,7 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.grocery.GroceryItem
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.add.AddNewListItem
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.list.ItemCategoryList
@@ -45,7 +45,7 @@ fun GroceryListScreen(
 
     Scaffold(
         topBar = {
-            TopBar(
+            AppTopBar(
                 leftIcon = Icon(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",

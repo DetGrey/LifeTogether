@@ -26,7 +26,7 @@ import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.lists.ListType
 import com.example.lifetogether.domain.model.lists.UserList
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.button.SecondaryButton
 import com.example.lifetogether.ui.common.button.AddButton
@@ -48,7 +48,7 @@ fun ListsScreen(
 
     Scaffold(
         topBar = {
-            TopBar(
+            AppTopBar(
                 leftIcon = Icon(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",

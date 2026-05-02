@@ -21,6 +21,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,7 +54,7 @@ fun GrocerySuggestionsEditor(
     ) {
         grouped.forEach { (categoryName, items) ->
             val isExpanded = expandedCategories.contains(categoryName)
-            val categoryEmoji = items.firstOrNull()?.category?.emoji ?: "🛒"
+            val categoryEmoji = items.firstOrNull()?.category?.emoji ?: UNCATEGORIZED_CATEGORY.emoji
 
             // --- CATEGORY HEADER ---
             item(key = categoryName) {
@@ -108,10 +109,11 @@ fun CategoryHeader(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextDefault(
+                Text(
                     text = "$emoji  $name",
                     modifier = Modifier.weight(1f),
                     maxLines = 1,
+                    style = MaterialTheme.typography.bodyLarge
                 )
 
                 Icon(

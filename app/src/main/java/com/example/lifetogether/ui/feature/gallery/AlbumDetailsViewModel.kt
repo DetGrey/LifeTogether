@@ -678,7 +678,6 @@ class AlbumDetailsViewModel @Inject constructor(
                     it.copy(
                         selectedMedia = emptySet(),
                         isAllMediaSelected = false,
-                        isSelectionModeActive = false,
                     )
                 }
             }

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.FloatingActionButton
@@ -33,7 +34,7 @@ import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.UserInformation
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.text.TextDisplayLarge
 import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -54,7 +55,7 @@ fun HomeScreen(
 
     Scaffold(
         topBar = {
-            TopBar(
+            AppTopBar(
                 leftIcon = Icon(
                     resId = R.drawable.ic_profile_picture,
                     description = "profile picture icon",
@@ -86,6 +87,7 @@ fun HomeScreen(
                     MaterialTheme.colorScheme.onTertiary
                 },
                 modifier = Modifier.size(70.dp),
+                shape = CircleShape,
             ) {
                 androidx.compose.material3.Icon(
                     painter = painterResource(id = R.drawable.ic_heart),

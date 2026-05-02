@@ -36,7 +36,7 @@ import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.ui.common.ActionSheet
 import com.example.lifetogether.ui.common.ActionSheetItem
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
@@ -61,7 +61,7 @@ fun AlbumDetailsScreen(
         AlbumDetailsUiState.Loading -> {
             Scaffold(
                 topBar = {
-                    TopBar(
+                    AppTopBar(
                         leftIcon = Icon(
                             resId = R.drawable.ic_back_arrow,
                             description = "back arrow icon",
@@ -103,7 +103,7 @@ private fun AlbumDetailsContent(
 
     Scaffold(
         topBar = {
-            TopBar(
+            AppTopBar(
                 leftIcon = Icon(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
@@ -293,6 +293,7 @@ private fun AlbumDetailsContent(
                             confirmButtonMessage = "Rename album",
                             textValue = uiState.actionDialogText,
                             onTextValueChange = { onUiEvent(AlbumDetailsUiEvent.SetActionDialogText(it)) },
+                            label = "New album name",
                             capitalization = true,
                         )
                     }

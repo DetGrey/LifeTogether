@@ -14,7 +14,7 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.enums.SettingsConfirmationTypes
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -30,7 +30,7 @@ fun SettingsScreen(
 
     Scaffold(
         topBar = {
-            TopBar(
+            AppTopBar(
                 leftIcon = Icon(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
@@ -113,6 +113,7 @@ fun SettingsScreen(
                     onTextValueChange = { value ->
                         onUiEvent(SettingsUiEvent.AddedFamilyIdChanged(value))
                     },
+                    label = "Family id",
                 )
 
                 SettingsConfirmationTypes.NEW_FAMILY -> ConfirmationDialog(

@@ -38,7 +38,7 @@ import com.example.lifetogether.ui.feature.signup.SignupRoute
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerRoute
 import com.example.lifetogether.ui.feature.tipTracker.statistics.TipStatisticsRoute
 
-private const val RouteTransitionDurationMillis = 350
+private const val RouteTransitionDurationMillis = 450
 private const val RouteTransitionFadeInitialAlpha = 0.92f
 
 @Composable

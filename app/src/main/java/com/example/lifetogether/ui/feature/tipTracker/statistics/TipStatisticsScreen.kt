@@ -1,7 +1,9 @@
 package com.example.lifetogether.ui.feature.tipTracker.statistics
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
@@ -15,10 +17,10 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.toFullDateString
 import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.domain.model.Icon
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.common.text.TextDefault
-import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
+import com.example.lifetogether.ui.common.text.TextHeadingLarge
 import com.example.lifetogether.ui.feature.tipTracker.components.StatsCard
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerNavigationEvent
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerStats
@@ -38,7 +40,7 @@ fun TipStatisticsScreen(
 
     Scaffold(
         topBar = {
-            TopBar(
+            AppTopBar(
                 leftIcon = Icon(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
@@ -94,30 +96,32 @@ fun TipStatisticsScreen(
             // TODO check if the item is still there if highest tip is null because I don't want the spacedBy to be there always
             item {
                 content.stats.highestTip?.let { tip ->
-                    TextSubHeadingMedium("Highest tip", color = MaterialTheme.colorScheme.primary)
+                    TextHeadingLarge("Highest tip")
+                    Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
                     TextDefault(
                         text = "Tip amount: ${tip.amount}",
-                        color = MaterialTheme.colorScheme.secondary,
+                        color = MaterialTheme.colorScheme.onBackground,
                         textAlign = TextAlign.Center,
                     )
                     TextDefault(
                         text = "Date: ${tip.date.toFullDateString()}",
-                        color = MaterialTheme.colorScheme.secondary,
+                        color = MaterialTheme.colorScheme.onBackground,
                         textAlign = TextAlign.Center,
                     )
                 }
             }
             item {
                 content.stats.bestMonth?.let { bestMonth ->
-                    TextSubHeadingMedium("Best month", color = MaterialTheme.colorScheme.primary)
+                    TextHeadingLarge("Best month")
+                    Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
                     TextDefault(
                         text = "Tip amount: ${bestMonth.second}",
-                        color = MaterialTheme.colorScheme.secondary,
+                        color = MaterialTheme.colorScheme.onBackground,
                         textAlign = TextAlign.Center,
                     )
                     TextDefault(
                         text = "Month: ${bestMonth.first}",
-                        color = MaterialTheme.colorScheme.secondary,
+                        color = MaterialTheme.colorScheme.onBackground,
                         textAlign = TextAlign.Center,
                     )
                 }

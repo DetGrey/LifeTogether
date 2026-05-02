@@ -16,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -35,6 +36,7 @@ fun FlowRowScope.FeatureCard(
 ) {
     Card(
         modifier = Modifier
+            .clip(MaterialTheme.shapes.large)
             .clickable { onClick() }
             .then(if (fullWidth) Modifier.fillMaxWidth() else Modifier.weight(1f))
             .fillMaxRowHeight(),
@@ -54,8 +56,7 @@ fun FlowRowScope.FeatureCard(
                 modifier = Modifier.height(50.dp),
                 tint = MaterialTheme.colorScheme.tertiary,
             )
-
-//        TextHeadingMedium(text = title)
+            
             TextSubHeadingMedium(
                 text = title,
                 alignCenter = true,

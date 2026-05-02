@@ -110,7 +110,10 @@ private fun RecipeDetailsContent(
 
                     Box(
                         modifier = Modifier
-                            .padding(start = LifeTogetherTokens.spacing.small, top = LifeTogetherTokens.spacing.small)
+                            .padding(
+                                start = LifeTogetherTokens.spacing.small,
+                                top = LifeTogetherTokens.spacing.small
+                            )
                             .height(40.dp)
                             .aspectRatio(1f)
                             .clickable {
@@ -122,13 +125,16 @@ private fun RecipeDetailsContent(
                         Icon(
                             painter = painterResource(id = R.drawable.ic_back_arrow),
                             contentDescription = "back arrow icon",
-                            tint = MaterialTheme.colorScheme.background,
+                            tint = MaterialTheme.colorScheme.onTertiary,
                         )
                     }
 
                     Box(
                         modifier = Modifier
-                            .padding(end = LifeTogetherTokens.spacing.small, top = LifeTogetherTokens.spacing.small)
+                            .padding(
+                                end = LifeTogetherTokens.spacing.small,
+                                top = LifeTogetherTokens.spacing.small
+                            )
                             .height(if (!uiState.editMode && uiState.recipeId != null) 40.dp else 50.dp)
                             .aspectRatio(1f)
                             .clickable(
@@ -147,19 +153,23 @@ private fun RecipeDetailsContent(
                             Text(
                                 text = if (bitmap != null) "Change image" else "Add image",
                                 textAlign = TextAlign.Right,
+                                color = MaterialTheme.colorScheme.onTertiary,
                             )
                         } else if (uiState.recipeId != null) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_trashcan),
                                 contentDescription = "trashcan icon",
-                                tint = MaterialTheme.colorScheme.background,
+                                tint = MaterialTheme.colorScheme.onTertiary,
                             )
                         }
                     }
 
                     Box(
                         modifier = Modifier
-                            .padding(start = LifeTogetherTokens.spacing.small, end = LifeTogetherTokens.spacing.xxLarge)
+                            .padding(
+                                start = LifeTogetherTokens.spacing.small,
+                                end = LifeTogetherTokens.spacing.xxLarge
+                            )
                             .align(Alignment.BottomStart),
                     ) {
                         EditableTextField(
@@ -169,6 +179,7 @@ private fun RecipeDetailsContent(
                             isEditable = uiState.editMode,
                             textStyle = MaterialTheme.typography.displayMedium,
                             color = MaterialTheme.colorScheme.primary,
+                            labelColor = MaterialTheme.colorScheme.onTertiary,
                         )
                     }
 
@@ -183,11 +194,13 @@ private fun RecipeDetailsContent(
                             .align(Alignment.BottomEnd),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_edit),
-                            contentDescription = "edit icon",
-                            tint = MaterialTheme.colorScheme.background,
-                        )
+                        if (uiState.recipeId != null) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_edit),
+                                contentDescription = "edit icon",
+                                tint = MaterialTheme.colorScheme.onTertiary,
+                            )
+                        }
                     }
                 }
             }
@@ -381,6 +394,7 @@ private fun RecipeDetailsContent(
                     PrimaryButton(
                         text = "Save",
                         onClick = { onUiEvent(RecipeDetailsUiEvent.SaveClicked) },
+                        modifier = Modifier.fillMaxWidth(0.5f),
                         loading = uiState.isSaving,
                     )
                 }

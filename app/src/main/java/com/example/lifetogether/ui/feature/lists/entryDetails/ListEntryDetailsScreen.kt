@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -37,7 +38,7 @@ import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
 import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.image.ImageUploadDialog
 import com.example.lifetogether.ui.common.button.PrimaryButton
@@ -75,7 +76,7 @@ fun ListEntryDetailsScreen(
 
     Scaffold(
         topBar = {
-            TopBar(
+            AppTopBar(
                 leftIcon = Icon(resId = R.drawable.ic_back_arrow, description = "back arrow"),
                 onLeftClick = { onNavigationEvent(ListEntryDetailsNavigationEvent.NavigateBack) },
                 text = title,
@@ -185,7 +186,7 @@ fun ListEntryDetailsScreen(
                                 TextSubHeadingMedium("Recurrence")
                                 TagOptionRow(
                                     options = RecurrenceUnit.entries.map { it.name.lowercase() },
-                                    selectedOption = formState.recurrenceUnit.name,
+                                    selectedOption = formState.recurrenceUnit.name.lowercase(),
                                     onSelectedOptionChange = {
                                         if (uiState.isEditing) {
                                             onUiEvent(ListEntryDetailsUiEvent.RecurrenceUnitChanged(it))
@@ -211,6 +212,8 @@ fun ListEntryDetailsScreen(
                         if (formState.recurrenceUnit == RecurrenceUnit.WEEKS) {
                             item {
                                 TextSubHeadingMedium("Weekdays")
+
+                                Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
 
                                 FlowRow(
                                     horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),

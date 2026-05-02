@@ -25,10 +25,12 @@ fun Dropdown(
     options: List<String>,
     label: String?,
     onValueChangedEvent: (String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { onExpandedChange(it) },
+        modifier = modifier,
     ) {
         TextField(
             readOnly = true,
