@@ -381,6 +381,7 @@ private fun RecipeDetailsContent(
                     PrimaryButton(
                         text = "Save",
                         onClick = { onUiEvent(RecipeDetailsUiEvent.SaveClicked) },
+                        loading = uiState.isSaving,
                     )
                 }
             }

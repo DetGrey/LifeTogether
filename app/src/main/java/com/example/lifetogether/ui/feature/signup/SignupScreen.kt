@@ -102,6 +102,7 @@ fun SignupScreen(
                     PrimaryButton(
                         text = "Sign up",
                         onClick = { onUiEvent(SignupUiEvent.SignUpClicked) },
+                        loading = uiState.isLoading,
                     )
 
                     TextDefault(

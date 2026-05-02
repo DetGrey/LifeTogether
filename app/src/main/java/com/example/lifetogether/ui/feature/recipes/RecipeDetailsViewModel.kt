@@ -365,18 +365,25 @@ class RecipeDetailsViewModel @Inject constructor(
             },
         )
 
+        updateContent { it.copy(isSaving = true) }
         viewModelScope.launch {
             when {
                 recipe.id.isNullOrBlank() -> {
                     when (val result = recipeRepository.saveRecipe(recipe)) {
                         is Result.Success -> _commands.send(RecipeDetailsCommand.NavigateBack)
-                        is Result.Failure -> showError(result.error.toUserMessage())
+                        is Result.Failure -> {
+                            updateContent { it.copy(isSaving = false) }
+                            showError(result.error.toUserMessage())
+                        }
                     }
                 }
                 else -> {
                     when (val result = recipeRepository.updateRecipe(recipe)) {
                         is Result.Success -> _commands.send(RecipeDetailsCommand.NavigateBack)
-                        is Result.Failure -> showError(result.error.toUserMessage())
+                        is Result.Failure -> {
+                            updateContent { it.copy(isSaving = false) }
+                            showError(result.error.toUserMessage())
+                        }
                     }
                 }
             }

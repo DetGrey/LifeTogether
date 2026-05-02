@@ -21,6 +21,7 @@ sealed interface RecipeDetailsUiState {
         val tagsInput: String = "",
         val tags: List<String> = emptyList(),
         val editMode: Boolean = false,
+        val isSaving: Boolean = false,
         val showDeleteConfirmationDialog: Boolean = false,
         val showImageUploadDialog: Boolean = false,
         val servingsExpanded: Boolean = false,

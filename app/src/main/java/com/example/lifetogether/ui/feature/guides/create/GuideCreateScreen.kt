@@ -238,6 +238,7 @@ fun GuideCreateScreen(
                     modifier = Modifier.fillMaxWidth(),
                     text = "Save guide",
                     onClick = { onUiEvent(GuideCreateUiEvent.SaveClicked) },
+                    loading = uiState.isSaving,
                 )
             }
         }

@@ -78,6 +78,7 @@ fun LoginScreen(
                     PrimaryButton(
                         text = "Login",
                         onClick = { onUiEvent(LoginUiEvent.LoginClicked) },
+                        loading = uiState.isLoading,
                     )
 
                     TextDefault(

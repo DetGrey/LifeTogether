@@ -199,12 +199,16 @@ class GuideCreateViewModel @Inject constructor(
     }
 
     private fun persistGuide(guide: Guide) {
+        _uiState.update { it.copy(isSaving = true) }
         viewModelScope.launch {
             when (val result = guideRepository.saveGuide(guide)) {
                 is Result.Success -> {
                     _commands.send(GuideCreateCommand.NavigateToGuideDetails(result.data))
                 }
-                is Result.Failure -> showError(result.error.toUserMessage())
+                is Result.Failure -> {
+                    _uiState.update { it.copy(isSaving = false) }
+                    showError(result.error.toUserMessage())
+                }
             }
         }
     }
