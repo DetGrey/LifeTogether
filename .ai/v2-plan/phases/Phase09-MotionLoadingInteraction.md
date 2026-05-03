@@ -212,15 +212,11 @@ _To be finalised during the pre-implementation grill-me session._
 
 ## GitHub Issues
 
-Create milestone `Phase 9: Motion, Loading & Interaction Patterns` and the following issues assigned to it:
+Create milestone `V2 Phase 9: Motion, Loading & Interaction Patterns` and the following issues assigned to it:
 
-- `[Phase 9] Remove SyncUpdatingText and simplify the sync lifecycle`
-- `[Phase 9] Implement global navigation transition`
-- `[Phase 9] Build skeleton loader component`
-- `[Phase 9] Migrate all loading screens to skeleton loaders`
-- `[Phase 9] Fix AnimatedVisibility and animateContentSize gaps`
-- `[Phase 9] Define and implement standardised UX interaction patterns`
-
-## Open Questions
-
-- None. The motion, loading, and interaction rules for Phase 9 are now locked for implementation.
+- `[Phase 9] [9.1] Remove SyncUpdatingText and simplify the sync lifecycle`
+- `[Phase 9] [9.2] Implement global navigation transition`
+- `[Phase 9] [9.3] Build skeleton loader component`
+- `[Phase 9] [9.3] Migrate all loading screens to skeleton loaders`
+- `[Phase 9] [9.4] Fix AnimatedVisibility and animateContentSize gaps`
+- `[Phase 9] [9.5-9.6] Define and implement standardised UX interaction patterns`
