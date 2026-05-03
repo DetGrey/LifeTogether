@@ -42,7 +42,7 @@ class GuideDetailsViewModel @Inject constructor(
     private var pointerCacheByStepId: Map<String, GuideLeafPointer> = emptyMap()
     internal var nowProvider: () -> Date = ::Date
 
-    private val _uiState = MutableStateFlow(GuideDetailsUiState())
+    private val _uiState = MutableStateFlow<GuideDetailsUiState>(GuideDetailsUiState.Loading)
     val uiState: StateFlow<GuideDetailsUiState> = _uiState.asStateFlow()
 
     private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
@@ -115,21 +115,21 @@ class GuideDetailsViewModel @Inject constructor(
     }
 
     fun canToggleVisibility(): Boolean {
-        val currentGuide = _uiState.value.guide ?: return false
+        val currentGuide = currentGuide() ?: return false
         val activeUid = uid ?: return false
         return currentGuide.ownerUid == activeUid
     }
 
     fun canDeleteGuide(): Boolean {
-        val currentGuide = _uiState.value.guide ?: return false
+        val currentGuide = currentGuide() ?: return false
         val activeUid = uid ?: return false
         return currentGuide.ownerUid == activeUid
     }
 
     fun toggleVisibility() {
-        val currentGuide = _uiState.value.guide ?: return
+        val currentGuide = currentGuide() ?: return
         val activeUid = uid ?: return
-        if (_uiState.value.isUpdatingVisibility) return
+        if (currentContentState()?.isUpdatingVisibility == true) return
 
         if (!canToggleVisibility()) {
             showError("Only the owner can change visibility")
@@ -156,9 +156,9 @@ class GuideDetailsViewModel @Inject constructor(
     }
 
     fun deleteGuide() {
-        if (_uiState.value.isDeletingGuide) return
+        if (currentContentState()?.isDeletingGuide == true) return
 
-        val currentGuide = _uiState.value.guide
+        val currentGuide = currentGuide()
         if (!canDeleteGuide()) {
             showError("Only the owner can delete this guide")
             return
@@ -180,7 +180,7 @@ class GuideDetailsViewModel @Inject constructor(
     fun toggleStepCompletion(stepId: String, amountIndex: Int) {
         if (stepId.isBlank()) return
 
-        val currentGuide = _uiState.value.guide ?: return
+        val currentGuide = currentGuide() ?: return
         val currentGuideId = resolveGuideId(currentGuide)
 
         val pointer = pointerForStepId(
@@ -209,7 +209,7 @@ class GuideDetailsViewModel @Inject constructor(
     }
 
     fun onStartOrContinue() {
-        val currentGuide = _uiState.value.guide ?: return
+        val currentGuide = currentGuide() ?: return
         val currentGuideId = resolveGuideId(currentGuide)
 
         if (currentGuide.started) {
@@ -217,7 +217,7 @@ class GuideDetailsViewModel @Inject constructor(
             return
         }
 
-        if (_uiState.value.isStartingGuide) return
+        if (currentContentState()?.isStartingGuide == true) return
 
         val firstPointer = GuideProgress.defaultPointerForGuide(currentGuide)
         val updatedGuide = currentGuide.copy(
@@ -236,7 +236,7 @@ class GuideDetailsViewModel @Inject constructor(
     }
 
     fun resetAllProgress() {
-        val currentGuide = _uiState.value.guide ?: return
+        val currentGuide = currentGuide() ?: return
         val currentGuideId = resolveGuideId(currentGuide)
 
         val updatedGuide = currentGuide.copy(
@@ -253,7 +253,7 @@ class GuideDetailsViewModel @Inject constructor(
 
     fun toggleSectionExpanded(sectionKey: String) {
         if (sectionKey.isBlank()) return
-        _uiState.update { state ->
+        updateContentState { state ->
             val isExpanded = state.sectionExpandedState[sectionKey] ?: true
             state.copy(
                 sectionExpandedState = state.sectionExpandedState + (sectionKey to !isExpanded),
@@ -263,7 +263,7 @@ class GuideDetailsViewModel @Inject constructor(
 
     fun selectSectionAmount(sectionKey: String, amountIndex: Int) {
         if (sectionKey.isBlank() || amountIndex < 0) return
-        val guide = _uiState.value.guide ?: return
+        val guide = currentGuide() ?: return
         val section = guide.sections
             .withIndex()
             .firstOrNull { (index, section) -> guideSectionKey(section, index) == sectionKey }
@@ -271,7 +271,7 @@ class GuideDetailsViewModel @Inject constructor(
             ?: return
         val maxIndex = section.amount.coerceAtLeast(1) - 1
         val normalizedAmountIndex = amountIndex.coerceIn(0, maxIndex)
-        _uiState.update { state ->
+        updateContentState { state ->
             state.copy(
                 selectedSectionAmountState = state.selectedSectionAmountState + (sectionKey to normalizedAmountIndex),
             )
@@ -381,20 +381,25 @@ class GuideDetailsViewModel @Inject constructor(
 
     private fun updateGuideState(guide: Guide) {
         invalidatePointerCache()
-        _uiState.update { state ->
-            state.copy(
-                guide = guide,
-                sectionExpandedState = reconcileSectionExpandedState(
-                    sections = guide.sections,
-                    existingState = state.sectionExpandedState,
-                ),
-                selectedSectionAmountState = reconcileSelectedSectionAmountState(
-                    sections = guide.sections,
-                    existingState = state.selectedSectionAmountState,
-                ),
-                canToggleAmountState = buildCanToggleAmountState(guide.sections),
-            )
-        }
+        val sectionExpandedState = reconcileSectionExpandedState(
+            sections = guide.sections,
+            existingState = currentContentState()?.sectionExpandedState.orEmpty(),
+        )
+        val selectedSectionAmountState = reconcileSelectedSectionAmountState(
+            sections = guide.sections,
+            existingState = currentContentState()?.selectedSectionAmountState.orEmpty(),
+        )
+        val canToggleAmountState = buildCanToggleAmountState(guide.sections)
+        val currentState = currentContentState()
+        _uiState.value = GuideDetailsUiState.Content(
+            guide = guide,
+            sectionExpandedState = sectionExpandedState,
+            selectedSectionAmountState = selectedSectionAmountState,
+            canToggleAmountState = canToggleAmountState,
+            isUpdatingVisibility = currentState?.isUpdatingVisibility ?: false,
+            isStartingGuide = currentState?.isStartingGuide ?: false,
+            isDeletingGuide = currentState?.isDeletingGuide ?: false,
+        )
     }
 
     private fun buildCanToggleAmountState(sections: List<GuideSection>): Map<String, Set<Int>> {
@@ -419,16 +424,33 @@ class GuideDetailsViewModel @Inject constructor(
     }
 
     private fun updateLoadingState(
-        isUpdatingVisibility: Boolean = _uiState.value.isUpdatingVisibility,
-        isStartingGuide: Boolean = _uiState.value.isStartingGuide,
-        isDeletingGuide: Boolean = _uiState.value.isDeletingGuide,
+        isUpdatingVisibility: Boolean = currentContentState()?.isUpdatingVisibility ?: false,
+        isStartingGuide: Boolean = currentContentState()?.isStartingGuide ?: false,
+        isDeletingGuide: Boolean = currentContentState()?.isDeletingGuide ?: false,
     ) {
-        _uiState.update { state ->
+        updateContentState { state ->
             state.copy(
                 isUpdatingVisibility = isUpdatingVisibility,
                 isStartingGuide = isStartingGuide,
                 isDeletingGuide = isDeletingGuide,
             )
+        }
+    }
+
+    private fun currentContentState(): GuideDetailsUiState.Content? {
+        return _uiState.value as? GuideDetailsUiState.Content
+    }
+
+    private fun currentGuide(): Guide? {
+        return currentContentState()?.guide
+    }
+
+    private fun updateContentState(
+        transform: (GuideDetailsUiState.Content) -> GuideDetailsUiState.Content,
+    ) {
+        _uiState.update { state ->
+            val contentState = state as? GuideDetailsUiState.Content ?: return@update state
+            transform(contentState)
         }
     }
 

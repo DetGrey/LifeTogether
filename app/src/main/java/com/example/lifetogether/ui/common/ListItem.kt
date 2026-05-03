@@ -48,12 +48,7 @@ fun ListItem(
     }
 
     M3ListItem(
-        modifier = Modifier
-            .padding(
-                horizontal = LifeTogetherTokens.spacing.small,
-                vertical = LifeTogetherTokens.spacing.xSmall
-            )
-            .fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         leadingContent = {
             CompletableBox(
                 isCompleted = item.completed,

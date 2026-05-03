@@ -8,13 +8,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,6 +33,11 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
+import com.example.lifetogether.ui.common.event.CollectUiCommands
+import com.example.lifetogether.ui.common.event.UiCommand
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.launch
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -44,7 +52,10 @@ fun DisplayVideoFromUri(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var isLoading by remember { mutableStateOf(true) }
-    var playerError by remember { mutableStateOf<PlaybackException?>(null) }
+
+    val coroutineScope = rememberCoroutineScope()
+    val uiCommands = Channel<UiCommand>(Channel.BUFFERED)
+    CollectUiCommands(uiCommands.receiveAsFlow())
 
     val exoPlayer = remember(context) {
         ExoPlayer.Builder(context)
@@ -62,7 +73,6 @@ fun DisplayVideoFromUri(
         exoPlayer.prepare()
         exoPlayer.playWhenReady = autoPlay
         isLoading = true
-        playerError = null
     }
 
     DisposableEffect(exoPlayer, lifecycleOwner) {
@@ -81,8 +91,17 @@ fun DisplayVideoFromUri(
             }
 
             override fun onPlayerError(error: PlaybackException) {
-                playerError = error
-                isLoading = false
+                error.message?.let {
+                    coroutineScope.launch {
+                        uiCommands.send(
+                            UiCommand.ShowSnackbar(
+                                message = it,
+                                withDismissAction = true,
+                            ),
+                        )
+                        isLoading = false
+                    }
+                }
             }
         }
 
@@ -137,15 +156,12 @@ fun DisplayVideoFromUri(
             }
         )
 
-        if (isLoading) {
+        AnimatedVisibility(
+            visible = isLoading,
+            enter = fadeIn(),
+            exit = fadeOut(),
+        ) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-        }
-
-        playerError?.let { //todo make it show the default error
-            Text(
-                text = "Error: ${it.message ?: "Unknown error"}",
-                modifier = Modifier.align(Alignment.Center),
-            )
         }
     }
 }

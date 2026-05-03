@@ -24,7 +24,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.lifetogether.ui.common.text.TextDefault
-import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerCalendarDay
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerCalendarState
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
@@ -69,11 +68,12 @@ fun TipsCalendar(
         )
     }
 
-    TextSubHeadingMedium(
-        calendar.monthLabel,
-        Modifier.fillMaxWidth(),
-        MaterialTheme.colorScheme.primary,
-        alignCenter = true,
+    Text(
+        modifier = Modifier.fillMaxWidth(),
+        text = calendar.monthLabel,
+        style = MaterialTheme.typography.titleLarge,
+        color = MaterialTheme.colorScheme.primary,
+        textAlign = TextAlign.Center,
     )
 
     Row(
@@ -116,7 +116,7 @@ private fun DayCell(day: TipTrackerCalendarDay) {
     Surface(
         modifier = Modifier
             .aspectRatio(1f)
-            .border(2.dp, MaterialTheme.colorScheme.onBackground, MaterialTheme.shapes.small),
+            .border(2.dp, MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.small),
         color = MaterialTheme.colorScheme.background,
         shape = MaterialTheme.shapes.small,
     ) {
@@ -127,14 +127,14 @@ private fun DayCell(day: TipTrackerCalendarDay) {
                     .align(Alignment.TopStart)
                     .padding(top = LifeTogetherTokens.spacing.xSmall, start = LifeTogetherTokens.spacing.xSmall),
                 fontSize = 9.sp,
-                color = MaterialTheme.colorScheme.onBackground
+                color = MaterialTheme.colorScheme.outline
             )
 
             day.totalText?.let { totalText ->
                 Text(
                     text = totalText,
                     style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier
                         .padding(top = LifeTogetherTokens.spacing.xSmall)
                         .align(Alignment.Center),

@@ -33,7 +33,7 @@ import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
@@ -57,7 +57,7 @@ fun ProfileScreen(
 
     Scaffold(
         topBar = {
-            TopBar(
+            AppTopBar(
                 leftIcon = Icon(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
@@ -227,6 +227,7 @@ fun ProfileScreen(
                 onTextValueChange = { value ->
                     onUiEvent(ProfileUiEvent.NewNameChanged(value))
                 },
+                label = "Name",
                 capitalization = true,
             )
 

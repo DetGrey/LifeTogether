@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -27,10 +26,11 @@ import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.lists.ListType
 import com.example.lifetogether.domain.model.lists.UserList
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.button.SecondaryButton
 import com.example.lifetogether.ui.common.button.AddButton
+import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.common.textfield.CustomTextField
@@ -43,9 +43,12 @@ fun ListsScreen(
     onUiEvent: (ListsUiEvent) -> Unit,
     onNavigationEvent: (ListsNavigationEvent) -> Unit,
 ) {
+    val contentState = uiState as? ListsUiState.Content
+    val isLoading = uiState is ListsUiState.Loading
+
     Scaffold(
         topBar = {
-            TopBar(
+            AppTopBar(
                 leftIcon = Icon(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
@@ -55,48 +58,65 @@ fun ListsScreen(
             )
         },
         floatingActionButton = {
-            AddButton(onClick = { onUiEvent(ListsUiEvent.CreateListClicked) })
+            if (!isLoading) {
+                AddButton(
+                    onClick = { onUiEvent(ListsUiEvent.CreateListClicked) },
+                )
+            }
         },
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(LifeTogetherTokens.spacing.small)
-                .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
-        ) {
-            if (uiState.userLists.isEmpty()) {
-                item {
-                    TextDefault(text = "No lists yet. Tap + to create one.")
+        when (uiState) {
+            ListsUiState.Loading -> {
+                Skeletons.ListDetail(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
+                )
+            }
+
+            is ListsUiState.Content -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(LifeTogetherTokens.spacing.small)
+                        .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+                ) {
+                    if (contentState?.userLists.orEmpty().isEmpty()) {
+                        item {
+                            TextDefault(text = "No lists yet. Tap + to create one.")
+                        }
+                    } else {
+                        items(contentState?.userLists.orEmpty()) { list ->
+                            UserListCard(
+                                list = list,
+                                onClick = {
+                                    list.id?.let {
+                                        onNavigationEvent(ListsNavigationEvent.NavigateToListDetails(it))
+                                    }
+                                },
+                            )
+                        }
+                    }
                 }
-            } else {
-                items(uiState.userLists) { list ->
-                    UserListCard(
-                        list = list,
-                        onClick = {
-                            list.id?.let {
-                                onNavigationEvent(ListsNavigationEvent.NavigateToListDetails(it))
-                            }
-                        },
+
+                if (contentState?.showCreateDialog == true) {
+                    CreateListDialog(
+                        name = contentState.newListName,
+                        onNameChange = { onUiEvent(ListsUiEvent.CreateListNameChanged(it)) },
+                        type = contentState.newListType,
+                        onTypeChange = { onUiEvent(ListsUiEvent.CreateListTypeChanged(it)) },
+                        visibility = contentState.newListVisibility,
+                        onVisibilityChange = { onUiEvent(ListsUiEvent.CreateListVisibilityChanged(it)) },
+                        isSaving = contentState.isSaving,
+                        onDismiss = { onUiEvent(ListsUiEvent.CreateDialogDismissed) },
+                        onCreate = { onUiEvent(ListsUiEvent.ConfirmCreateListClicked) },
                     )
                 }
             }
-        }
-
-        if (uiState.showCreateDialog) {
-            CreateListDialog(
-                name = uiState.newListName,
-                onNameChange = { onUiEvent(ListsUiEvent.CreateListNameChanged(it)) },
-                type = uiState.newListType,
-                onTypeChange = { onUiEvent(ListsUiEvent.CreateListTypeChanged(it)) },
-                visibility = uiState.newListVisibility,
-                onVisibilityChange = { onUiEvent(ListsUiEvent.CreateListVisibilityChanged(it)) },
-                isSaving = uiState.isSaving,
-                onDismiss = { onUiEvent(ListsUiEvent.CreateDialogDismissed) },
-                onCreate = { onUiEvent(ListsUiEvent.ConfirmCreateListClicked) },
-            )
         }
     }
 }
@@ -207,14 +227,11 @@ private fun CreateListDialog(
             }
         },
         confirmButton = {
-            if (isSaving) {
-                CircularProgressIndicator()
-            } else {
-                PrimaryButton(
-                    text = "Create",
-                    onClick = onCreate,
-                )
-            }
+            PrimaryButton(
+                text = "Create",
+                onClick = onCreate,
+                loading = isSaving,
+            )
         },
         dismissButton = {
             SecondaryButton(

@@ -1,5 +1,9 @@
 package com.example.lifetogether.ui.feature.admin.groceryList.suggestions
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -19,7 +23,7 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.add.AddNewListItem
 import com.example.lifetogether.ui.common.add.EditListItem
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
@@ -36,7 +40,7 @@ fun AdminGrocerySuggestionsScreen(
 ) {
     Scaffold(
         topBar = {
-            TopBar(
+            AppTopBar(
                 leftIcon = Icon(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
@@ -89,44 +93,50 @@ fun AdminGrocerySuggestionsScreen(
                 .padding(LifeTogetherTokens.spacing.small),
             contentAlignment = Alignment.BottomCenter,
         ) {
-            if (uiState.editingSuggestionId != null) {
-                EditListItem(
-                    textValue = uiState.newSuggestionText,
-                    onTextChange = { value ->
-                        onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionTextChanged(value))
-                    },
-                    priceValue = uiState.newSuggestionPrice,
-                    onPriceChange = { value ->
-                        onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionPriceChanged(value))
-                    },
-                    onSaveClick = {
-                        onUiEvent(AdminGrocerySuggestionsUiEvent.ClickSaveSuggestion)
-                    },
-                    categoryList = uiState.groceryCategories,
-                    selectedCategory = uiState.newSuggestionCategory,
-                    onCategoryChange = { category ->
-                        onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionCategoryChanged(category))
-                    },
-                )
-            } else {
-                AddNewListItem(
-                    textValue = uiState.newSuggestionText,
-                    onTextChange = { value ->
-                        onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionTextChanged(value))
-                    },
-                    priceValue = uiState.newSuggestionPrice,
-                    onPriceChange = { value ->
-                        onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionPriceChanged(value))
-                    },
-                    onAddClick = {
-                        onUiEvent(AdminGrocerySuggestionsUiEvent.ClickAddSuggestion)
-                    },
-                    categoryList = uiState.groceryCategories,
-                    selectedCategory = uiState.newSuggestionCategory,
-                    onCategoryChange = { category ->
-                        onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionCategoryChanged(category))
-                    },
-                )
+            AnimatedContent(
+                targetState = uiState.editingSuggestionId != null,
+                transitionSpec = { fadeIn() togetherWith fadeOut() },
+                label = "suggestion_input_bar",
+            ) { isEditing ->
+                if (isEditing) {
+                    EditListItem(
+                        textValue = uiState.newSuggestionText,
+                        onTextChange = { value ->
+                            onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionTextChanged(value))
+                        },
+                        priceValue = uiState.newSuggestionPrice,
+                        onPriceChange = { value ->
+                            onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionPriceChanged(value))
+                        },
+                        onSaveClick = {
+                            onUiEvent(AdminGrocerySuggestionsUiEvent.ClickSaveSuggestion)
+                        },
+                        categoryList = uiState.groceryCategories,
+                        selectedCategory = uiState.newSuggestionCategory,
+                        onCategoryChange = { category ->
+                            onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionCategoryChanged(category))
+                        },
+                    )
+                } else {
+                    AddNewListItem(
+                        textValue = uiState.newSuggestionText,
+                        onTextChange = { value ->
+                            onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionTextChanged(value))
+                        },
+                        priceValue = uiState.newSuggestionPrice,
+                        onPriceChange = { value ->
+                            onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionPriceChanged(value))
+                        },
+                        onAddClick = {
+                            onUiEvent(AdminGrocerySuggestionsUiEvent.ClickAddSuggestion)
+                        },
+                        categoryList = uiState.groceryCategories,
+                        selectedCategory = uiState.newSuggestionCategory,
+                        onCategoryChange = { category ->
+                            onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionCategoryChanged(category))
+                        },
+                    )
+                }
             }
         }
 

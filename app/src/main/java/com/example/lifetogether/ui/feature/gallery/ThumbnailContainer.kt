@@ -1,6 +1,10 @@
 package com.example.lifetogether.ui.feature.gallery
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
@@ -16,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.lifetogether.R
@@ -40,6 +45,13 @@ fun ThumbnailContainer(
             .aspectRatio(1f)
             .clip(MaterialTheme.shapes.small)
             .background(MaterialTheme.colorScheme.tertiaryContainer)
+            .then( if (isSelected) {
+                Modifier.border(
+                    width = 2.dp,
+                    color = MaterialTheme.colorScheme.primary,
+                    shape = MaterialTheme.shapes.small,
+                )
+            } else Modifier)
             .combinedClickable(
                 onClick = { onClick() },
                 onLongClick = { onLongClick() }
@@ -84,13 +96,17 @@ fun ThumbnailContainer(
                 TextDefault(duration.durationToString(), color = MaterialTheme.colorScheme.onTertiaryContainer)
             }
         }
-        if (isSelectionMode) {
-                Box(
-                    modifier = Modifier
-                        .size(LifeTogetherTokens.sizing.touchTargetMinimum)
-                        .align(Alignment.TopStart)
-                        .padding(LifeTogetherTokens.spacing.xSmall),
-                ) {
+        AnimatedVisibility(
+            visible = isSelectionMode,
+            enter = fadeIn(),
+            exit = fadeOut(),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(LifeTogetherTokens.sizing.touchTargetMinimum)
+                    .align(Alignment.TopStart)
+                    .padding(LifeTogetherTokens.spacing.xSmall),
+            ) {
                 CompletableBox(
                     isCompleted = isSelected,
                     onCompleteToggle = onSelectionToggle,

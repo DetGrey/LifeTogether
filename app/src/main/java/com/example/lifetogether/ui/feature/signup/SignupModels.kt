@@ -9,6 +9,7 @@ data class SignupUiState(
     val showBirthdayPicker: Boolean = false,
     val password: String = "",
     val confirmPassword: String = "",
+    val isLoading: Boolean = false,
 )
 
 sealed interface SignupUiEvent {

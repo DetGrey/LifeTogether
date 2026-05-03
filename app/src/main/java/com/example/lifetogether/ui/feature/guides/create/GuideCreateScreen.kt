@@ -28,7 +28,7 @@ import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.guides.GuideSection
 import com.example.lifetogether.domain.model.guides.GuideStepType
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.dropdown.Dropdown
 import com.example.lifetogether.ui.common.text.TextDefault
@@ -50,7 +50,7 @@ fun GuideCreateScreen(
 
     Scaffold(
         topBar = {
-            TopBar(
+            AppTopBar(
                 leftIcon = Icon(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
@@ -238,6 +238,7 @@ fun GuideCreateScreen(
                     modifier = Modifier.fillMaxWidth(),
                     text = "Save guide",
                     onClick = { onUiEvent(GuideCreateUiEvent.SaveClicked) },
+                    loading = uiState.isSaving,
                 )
             }
         }

@@ -4,14 +4,18 @@ import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.lists.ListType
 import com.example.lifetogether.domain.model.lists.UserList
 
-data class ListsUiState(
-    val userLists: List<UserList> = emptyList(),
-    val showCreateDialog: Boolean = false,
-    val newListName: String = "",
-    val newListType: ListType = ListType.ROUTINE,
-    val newListVisibility: Visibility = Visibility.PRIVATE,
-    val isSaving: Boolean = false,
-)
+sealed interface ListsUiState {
+    data object Loading : ListsUiState
+
+    data class Content(
+        val userLists: List<UserList> = emptyList(),
+        val showCreateDialog: Boolean = false,
+        val newListName: String = "",
+        val newListType: ListType = ListType.ROUTINE,
+        val newListVisibility: Visibility = Visibility.PRIVATE,
+        val isSaving: Boolean = false,
+    ) : ListsUiState
+}
 
 sealed interface ListsUiEvent {
     data object CreateListClicked : ListsUiEvent

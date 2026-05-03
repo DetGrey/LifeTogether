@@ -84,17 +84,17 @@ fun ActionSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.onBackground,
+        containerColor = MaterialTheme.colorScheme.primaryContainer,
     ) {
         Column(
             modifier = Modifier
-                .padding(horizontal = LifeTogetherTokens.spacing.medium, vertical = LifeTogetherTokens.spacing.small)
-                .padding(bottom = LifeTogetherTokens.spacing.large + LifeTogetherTokens.spacing.small),
+                .padding(horizontal = LifeTogetherTokens.spacing.medium)
+                .padding(bottom = LifeTogetherTokens.spacing.large),
         ) {
             actionsList.forEachIndexed { index, action ->
                 val textColor = when {
                     action.isDestructive -> MaterialTheme.colorScheme.error
-                    else -> MaterialTheme.colorScheme.background
+                    else -> MaterialTheme.colorScheme.onPrimaryContainer
                 }
 
                 TextDefault(

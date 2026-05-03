@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.Image
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.FloatingActionButton
@@ -34,8 +34,9 @@ import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.UserInformation
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.text.TextDisplayLarge
+import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
@@ -45,57 +46,67 @@ fun HomeScreen(
     uiState: HomeUiState,
     onNavigationEvent: (HomeNavigationEvent) -> Unit,
 ) {
-    if (uiState == HomeUiState.Loading) {
-        Box(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.background)
-                .fillMaxSize(),
-            contentAlignment = Alignment.Center,
-        ) {
-            CircularProgressIndicator()
-        }
-    } else {
-        val content = when (uiState) {
-            is HomeUiState.Unauthenticated -> uiState.content
-            is HomeUiState.Authenticated -> uiState.content
-            HomeUiState.Loading -> error("Loading is handled above")
-        }
+    val isLoading = uiState == HomeUiState.Loading
+    val content = when (uiState) {
+        is HomeUiState.Unauthenticated -> uiState.content
+        is HomeUiState.Authenticated -> uiState.content
+        HomeUiState.Loading -> null
+    }
 
-        Scaffold(
-            topBar = {
-                TopBar(
-                    leftIcon = Icon(
-                        resId = R.drawable.ic_profile_picture,
-                        description = "profile picture icon",
-                    ),
-                    onLeftClick = {
-                        onNavigationEvent(HomeNavigationEvent.ProfileClicked)
-                    },
-                    text = "Life Together",
-                    rightIcon = Icon(
-                        resId = R.drawable.ic_settings,
-                        description = "settings icon",
-                    ),
-                    onRightClick = {
-                        onNavigationEvent(HomeNavigationEvent.SettingsClicked)
-                    },
+    Scaffold(
+        topBar = {
+            AppTopBar(
+                leftIcon = Icon(
+                    resId = R.drawable.ic_profile_picture,
+                    description = "profile picture icon",
+                ),
+                onLeftClick = {
+                    onNavigationEvent(HomeNavigationEvent.ProfileClicked)
+                },
+                text = "Life Together",
+                rightIcon = Icon(
+                    resId = R.drawable.ic_settings,
+                    description = "settings icon",
+                ),
+                onRightClick = {
+                    onNavigationEvent(HomeNavigationEvent.SettingsClicked)
+                },
+            )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {},
+                containerColor = if (isLoading) {
+                    MaterialTheme.colorScheme.surfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.tertiary
+                },
+                contentColor = if (isLoading) {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.onTertiary
+                },
+                modifier = Modifier.size(70.dp),
+                shape = CircleShape,
+            ) {
+                androidx.compose.material3.Icon(
+                    painter = painterResource(id = R.drawable.ic_heart),
+                    contentDescription = "heart icon",
                 )
-            },
-            floatingActionButton = {
-                FloatingActionButton(
-                    onClick = {},
-                    containerColor = MaterialTheme.colorScheme.tertiary,
-                    contentColor = MaterialTheme.colorScheme.onTertiary,
-                    modifier = Modifier.size(70.dp),
-                ) {
-                    androidx.compose.material3.Icon(
-                        painter = painterResource(id = R.drawable.ic_heart),
-                        contentDescription = "heart icon",
-                    )
-                }
-            },
-            floatingActionButtonPosition = FabPosition.Center,
-        ) { padding ->
+            }
+        },
+        floatingActionButtonPosition = FabPosition.Center,
+    ) { padding ->
+        if (isLoading) {
+            Skeletons.GridCollection(
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.background)
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
+            )
+        } else {
+            val content = content ?: error("Loading is handled above")
             LazyColumn(
                 modifier = Modifier
                     .background(MaterialTheme.colorScheme.background)

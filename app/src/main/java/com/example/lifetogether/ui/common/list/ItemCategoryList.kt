@@ -1,5 +1,10 @@
 package com.example.lifetogether.ui.common.list
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -85,9 +90,12 @@ fun ItemCategoryList(
             }
             HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.primaryContainer)
         }
-        if (expanded) {
-            Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
-            Column {
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut(),
+        ) {
+            Column(modifier = Modifier.padding(top = LifeTogetherTokens.spacing.small)) {
                 itemList.forEach { item ->
                     ListItem(
                         item = item,

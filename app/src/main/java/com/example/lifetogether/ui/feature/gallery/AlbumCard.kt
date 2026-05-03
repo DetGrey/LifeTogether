@@ -66,6 +66,7 @@ fun AlbumCard(
             text = albumName,
             modifier = Modifier
                 .padding(start = LifeTogetherTokens.spacing.xSmall),
+            color = MaterialTheme.colorScheme.primary,
         )
 
         TextDefault(

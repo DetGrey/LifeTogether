@@ -1,5 +1,10 @@
 package com.example.lifetogether.ui.feature.admin.groceryList.suggestions
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -12,11 +17,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,7 +54,7 @@ fun GrocerySuggestionsEditor(
     ) {
         grouped.forEach { (categoryName, items) ->
             val isExpanded = expandedCategories.contains(categoryName)
-            val categoryEmoji = items.firstOrNull()?.category?.emoji ?: "🛒"
+            val categoryEmoji = items.firstOrNull()?.category?.emoji ?: UNCATEGORIZED_CATEGORY.emoji
 
             // --- CATEGORY HEADER ---
             item(key = categoryName) {
@@ -62,17 +67,23 @@ fun GrocerySuggestionsEditor(
             }
 
             // --- ITEMS (Visible only if expanded) ---
-            if (isExpanded) {
-                items(items, key = { it.id ?: it.suggestionName }) { suggestion ->
-                    GrocerySuggestionRow(
-                        suggestion = suggestion,
-                        onEdit = { onEditItem(suggestion) },
-                        onDelete = { onDeleteItem(suggestion) },
-                    )
+            item {
+                AnimatedVisibility(
+                    visible = isExpanded,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut(),
+                ) {
+                    Column {
+                        items.forEach { suggestion ->
+                            GrocerySuggestionRow(
+                                suggestion = suggestion,
+                                onEdit = { onEditItem(suggestion) },
+                                onDelete = { onDeleteItem(suggestion) },
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
+                    }
                 }
-
-                // Add spacing after an expanded section
-                item { Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small)) }
             }
         }
     }
@@ -98,10 +109,11 @@ fun CategoryHeader(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextDefault(
+                Text(
                     text = "$emoji  $name",
                     modifier = Modifier.weight(1f),
                     maxLines = 1,
+                    style = MaterialTheme.typography.bodyLarge
                 )
 
                 Icon(

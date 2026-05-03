@@ -20,16 +20,17 @@ fun EditableTextField(
     isEditable: Boolean,
     textStyle: TextStyle = MaterialTheme.typography.bodyMedium,
     color: Color = MaterialTheme.colorScheme.onBackground,
+    labelColor: Color = MaterialTheme.colorScheme.onBackground,
     keyboardType: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Done,
     capitalization: Boolean = true,
 ) {
     if (isEditable) {
         TextField(
-            modifier = Modifier.inputFieldModifier(),
+            modifier = Modifier.editableInputFieldModifier(),
             value = text,
             onValueChange = onTextChange,
-            label = { Text(label) },
+            label = { Text(label, color = labelColor) },
             keyboardOptions = KeyboardOptions(
                 keyboardType = keyboardType,
                 imeAction = imeAction,

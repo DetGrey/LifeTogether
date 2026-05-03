@@ -59,15 +59,19 @@ class SignUpViewModel @Inject constructor(
         ) //todo there should be a check to make sure they are not null either here or in usecase
 
         // TODO validate password and confirmPassword locally before calling SignUpUseCase
+        _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch {
             when (val result = signUpUseCase.invoke(User(state.email, state.password), userInformation)) {
                 is Result.Success -> _commands.send(SignupCommand.NavigateToProfile)
-                is Result.Failure -> _uiCommands.send(
-                    UiCommand.ShowSnackbar(
-                        message = result.error.toUserMessage(),
-                        withDismissAction = true,
-                    ),
-                )
+                is Result.Failure -> {
+                    _uiState.update { it.copy(isLoading = false) }
+                    _uiCommands.send(
+                        UiCommand.ShowSnackbar(
+                            message = result.error.toUserMessage(),
+                            withDismissAction = true,
+                        ),
+                    )
+                }
             }
         }
     }

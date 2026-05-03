@@ -1,6 +1,10 @@
 package com.example.lifetogether.ui.feature.lists.listDetails
 
 import android.graphics.Bitmap
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -17,7 +21,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -36,10 +39,11 @@ import com.example.lifetogether.domain.model.lists.RecurrenceUnit
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.ui.common.ActionSheet
 import com.example.lifetogether.ui.common.ActionSheetItem
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.list.CompletableBox
+import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -62,7 +66,7 @@ fun ListDetailsScreen(
 
     Scaffold(
         topBar = {
-            TopBar(
+            AppTopBar(
                 leftIcon = Icon(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
@@ -77,7 +81,7 @@ fun ListDetailsScreen(
             )
         },
         floatingActionButton = {
-            if (contentState?.isSelectionModeActive != true) {
+            if (contentState?.isSelectionModeActive != true && uiState !is ListDetailsUiState.Loading) {
                 AddButton(onClick = {
                     onNavigationEvent(ListDetailsNavigationEvent.NavigateToCreateEntry)
                 })
@@ -86,14 +90,11 @@ fun ListDetailsScreen(
     ) { padding ->
         when (uiState) {
             is ListDetailsUiState.Loading -> {
-                Box(
+                Skeletons.ListDetail(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator()
-                }
+                )
             }
 
             is ListDetailsUiState.Content -> {
@@ -104,15 +105,21 @@ fun ListDetailsScreen(
                         .padding(horizontal = LifeTogetherTokens.spacing.small),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    if (uiState.isSelectionModeActive) {
-                        SelectionModeBar(
-                            selectedCount = uiState.selectedEntryIds.size,
-                            isAllSelected = uiState.isAllEntriesSelected,
-                            onToggleAll = { onUiEvent(ListDetailsUiEvent.ToggleAllEntrySelection) },
-                            onCancel = { onUiEvent(ListDetailsUiEvent.ExitSelectionMode) },
-                        )
-                    } else {
-                        Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.medium))
+                    AnimatedContent(
+                        targetState = uiState.isSelectionModeActive,
+                        transitionSpec = { fadeIn() togetherWith fadeOut() },
+                        label = "selection_mode_bar",
+                    ) { selectionActive ->
+                        if (selectionActive) {
+                            SelectionModeBar(
+                                selectedCount = uiState.selectedEntryIds.size,
+                                isAllSelected = uiState.isAllEntriesSelected,
+                                onToggleAll = { onUiEvent(ListDetailsUiEvent.ToggleAllEntrySelection) },
+                                onCancel = { onUiEvent(ListDetailsUiEvent.ExitSelectionMode) },
+                            )
+                        } else {
+                            Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.medium))
+                        }
                     }
 
                     if (entries.isEmpty()) {
@@ -268,7 +275,10 @@ private fun ListEntryCard(
             )
             .padding(LifeTogetherTokens.spacing.medium),
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+        ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),

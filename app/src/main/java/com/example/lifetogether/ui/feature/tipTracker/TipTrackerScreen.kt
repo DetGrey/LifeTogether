@@ -14,7 +14,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.domain.model.Icon
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.feature.tipTracker.components.AddNewTipItem
@@ -33,7 +33,7 @@ fun TipTrackerScreen(
     val content = uiState as TipTrackerUiState.Content
     Scaffold(
         topBar = {
-            TopBar(
+            AppTopBar(
                 leftIcon = Icon(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
@@ -146,6 +146,10 @@ private fun TipTrackerScreenPreview() {
                     TipItem(amount = 120f, date = Date()),
                 ),
                 groupedTips = mapOf("01. January 2026" to listOf(TipItem(amount = 120f, date = Date()))),
+                calendar = TipTrackerCalendarState(
+                    monthLabel = "April",
+                    days = listOf(TipTrackerCalendarDay("1 Fri", "100"), TipTrackerCalendarDay("2 Sat"))
+                )
             ),
             onUiEvent = {},
             onNavigationEvent = {},

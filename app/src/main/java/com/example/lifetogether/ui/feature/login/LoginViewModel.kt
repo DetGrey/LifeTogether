@@ -41,15 +41,19 @@ class LoginViewModel @Inject constructor(
 
     private fun login() {
         val state = _uiState.value
+        _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch {
             when (val loginResult = loginUseCase.invoke(User(state.email, state.password))) {
                 is Result.Success -> _commands.send(LoginCommand.NavigateBackOnSuccess)
-                is Result.Failure -> _uiCommands.send(
-                    UiCommand.ShowSnackbar(
-                        message = loginResult.error.toUserMessage(),
-                        withDismissAction = true,
-                    ),
-                )
+                is Result.Failure -> {
+                    _uiState.update { it.copy(isLoading = false) }
+                    _uiCommands.send(
+                        UiCommand.ShowSnackbar(
+                            message = loginResult.error.toUserMessage(),
+                            withDismissAction = true,
+                        ),
+                    )
+                }
             }
         }
     }

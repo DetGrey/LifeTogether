@@ -2,6 +2,9 @@ package com.example.lifetogether.ui.feature.recipes
 
 import android.graphics.Bitmap
 import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -40,6 +42,7 @@ import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.image.ImageUploadDialog
 import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.list.CompletableCategoryList
+import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.tagOptionRow.TagOption
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.textfield.EditableTextField
@@ -58,12 +61,9 @@ fun RecipeDetailsScreen(
 ) {
     when (uiState) {
         RecipeDetailsUiState.Loading -> {
-            Box(
+            Skeletons.FormEdit(
                 modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator()
-            }
+            )
         }
 
         is RecipeDetailsUiState.Content -> RecipeDetailsContent(
@@ -110,7 +110,10 @@ private fun RecipeDetailsContent(
 
                     Box(
                         modifier = Modifier
-                            .padding(start = LifeTogetherTokens.spacing.small, top = LifeTogetherTokens.spacing.small)
+                            .padding(
+                                start = LifeTogetherTokens.spacing.small,
+                                top = LifeTogetherTokens.spacing.small
+                            )
                             .height(40.dp)
                             .aspectRatio(1f)
                             .clickable {
@@ -122,13 +125,16 @@ private fun RecipeDetailsContent(
                         Icon(
                             painter = painterResource(id = R.drawable.ic_back_arrow),
                             contentDescription = "back arrow icon",
-                            tint = MaterialTheme.colorScheme.background,
+                            tint = MaterialTheme.colorScheme.onTertiary,
                         )
                     }
 
                     Box(
                         modifier = Modifier
-                            .padding(end = LifeTogetherTokens.spacing.small, top = LifeTogetherTokens.spacing.small)
+                            .padding(
+                                end = LifeTogetherTokens.spacing.small,
+                                top = LifeTogetherTokens.spacing.small
+                            )
                             .height(if (!uiState.editMode && uiState.recipeId != null) 40.dp else 50.dp)
                             .aspectRatio(1f)
                             .clickable(
@@ -147,19 +153,23 @@ private fun RecipeDetailsContent(
                             Text(
                                 text = if (bitmap != null) "Change image" else "Add image",
                                 textAlign = TextAlign.Right,
+                                color = MaterialTheme.colorScheme.onTertiary,
                             )
                         } else if (uiState.recipeId != null) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_trashcan),
                                 contentDescription = "trashcan icon",
-                                tint = MaterialTheme.colorScheme.background,
+                                tint = MaterialTheme.colorScheme.onTertiary,
                             )
                         }
                     }
 
                     Box(
                         modifier = Modifier
-                            .padding(start = LifeTogetherTokens.spacing.small, end = LifeTogetherTokens.spacing.xxLarge)
+                            .padding(
+                                start = LifeTogetherTokens.spacing.small,
+                                end = LifeTogetherTokens.spacing.xxLarge
+                            )
                             .align(Alignment.BottomStart),
                     ) {
                         EditableTextField(
@@ -169,6 +179,7 @@ private fun RecipeDetailsContent(
                             isEditable = uiState.editMode,
                             textStyle = MaterialTheme.typography.displayMedium,
                             color = MaterialTheme.colorScheme.primary,
+                            labelColor = MaterialTheme.colorScheme.onTertiary,
                         )
                     }
 
@@ -183,11 +194,13 @@ private fun RecipeDetailsContent(
                             .align(Alignment.BottomEnd),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_edit),
-                            contentDescription = "edit icon",
-                            tint = MaterialTheme.colorScheme.background,
-                        )
+                        if (uiState.recipeId != null) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_edit),
+                                contentDescription = "edit icon",
+                                tint = MaterialTheme.colorScheme.onTertiary,
+                            )
+                        }
                     }
                 }
             }
@@ -324,7 +337,11 @@ private fun RecipeDetailsContent(
                         )
                     }
 
-                    if (uiState.editMode) {
+                    AnimatedVisibility(
+                        visible = uiState.editMode,
+                        enter = fadeIn(),
+                        exit = fadeOut(),
+                    ) {
                         AddNewIngredient(
                             onAddClick = {
                                 onUiEvent(RecipeDetailsUiEvent.AddIngredientClicked(it))
@@ -354,7 +371,11 @@ private fun RecipeDetailsContent(
                             },
                         )
 
-                        if (uiState.editMode) {
+                        AnimatedVisibility(
+                            visible = uiState.editMode,
+                            enter = fadeIn(),
+                            exit = fadeOut(),
+                        ) {
                             AddNewString(
                                 label = "Add new instruction",
                                 onAddClick = {
@@ -365,10 +386,16 @@ private fun RecipeDetailsContent(
                     }
                 }
 
-                if (uiState.editMode) {
+                AnimatedVisibility(
+                    visible = uiState.editMode,
+                    enter = fadeIn(),
+                    exit = fadeOut(),
+                ) {
                     PrimaryButton(
                         text = "Save",
                         onClick = { onUiEvent(RecipeDetailsUiEvent.SaveClicked) },
+                        modifier = Modifier.fillMaxWidth(0.5f),
+                        loading = uiState.isSaving,
                     )
                 }
             }

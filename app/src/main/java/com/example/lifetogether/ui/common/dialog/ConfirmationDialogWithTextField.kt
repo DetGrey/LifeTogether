@@ -24,6 +24,7 @@ fun ConfirmationDialogWithTextField(
     confirmButtonMessage: String,
     textValue: String,
     onTextValueChange: (String) -> Unit,
+    label: String,
     keyboardType: KeyboardType = KeyboardType.Text,
     capitalization: Boolean = false,
 ) {
@@ -38,7 +39,7 @@ fun ConfirmationDialogWithTextField(
                 CustomTextField(
                     value = textValue,
                     onValueChange = onTextValueChange,
-                    label = null,
+                    label = label,
                     keyboardType = keyboardType,
                     imeAction = ImeAction.Done,
                     capitalization = capitalization,
@@ -73,6 +74,7 @@ fun ConfirmationDialogWithTextFieldPreview() {
             confirmButtonMessage = "Change name",
             textValue = "",
             onTextValueChange = { },
+            label = "Name",
         )
     }
 }

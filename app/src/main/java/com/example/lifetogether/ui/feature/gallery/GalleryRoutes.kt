@@ -86,7 +86,7 @@ fun AlbumDetailsRoute(
             when (navigationEvent) {
                 AlbumDetailsNavigationEvent.NavigateBack -> appNavigator.navigateBack()
                 is AlbumDetailsNavigationEvent.NavigateToMediaDetails -> {
-                    val albumId = uiState.album?.id ?: return@AlbumDetailsScreen
+                    val albumId = (uiState as? AlbumDetailsUiState.Content)?.album?.id ?: return@AlbumDetailsScreen
                     appNavigator.navigate(GalleryMediaNavRoute(albumId, navigationEvent.initialIndex))
                 }
             }

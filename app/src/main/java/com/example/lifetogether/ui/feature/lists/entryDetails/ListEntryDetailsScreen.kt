@@ -4,6 +4,9 @@ import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -12,12 +15,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -35,12 +38,13 @@ import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
 import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.image.ImageUploadDialog
 import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.tagOptionRow.TagOption
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
+import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.common.textfield.CustomTextField
@@ -72,7 +76,7 @@ fun ListEntryDetailsScreen(
 
     Scaffold(
         topBar = {
-            TopBar(
+            AppTopBar(
                 leftIcon = Icon(resId = R.drawable.ic_back_arrow, description = "back arrow"),
                 onLeftClick = { onNavigationEvent(ListEntryDetailsNavigationEvent.NavigateBack) },
                 text = title,
@@ -89,13 +93,15 @@ fun ListEntryDetailsScreen(
     ) { padding ->
         when (uiState) {
             is EntryDetailsUiState.Loading -> {
-                Box(
+                Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(top = padding.calculateTopPadding()),
-                    contentAlignment = Alignment.Center,
+                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
                 ) {
-                    CircularProgressIndicator()
+                    Skeletons.FormEdit(
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             }
 
@@ -180,7 +186,7 @@ fun ListEntryDetailsScreen(
                                 TextSubHeadingMedium("Recurrence")
                                 TagOptionRow(
                                     options = RecurrenceUnit.entries.map { it.name.lowercase() },
-                                    selectedOption = formState.recurrenceUnit.name,
+                                    selectedOption = formState.recurrenceUnit.name.lowercase(),
                                     onSelectedOptionChange = {
                                         if (uiState.isEditing) {
                                             onUiEvent(ListEntryDetailsUiEvent.RecurrenceUnitChanged(it))
@@ -207,6 +213,8 @@ fun ListEntryDetailsScreen(
                             item {
                                 TextSubHeadingMedium("Weekdays")
 
+                                Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
+
                                 FlowRow(
                                     horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                                     verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),
@@ -228,22 +236,23 @@ fun ListEntryDetailsScreen(
                         }
                     }
 
-                    if (uiState.isEditing) {
+                    AnimatedVisibility(
+                        visible = uiState.isEditing,
+                        enter = fadeIn(),
+                        exit = fadeOut(),
+                    ) {
                         Box(
                             modifier = Modifier
                                 .height(50.dp)
                                 .padding(bottom = padding.calculateBottomPadding())
                                 .align(Alignment.End),
                         ) {
-                            if (uiState.isSaving) {
-                                CircularProgressIndicator()
-                            } else {
-                                PrimaryButton(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    text = if (isExistingEntry) "Save changes" else "Create",
-                                    onClick = { onUiEvent(ListEntryDetailsUiEvent.SaveClicked) },
-                                )
-                            }
+                            PrimaryButton(
+                                modifier = Modifier.fillMaxWidth(),
+                                text = if (isExistingEntry) "Save changes" else "Create",
+                                onClick = { onUiEvent(ListEntryDetailsUiEvent.SaveClicked) },
+                                loading = uiState.isSaving,
+                            )
                         }
                     }
                 }

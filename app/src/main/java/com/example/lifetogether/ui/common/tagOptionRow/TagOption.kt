@@ -31,6 +31,7 @@ fun TagOption(
             labelColor = MaterialTheme.colorScheme.onBackground,
             selectedContainerColor = MaterialTheme.colorScheme.secondary,
             selectedLabelColor = MaterialTheme.colorScheme.onSecondary,
+            disabledSelectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
         ),
         border = FilterChipDefaults.filterChipBorder(
             borderColor = MaterialTheme.colorScheme.onBackground,
@@ -63,6 +64,10 @@ fun ListEntryDetailsScreenPreview() {
                 tag = "Mon",
                 selectedTag = "Mon",
                 onClick = {},
+            )
+            TagOption(
+                tag = "Mon",
+                selectedTag = "Mon",
             )
         }
     }
