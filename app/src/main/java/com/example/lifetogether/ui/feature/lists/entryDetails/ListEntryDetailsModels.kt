@@ -16,10 +16,10 @@ sealed interface EntryDetailsUiState {
 
     data class Content(
         val details: EntryDetailsContent,
-        val isEditing: Boolean,
-        val showDiscardDialog: Boolean,
-        val isSaving: Boolean,
-        val showImageUploadDialog: Boolean,
+        val isEditing: Boolean = false,
+        val showDiscardDialog: Boolean = false,
+        val isSaving: Boolean = false,
+        val showImageUploadDialog: Boolean = false,
     ) : EntryDetailsUiState
 }
 

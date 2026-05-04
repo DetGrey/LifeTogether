@@ -158,6 +158,7 @@ private fun TipTrackerScreenPreview() {
                 tips = listOf(
                     TipItem(amount = 120f, date = Date()),
                 ),
+                stats = TipTrackerStats(),
                 groupedTips = mapOf("01. January 2026" to listOf(TipItem(amount = 120f, date = Date()))),
                 calendar = TipTrackerCalendarState(
                     monthLabel = "April",
@@ -179,8 +180,10 @@ private fun TipTrackerScreenListPreview() {
                 tips = listOf(
                     TipItem(amount = 120f, date = Date()),
                 ),
+                stats = TipTrackerStats(),
                 groupedTips = mapOf("01. January 2026" to listOf(TipItem(amount = 120f, date = Date()))),
                 overviewOption = "List",
+                calendar = TipTrackerCalendarState(),
             ),
             onUiEvent = {},
             onNavigationEvent = {},

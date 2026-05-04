@@ -63,7 +63,15 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
                         _uiState.update { state ->
                             when (state) {
                                 is AdminGrocerySuggestionsUiState.Loading -> AdminGrocerySuggestionsUiState.Content(
+                                    showDeleteCategoryConfirmationDialog = false,
+                                    selectedSuggestion = null,
                                     groceryCategories = categories,
+                                    categoryExpandedStates = emptySet(),
+                                    grocerySuggestions = emptyList(),
+                                    newSuggestionText = "",
+                                    newSuggestionPrice = "",
+                                    newSuggestionCategory = UNCATEGORIZED_CATEGORY,
+                                    editingSuggestionId = null,
                                 )
 
                                 is AdminGrocerySuggestionsUiState.Content -> state.copy(groceryCategories = categories)
@@ -76,6 +84,7 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
                             when (state) {
                                 is AdminGrocerySuggestionsUiState.Loading -> AdminGrocerySuggestionsUiState.Content(
                                     groceryCategories = emptyList(),
+                                    grocerySuggestions = emptyList(),
                                 )
 
                                 is AdminGrocerySuggestionsUiState.Content -> state.copy(groceryCategories = emptyList())
@@ -110,6 +119,7 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
                         _uiState.update { state ->
                             when (state) {
                                 is AdminGrocerySuggestionsUiState.Loading -> AdminGrocerySuggestionsUiState.Content(
+                                    groceryCategories = emptyList(), //todo this should probably not be null
                                     grocerySuggestions = result.data.sortedBy { it.category?.name },
                                 )
 
@@ -124,6 +134,7 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
                         _uiState.update { state ->
                             when (state) {
                                 is AdminGrocerySuggestionsUiState.Loading -> AdminGrocerySuggestionsUiState.Content(
+                                    groceryCategories = emptyList(),
                                     grocerySuggestions = emptyList(),
                                 )
 

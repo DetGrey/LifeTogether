@@ -49,6 +49,10 @@ class ProfileViewModel @Inject constructor(
                         when (it) {
                             is ProfileUiState.Loading -> ProfileUiState.Content(
                                 userInformation = state.user,
+                                showConfirmationDialog = false,
+                                showImageUploadDialog = false,
+                                confirmationDialogType = null,
+                                newName = "",
                             )
 
                             is ProfileUiState.Content -> it.copy(

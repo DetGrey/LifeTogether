@@ -6,7 +6,7 @@ sealed interface GalleryUiState {
     data object Loading : GalleryUiState
 
     data class Content(
-        val albums: List<AlbumUiModel> = emptyList(),
+        val albums: List<AlbumUiModel>,
         val showNewAlbumDialog: Boolean = false,
         val newAlbumName: String = "",
     ) : GalleryUiState

@@ -8,11 +8,11 @@ sealed interface AdminGrocerySuggestionsUiState {
     data object Loading : AdminGrocerySuggestionsUiState
 
     data class Content(
+        val groceryCategories: List<Category>,
+        val grocerySuggestions: List<GrocerySuggestion>,
         val showDeleteCategoryConfirmationDialog: Boolean = false,
         val selectedSuggestion: GrocerySuggestion? = null,
-        val groceryCategories: List<Category> = emptyList(),
         val categoryExpandedStates: Set<String> = emptySet(),
-        val grocerySuggestions: List<GrocerySuggestion> = emptyList(),
         val newSuggestionText: String = "",
         val newSuggestionPrice: String = "",
         val newSuggestionCategory: Category = UNCATEGORIZED_CATEGORY,

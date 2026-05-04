@@ -250,10 +250,13 @@ private fun GroceryListScreenPreview2() {
                         itemName = "Banana",
                     )
                 ),
-                expectedTotalPrice = 40.0F,
+                groceryCategories = listOf(UNCATEGORIZED_CATEGORY),
                 categoryExpandedStates = mapOf(
-                    UNCATEGORIZED_CATEGORY_NAME to true
-                )
+                    UNCATEGORIZED_CATEGORY_NAME to true,
+                ),
+                expectedTotalPrice = 40.0F,
+                allGrocerySuggestions = emptyList(),
+                currentGrocerySuggestions = emptyList(),
             ),
             onUiEvent = {},
             onNavigationEvent = {},

@@ -6,7 +6,7 @@ sealed interface GuidesUiState {
     data object Loading : GuidesUiState
 
     data class Content(
-        val guides: List<Guide> = emptyList(),
+        val guides: List<Guide>,
         val showAddOptionsDialog: Boolean = false,
         val showImportDialog: Boolean = false,
         val isImporting: Boolean = false,

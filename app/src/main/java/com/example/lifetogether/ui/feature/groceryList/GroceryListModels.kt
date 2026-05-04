@@ -10,18 +10,18 @@ sealed interface GroceryListUiState {
 
     data class Content(
         val showConfirmationDialog: Boolean = false,
-        val groceryList: List<GroceryItem> = emptyList(),
-        val completedItems: List<GroceryItem> = emptyList(),
-        val categorizedItems: Map<Category, List<GroceryItem>> = emptyMap(),
-        val groceryCategories: List<Category> = emptyList(),
-        val categoryExpandedStates: Map<String, Boolean> = emptyMap(),
+        val groceryList: List<GroceryItem>,
+        val completedItems: List<GroceryItem>,
+        val categorizedItems: Map<Category, List<GroceryItem>>,
+        val groceryCategories: List<Category>,
+        val categoryExpandedStates: Map<String, Boolean>,
         val completedSectionExpanded: Boolean = false,
-        val expectedTotalPrice: Float? = null,
+        val expectedTotalPrice: Float?,
         val newItemText: String = "",
         val newItemPrice: String = "",
         val newItemCategory: Category = UNCATEGORIZED_CATEGORY,
-        val allGrocerySuggestions: List<GrocerySuggestion> = emptyList(),
-        val currentGrocerySuggestions: List<GrocerySuggestion> = emptyList(),
+        val allGrocerySuggestions: List<GrocerySuggestion>,
+        val currentGrocerySuggestions: List<GrocerySuggestion>,
     ) : GroceryListUiState
 }
 

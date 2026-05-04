@@ -322,7 +322,20 @@ class GuideStepPlayerViewModel @Inject constructor(
         val leaves = GuideProgress.buildLeafPointers(guide.sections)
         if (leaves.isEmpty()) {
             currentPointerIndex = -1
-            _uiState.value = GuideStepPlayerUiState.Content(guide = guide)
+            _uiState.value = GuideStepPlayerUiState.Content(
+                guide = guide,
+                currentStep = null,
+                nextStep = null,
+                currentRoundGroupLabel = "",
+                currentRoundGroupMeta = "",
+                currentStepNumber = 0,
+                totalSteps = 0,
+                sectionTitle = "",
+                sectionSubtitle = "",
+                currentPartLabel = "",
+                currentPartProgressPercent = 0,
+                currentPartProgressText = "0 / 0",
+            )
             return
         }
 

@@ -144,7 +144,20 @@ fun GuideStepPlayerScreen(
 private fun GuideStepPlayerScreenPreview() {
     LifeTogetherTheme {
         GuideStepPlayerScreen(
-            uiState = GuideStepPlayerUiState.Content(),
+            uiState = GuideStepPlayerUiState.Content(
+                guide = null,
+                currentStep = null,
+                nextStep = null,
+                currentRoundGroupLabel = "",
+                currentRoundGroupMeta = "",
+                currentStepNumber = 0,
+                totalSteps = 0,
+                sectionTitle = "",
+                sectionSubtitle = "",
+                currentPartLabel = "",
+                currentPartProgressPercent = 0,
+                currentPartProgressText = "0 / 0",
+            ),
             onUiEvent = {},
             onNavigationEvent = {},
         )

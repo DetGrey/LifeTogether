@@ -8,7 +8,7 @@ sealed interface ListsUiState {
     data object Loading : ListsUiState
 
     data class Content(
-        val userLists: List<UserList> = emptyList(),
+        val userLists: List<UserList>,
         val showCreateDialog: Boolean = false,
         val newListName: String = "",
         val newListType: ListType = ListType.ROUTINE,

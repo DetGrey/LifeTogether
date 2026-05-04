@@ -221,7 +221,7 @@ class AlbumDetailsViewModel @Inject constructor(
             }
             groupMedia()
             items.forEach { media ->
-                val mediaId = media.id ?: return@forEach
+                val mediaId = media.id
                 if (!requestedThumbnailIds.contains(mediaId)) {
                     requestedThumbnailIds.add(mediaId)
                     fetchThumbnail(mediaId)
@@ -685,7 +685,7 @@ class AlbumDetailsViewModel @Inject constructor(
             false -> {
                 updateContentState { state ->
                     state.copy(
-                        selectedMedia = state.media.mapNotNull { it.id }.toSet(),
+                        selectedMedia = state.media.map { it.id }.toSet(),
                         isAllMediaSelected = true,
                     )
                 }
@@ -739,7 +739,17 @@ class AlbumDetailsViewModel @Inject constructor(
     private fun updateContentState(transform: (AlbumDetailsUiState.Content) -> AlbumDetailsUiState.Content) {
         _uiState.update { state ->
             val contentState = when (state) {
-                is AlbumDetailsUiState.Loading -> AlbumDetailsUiState.Content(familyId = familyId)
+                is AlbumDetailsUiState.Loading -> AlbumDetailsUiState.Content(
+                    album = null,
+                    media = emptyList(),
+                    groupedMedia = emptyList(),
+                    thumbnails = emptyMap(),
+                    overflowMenuAction = null,
+                    actionDialogText = "",
+                    selectedMedia = emptySet(),
+                    albums = emptyList(),
+                    familyId = familyId,
+                )
                 is AlbumDetailsUiState.Content -> state
             }
             transform(contentState)

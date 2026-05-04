@@ -7,10 +7,10 @@ sealed interface GuideDetailsUiState {
     data object Loading : GuideDetailsUiState
 
     data class Content(
-        val guide: Guide? = null,
-        val sectionExpandedState: Map<String, Boolean> = emptyMap(),
-        val selectedSectionAmountState: Map<String, Int> = emptyMap(),
-        val canToggleAmountState: Map<String, Set<Int>> = emptyMap(),
+        val guide: Guide?,
+        val sectionExpandedState: Map<String, Boolean>,
+        val selectedSectionAmountState: Map<String, Int>,
+        val canToggleAmountState: Map<String, Set<Int>>,
         val isUpdatingVisibility: Boolean = false,
         val isStartingGuide: Boolean = false,
         val isDeletingGuide: Boolean = false,

@@ -12,11 +12,11 @@ sealed interface ListDetailsUiState {
         val listType: ListType,
         val entries: List<ListEntry>,
         val imageBitmaps: Map<String, Bitmap>,
-        val isSelectionModeActive: Boolean,
         val selectedEntryIds: Set<String>,
-        val isAllEntriesSelected: Boolean,
-        val showActionSheet: Boolean,
-        val showDeleteSelectedDialog: Boolean,
+        val isSelectionModeActive: Boolean = false,
+        val isAllEntriesSelected: Boolean = false,
+        val showActionSheet: Boolean = false,
+        val showDeleteSelectedDialog: Boolean = false,
     ) : ListDetailsUiState
 }
 

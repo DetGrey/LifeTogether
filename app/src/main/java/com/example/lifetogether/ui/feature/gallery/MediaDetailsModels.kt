@@ -7,8 +7,8 @@ sealed interface MediaDetailsUiState {
     data object Loading : MediaDetailsUiState
 
     data class Content(
-        val mediaList: List<GalleryMedia> = emptyList(),
-        val currentIndex: Int = 0,
+        val mediaList: List<GalleryMedia>,
+        val currentIndex: Int,
         val showOverflowMenu: Boolean = false,
         val showOverflowMenuActionDialog: Boolean = false,
         val overflowMenuAction: MenuAction.MediaDetailsActions? = null,

@@ -7,9 +7,9 @@ sealed interface FamilyUiState {
     data object Loading : FamilyUiState
 
     data class Content(
-        val familyId: String? = null,
-        val uid: String? = null,
-        val familyInformation: FamilyInformation? = null,
+        val familyId: String?,
+        val uid: String?,
+        val familyInformation: FamilyInformation?,
         val showConfirmationDialog: Boolean = false,
         val confirmationDialogType: FamilyConfirmationType? = null,
         val memberToRemove: FamilyMember? = null,

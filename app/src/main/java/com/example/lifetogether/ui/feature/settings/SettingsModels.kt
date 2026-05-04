@@ -7,7 +7,7 @@ sealed interface SettingsUiState {
     data object Loading : SettingsUiState
 
     data class Content(
-        val userInformation: UserInformation? = null,
+        val userInformation: UserInformation?,
         val showConfirmationDialog: Boolean = false,
         val confirmationDialogType: SettingsConfirmationTypes? = null,
         val addedFamilyId: String = "",

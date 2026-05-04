@@ -63,6 +63,9 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
                             when (state) {
                                 is AdminGroceryCategoriesUiState.Loading -> AdminGroceryCategoriesUiState.Content(
                                     groceryCategories = categories,
+                                    newCategory = "",
+                                    showDeleteCategoryConfirmationDialog = false,
+                                    selectedCategory = null,
                                 )
 
                                 is AdminGroceryCategoriesUiState.Content -> state.copy(groceryCategories = categories)
@@ -75,6 +78,9 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
                             when (state) {
                                 is AdminGroceryCategoriesUiState.Loading -> AdminGroceryCategoriesUiState.Content(
                                     groceryCategories = emptyList(),
+                                    newCategory = "",
+                                    showDeleteCategoryConfirmationDialog = false,
+                                    selectedCategory = null,
                                 )
 
                                 is AdminGroceryCategoriesUiState.Content -> state.copy(groceryCategories = emptyList())

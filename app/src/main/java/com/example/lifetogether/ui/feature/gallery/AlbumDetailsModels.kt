@@ -9,22 +9,22 @@ sealed interface AlbumDetailsUiState {
     data object Loading : AlbumDetailsUiState
 
     data class Content(
-        val album: Album? = null,
-        val media: List<GalleryMedia> = emptyList(),
-        val groupedMedia: List<Pair<String, List<GalleryMedia>>> = emptyList(),
-        val thumbnails: Map<String, ByteArray> = emptyMap(),
+        val album: Album?,
+        val media: List<GalleryMedia>,
+        val groupedMedia: List<Pair<String, List<GalleryMedia>>>,
+        val thumbnails: Map<String, ByteArray>,
         val showOverflowMenu: Boolean = false,
         val showOverflowMenuActionDialog: Boolean = false,
         val showImageUploadDialog: Boolean = false,
-        val overflowMenuAction: MenuAction? = null,
-        val actionDialogText: String = "",
+        val overflowMenuAction: MenuAction?,
+        val actionDialogText: String,
         val isPartialLoad: Boolean = false,
         val isRefreshing: Boolean = false,
         val isSelectionModeActive: Boolean = false,
-        val selectedMedia: Set<String> = emptySet(),
+        val selectedMedia: Set<String>,
         val isAllMediaSelected: Boolean = false,
-        val albums: List<AlbumUiModel> = emptyList(),
-        val familyId: String? = null,
+        val albums: List<AlbumUiModel>,
+        val familyId: String?,
         val isSyncing: Boolean = false,
     ) : AlbumDetailsUiState
 }

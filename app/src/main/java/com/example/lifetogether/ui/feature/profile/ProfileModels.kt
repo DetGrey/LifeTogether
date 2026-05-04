@@ -6,7 +6,7 @@ sealed interface ProfileUiState {
     data object Loading : ProfileUiState
 
     data class Content(
-        val userInformation: UserInformation? = null,
+        val userInformation: UserInformation?,
         val showConfirmationDialog: Boolean = false,
         val showImageUploadDialog: Boolean = false,
         val confirmationDialogType: ProfileConfirmationType? = null,

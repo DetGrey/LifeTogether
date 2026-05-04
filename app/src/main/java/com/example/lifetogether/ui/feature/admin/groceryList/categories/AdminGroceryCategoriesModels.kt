@@ -6,7 +6,7 @@ sealed interface AdminGroceryCategoriesUiState {
     data object Loading : AdminGroceryCategoriesUiState
 
     data class Content(
-        val groceryCategories: List<Category> = emptyList(),
+        val groceryCategories: List<Category>,
         val newCategory: String = "",
         val showDeleteCategoryConfirmationDialog: Boolean = false,
         val selectedCategory: Category? = null,

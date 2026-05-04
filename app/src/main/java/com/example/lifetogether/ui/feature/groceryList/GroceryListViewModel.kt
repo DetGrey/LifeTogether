@@ -43,7 +43,18 @@ class GroceryListViewModel @Inject constructor(
     private val groceryRepository: GroceryRepository,
     private val sendNotificationUseCase: SendNotificationUseCase,
 ) : ViewModel() {
-    private val _interactionState = MutableStateFlow(GroceryListUiState.Content())
+    private val _interactionState = MutableStateFlow(
+        GroceryListUiState.Content(
+            groceryList = emptyList(),
+            completedItems = emptyList(),
+            categorizedItems = emptyMap(),
+            groceryCategories = emptyList(),
+            categoryExpandedStates = emptyMap(),
+            expectedTotalPrice = null,
+            allGrocerySuggestions = emptyList(),
+            currentGrocerySuggestions = emptyList(),
+        ),
+    )
 
     val uiState: StateFlow<GroceryListUiState> = combine(
         groceryItemsState(),
@@ -306,7 +317,7 @@ class GroceryListViewModel @Inject constructor(
             dismissDeleteCompletedConfirmation()
             return
         }
-        val idsToDelete = completedItems.mapNotNull { it.id }
+        val idsToDelete = completedItems.map { it.id }
 
         viewModelScope.launch {
             when (val result = groceryRepository.deleteGroceryItems(itemIds = idsToDelete)) {

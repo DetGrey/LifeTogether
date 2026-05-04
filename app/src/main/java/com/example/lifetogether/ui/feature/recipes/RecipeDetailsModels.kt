@@ -20,13 +20,13 @@ sealed interface RecipeDetailsUiState {
         val servings: String,
         val tagsInput: String,
         val tags: List<String>,
-        val editMode: Boolean,
-        val isSaving: Boolean,
-        val showDeleteConfirmationDialog: Boolean,
-        val showImageUploadDialog: Boolean,
-        val servingsExpanded: Boolean,
         val expandedStates: Map<String, Boolean>,
         val ingredientsByServings: List<Ingredient>,
+        val editMode: Boolean = false,
+        val isSaving: Boolean = false,
+        val showDeleteConfirmationDialog: Boolean = false,
+        val showImageUploadDialog: Boolean = false,
+        val servingsExpanded: Boolean = false,
     ) : RecipeDetailsUiState
 }
 

@@ -182,7 +182,7 @@ private fun AdminGroceryCategoriesScreenPreview() {
                     Category("❓️", "Uncategorized"),
                     Category("🥦", "Vegetables"),
                 ),
-                newCategory = "❓Frozen"
+                newCategory = "❓Frozen",
             ),
             onUiEvent = {},
             onNavigationEvent = {},

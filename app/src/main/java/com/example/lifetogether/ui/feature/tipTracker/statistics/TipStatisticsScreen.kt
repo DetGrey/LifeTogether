@@ -24,6 +24,7 @@ import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextHeadingLarge
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerNavigationEvent
+import com.example.lifetogether.ui.feature.tipTracker.TipTrackerCalendarState
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerStats
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerUiEvent
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerUiState
@@ -161,6 +162,7 @@ private fun TipStatisticsScreenPreview() {
                     bestMonth = "January 2026" to 120f,
                 ),
                 groupedTips = mapOf("01. January 2026" to listOf(TipItem(amount = 120f, date = Date()))),
+                calendar = TipTrackerCalendarState(),
             ),
             onUiEvent = {},
             onNavigationEvent = {},
