@@ -160,7 +160,7 @@ fun MediaDetailsScreen(
                     bottomStart = CornerSize(0.dp),
                     bottomEnd = CornerSize(0.dp),
                 ),
-                color = MaterialTheme.colorScheme.surface,
+                color = MaterialTheme.colorScheme.surfaceVariant,
             ) {
                 mediaList.getOrNull(pagerState.currentPage)?.let {
                     MediaDetailsPanelContent(it)

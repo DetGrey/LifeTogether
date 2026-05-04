@@ -26,6 +26,10 @@ class RecipesViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
     private val recipeRepository: RecipeRepository,
 ) : ViewModel() {
+    companion object {
+        private val DEFAULT_TAG_ORDER = listOf("Simple", "Dinner", "Breakfast")
+    }
+
     private val _uiState = MutableStateFlow<RecipesUiState>(RecipesUiState.Loading)
     val uiState: StateFlow<RecipesUiState> = _uiState.asStateFlow()
 
@@ -127,15 +131,32 @@ class RecipesViewModel @Inject constructor(
     }
 
     private fun buildTagsList(recipes: List<Recipe>): List<String> {
-        val tags = linkedSetOf("All")
+        val tags = linkedSetOf<String>()
         recipes.forEach { recipe ->
             recipe.tags.forEach { tag ->
-                tags += tag.replaceFirstChar { character ->
-                    character.uppercase()
+                if (tag.isNotBlank()) {
+                    tags += tag.normalizedTag()
                 }
             }
         }
-        return tags.toList()
+
+        val prioritizedTags = mutableListOf("All")
+        tags.remove("All")
+        DEFAULT_TAG_ORDER.forEach { tag ->
+            if (tags.remove(tag)) {
+                prioritizedTags += tag
+            }
+        }
+
+        return prioritizedTags + tags.toList()
+    }
+
+    private fun String.normalizedTag(): String {
+        return trim()
+            .lowercase()
+            .replaceFirstChar { character ->
+                character.uppercase()
+            }
     }
 
     private fun showError(message: String) {

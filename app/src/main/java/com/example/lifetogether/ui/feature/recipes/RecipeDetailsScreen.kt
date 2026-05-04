@@ -2,9 +2,11 @@ package com.example.lifetogether.ui.feature.recipes
 
 import android.graphics.Bitmap
 import android.net.Uri
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -59,20 +61,25 @@ fun RecipeDetailsScreen(
     onUiEvent: (RecipeDetailsUiEvent) -> Unit,
     onNavigationEvent: (RecipeDetailsNavigationEvent) -> Unit,
 ) {
-    when (uiState) {
-        RecipeDetailsUiState.Loading -> {
+    AnimatedContent(
+        targetState = uiState is RecipeDetailsUiState.Loading,
+        transitionSpec = { fadeIn() togetherWith fadeOut() },
+        label = "recipe_details_loading_content",
+    ) { loading ->
+        if (loading) {
             Skeletons.FormEdit(
                 modifier = Modifier.fillMaxSize(),
             )
+        } else {
+            val contentState = uiState as? RecipeDetailsUiState.Content ?: return@AnimatedContent
+            RecipeDetailsContent(
+                uiState = contentState,
+                bitmap = bitmap,
+                onImageUpload = onImageUpload,
+                onUiEvent = onUiEvent,
+                onNavigationEvent = onNavigationEvent,
+            )
         }
-
-        is RecipeDetailsUiState.Content -> RecipeDetailsContent(
-            uiState = uiState,
-            bitmap = bitmap,
-            onImageUpload = onImageUpload,
-            onUiEvent = onUiEvent,
-            onNavigationEvent = onNavigationEvent,
-        )
     }
 }
 
@@ -454,11 +461,20 @@ private fun RecipeDetailsScreenPreview() {
                     Instruction(itemName = "Blend everything"),
                 ),
                 preparationTimeMin = "30",
+                favourite = false,
                 recipeServings = 2,
                 servings = "2",
                 tagsInput = "Dinner Soup",
                 tags = listOf("Dinner", "Soup"),
                 editMode = false,
+                isSaving = false,
+                showDeleteConfirmationDialog = false,
+                showImageUploadDialog = false,
+                servingsExpanded = false,
+                expandedStates = mapOf(
+                    "ingredients" to true,
+                    "instructions" to true,
+                ),
                 ingredientsByServings = listOf(
                     com.example.lifetogether.domain.model.recipe.Ingredient(
                         itemName = "Tomatoes",

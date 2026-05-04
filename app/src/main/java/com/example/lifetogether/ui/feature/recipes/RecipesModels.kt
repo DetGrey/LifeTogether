@@ -6,9 +6,9 @@ sealed interface RecipesUiState {
     data object Loading : RecipesUiState
 
     data class Content(
-        val recipes: List<Recipe> = emptyList(),
-        val tagsList: List<String> = listOf("All"),
-        val selectedTag: String = "All",
+        val recipes: List<Recipe>,
+        val tagsList: List<String>,
+        val selectedTag: String,
     ) : RecipesUiState
 }
 

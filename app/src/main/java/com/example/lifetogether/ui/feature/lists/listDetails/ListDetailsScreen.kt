@@ -88,6 +88,7 @@ fun ListDetailsScreen(
     onNavigationEvent: (ListDetailsNavigationEvent) -> Unit,
 ) {
     val contentState = uiState as? ListDetailsUiState.Content
+    val isLoading = uiState is ListDetailsUiState.Loading
     val listType = contentState?.listType ?: ListType.ROUTINE
     val entries = contentState?.entries.orEmpty()
     val imageBitmaps = contentState?.imageBitmaps.orEmpty()
@@ -121,16 +122,19 @@ fun ListDetailsScreen(
             }
         },
     ) { padding ->
-        when (uiState) {
-            is ListDetailsUiState.Loading -> {
+        AnimatedContent(
+            targetState = isLoading,
+            transitionSpec = { fadeIn() togetherWith fadeOut() },
+            label = "list_details_loading_content",
+        ) { loading ->
+            if (loading) {
                 Skeletons.ListDetail(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding),
                 )
-            }
-
-            is ListDetailsUiState.Content -> {
+            } else {
+                val content = contentState ?: return@AnimatedContent
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -139,14 +143,14 @@ fun ListDetailsScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     AnimatedContent(
-                        targetState = uiState.isSelectionModeActive,
+                        targetState = content.isSelectionModeActive,
                         transitionSpec = { fadeIn() togetherWith fadeOut() },
                         label = "selection_mode_bar",
                     ) { selectionActive ->
                         if (selectionActive) {
                             SelectionModeBar(
-                                selectedCount = uiState.selectedEntryIds.size,
-                                isAllSelected = uiState.isAllEntriesSelected,
+                                selectedCount = content.selectedEntryIds.size,
+                                isAllSelected = content.isAllEntriesSelected,
                                 onToggleAll = { onUiEvent(ListDetailsUiEvent.ToggleAllEntrySelection) },
                                 onCancel = { onUiEvent(ListDetailsUiEvent.ExitSelectionMode) },
                             )
@@ -167,19 +171,19 @@ fun ListDetailsScreen(
                             listType = listType,
                             entries = entries,
                             imageBitmaps = imageBitmaps,
-                            isSelectionMode = uiState.isSelectionModeActive,
-                            selectedIds = uiState.selectedEntryIds,
+                            isSelectionMode = content.isSelectionModeActive,
+                            selectedIds = content.selectedEntryIds,
                             completedExpanded = completedExpanded,
                             onToggleCompletedExpanded = { completedExpanded = !completedExpanded },
                             onEntryClick = { entry ->
-                                if (uiState.isSelectionModeActive) {
+                                if (content.isSelectionModeActive) {
                                     onUiEvent(ListDetailsUiEvent.ToggleEntrySelection(entry.id))
                                 } else {
                                     onNavigationEvent(ListDetailsNavigationEvent.NavigateToEntryDetails(entry.id))
                                 }
                             },
                             onEntryLongClick = { entry ->
-                                if (!uiState.isSelectionModeActive) {
+                                if (!content.isSelectionModeActive) {
                                     onUiEvent(ListDetailsUiEvent.EnterSelectionMode(entry.id))
                                 }
                             },

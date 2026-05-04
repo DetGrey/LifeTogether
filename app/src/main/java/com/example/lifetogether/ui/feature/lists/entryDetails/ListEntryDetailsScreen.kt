@@ -5,8 +5,10 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.background
@@ -69,6 +71,7 @@ fun ListEntryDetailsScreen(
     onNavigationEvent: (ListEntryDetailsNavigationEvent) -> Unit,
 ) {
     val content = uiState as? EntryDetailsUiState.Content
+    val isLoading = uiState is EntryDetailsUiState.Loading
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
     ) { uri: Uri? ->
@@ -95,8 +98,12 @@ fun ListEntryDetailsScreen(
             )
         }
     ) { padding ->
-        when (uiState) {
-            is EntryDetailsUiState.Loading -> {
+        AnimatedContent(
+            targetState = isLoading,
+            transitionSpec = { fadeIn() togetherWith fadeOut() },
+            label = "entry_details_loading_content",
+        ) { loading ->
+            if (loading) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -107,9 +114,8 @@ fun ListEntryDetailsScreen(
                         modifier = Modifier.weight(1f),
                     )
                 }
-            }
-
-            is EntryDetailsUiState.Content -> {
+            } else {
+                val contentState = content ?: return@AnimatedContent
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -120,9 +126,9 @@ fun ListEntryDetailsScreen(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
                     ) {
-                        when (val details = uiState.details) {
+                        when (val details = contentState.details) {
                             is EntryDetailsContent.Routine -> routineEntryForm(
-                                uiState = uiState,
+                                uiState = contentState,
                                 isExistingEntry = isExistingEntry,
                                 bitmap = bitmap,
                                 pendingBitmap = details.form.pendingImageBitmap,
@@ -132,25 +138,25 @@ fun ListEntryDetailsScreen(
                             )
 
                             is EntryDetailsContent.Wish -> wishListEntryForm(
-                                uiState = uiState,
+                                uiState = contentState,
                                 formState = details.form,
                                 onUiEvent = onUiEvent,
                             )
 
                             is EntryDetailsContent.Note -> notesEntryForm(
-                                uiState = uiState,
+                                uiState = contentState,
                                 formState = details.form,
                                 onUiEvent = onUiEvent,
                             )
 
                             is EntryDetailsContent.Checklist -> checklistEntryForm(
-                                uiState = uiState,
+                                uiState = contentState,
                                 formState = details.form,
                                 onUiEvent = onUiEvent,
                             )
 
                             is EntryDetailsContent.Meal -> mealPlannerEntryForm(
-                                uiState = uiState,
+                                uiState = contentState,
                                 formState = details.form,
                                 onUiEvent = onUiEvent,
                             )
@@ -158,7 +164,7 @@ fun ListEntryDetailsScreen(
                     }
 
                     AnimatedVisibility(
-                        visible = uiState.isEditing,
+                        visible = contentState.isEditing,
                         enter = fadeIn(),
                         exit = fadeOut(),
                     ) {
@@ -172,7 +178,7 @@ fun ListEntryDetailsScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 text = if (isExistingEntry) "Save changes" else "Create",
                                 onClick = { onUiEvent(ListEntryDetailsUiEvent.SaveClicked) },
-                                loading = uiState.isSaving,
+                                loading = contentState.isSaving,
                             )
                         }
                     }

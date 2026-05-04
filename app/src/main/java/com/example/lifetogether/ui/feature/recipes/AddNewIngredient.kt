@@ -2,6 +2,7 @@ package com.example.lifetogether.ui.feature.recipes
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -56,8 +57,7 @@ fun AddNewIngredient(
 
     Card(
         modifier = Modifier
-            .fillMaxWidth()
-            .height(140.dp),
+            .fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
         ),
@@ -65,7 +65,6 @@ fun AddNewIngredient(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
                 .padding(horizontal = LifeTogetherTokens.spacing.medium)
                 .padding(bottom = LifeTogetherTokens.spacing.small),
         ) {
@@ -77,7 +76,7 @@ fun AddNewIngredient(
                 imeAction = ImeAction.Done,
             )
 
-            Row {
+            Row(Modifier.height(IntrinsicSize.Min)) {
                 CustomTextField(
                     value = amount,
                     onValueChange = {
@@ -104,7 +103,7 @@ fun AddNewIngredient(
                 )
                 Row(
                     modifier = Modifier
-                        .padding(LifeTogetherTokens.spacing.small)
+                        .padding(horizontal = LifeTogetherTokens.spacing.small)
                         .fillMaxHeight()
                         .clickable {
                             updateIngredient(

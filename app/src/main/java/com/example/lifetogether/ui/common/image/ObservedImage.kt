@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.domain.logic.toBitmap
@@ -18,7 +19,10 @@ fun rememberObservedImageBitmap(
 ): Bitmap? {
     val observeImageStateUseCase = rememberObserveImageStateUseCase()
     val currentOnError by rememberUpdatedState(onError)
-    val imageState by observeImageStateUseCase(imageType).collectAsStateWithLifecycle(
+    val imageStateFlow = remember(imageType, observeImageStateUseCase) {
+        observeImageStateUseCase(imageType)
+    }
+    val imageState by imageStateFlow.collectAsStateWithLifecycle(
         initialValue = if (imageType == null) ImageState.Empty else ImageState.Loading,
     )
 

@@ -174,6 +174,7 @@ class RecipeDetailsViewModel @Inject constructor(
         recipeId: String? = pendingRecipeId,
         editMode: Boolean,
     ): RecipeDetailsUiState.Content {
+        val isNewRecipe = recipe == null && recipeId == null
         val sourceRecipe = recipe ?: originalRecipe ?: Recipe(
             id = recipeId.orEmpty(),
             familyId = familyId.orEmpty(),
@@ -183,19 +184,25 @@ class RecipeDetailsViewModel @Inject constructor(
         val ingredients = sourceRecipe.ingredients
 
         return RecipeDetailsUiState.Content(
-            recipeId = recipeId ?: sourceRecipe.id,
-            familyId = familyId,
+            recipeId = recipeId?.takeIf { it.isNotBlank() }
+                ?: sourceRecipe.id.takeIf { it.isNotBlank() },
+            familyId = familyId?.takeIf { it.isNotBlank() },
             itemName = sourceRecipe.itemName,
             description = sourceRecipe.description,
             ingredients = ingredients,
             instructions = sourceRecipe.instructions,
-            preparationTimeMin = sourceRecipe.preparationTimeMin.toString(),
+            preparationTimeMin = if (isNewRecipe) {
+                ""
+            } else {
+                sourceRecipe.preparationTimeMin.toString()
+            },
             favourite = sourceRecipe.favourite,
             recipeServings = sourceRecipe.servings,
             servings = if (recipe == null && recipeId == null) "" else servings,
             tagsInput = sourceRecipe.tags.joinToString(" "),
             tags = sourceRecipe.tags,
             editMode = editMode,
+            isSaving = false,
             showDeleteConfirmationDialog = false,
             showImageUploadDialog = false,
             servingsExpanded = false,

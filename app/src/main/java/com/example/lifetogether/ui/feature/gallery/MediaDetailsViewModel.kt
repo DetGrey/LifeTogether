@@ -196,10 +196,9 @@ class MediaDetailsViewModel @Inject constructor(
         val currentOffset = uiState.value.offsetY
         val maxOffset = getMaxOffset(totalHeight)
 
-        // SNAP LOGIC:
-        // If the panel is more than 30% open, snap to fully open.
-        // Otherwise, snap back to closed.
-        val snapTarget = if (currentOffset < maxOffset * 0.3f) {
+        // Snap open only if the panel is dragged far enough up.
+        // This makes a normal downward swipe close the panel more reliably.
+        val snapTarget = if (currentOffset <= maxOffset * 0.5f) {
             maxOffset
         } else {
             0f

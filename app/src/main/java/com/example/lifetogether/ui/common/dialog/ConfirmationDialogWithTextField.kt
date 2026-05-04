@@ -4,7 +4,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -28,6 +33,12 @@ fun ConfirmationDialogWithTextField(
     keyboardType: KeyboardType = KeyboardType.Text,
     capitalization: Boolean = false,
 ) {
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = dialogTitle) },
@@ -43,6 +54,7 @@ fun ConfirmationDialogWithTextField(
                     keyboardType = keyboardType,
                     imeAction = ImeAction.Done,
                     capitalization = capitalization,
+                    modifier = Modifier.focusRequester(focusRequester),
                 )
             }
         },

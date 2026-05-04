@@ -20,14 +20,20 @@ import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.datasource.StorageDataSource
 import com.example.lifetogether.domain.repository.ImageRepository
+import com.example.lifetogether.di.AppScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.CoroutineScope
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class ImageRepositoryImpl @Inject constructor(
+    @param:AppScope private val appScope: CoroutineScope,
     private val userLocalDataSource: UserLocalDataSource,
     private val recipeLocalDataSource: RecipeLocalDataSource,
     private val userListLocalDataSource: UserListLocalDataSource,
@@ -40,22 +46,31 @@ class ImageRepositoryImpl @Inject constructor(
     companion object {
         private const val TAG = "LocalImageRepositoryImpl"
     }
+
+    private val imageByteArrayFlows = ConcurrentHashMap<ImageType, Flow<Result<ByteArray, AppError>>>()
+
     override fun observeImageByteArray(imageType: ImageType): Flow<Result<ByteArray, AppError>> {
-        Log.d(TAG, "getImageByteArray")
-        val byteArrayFlow = when (imageType) {
-            is ImageType.ProfileImage -> userLocalDataSource.observeProfileImageByteArray(imageType.uid)
-            is ImageType.FamilyImage -> userLocalDataSource.observeFamilyImageByteArray(imageType.familyId)
-            is ImageType.RecipeImage -> recipeLocalDataSource.observeImageByteArray(
-                familyId = imageType.familyId,
-                recipeId = imageType.recipeId,
-            )
-            is ImageType.RoutineListEntryImage -> userListLocalDataSource.observeRoutineImageByteArray(imageType.entryId)
-            is ImageType.GalleryMedia -> flowOf(null)
-        }
-        return byteArrayFlow.map { byteArray ->
-            appResultOf {
-                byteArray ?: throw AppErrorThrowable(AppErrors.storage("No ByteArray found"))
+        return imageByteArrayFlows.getOrPut(imageType) {
+            Log.d(TAG, "getImageByteArray")
+            val byteArrayFlow = when (imageType) {
+                is ImageType.ProfileImage -> userLocalDataSource.observeProfileImageByteArray(imageType.uid)
+                is ImageType.FamilyImage -> userLocalDataSource.observeFamilyImageByteArray(imageType.familyId)
+                is ImageType.RecipeImage -> recipeLocalDataSource.observeImageByteArray(
+                    familyId = imageType.familyId,
+                    recipeId = imageType.recipeId,
+                )
+                is ImageType.RoutineListEntryImage -> userListLocalDataSource.observeRoutineImageByteArray(imageType.entryId)
+                is ImageType.GalleryMedia -> flowOf(null)
             }
+            byteArrayFlow.map { byteArray ->
+                appResultOf {
+                    byteArray ?: throw AppErrorThrowable(AppErrors.storage("No ByteArray found"))
+                }
+            }.shareIn(
+                scope = appScope,
+                started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+                replay = 1,
+            )
         }
     }
 
