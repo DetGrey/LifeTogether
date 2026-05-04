@@ -2,7 +2,6 @@ package com.example.lifetogether.ui.feature.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.enums.SettingsConfirmationTypes
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.FamilyRepository

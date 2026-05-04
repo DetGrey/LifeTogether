@@ -187,7 +187,7 @@ fun ProfileScreen(
                         // TODO: Implement password change flow and re-enable this row.
                         ProfileDetails(
                             icon = Icon(
-                                resId = R.drawable.ic_password,
+                                resId = R.drawable.ic_password_asterisk,
                                 description = "password icon",
                             ),
                             title = "Password",

@@ -303,7 +303,7 @@ class GuideStepPlayerViewModel @Inject constructor(
     }
 
     private fun resolveGuideId(guide: Guide): String {
-        return guide.id?.takeIf { it.isNotBlank() } ?: guideId
+        return guide.id.takeIf { it.isNotBlank() } ?: guideId
     }
 
     private fun showError(message: String) {
