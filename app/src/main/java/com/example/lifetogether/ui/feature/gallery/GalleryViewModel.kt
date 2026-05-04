@@ -28,7 +28,7 @@ class GalleryViewModel @Inject constructor(
     private val getAlbumDisplayModelsUseCase: GetAlbumDisplayModelsUseCase,
     private val galleryRepository: GalleryRepository,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(GalleryUiState())
+    private val _uiState = MutableStateFlow<GalleryUiState>(GalleryUiState.Loading)
     val uiState: StateFlow<GalleryUiState> = _uiState.asStateFlow()
 
     private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
@@ -51,13 +51,7 @@ class GalleryViewModel @Inject constructor(
                     requestedThumbnails.clear()
                     observeAlbumsJob?.cancel()
                     observeAlbumsJob = null
-                    _uiState.update {
-                        it.copy(
-                            albums = emptyList(),
-                            showNewAlbumDialog = false,
-                            newAlbumName = "",
-                        )
-                    }
+                    _uiState.value = GalleryUiState.Loading
                 }
             }
         }
@@ -73,20 +67,20 @@ class GalleryViewModel @Inject constructor(
     }
 
     private fun openNewAlbumDialog() {
-        _uiState.update { it.copy(showNewAlbumDialog = true) }
+        updateContent { it.copy(showNewAlbumDialog = true) }
     }
 
     private fun closeNewAlbumDialog() {
-        _uiState.update { it.copy(showNewAlbumDialog = false, newAlbumName = "") }
+        updateContent { it.copy(showNewAlbumDialog = false, newAlbumName = "") }
     }
 
     private fun setNewAlbumName(name: String) {
-        _uiState.update { it.copy(newAlbumName = name) }
+        updateContent { it.copy(newAlbumName = name) }
     }
 
     private fun createNewAlbum() {
         val familyIdValue = familyId
-        val albumName = _uiState.value.newAlbumName.trim()
+        val albumName = (uiState.value as? GalleryUiState.Content)?.newAlbumName.orEmpty().trim()
 
         if (albumName.isEmpty()) {
             showError("Please enter an album name first")
@@ -119,7 +113,15 @@ class GalleryViewModel @Inject constructor(
             getAlbumDisplayModelsUseCase.invoke(familyIdValue).collect { result ->
                 when (result) {
                     is Result.Success -> {
-                        _uiState.update { it.copy(albums = result.data) }
+                        _uiState.update { state ->
+                            when (state) {
+                                is GalleryUiState.Loading -> GalleryUiState.Content(
+                                    albums = result.data,
+                                )
+
+                                is GalleryUiState.Content -> state.copy(albums = result.data)
+                            }
+                        }
 
                         result.data.forEach { album ->
                             if (album.thumbnail == null && !requestedThumbnails.contains(album.id)) {
@@ -142,6 +144,15 @@ class GalleryViewModel @Inject constructor(
                     withDismissAction = true,
                 ),
             )
+        }
+    }
+
+    private fun updateContent(transform: (GalleryUiState.Content) -> GalleryUiState.Content) {
+        _uiState.update { state ->
+            when (state) {
+                is GalleryUiState.Loading -> state
+                is GalleryUiState.Content -> transform(state)
+            }
         }
     }
 }

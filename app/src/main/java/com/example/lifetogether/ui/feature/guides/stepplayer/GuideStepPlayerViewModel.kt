@@ -53,7 +53,7 @@ class GuideStepPlayerViewModel @Inject constructor(
 
     private var currentPointerIndex: Int = -1
 
-    private val _uiState = MutableStateFlow(GuideStepPlayerUiState())
+    private val _uiState = MutableStateFlow<GuideStepPlayerUiState>(GuideStepPlayerUiState.Loading)
     val uiState: StateFlow<GuideStepPlayerUiState> = _uiState.asStateFlow()
 
     private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
@@ -74,6 +74,7 @@ class GuideStepPlayerViewModel @Inject constructor(
                 } else if (state is SessionState.Unauthenticated) {
                     familyId = null
                     uid = null
+                    _uiState.value = GuideStepPlayerUiState.Loading
                 }
             }
         }
@@ -122,7 +123,7 @@ class GuideStepPlayerViewModel @Inject constructor(
     }
 
     fun goToPreviousStep() {
-        val currentGuide = _uiState.value.guide ?: return
+        val currentGuide = contentState()?.guide ?: return
         val leaves = GuideProgress.buildLeafPointers(currentGuide.sections)
         if (leaves.isEmpty()) return
 
@@ -143,7 +144,7 @@ class GuideStepPlayerViewModel @Inject constructor(
     }
 
     private fun updateCurrentStep(completionMode: CompletionMode, moveToNext: Boolean) {
-        val currentGuide = _uiState.value.guide ?: return
+        val currentGuide = contentState()?.guide ?: return
         val pointer = currentPointer(currentGuide) ?: return
 
         val canToggleCurrent = GuideProgress.canTogglePointer(currentGuide.sections, pointer)
@@ -321,7 +322,7 @@ class GuideStepPlayerViewModel @Inject constructor(
         val leaves = GuideProgress.buildLeafPointers(guide.sections)
         if (leaves.isEmpty()) {
             currentPointerIndex = -1
-            _uiState.value = GuideStepPlayerUiState(guide = guide)
+            _uiState.value = GuideStepPlayerUiState.Content(guide = guide)
             return
         }
 
@@ -355,7 +356,7 @@ class GuideStepPlayerViewModel @Inject constructor(
         guide: Guide,
         leaves: List<GuideLeafPointer>,
         pointer: GuideLeafPointer,
-    ): GuideStepPlayerUiState {
+    ): GuideStepPlayerUiState.Content {
         val currentStep = GuideProgress.getStepAtPointer(guide.sections, pointer)
         val nextStep = leaves.getOrNull(currentPointerIndex + 1)
             ?.let { GuideProgress.getStepAtPointer(guide.sections, it) }
@@ -365,7 +366,7 @@ class GuideStepPlayerViewModel @Inject constructor(
             GuideProgress.sectionAmountProgress(section = it, amountIndex = pointer.sectionAmountIndex)
         } ?: (0 to 0)
         val currentPartLabel = buildCurrentPartLabel(section = currentSection, pointer = pointer)
-        return GuideStepPlayerUiState(
+        return GuideStepPlayerUiState.Content(
             guide = guide,
             currentStep = currentStep,
             nextStep = nextStep,
@@ -393,5 +394,9 @@ class GuideStepPlayerViewModel @Inject constructor(
     private fun buildCurrentPartLabel(section: GuideSection?, pointer: GuideLeafPointer): String {
         if (section == null || section.amount <= 1) return ""
         return "Part ${pointer.sectionAmountIndex + 1}/${section.amount}"
+    }
+
+    private fun contentState(): GuideStepPlayerUiState.Content? {
+        return _uiState.value as? GuideStepPlayerUiState.Content
     }
 }

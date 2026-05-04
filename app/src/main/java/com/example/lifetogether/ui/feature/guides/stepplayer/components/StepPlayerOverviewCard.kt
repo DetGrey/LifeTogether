@@ -21,7 +21,7 @@ import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
-fun StepPlayerOverviewCard(uiState: GuideStepPlayerUiState) {
+fun StepPlayerOverviewCard(uiState: GuideStepPlayerUiState.Content) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
@@ -76,7 +76,7 @@ fun StepPlayerOverviewCard(uiState: GuideStepPlayerUiState) {
 private fun StepPlayerOverviewCardPreview() {
     LifeTogetherTheme {
         StepPlayerOverviewCard(
-            uiState = GuideStepPlayerUiState(
+            uiState = GuideStepPlayerUiState.Content(
                 sectionTitle = "Ears",
                 sectionSubtitle = "Make 2",
                 currentPartLabel = "Part 1/2",

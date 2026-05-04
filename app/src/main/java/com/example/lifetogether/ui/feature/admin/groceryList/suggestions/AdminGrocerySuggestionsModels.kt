@@ -4,17 +4,21 @@ import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.util.UNCATEGORIZED_CATEGORY
 
-data class AdminGrocerySuggestionsUiState(
-    val showDeleteCategoryConfirmationDialog: Boolean = false,
-    val selectedSuggestion: GrocerySuggestion? = null,
-    val groceryCategories: List<Category> = emptyList(),
-    val categoryExpandedStates: Set<String> = emptySet(),
-    val grocerySuggestions: List<GrocerySuggestion> = emptyList(),
-    val newSuggestionText: String = "",
-    val newSuggestionPrice: String = "",
-    val newSuggestionCategory: Category = UNCATEGORIZED_CATEGORY,
-    val editingSuggestionId: String? = null,
-)
+sealed interface AdminGrocerySuggestionsUiState {
+    data object Loading : AdminGrocerySuggestionsUiState
+
+    data class Content(
+        val showDeleteCategoryConfirmationDialog: Boolean = false,
+        val selectedSuggestion: GrocerySuggestion? = null,
+        val groceryCategories: List<Category> = emptyList(),
+        val categoryExpandedStates: Set<String> = emptySet(),
+        val grocerySuggestions: List<GrocerySuggestion> = emptyList(),
+        val newSuggestionText: String = "",
+        val newSuggestionPrice: String = "",
+        val newSuggestionCategory: Category = UNCATEGORIZED_CATEGORY,
+        val editingSuggestionId: String? = null,
+    ) : AdminGrocerySuggestionsUiState
+}
 
 sealed interface AdminGrocerySuggestionsUiEvent {
     data class ToggleCategory(val categoryName: String) : AdminGrocerySuggestionsUiEvent

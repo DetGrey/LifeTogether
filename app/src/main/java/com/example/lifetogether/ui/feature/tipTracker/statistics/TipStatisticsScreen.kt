@@ -15,17 +15,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.toFullDateString
-import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.ui.common.AppTopBar
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
+import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextHeadingLarge
-import com.example.lifetogether.ui.feature.tipTracker.components.StatsCard
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerNavigationEvent
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerStats
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerUiEvent
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerUiState
+import com.example.lifetogether.ui.feature.tipTracker.components.StatsCard
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import java.util.Date
@@ -36,8 +38,6 @@ fun TipStatisticsScreen(
     onUiEvent: (TipTrackerUiEvent) -> Unit,
     onNavigationEvent: (TipTrackerNavigationEvent) -> Unit,
 ) {
-    val content = uiState as TipTrackerUiState.Content
-
     Scaffold(
         topBar = {
             AppTopBar(
@@ -52,78 +52,89 @@ fun TipStatisticsScreen(
             )
         },
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(LifeTogetherTokens.spacing.small)
-                .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
+        AnimatedLoadingContent(
+            isLoading = uiState is TipTrackerUiState.Loading,
+            label = "tip_statistics_loading",
+            loadingContent = {
+                Skeletons.GridCollection(
+                    modifier = Modifier.fillMaxSize(),
+                )
+            },
         ) {
-            item {
-                if (content.tips.isNotEmpty()) {
-                    TagOptionRow(
-                        options = listOf("Week", "Month", "Year", "All"),
-                        selectedOption = content.timePeriod,
-                        onSelectedOptionChange = {
-                            onUiEvent(TipTrackerUiEvent.TimePeriodSelected(it))
-                        },
-                        center = true,
-                    )
-                    StatsCard(
-                        title = when (content.timePeriod) {
-                            "Week" -> "This week"
-                            "Month" -> "This month"
-                            "Year" -> "This year"
-                            else -> "All time"
-                        },
-                        total = when (content.timePeriod) {
-                            "Week" -> content.stats.weeklyTotal.toString()
-                            "Month" -> content.stats.monthlyTotal.toString()
-                            "Year" -> content.stats.yearlyTotal.toString()
-                            else -> content.stats.total.toString()
-                        },
-                        average = when (content.timePeriod) {
-                            "Week" -> content.stats.weeklyAverage.toString()
-                            "Month" -> content.stats.monthlyAverage.toString()
-                            "Year" -> content.stats.yearlyAverage.toString()
-                            else -> content.stats.totalAverage.toString()
-                        },
-                    )
+            val content = uiState as? TipTrackerUiState.Content ?: return@AnimatedLoadingContent
+
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(LifeTogetherTokens.spacing.small)
+                    .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
+            ) {
+                item {
+                    if (content.tips.isNotEmpty()) {
+                        TagOptionRow(
+                            options = listOf("Week", "Month", "Year", "All"),
+                            selectedOption = content.timePeriod,
+                            onSelectedOptionChange = {
+                                onUiEvent(TipTrackerUiEvent.TimePeriodSelected(it))
+                            },
+                            center = true,
+                        )
+                        StatsCard(
+                            title = when (content.timePeriod) {
+                                "Week" -> "This week"
+                                "Month" -> "This month"
+                                "Year" -> "This year"
+                                else -> "All time"
+                            },
+                            total = when (content.timePeriod) {
+                                "Week" -> content.stats.weeklyTotal.toString()
+                                "Month" -> content.stats.monthlyTotal.toString()
+                                "Year" -> content.stats.yearlyTotal.toString()
+                                else -> content.stats.total.toString()
+                            },
+                            average = when (content.timePeriod) {
+                                "Week" -> content.stats.weeklyAverage.toString()
+                                "Month" -> content.stats.monthlyAverage.toString()
+                                "Year" -> content.stats.yearlyAverage.toString()
+                                else -> content.stats.totalAverage.toString()
+                            },
+                        )
+                    }
                 }
-            }
-            // TODO check if the item is still there if highest tip is null because I don't want the spacedBy to be there always
-            item {
-                content.stats.highestTip?.let { tip ->
-                    TextHeadingLarge("Highest tip")
-                    Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
-                    TextDefault(
-                        text = "Tip amount: ${tip.amount}",
-                        color = MaterialTheme.colorScheme.onBackground,
-                        textAlign = TextAlign.Center,
-                    )
-                    TextDefault(
-                        text = "Date: ${tip.date.toFullDateString()}",
-                        color = MaterialTheme.colorScheme.onBackground,
-                        textAlign = TextAlign.Center,
-                    )
+                item {
+                    content.stats.highestTip?.let { tip ->
+                        TextHeadingLarge("Highest tip")
+                        Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
+                        TextDefault(
+                            text = "Tip amount: ${tip.amount}",
+                            color = MaterialTheme.colorScheme.onBackground,
+                            textAlign = TextAlign.Center,
+                        )
+                        TextDefault(
+                            text = "Date: ${tip.date.toFullDateString()}",
+                            color = MaterialTheme.colorScheme.onBackground,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
                 }
-            }
-            item {
-                content.stats.bestMonth?.let { bestMonth ->
-                    TextHeadingLarge("Best month")
-                    Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
-                    TextDefault(
-                        text = "Tip amount: ${bestMonth.second}",
-                        color = MaterialTheme.colorScheme.onBackground,
-                        textAlign = TextAlign.Center,
-                    )
-                    TextDefault(
-                        text = "Month: ${bestMonth.first}",
-                        color = MaterialTheme.colorScheme.onBackground,
-                        textAlign = TextAlign.Center,
-                    )
+                item {
+                    content.stats.bestMonth?.let { bestMonth ->
+                        TextHeadingLarge("Best month")
+                        Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
+                        TextDefault(
+                            text = "Tip amount: ${bestMonth.second}",
+                            color = MaterialTheme.colorScheme.onBackground,
+                            textAlign = TextAlign.Center,
+                        )
+                        TextDefault(
+                            text = "Month: ${bestMonth.first}",
+                            color = MaterialTheme.colorScheme.onBackground,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
                 }
             }
         }

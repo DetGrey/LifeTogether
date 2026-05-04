@@ -3,15 +3,19 @@ package com.example.lifetogether.ui.feature.family
 import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.model.family.FamilyMember
 
-data class FamilyUiState(
-    val familyId: String? = null,
-    val uid: String? = null,
-    val familyInformation: FamilyInformation? = null,
-    val showConfirmationDialog: Boolean = false,
-    val confirmationDialogType: FamilyConfirmationType? = null,
-    val memberToRemove: FamilyMember? = null,
-    val showImageUploadDialog: Boolean = false,
-)
+sealed interface FamilyUiState {
+    data object Loading : FamilyUiState
+
+    data class Content(
+        val familyId: String? = null,
+        val uid: String? = null,
+        val familyInformation: FamilyInformation? = null,
+        val showConfirmationDialog: Boolean = false,
+        val confirmationDialogType: FamilyConfirmationType? = null,
+        val memberToRemove: FamilyMember? = null,
+        val showImageUploadDialog: Boolean = false,
+    ) : FamilyUiState
+}
 
 enum class FamilyConfirmationType {
     LEAVE_FAMILY,

@@ -28,7 +28,7 @@ private val UNCATEGORIZED_CATEGORY = Category(
 class AdminGroceryCategoriesViewModel @Inject constructor(
     private val groceryRepository: GroceryRepository,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(AdminGroceryCategoriesUiState())
+    private val _uiState = MutableStateFlow<AdminGroceryCategoriesUiState>(AdminGroceryCategoriesUiState.Loading)
     val uiState: StateFlow<AdminGroceryCategoriesUiState> = _uiState.asStateFlow()
 
     private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
@@ -40,7 +40,7 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
 
     fun onEvent(event: AdminGroceryCategoriesUiEvent) {
         when (event) {
-            is AdminGroceryCategoriesUiEvent.NewCategoryChanged -> updateUiState {
+            is AdminGroceryCategoriesUiEvent.NewCategoryChanged -> updateContent {
                 it.copy(newCategory = event.value)
             }
             AdminGroceryCategoriesUiEvent.AddCategoryClicked -> addCategory()
@@ -59,14 +59,26 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
                             .filterNot { it.name == UNCATEGORIZED_NAME }
                             .sortedBy { it.name }
                             .let { listOf(UNCATEGORIZED_CATEGORY) + it }
-                        updateUiState { state ->
-                            state.copy(groceryCategories = categories)
+                        _uiState.update { state ->
+                            when (state) {
+                                is AdminGroceryCategoriesUiState.Loading -> AdminGroceryCategoriesUiState.Content(
+                                    groceryCategories = categories,
+                                )
+
+                                is AdminGroceryCategoriesUiState.Content -> state.copy(groceryCategories = categories)
+                            }
                         }
                     }
 
                     is Result.Failure -> {
-                        updateUiState { state ->
-                            state.copy(groceryCategories = emptyList())
+                        _uiState.update { state ->
+                            when (state) {
+                                is AdminGroceryCategoriesUiState.Loading -> AdminGroceryCategoriesUiState.Content(
+                                    groceryCategories = emptyList(),
+                                )
+
+                                is AdminGroceryCategoriesUiState.Content -> state.copy(groceryCategories = emptyList())
+                            }
                         }
                         showError(result.error.toUserMessage())
                     }
@@ -76,7 +88,7 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
     }
 
     private fun showDeleteConfirmation(category: Category) {
-        updateUiState {
+        updateContent {
             it.copy(
                 selectedCategory = category,
                 showDeleteCategoryConfirmationDialog = true,
@@ -85,7 +97,7 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
     }
 
     private fun dismissDeleteConfirmation() {
-        updateUiState {
+        updateContent {
             it.copy(
                 showDeleteCategoryConfirmationDialog = false,
                 selectedCategory = null,
@@ -94,7 +106,7 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
     }
 
     private fun addCategory() {
-        val newCategory = _uiState.value.newCategory
+        val newCategory = (uiState.value as? AdminGroceryCategoriesUiState.Content)?.newCategory.orEmpty()
         if (newCategory.isEmpty() && !newCategory.contains(" ")) {
             return
         }
@@ -108,7 +120,7 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
 
         viewModelScope.launch {
             when (val result = groceryRepository.addCategory(category)) {
-                is Result.Success -> updateUiState { state ->
+                is Result.Success -> updateContent { state ->
                     state.copy(newCategory = "")
                 }
 
@@ -120,7 +132,7 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
     }
 
     private fun deleteCategory() {
-        val category = _uiState.value.selectedCategory ?: return
+        val category = (uiState.value as? AdminGroceryCategoriesUiState.Content)?.selectedCategory ?: return
         viewModelScope.launch {
             when (val result = groceryRepository.deleteCategory(category)) {
                 is Result.Success -> dismissDeleteConfirmation()
@@ -145,5 +157,14 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
 
     private fun updateUiState(transform: (AdminGroceryCategoriesUiState) -> AdminGroceryCategoriesUiState) {
         _uiState.update(transform)
+    }
+
+    private fun updateContent(transform: (AdminGroceryCategoriesUiState.Content) -> AdminGroceryCategoriesUiState.Content) {
+        updateUiState { state ->
+            when (state) {
+                is AdminGroceryCategoriesUiState.Loading -> state
+                is AdminGroceryCategoriesUiState.Content -> transform(state)
+            }
+        }
     }
 }

@@ -32,7 +32,7 @@ class ProfileViewModel @Inject constructor(
     private val uploadImageUseCase: UploadImageUseCase,
     @param:ApplicationContext private val context: Context,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(ProfileUiState())
+    private val _uiState = MutableStateFlow<ProfileUiState>(ProfileUiState.Loading)
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
     private val _commands = Channel<ProfileCommand>(Channel.BUFFERED)
@@ -44,11 +44,24 @@ class ProfileViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             sessionRepository.sessionState.collect { state ->
-                updateUiState {
-                    it.copy(
-                        userInformation = (state as? SessionState.Authenticated)?.user,
-                        showImageUploadDialog = false,
-                    )
+                when (state) {
+                    is SessionState.Authenticated -> updateUiState {
+                        when (it) {
+                            is ProfileUiState.Loading -> ProfileUiState.Content(
+                                userInformation = state.user,
+                            )
+
+                            is ProfileUiState.Content -> it.copy(
+                                userInformation = state.user,
+                                showImageUploadDialog = false,
+                            )
+                        }
+                    }
+
+                    SessionState.Loading -> Unit
+                    SessionState.Unauthenticated -> {
+                        _uiState.value = ProfileUiState.Loading
+                    }
                 }
             }
         }
@@ -56,22 +69,22 @@ class ProfileViewModel @Inject constructor(
 
     fun onEvent(event: ProfileUiEvent) {
         when (event) {
-            ProfileUiEvent.AddImageClicked -> updateUiState { it.copy(showImageUploadDialog = true) }
+            ProfileUiEvent.AddImageClicked -> updateContent { it.copy(showImageUploadDialog = true) }
             ProfileUiEvent.ImageUploadDismissed,
-            ProfileUiEvent.ImageUploadConfirmed -> updateUiState { it.copy(showImageUploadDialog = false) }
+            ProfileUiEvent.ImageUploadConfirmed -> updateContent { it.copy(showImageUploadDialog = false) }
 
             ProfileUiEvent.NameClicked -> showNameDialog()
             ProfileUiEvent.LogoutClicked -> showLogoutDialog()
             ProfileUiEvent.DismissConfirmationDialog -> closeConfirmationDialog()
             ProfileUiEvent.ConfirmConfirmationDialog -> confirmConfirmationDialog()
-            is ProfileUiEvent.NewNameChanged -> updateUiState {
+            is ProfileUiEvent.NewNameChanged -> updateContent {
                 it.copy(newName = event.value)
             }
         }
     }
 
     suspend fun uploadProfileImage(uri: Uri): Result<Unit, AppError> {
-        val uid = _uiState.value.userInformation?.uid
+        val uid = (uiState.value as? ProfileUiState.Content)?.userInformation?.uid
             ?: return Result.Failure(AppError.Validation("Missing user context"))
         return uploadImageUseCase.invoke(
             uri = uri,
@@ -81,7 +94,7 @@ class ProfileViewModel @Inject constructor(
     }
 
     private fun showNameDialog() {
-        updateUiState {
+        updateContent {
             it.copy(
                 showConfirmationDialog = true,
                 confirmationDialogType = ProfileConfirmationType.NAME,
@@ -91,7 +104,7 @@ class ProfileViewModel @Inject constructor(
     }
 
     private fun showLogoutDialog() {
-        updateUiState {
+        updateContent {
             it.copy(
                 showConfirmationDialog = true,
                 confirmationDialogType = ProfileConfirmationType.LOGOUT,
@@ -101,7 +114,7 @@ class ProfileViewModel @Inject constructor(
     }
 
     private fun closeConfirmationDialog() {
-        updateUiState {
+        updateContent {
             it.copy(
                 showConfirmationDialog = false,
                 confirmationDialogType = null,
@@ -111,7 +124,7 @@ class ProfileViewModel @Inject constructor(
     }
 
     private fun confirmConfirmationDialog() {
-        when (_uiState.value.confirmationDialogType) {
+        when ((uiState.value as? ProfileUiState.Content)?.confirmationDialogType) {
             ProfileConfirmationType.LOGOUT -> logout()
             ProfileConfirmationType.NAME -> changeName()
             null -> Unit
@@ -135,7 +148,7 @@ class ProfileViewModel @Inject constructor(
     }
 
     private fun changeName() {
-        val state = _uiState.value
+        val state = uiState.value as? ProfileUiState.Content ?: return
         val name = state.newName.trim()
         if (name.isEmpty()) return
 
@@ -165,5 +178,14 @@ class ProfileViewModel @Inject constructor(
 
     private fun updateUiState(transform: (ProfileUiState) -> ProfileUiState) {
         _uiState.update(transform)
+    }
+
+    private fun updateContent(transform: (ProfileUiState.Content) -> ProfileUiState.Content) {
+        updateUiState { state ->
+            when (state) {
+                is ProfileUiState.Loading -> state
+                is ProfileUiState.Content -> transform(state)
+            }
+        }
     }
 }

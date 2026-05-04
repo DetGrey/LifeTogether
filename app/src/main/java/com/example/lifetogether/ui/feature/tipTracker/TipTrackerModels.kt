@@ -38,6 +38,8 @@ data class TipTrackerCalendarDay(
 )
 
 sealed interface TipTrackerUiState {
+    data object Loading : TipTrackerUiState
+
     data class Content(
         val tips: List<TipItem> = emptyList(),
         val stats: TipTrackerStats = TipTrackerStats(),

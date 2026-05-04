@@ -5,10 +5,8 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.background
@@ -47,6 +45,7 @@ import com.example.lifetogether.domain.model.lists.RecurrenceUnit
 import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.ui.common.AppTopBar
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.image.ImageUploadDialog
 import com.example.lifetogether.ui.common.button.PrimaryButton
@@ -98,89 +97,78 @@ fun ListEntryDetailsScreen(
             )
         }
     ) { padding ->
-        AnimatedContent(
-            targetState = isLoading,
-            transitionSpec = { fadeIn() togetherWith fadeOut() },
+        AnimatedLoadingContent(
+            isLoading = isLoading,
             label = "entry_details_loading_content",
-        ) { loading ->
-            if (loading) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = padding.calculateTopPadding()),
+            loadingContent = {
+                Skeletons.FormEdit(modifier = Modifier.fillMaxSize())
+            },
+        ) {
+            val contentState = content ?: return@AnimatedLoadingContent
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = padding.calculateTopPadding())
+                    .padding(LifeTogetherTokens.spacing.small),
+            ) {
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
                 ) {
-                    Skeletons.FormEdit(
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            } else {
-                val contentState = content ?: return@AnimatedContent
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = padding.calculateTopPadding())
-                        .padding(LifeTogetherTokens.spacing.small),
-                ) {
-                    LazyColumn(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
-                    ) {
-                        when (val details = contentState.details) {
-                            is EntryDetailsContent.Routine -> routineEntryForm(
-                                uiState = contentState,
-                                isExistingEntry = isExistingEntry,
-                                bitmap = bitmap,
-                                pendingBitmap = details.form.pendingImageBitmap,
-                                imagePickerLauncher = imagePickerLauncher,
-                                formState = details.form,
-                                onUiEvent = onUiEvent,
-                            )
+                    when (val details = contentState.details) {
+                        is EntryDetailsContent.Routine -> routineEntryForm(
+                            uiState = contentState,
+                            isExistingEntry = isExistingEntry,
+                            bitmap = bitmap,
+                            pendingBitmap = details.form.pendingImageBitmap,
+                            imagePickerLauncher = imagePickerLauncher,
+                            formState = details.form,
+                            onUiEvent = onUiEvent,
+                        )
 
-                            is EntryDetailsContent.Wish -> wishListEntryForm(
-                                uiState = contentState,
-                                formState = details.form,
-                                onUiEvent = onUiEvent,
-                            )
+                        is EntryDetailsContent.Wish -> wishListEntryForm(
+                            uiState = contentState,
+                            formState = details.form,
+                            onUiEvent = onUiEvent,
+                        )
 
-                            is EntryDetailsContent.Note -> notesEntryForm(
-                                uiState = contentState,
-                                formState = details.form,
-                                onUiEvent = onUiEvent,
-                            )
+                        is EntryDetailsContent.Note -> notesEntryForm(
+                            uiState = contentState,
+                            formState = details.form,
+                            onUiEvent = onUiEvent,
+                        )
 
-                            is EntryDetailsContent.Checklist -> checklistEntryForm(
-                                uiState = contentState,
-                                formState = details.form,
-                                onUiEvent = onUiEvent,
-                            )
+                        is EntryDetailsContent.Checklist -> checklistEntryForm(
+                            uiState = contentState,
+                            formState = details.form,
+                            onUiEvent = onUiEvent,
+                        )
 
-                            is EntryDetailsContent.Meal -> mealPlannerEntryForm(
-                                uiState = contentState,
-                                formState = details.form,
-                                onUiEvent = onUiEvent,
-                            )
-                        }
+                        is EntryDetailsContent.Meal -> mealPlannerEntryForm(
+                            uiState = contentState,
+                            formState = details.form,
+                            onUiEvent = onUiEvent,
+                        )
                     }
+                }
 
-                    AnimatedVisibility(
-                        visible = contentState.isEditing,
-                        enter = fadeIn(),
-                        exit = fadeOut(),
+                AnimatedVisibility(
+                    visible = contentState.isEditing,
+                    enter = fadeIn(),
+                    exit = fadeOut(),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .height(50.dp)
+                            .padding(bottom = padding.calculateBottomPadding())
+                            .align(Alignment.End),
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .height(50.dp)
-                                .padding(bottom = padding.calculateBottomPadding())
-                                .align(Alignment.End),
-                        ) {
-                            PrimaryButton(
-                                modifier = Modifier.fillMaxWidth(),
-                                text = if (isExistingEntry) "Save changes" else "Create",
-                                onClick = { onUiEvent(ListEntryDetailsUiEvent.SaveClicked) },
-                                loading = contentState.isSaving,
-                            )
-                        }
+                        PrimaryButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = if (isExistingEntry) "Save changes" else "Create",
+                            onClick = { onUiEvent(ListEntryDetailsUiEvent.SaveClicked) },
+                            loading = contentState.isSaving,
+                        )
                     }
                 }
             }

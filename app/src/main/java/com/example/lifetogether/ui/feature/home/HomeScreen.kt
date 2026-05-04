@@ -35,6 +35,7 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.ui.common.AppTopBar
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.text.TextDisplayLarge
 import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -97,15 +98,13 @@ fun HomeScreen(
         },
         floatingActionButtonPosition = FabPosition.Center,
     ) { padding ->
-        if (isLoading) {
-            Skeletons.GridCollection(
-                modifier = Modifier
-                    .background(MaterialTheme.colorScheme.background)
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
-            )
-        } else {
+        AnimatedLoadingContent(
+            isLoading = isLoading,
+            label = "home_loading_content",
+            loadingContent = {
+                Skeletons.GridCollection(modifier = Modifier.fillMaxSize())
+            },
+        ) {
             val content = content ?: error("Loading is handled above")
             LazyColumn(
                 modifier = Modifier

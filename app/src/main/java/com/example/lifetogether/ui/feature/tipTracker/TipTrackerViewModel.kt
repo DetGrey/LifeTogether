@@ -36,7 +36,7 @@ class TipTrackerViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
     private val tipTrackerRepository: TipTrackerRepository,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow<TipTrackerUiState>(TipTrackerUiState.Content())
+    private val _uiState = MutableStateFlow<TipTrackerUiState>(TipTrackerUiState.Loading)
     val uiState: StateFlow<TipTrackerUiState> = _uiState.asStateFlow()
 
     private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
@@ -56,6 +56,7 @@ class TipTrackerViewModel @Inject constructor(
                     familyId = null
                     tipsJob?.cancel()
                     tipsJob = null
+                    _uiState.value = TipTrackerUiState.Loading
                 }
             }
         }
@@ -107,7 +108,7 @@ class TipTrackerViewModel @Inject constructor(
         tipsJob?.cancel()
         val familyIdValue = familyId
         if (familyIdValue.isNullOrBlank()) {
-            updateContent { TipTrackerUiState.Content() }
+            _uiState.value = TipTrackerUiState.Loading
             return
         }
 
@@ -126,16 +127,28 @@ class TipTrackerViewModel @Inject constructor(
         val stats = calculateStats(sortedTips)
         val groupedTips = sortedTips.groupBy { it.date.toFullDateString() }
 
-        updateContent {
-            it.copy(
-                tips = sortedTips,
-                stats = stats,
-                groupedTips = groupedTips,
-                calendar = buildCalendarState(
-                    displayedDate = it.calendar.displayedDate,
+        _uiState.update { state ->
+            when (state) {
+                is TipTrackerUiState.Loading -> TipTrackerUiState.Content(
                     tips = sortedTips,
-                ),
-            )
+                    stats = stats,
+                    groupedTips = groupedTips,
+                    calendar = buildCalendarState(
+                        displayedDate = LocalDate.now(),
+                        tips = sortedTips,
+                    ),
+                )
+
+                is TipTrackerUiState.Content -> state.copy(
+                    tips = sortedTips,
+                    stats = stats,
+                    groupedTips = groupedTips,
+                    calendar = buildCalendarState(
+                        displayedDate = state.calendar.displayedDate,
+                        tips = sortedTips,
+                    ),
+                )
+            }
         }
     }
 

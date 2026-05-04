@@ -23,7 +23,8 @@ fun ProfileRoute(
     val viewModel: ProfileViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    val imageType = uiState.userInformation?.uid?.let { ImageType.ProfileImage(it) }
+    val content = uiState as? ProfileUiState.Content
+    val imageType = content?.userInformation?.uid?.let { ImageType.ProfileImage(it) }
     val snackbarHostState = LocalRootSnackbarHostState.current
     val coroutineScope = rememberCoroutineScope()
     val bitmap = rememberObservedImageBitmap(imageType) { message ->
@@ -31,7 +32,7 @@ fun ProfileRoute(
             snackbarHostState.showSnackbar(message)
         }
     }
-    val isAdmin = uiState.userInformation?.uid in BuildConfig.ADMIN_LIST.split(",")
+    val isAdmin = content?.userInformation?.uid in BuildConfig.ADMIN_LIST.split(",")
 
     CollectUiCommands(viewModel.uiCommands)
 
@@ -47,7 +48,6 @@ fun ProfileRoute(
         uiState = uiState,
         bitmap = bitmap,
         isAdmin = isAdmin,
-        showImageUploadDialog = uiState.showImageUploadDialog,
         onImageUpload = viewModel::uploadProfileImage,
         onUiEvent = viewModel::onEvent,
         onNavigationEvent = { navigationEvent ->

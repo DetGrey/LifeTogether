@@ -38,6 +38,7 @@ import com.example.lifetogether.ui.common.ActionSheet
 import com.example.lifetogether.ui.common.ActionSheetItem
 import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.button.AddButton
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.common.image.MediaUploadMultipleDialog
@@ -57,8 +58,10 @@ fun AlbumDetailsScreen(
     onUiEvent: (AlbumDetailsUiEvent) -> Unit,
     onNavigationEvent: (AlbumDetailsNavigationEvent) -> Unit,
 ) {
-    when (uiState) {
-        AlbumDetailsUiState.Loading -> {
+    AnimatedLoadingContent(
+        isLoading = uiState is AlbumDetailsUiState.Loading,
+        label = "album_details_loading_content",
+        loadingContent = {
             Scaffold(
                 topBar = {
                     AppTopBar(
@@ -71,23 +74,17 @@ fun AlbumDetailsScreen(
                     )
                 },
             ) { padding ->
-                Skeletons.GalleryGrid(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
-                )
+                Skeletons.GalleryGrid(modifier = Modifier.fillMaxSize().padding(padding))
             }
-        }
-
-        is AlbumDetailsUiState.Content -> {
-            AlbumDetailsContent(
-                uiState = uiState,
-                onImageUpload = onImageUpload,
-                onUiEvent = onUiEvent,
-                onNavigationEvent = onNavigationEvent,
-            )
-        }
+        },
+    ) {
+        val content = uiState as? AlbumDetailsUiState.Content ?: return@AnimatedLoadingContent
+        AlbumDetailsContent(
+            uiState = content,
+            onImageUpload = onImageUpload,
+            onUiEvent = onUiEvent,
+            onNavigationEvent = onNavigationEvent,
+        )
     }
 }
 

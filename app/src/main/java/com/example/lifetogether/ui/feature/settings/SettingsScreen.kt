@@ -15,8 +15,10 @@ import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.enums.SettingsConfirmationTypes
 import com.example.lifetogether.ui.common.AppTopBar
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
+import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
@@ -26,8 +28,6 @@ fun SettingsScreen(
     onUiEvent: (SettingsUiEvent) -> Unit,
     onNavigationEvent: (SettingsNavigationEvent) -> Unit,
 ) {
-    val userInformationState = uiState.userInformation
-
     Scaffold(
         topBar = {
             AppTopBar(
@@ -42,94 +42,105 @@ fun SettingsScreen(
             )
         },
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(LifeTogetherTokens.spacing.small),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
+        AnimatedLoadingContent(
+            isLoading = uiState is SettingsUiState.Loading,
+            label = "settings_loading",
+            loadingContent = {
+                Skeletons.ListDetail(modifier = Modifier.fillMaxSize())
+            },
         ) {
-            item {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
-                ) {
-                    SettingsItem(
-                        icon = Icon(R.drawable.ic_profile_picture, "profile icon"),
-                        title = userInformationState?.name ?: "Username",
-                        link = "Edit my profile",
-                        linkClickable = {
-                            onNavigationEvent(SettingsNavigationEvent.NavigateToProfile)
-                        },
-                    )
+            val content = uiState as? SettingsUiState.Content ?: return@AnimatedLoadingContent
+            val userInformationState = content.userInformation
 
-                    if (userInformationState?.familyId is String) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(LifeTogetherTokens.spacing.small),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
+            ) {
+                item {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+                    ) {
                         SettingsItem(
-                            icon = Icon(R.drawable.ic_family, "family icon"),
-                            title = "My family",
-                            link = "Edit family",
+                            icon = Icon(R.drawable.ic_profile_picture, "profile icon"),
+                            title = userInformationState?.name ?: "Username",
+                            link = "Edit my profile",
                             linkClickable = {
-                                onNavigationEvent(SettingsNavigationEvent.NavigateToFamily)
+                                onNavigationEvent(SettingsNavigationEvent.NavigateToProfile)
                             },
                         )
-                    } else {
+
+                        if (userInformationState?.familyId is String) {
+                            SettingsItem(
+                                icon = Icon(R.drawable.ic_family, "family icon"),
+                                title = "My family",
+                                link = "Edit family",
+                                linkClickable = {
+                                    onNavigationEvent(SettingsNavigationEvent.NavigateToFamily)
+                                },
+                            )
+                        } else {
+                            SettingsItem(
+                                icon = Icon(R.drawable.ic_family, "family icon"),
+                                title = "Join a family",
+                                titleClickable = {
+                                    onUiEvent(SettingsUiEvent.JoinFamilyClicked)
+                                },
+                                link = "Create new family",
+                                linkClickable = {
+                                    onUiEvent(SettingsUiEvent.CreateNewFamilyClicked)
+                                },
+                            )
+                        }
+
                         SettingsItem(
-                            icon = Icon(R.drawable.ic_family, "family icon"),
-                            title = "Join a family",
-                            titleClickable = {
-                                onUiEvent(SettingsUiEvent.JoinFamilyClicked)
-                            },
-                            link = "Create new family",
-                            linkClickable = {
-                                onUiEvent(SettingsUiEvent.CreateNewFamilyClicked)
-                            },
+                            icon = Icon(R.drawable.ic_bell, "bell icon"),
+                            title = "Notifications",
+                            link = "Manage notifications",
+                            linkClickable = null,
                         )
                     }
-
-                    SettingsItem(
-                        icon = Icon(R.drawable.ic_bell, "bell icon"),
-                        title = "Notifications",
-                        link = "Manage notifications",
-                        linkClickable = null,
-                    )
                 }
             }
-        }
 
-        if (uiState.showConfirmationDialog) {
-            when (uiState.confirmationDialogType) {
-                SettingsConfirmationTypes.JOIN_FAMILY -> ConfirmationDialogWithTextField(
-                    onDismiss = {
-                        onUiEvent(SettingsUiEvent.DismissConfirmationDialog)
-                    },
-                    onConfirm = {
-                        onUiEvent(SettingsUiEvent.ConfirmJoinFamily)
-                    },
-                    dialogTitle = "Join a family",
-                    dialogMessage = "Please add the family id to join",
-                    dismissButtonMessage = "Cancel",
-                    confirmButtonMessage = "Join",
-                    textValue = uiState.addedFamilyId,
-                    onTextValueChange = { value ->
-                        onUiEvent(SettingsUiEvent.AddedFamilyIdChanged(value))
-                    },
-                    label = "Family id",
-                )
+            if (content.showConfirmationDialog) {
+                when (content.confirmationDialogType) {
+                    SettingsConfirmationTypes.JOIN_FAMILY -> ConfirmationDialogWithTextField(
+                        onDismiss = {
+                            onUiEvent(SettingsUiEvent.DismissConfirmationDialog)
+                        },
+                        onConfirm = {
+                            onUiEvent(SettingsUiEvent.ConfirmJoinFamily)
+                        },
+                        dialogTitle = "Join a family",
+                        dialogMessage = "Please add the family id to join",
+                        dismissButtonMessage = "Cancel",
+                        confirmButtonMessage = "Join",
+                        textValue = content.addedFamilyId,
+                        onTextValueChange = { value ->
+                            onUiEvent(SettingsUiEvent.AddedFamilyIdChanged(value))
+                        },
+                        label = "Family id",
+                    )
 
-                SettingsConfirmationTypes.NEW_FAMILY -> ConfirmationDialog(
-                    onDismiss = {
-                        onUiEvent(SettingsUiEvent.DismissConfirmationDialog)
-                    },
-                    onConfirm = {
-                        onUiEvent(SettingsUiEvent.ConfirmCreateNewFamily)
-                    },
-                    dialogTitle = "Create new family",
-                    dialogMessage = "Are you sure you want to create a new family?",
-                    dismissButtonMessage = "Cancel",
-                    confirmButtonMessage = "Create",
-                )
+                    SettingsConfirmationTypes.NEW_FAMILY -> ConfirmationDialog(
+                        onDismiss = {
+                            onUiEvent(SettingsUiEvent.DismissConfirmationDialog)
+                        },
+                        onConfirm = {
+                            onUiEvent(SettingsUiEvent.ConfirmCreateNewFamily)
+                        },
+                        dialogTitle = "Create new family",
+                        dialogMessage = "Are you sure you want to create a new family?",
+                        dismissButtonMessage = "Cancel",
+                        confirmButtonMessage = "Create",
+                    )
 
-                null -> Unit
+                    null -> Unit
+                }
             }
         }
     }
@@ -140,7 +151,7 @@ fun SettingsScreen(
 fun SettingsScreenPreview() {
     LifeTogetherTheme {
         SettingsScreen(
-            uiState = SettingsUiState(
+            uiState = SettingsUiState.Content(
                 userInformation = UserInformation(
                     name = "Alex",
                 ),

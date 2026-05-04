@@ -2,12 +2,16 @@ package com.example.lifetogether.ui.feature.admin.groceryList.categories
 
 import com.example.lifetogether.domain.model.Category
 
-data class AdminGroceryCategoriesUiState(
-    val groceryCategories: List<Category> = emptyList(),
-    val newCategory: String = "",
-    val showDeleteCategoryConfirmationDialog: Boolean = false,
-    val selectedCategory: Category? = null,
-)
+sealed interface AdminGroceryCategoriesUiState {
+    data object Loading : AdminGroceryCategoriesUiState
+
+    data class Content(
+        val groceryCategories: List<Category> = emptyList(),
+        val newCategory: String = "",
+        val showDeleteCategoryConfirmationDialog: Boolean = false,
+        val selectedCategory: Category? = null,
+    ) : AdminGroceryCategoriesUiState
+}
 
 sealed interface AdminGroceryCategoriesUiEvent {
     data class NewCategoryChanged(val value: String) : AdminGroceryCategoriesUiEvent

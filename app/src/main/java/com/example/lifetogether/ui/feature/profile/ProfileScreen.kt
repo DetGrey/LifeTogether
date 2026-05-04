@@ -34,10 +34,12 @@ import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.ui.common.AppTopBar
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.common.image.ImageUploadDialog
+import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.text.TextHeadingLarge
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -48,13 +50,10 @@ fun ProfileScreen(
     uiState: ProfileUiState,
     bitmap: Bitmap?,
     isAdmin: Boolean,
-    showImageUploadDialog: Boolean,
     onImageUpload: suspend (Uri) -> Result<Unit, AppError>,
     onUiEvent: (ProfileUiEvent) -> Unit,
     onNavigationEvent: (ProfileNavigationEvent) -> Unit,
 ) {
-    val userInformation = uiState.userInformation
-
     Scaffold(
         topBar = {
             AppTopBar(
@@ -76,175 +75,186 @@ fun ProfileScreen(
             )
         },
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(LifeTogetherTokens.spacing.small),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
+        AnimatedLoadingContent(
+            isLoading = uiState is ProfileUiState.Loading,
+            label = "profile_loading",
+            loadingContent = {
+                Skeletons.SectionDetail(modifier = Modifier.fillMaxSize())
+            },
         ) {
-            item {
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center,
-                ) {
+            val content = uiState as? ProfileUiState.Content ?: return@AnimatedLoadingContent
+            val userInformation = content.userInformation
+
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(LifeTogetherTokens.spacing.small),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
+            ) {
+                item {
                     Box(
-                        modifier = Modifier.size(250.dp),
-                        contentAlignment = Alignment.TopEnd,
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center,
                     ) {
                         Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(shape = CircleShape)
-                                .background(color = MaterialTheme.colorScheme.onBackground),
-                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.size(250.dp),
+                            contentAlignment = Alignment.TopEnd,
                         ) {
-                            if (bitmap != null) {
-                                Image(
-                                    modifier = Modifier.fillMaxSize(),
-                                    bitmap = bitmap.asImageBitmap(),
-                                    contentDescription = "profile picture",
-                                    contentScale = ContentScale.Crop,
-                                )
-                            } else {
-                                androidx.compose.material3.Icon(
-                                    modifier = Modifier.fillMaxSize(),
-                                    painter = painterResource(id = R.drawable.ic_avatar),
-                                    contentDescription = "profile picture",
-                                    tint = Color.Unspecified
-                                )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(shape = CircleShape)
+                                    .background(color = MaterialTheme.colorScheme.onBackground),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                if (bitmap != null) {
+                                    Image(
+                                        modifier = Modifier.fillMaxSize(),
+                                        bitmap = bitmap.asImageBitmap(),
+                                        contentDescription = "profile picture",
+                                        contentScale = ContentScale.Crop,
+                                    )
+                                } else {
+                                    androidx.compose.material3.Icon(
+                                        modifier = Modifier.fillMaxSize(),
+                                        painter = painterResource(id = R.drawable.ic_avatar),
+                                        contentDescription = "profile picture",
+                                        tint = Color.Unspecified,
+                                    )
+                                }
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .padding(end = LifeTogetherTokens.spacing.small)
+                                    .size(LifeTogetherTokens.spacing.xxxLarge),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                AddButton(onClick = { onUiEvent(ProfileUiEvent.AddImageClicked) })
                             }
                         }
-
-                        Box(
-                            modifier = Modifier
-                                .padding(end = LifeTogetherTokens.spacing.small)
-                                .size(LifeTogetherTokens.spacing.xxxLarge),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            AddButton(onClick = { onUiEvent(ProfileUiEvent.AddImageClicked) })
-                        }
                     }
+
+                    Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
+                    TextHeadingLarge(text = userInformation?.name ?: "")
                 }
 
-                Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
-                TextHeadingLarge(text = userInformation?.name ?: "")
-            }
+                item {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+                    ) {
+                        TextHeadingMedium(text = "Personal details")
 
-            item {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
-                ) {
-                    TextHeadingMedium(text = "Personal details")
-
-                    ProfileDetails(
-                        icon = Icon(
-                            resId = R.drawable.ic_profile,
-                            description = "person icon",
-                        ),
-                        title = "Name",
-                        value = userInformation?.name ?: "",
-                        onClick = {
-                            onUiEvent(ProfileUiEvent.NameClicked)
-                        },
-                    )
-                    ProfileDetails(
-                        icon = Icon(
-                            resId = R.drawable.ic_email,
-                            description = "at sign icon",
-                        ),
-                        title = "Email",
-                        value = userInformation?.email ?: "",
-                    )
-                    ProfileDetails(
-                        icon = Icon(
-                            resId = R.drawable.ic_cake,
-                            description = "cake icon",
-                        ),
-                        title = "Birthday",
-                        value = userInformation?.birthday?.toFullDateString() ?: "",
-                    )
-                    if (isAdmin) {
                         ProfileDetails(
                             icon = Icon(
-                                resId = R.drawable.ic_settings,
-                                description = "settings icon",
+                                resId = R.drawable.ic_profile,
+                                description = "person icon",
                             ),
-                            title = "User type",
-                            value = "Admin",
+                            title = "Name",
+                            value = userInformation?.name ?: "",
+                            onClick = {
+                                onUiEvent(ProfileUiEvent.NameClicked)
+                            },
+                        )
+                        ProfileDetails(
+                            icon = Icon(
+                                resId = R.drawable.ic_email,
+                                description = "at sign icon",
+                            ),
+                            title = "Email",
+                            value = userInformation?.email ?: "",
+                        )
+                        ProfileDetails(
+                            icon = Icon(
+                                resId = R.drawable.ic_cake,
+                                description = "cake icon",
+                            ),
+                            title = "Birthday",
+                            value = userInformation?.birthday?.toFullDateString() ?: "",
+                        )
+                        if (isAdmin) {
+                            ProfileDetails(
+                                icon = Icon(
+                                    resId = R.drawable.ic_settings,
+                                    description = "settings icon",
+                                ),
+                                title = "User type",
+                                value = "Admin",
+                            )
+                        }
+                        // TODO: Implement password change flow and re-enable this row.
+                        ProfileDetails(
+                            icon = Icon(
+                                resId = R.drawable.ic_password,
+                                description = "password icon",
+                            ),
+                            title = "Password",
+                            value = "Change password",
+                            enabled = false,
+                        )
+                        ProfileDetails(
+                            icon = Icon(
+                                resId = R.drawable.ic_logout,
+                                description = "logout icon",
+                            ),
+                            title = "Logout",
+                            value = "Logout",
+                            onClick = {
+                                onUiEvent(ProfileUiEvent.LogoutClicked)
+                            },
                         )
                     }
-                    // TODO: Implement password change flow and re-enable this row.
-                    ProfileDetails(
-                        icon = Icon(
-                            resId = R.drawable.ic_password,
-                            description = "password icon",
-                        ),
-                        title = "Password",
-                        value = "Change password",
-                        enabled = false,
-                    )
-                    ProfileDetails(
-                        icon = Icon(
-                            resId = R.drawable.ic_logout,
-                            description = "logout icon",
-                        ),
-                        title = "Logout",
-                        value = "Logout",
-                        onClick = {
-                            onUiEvent(ProfileUiEvent.LogoutClicked)
-                        },
-                    )
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.xLarge))
                 }
             }
 
-            item {
-                Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.xLarge))
+            if (content.showConfirmationDialog) {
+                when (content.confirmationDialogType) {
+                    ProfileConfirmationType.LOGOUT -> ConfirmationDialog(
+                        onDismiss = { onUiEvent(ProfileUiEvent.DismissConfirmationDialog) },
+                        onConfirm = { onUiEvent(ProfileUiEvent.ConfirmConfirmationDialog) },
+                        dialogTitle = "Logout",
+                        dialogMessage = "Are you sure you want to logout?",
+                        dismissButtonMessage = "Cancel",
+                        confirmButtonMessage = "Logout",
+                    )
+
+                    ProfileConfirmationType.NAME -> ConfirmationDialogWithTextField(
+                        onDismiss = { onUiEvent(ProfileUiEvent.DismissConfirmationDialog) },
+                        onConfirm = { onUiEvent(ProfileUiEvent.ConfirmConfirmationDialog) },
+                        dialogTitle = "Change name",
+                        dialogMessage = "Please enter your new name",
+                        dismissButtonMessage = "Cancel",
+                        confirmButtonMessage = "Change name",
+                        textValue = content.newName,
+                        onTextValueChange = { value ->
+                            onUiEvent(ProfileUiEvent.NewNameChanged(value))
+                        },
+                        label = "Name",
+                        capitalization = true,
+                    )
+
+                    null -> Unit
+                }
+            }
+
+            if (content.showImageUploadDialog && userInformation?.uid != null) {
+                ImageUploadDialog(
+                    onDismiss = { onUiEvent(ProfileUiEvent.ImageUploadDismissed) },
+                    onConfirm = { onUiEvent(ProfileUiEvent.ImageUploadConfirmed) },
+                    onUpload = onImageUpload,
+                    dialogTitle = "Upload profile photo",
+                    dialogMessage = "Select your new profile photo",
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Upload photo",
+                )
             }
         }
-    }
-
-    if (uiState.showConfirmationDialog) {
-        when (uiState.confirmationDialogType) {
-            ProfileConfirmationType.LOGOUT -> ConfirmationDialog(
-                onDismiss = { onUiEvent(ProfileUiEvent.DismissConfirmationDialog) },
-                onConfirm = { onUiEvent(ProfileUiEvent.ConfirmConfirmationDialog) },
-                dialogTitle = "Logout",
-                dialogMessage = "Are you sure you want to logout?",
-                dismissButtonMessage = "Cancel",
-                confirmButtonMessage = "Logout",
-            )
-
-            ProfileConfirmationType.NAME -> ConfirmationDialogWithTextField(
-                onDismiss = { onUiEvent(ProfileUiEvent.DismissConfirmationDialog) },
-                onConfirm = { onUiEvent(ProfileUiEvent.ConfirmConfirmationDialog) },
-                dialogTitle = "Change name",
-                dialogMessage = "Please enter your new name",
-                dismissButtonMessage = "Cancel",
-                confirmButtonMessage = "Change name",
-                textValue = uiState.newName,
-                onTextValueChange = { value ->
-                    onUiEvent(ProfileUiEvent.NewNameChanged(value))
-                },
-                label = "Name",
-                capitalization = true,
-            )
-
-            null -> Unit
-        }
-    }
-
-    if (showImageUploadDialog && userInformation?.uid != null) {
-        ImageUploadDialog(
-            onDismiss = { onUiEvent(ProfileUiEvent.ImageUploadDismissed) },
-            onConfirm = { onUiEvent(ProfileUiEvent.ImageUploadConfirmed) },
-            onUpload = onImageUpload,
-            dialogTitle = "Upload profile photo",
-            dialogMessage = "Select your new profile photo",
-            dismissButtonMessage = "Cancel",
-            confirmButtonMessage = "Upload photo",
-        )
     }
 }
 
@@ -253,7 +263,7 @@ fun ProfileScreen(
 fun ProfileScreenPreview() {
     LifeTogetherTheme {
         ProfileScreen(
-            uiState = ProfileUiState(
+            uiState = ProfileUiState.Content(
                 userInformation = UserInformation(
                     uid = "uid-1",
                     name = "Alex",
@@ -262,7 +272,6 @@ fun ProfileScreenPreview() {
             ),
             bitmap = null,
             isAdmin = true,
-            showImageUploadDialog = false,
             onImageUpload = { Result.Success(Unit) },
             onUiEvent = {},
             onNavigationEvent = {},

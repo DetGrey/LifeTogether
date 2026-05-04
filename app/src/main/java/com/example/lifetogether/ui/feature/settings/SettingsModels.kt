@@ -3,12 +3,16 @@ package com.example.lifetogether.ui.feature.settings
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.enums.SettingsConfirmationTypes
 
-data class SettingsUiState(
-    val userInformation: UserInformation? = null,
-    val showConfirmationDialog: Boolean = false,
-    val confirmationDialogType: SettingsConfirmationTypes? = null,
-    val addedFamilyId: String = "",
-)
+sealed interface SettingsUiState {
+    data object Loading : SettingsUiState
+
+    data class Content(
+        val userInformation: UserInformation? = null,
+        val showConfirmationDialog: Boolean = false,
+        val confirmationDialogType: SettingsConfirmationTypes? = null,
+        val addedFamilyId: String = "",
+    ) : SettingsUiState
+}
 
 sealed interface SettingsUiEvent {
     data object JoinFamilyClicked : SettingsUiEvent

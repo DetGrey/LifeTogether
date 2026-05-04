@@ -6,9 +6,8 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Text
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,8 +16,10 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.AppTopBar
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
+import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.model.AlbumUiModel
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
@@ -43,57 +44,69 @@ fun GalleryScreen(
             )
         },
         floatingActionButton = {
-            AddButton(onClick = {
-                onUiEvent(GalleryUiEvent.OpenNewAlbumDialog)
-            })
+            if (uiState is GalleryUiState.Content) {
+                AddButton(onClick = {
+                    onUiEvent(GalleryUiEvent.OpenNewAlbumDialog)
+                })
+            }
         },
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(LifeTogetherTokens.spacing.small),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
+        AnimatedLoadingContent(
+            isLoading = uiState is GalleryUiState.Loading,
+            label = "gallery_loading",
+            loadingContent = {
+                Skeletons.GridCollection(modifier = Modifier.fillMaxSize())
+            },
         ) {
-            item {
-                if (uiState.albums.isEmpty()) {
-                    Text(text = "No albums created. Press + to create one.")
-                } else {
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        maxItemsInEachRow = 2,
-                        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
-                    ) {
-                        for (album in uiState.albums) {
-                            AlbumCard(
-                                album.name,
-                                album.mediaCount,
-                                album.thumbnail?.toBitmap(),
-                                onClick = {
-                                    onNavigationEvent(GalleryNavigationEvent.NavigateToAlbumMedia(album.id))
-                                },
-                            )
+            val content = uiState as? GalleryUiState.Content ?: return@AnimatedLoadingContent
+
+            androidx.compose.foundation.lazy.LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(LifeTogetherTokens.spacing.small),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
+            ) {
+                item {
+                    if (content.albums.isEmpty()) {
+                        Text(text = "No albums created. Press + to create one.")
+                    } else {
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            maxItemsInEachRow = 2,
+                            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                        ) {
+                            for (album in content.albums) {
+                                AlbumCard(
+                                    album.name,
+                                    album.mediaCount,
+                                    album.thumbnail?.toBitmap(),
+                                    onClick = {
+                                        onNavigationEvent(GalleryNavigationEvent.NavigateToAlbumMedia(album.id))
+                                    },
+                                )
+                            }
                         }
                     }
                 }
             }
-        }
-    }
 
-    if (uiState.showNewAlbumDialog) {
-        ConfirmationDialogWithTextField(
-            onDismiss = { onUiEvent(GalleryUiEvent.DismissNewAlbumDialog) },
-            onConfirm = { onUiEvent(GalleryUiEvent.CreateNewAlbum) },
-            dialogTitle = "Create new album",
-            dialogMessage = "Please enter a name for your new album",
-            dismissButtonMessage = "Cancel",
-            confirmButtonMessage = "Create",
-            textValue = uiState.newAlbumName,
-            onTextValueChange = { onUiEvent(GalleryUiEvent.NewAlbumNameChanged(it)) },
-            label = "Album name",
-            capitalization = true,
-        )
+            if (content.showNewAlbumDialog) {
+                ConfirmationDialogWithTextField(
+                    onDismiss = { onUiEvent(GalleryUiEvent.DismissNewAlbumDialog) },
+                    onConfirm = { onUiEvent(GalleryUiEvent.CreateNewAlbum) },
+                    dialogTitle = "Create new album",
+                    dialogMessage = "Please enter a name for your new album",
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Create",
+                    textValue = content.newAlbumName,
+                    onTextValueChange = { onUiEvent(GalleryUiEvent.NewAlbumNameChanged(it)) },
+                    label = "Album name",
+                    capitalization = true,
+                )
+            }
+        }
     }
 }
 
@@ -102,7 +115,7 @@ fun GalleryScreen(
 private fun GalleryScreenPreview() {
     LifeTogetherTheme {
         GalleryScreen(
-            uiState = GalleryUiState(
+            uiState = GalleryUiState.Content(
                 albums = listOf(
                     AlbumUiModel(
                         id = "album-1",

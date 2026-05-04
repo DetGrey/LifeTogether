@@ -19,8 +19,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.AppTopBar
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.button.SecondaryButton
+import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.feature.guides.stepplayer.components.GuideStepCard
 import com.example.lifetogether.ui.feature.guides.stepplayer.components.StepPlayerOverviewCard
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -32,8 +34,6 @@ fun GuideStepPlayerScreen(
     onUiEvent: (GuideStepPlayerUiEvent) -> Unit,
     onNavigationEvent: (GuideStepPlayerNavigationEvent) -> Unit,
 ) {
-    val canPrimaryAction = uiState.currentStep != null && (uiState.canGoNext || uiState.canToggleCurrentStep)
-
     Scaffold(
         topBar = {
             AppTopBar(
@@ -46,81 +46,92 @@ fun GuideStepPlayerScreen(
             )
         },
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = LifeTogetherTokens.spacing.small),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+        AnimatedLoadingContent(
+            isLoading = uiState is GuideStepPlayerUiState.Loading,
+            label = "guide_step_player_loading",
+            loadingContent = {
+                Skeletons.SectionDetail(modifier = Modifier.fillMaxSize())
+            },
         ) {
-            item {
-                StepPlayerOverviewCard(uiState)
-            }
+            val content = uiState as? GuideStepPlayerUiState.Content ?: return@AnimatedLoadingContent
+            val canPrimaryAction = content.currentStep != null && (content.canGoNext || content.canToggleCurrentStep)
 
-            item {
-                GuideStepCard(
-                    header = "Current step",
-                    step = uiState.currentStep,
-                    stepNumber = uiState.currentStepNumber,
-                    roundGroupLabel = uiState.currentRoundGroupLabel,
-                    roundGroupMeta = uiState.currentRoundGroupMeta,
-                    emphasized = true,
-                )
-            }
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = LifeTogetherTokens.spacing.small),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+            ) {
+                item {
+                    StepPlayerOverviewCard(content)
+                }
 
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
-                ) {
-                    SecondaryButton(
-                        modifier = Modifier.weight(1f),
-                        text = "Previous",
-                        enabled = uiState.canGoPrevious,
-                        onClick = { onUiEvent(GuideStepPlayerUiEvent.PreviousClicked) },
-                    )
-
-                    PrimaryButton(
-                        modifier = Modifier.weight(1.35f),
-                        text = when {
-                            uiState.currentStepCompleted && uiState.canGoNext -> "Next step"
-                            uiState.currentStepCompleted -> "Completed"
-                            uiState.canGoNext -> "Complete + next"
-                            else -> "Complete step"
-                        },
-                        enabled = canPrimaryAction,
-                        onClick = { onUiEvent(GuideStepPlayerUiEvent.CompleteCurrentAndGoNextClicked) },
+                item {
+                    GuideStepCard(
+                        header = "Current step",
+                        step = content.currentStep,
+                        stepNumber = content.currentStepNumber,
+                        roundGroupLabel = content.currentRoundGroupLabel,
+                        roundGroupMeta = content.currentRoundGroupMeta,
+                        emphasized = true,
                     )
                 }
-            }
 
-            item {
-                PrimaryButton(
-                    modifier = Modifier.fillMaxWidth(),
-                    text = if (uiState.currentStepCompleted) {
-                        "Mark current step incomplete"
-                    } else {
-                        "Mark current step complete"
-                    },
-                    enabled = uiState.currentStep != null && uiState.canToggleCurrentStep,
-                    onClick = { onUiEvent(GuideStepPlayerUiEvent.ToggleCurrentStepCompletionClicked) },
-                )
-            }
-
-            item {
-                AnimatedVisibility(
-                    visible = uiState.nextStep != null,
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut(),
-                ) {
-                    uiState.nextStep?.let { nextStep ->
-                        GuideStepCard(
-                            header = "Up next",
-                            step = nextStep,
-                            stepNumber = (uiState.currentStepNumber + 1).coerceAtMost(uiState.totalSteps),
-                            emphasized = false,
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                    ) {
+                        SecondaryButton(
+                            modifier = Modifier.weight(1f),
+                            text = "Previous",
+                            enabled = content.canGoPrevious,
+                            onClick = { onUiEvent(GuideStepPlayerUiEvent.PreviousClicked) },
                         )
+
+                        PrimaryButton(
+                            modifier = Modifier.weight(1.35f),
+                            text = when {
+                                content.currentStepCompleted && content.canGoNext -> "Next step"
+                                content.currentStepCompleted -> "Completed"
+                                content.canGoNext -> "Complete + next"
+                                else -> "Complete step"
+                            },
+                            enabled = canPrimaryAction,
+                            onClick = { onUiEvent(GuideStepPlayerUiEvent.CompleteCurrentAndGoNextClicked) },
+                        )
+                    }
+                }
+
+                item {
+                    PrimaryButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = if (content.currentStepCompleted) {
+                            "Mark current step incomplete"
+                        } else {
+                            "Mark current step complete"
+                        },
+                        enabled = content.currentStep != null && content.canToggleCurrentStep,
+                        onClick = { onUiEvent(GuideStepPlayerUiEvent.ToggleCurrentStepCompletionClicked) },
+                    )
+                }
+
+                item {
+                    AnimatedVisibility(
+                        visible = content.nextStep != null,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut(),
+                    ) {
+                        content.nextStep?.let { nextStep ->
+                            GuideStepCard(
+                                header = "Up next",
+                                step = nextStep,
+                                stepNumber = (content.currentStepNumber + 1).coerceAtMost(content.totalSteps),
+                                emphasized = false,
+                            )
+                        }
                     }
                 }
             }
@@ -133,7 +144,7 @@ fun GuideStepPlayerScreen(
 private fun GuideStepPlayerScreenPreview() {
     LifeTogetherTheme {
         GuideStepPlayerScreen(
-            uiState = GuideStepPlayerUiState(),
+            uiState = GuideStepPlayerUiState.Content(),
             onUiEvent = {},
             onNavigationEvent = {},
         )

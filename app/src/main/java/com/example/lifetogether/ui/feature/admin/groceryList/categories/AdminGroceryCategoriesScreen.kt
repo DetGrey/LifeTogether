@@ -30,7 +30,9 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.ui.common.AppTopBar
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
+import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -56,107 +58,116 @@ fun AdminGroceryCategoriesScreen(
             )
         },
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(LifeTogetherTokens.spacing.small)
-                .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
+        AnimatedLoadingContent(
+            isLoading = uiState is AdminGroceryCategoriesUiState.Loading,
+            label = "admin_grocery_categories_loading",
+            loadingContent = {
+                Skeletons.FormEdit(modifier = Modifier.fillMaxSize())
+            },
         ) {
+            val content = uiState as? AdminGroceryCategoriesUiState.Content ?: return@AnimatedLoadingContent
 
-            item {
-                Text(
-                    modifier = Modifier.padding(horizontal = LifeTogetherTokens.spacing.xSmall),
-                    text = "Add new category as a string with an emoji and a name with whitespace between e.g. \"\uD83C\uDF5E Bakery\"",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    textAlign = TextAlign.Center,
-                )
-
-                Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.medium))
-
-                TextHeadingMedium("Grocery categories")
-
-                if (uiState.groceryCategories.isNotEmpty()) {
-                    ListEditorContainer(
-                        uiState.groceryCategories.map { category -> "${category.emoji} ${category.name}" },
-                        onDelete = { categoryString ->
-                            val categoryList = categoryString.split(" ", limit = 2)
-                            onUiEvent(
-                                AdminGroceryCategoriesUiEvent.DeleteCategoryClicked(
-                                    Category(categoryList[0], categoryList[1]),
-                                ),
-                            )
-                        },
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(LifeTogetherTokens.spacing.small)
+                    .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
+            ) {
+                item {
+                    Text(
+                        modifier = Modifier.padding(horizontal = LifeTogetherTokens.spacing.xSmall),
+                        text = "Add new category as a string with an emoji and a name with whitespace between e.g. \"\uD83C\uDF5E Bakery\"",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        textAlign = TextAlign.Center,
                     )
+
+                    Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.medium))
+
+                    TextHeadingMedium("Grocery categories")
+
+                    if (content.groceryCategories.isNotEmpty()) {
+                        ListEditorContainer(
+                            content.groceryCategories.map { category -> "${category.emoji} ${category.name}" },
+                            onDelete = { categoryString ->
+                                val categoryList = categoryString.split(" ", limit = 2)
+                                onUiEvent(
+                                    AdminGroceryCategoriesUiEvent.DeleteCategoryClicked(
+                                        Category(categoryList[0], categoryList[1]),
+                                    ),
+                                )
+                            },
+                        )
+                    }
                 }
             }
-        }
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(LifeTogetherTokens.spacing.small),
-            contentAlignment = Alignment.BottomCenter,
-        ) {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(60.dp)
-                    .clip(shape = RoundedCornerShape(LifeTogetherTokens.spacing.large))
-                    .background(color = MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.CenterStart,
+                    .fillMaxSize()
+                    .padding(LifeTogetherTokens.spacing.small),
+                contentAlignment = Alignment.BottomCenter,
             ) {
-                Row(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp)
+                        .clip(shape = RoundedCornerShape(LifeTogetherTokens.spacing.large))
+                        .background(color = MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.CenterStart,
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(0.8f),
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        CustomTextField(
-                            value = uiState.newCategory,
-                            onValueChange = {
-                                onUiEvent(AdminGroceryCategoriesUiEvent.NewCategoryChanged(it))
-                            },
-                            label = "Add category",
-                            keyboardType = KeyboardType.Text,
-                            imeAction = ImeAction.Done,
-                        )
-                    }
-                    Row(
-                        modifier = Modifier
-                            .padding(LifeTogetherTokens.spacing.small)
-                            .fillMaxHeight()
-                            .clickable {
-                                onUiEvent(AdminGroceryCategoriesUiEvent.AddCategoryClicked)
-                            },
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(text = "Add", color = MaterialTheme.colorScheme.secondary)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(0.8f),
+                        ) {
+                            CustomTextField(
+                                value = content.newCategory,
+                                onValueChange = {
+                                    onUiEvent(AdminGroceryCategoriesUiEvent.NewCategoryChanged(it))
+                                },
+                                label = "Add category",
+                                keyboardType = KeyboardType.Text,
+                                imeAction = ImeAction.Done,
+                            )
+                        }
+                        Row(
+                            modifier = Modifier
+                                .padding(LifeTogetherTokens.spacing.small)
+                                .fillMaxHeight()
+                                .clickable {
+                                    onUiEvent(AdminGroceryCategoriesUiEvent.AddCategoryClicked)
+                                },
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(text = "Add", color = MaterialTheme.colorScheme.secondary)
 
-                        Spacer(modifier = Modifier.width(LifeTogetherTokens.spacing.xSmall))
+                            Spacer(modifier = Modifier.width(LifeTogetherTokens.spacing.xSmall))
 
-                        Text(
-                            text = ">",
-                            color = MaterialTheme.colorScheme.secondary,
-                        )
+                            Text(
+                                text = ">",
+                                color = MaterialTheme.colorScheme.secondary,
+                            )
+                        }
                     }
                 }
             }
-        }
 
-        if (uiState.showDeleteCategoryConfirmationDialog && uiState.selectedCategory != null) {
-            ConfirmationDialog(
-                onDismiss = { onUiEvent(AdminGroceryCategoriesUiEvent.DismissDeleteCategoryConfirmation) },
-                onConfirm = { onUiEvent(AdminGroceryCategoriesUiEvent.ConfirmDeleteCategory) },
-                dialogTitle = "Delete category?",
-                dialogMessage = "Are you sure you want to delete the category: ${uiState.selectedCategory.emoji} ${uiState.selectedCategory.name}?",
-                dismissButtonMessage = "Cancel",
-                confirmButtonMessage = "Delete",
-            )
+            if (content.showDeleteCategoryConfirmationDialog && content.selectedCategory != null) {
+                ConfirmationDialog(
+                    onDismiss = { onUiEvent(AdminGroceryCategoriesUiEvent.DismissDeleteCategoryConfirmation) },
+                    onConfirm = { onUiEvent(AdminGroceryCategoriesUiEvent.ConfirmDeleteCategory) },
+                    dialogTitle = "Delete category?",
+                    dialogMessage = "Are you sure you want to delete the category: ${content.selectedCategory.emoji} ${content.selectedCategory.name}?",
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Delete",
+                )
+            }
         }
     }
 }
@@ -166,7 +177,7 @@ fun AdminGroceryCategoriesScreen(
 private fun AdminGroceryCategoriesScreenPreview() {
     LifeTogetherTheme {
         AdminGroceryCategoriesScreen(
-            uiState = AdminGroceryCategoriesUiState(
+            uiState = AdminGroceryCategoriesUiState.Content(
                 groceryCategories = listOf(
                     Category("❓️", "Uncategorized"),
                     Category("🥦", "Vegetables"),

@@ -8,7 +8,8 @@ Here are some bugs that need to be fixed:
 - [x] in recipedetailsscreen when creating new recipe it shows "0" in preparation time from the start but it should be empty until user adds something
 - [x] AddNewIngredient should not have fixed height but still look around the same with dynamic
 - [x] Make the Surface for MediaDetailsPanelContent in MediaDetailsScreen easier to dismiss (often fails and moved up again when I do a natural swipe)
-- [ ] In ConfirmationDialogWithTextField make the textfield in auto focus so it opens keyboard
+- [x] In ConfirmationDialogWithTextField make the textfield in auto focus so it opens keyboard
+- [ ] Remove all default values from Content UiStates unless absolutely necessary
 
 Here are some questions:
 

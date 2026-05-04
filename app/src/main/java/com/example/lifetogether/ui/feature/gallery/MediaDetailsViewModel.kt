@@ -33,7 +33,7 @@ class MediaDetailsViewModel @Inject constructor(
     private val galleryRepository: GalleryRepository,
     private val deleteMediaUseCase: DeleteMediaUseCase,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(MediaDetailsUiState())
+    private val _uiState = MutableStateFlow<MediaDetailsUiState>(MediaDetailsUiState.Loading)
     val uiState: StateFlow<MediaDetailsUiState> = _uiState.asStateFlow()
 
     private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
@@ -45,7 +45,6 @@ class MediaDetailsViewModel @Inject constructor(
     private val initialIndex: Int = savedStateHandle["initialIndex"] ?: 0
 
     init {
-        _uiState.update { it.copy(currentIndex = initialIndex) }
         viewModelScope.launch {
             sessionRepository.sessionState.collect { state ->
                 val newFamilyId = (state as? SessionState.Authenticated)?.user?.familyId
@@ -56,6 +55,7 @@ class MediaDetailsViewModel @Inject constructor(
                     familyId = null
                     loadAlbumMediaJob?.cancel()
                     loadAlbumMediaJob = null
+                    _uiState.value = MediaDetailsUiState.Loading
                 }
             }
         }
@@ -82,10 +82,15 @@ class MediaDetailsViewModel @Inject constructor(
             galleryRepository.observeAlbumMedia(familyIdValue, albumIdValue).collect { result ->
                 when (result) {
                     is Result.Success -> {
-                        _uiState.update {
-                            it.copy(
-                                mediaList = result.data,
-                            )
+                        _uiState.update { state ->
+                            when (state) {
+                                is MediaDetailsUiState.Loading -> MediaDetailsUiState.Content(
+                                    mediaList = result.data,
+                                    currentIndex = initialIndex,
+                                )
+
+                                is MediaDetailsUiState.Content -> state.copy(mediaList = result.data)
+                            }
                         }
                     }
 
@@ -96,8 +101,9 @@ class MediaDetailsViewModel @Inject constructor(
     }
 
     private fun downloadMedia(index: Int? = null) {
-        val mediaIndex = index ?: _uiState.value.currentIndex
-        val currentMediaId = _uiState.value.mediaList.getOrNull(mediaIndex)?.id
+        val content = _uiState.value as? MediaDetailsUiState.Content ?: return
+        val mediaIndex = index ?: content.currentIndex
+        val currentMediaId = content.mediaList.getOrNull(mediaIndex)?.id
         val familyIdValue = familyId
 
         if (currentMediaId == null || familyIdValue == null) {
@@ -144,8 +150,9 @@ class MediaDetailsViewModel @Inject constructor(
     }
 
     private fun deleteMedia(index: Int? = null) {
-        val mediaIndex = index ?: _uiState.value.currentIndex
-        val currentMedia = _uiState.value.mediaList.getOrNull(mediaIndex) ?: return
+        val content = _uiState.value as? MediaDetailsUiState.Content ?: return
+        val mediaIndex = index ?: content.currentIndex
+        val currentMedia = content.mediaList.getOrNull(mediaIndex) ?: return
 
         viewModelScope.launch {
             when (val result = deleteMediaUseCase.invoke(currentMedia.albumId, listOf(currentMedia))) {
@@ -159,11 +166,11 @@ class MediaDetailsViewModel @Inject constructor(
     }
 
     private fun toggleOverflowMenu(show: Boolean? = null) {
-        _uiState.update { it.copy(showOverflowMenu = show ?: !it.showOverflowMenu) }
+        updateContent { it.copy(showOverflowMenu = show ?: !it.showOverflowMenu) }
     }
 
     private fun startOverflowAction(action: MenuAction.MediaDetailsActions) {
-        _uiState.update {
+        updateContent {
             it.copy(
                 overflowMenuAction = action,
                 showOverflowMenuActionDialog = true,
@@ -173,7 +180,7 @@ class MediaDetailsViewModel @Inject constructor(
     }
 
     private fun dismissOverflowMenuActionDialog() {
-        _uiState.update {
+        updateContent {
             it.copy(
                 showOverflowMenuActionDialog = false,
                 overflowMenuAction = null,
@@ -188,12 +195,13 @@ class MediaDetailsViewModel @Inject constructor(
 
     private fun onVerticalDrag(dragAmount: Float, totalHeight: Int) {
         val maxOffset = getMaxOffset(totalHeight)
-        val newOffset = (_uiState.value.offsetY + dragAmount).coerceIn(maxOffset, 0f)
-        _uiState.update { it.copy(offsetY = newOffset) }
+        val currentOffset = (_uiState.value as? MediaDetailsUiState.Content)?.offsetY ?: return
+        val newOffset = (currentOffset + dragAmount).coerceIn(maxOffset, 0f)
+        updateContent { it.copy(offsetY = newOffset) }
     }
 
     private fun onDragEnd(totalHeight: Int) {
-        val currentOffset = uiState.value.offsetY
+        val currentOffset = (uiState.value as? MediaDetailsUiState.Content)?.offsetY ?: return
         val maxOffset = getMaxOffset(totalHeight)
 
         // Snap open only if the panel is dragged far enough up.
@@ -203,7 +211,7 @@ class MediaDetailsViewModel @Inject constructor(
         } else {
             0f
         }
-        _uiState.update { it.copy(offsetY = snapTarget) }
+        updateContent { it.copy(offsetY = snapTarget) }
     }
 
     private fun showError(message: String) {
@@ -237,6 +245,15 @@ class MediaDetailsViewModel @Inject constructor(
     private fun hideProgress() {
         viewModelScope.launch {
             _uiCommands.send(UiCommand.HideProgressSnackbar)
+        }
+    }
+
+    private fun updateContent(transform: (MediaDetailsUiState.Content) -> MediaDetailsUiState.Content) {
+        _uiState.update { state ->
+            when (state) {
+                is MediaDetailsUiState.Loading -> state
+                is MediaDetailsUiState.Content -> transform(state)
+            }
         }
     }
 }

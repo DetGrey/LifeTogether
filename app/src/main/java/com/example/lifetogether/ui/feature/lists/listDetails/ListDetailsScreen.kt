@@ -5,8 +5,8 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -64,6 +64,7 @@ import com.example.lifetogether.ui.common.ActionSheetItem
 import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.button.SecondaryButton
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.list.CompletableBox
 import com.example.lifetogether.ui.common.skeleton.Skeletons
@@ -122,76 +123,74 @@ fun ListDetailsScreen(
             }
         },
     ) { padding ->
-        AnimatedContent(
-            targetState = isLoading,
-            transitionSpec = { fadeIn() togetherWith fadeOut() },
+        AnimatedLoadingContent(
+            isLoading = isLoading,
             label = "list_details_loading_content",
-        ) { loading ->
-            if (loading) {
+            loadingContent = {
                 Skeletons.ListDetail(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding),
                 )
-            } else {
-                val content = contentState ?: return@AnimatedContent
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .padding(horizontal = LifeTogetherTokens.spacing.small),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    AnimatedContent(
-                        targetState = content.isSelectionModeActive,
-                        transitionSpec = { fadeIn() togetherWith fadeOut() },
-                        label = "selection_mode_bar",
-                    ) { selectionActive ->
-                        if (selectionActive) {
-                            SelectionModeBar(
-                                selectedCount = content.selectedEntryIds.size,
-                                isAllSelected = content.isAllEntriesSelected,
-                                onToggleAll = { onUiEvent(ListDetailsUiEvent.ToggleAllEntrySelection) },
-                                onCancel = { onUiEvent(ListDetailsUiEvent.ExitSelectionMode) },
-                            )
-                        } else {
-                            Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.medium))
-                        }
-                    }
-
-                    if (entries.isEmpty()) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(text = "No entries yet. Tap + to add one.")
-                        }
-                    } else {
-                        ListDetailsEntriesSection(
-                            listType = listType,
-                            entries = entries,
-                            imageBitmaps = imageBitmaps,
-                            isSelectionMode = content.isSelectionModeActive,
-                            selectedIds = content.selectedEntryIds,
-                            completedExpanded = completedExpanded,
-                            onToggleCompletedExpanded = { completedExpanded = !completedExpanded },
-                            onEntryClick = { entry ->
-                                if (content.isSelectionModeActive) {
-                                    onUiEvent(ListDetailsUiEvent.ToggleEntrySelection(entry.id))
-                                } else {
-                                    onNavigationEvent(ListDetailsNavigationEvent.NavigateToEntryDetails(entry.id))
-                                }
-                            },
-                            onEntryLongClick = { entry ->
-                                if (!content.isSelectionModeActive) {
-                                    onUiEvent(ListDetailsUiEvent.EnterSelectionMode(entry.id))
-                                }
-                            },
-                            onEntryToggleComplete = { entry ->
-                                onUiEvent(ListDetailsUiEvent.ToggleEntryCompleted(entry.id))
-                            },
+            },
+        ) {
+            val content = contentState ?: return@AnimatedLoadingContent
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = LifeTogetherTokens.spacing.small),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                AnimatedContent(
+                    targetState = content.isSelectionModeActive,
+                    transitionSpec = { fadeIn() togetherWith fadeOut() },
+                    label = "selection_mode_bar",
+                ) { selectionActive ->
+                    if (selectionActive) {
+                        SelectionModeBar(
+                            selectedCount = content.selectedEntryIds.size,
+                            isAllSelected = content.isAllEntriesSelected,
+                            onToggleAll = { onUiEvent(ListDetailsUiEvent.ToggleAllEntrySelection) },
+                            onCancel = { onUiEvent(ListDetailsUiEvent.ExitSelectionMode) },
                         )
+                    } else {
+                        Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.medium))
                     }
+                }
+
+                if (entries.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(text = "No entries yet. Tap + to add one.")
+                    }
+                } else {
+                    ListDetailsEntriesSection(
+                        listType = listType,
+                        entries = entries,
+                        imageBitmaps = imageBitmaps,
+                        isSelectionMode = content.isSelectionModeActive,
+                        selectedIds = content.selectedEntryIds,
+                        completedExpanded = completedExpanded,
+                        onToggleCompletedExpanded = { completedExpanded = !completedExpanded },
+                        onEntryClick = { entry ->
+                            if (content.isSelectionModeActive) {
+                                onUiEvent(ListDetailsUiEvent.ToggleEntrySelection(entry.id))
+                            } else {
+                                onNavigationEvent(ListDetailsNavigationEvent.NavigateToEntryDetails(entry.id))
+                            }
+                        },
+                        onEntryLongClick = { entry ->
+                            if (!content.isSelectionModeActive) {
+                                onUiEvent(ListDetailsUiEvent.EnterSelectionMode(entry.id))
+                            }
+                        },
+                        onEntryToggleComplete = { entry ->
+                            onUiEvent(ListDetailsUiEvent.ToggleEntryCompleted(entry.id))
+                        },
+                    )
                 }
             }
         }

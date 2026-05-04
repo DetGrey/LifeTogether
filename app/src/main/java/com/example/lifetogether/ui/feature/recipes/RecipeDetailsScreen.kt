@@ -2,11 +2,9 @@ package com.example.lifetogether.ui.feature.recipes
 
 import android.graphics.Bitmap
 import android.net.Uri
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -40,6 +38,7 @@ import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.ui.common.add.AddNewString
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.image.ImageUploadDialog
 import com.example.lifetogether.ui.common.button.PrimaryButton
@@ -61,25 +60,21 @@ fun RecipeDetailsScreen(
     onUiEvent: (RecipeDetailsUiEvent) -> Unit,
     onNavigationEvent: (RecipeDetailsNavigationEvent) -> Unit,
 ) {
-    AnimatedContent(
-        targetState = uiState is RecipeDetailsUiState.Loading,
-        transitionSpec = { fadeIn() togetherWith fadeOut() },
+    AnimatedLoadingContent(
+        isLoading = uiState is RecipeDetailsUiState.Loading,
         label = "recipe_details_loading_content",
-    ) { loading ->
-        if (loading) {
-            Skeletons.FormEdit(
-                modifier = Modifier.fillMaxSize(),
-            )
-        } else {
-            val contentState = uiState as? RecipeDetailsUiState.Content ?: return@AnimatedContent
-            RecipeDetailsContent(
-                uiState = contentState,
-                bitmap = bitmap,
-                onImageUpload = onImageUpload,
-                onUiEvent = onUiEvent,
-                onNavigationEvent = onNavigationEvent,
-            )
-        }
+        loadingContent = {
+            Skeletons.FormEdit(modifier = Modifier.fillMaxSize())
+        },
+    ) {
+        val contentState = uiState as? RecipeDetailsUiState.Content ?: return@AnimatedLoadingContent
+        RecipeDetailsContent(
+            uiState = contentState,
+            bitmap = bitmap,
+            onImageUpload = onImageUpload,
+            onUiEvent = onUiEvent,
+            onNavigationEvent = onNavigationEvent,
+        )
     }
 }
 

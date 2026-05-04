@@ -3,15 +3,19 @@ package com.example.lifetogether.ui.feature.gallery
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.ui.model.MenuAction
 
-data class MediaDetailsUiState(
-    val mediaList: List<GalleryMedia> = emptyList(),
-    val currentIndex: Int = 0,
-    val showOverflowMenu: Boolean = false,
-    val showOverflowMenuActionDialog: Boolean = false,
-    val overflowMenuAction: MenuAction.MediaDetailsActions? = null,
-    val actionDialogText: String = "",
-    val offsetY: Float = 0f,
-)
+sealed interface MediaDetailsUiState {
+    data object Loading : MediaDetailsUiState
+
+    data class Content(
+        val mediaList: List<GalleryMedia> = emptyList(),
+        val currentIndex: Int = 0,
+        val showOverflowMenu: Boolean = false,
+        val showOverflowMenuActionDialog: Boolean = false,
+        val overflowMenuAction: MenuAction.MediaDetailsActions? = null,
+        val actionDialogText: String = "",
+        val offsetY: Float = 0f,
+    ) : MediaDetailsUiState
+}
 
 sealed interface MediaDetailsUiEvent {
     data class VerticalDrag(val dragAmount: Float, val totalHeight: Int) : MediaDetailsUiEvent

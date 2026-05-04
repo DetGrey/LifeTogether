@@ -17,8 +17,8 @@ import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.button.AddButton
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.skeleton.Skeletons
-import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -55,54 +55,48 @@ fun RecipesScreen(
             }
         },
     ) { padding ->
-        when (uiState) {
-            RecipesUiState.Loading -> {
-                Skeletons.ListDetail(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
-                )
-            }
+        AnimatedLoadingContent(
+            isLoading = isLoading,
+            label = "recipes_loading_content",
+            loadingContent = {
+                Skeletons.ListDetail(modifier = Modifier.fillMaxSize())
+            },
+        ) {
+            val content = contentState ?: return@AnimatedLoadingContent
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(LifeTogetherTokens.spacing.small),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.large),
+            ) {
+                item {
+                    TagOptionRow(
+                        options = content.tagsList,
+                        selectedOption = content.selectedTag,
+                        onSelectedOptionChange = {
+                            onUiEvent(RecipesUiEvent.TagSelected(it))
+                        },
+                    )
+                }
 
-            is RecipesUiState.Content -> {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .padding(LifeTogetherTokens.spacing.small),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.large),
-                ) {
-                    item {
-                        TagOptionRow(
-                            options = contentState?.tagsList.orEmpty(),
-                            selectedOption = contentState?.selectedTag.orEmpty(),
-                            onSelectedOptionChange = {
-                                onUiEvent(RecipesUiEvent.TagSelected(it))
-                            },
-                        )
-                    }
-
-                    item {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
-                        ) {
-                            for (recipe in contentState?.recipes.orEmpty()) {
-                                RecipeCard(
-                                    recipe = recipe,
-                                    onClick = {
-                                        recipe.id?.let { recipeId ->
-                                            onNavigationEvent(
-                                                RecipesNavigationEvent.NavigateToRecipeDetails(recipeId)
-                                            )
-                                        }
-                                    },
-                                )
-                            }
+                item {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                    ) {
+                        for (recipe in content.recipes) {
+                            RecipeCard(
+                                recipe = recipe,
+                                onClick = {
+                                    onNavigationEvent(
+                                        RecipesNavigationEvent.NavigateToRecipeDetails(recipe.id)
+                                    )
+                                },
+                            )
                         }
-                        Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.bottomInsetMedium))
                     }
+                    Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.bottomInsetMedium))
                 }
             }
         }
@@ -126,6 +120,17 @@ private fun RecipesScreenPreview() {
                 tagsList = listOf("All", "Dinner", "Soup"),
                 selectedTag = "All",
             ),
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
+    }
+}
+@Preview(showBackground = true)
+@Composable
+private fun RecipesScreenLoadingPreview() {
+    LifeTogetherTheme {
+        RecipesScreen(
+            uiState = RecipesUiState.Loading,
             onUiEvent = {},
             onNavigationEvent = {},
         )

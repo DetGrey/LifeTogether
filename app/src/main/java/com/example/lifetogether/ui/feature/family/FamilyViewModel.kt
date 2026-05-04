@@ -34,7 +34,7 @@ class FamilyViewModel @Inject constructor(
     private val uploadImageUseCase: UploadImageUseCase,
     @param:ApplicationContext private val context: Context,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(FamilyUiState())
+    private val _uiState = MutableStateFlow<FamilyUiState>(FamilyUiState.Loading)
     val uiState: StateFlow<FamilyUiState> = _uiState.asStateFlow()
 
     private val _commands = Channel<FamilyCommand>(Channel.BUFFERED)
@@ -51,26 +51,45 @@ class FamilyViewModel @Inject constructor(
                 val authenticated = state as? SessionState.Authenticated
                 val familyId = authenticated?.user?.familyId
                 val uid = authenticated?.user?.uid
-                val previousFamilyId = _uiState.value.familyId
+                val previousFamilyId = (_uiState.value as? FamilyUiState.Content)?.familyId
 
                 updateUiState {
-                    it.copy(
-                        familyId = familyId,
-                        uid = uid,
-                        familyInformation = if (familyId == previousFamilyId) {
-                            it.familyInformation
-                        } else {
-                            null
-                        },
-                        showConfirmationDialog = false,
-                        confirmationDialogType = null,
-                        memberToRemove = null,
-                        showImageUploadDialog = false,
-                    )
+                    when (it) {
+                        is FamilyUiState.Loading -> {
+                            if (familyId != null) {
+                                FamilyUiState.Content(
+                                    familyId = familyId,
+                                    uid = uid,
+                                    familyInformation = null,
+                                )
+                            } else {
+                                FamilyUiState.Loading
+                            }
+                        }
+
+                        is FamilyUiState.Content -> it.copy(
+                            familyId = familyId,
+                            uid = uid,
+                            familyInformation = if (familyId == previousFamilyId) {
+                                it.familyInformation
+                            } else {
+                                null
+                            },
+                            showConfirmationDialog = false,
+                            confirmationDialogType = null,
+                            memberToRemove = null,
+                            showImageUploadDialog = false,
+                        )
+                    }
                 }
 
                 if (familyId != previousFamilyId) {
                     observeFamilyInformation(familyId)
+                }
+                if (state is SessionState.Unauthenticated) {
+                    familyInformationJob?.cancel()
+                    familyInformationJob = null
+                    _uiState.value = FamilyUiState.Loading
                 }
             }
         }
@@ -84,14 +103,14 @@ class FamilyViewModel @Inject constructor(
             is FamilyUiEvent.RemoveMemberClicked -> showRemoveMemberConfirmation(event.member)
             FamilyUiEvent.DismissConfirmationDialog -> closeConfirmationDialog()
             FamilyUiEvent.ConfirmConfirmationDialog -> confirmConfirmationDialog()
-            FamilyUiEvent.AddImageClicked -> updateUiState { it.copy(showImageUploadDialog = true) }
+            FamilyUiEvent.AddImageClicked -> updateContent { it.copy(showImageUploadDialog = true) }
             FamilyUiEvent.ImageUploadDismissed,
-            FamilyUiEvent.ImageUploadConfirmed -> updateUiState { it.copy(showImageUploadDialog = false) }
+            FamilyUiEvent.ImageUploadConfirmed -> updateContent { it.copy(showImageUploadDialog = false) }
         }
     }
 
     suspend fun uploadFamilyImage(uri: Uri): Result<Unit, AppError> {
-        val familyId = _uiState.value.familyId
+        val familyId = (uiState.value as? FamilyUiState.Content)?.familyId
             ?: return Result.Failure(AppError.Validation("Missing family context"))
         return uploadImageUseCase.invoke(
             uri = uri,
@@ -103,19 +122,19 @@ class FamilyViewModel @Inject constructor(
     private fun observeFamilyInformation(familyId: String?) {
         familyInformationJob?.cancel()
         if (familyId == null) {
-            updateUiState { it.copy(familyInformation = null) }
+            updateContent { it.copy(familyInformation = null) }
             return
         }
 
         familyInformationJob = viewModelScope.launch {
             familyRepository.observeFamilyInformation(familyId).collect { result ->
                 when (result) {
-                    is Result.Success -> updateUiState {
+                    is Result.Success -> updateContent {
                         it.copy(familyInformation = result.data)
                     }
 
                     is Result.Failure -> {
-                        updateUiState {
+                        updateContent {
                             it.copy(familyInformation = null)
                         }
                         showError(result.error.toUserMessage())
@@ -126,7 +145,7 @@ class FamilyViewModel @Inject constructor(
     }
 
     private fun showConfirmationDialog(type: FamilyConfirmationType) {
-        updateUiState {
+        updateContent {
             it.copy(
                 showConfirmationDialog = true,
                 confirmationDialogType = type,
@@ -136,7 +155,7 @@ class FamilyViewModel @Inject constructor(
     }
 
     private fun showRemoveMemberConfirmation(member: FamilyMember) {
-        updateUiState {
+        updateContent {
             it.copy(
                 showConfirmationDialog = true,
                 confirmationDialogType = FamilyConfirmationType.REMOVE_MEMBER,
@@ -146,7 +165,7 @@ class FamilyViewModel @Inject constructor(
     }
 
     private fun closeConfirmationDialog() {
-        updateUiState {
+        updateContent {
             it.copy(
                 showConfirmationDialog = false,
                 confirmationDialogType = null,
@@ -156,7 +175,7 @@ class FamilyViewModel @Inject constructor(
     }
 
     private fun confirmConfirmationDialog() {
-        when (_uiState.value.confirmationDialogType) {
+        when ((uiState.value as? FamilyUiState.Content)?.confirmationDialogType) {
             FamilyConfirmationType.ADD_MEMBER -> copyFamilyId()
             FamilyConfirmationType.LEAVE_FAMILY -> leaveFamily()
             FamilyConfirmationType.REMOVE_MEMBER -> removeFamilyMember()
@@ -166,7 +185,7 @@ class FamilyViewModel @Inject constructor(
     }
 
     private fun copyFamilyId() {
-        val familyId = _uiState.value.familyId ?: return
+        val familyId = (uiState.value as? FamilyUiState.Content)?.familyId ?: return
         closeConfirmationDialog()
         viewModelScope.launch {
             _commands.send(FamilyCommand.CopyFamilyId(familyId))
@@ -174,7 +193,7 @@ class FamilyViewModel @Inject constructor(
     }
 
     private fun leaveFamily() {
-        val state = _uiState.value
+        val state = _uiState.value as? FamilyUiState.Content ?: return
         val familyId = state.familyId ?: return
         val uid = state.uid ?: return
 
@@ -194,7 +213,7 @@ class FamilyViewModel @Inject constructor(
     }
 
     private fun removeFamilyMember() {
-        val state = _uiState.value
+        val state = _uiState.value as? FamilyUiState.Content ?: return
         val familyId = state.familyId ?: return
         val memberUid = state.memberToRemove?.uid ?: return
 
@@ -210,7 +229,7 @@ class FamilyViewModel @Inject constructor(
     }
 
     private fun deleteFamily() {
-        val familyId = _uiState.value.familyId ?: return
+        val familyId = (uiState.value as? FamilyUiState.Content)?.familyId ?: return
 
         viewModelScope.launch {
             when (val result = familyRepository.deleteFamily(familyId)) {
@@ -238,5 +257,14 @@ class FamilyViewModel @Inject constructor(
 
     private fun updateUiState(transform: (FamilyUiState) -> FamilyUiState) {
         _uiState.update(transform)
+    }
+
+    private fun updateContent(transform: (FamilyUiState.Content) -> FamilyUiState.Content) {
+        updateUiState { state ->
+            when (state) {
+                is FamilyUiState.Loading -> state
+                is FamilyUiState.Content -> transform(state)
+            }
+        }
     }
 }

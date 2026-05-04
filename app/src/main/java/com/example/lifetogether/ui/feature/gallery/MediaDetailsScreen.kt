@@ -23,9 +23,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.tooling.preview.Preview
 import kotlin.math.roundToInt
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.durationToString
@@ -38,9 +38,11 @@ import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.ui.common.ActionSheet
 import com.example.lifetogether.ui.common.ActionSheetItem
 import com.example.lifetogether.ui.common.AppTopBar
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.image.DisplayImageFromUri
 import com.example.lifetogether.ui.common.image.DisplayVideoFromUri
+import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.model.MenuAction
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -53,22 +55,9 @@ fun MediaDetailsScreen(
     onUiEvent: (MediaDetailsUiEvent) -> Unit,
     onNavigationEvent: (MediaDetailsNavigationEvent) -> Unit,
 ) {
-    val mediaList = uiState.mediaList
-    val pagerState = rememberPagerState(
-        initialPage = uiState.currentIndex,
-        pageCount = { mediaList.size },
-    )
-
-    val containerSize = LocalWindowInfo.current.containerSize
-
-    val animatedOffset by animateFloatAsState(
-        targetValue = uiState.offsetY,
-        label = "offsetAnimation",
-        animationSpec = spring(stiffness = Spring.StiffnessLow),
-    )
-
     Scaffold(
         topBar = {
+            val content = uiState as? MediaDetailsUiState.Content
             AppTopBar(
                 leftIcon = Icon(
                     resId = R.drawable.ic_back_arrow,
@@ -77,7 +66,7 @@ fun MediaDetailsScreen(
                 onLeftClick = {
                     onNavigationEvent(MediaDetailsNavigationEvent.NavigateBack)
                 },
-                text = mediaList.getOrNull(pagerState.currentPage)
+                text = content?.mediaList?.getOrNull(content.currentIndex)
                     ?.dateCreated
                     ?.toAbbreviatedDateString()
                     ?: "Media",
@@ -89,114 +78,138 @@ fun MediaDetailsScreen(
             )
         },
     ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .pointerInput(containerSize) {
-                    detectVerticalDragGestures(
-                        onVerticalDrag = { _, dragAmount ->
-                            onUiEvent(MediaDetailsUiEvent.VerticalDrag(dragAmount, containerSize.height))
-                        },
-                        onDragEnd = {
-                            onUiEvent(MediaDetailsUiEvent.DragEnd(containerSize.height))
-                        }
-                    )
-                },
+        AnimatedLoadingContent(
+            isLoading = uiState is MediaDetailsUiState.Loading,
+            label = "media_details_loading",
+            loadingContent = {
+                Skeletons.SectionDetail(modifier = Modifier.fillMaxSize())
+            },
         ) {
-            Column(
+            val content = uiState as? MediaDetailsUiState.Content ?: return@AnimatedLoadingContent
+            val mediaList = content.mediaList
+            val pagerState = rememberPagerState(
+                initialPage = content.currentIndex,
+                pageCount = { mediaList.size },
+            )
+
+            val containerSize = LocalWindowInfo.current.containerSize
+
+            val animatedOffset by animateFloatAsState(
+                targetValue = content.offsetY,
+                label = "offsetAnimation",
+                animationSpec = spring(stiffness = Spring.StiffnessLow),
+            )
+
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(LifeTogetherTokens.spacing.small),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier
-                        .fillMaxSize(),
-                    pageSpacing = 16.dp,
-                    beyondViewportPageCount = 1,
-                ) { page ->
-                    val media = mediaList[page]
-
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                    ) {
-                        when (media) {
-                            is GalleryImage -> {
-                                media.mediaUri?.let {
-                                    DisplayImageFromUri(it, media.itemName)
-                                }
+                    .padding(padding)
+                    .pointerInput(containerSize) {
+                        detectVerticalDragGestures(
+                            onVerticalDrag = { _, dragAmount ->
+                                onUiEvent(MediaDetailsUiEvent.VerticalDrag(dragAmount, containerSize.height))
+                            },
+                            onDragEnd = {
+                                onUiEvent(MediaDetailsUiEvent.DragEnd(containerSize.height))
                             }
+                        )
+                    },
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(LifeTogetherTokens.spacing.small),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.fillMaxSize(),
+                        pageSpacing = 16.dp,
+                        beyondViewportPageCount = 1,
+                    ) { page ->
+                        val media = mediaList[page]
 
-                            is GalleryVideo -> {
-                                media.mediaUri?.let { uri ->
-                                    DisplayVideoFromUri(
-                                        videoUri = uri,
-                                        autoPlay = false,
-                                        useController = true,
-                                        modifier = Modifier.fillMaxSize(),
-                                        keepScreenOn = true,
-                                    )
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                        ) {
+                            when (media) {
+                                is GalleryImage -> {
+                                    media.mediaUri?.let {
+                                        DisplayImageFromUri(it, media.itemName)
+                                    }
+                                }
+
+                                is GalleryVideo -> {
+                                    media.mediaUri?.let { uri ->
+                                        DisplayVideoFromUri(
+                                            videoUri = uri,
+                                            autoPlay = false,
+                                            useController = true,
+                                            modifier = Modifier.fillMaxSize(),
+                                            keepScreenOn = true,
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
 
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.4f) // This is our panel height
-                    .align(Alignment.BottomCenter)
-                    .offset {
-                        IntOffset(
-                            x = 0,
-                            y = (animatedOffset + (containerSize.height * 0.4f)).roundToInt(),
-                        )
-                    },
-                shape = MaterialTheme.shapes.extraLarge.copy(
-                    bottomStart = CornerSize(0.dp),
-                    bottomEnd = CornerSize(0.dp),
-                ),
-                color = MaterialTheme.colorScheme.surfaceVariant,
-            ) {
-                mediaList.getOrNull(pagerState.currentPage)?.let {
-                    MediaDetailsPanelContent(it)
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.4f)
+                        .align(Alignment.BottomCenter)
+                        .offset {
+                            IntOffset(
+                                x = 0,
+                                y = (animatedOffset + (containerSize.height * 0.4f)).roundToInt(),
+                            )
+                        },
+                    shape = MaterialTheme.shapes.extraLarge.copy(
+                        bottomStart = CornerSize(0.dp),
+                        bottomEnd = CornerSize(0.dp),
+                    ),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                ) {
+                    mediaList.getOrNull(pagerState.currentPage)?.let {
+                        MediaDetailsPanelContent(it)
+                    }
                 }
             }
         }
     }
 
-    if (uiState.showOverflowMenu) {
-        ActionSheet(
-            onDismiss = { onUiEvent(MediaDetailsUiEvent.ToggleOverflowMenu) },
-            actionsList = MenuAction.MediaDetailsActions.entries.map {
-                ActionSheetItem(
-                    label = it.label,
-                    onClick = { onUiEvent(MediaDetailsUiEvent.StartOverflowAction(it)) },
-                    isDestructive = it == MenuAction.MediaDetailsActions.DELETE,
-                )
-            },
-        )
-    }
+    if (uiState is MediaDetailsUiState.Content) {
+        if (uiState.showOverflowMenu) {
+            ActionSheet(
+                onDismiss = { onUiEvent(MediaDetailsUiEvent.ToggleOverflowMenu) },
+                actionsList = MenuAction.MediaDetailsActions.entries.map {
+                    ActionSheetItem(
+                        label = it.label,
+                        onClick = { onUiEvent(MediaDetailsUiEvent.StartOverflowAction(it)) },
+                        isDestructive = it == MenuAction.MediaDetailsActions.DELETE,
+                    )
+                },
+            )
+        }
 
-    if (uiState.showOverflowMenuActionDialog && uiState.overflowMenuAction != null) {
-        when (uiState.overflowMenuAction) {
-            MenuAction.MediaDetailsActions.DOWNLOAD -> {
-                onUiEvent(MediaDetailsUiEvent.DownloadMedia(pagerState.currentPage))
-            }
+        if (uiState.showOverflowMenuActionDialog && uiState.overflowMenuAction != null) {
+            when (uiState.overflowMenuAction) {
+                MenuAction.MediaDetailsActions.DOWNLOAD -> {
+                    onUiEvent(MediaDetailsUiEvent.DownloadMedia(uiState.currentIndex))
+                }
 
-            MenuAction.MediaDetailsActions.DELETE -> {
-                ConfirmationDialog(
-                    onDismiss = { onUiEvent(MediaDetailsUiEvent.DismissOverflowMenuActionDialog) },
-                    onConfirm = { onUiEvent(MediaDetailsUiEvent.DeleteMedia(pagerState.currentPage)) },
-                    dialogTitle = "Delete",
-                    dialogMessage = "Are you sure you want to delete this?",
-                    dismissButtonMessage = "Cancel",
-                    confirmButtonMessage = "Delete",
-                )
+                MenuAction.MediaDetailsActions.DELETE -> {
+                    ConfirmationDialog(
+                        onDismiss = { onUiEvent(MediaDetailsUiEvent.DismissOverflowMenuActionDialog) },
+                        onConfirm = { onUiEvent(MediaDetailsUiEvent.DeleteMedia(uiState.currentIndex)) },
+                        dialogTitle = "Delete",
+                        dialogMessage = "Are you sure you want to delete this?",
+                        dismissButtonMessage = "Cancel",
+                        confirmButtonMessage = "Delete",
+                    )
+                }
             }
         }
     }
@@ -227,7 +240,7 @@ private fun MediaDetailsPanelContent(media: GalleryMedia) {
 private fun MediaDetailsScreenPreview() {
     LifeTogetherTheme {
         MediaDetailsScreen(
-            uiState = MediaDetailsUiState(
+            uiState = MediaDetailsUiState.Content(
                 mediaList = listOf(
                     GalleryImage(
                         id = "media-1",

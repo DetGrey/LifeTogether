@@ -2,11 +2,15 @@ package com.example.lifetogether.ui.feature.gallery
 
 import com.example.lifetogether.ui.model.AlbumUiModel
 
-data class GalleryUiState(
-    val albums: List<AlbumUiModel> = emptyList(),
-    val showNewAlbumDialog: Boolean = false,
-    val newAlbumName: String = "",
-)
+sealed interface GalleryUiState {
+    data object Loading : GalleryUiState
+
+    data class Content(
+        val albums: List<AlbumUiModel> = emptyList(),
+        val showNewAlbumDialog: Boolean = false,
+        val newAlbumName: String = "",
+    ) : GalleryUiState
+}
 
 sealed interface GalleryUiEvent {
     data object OpenNewAlbumDialog : GalleryUiEvent

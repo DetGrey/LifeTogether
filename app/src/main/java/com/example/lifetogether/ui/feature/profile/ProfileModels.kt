@@ -2,13 +2,17 @@ package com.example.lifetogether.ui.feature.profile
 
 import com.example.lifetogether.domain.model.UserInformation
 
-data class ProfileUiState(
-    val userInformation: UserInformation? = null,
-    val showConfirmationDialog: Boolean = false,
-    val showImageUploadDialog: Boolean = false,
-    val confirmationDialogType: ProfileConfirmationType? = null,
-    val newName: String = "",
-)
+sealed interface ProfileUiState {
+    data object Loading : ProfileUiState
+
+    data class Content(
+        val userInformation: UserInformation? = null,
+        val showConfirmationDialog: Boolean = false,
+        val showImageUploadDialog: Boolean = false,
+        val confirmationDialogType: ProfileConfirmationType? = null,
+        val newName: String = "",
+    ) : ProfileUiState
+}
 
 enum class ProfileConfirmationType {
     LOGOUT,

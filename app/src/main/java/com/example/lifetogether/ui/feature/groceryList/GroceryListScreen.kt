@@ -24,6 +24,7 @@ import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.add.AddNewListItem
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.list.ItemCategoryList
 import com.example.lifetogether.ui.common.skeleton.Skeletons
@@ -57,93 +58,89 @@ fun GroceryListScreen(
             )
         },
     ) { padding ->
-        when (uiState) {
-            GroceryListUiState.Loading -> {
-                Skeletons.ListDetail(
-                    modifier = Modifier
-                        .padding(padding)
-                        .padding(LifeTogetherTokens.spacing.small)
-                        .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
-                )
-            }
-
-            is GroceryListUiState.Content -> {
-                LazyColumn(
-                    modifier = Modifier
-                        .padding(padding)
-                        .padding(LifeTogetherTokens.spacing.small)
-                        .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
-                ) {
-                    item {
-                        Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
-                            if (contentState?.groceryList.orEmpty().isEmpty()) {
-                                TextDefault(text = "No items on the list yet")
-                            } else {
-                                contentState?.expectedTotalPrice?.let {
-                                    Column(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                    ) {
-                                        TextSubHeadingMedium(
-                                            text = "Expected total price:",
-                                            color = MaterialTheme.colorScheme.secondary,
-                                        )
-                                        TextSubHeadingMedium(
-                                            text = it.priceToString(true),
-                                            color = MaterialTheme.colorScheme.secondary,
-                                        )
-                                    }
-                                }
-
-                                contentState?.categorizedItems.orEmpty().forEach { (category, groceryItems) ->
-                                    if (groceryItems.isNotEmpty()) {
-                                        contentState?.categoryExpandedStates?.get(category.name)?.let { expanded ->
-                                            ItemCategoryList(
-                                                category = category,
-                                                itemList = groceryItems,
-                                                expanded = expanded,
-                                                onClick = {
-                                                    onUiEvent(GroceryListUiEvent.CategoryExpandedClicked(category.name))
-                                                },
-                                                onCompleteToggle = { item ->
-                                                    if (item is GroceryItem) {
-                                                        onUiEvent(GroceryListUiEvent.ItemCompletedToggled(item))
-                                                    }
-                                                },
-                                                onBellClick = { item ->
-                                                    onUiEvent(GroceryListUiEvent.NotificationClicked(item))
-                                                },
-                                            )
-                                        }
-                                    }
-                                }
-
-                                if (contentState?.completedItems.orEmpty().isNotEmpty()) {
-                                    ItemCategoryList(
-                                        category = Category(
-                                            emoji = "✔️",
-                                            name = "Completed",
-                                        ),
-                                        itemList = contentState?.completedItems.orEmpty(),
-                                        expanded = contentState?.completedSectionExpanded == true,
-                                        onClick = {
-                                            onUiEvent(GroceryListUiEvent.CompletedSectionExpandedClicked)
-                                        },
-                                        onCompleteToggle = { item ->
-                                            if (item is GroceryItem) {
-                                                onUiEvent(GroceryListUiEvent.ItemCompletedToggled(item))
-                                            }
-                                        },
-                                        onBellClick = { item ->
-                                            onUiEvent(GroceryListUiEvent.NotificationClicked(item))
-                                        },
-                                        onDelete = {
-                                            onUiEvent(GroceryListUiEvent.DeleteCompletedClicked)
-                                        },
+        AnimatedLoadingContent(
+            isLoading = uiState is GroceryListUiState.Loading,
+            label = "grocery_list_loading_content",
+            loadingContent = {
+                Skeletons.ListDetail(modifier = Modifier.fillMaxSize())
+            },
+        ) {
+            val content = contentState ?: return@AnimatedLoadingContent
+            LazyColumn(
+                modifier = Modifier
+                    .padding(padding)
+                    .padding(LifeTogetherTokens.spacing.small)
+                    .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
+            ) {
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
+                        if (content.groceryList.isEmpty()) {
+                            TextDefault(text = "No items on the list yet")
+                        } else {
+                            content.expectedTotalPrice?.let {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                ) {
+                                    TextSubHeadingMedium(
+                                        text = "Expected total price:",
+                                        color = MaterialTheme.colorScheme.secondary,
+                                    )
+                                    TextSubHeadingMedium(
+                                        text = it.priceToString(true),
+                                        color = MaterialTheme.colorScheme.secondary,
                                     )
                                 }
+                            }
+
+                            content.categorizedItems.forEach { (category, groceryItems) ->
+                                if (groceryItems.isNotEmpty()) {
+                                    content.categoryExpandedStates[category.name]?.let { expanded ->
+                                        ItemCategoryList(
+                                            category = category,
+                                            itemList = groceryItems,
+                                            expanded = expanded,
+                                            onClick = {
+                                                onUiEvent(GroceryListUiEvent.CategoryExpandedClicked(category.name))
+                                            },
+                                            onCompleteToggle = { item ->
+                                                if (item is GroceryItem) {
+                                                    onUiEvent(GroceryListUiEvent.ItemCompletedToggled(item))
+                                                }
+                                            },
+                                            onBellClick = { item ->
+                                                onUiEvent(GroceryListUiEvent.NotificationClicked(item))
+                                            },
+                                        )
+                                    }
+                                }
+                            }
+
+                            if (content.completedItems.isNotEmpty()) {
+                                ItemCategoryList(
+                                    category = Category(
+                                        emoji = "✔️",
+                                        name = "Completed",
+                                    ),
+                                    itemList = content.completedItems,
+                                    expanded = content.completedSectionExpanded == true,
+                                    onClick = {
+                                        onUiEvent(GroceryListUiEvent.CompletedSectionExpandedClicked)
+                                    },
+                                    onCompleteToggle = { item ->
+                                        if (item is GroceryItem) {
+                                            onUiEvent(GroceryListUiEvent.ItemCompletedToggled(item))
+                                        }
+                                    },
+                                    onBellClick = { item ->
+                                        onUiEvent(GroceryListUiEvent.NotificationClicked(item))
+                                    },
+                                    onDelete = {
+                                        onUiEvent(GroceryListUiEvent.DeleteCompletedClicked)
+                                    },
+                                )
                             }
                         }
                     }

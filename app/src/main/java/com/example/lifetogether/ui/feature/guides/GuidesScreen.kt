@@ -43,6 +43,7 @@ import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.ui.common.AppTopBar
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.button.SecondaryButton
 import com.example.lifetogether.ui.common.button.AddButton
@@ -117,40 +118,35 @@ fun GuidesScreen(
             }
         },
     ) { padding ->
-        when (uiState) {
-            GuidesUiState.Loading -> {
-                Skeletons.ListDetail(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
-                )
-            }
-            is GuidesUiState.Content -> {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .padding(LifeTogetherTokens.spacing.small)
-                        .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
-                ) {
-                    if (contentState?.guides.orEmpty().isEmpty()) {
-                        item {
-                            Text(text = "No guides yet. Tap + to create or import one.")
-                        }
-                    } else {
-                        items(contentState?.guides.orEmpty()) { guide ->
-                            GuideOverviewCard(
-                                guide = guide,
-                                onClick = {
-                                    guide.id?.let {
-                                        onNavigationEvent(GuidesNavigationEvent.NavigateToGuideDetails(it))
-                                    }
-                                },
-                            )
-                        }
+        AnimatedLoadingContent(
+            isLoading = isLoading,
+            label = "guides_loading_content",
+            loadingContent = {
+                Skeletons.ListDetail(modifier = Modifier.fillMaxSize())
+            },
+        ) {
+            val content = contentState ?: return@AnimatedLoadingContent
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(LifeTogetherTokens.spacing.small)
+                    .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+            ) {
+                if (content.guides.isEmpty()) {
+                    item {
+                        Text(text = "No guides yet. Tap + to create or import one.")
+                    }
+                } else {
+                    items(content.guides) { guide ->
+                        GuideOverviewCard(
+                            guide = guide,
+                            onClick = {
+                                onNavigationEvent(GuidesNavigationEvent.NavigateToGuideDetails(guide.id))
+                            },
+                        )
                     }
                 }
             }

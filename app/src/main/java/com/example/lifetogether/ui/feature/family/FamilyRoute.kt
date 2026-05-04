@@ -22,7 +22,8 @@ fun FamilyRoute(
     val context = LocalContext.current
     val viewModel: FamilyViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val imageType = uiState.familyId?.let { ImageType.FamilyImage(it) }
+    val content = uiState as? FamilyUiState.Content
+    val imageType = content?.familyId?.let { ImageType.FamilyImage(it) }
     val snackbarHostState = LocalRootSnackbarHostState.current
     val coroutineScope = rememberCoroutineScope()
     val bitmap = rememberObservedImageBitmap(imageType) { message ->
@@ -48,7 +49,6 @@ fun FamilyRoute(
     FamilyScreen(
         uiState = uiState,
         bitmap = bitmap,
-        showImageUploadDialog = uiState.showImageUploadDialog,
         onImageUpload = viewModel::uploadFamilyImage,
         onUiEvent = viewModel::onEvent,
         onNavigationEvent = { navigationEvent ->

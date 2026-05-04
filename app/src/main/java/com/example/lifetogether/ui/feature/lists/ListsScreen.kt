@@ -27,10 +27,12 @@ import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.lists.ListType
 import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.ui.common.AppTopBar
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.button.SecondaryButton
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.skeleton.Skeletons
+import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.common.textfield.CustomTextField
@@ -66,55 +68,51 @@ fun ListsScreen(
             }
         },
     ) { padding ->
-        when (uiState) {
-            ListsUiState.Loading -> {
-                Skeletons.ListDetail(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
-                )
-            }
-
-            is ListsUiState.Content -> {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .padding(LifeTogetherTokens.spacing.small)
-                        .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
-                ) {
-                    if (contentState?.userLists.orEmpty().isEmpty()) {
-                        item {
-                            TextDefault(text = "No lists yet. Tap + to create one.")
-                        }
-                    } else {
-                        items(contentState?.userLists.orEmpty()) { list ->
-                            UserListCard(
-                                list = list,
-                                onClick = {
-                                    onNavigationEvent(ListsNavigationEvent.NavigateToListDetails(list.id))
-                                },
-                            )
-                        }
+        AnimatedLoadingContent(
+            isLoading = isLoading,
+            label = "lists_loading_content",
+            loadingContent = {
+                Skeletons.ListDetail(modifier = Modifier.fillMaxSize())
+            },
+        ) {
+            val content = contentState ?: return@AnimatedLoadingContent
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(LifeTogetherTokens.spacing.small)
+                    .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+            ) {
+                if (content.userLists.isEmpty()) {
+                    item {
+                        TextDefault(text = "No lists yet. Tap + to create one.")
+                    }
+                } else {
+                    items(content.userLists) { list ->
+                        UserListCard(
+                            list = list,
+                            onClick = {
+                                onNavigationEvent(ListsNavigationEvent.NavigateToListDetails(list.id))
+                            },
+                        )
                     }
                 }
+            }
 
-                if (contentState?.showCreateDialog == true) {
-                    CreateListDialog(
-                        name = contentState.newListName,
-                        onNameChange = { onUiEvent(ListsUiEvent.CreateListNameChanged(it)) },
-                        type = contentState.newListType,
-                        onTypeChange = { onUiEvent(ListsUiEvent.CreateListTypeChanged(it)) },
-                        visibility = contentState.newListVisibility,
-                        onVisibilityChange = { onUiEvent(ListsUiEvent.CreateListVisibilityChanged(it)) },
-                        isSaving = contentState.isSaving,
-                        onDismiss = { onUiEvent(ListsUiEvent.CreateDialogDismissed) },
-                        onCreate = { onUiEvent(ListsUiEvent.ConfirmCreateListClicked) },
-                    )
-                }
+            if (content.showCreateDialog) {
+                CreateListDialog(
+                    name = content.newListName,
+                    onNameChange = { onUiEvent(ListsUiEvent.CreateListNameChanged(it)) },
+                    type = content.newListType,
+                    onTypeChange = { onUiEvent(ListsUiEvent.CreateListTypeChanged(it)) },
+                    visibility = content.newListVisibility,
+                    onVisibilityChange = { onUiEvent(ListsUiEvent.CreateListVisibilityChanged(it)) },
+                    isSaving = content.isSaving,
+                    onDismiss = { onUiEvent(ListsUiEvent.CreateDialogDismissed) },
+                    onCreate = { onUiEvent(ListsUiEvent.ConfirmCreateListClicked) },
+                )
             }
         }
     }
@@ -186,42 +184,24 @@ private fun CreateListDialog(
 
                 Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
                     Text("Type", style = MaterialTheme.typography.labelLarge)
-                    Row(horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
-                        ListType.entries.forEach { listType -> //todo use TagOption instead
-                            val selected = type == listType
-                            if (selected) {
-                                PrimaryButton(
-                                    text = listType.name.lowercase().replaceFirstChar { it.uppercase() },
-                                    onClick = {},
-                                )
-                            } else {
-                                SecondaryButton(
-                                    text = listType.name.lowercase().replaceFirstChar { it.uppercase() },
-                                    onClick = { onTypeChange(listType) },
-                                )
-                            }
+                    TagOptionRow(
+                        options = ListType.entries.map { it.name.lowercase() }, //todo add visual name
+                        selectedOption = type.name.lowercase(),
+                        onSelectedOptionChange = { new ->
+                            ListType.entries.find { it.name.lowercase() == new }?.let { onTypeChange(it) }
                         }
-                    }
+                    )
                 }
 
                 Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
                     Text("Visibility", style = MaterialTheme.typography.labelLarge)
-                    Row(horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
-                        Visibility.entries.forEach { vis ->
-                            val selected = visibility == vis
-                            if (selected) {
-                                PrimaryButton(
-                                    text = vis.name.lowercase().replaceFirstChar { it.uppercase() },
-                                    onClick = {},
-                                )
-                            } else {
-                                SecondaryButton(
-                                    text = vis.name.lowercase().replaceFirstChar { it.uppercase() },
-                                    onClick = { onVisibilityChange(vis) },
-                                )
-                            }
+                    TagOptionRow(
+                        options = Visibility.entries.map { it.name.lowercase() }, //todo add visual name
+                        selectedOption = visibility.name.lowercase(),
+                        onSelectedOptionChange = { new ->
+                            Visibility.entries.find { it.name.lowercase() == new }?.let { onVisibilityChange(it) }
                         }
-                    }
+                    )
                 }
             }
         },

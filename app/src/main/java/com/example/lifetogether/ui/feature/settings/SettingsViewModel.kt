@@ -27,7 +27,7 @@ class SettingsViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
     private val familyRepository: FamilyRepository,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(SettingsUiState())
+    private val _uiState = MutableStateFlow<SettingsUiState>(SettingsUiState.Loading)
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
     private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
@@ -36,10 +36,21 @@ class SettingsViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             sessionRepository.sessionState.collect { state ->
-                updateUiState {
-                    it.copy(
-                        userInformation = (state as? SessionState.Authenticated)?.user,
-                    )
+                when (state) {
+                    is SessionState.Authenticated -> updateUiState {
+                        when (it) {
+                            is SettingsUiState.Loading -> SettingsUiState.Content(
+                                userInformation = state.user,
+                            )
+
+                            is SettingsUiState.Content -> it.copy(userInformation = state.user)
+                        }
+                    }
+
+                    SessionState.Loading -> Unit
+                    SessionState.Unauthenticated -> {
+                        _uiState.value = SettingsUiState.Loading
+                    }
                 }
             }
         }
@@ -50,7 +61,7 @@ class SettingsViewModel @Inject constructor(
             SettingsUiEvent.JoinFamilyClicked -> showJoinFamilyDialog()
             SettingsUiEvent.CreateNewFamilyClicked -> showCreateFamilyDialog()
             SettingsUiEvent.DismissConfirmationDialog -> closeConfirmationDialog()
-            is SettingsUiEvent.AddedFamilyIdChanged -> updateUiState {
+            is SettingsUiEvent.AddedFamilyIdChanged -> updateContent {
                 it.copy(addedFamilyId = event.value)
             }
             SettingsUiEvent.ConfirmJoinFamily -> joinFamily()
@@ -59,7 +70,7 @@ class SettingsViewModel @Inject constructor(
     }
 
     private fun showJoinFamilyDialog() {
-        updateUiState {
+        updateContent {
             it.copy(
                 showConfirmationDialog = true,
                 confirmationDialogType = SettingsConfirmationTypes.JOIN_FAMILY,
@@ -69,7 +80,7 @@ class SettingsViewModel @Inject constructor(
     }
 
     private fun showCreateFamilyDialog() {
-        updateUiState {
+        updateContent {
             it.copy(
                 showConfirmationDialog = true,
                 confirmationDialogType = SettingsConfirmationTypes.NEW_FAMILY,
@@ -79,7 +90,7 @@ class SettingsViewModel @Inject constructor(
     }
 
     private fun closeConfirmationDialog() {
-        updateUiState {
+        updateContent {
             it.copy(
                 showConfirmationDialog = false,
                 confirmationDialogType = null,
@@ -89,7 +100,7 @@ class SettingsViewModel @Inject constructor(
     }
 
     private fun joinFamily() {
-        val state = _uiState.value
+        val state = _uiState.value as? SettingsUiState.Content ?: return
         val addedFamilyId = state.addedFamilyId
         if (addedFamilyId.isEmpty()) return
         val userInformation = state.userInformation ?: return
@@ -105,7 +116,7 @@ class SettingsViewModel @Inject constructor(
     }
 
     private fun createNewFamily() {
-        val userInformation = _uiState.value.userInformation ?: return
+        val userInformation = (_uiState.value as? SettingsUiState.Content)?.userInformation ?: return
         val uid = userInformation.uid ?: return
         val name = userInformation.name ?: return
 
@@ -128,5 +139,14 @@ class SettingsViewModel @Inject constructor(
 
     private fun updateUiState(transform: (SettingsUiState) -> SettingsUiState) {
         _uiState.update(transform)
+    }
+
+    private fun updateContent(transform: (SettingsUiState.Content) -> SettingsUiState.Content) {
+        updateUiState { state ->
+            when (state) {
+                is SettingsUiState.Loading -> state
+                is SettingsUiState.Content -> transform(state)
+            }
+        }
     }
 }

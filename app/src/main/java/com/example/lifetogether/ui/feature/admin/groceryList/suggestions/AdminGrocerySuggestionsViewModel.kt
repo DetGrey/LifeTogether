@@ -25,7 +25,7 @@ import javax.inject.Inject
 class AdminGrocerySuggestionsViewModel @Inject constructor(
     private val groceryRepository: GroceryRepository,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(AdminGrocerySuggestionsUiState())
+    private val _uiState = MutableStateFlow<AdminGrocerySuggestionsUiState>(AdminGrocerySuggestionsUiState.Loading)
     val uiState: StateFlow<AdminGrocerySuggestionsUiState> = _uiState.asStateFlow()
     private val _commands = Channel<UiCommand>(Channel.BUFFERED)
     val commands: Flow<UiCommand> = _commands.receiveAsFlow()
@@ -56,19 +56,30 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
             groceryRepository.observeCategories().collect { result ->
                 when (result) {
                     is Result.Success -> {
-                        updateUiState { state ->
-                            state.copy(
-                                groceryCategories = result.data
-                                    .filterNot { it.name == UNCATEGORIZED_CATEGORY_NAME }
-                                    .sortedBy { it.name }
-                                    .let { listOf(UNCATEGORIZED_CATEGORY) + it },
-                            )
+                        val categories = result.data
+                            .filterNot { it.name == UNCATEGORIZED_CATEGORY_NAME }
+                            .sortedBy { it.name }
+                            .let { listOf(UNCATEGORIZED_CATEGORY) + it }
+                        _uiState.update { state ->
+                            when (state) {
+                                is AdminGrocerySuggestionsUiState.Loading -> AdminGrocerySuggestionsUiState.Content(
+                                    groceryCategories = categories,
+                                )
+
+                                is AdminGrocerySuggestionsUiState.Content -> state.copy(groceryCategories = categories)
+                            }
                         }
                     }
 
                     is Result.Failure -> {
-                        updateUiState { state ->
-                            state.copy(groceryCategories = emptyList())
+                        _uiState.update { state ->
+                            when (state) {
+                                is AdminGrocerySuggestionsUiState.Loading -> AdminGrocerySuggestionsUiState.Content(
+                                    groceryCategories = emptyList(),
+                                )
+
+                                is AdminGrocerySuggestionsUiState.Content -> state.copy(groceryCategories = emptyList())
+                            }
                         }
                         showError(result.error.toUserMessage())
                     }
@@ -79,7 +90,7 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
 
     // ---------------------------------------------------------------- EXPANDED STATES
     private fun toggleCategory(categoryName: String) {
-        updateUiState { state ->
+        updateContent { state ->
             val currentSet = state.categoryExpandedStates
             val newSet = if (currentSet.contains(categoryName)) {
                 currentSet - categoryName
@@ -96,17 +107,28 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
             groceryRepository.observeGrocerySuggestions().collect { result ->
                 when (result) {
                     is Result.Success -> {
-                        updateUiState { state ->
-                            state.copy(
-                                grocerySuggestions = result.data
-                                    .sortedBy { it.category?.name }
-                            )
+                        _uiState.update { state ->
+                            when (state) {
+                                is AdminGrocerySuggestionsUiState.Loading -> AdminGrocerySuggestionsUiState.Content(
+                                    grocerySuggestions = result.data.sortedBy { it.category?.name },
+                                )
+
+                                is AdminGrocerySuggestionsUiState.Content -> state.copy(
+                                    grocerySuggestions = result.data.sortedBy { it.category?.name }
+                                )
+                            }
                         }
                     }
 
                     is Result.Failure -> {
-                        updateUiState { state ->
-                            state.copy(grocerySuggestions = emptyList())
+                        _uiState.update { state ->
+                            when (state) {
+                                is AdminGrocerySuggestionsUiState.Loading -> AdminGrocerySuggestionsUiState.Content(
+                                    grocerySuggestions = emptyList(),
+                                )
+
+                                is AdminGrocerySuggestionsUiState.Content -> state.copy(grocerySuggestions = emptyList())
+                            }
                         }
                         showError(result.error.toUserMessage())
                     }
@@ -117,25 +139,25 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
 
     // ---------------------------------------------------------------- NEW ITEM
     private fun onNewSuggestionTextChange(value: String) {
-        updateUiState { state ->
+        updateContent { state ->
             state.copy(newSuggestionText = value)
         }
     }
 
     private fun onNewSuggestionPriceChange(value: String) {
-        updateUiState { state ->
+        updateContent { state ->
             state.copy(newSuggestionPrice = value)
         }
     }
 
     private fun updateNewSuggestionCategory(category: Category?) {
-        updateUiState { state ->
+        updateContent { state ->
             state.copy(newSuggestionCategory = category ?: UNCATEGORIZED_CATEGORY)
         }
     }
 
     private fun onDeleteSuggestionClick(suggestion: GrocerySuggestion) {
-        updateUiState { state ->
+        updateContent { state ->
             state.copy(
                 selectedSuggestion = suggestion,
                 showDeleteCategoryConfirmationDialog = true,
@@ -144,7 +166,7 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
     }
 
     private fun startEditingSuggestion(suggestion: GrocerySuggestion) {
-        updateUiState { state ->
+        updateContent { state ->
             state.copy(
                 editingSuggestionId = suggestion.id,
                 newSuggestionText = suggestion.suggestionName,
@@ -155,7 +177,7 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
     }
 
     private fun clearSuggestionDraft() {
-        updateUiState { state ->
+        updateContent { state ->
             state.copy(
                 editingSuggestionId = null,
                 newSuggestionCategory = UNCATEGORIZED_CATEGORY,
@@ -166,7 +188,7 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
     }
 
     private fun dismissDeleteSuggestionDialog() {
-        updateUiState { state ->
+        updateContent { state ->
             state.copy(
                 showDeleteCategoryConfirmationDialog = false,
                 selectedSuggestion = null,
@@ -176,7 +198,7 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
 
     // ---------------------------------------------------------------- ADD CATEGORY
     private fun addNewGrocerySuggestion() {
-        val state = _uiState.value
+        val state = _uiState.value as? AdminGrocerySuggestionsUiState.Content ?: return
 
         if (state.newSuggestionText.isEmpty()) {
             showError("Please enter a suggestion first")
@@ -202,7 +224,7 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
     }
 
     private fun saveEditedGrocerySuggestion() {
-        val state = _uiState.value
+        val state = _uiState.value as? AdminGrocerySuggestionsUiState.Content ?: return
         val editingSuggestionId = state.editingSuggestionId
 
         if (editingSuggestionId.isNullOrBlank()) {
@@ -233,7 +255,7 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
 
     // ---------------------------------------------------------------- DELETE CATEGORY
     private fun deleteCategory() {
-        val selectedSuggestion = _uiState.value.selectedSuggestion ?: run {
+        val selectedSuggestion = (_uiState.value as? AdminGrocerySuggestionsUiState.Content)?.selectedSuggestion ?: run {
             return
         }
 
@@ -244,13 +266,13 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
                 showError(result.error.toUserMessage())
             }
 
-            updateUiState { state ->
-                state.copy(
-                    selectedSuggestion = null,
-                    showDeleteCategoryConfirmationDialog = false,
-                )
-            }
+        updateContent { state ->
+            state.copy(
+                selectedSuggestion = null,
+                showDeleteCategoryConfirmationDialog = false,
+            )
         }
+    }
     }
 
     private fun showError(message: String) {
@@ -266,5 +288,14 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
 
     private fun updateUiState(transform: (AdminGrocerySuggestionsUiState) -> AdminGrocerySuggestionsUiState) {
         _uiState.update(transform)
+    }
+
+    private fun updateContent(transform: (AdminGrocerySuggestionsUiState.Content) -> AdminGrocerySuggestionsUiState.Content) {
+        updateUiState { state ->
+            when (state) {
+                is AdminGrocerySuggestionsUiState.Loading -> state
+                is AdminGrocerySuggestionsUiState.Content -> transform(state)
+            }
+        }
     }
 }
