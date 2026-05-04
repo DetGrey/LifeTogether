@@ -6,7 +6,7 @@ import java.util.Date
 
 data class Album(
     @DocumentId @Transient
-    override var id: String? = null,
+    override var id: String = "",
     override val familyId: String = "",
     override var itemName: String = "",
     override var lastUpdated: Date = Date(),

@@ -37,14 +37,14 @@ class RecipeRepositoryImpl @Inject constructor(
                         val existingRecipeIdsWithImages = recipeLocalDataSource.getRecipeIdsWithImages(familyId)
                         val byteArrays: MutableMap<String, ByteArray> = mutableMapOf()
                         for (recipe in result.data.items) {
-                            if (recipe.id != null && existingRecipeIdsWithImages.contains(recipe.id)) {
+                            if (existingRecipeIdsWithImages.contains(recipe.id)) {
                                 continue
                             }
                             val byteArrayResult = recipe.imageUrl?.let { url ->
                                 storageDataSource.fetchImageByteArray(url)
                             }
                             if (byteArrayResult is Result.Success) {
-                                recipe.id?.let { byteArrays[it] = byteArrayResult.data }
+                                byteArrays[recipe.id] = byteArrayResult.data
                             }
                         }
                         recipeLocalDataSource.updateRecipes(result.data.items, byteArrays)

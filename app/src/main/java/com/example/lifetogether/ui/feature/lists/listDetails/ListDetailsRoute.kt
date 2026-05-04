@@ -14,16 +14,25 @@ import com.example.lifetogether.ui.navigation.ListEntryDetailsNavRoute
 fun ListDetailsRoute(
     appNavigator: AppNavigator,
 ) {
-    FeatureSyncLifecycleBinding(keys = setOf(SyncKey.USER_LISTS, SyncKey.ROUTINE_LIST_ENTRIES))
+    FeatureSyncLifecycleBinding(
+        keys = setOf(
+            SyncKey.USER_LISTS,
+            SyncKey.ROUTINE_LIST_ENTRIES,
+            SyncKey.WISH_LIST_ENTRIES,
+            SyncKey.NOTE_ENTRIES,
+            SyncKey.CHECKLIST_ENTRIES,
+            SyncKey.MEAL_PLAN_ENTRIES,
+        ),
+    )
 
     val viewModel: ListDetailsViewModel = hiltViewModel()
-    val screenState by viewModel.screenState.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val listId = viewModel.listId
 
     CollectUiCommands(viewModel.uiCommands)
 
     ListDetailsScreen(
-        screenState = screenState,
+        uiState = uiState,
         onUiEvent = { event ->
             when (event) {
                 ListDetailsUiEvent.ToggleActionSheet -> viewModel.toggleActionSheet()
@@ -35,7 +44,7 @@ fun ListDetailsRoute(
                 ListDetailsUiEvent.RequestDeleteSelected -> viewModel.requestDeleteSelected()
                 ListDetailsUiEvent.DismissDeleteSelectedDialog -> viewModel.dismissDeleteSelectedDialog()
                 ListDetailsUiEvent.ConfirmDeleteSelected -> viewModel.confirmDeleteSelected()
-                is ListDetailsUiEvent.CompleteEntry -> viewModel.completeEntry(event.entry)
+                is ListDetailsUiEvent.ToggleEntryCompleted -> viewModel.toggleEntryCompleted(event.entryId)
             }
         },
         onNavigationEvent = { navigationEvent ->

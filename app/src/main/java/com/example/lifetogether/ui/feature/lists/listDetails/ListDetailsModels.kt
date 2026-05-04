@@ -1,26 +1,24 @@
 package com.example.lifetogether.ui.feature.lists.listDetails
 
 import android.graphics.Bitmap
-import com.example.lifetogether.domain.model.lists.RoutineListEntry
+import com.example.lifetogether.domain.model.lists.ListEntry
+import com.example.lifetogether.domain.model.lists.ListType
 
 sealed interface ListDetailsUiState {
     data object Loading : ListDetailsUiState
 
     data class Content(
-        val listName: String = "",
-        val isSelectionModeActive: Boolean = false,
-        val selectedEntryIds: Set<String> = emptySet(),
-        val isAllEntriesSelected: Boolean = false,
-        val showActionSheet: Boolean = false,
-        val showDeleteSelectedDialog: Boolean = false,
+        val listName: String,
+        val listType: ListType,
+        val entries: List<ListEntry>,
+        val imageBitmaps: Map<String, Bitmap>,
+        val isSelectionModeActive: Boolean,
+        val selectedEntryIds: Set<String>,
+        val isAllEntriesSelected: Boolean,
+        val showActionSheet: Boolean,
+        val showDeleteSelectedDialog: Boolean,
     ) : ListDetailsUiState
 }
-
-data class ListDetailsScreenState(
-    val uiState: ListDetailsUiState = ListDetailsUiState.Loading,
-    val entries: List<RoutineListEntry> = emptyList(),
-    val imageBitmaps: Map<String, Bitmap> = emptyMap(),
-)
 
 sealed interface ListDetailsUiEvent {
     data object ToggleActionSheet : ListDetailsUiEvent
@@ -32,7 +30,7 @@ sealed interface ListDetailsUiEvent {
     data object RequestDeleteSelected : ListDetailsUiEvent
     data object DismissDeleteSelectedDialog : ListDetailsUiEvent
     data object ConfirmDeleteSelected : ListDetailsUiEvent
-    data class CompleteEntry(val entry: RoutineListEntry) : ListDetailsUiEvent
+    data class ToggleEntryCompleted(val entryId: String) : ListDetailsUiEvent
 }
 
 sealed interface ListDetailsNavigationEvent {

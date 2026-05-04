@@ -13,6 +13,10 @@ enum class SyncKey {
     GALLERY_MEDIA,
     USER_LISTS,
     ROUTINE_LIST_ENTRIES,
+    WISH_LIST_ENTRIES,
+    NOTE_ENTRIES,
+    CHECKLIST_ENTRIES,
+    MEAL_PLAN_ENTRIES,
 }
 
 data class SyncContext(

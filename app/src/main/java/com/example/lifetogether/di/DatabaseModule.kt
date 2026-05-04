@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.example.lifetogether.data.local.AppDatabase
 import com.example.lifetogether.data.local.dao.AlbumsDao
+import com.example.lifetogether.data.local.dao.ChecklistEntriesDao
 import com.example.lifetogether.data.local.dao.CategoriesDao
 import com.example.lifetogether.data.local.dao.FamilyInformationDao
 import com.example.lifetogether.data.local.dao.GalleryMediaDao
@@ -11,8 +12,11 @@ import com.example.lifetogether.data.local.dao.GuideProgressDao
 import com.example.lifetogether.data.local.dao.GuidesDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
+import com.example.lifetogether.data.local.dao.MealPlanEntriesDao
+import com.example.lifetogether.data.local.dao.NoteEntriesDao
 import com.example.lifetogether.data.local.dao.RoutineListsDao
 import com.example.lifetogether.data.local.dao.UserListsDao
+import com.example.lifetogether.data.local.dao.WishListsDao
 import com.example.lifetogether.data.local.dao.RecipesDao
 import com.example.lifetogether.data.local.dao.TipTrackerDao
 import com.example.lifetogether.data.local.dao.UserInformationDao
@@ -37,7 +41,12 @@ object DatabaseModule {
         )
             .allowMainThreadQueries()
             .fallbackToDestructiveMigration(false)
-            .addMigrations(AppDatabase.MIGRATION_23_24, AppDatabase.MIGRATION_24_25, AppDatabase.MIGRATION_25_26)
+            .addMigrations(
+                AppDatabase.MIGRATION_23_24,
+                AppDatabase.MIGRATION_24_25,
+                AppDatabase.MIGRATION_25_26,
+                AppDatabase.MIGRATION_27_28,
+            )
             .build()
     }
 
@@ -117,5 +126,29 @@ object DatabaseModule {
     @Singleton
     fun provideRoutineListsDao(db: AppDatabase): RoutineListsDao {
         return db.routineListsDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideWishListsDao(db: AppDatabase): WishListsDao {
+        return db.wishListsDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideNoteEntriesDao(db: AppDatabase): NoteEntriesDao {
+        return db.noteEntriesDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideChecklistEntriesDao(db: AppDatabase): ChecklistEntriesDao {
+        return db.checklistEntriesDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideMealPlanEntriesDao(db: AppDatabase): MealPlanEntriesDao {
+        return db.mealPlanEntriesDao()
     }
 }

@@ -10,19 +10,19 @@ import java.util.Date
 @Entity(tableName = Constants.ROUTINE_LIST_ENTRIES_TABLE)
 data class RoutineListEntryEntity(
     @PrimaryKey
-    val id: String = "",
+    val id: String,
     @ColumnInfo(name = "family_id")
-    val familyId: String = "",
+    val familyId: String,
     @ColumnInfo(name = "list_id")
-    val listId: String = "",
+    val listId: String,
     @ColumnInfo(name = "item_name")
-    val itemName: String = "",
+    val itemName: String,
     @ColumnInfo(name = "last_updated")
-    val lastUpdated: Date = Date(),
+    val lastUpdated: Date,
     @ColumnInfo(name = "date_created")
-    val dateCreated: Date = Date(),
+    val dateCreated: Date,
     @ColumnInfo(name = "next_date")
-    val nextDate: Date? = null,
+    val nextDate: Date,
     @ColumnInfo(name = "last_completed_at")
     val lastCompletedAt: Date? = null,
     @ColumnInfo(name = "completion_count")
@@ -65,7 +65,7 @@ data class RoutineListEntryEntity(
         result = 31 * result + itemName.hashCode()
         result = 31 * result + lastUpdated.hashCode()
         result = 31 * result + dateCreated.hashCode()
-        result = 31 * result + (nextDate?.hashCode() ?: 0)
+        result = 31 * result + (nextDate.hashCode())
         result = 31 * result + (lastCompletedAt?.hashCode() ?: 0)
         result = 31 * result + completionCount
         result = 31 * result + recurrenceUnit.hashCode()

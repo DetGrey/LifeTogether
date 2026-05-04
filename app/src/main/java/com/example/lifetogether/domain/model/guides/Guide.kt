@@ -8,7 +8,7 @@ import java.util.Date
 
 data class Guide(
     @DocumentId @Transient
-    override val id: String? = null,
+    override val id: String = "",
     override val familyId: String = "",
     @get:PropertyName("name")
     @set:PropertyName("name")

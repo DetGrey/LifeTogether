@@ -17,7 +17,16 @@ fun ListsRoute(
 ) {
     val viewModel: ListsViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    FeatureSyncLifecycleBinding(keys = setOf(SyncKey.USER_LISTS, SyncKey.ROUTINE_LIST_ENTRIES))
+    FeatureSyncLifecycleBinding(
+        keys = setOf(
+            SyncKey.USER_LISTS,
+            SyncKey.ROUTINE_LIST_ENTRIES,
+            SyncKey.WISH_LIST_ENTRIES,
+            SyncKey.NOTE_ENTRIES,
+            SyncKey.CHECKLIST_ENTRIES,
+            SyncKey.MEAL_PLAN_ENTRIES,
+        ),
+    )
     CollectUiCommands(viewModel.uiCommands)
 
     LaunchedEffect(viewModel) {

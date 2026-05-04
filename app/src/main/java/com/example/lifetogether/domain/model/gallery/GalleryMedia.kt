@@ -7,7 +7,7 @@ import com.google.firebase.firestore.DocumentId
 import java.util.Date
 
 sealed interface GalleryMedia : Item {
-    override var id: String?
+    override var id: String
     override val familyId: String
     override var itemName: String
     override var lastUpdated: Date
@@ -20,7 +20,7 @@ sealed interface GalleryMedia : Item {
 
 data class GalleryImage(
     @DocumentId @Transient
-    override var id: String? = null,
+    override var id: String = "",
     override val familyId: String = "",
     override var itemName: String = "",
     override var lastUpdated: Date = Date(),
@@ -34,7 +34,7 @@ data class GalleryImage(
 
 data class GalleryVideo(
     @DocumentId @Transient
-    override var id: String? = null,
+    override var id: String = "",
     override val familyId: String = "",
     override var itemName: String = "",
     override var lastUpdated: Date = Date(),

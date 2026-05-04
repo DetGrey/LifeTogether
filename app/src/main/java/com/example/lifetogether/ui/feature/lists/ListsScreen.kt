@@ -36,6 +36,7 @@ import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
+import java.util.Date
 
 @Composable
 fun ListsScreen(
@@ -94,9 +95,7 @@ fun ListsScreen(
                             UserListCard(
                                 list = list,
                                 onClick = {
-                                    list.id?.let {
-                                        onNavigationEvent(ListsNavigationEvent.NavigateToListDetails(it))
-                                    }
+                                    onNavigationEvent(ListsNavigationEvent.NavigateToListDetails(list.id))
                                 },
                             )
                         }
@@ -253,18 +252,26 @@ fun UserListCardPreview() {
             UserListCard(
                 list = UserList(
                     id = "1",
+                    familyId = "family-1",
                     itemName = "Morning Routines",
+                    lastUpdated = Date(),
+                    dateCreated = Date(),
                     type = ListType.ROUTINE,
                     visibility = Visibility.FAMILY,
+                    ownerUid = "user-1",
                 ),
                 onClick = {},
             )
             UserListCard(
                 list = UserList(
                     id = "2",
+                    familyId = "family-1",
                     itemName = "My Private Habits",
+                    lastUpdated = Date(),
+                    dateCreated = Date(),
                     type = ListType.ROUTINE,
                     visibility = Visibility.PRIVATE,
+                    ownerUid = "user-1",
                 ),
                 onClick = {},
             )

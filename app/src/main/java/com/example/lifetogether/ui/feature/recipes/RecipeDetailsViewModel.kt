@@ -175,7 +175,7 @@ class RecipeDetailsViewModel @Inject constructor(
         editMode: Boolean,
     ): RecipeDetailsUiState.Content {
         val sourceRecipe = recipe ?: originalRecipe ?: Recipe(
-            id = recipeId,
+            id = recipeId.orEmpty(),
             familyId = familyId.orEmpty(),
         )
 
@@ -344,11 +344,11 @@ class RecipeDetailsViewModel @Inject constructor(
         }
 
         val original = originalRecipe ?: Recipe(
-            id = state.recipeId,
+            id = state.recipeId.orEmpty(),
             familyId = familyId,
         )
         val recipe = Recipe(
-            id = state.recipeId?.takeIf { it.isNotBlank() },
+            id = state.recipeId.orEmpty(),
             familyId = familyId,
             itemName = state.itemName,
             lastUpdated = Date(),
@@ -368,7 +368,7 @@ class RecipeDetailsViewModel @Inject constructor(
         updateContent { it.copy(isSaving = true) }
         viewModelScope.launch {
             when {
-                recipe.id.isNullOrBlank() -> {
+                recipe.id.isBlank() -> {
                     when (val result = recipeRepository.saveRecipe(recipe)) {
                         is Result.Success -> _commands.send(RecipeDetailsCommand.NavigateBack)
                         is Result.Failure -> {

@@ -5,7 +5,7 @@ import java.util.Date
 
 data class TipItem(
     @DocumentId @Transient
-    override val id: String? = null,
+    override val id: String = "",
     override val familyId: String = "",
     override val itemName: String = "Tip",
     override var lastUpdated: Date = Date(),

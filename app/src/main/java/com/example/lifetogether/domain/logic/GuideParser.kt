@@ -41,6 +41,8 @@ object GuideParser {
         preserveProgressHints: Boolean = true,
     ): Guide {
         val normalizedId = idOverride?.takeIf { it.isNotBlank() }
+            ?: readString(rawMap, "id").takeIf { it.isNotBlank() }
+            ?: if (regenerateIds) UUID.randomUUID().toString() else ""
         val familyId = familyIdOverride ?: readString(rawMap, "familyId")
         val ownerUid = ownerUidOverride ?: readString(rawMap, "ownerUid")
 

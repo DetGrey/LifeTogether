@@ -1,38 +1,35 @@
 package com.example.lifetogether.domain.sync
 
 import android.app.Application
-import com.example.lifetogether.domain.usecase.sync.SyncAlbumsUseCase
-import com.example.lifetogether.domain.usecase.sync.SyncCategoriesUseCase
-import com.example.lifetogether.domain.usecase.sync.SyncFamilyInformationUseCase
-import com.example.lifetogether.domain.usecase.sync.SyncGalleryMediaUseCase
-import com.example.lifetogether.domain.usecase.sync.SyncGuidesUseCase
-import com.example.lifetogether.domain.usecase.sync.SyncRoutineListsUseCase
-import com.example.lifetogether.domain.usecase.sync.SyncUserListsUseCase
-import com.example.lifetogether.domain.usecase.sync.SyncGroceryListUseCase
-import com.example.lifetogether.domain.usecase.sync.SyncGrocerySuggestionsUseCase
-import com.example.lifetogether.domain.usecase.sync.SyncRecipesUseCase
-import com.example.lifetogether.domain.usecase.sync.SyncTipTrackerUseCase
-import com.example.lifetogether.domain.usecase.sync.SyncUserInformationUseCase
-import com.example.lifetogether.domain.usecase.sync.SyncStartHandle
+import android.util.Log
+import com.example.lifetogether.domain.repository.FamilyRepository
+import com.example.lifetogether.domain.repository.GalleryRepository
+import com.example.lifetogether.domain.repository.GroceryRepository
+import com.example.lifetogether.domain.repository.GuideRepository
+import com.example.lifetogether.domain.repository.RecipeRepository
+import com.example.lifetogether.domain.repository.TipTrackerRepository
+import com.example.lifetogether.domain.repository.UserListRepository
+import com.example.lifetogether.domain.repository.UserRepository
+import com.example.lifetogether.domain.result.AppError
+import com.example.lifetogether.domain.result.Result as AppResult
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class SyncCoordinator @Inject constructor(
     private val application: Application,
-    private val syncGroceryListUseCase: SyncGroceryListUseCase,
-    private val syncRecipesUseCase: SyncRecipesUseCase,
-    private val syncCategoriesUseCase: SyncCategoriesUseCase,
-    private val syncGrocerySuggestionsUseCase: SyncGrocerySuggestionsUseCase,
-    private val syncUserInformationUseCase: SyncUserInformationUseCase,
-    private val syncFamilyInformationUseCase: SyncFamilyInformationUseCase,
-    private val syncAlbumsUseCase: SyncAlbumsUseCase,
-    private val syncGalleryMediaUseCase: SyncGalleryMediaUseCase,
-    private val syncTipTrackerUseCase: SyncTipTrackerUseCase,
-    private val syncGuidesUseCase: SyncGuidesUseCase,
-    private val syncUserListsUseCase: SyncUserListsUseCase,
-    private val syncRoutineListsUseCase: SyncRoutineListsUseCase,
+    private val groceryRepository: GroceryRepository,
+    private val recipeRepository: RecipeRepository,
+    private val userRepository: UserRepository,
+    private val familyRepository: FamilyRepository,
+    private val galleryRepository: GalleryRepository,
+    private val tipTrackerRepository: TipTrackerRepository,
+    private val guideRepository: GuideRepository,
+    private val userListRepository: UserListRepository,
 ) {
     private val globalSyncKeys = setOf(
         SyncKey.USER,
@@ -50,12 +47,16 @@ class SyncCoordinator @Inject constructor(
         SyncKey.GALLERY_MEDIA,
         SyncKey.USER_LISTS,
         SyncKey.ROUTINE_LIST_ENTRIES,
+        SyncKey.WISH_LIST_ENTRIES,
+        SyncKey.NOTE_ENTRIES,
+        SyncKey.CHECKLIST_ENTRIES,
+        SyncKey.MEAL_PLAN_ENTRIES,
     )
 
     private var syncedUid: String? = null
     private var syncedFamilyId: String? = null
 
-    private val activeSyncHandles: MutableMap<SyncKey, SyncStartHandle> = mutableMapOf()
+    private val activeSyncHandles: MutableMap<SyncKey, Job> = mutableMapOf()
     private val activeSyncContexts: MutableMap<SyncKey, SyncContext> = mutableMapOf()
     private val syncRefCounts: MutableMap<SyncKey, Int> = mutableMapOf()
 
@@ -133,82 +134,151 @@ class SyncCoordinator @Inject constructor(
         context: SyncContext,
     ) {
         val existingContext = activeSyncContexts[key]
-        if (existingContext == context && activeSyncHandles[key]?.job?.isActive == true) {
+        if (existingContext == context && activeSyncHandles[key]?.isActive == true) {
             return
         }
 
         stopSynchronizer(key)
 
-        val handle = createSynchronizerHandle(scope, key, context) ?: return
+        val job = createSynchronizerHandle(scope, key, context) ?: return
 
         activeSyncContexts[key] = context
-        activeSyncHandles[key] = handle
+        activeSyncHandles[key] = job
     }
 
     private fun createSynchronizerHandle(
         scope: CoroutineScope,
         key: SyncKey,
         context: SyncContext,
-    ): SyncStartHandle? {
+    ): Job? {
         return when (key) {
             SyncKey.USER -> {
                 val uid = context.uid ?: return null
-                syncUserInformationUseCase.start(scope, uid)
+                startSync(scope, "ObserveUserInfo", "user info sync failure") {
+                    userRepository.syncUserInformationFromRemote(uid)
+                }
             }
 
             SyncKey.FAMILY -> {
                 val familyId = context.familyId ?: return null
-                syncFamilyInformationUseCase.start(scope, familyId)
+                startSync(scope, "ObserveFamilyInfo", "family info sync failure") {
+                    familyRepository.syncFamilyInformationFromRemote(familyId)
+                }
             }
 
             SyncKey.GROCERY_LIST -> {
                 val familyId = context.familyId ?: return null
-                syncGroceryListUseCase.start(scope, familyId)
+                startSync(scope, "ObserveGroceryList", "grocery list sync failure") {
+                    groceryRepository.syncGroceryItems(familyId)
+                }
             }
 
-            SyncKey.GROCERY_CATEGORIES -> syncCategoriesUseCase.start(scope)
+            SyncKey.GROCERY_CATEGORIES -> startSync(scope, "ObserveCategories", "categories sync failure") {
+                groceryRepository.syncCategories()
+            }
 
-            SyncKey.GROCERY_SUGGESTIONS -> syncGrocerySuggestionsUseCase.start(scope)
+            SyncKey.GROCERY_SUGGESTIONS -> startSync(scope, "ObserveGrocerySugg", "grocery suggestions sync failure") {
+                groceryRepository.syncGrocerySuggestions()
+            }
 
             SyncKey.RECIPES -> {
                 val familyId = context.familyId ?: return null
-                syncRecipesUseCase.start(scope, familyId)
+                startSync(scope, "ObserveRecipes", "recipes sync failure") {
+                    recipeRepository.syncRecipesFromRemote(familyId)
+                }
             }
 
             SyncKey.GUIDES -> {
                 val uid = context.uid ?: return null
                 val familyId = context.familyId ?: return null
-                syncGuidesUseCase.start(scope, uid, familyId)
+                startSync(scope, "SyncGuidesUseCase", "guides sync failure") {
+                    guideRepository.syncGuidesFromRemote(uid, familyId)
+                }
             }
 
             SyncKey.TIP_TRACKER -> {
                 val familyId = context.familyId ?: return null
-                syncTipTrackerUseCase.start(scope, familyId)
+                startSync(scope, "ObserveTipTracker", "tip sync failure") {
+                    tipTrackerRepository.syncTipsFromRemote(familyId)
+                }
             }
 
             SyncKey.GALLERY_ALBUMS -> {
                 val familyId = context.familyId ?: return null
-                syncAlbumsUseCase.start(scope, familyId)
+                startSync(scope, "ObserveAlbums", "albums sync failure") {
+                    galleryRepository.syncAlbumsFromRemote(familyId)
+                }
             }
 
             SyncKey.GALLERY_MEDIA -> {
                 val familyId = context.familyId ?: return null
-                syncGalleryMediaUseCase.start(
-                    scope = scope,
-                    familyId = familyId,
-                    context = application.applicationContext,
-                )
+                startSync(scope, "ObserveGalleryMedia", "failure") {
+                    galleryRepository.syncGalleryMediaFromRemote(familyId, application.applicationContext)
+                }
             }
 
             SyncKey.USER_LISTS -> {
                 val uid = context.uid ?: return null
                 val familyId = context.familyId ?: return null
-                syncUserListsUseCase.start(scope, uid, familyId)
+                startSync(scope, "SyncUserListsUseCase", "user lists sync failure") {
+                    userListRepository.syncUserListsFromRemote(uid, familyId)
+                }
             }
 
             SyncKey.ROUTINE_LIST_ENTRIES -> {
+                val uid = context.uid ?: return null
                 val familyId = context.familyId ?: return null
-                syncRoutineListsUseCase.start(scope, familyId)
+                startSync(scope, "SyncRoutineListsUseCase", "routine list sync failure") {
+                    userListRepository.syncRoutineListEntriesFromRemote(uid, familyId)
+                }
+            }
+
+            SyncKey.WISH_LIST_ENTRIES -> {
+                val uid = context.uid ?: return null
+                val familyId = context.familyId ?: return null
+                startSync(scope, "SyncWishListEntriesUseCase", "wish list sync failure") {
+                    userListRepository.syncWishListEntriesFromRemote(uid, familyId)
+                }
+            }
+
+            SyncKey.NOTE_ENTRIES -> {
+                val uid = context.uid ?: return null
+                val familyId = context.familyId ?: return null
+                startSync(scope, "SyncNoteEntriesUseCase", "note entries sync failure") {
+                    userListRepository.syncNoteEntriesFromRemote(uid, familyId)
+                }
+            }
+
+            SyncKey.CHECKLIST_ENTRIES -> {
+                val uid = context.uid ?: return null
+                val familyId = context.familyId ?: return null
+                startSync(scope, "SyncChecklistEntriesUseCase", "checklist entries sync failure") {
+                    userListRepository.syncChecklistEntriesFromRemote(uid, familyId)
+                }
+            }
+
+            SyncKey.MEAL_PLAN_ENTRIES -> {
+                val uid = context.uid ?: return null
+                val familyId = context.familyId ?: return null
+                startSync(scope, "SyncMealPlanEntriesUseCase", "meal plan entries sync failure") {
+                    userListRepository.syncMealPlanEntriesFromRemote(uid, familyId)
+                }
+            }
+        }
+    }
+
+    private fun startSync(
+        scope: CoroutineScope,
+        tag: String,
+        failureMessage: String,
+        block: () -> Flow<AppResult<Unit, AppError>>,
+    ): Job {
+        return scope.launch {
+            block().collect { result ->
+                when (result) {
+                    is AppResult.Success -> Unit
+                    is AppResult.Failure -> Log.e(tag, "$failureMessage: ${result.error}")
+                }
             }
         }
     }
@@ -227,7 +297,7 @@ class SyncCoordinator @Inject constructor(
     }
 
     private fun stopSynchronizer(key: SyncKey) {
-        activeSyncHandles.remove(key)?.job?.cancel()
+        activeSyncHandles.remove(key)?.cancel()
         activeSyncContexts.remove(key)
     }
 }

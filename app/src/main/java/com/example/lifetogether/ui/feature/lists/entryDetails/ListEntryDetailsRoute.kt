@@ -17,13 +17,19 @@ fun ListEntryDetailsRoute(
     appNavigator: AppNavigator,
 ) {
     val viewModel: ListEntryDetailsViewModel = hiltViewModel()
-    val screenState by viewModel.screenState.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val familyId by viewModel.familyId.collectAsStateWithLifecycle()
     val entryId = viewModel.entryId
-    val imageType = if (!familyId.isNullOrBlank() && !entryId.isNullOrBlank()) {
-        ImageType.RoutineListEntryImage(familyId!!, entryId)
-    } else {
-        null
+    val content = uiState as? EntryDetailsUiState.Content
+    val imageType = when (content?.details) {
+        is EntryDetailsContent.Routine ->
+            if (!familyId.isNullOrBlank() && !entryId.isNullOrBlank()) {
+                ImageType.RoutineListEntryImage(familyId!!, entryId)
+            } else {
+                null
+            }
+
+        else -> null
     }
     val snackbarHostState = LocalRootSnackbarHostState.current
     val coroutineScope = rememberCoroutineScope()
@@ -36,7 +42,7 @@ fun ListEntryDetailsRoute(
     CollectUiCommands(viewModel.uiCommands)
 
     ListEntryDetailsScreen(
-        screenState = screenState,
+        uiState = uiState,
         entryId = entryId,
         familyId = familyId,
         bitmap = bitmap,

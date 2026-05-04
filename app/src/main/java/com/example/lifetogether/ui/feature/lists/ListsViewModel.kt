@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Date
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -130,6 +131,7 @@ class ListsViewModel @Inject constructor(
         updateContentState { it.copy(isSaving = true) }
         viewModelScope.launch {
             val list = UserList(
+                id = UUID.randomUUID().toString(),
                 familyId = activeFamilyId,
                 itemName = currentState.newListName.trim(),
                 lastUpdated = Date(),

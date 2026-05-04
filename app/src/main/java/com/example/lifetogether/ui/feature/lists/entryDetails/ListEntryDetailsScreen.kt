@@ -8,6 +8,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -29,6 +31,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -54,21 +60,19 @@ import com.example.lifetogether.ui.theme.LifeTogetherTokens
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ListEntryDetailsScreen(
-    screenState: EntryDetailsScreenState,
+    uiState: EntryDetailsUiState,
     entryId: String? = null,
     familyId: String? = null,
     bitmap: Bitmap? = null,
-    showImageUploadDialog: Boolean = false,
     onImageUpload: suspend (Uri) -> Result<Unit, AppError> = { Result.Success(Unit) },
     onUiEvent: (ListEntryDetailsUiEvent) -> Unit,
     onNavigationEvent: (ListEntryDetailsNavigationEvent) -> Unit,
 ) {
-    val uiState = screenState.uiState
-    val formState = screenState.formState
+    val content = uiState as? EntryDetailsUiState.Content
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
     ) { uri: Uri? ->
-        uri?.let { onUiEvent(ListEntryDetailsUiEvent.ImageSelected(it)) }
+        uri?.let { onUiEvent(ListEntryDetailsUiEvent.Routine.ImageSelected(it)) }
     }
 
     val isExistingEntry = entryId != null
@@ -82,7 +86,7 @@ fun ListEntryDetailsScreen(
                 text = title,
                 rightIcon = if (isExistingEntry) Icon(resId = R.drawable.ic_edit, description = "edit entry") else null,
                 onRightClick = if (isExistingEntry) {
-                    if ((uiState as? EntryDetailsUiState.Content)?.isEditing == true) {
+                    if (content?.isEditing == true) {
                         { onUiEvent(ListEntryDetailsUiEvent.RequestCancelEdit) }
                     } else {
                         { onUiEvent(ListEntryDetailsUiEvent.EnterEditMode) }
@@ -116,123 +120,40 @@ fun ListEntryDetailsScreen(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
                     ) {
-                        item {
-                            val displayBitmap = if (isExistingEntry) bitmap else formState.pendingImageBitmap
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(180.dp)
-                                    .background(
-                                        MaterialTheme.colorScheme.surfaceVariant,
-                                        MaterialTheme.shapes.extraLarge
-                                    )
-                                    .clickable(enabled = uiState.isEditing) {
-                                        if (isExistingEntry) {
-                                            onUiEvent(ListEntryDetailsUiEvent.RequestImageUpload)
-                                        } else {
-                                            imagePickerLauncher.launch("image/*")
-                                        }
-                                    },
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                if (displayBitmap != null) {
-                                    Image(
-                                        modifier = Modifier.fillMaxSize(),
-                                        bitmap = displayBitmap.asImageBitmap(),
-                                        contentDescription = "entry image",
-                                        contentScale = ContentScale.Crop,
-                                    )
-                                } else {
-                                    TextDefault(
-                                        text = if (uiState.isEditing) "Tap to add image" else "No image",
-                                    )
-                                }
-
-                                if (uiState.isEditing) {
-                                    Box(
-                                        modifier = Modifier
-                                            .align(Alignment.BottomEnd)
-                                            .padding(LifeTogetherTokens.spacing.small)
-                                            .background(
-                                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
-                                                shape = MaterialTheme.shapes.small,
-                                            )
-                                            .padding(horizontal = LifeTogetherTokens.spacing.small, vertical = LifeTogetherTokens.spacing.xSmall),
-                                    ) {
-                                        Text(
-                                            text = if (displayBitmap != null) "Change image" else "Add image",
-                                            style = MaterialTheme.typography.labelSmall,
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        item {
-                            CustomTextField(
-                                value = formState.name,
-                                onValueChange = { onUiEvent(ListEntryDetailsUiEvent.NameChanged(it)) },
-                                label = "Name",
-                                modifier = Modifier.fillMaxWidth(),
-                                imeAction = ImeAction.Next,
-                                keyboardType = KeyboardType.Text,
-                                capitalization = true,
-                                enabled = uiState.isEditing,
+                        when (val details = uiState.details) {
+                            is EntryDetailsContent.Routine -> routineEntryForm(
+                                uiState = uiState,
+                                isExistingEntry = isExistingEntry,
+                                bitmap = bitmap,
+                                pendingBitmap = details.form.pendingImageBitmap,
+                                imagePickerLauncher = imagePickerLauncher,
+                                formState = details.form,
+                                onUiEvent = onUiEvent,
                             )
-                        }
 
-                        item {
-                            Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
-                                TextSubHeadingMedium("Recurrence")
-                                TagOptionRow(
-                                    options = RecurrenceUnit.entries.map { it.name.lowercase() },
-                                    selectedOption = formState.recurrenceUnit.name.lowercase(),
-                                    onSelectedOptionChange = {
-                                        if (uiState.isEditing) {
-                                            onUiEvent(ListEntryDetailsUiEvent.RecurrenceUnitChanged(it))
-                                        }
-                                    },
-                                    showDividers = false,
-                                )
-                            }
-                        }
-
-                        item {
-                            CustomTextField(
-                                value = formState.interval,
-                                onValueChange = { onUiEvent(ListEntryDetailsUiEvent.IntervalChanged(it)) },
-                                label = "Interval (N)",
-                                modifier = Modifier.fillMaxWidth(),
-                                imeAction = ImeAction.Next,
-                                keyboardType = KeyboardType.Number,
-                                enabled = uiState.isEditing,
+                            is EntryDetailsContent.Wish -> wishListEntryForm(
+                                uiState = uiState,
+                                formState = details.form,
+                                onUiEvent = onUiEvent,
                             )
-                        }
 
-                        if (formState.recurrenceUnit == RecurrenceUnit.WEEKS) {
-                            item {
-                                TextSubHeadingMedium("Weekdays")
+                            is EntryDetailsContent.Note -> notesEntryForm(
+                                uiState = uiState,
+                                formState = details.form,
+                                onUiEvent = onUiEvent,
+                            )
 
-                                Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
+                            is EntryDetailsContent.Checklist -> checklistEntryForm(
+                                uiState = uiState,
+                                formState = details.form,
+                                onUiEvent = onUiEvent,
+                            )
 
-                                FlowRow(
-                                    horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
-                                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),
-                                ) {
-                                    ListEntryDetailsViewModel.WEEKDAYS.forEachIndexed { index, day ->
-                                        val dayNum = index + 1
-                                        TagOption(
-                                            tag = day,
-                                            selectedTag = if (dayNum in formState.selectedWeekdays) day else "",
-                                            onClick = {
-                                                if (uiState.isEditing) {
-                                                    onUiEvent(ListEntryDetailsUiEvent.SelectedWeekdaysChanged(dayNum))
-                                                }
-                                            },
-                                        )
-                                    }
-                                }
-                            }
+                            is EntryDetailsContent.Meal -> mealPlannerEntryForm(
+                                uiState = uiState,
+                                formState = details.form,
+                                onUiEvent = onUiEvent,
+                            )
                         }
                     }
 
@@ -260,7 +181,7 @@ fun ListEntryDetailsScreen(
         }
     }
 
-    if (uiState is EntryDetailsUiState.Content && uiState.showDiscardDialog) {
+    if (content?.showDiscardDialog == true) {
         ConfirmationDialog(
             onDismiss = { onUiEvent(ListEntryDetailsUiEvent.DismissDiscardDialog) },
             onConfirm = { onUiEvent(ListEntryDetailsUiEvent.ConfirmDiscard) },
@@ -271,7 +192,7 @@ fun ListEntryDetailsScreen(
         )
     }
 
-    if (showImageUploadDialog && entryId != null && familyId != null) {
+    if (content?.showImageUploadDialog == true && entryId != null && familyId != null) {
         ImageUploadDialog(
             onDismiss = { onUiEvent(ListEntryDetailsUiEvent.DismissImageUpload) },
             onConfirm = { onUiEvent(ListEntryDetailsUiEvent.ConfirmImageUpload) },
@@ -284,19 +205,348 @@ fun ListEntryDetailsScreen(
     }
 }
 
+private fun LazyListScope.routineEntryForm(
+    uiState: EntryDetailsUiState.Content,
+    isExistingEntry: Boolean,
+    bitmap: Bitmap?,
+    pendingBitmap: Bitmap?,
+    imagePickerLauncher: androidx.activity.result.ActivityResultLauncher<String>,
+    formState: RoutineEntryFormState,
+    onUiEvent: (ListEntryDetailsUiEvent) -> Unit,
+) {
+    item {
+        val displayBitmap = if (isExistingEntry) bitmap else pendingBitmap
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(180.dp)
+                .background(
+                    MaterialTheme.colorScheme.surfaceVariant,
+                    MaterialTheme.shapes.extraLarge,
+                )
+                .clickable(enabled = uiState.isEditing) {
+                    if (isExistingEntry) {
+                            onUiEvent(ListEntryDetailsUiEvent.RequestImageUpload)
+                        } else {
+                            imagePickerLauncher.launch("image/*")
+                        }
+                },
+            contentAlignment = Alignment.Center,
+        ) {
+            if (displayBitmap != null) {
+                Image(
+                    modifier = Modifier.fillMaxSize(),
+                    bitmap = displayBitmap.asImageBitmap(),
+                    contentDescription = "entry image",
+                    contentScale = ContentScale.Crop,
+                )
+            } else {
+                TextDefault(
+                    text = if (uiState.isEditing) "Tap to add image" else "No image",
+                )
+            }
+
+            if (uiState.isEditing) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(LifeTogetherTokens.spacing.small)
+                        .background(
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                            shape = MaterialTheme.shapes.small,
+                        )
+                        .padding(horizontal = LifeTogetherTokens.spacing.small, vertical = LifeTogetherTokens.spacing.xSmall),
+                ) {
+                    Text(
+                        text = if (displayBitmap != null) "Change image" else "Add image",
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                }
+            }
+        }
+    }
+
+    item {
+        CustomTextField(
+            value = formState.name,
+            onValueChange = { onUiEvent(ListEntryDetailsUiEvent.NameChanged(it)) },
+            label = "Name",
+            modifier = Modifier.fillMaxWidth(),
+            imeAction = ImeAction.Next,
+            keyboardType = KeyboardType.Text,
+            capitalization = true,
+            enabled = uiState.isEditing,
+        )
+    }
+
+    item {
+        Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
+            TextSubHeadingMedium("Recurrence")
+            TagOptionRow(
+                options = RecurrenceUnit.entries.map { it.name.lowercase() },
+                selectedOption = formState.recurrenceUnit.name.lowercase(),
+                onSelectedOptionChange = {
+                    if (uiState.isEditing) {
+                        onUiEvent(ListEntryDetailsUiEvent.Routine.RecurrenceUnitChanged(it))
+                    }
+                },
+                showDividers = false,
+            )
+        }
+    }
+
+    item {
+        CustomTextField(
+            value = formState.interval,
+            onValueChange = { onUiEvent(ListEntryDetailsUiEvent.Routine.IntervalChanged(it)) },
+            label = "Interval (N)",
+            modifier = Modifier.fillMaxWidth(),
+            imeAction = ImeAction.Next,
+            keyboardType = KeyboardType.Number,
+            enabled = uiState.isEditing,
+        )
+    }
+
+    if (formState.recurrenceUnit == RecurrenceUnit.WEEKS) {
+        item {
+            TextSubHeadingMedium("Weekdays")
+
+            Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),
+            ) {
+                ListEntryDetailsViewModel.WEEKDAYS.forEachIndexed { index, day ->
+                    val dayNum = index + 1
+                    TagOption(
+                        tag = day,
+                        selectedTag = if (dayNum in formState.selectedWeekdays) day else "",
+                        onClick = {
+                            if (uiState.isEditing) {
+                                onUiEvent(ListEntryDetailsUiEvent.Routine.SelectedWeekdaysChanged(dayNum))
+                            }
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun LazyListScope.wishListEntryForm(
+    uiState: EntryDetailsUiState.Content,
+    formState: WishEntryFormState,
+    onUiEvent: (ListEntryDetailsUiEvent) -> Unit,
+) {
+    item {
+        CustomTextField(
+            value = formState.url,
+            onValueChange = { onUiEvent(ListEntryDetailsUiEvent.Wish.UrlChanged(it)) },
+            label = "URL",
+            modifier = Modifier.fillMaxWidth(),
+            imeAction = ImeAction.Next,
+            keyboardType = KeyboardType.Uri,
+            enabled = uiState.isEditing,
+        )
+    }
+    item {
+        CustomTextField(
+            value = formState.estimatedPriceMinor,
+            onValueChange = { onUiEvent(ListEntryDetailsUiEvent.Wish.EstimatedPriceMinorChanged(it)) },
+            label = "Estimated price (minor units)",
+            modifier = Modifier.fillMaxWidth(),
+            imeAction = ImeAction.Next,
+            keyboardType = KeyboardType.Number,
+            enabled = uiState.isEditing,
+        )
+    }
+    item {
+        CustomTextField(
+            value = formState.currencyCode,
+            onValueChange = { onUiEvent(ListEntryDetailsUiEvent.Wish.CurrencyCodeChanged(it)) },
+            label = "Currency code",
+            modifier = Modifier.fillMaxWidth(),
+            imeAction = ImeAction.Next,
+            keyboardType = KeyboardType.Text,
+            enabled = uiState.isEditing,
+        )
+    }
+    item {
+        Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
+            TextSubHeadingMedium("Priority")
+            TagOptionRow(
+                options = listOf("urgent", "planned", "someday"),
+                selectedOption = formState.priority.value,
+                onSelectedOptionChange = {
+                    if (uiState.isEditing) onUiEvent(ListEntryDetailsUiEvent.Wish.PriorityChanged(it))
+                },
+                showDividers = false,
+            )
+        }
+    }
+    item {
+        CustomTextField(
+            value = formState.notes,
+            onValueChange = { onUiEvent(ListEntryDetailsUiEvent.Wish.NotesChanged(it)) },
+            label = "Notes",
+            modifier = Modifier.fillMaxWidth(),
+            imeAction = ImeAction.Next,
+            keyboardType = KeyboardType.Text,
+            enabled = uiState.isEditing,
+        )
+    }
+}
+
+private fun LazyListScope.notesEntryForm(
+    uiState: EntryDetailsUiState.Content,
+    formState: NoteEntryFormState,
+    onUiEvent: (ListEntryDetailsUiEvent) -> Unit,
+) {
+    item {
+        Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
+            TextSubHeadingMedium("Mode")
+            TagOptionRow(
+                options = listOf("edit", "preview"),
+                selectedOption = if (formState.isPreviewMode) "preview" else "edit",
+                onSelectedOptionChange = {
+                    onUiEvent(ListEntryDetailsUiEvent.Note.PreviewModeChanged(it == "preview"))
+                },
+                showDividers = false,
+            )
+        }
+    }
+
+    item {
+        if (formState.isPreviewMode) {
+            SelectionContainer {
+                Text(
+                    text = renderMarkdownPreview(formState.markdownBody),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+        } else {
+            CustomTextField(
+                value = formState.markdownBody,
+                onValueChange = { onUiEvent(ListEntryDetailsUiEvent.Note.MarkdownBodyChanged(it)) },
+                label = "Markdown body",
+                modifier = Modifier.fillMaxWidth(),
+                imeAction = ImeAction.Next,
+                keyboardType = KeyboardType.Text,
+                enabled = uiState.isEditing,
+            )
+        }
+    }
+}
+
+private fun LazyListScope.checklistEntryForm(
+    uiState: EntryDetailsUiState.Content,
+    formState: ChecklistEntryFormState,
+    onUiEvent: (ListEntryDetailsUiEvent) -> Unit,
+) {
+    item {
+        Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
+            TextSubHeadingMedium("Status")
+            TagOptionRow(
+                options = listOf("pending", "completed"),
+                selectedOption = if (formState.isChecked) "completed" else "pending",
+                onSelectedOptionChange = {
+                    if (uiState.isEditing) {
+                        onUiEvent(ListEntryDetailsUiEvent.Checklist.CheckedChanged(it == "completed"))
+                    }
+                },
+                showDividers = false,
+            )
+        }
+    }
+}
+
+private fun LazyListScope.mealPlannerEntryForm(
+    uiState: EntryDetailsUiState.Content,
+    formState: MealPlanEntryFormState,
+    onUiEvent: (ListEntryDetailsUiEvent) -> Unit,
+) {
+    item {
+        CustomTextField(
+            value = formState.date,
+            onValueChange = { onUiEvent(ListEntryDetailsUiEvent.Meal.DateChanged(it)) },
+            label = "Date (YYYY-MM-DD)",
+            modifier = Modifier.fillMaxWidth(),
+            imeAction = ImeAction.Next,
+            keyboardType = KeyboardType.Text,
+            enabled = uiState.isEditing,
+        )
+    }
+    item {
+        CustomTextField(
+            value = formState.recipeId,
+            onValueChange = { onUiEvent(ListEntryDetailsUiEvent.Meal.RecipeIdChanged(it)) },
+            label = "Recipe ID (optional)",
+            modifier = Modifier.fillMaxWidth(),
+            imeAction = ImeAction.Next,
+            keyboardType = KeyboardType.Text,
+            enabled = uiState.isEditing,
+        )
+    }
+    item {
+        CustomTextField(
+            value = formState.customMealName,
+            onValueChange = { onUiEvent(ListEntryDetailsUiEvent.Meal.CustomMealNameChanged(it)) },
+            label = "Custom meal name (optional)",
+            modifier = Modifier.fillMaxWidth(),
+            imeAction = ImeAction.Next,
+            keyboardType = KeyboardType.Text,
+            enabled = uiState.isEditing,
+        )
+    }
+}
+
+private fun renderMarkdownPreview(markdown: String): AnnotatedString {
+    return buildAnnotatedString {
+        val lines = markdown.lines()
+        lines.forEachIndexed { index, rawLine ->
+            val line = rawLine.trimEnd()
+            when {
+                line.startsWith("# ") -> {
+                    pushStyle(SpanStyle(fontWeight = FontWeight.Bold))
+                    append(line.removePrefix("# "))
+                    pop()
+                }
+
+                line.startsWith("## ") -> {
+                    pushStyle(SpanStyle(fontWeight = FontWeight.Bold))
+                    append(line.removePrefix("## "))
+                    pop()
+                }
+
+                line.startsWith("- ") -> append("• ${line.removePrefix("- ")}")
+                else -> append(line)
+            }
+
+            if (index != lines.lastIndex) append("\n")
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun ListEntryDetailsScreenPreview() {
     LifeTogetherTheme {
         ListEntryDetailsScreen(
-            screenState = EntryDetailsScreenState(
-                uiState = EntryDetailsUiState.Content(isEditing = true),
-                formState = EntryFormState(
-                    name = "Water the plants",
-                    recurrenceUnit = RecurrenceUnit.WEEKS,
-                    interval = "2",
-                    selectedWeekdays = setOf(1, 4),
+            uiState = EntryDetailsUiState.Content(
+                details = EntryDetailsContent.Routine.blank().copy(
+                    form = RoutineEntryFormState(
+                        name = "Water the plants",
+                        recurrenceUnit = RecurrenceUnit.WEEKS,
+                        interval = "2",
+                        selectedWeekdays = setOf(1, 4),
+                    ),
                 ),
+                isEditing = true,
+                showDiscardDialog = false,
+                isSaving = false,
+                showImageUploadDialog = false,
             ),
             entryId = null,
             onUiEvent = {},
