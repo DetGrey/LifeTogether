@@ -335,6 +335,18 @@ private fun LazyListScope.wishListEntryForm(
 ) {
     item {
         CustomTextField(
+            value = formState.name,
+            onValueChange = { onUiEvent(ListEntryDetailsUiEvent.NameChanged(it)) },
+            label = "Name",
+            modifier = Modifier.fillMaxWidth(),
+            imeAction = ImeAction.Next,
+            keyboardType = KeyboardType.Text,
+            capitalization = true,
+            enabled = uiState.isEditing,
+        )
+    }
+    item {
+        CustomTextField(
             value = formState.url,
             onValueChange = { onUiEvent(ListEntryDetailsUiEvent.Wish.UrlChanged(it)) },
             label = "URL",
@@ -412,6 +424,25 @@ private fun LazyListScope.notesEntryForm(
     }
 
     item {
+        if (uiState.isEditing) {
+            CustomTextField(
+                value = formState.name,
+                onValueChange = { onUiEvent(ListEntryDetailsUiEvent.NameChanged(it)) },
+                label = "Title",
+                modifier = Modifier.fillMaxWidth(),
+                imeAction = ImeAction.Next,
+                keyboardType = KeyboardType.Text,
+            )
+        } else if (formState.name.isNotBlank()) {
+            Text(
+                text = formState.name,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = LifeTogetherTokens.spacing.small),
+            )
+        }
+    }
+
+    item {
         if (formState.isPreviewMode) {
             SelectionContainer {
                 Text(
@@ -440,6 +471,17 @@ private fun LazyListScope.checklistEntryForm(
     onUiEvent: (ListEntryDetailsUiEvent) -> Unit,
 ) {
     item {
+        CustomTextField(
+            value = formState.name,
+            onValueChange = { onUiEvent(ListEntryDetailsUiEvent.NameChanged(it)) },
+            label = "Name",
+            modifier = Modifier.fillMaxWidth(),
+            imeAction = ImeAction.Next,
+            keyboardType = KeyboardType.Text,
+            enabled = uiState.isEditing,
+        )
+    }
+    item {
         Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
             TextSubHeadingMedium("Status")
             TagOptionRow(
@@ -461,6 +503,17 @@ private fun LazyListScope.mealPlannerEntryForm(
     formState: MealPlanEntryFormState,
     onUiEvent: (ListEntryDetailsUiEvent) -> Unit,
 ) {
+    item {
+        CustomTextField(
+            value = formState.name,
+            onValueChange = { onUiEvent(ListEntryDetailsUiEvent.NameChanged(it)) },
+            label = "Name",
+            modifier = Modifier.fillMaxWidth(),
+            imeAction = ImeAction.Next,
+            keyboardType = KeyboardType.Text,
+            enabled = uiState.isEditing,
+        )
+    }
     item {
         CustomTextField(
             value = formState.date,
