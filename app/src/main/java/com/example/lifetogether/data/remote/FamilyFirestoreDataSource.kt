@@ -35,7 +35,11 @@ class FamilyFirestoreDataSource @Inject constructor(
             if (snapshot != null && snapshot.exists()) {
                 @Suppress("UNCHECKED_CAST")
                 val membersData = snapshot.get("members") as? List<Map<String, String>> ?: emptyList()
-                val members = membersData.map { FamilyMember(uid = it["uid"], name = it["name"]) }
+                val members = membersData.mapNotNull { member ->
+                    val uid = member["uid"]?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+                    val name = member["name"]?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+                    FamilyMember(uid = uid, name = name)
+                }
                 trySend(
                     Result.Success(
                         FamilyInformation(

@@ -9,7 +9,7 @@ import java.util.Date
 @Entity(tableName = Constants.USER_TABLE)
 data class UserEntity(
     @PrimaryKey
-    val uid: String = "",
+    val uid: String,
     val email: String? = null,
     val name: String? = null,
     val birthday: Date? = null,

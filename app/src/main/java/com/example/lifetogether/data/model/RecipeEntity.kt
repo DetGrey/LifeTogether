@@ -12,21 +12,21 @@ import java.util.Date
 @Entity(tableName = Constants.RECIPES_TABLE)
 data class RecipeEntity(
     @PrimaryKey
-    val id: String = "",
+    val id: String,
     @ColumnInfo(name = "family_id")
-    val familyId: String = "",
+    val familyId: String,
     @ColumnInfo(name = "item_name")
-    val itemName: String = "",
+    val itemName: String,
     @ColumnInfo(name = "last_updated")
-    val lastUpdated: Date = Date(),
-    val description: String = "",
-    val ingredients: List<Ingredient> = listOf(),
-    val instructions: List<Instruction> = listOf(),
+    val lastUpdated: Date,
+    val description: String,
+    val ingredients: List<Ingredient>,
+    val instructions: List<Instruction>,
     @ColumnInfo(name = "preparation_time_min")
-    val preparationTimeMin: Int = 0,
-    val favourite: Boolean = false,
-    val servings: Int = 1,
-    val tags: List<String> = listOf(),
+    val preparationTimeMin: Int,
+    val favourite: Boolean,
+    val servings: Int,
+    val tags: List<String>,
     @ColumnInfo(name = "image_data")
     val imageData: ByteArray? = null,
 ) {

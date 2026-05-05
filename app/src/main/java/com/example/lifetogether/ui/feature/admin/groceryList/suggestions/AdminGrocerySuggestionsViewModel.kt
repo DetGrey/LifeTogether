@@ -120,11 +120,11 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
                             when (state) {
                                 is AdminGrocerySuggestionsUiState.Loading -> AdminGrocerySuggestionsUiState.Content(
                                     groceryCategories = emptyList(), //todo this should probably not be null
-                                    grocerySuggestions = result.data.sortedBy { it.category?.name },
+                                    grocerySuggestions = result.data.sortedBy { it.category.name },
                                 )
 
                                 is AdminGrocerySuggestionsUiState.Content -> state.copy(
-                                    grocerySuggestions = result.data.sortedBy { it.category?.name }
+                                    grocerySuggestions = result.data.sortedBy { it.category.name }
                                 )
                             }
                         }
@@ -182,7 +182,7 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
                 editingSuggestionId = suggestion.id,
                 newSuggestionText = suggestion.suggestionName,
                 newSuggestionPrice = suggestion.approxPrice?.toString().orEmpty(),
-                newSuggestionCategory = suggestion.category ?: UNCATEGORIZED_CATEGORY,
+                newSuggestionCategory = suggestion.category,
             )
         }
     }

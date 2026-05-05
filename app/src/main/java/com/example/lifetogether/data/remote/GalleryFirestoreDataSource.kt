@@ -86,7 +86,7 @@ class GalleryFirestoreDataSource @Inject constructor(
     }
 
     suspend fun updateAlbum(album: Album): Result<Unit, AppError> {
-        val id = album.id ?: return Result.Failure(AppErrors.validation("Missing album id"))
+        val id = album.id
         return appResultOfSuspend {
             db.collection(Constants.ALBUMS_TABLE).document(id).set(album, SetOptions.merge()).await()
         }

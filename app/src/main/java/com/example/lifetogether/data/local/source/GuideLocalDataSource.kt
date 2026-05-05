@@ -74,7 +74,7 @@ class GuideLocalDataSource @Inject constructor(
         if (items.isEmpty()) return
         val entities = items.map { item ->
             GuideEntity(
-                id = item.id ?: "",
+                id = item.id,
                 familyId = item.familyId,
                 itemName = item.itemName,
                 lastUpdated = item.lastUpdated,
@@ -100,7 +100,7 @@ class GuideLocalDataSource @Inject constructor(
         if (items.isEmpty()) return
         val entities = items.map { item ->
             GuideEntity(
-                id = item.id ?: "",
+                id = item.id,
                 familyId = item.familyId,
                 itemName = item.itemName,
                 lastUpdated = item.lastUpdated,

@@ -27,7 +27,7 @@ class AlbumLocalDataSource @Inject constructor(
         val familyId = items.firstOrNull()?.familyId ?: return
         val entities = items.map { item ->
             AlbumEntity(
-                id = item.id ?: "",
+                id = item.id,
                 familyId = item.familyId,
                 itemName = item.itemName,
                 lastUpdated = item.lastUpdated,

@@ -107,7 +107,7 @@ class GuideFirestoreDataSource @Inject constructor(
     }
 
     suspend fun updateGuide(guide: Guide): Result<Unit, AppError> {
-        val id = guide.id ?: return Result.Failure(AppErrors.validation("Missing guide id"))
+        val id = guide.id
         return appResultOfSuspend {
             val upload = GuideParser.guideToFirestoreMap(guide)
             db.collection(Constants.GUIDES_TABLE).document(id).set(upload, SetOptions.merge()).await()

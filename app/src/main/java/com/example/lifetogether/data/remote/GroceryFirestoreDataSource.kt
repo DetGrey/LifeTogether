@@ -1,6 +1,5 @@
 package com.example.lifetogether.data.remote
 
-import com.example.lifetogether.data.logic.AppErrorThrowable
 import com.example.lifetogether.data.logic.AppErrors
 import com.example.lifetogether.data.logic.appResultOfSuspend
 
@@ -52,7 +51,7 @@ class GroceryFirestoreDataSource @Inject constructor(
 
     suspend fun toggleGroceryItemCompletion(item: CompletableItem): Result<Unit, AppError> {
         return appResultOfSuspend {
-            val id = item.id ?: throw AppErrorThrowable(AppErrors.validation("Missing item id"))
+            val id = item.id
             db.collection(Constants.GROCERY_TABLE).document(id).update(
                 mapOf(
                     "completed" to item.completed,

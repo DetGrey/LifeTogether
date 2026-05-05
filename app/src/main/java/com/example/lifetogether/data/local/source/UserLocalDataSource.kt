@@ -20,8 +20,9 @@ class UserLocalDataSource @Inject constructor(
         userInformation: UserInformation,
         byteArray: ByteArray? = null,
     ) {
+        val uid = requireNotNull(userInformation.uid) { "Missing user uid" }
         var userEntity = UserEntity(
-            uid = userInformation.uid ?: "",
+            uid = uid,
             email = userInformation.email,
             name = userInformation.name,
             birthday = userInformation.birthday,
@@ -48,20 +49,20 @@ class UserLocalDataSource @Inject constructor(
         byteArray: ByteArray? = null,
     ) {
         var familyEntity = FamilyEntity(
-            familyId = familyInformation.familyId ?: "",
+            familyId = familyInformation.familyId,
         )
         if (byteArray != null) {
             familyEntity = familyEntity.copy(imageData = byteArray)
         }
         familyInformationDao.updateFamily(familyEntity)
 
-        val familyMembers = familyInformation.members?.map {
+        val familyMembers = familyInformation.members.map {
             FamilyMemberEntity(
-                uid = it.uid ?: "",
+                uid = it.uid,
                 familyId = familyInformation.familyId,
                 name = it.name,
             )
-        } ?: emptyList()
+        }
         familyInformationDao.updateFamilyMembers(familyMembers)
     }
 

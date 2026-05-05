@@ -52,7 +52,7 @@ class RecipeFirestoreDataSource @Inject constructor(
     }
 
     suspend fun updateRecipe(recipe: Recipe): Result<Unit, AppError> {
-        val id = recipe.id ?: return Result.Failure(AppErrors.validation("Missing recipe id"))
+        val id = recipe.id
         return appResultOfSuspend {
             db.collection(Constants.RECIPES_TABLE).document(id).set(recipe, SetOptions.merge()).await()
         }

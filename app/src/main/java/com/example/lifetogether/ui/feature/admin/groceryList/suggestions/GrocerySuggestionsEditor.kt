@@ -46,7 +46,7 @@ fun GrocerySuggestionsEditor(
     onDeleteItem: (GrocerySuggestion) -> Unit,
 ) {
     // 1. Group data logically
-    val grouped = suggestions.groupBy { it.category?.name ?: "Uncategorized" }
+    val grouped = suggestions.groupBy { it.category.name }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),

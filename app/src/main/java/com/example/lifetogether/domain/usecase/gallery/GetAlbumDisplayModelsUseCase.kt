@@ -33,7 +33,7 @@ class GetAlbumDisplayModelsUseCase @Inject constructor(
 
                     val albums = albumsResult.data.map { album ->
                         AlbumUiModel(
-                            id = album.id ?: "",
+                            id = album.id,
                             familyId = album.familyId,
                             name = album.itemName,
                             lastUpdated = album.lastUpdated,

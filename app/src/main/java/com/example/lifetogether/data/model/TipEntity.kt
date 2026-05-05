@@ -10,14 +10,14 @@ import java.util.Date
 @Entity(tableName = Constants.TIP_TRACKER_TABLE)
 data class TipEntity(
     @PrimaryKey
-    val id: String = "",
+    val id: String,
     @ColumnInfo(name = "family_id")
-    val familyId: String = "",
+    val familyId: String,
     @ColumnInfo(name = "item_name")
-    val itemName: String = "Tip",
+    val itemName: String,
     @ColumnInfo(name = "last_updated")
-    val lastUpdated: Date = Date(),
-    val amount: Float = 0F,
+    val lastUpdated: Date,
+    val amount: Float,
     val currency: String = "DKK",
-    val date: Date = Date(),
+    val date: Date,
 )

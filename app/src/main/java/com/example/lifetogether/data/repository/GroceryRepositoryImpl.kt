@@ -61,7 +61,7 @@ class GroceryRepositoryImpl @Inject constructor(
                     } else {
                         val entities = result.data.map { item ->
                             GroceryListEntity(
-                                id = item.id ?: "",
+                                id = item.id,
                                 familyId = item.familyId,
                                 name = item.itemName,
                                 lastUpdated = item.lastUpdated,

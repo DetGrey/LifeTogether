@@ -156,7 +156,7 @@ fun AdminGrocerySuggestionsScreen(
                         onUiEvent(AdminGrocerySuggestionsUiEvent.ConfirmDeleteSuggestion)
                     },
                     dialogTitle = "Delete category?",
-                    dialogMessage = "Are you sure you want to delete the category: \"${selectedSuggestion.category?.emoji} ${selectedSuggestion.category?.name} - ${selectedSuggestion.suggestionName}\"?",
+                    dialogMessage = "Are you sure you want to delete the category: \"${selectedSuggestion.category.emoji} ${selectedSuggestion.category.name} - ${selectedSuggestion.suggestionName}\"?",
                     dismissButtonMessage = "Cancel",
                     confirmButtonMessage = "Delete",
                 )

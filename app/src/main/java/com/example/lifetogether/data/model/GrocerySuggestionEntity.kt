@@ -7,15 +7,14 @@ import androidx.room.PrimaryKey
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.util.Constants
 
-// Assuming you have an Entity for your lists that includes a count
 @Entity(tableName = Constants.GROCERY_SUGGESTIONS_TABLE)
 data class GrocerySuggestionEntity(
     @PrimaryKey
-    val id: String = "",
+    val id: String,
     @ColumnInfo(name = "suggestion_name")
-    val suggestionName: String = "",
+    val suggestionName: String,
     @Embedded(prefix = "category_")
-    var category: Category? = null,
+    var category: Category,
     @ColumnInfo(name = "approx_price")
     val approxPrice: Float? = null,
 )

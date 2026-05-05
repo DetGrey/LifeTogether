@@ -9,7 +9,7 @@ import com.example.lifetogether.util.Constants
 data class FamilyEntity(
     @PrimaryKey
     @ColumnInfo(name = "family_id")
-    val familyId: String = "",
+    val familyId: String,
 
     @ColumnInfo(name = "image_data")
     val imageData: ByteArray? = null,

@@ -51,17 +51,11 @@ class UserRepositoryImpl @Inject constructor(
         // Get family members
         val familyMembersFlow = userLocalDataSource.observeFamilyMembers(familyId).map { list ->
             list.map { familyMember ->
-                try {
-                    Log.d(TAG, "Mapping local family member")
-
-                    FamilyMember(
-                        uid = familyMember.uid,
-                        name = familyMember.name,
-                    )
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed mapping family member: ${e.message}", e)
-                    emptyList<FamilyMember>()
-                }
+                Log.d(TAG, "Mapping local family member")
+                FamilyMember(
+                    uid = familyMember.uid,
+                    name = familyMember.name,
+                )
             }
         }
 
@@ -70,8 +64,7 @@ class UserRepositoryImpl @Inject constructor(
             when (familyInfo) {
                 is Result.Success -> {
                     // Add the family members to the family information
-                    val validMembers = familyMembers.filterIsInstance<FamilyMember>()
-                    val updatedFamilyInfo = familyInfo.data.copy(members = validMembers)
+                    val updatedFamilyInfo = familyInfo.data.copy(members = familyMembers)
                     Result.Success(updatedFamilyInfo)
                 }
                 is Result.Failure -> {
@@ -172,9 +165,7 @@ class UserRepositoryImpl @Inject constructor(
         return familyFirestoreDataSource.familyInformationSnapshotListener(familyId).map { result ->
             when (result) {
                 is Result.Success -> appResultOfSuspend {
-                    val hasExistingImage = result.data.familyId?.let { familyIdValue ->
-                        userLocalDataSource.familyHasImage(familyIdValue)
-                    } ?: false
+                    val hasExistingImage = userLocalDataSource.familyHasImage(result.data.familyId)
 
                     if (!hasExistingImage) {
                         val byteArrayResult = result.data.imageUrl?.let { url ->

@@ -10,19 +10,19 @@ import java.util.Date
 @Entity(tableName = Constants.GALLERY_MEDIA_TABLE)
 data class GalleryMediaEntity(
     @PrimaryKey
-    val id: String = "",
+    val id: String,
     @ColumnInfo(name = "media_type")
-    val mediaType: MediaType, // Discriminator column
+    val mediaType: MediaType,
     @ColumnInfo(name = "family_id")
-    val familyId: String = "",
+    val familyId: String,
     @ColumnInfo(name = "item_name")
-    val itemName: String = "",
+    val itemName: String,
     @ColumnInfo(name = "last_updated")
-    val lastUpdated: Date = Date(),
+    val lastUpdated: Date,
     @ColumnInfo(name = "album_id")
-    val albumId: String = "",
+    val albumId: String,
     @ColumnInfo(name = "date_created")
-    val dateCreated: Date? = null,
+    val dateCreated: Date,
     @ColumnInfo(name = "media_uri")
     val mediaUri: String? = null,
     val thumbnail: ByteArray? = null, // Could be used for video thumbnails too if generated locally
@@ -58,7 +58,7 @@ data class GalleryMediaEntity(
         result = 31 * result + itemName.hashCode()
         result = 31 * result + lastUpdated.hashCode()
         result = 31 * result + albumId.hashCode()
-        result = 31 * result + (dateCreated?.hashCode() ?: 0)
+        result = 31 * result + (dateCreated.hashCode())
         result = 31 * result + (mediaUri?.hashCode() ?: 0)
         result = 31 * result + (thumbnail?.contentHashCode() ?: 0)
         return result

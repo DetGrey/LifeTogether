@@ -231,7 +231,7 @@ class GroceryListViewModel @Inject constructor(
         updateContentState { state ->
             state.copy(
                 newItemText = suggestion.suggestionName,
-                newItemCategory = suggestion.category ?: UNCATEGORIZED_CATEGORY,
+                newItemCategory = suggestion.category,
                 newItemPrice = suggestion.approxPrice?.toString() ?: "",
             )
         }
@@ -298,7 +298,7 @@ class GroceryListViewModel @Inject constructor(
     }
 
     private fun sendGroceryNotification(item: GroceryItem) {
-        val option = groceryListNotificationOptions(item.itemName, item.category?.emoji ?: "")
+        val option = groceryListNotificationOptions(item.itemName, item.category.emoji)
 
         viewModelScope.launch {
             sendNotificationUseCase(
@@ -391,7 +391,7 @@ class GroceryListViewModel @Inject constructor(
         val categorizedMap = list
             .filter { !it.completed }
             .groupBy { item ->
-                item.category?.takeIf { it.name != UNCATEGORIZED_CATEGORY_NAME } ?: UNCATEGORIZED_CATEGORY
+                item.category.takeIf { it.name != UNCATEGORIZED_CATEGORY_NAME } ?: UNCATEGORIZED_CATEGORY
             }
             .mapValues { entry ->
                 entry.value.sortedBy { it.itemName }

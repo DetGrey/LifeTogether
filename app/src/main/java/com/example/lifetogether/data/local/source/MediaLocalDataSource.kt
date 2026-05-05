@@ -72,7 +72,7 @@ class MediaLocalDataSource @Inject constructor(
         if (items.isEmpty() && completeSourceList != null) {
             val currentItemsById = currentRoomItems.associateBy { it.id }
             completeSourceList.forEach { mediaItem ->
-                val existing = mediaItem.id?.let { currentItemsById[it] } ?: return@forEach
+                val existing = currentItemsById[mediaItem.id] ?: return@forEach
                 entityList.add(
                     existing.copy(
                         albumId = mediaItem.albumId,
@@ -98,7 +98,7 @@ class MediaLocalDataSource @Inject constructor(
 
             entityList.add(
                 GalleryMediaEntity(
-                    id = mediaItem.id!!,
+                    id = mediaItem.id,
                     mediaType = mediaItem.mediaType,
                     familyId = mediaItem.familyId,
                     itemName = mediaItem.itemName,
@@ -130,7 +130,7 @@ class MediaLocalDataSource @Inject constructor(
 
         if (completeSourceList != null) {
             val currentIdsInRoom = currentRoomItems.map { it.id }.toSet()
-            val sourceIds = completeSourceList.mapNotNull { it.id }.toSet()
+            val sourceIds = completeSourceList.map { it.id }.toSet()
             val idsToDeleteFromRoom = currentIdsInRoom - sourceIds
             val itemsToDeleteFromStorage = currentRoomItems.filter { it.id in idsToDeleteFromRoom }
 
@@ -227,10 +227,8 @@ class MediaLocalDataSource @Inject constructor(
                 put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
                 put(MediaStore.MediaColumns.RELATIVE_PATH, relativePath)
                 put(MediaStore.MediaColumns.IS_PENDING, 1)
+                put(MediaStore.MediaColumns.DATE_TAKEN, mediaItem.dateCreated.time)
 
-                mediaItem.dateCreated?.time?.let {
-                    put(MediaStore.MediaColumns.DATE_TAKEN, it)
-                }
                 if (mediaItem is GalleryVideo) {
                     mediaItem.duration?.let { put(MediaStore.Video.Media.DURATION, it) }
                 }

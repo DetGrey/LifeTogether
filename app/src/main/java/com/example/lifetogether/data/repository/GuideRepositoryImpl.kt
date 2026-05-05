@@ -111,9 +111,8 @@ class GuideRepositoryImpl @Inject constructor(
                 }
 
                 val mergedGuides = (sharedGuides + privateGuides)
-                    .associateBy { it.id ?: "" }
+                    .associateBy { it.id }
                     .values
-                    .filter { !it.id.isNullOrBlank() }
                 val hasFullSnapshotCoverage = sharedHasSuccessfulSync && privateHasSuccessfulSync
 
                 try {

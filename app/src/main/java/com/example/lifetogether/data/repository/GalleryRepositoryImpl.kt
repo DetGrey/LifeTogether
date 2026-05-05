@@ -231,7 +231,7 @@ class GalleryRepositoryImpl @Inject constructor(
                                                 if (downloadResult is Result.Success) {
                                                     Pair(galleryMedia, downloadResult.data)
                                                 } else {
-                                                    roundFailedItems.add(galleryMedia.id ?: "unknown")
+                                                    roundFailedItems.add(galleryMedia.id)
                                                     if (downloadResult is Result.Failure) {
                                                         Log.d(TAG, "Failed to download ${galleryMedia.itemName}: ${downloadResult.error}")
                                                     } else if (lastException != null) {
@@ -274,7 +274,7 @@ class GalleryRepositoryImpl @Inject constructor(
                     )
 
                     if (remainingItems.isNotEmpty()) {
-                        failedItems.addAll(remainingItems.mapNotNull { it.id })
+                        failedItems.addAll(remainingItems.map { it.id })
                     }
                     if (failedItems.isNotEmpty()) {
                         Log.w(TAG, "${failedItems.size} gallery media items failed to sync: $failedItems")

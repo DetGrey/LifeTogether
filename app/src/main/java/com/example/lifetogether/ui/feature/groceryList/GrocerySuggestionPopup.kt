@@ -55,7 +55,7 @@ fun GrocerySuggestionPopup(
                 ) {
                     Text(
                         modifier = Modifier.fillMaxWidth(0.45f),
-                        text = "${suggestion.category?.emoji} ${suggestion.category?.name}",
+                        text = "${suggestion.category.emoji} ${suggestion.category.name}",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyMedium,
                         maxLines = 1,

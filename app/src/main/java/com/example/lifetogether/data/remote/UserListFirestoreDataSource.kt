@@ -448,8 +448,8 @@ class UserListFirestoreDataSource @Inject constructor(
         return baseEntry
     }
 
-    private fun parseFirestoreWishListEntry(documentId: String, data: Map<String, Any?>): WishListEntry {
-        fun str(key: String) = (data[key] as? String).orEmpty()
+    private fun parseFirestoreWishListEntry(documentId: String, data: Map<String, Any?>): WishListEntry? {
+        fun str(key: String): String? = (data[key] as? String)?.trim()?.takeIf { it.isNotEmpty() }
         fun date(key: String): Date? = when (val v = data[key]) {
             is Timestamp -> v.toDate()
             is Long -> Date(v)
@@ -466,13 +466,19 @@ class UserListFirestoreDataSource @Inject constructor(
             else -> null
         }
 
+        val familyId = str("familyId") ?: return null
+        val listId = str("listId") ?: return null
+        val itemName = str("name") ?: str("itemName") ?: return null
+        val lastUpdated = date("lastUpdated") ?: return null
+        val dateCreated = date("dateCreated") ?: return null
+
         return WishListEntry(
             id = documentId,
-            familyId = str("familyId"),
-            listId = str("listId"),
-            itemName = str("name").ifBlank { str("itemName") },
-            lastUpdated = date("lastUpdated") ?: Date(),
-            dateCreated = date("dateCreated") ?: Date(),
+            familyId = familyId,
+            listId = listId,
+            itemName = itemName,
+            lastUpdated = lastUpdated,
+            dateCreated = dateCreated,
             isPurchased = boolVal("isPurchased"),
             url = data["url"] as? String,
             estimatedPriceMinor = longVal("estimatedPriceMinor"),
@@ -482,27 +488,34 @@ class UserListFirestoreDataSource @Inject constructor(
         )
     }
 
-    private fun parseFirestoreNoteEntry(documentId: String, data: Map<String, Any?>): NoteEntry {
-        fun str(key: String) = (data[key] as? String).orEmpty()
+    private fun parseFirestoreNoteEntry(documentId: String, data: Map<String, Any?>): NoteEntry? {
+        fun str(key: String): String? = (data[key] as? String)?.trim()?.takeIf { it.isNotEmpty() }
         fun date(key: String): Date? = when (val v = data[key]) {
             is Timestamp -> v.toDate()
             is Long -> Date(v)
             else -> null
         }
 
+        val familyId = str("familyId") ?: return null
+        val listId = str("listId") ?: return null
+        val itemName = str("name") ?: str("itemName") ?: return null
+        val markdownBody = str("markdownBody") ?: str("body") ?: return null
+        val lastUpdated = date("lastUpdated") ?: return null
+        val dateCreated = date("dateCreated") ?: return null
+
         return NoteEntry(
             id = documentId,
-            familyId = str("familyId"),
-            listId = str("listId"),
-            itemName = str("name").ifBlank { str("itemName") },
-            markdownBody = str("markdownBody").ifBlank { str("body") },
-            lastUpdated = date("lastUpdated") ?: Date(),
-            dateCreated = date("dateCreated") ?: Date(),
+            familyId = familyId,
+            listId = listId,
+            itemName = itemName,
+            markdownBody = markdownBody,
+            lastUpdated = lastUpdated,
+            dateCreated = dateCreated,
         )
     }
 
-    private fun parseFirestoreChecklistEntry(documentId: String, data: Map<String, Any?>): ChecklistEntry {
-        fun str(key: String) = (data[key] as? String).orEmpty()
+    private fun parseFirestoreChecklistEntry(documentId: String, data: Map<String, Any?>): ChecklistEntry? {
+        fun str(key: String): String? = (data[key] as? String)?.trim()?.takeIf { it.isNotEmpty() }
         fun date(key: String): Date? = when (val v = data[key]) {
             is Timestamp -> v.toDate()
             is Long -> Date(v)
@@ -514,35 +527,48 @@ class UserListFirestoreDataSource @Inject constructor(
             else -> default
         }
 
+        val familyId = str("familyId") ?: return null
+        val listId = str("listId") ?: return null
+        val itemName = str("name") ?: str("itemName") ?: return null
+        val lastUpdated = date("lastUpdated") ?: return null
+        val dateCreated = date("dateCreated") ?: return null
+
         return ChecklistEntry(
             id = documentId,
-            familyId = str("familyId"),
-            listId = str("listId"),
-            itemName = str("name").ifBlank { str("itemName") },
+            familyId = familyId,
+            listId = listId,
+            itemName = itemName,
             isChecked = boolVal("isChecked"),
-            lastUpdated = date("lastUpdated") ?: Date(),
-            dateCreated = date("dateCreated") ?: Date(),
+            lastUpdated = lastUpdated,
+            dateCreated = dateCreated,
         )
     }
 
-    private fun parseFirestoreMealPlanEntry(documentId: String, data: Map<String, Any?>): MealPlanEntry {
-        fun str(key: String) = (data[key] as? String).orEmpty()
+    private fun parseFirestoreMealPlanEntry(documentId: String, data: Map<String, Any?>): MealPlanEntry? {
+        fun str(key: String): String? = (data[key] as? String)?.trim()?.takeIf { it.isNotEmpty() }
         fun date(key: String): Date? = when (val v = data[key]) {
             is Timestamp -> v.toDate()
             is Long -> Date(v)
             else -> null
         }
 
+        val familyId = str("familyId") ?: return null
+        val listId = str("listId") ?: return null
+        val itemName = str("name") ?: str("itemName") ?: return null
+        val mealDate = str("date") ?: return null
+        val lastUpdated = date("lastUpdated") ?: return null
+        val dateCreated = date("dateCreated") ?: return null
+
         return MealPlanEntry(
             id = documentId,
-            familyId = str("familyId"),
-            listId = str("listId"),
-            itemName = str("name").ifBlank { str("itemName") },
-            date = str("date"),
+            familyId = familyId,
+            listId = listId,
+            itemName = itemName,
+            date = mealDate,
             recipeId = data["recipeId"] as? String,
             customMealName = data["customMealName"] as? String,
-            lastUpdated = date("lastUpdated") ?: Date(),
-            dateCreated = date("dateCreated") ?: Date(),
+            lastUpdated = lastUpdated,
+            dateCreated = dateCreated,
         )
     }
 

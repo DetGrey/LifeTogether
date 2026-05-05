@@ -6,7 +6,7 @@ import com.example.lifetogether.util.Constants
 
 @Entity(tableName = Constants.CATEGORY_TABLE)
 data class CategoryEntity(
-    val emoji: String = "",
+    val emoji: String,
     @PrimaryKey
-    val name: String = "",
+    val name: String,
 )

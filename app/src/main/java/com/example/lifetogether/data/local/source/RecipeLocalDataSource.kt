@@ -26,7 +26,7 @@ class RecipeLocalDataSource @Inject constructor(
         val familyId = items.firstOrNull()?.familyId ?: return
         var entities = items.map { item ->
             RecipeEntity(
-                id = item.id ?: "",
+                id = item.id,
                 familyId = item.familyId,
                 itemName = item.itemName,
                 lastUpdated = item.lastUpdated,

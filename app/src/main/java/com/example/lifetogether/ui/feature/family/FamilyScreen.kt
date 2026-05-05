@@ -131,7 +131,7 @@ fun FamilyScreen(
                                     resId = R.drawable.ic_profile,
                                     description = "person icon",
                                 ),
-                                title = member.name ?: "Unknown Member",
+                                title = member.name,
                                 value = if (member.uid == uid) "(Myself)" else "Remove",
                                 onClick = if (member.uid == uid) {
                                     null
@@ -247,7 +247,7 @@ fun FamilyScreenPreview() {
                 familyInformation = FamilyInformation(
                     familyId = "family-123",
                     members = listOf(
-                        FamilyMember(name = "Ane")
+                        FamilyMember(uid = "uid-1", name = "Ane")
                     ),
                 ),
             ),
