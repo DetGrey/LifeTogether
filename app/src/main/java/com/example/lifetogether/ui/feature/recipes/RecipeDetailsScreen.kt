@@ -35,6 +35,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
+import com.example.lifetogether.domain.model.enums.MeasureType
 import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.ui.common.add.AddNewString
@@ -448,6 +449,7 @@ private fun RecipeDetailsScreenPreview() {
                 description = "A simple soup.",
                 ingredients = listOf(
                     com.example.lifetogether.domain.model.recipe.Ingredient(
+                        measureType = MeasureType.PIECE,
                         itemName = "Tomatoes",
                         amount = 3.0,
                     ),
@@ -472,6 +474,7 @@ private fun RecipeDetailsScreenPreview() {
                 ),
                 ingredientsByServings = listOf(
                     com.example.lifetogether.domain.model.recipe.Ingredient(
+                        measureType = MeasureType.PIECE,
                         itemName = "Tomatoes",
                         amount = 3.0,
                     ),

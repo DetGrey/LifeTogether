@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Date
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -250,6 +251,7 @@ class GroceryListViewModel @Inject constructor(
 
         val groceryItem = familyId?.let {
             GroceryItem(
+                id = UUID.randomUUID().toString(),
                 familyId = it,
                 category = state.newItemCategory,
                 itemName = state.newItemText,

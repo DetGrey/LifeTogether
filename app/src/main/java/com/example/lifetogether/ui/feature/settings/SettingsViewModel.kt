@@ -102,9 +102,8 @@ class SettingsViewModel @Inject constructor(
         val state = _uiState.value as? SettingsUiState.Content ?: return
         val addedFamilyId = state.addedFamilyId
         if (addedFamilyId.isEmpty()) return
-        val userInformation = state.userInformation ?: return
-        val uid = userInformation.uid ?: return
-        val name = userInformation.name ?: return
+        val uid = state.userInformation.uid
+        val name = state.userInformation.name
 
         viewModelScope.launch {
             when (val result = familyRepository.joinFamily(addedFamilyId, uid, name)) {
@@ -116,8 +115,8 @@ class SettingsViewModel @Inject constructor(
 
     private fun createNewFamily() {
         val userInformation = (_uiState.value as? SettingsUiState.Content)?.userInformation ?: return
-        val uid = userInformation.uid ?: return
-        val name = userInformation.name ?: return
+        val uid = userInformation.uid
+        val name = userInformation.name
 
         viewModelScope.launch {
             when (val result = familyRepository.createNewFamily(uid, name)) {

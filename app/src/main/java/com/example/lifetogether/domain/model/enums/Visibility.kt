@@ -8,8 +8,8 @@ enum class Visibility(val value: String) {
     ;
 
     companion object {
-        fun fromValue(value: String?): Visibility {
-            return entries.firstOrNull { it.value.equals(value, ignoreCase = true) } ?: PRIVATE
+        fun fromValue(value: String?): Visibility? {
+            return entries.firstOrNull { it.value.equals(value, ignoreCase = true) }
         }
     }
 }

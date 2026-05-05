@@ -136,6 +136,7 @@ fun ItemCategoryListPreview() {
 
 val groceryList = listOf(
     GroceryItem(
+        id = "grocery-1",
         familyId = "dsuaihfao",
         category = Category(
             "🍎",
@@ -146,6 +147,7 @@ val groceryList = listOf(
         completed = false,
     ),
     GroceryItem(
+        id = "grocery-2",
         familyId = "dsuaihfao",
         category = Category(
             "🍎",

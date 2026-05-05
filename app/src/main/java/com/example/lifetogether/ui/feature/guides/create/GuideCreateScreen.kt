@@ -253,6 +253,7 @@ private fun GuideCreateScreenPreview() {
             uiState = GuideCreateUiState(
                 title = "Family reset",
                 description = "A simple weekly reset guide",
+                visibility = Visibility.PRIVATE,
                 sections = listOf(
                     GuideSection(
                         id = "section-1",

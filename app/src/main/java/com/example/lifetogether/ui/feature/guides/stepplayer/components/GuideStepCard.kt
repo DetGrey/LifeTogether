@@ -77,8 +77,11 @@ private fun GuideStepCardPreview() {
             header = "Current step",
             step = GuideStep(
                 id = "step-1",
+                name = "Step 3",
                 type = GuideStepType.NUMBERED,
+                title = "",
                 content = "Share one thing that felt good this week.",
+                subSteps = emptyList(),
             ),
             stepNumber = 3,
             emphasized = true,
@@ -87,9 +90,11 @@ private fun GuideStepCardPreview() {
             header = "Current step",
             step = GuideStep(
                 id = "step-1",
+                name = "R1",
                 type = GuideStepType.ROUND,
                 title = "R1",
                 content = "Share one thing that felt good this week.",
+                subSteps = emptyList(),
             ),
             stepNumber = 3,
             emphasized = true,

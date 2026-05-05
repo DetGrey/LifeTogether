@@ -7,8 +7,8 @@ enum class WishListPriority(val value: String) {
     ;
 
     companion object {
-        fun fromValue(value: String?): WishListPriority {
-            return entries.firstOrNull { it.value.equals(value, ignoreCase = true) } ?: PLANNED
+        fun fromValue(value: String?): WishListPriority? {
+            return entries.firstOrNull { it.value.equals(value, ignoreCase = true) }
         }
     }
 }

@@ -9,6 +9,7 @@ import com.example.lifetogether.data.logic.AppErrorThrowable
 import com.example.lifetogether.data.logic.appResultOfSuspend
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.lists.ChecklistEntry
+import com.example.lifetogether.domain.model.lists.ListType
 import com.example.lifetogether.domain.model.lists.MealPlanEntry
 import com.example.lifetogether.domain.model.lists.NoteEntry
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
@@ -19,9 +20,10 @@ import com.example.lifetogether.domain.model.lists.WishListPriority
 import com.example.lifetogether.domain.result.ListSnapshot
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.util.Constants
-import com.google.firebase.Timestamp
+import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.PropertyName
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
@@ -48,10 +50,12 @@ class UserListFirestoreDataSource @Inject constructor(
                 return@addSnapshotListener
             }
             val items = snapshot.documents.mapNotNull { doc ->
-                val data = doc.data ?: return@mapNotNull null
-                runCatching { parseFirestoreUserList(doc.id, data) }
-                    .onFailure { Log.e(TAG, "Failed parsing family user list ${doc.id}", it) }
-                    .getOrNull()
+                try {
+                    doc.toObject(UserListDto::class.java)?.toDomain(doc.id)
+                } catch (throwable: Throwable) {
+                    Log.e(TAG, "Failed parsing family user list ${doc.id}", throwable)
+                    null
+                }
             }
             trySend(Result.Success(ListSnapshot(items))).isSuccess
         }
@@ -73,10 +77,12 @@ class UserListFirestoreDataSource @Inject constructor(
                 return@addSnapshotListener
             }
             val items = snapshot.documents.mapNotNull { doc ->
-                val data = doc.data ?: return@mapNotNull null
-                runCatching { parseFirestoreUserList(doc.id, data) }
-                    .onFailure { Log.e(TAG, "Failed parsing private user list ${doc.id}", it) }
-                    .getOrNull()
+                try {
+                    doc.toObject(UserListDto::class.java)?.toDomain(doc.id)
+                } catch (throwable: Throwable) {
+                    Log.e(TAG, "Failed parsing private user list ${doc.id}", throwable)
+                    null
+                }
             }
             trySend(Result.Success(ListSnapshot(items))).isSuccess
         }
@@ -95,10 +101,12 @@ class UserListFirestoreDataSource @Inject constructor(
                 return@addSnapshotListener
             }
             val items = snapshot.documents.mapNotNull { doc ->
-                val data = doc.data ?: return@mapNotNull null
-                runCatching { parseFirestoreRoutineListEntry(doc.id, data) }
-                    .onFailure { Log.e(TAG, "Failed parsing list entry ${doc.id}", it) }
-                    .getOrNull()
+                try {
+                    doc.toObject(RoutineListEntryDto::class.java)?.toDomain(doc.id)
+                } catch (throwable: Throwable) {
+                    Log.e(TAG, "Failed parsing list entry ${doc.id}", throwable)
+                    null
+                }
             }
             trySend(Result.Success(ListSnapshot(items))).isSuccess
         }
@@ -117,10 +125,12 @@ class UserListFirestoreDataSource @Inject constructor(
                 return@addSnapshotListener
             }
             val items = snapshot.documents.mapNotNull { doc ->
-                val data = doc.data ?: return@mapNotNull null
-                runCatching { parseFirestoreWishListEntry(doc.id, data) }
-                    .onFailure { Log.e(TAG, "Failed parsing wish list entry ${doc.id}", it) }
-                    .getOrNull()
+                try {
+                    doc.toObject(WishListEntryDto::class.java)?.toDomain(doc.id)
+                } catch (throwable: Throwable) {
+                    Log.e(TAG, "Failed parsing wish list entry ${doc.id}", throwable)
+                    null
+                }
             }
             trySend(Result.Success(ListSnapshot(items))).isSuccess
         }
@@ -139,10 +149,12 @@ class UserListFirestoreDataSource @Inject constructor(
                 return@addSnapshotListener
             }
             val items = snapshot.documents.mapNotNull { doc ->
-                val data = doc.data ?: return@mapNotNull null
-                runCatching { parseFirestoreNoteEntry(doc.id, data) }
-                    .onFailure { Log.e(TAG, "Failed parsing note entry ${doc.id}", it) }
-                    .getOrNull()
+                try {
+                    doc.toObject(NoteEntryDto::class.java)?.toDomain(doc.id)
+                } catch (throwable: Throwable) {
+                    Log.e(TAG, "Failed parsing note entry ${doc.id}", throwable)
+                    null
+                }
             }
             trySend(Result.Success(ListSnapshot(items))).isSuccess
         }
@@ -161,10 +173,12 @@ class UserListFirestoreDataSource @Inject constructor(
                 return@addSnapshotListener
             }
             val items = snapshot.documents.mapNotNull { doc ->
-                val data = doc.data ?: return@mapNotNull null
-                runCatching { parseFirestoreChecklistEntry(doc.id, data) }
-                    .onFailure { Log.e(TAG, "Failed parsing checklist entry ${doc.id}", it) }
-                    .getOrNull()
+                try {
+                    doc.toObject(ChecklistEntryDto::class.java)?.toDomain(doc.id)
+                } catch (throwable: Throwable) {
+                    Log.e(TAG, "Failed parsing checklist entry ${doc.id}", throwable)
+                    null
+                }
             }
             trySend(Result.Success(ListSnapshot(items))).isSuccess
         }
@@ -183,10 +197,12 @@ class UserListFirestoreDataSource @Inject constructor(
                 return@addSnapshotListener
             }
             val items = snapshot.documents.mapNotNull { doc ->
-                val data = doc.data ?: return@mapNotNull null
-                runCatching { parseFirestoreMealPlanEntry(doc.id, data) }
-                    .onFailure { Log.e(TAG, "Failed parsing meal plan entry ${doc.id}", it) }
-                    .getOrNull()
+                try {
+                    doc.toObject(MealPlanEntryDto::class.java)?.toDomain(doc.id)
+                } catch (throwable: Throwable) {
+                    Log.e(TAG, "Failed parsing meal plan entry ${doc.id}", throwable)
+                    null
+                }
             }
             trySend(Result.Success(ListSnapshot(items))).isSuccess
         }
@@ -200,7 +216,7 @@ class UserListFirestoreDataSource @Inject constructor(
                 throw AppErrorThrowable(AppErrors.validation("Missing user list id"))
             }
             db.collection(Constants.USER_LISTS_TABLE).document(id)
-                .set(userListToFirestoreMap(userList), SetOptions.merge())
+                .set(userList.toDto().toFirestoreMap(), SetOptions.merge())
                 .await()
             id
         }
@@ -209,7 +225,7 @@ class UserListFirestoreDataSource @Inject constructor(
     suspend fun saveRoutineListEntry(entry: RoutineListEntry): Result<String, AppError> {
         return appResultOfSuspend {
             val doc = db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE)
-                .add(listEntryToFirestoreMap(entry)).await()
+                .add(entry.toDto().toFirestoreMap()).await()
             doc.id
         }
     }
@@ -219,7 +235,7 @@ class UserListFirestoreDataSource @Inject constructor(
         if (id.isBlank()) return Result.Failure(AppErrors.validation("Missing routine list entry id"))
         return appResultOfSuspend {
             db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE).document(id)
-                .set(listEntryToFirestoreMap(entry), SetOptions.merge())
+                .set(entry.toDto().toFirestoreMap(), SetOptions.merge())
                 .await()
         }
     }
@@ -227,7 +243,7 @@ class UserListFirestoreDataSource @Inject constructor(
     suspend fun saveWishListEntry(entry: WishListEntry): Result<String, AppError> {
         return appResultOfSuspend {
             val doc = db.collection(Constants.WISH_LIST_ENTRIES_TABLE)
-                .add(wishListEntryToFirestoreMap(entry)).await()
+                .add(entry.toDto().toFirestoreMap()).await()
             doc.id
         }
     }
@@ -237,7 +253,7 @@ class UserListFirestoreDataSource @Inject constructor(
         if (id.isBlank()) return Result.Failure(AppErrors.validation("Missing wish list entry id"))
         return appResultOfSuspend {
             db.collection(Constants.WISH_LIST_ENTRIES_TABLE).document(id)
-                .set(wishListEntryToFirestoreMap(entry), SetOptions.merge())
+                .set(entry.toDto().toFirestoreMap(), SetOptions.merge())
                 .await()
         }
     }
@@ -255,7 +271,7 @@ class UserListFirestoreDataSource @Inject constructor(
     suspend fun saveNoteEntry(entry: NoteEntry): Result<String, AppError> {
         return appResultOfSuspend {
             val doc = db.collection(Constants.NOTE_LIST_ENTRIES_TABLE)
-                .add(noteEntryToFirestoreMap(entry)).await()
+                .add(entry.toDto().toFirestoreMap()).await()
             doc.id
         }
     }
@@ -265,7 +281,7 @@ class UserListFirestoreDataSource @Inject constructor(
         if (id.isBlank()) return Result.Failure(AppErrors.validation("Missing note entry id"))
         return appResultOfSuspend {
             db.collection(Constants.NOTE_LIST_ENTRIES_TABLE).document(id)
-                .set(noteEntryToFirestoreMap(entry), SetOptions.merge())
+                .set(entry.toDto().toFirestoreMap(), SetOptions.merge())
                 .await()
         }
     }
@@ -283,7 +299,7 @@ class UserListFirestoreDataSource @Inject constructor(
     suspend fun saveChecklistEntry(entry: ChecklistEntry): Result<String, AppError> {
         return appResultOfSuspend {
             val doc = db.collection(Constants.CHECKLIST_ENTRIES_TABLE)
-                .add(checklistEntryToFirestoreMap(entry)).await()
+                .add(entry.toDto().toFirestoreMap()).await()
             doc.id
         }
     }
@@ -293,7 +309,7 @@ class UserListFirestoreDataSource @Inject constructor(
         if (id.isBlank()) return Result.Failure(AppErrors.validation("Missing checklist entry id"))
         return appResultOfSuspend {
             db.collection(Constants.CHECKLIST_ENTRIES_TABLE).document(id)
-                .set(checklistEntryToFirestoreMap(entry), SetOptions.merge())
+                .set(entry.toDto().toFirestoreMap(), SetOptions.merge())
                 .await()
         }
     }
@@ -311,7 +327,7 @@ class UserListFirestoreDataSource @Inject constructor(
     suspend fun saveMealPlanEntry(entry: MealPlanEntry): Result<String, AppError> {
         return appResultOfSuspend {
             val doc = db.collection(Constants.MEAL_PLAN_ENTRIES_TABLE)
-                .add(mealPlanEntryToFirestoreMap(entry)).await()
+                .add(entry.toDto().toFirestoreMap()).await()
             doc.id
         }
     }
@@ -321,7 +337,7 @@ class UserListFirestoreDataSource @Inject constructor(
         if (id.isBlank()) return Result.Failure(AppErrors.validation("Missing meal plan entry id"))
         return appResultOfSuspend {
             db.collection(Constants.MEAL_PLAN_ENTRIES_TABLE).document(id)
-                .set(mealPlanEntryToFirestoreMap(entry), SetOptions.merge())
+                .set(entry.toDto().toFirestoreMap(), SetOptions.merge())
                 .await()
         }
     }
@@ -364,279 +380,470 @@ class UserListFirestoreDataSource @Inject constructor(
         }
     }
 
-    private fun parseFirestoreUserList(documentId: String, data: Map<String, Any?>): UserList {
-        fun requiredStr(key: String): String =
-            (data[key] as? String)?.trim()?.takeIf { it.isNotEmpty() }
-                ?: throw IllegalArgumentException("Missing $key")
-        fun date(key: String): Date? = when (val v = data[key]) {
-            is Timestamp -> v.toDate()
-            is Long -> Date(v)
-            else -> null
-        }
-        fun requiredDate(key: String): Date = date(key) ?: throw IllegalArgumentException("Missing $key")
-        fun requiredListType(value: String): com.example.lifetogether.domain.model.lists.ListType {
-            return com.example.lifetogether.domain.model.lists.ListType.entries.firstOrNull {
-                it.value.equals(value, ignoreCase = true)
-            } ?: throw IllegalArgumentException("Invalid type: $value")
-        }
-        fun requiredVisibility(value: String): Visibility {
-            return Visibility.entries.firstOrNull { it.value.equals(value, ignoreCase = true) }
-                ?: throw IllegalArgumentException("Invalid visibility: $value")
-        }
-        val itemName = (data["name"] as? String)?.trim()?.takeIf { it.isNotEmpty() }
-            ?: requiredStr("itemName")
-        return UserList(
-            id = documentId,
-            familyId = requiredStr("familyId"),
-            itemName = itemName,
-            lastUpdated = requiredDate("lastUpdated"),
-            dateCreated = requiredDate("dateCreated"),
-            type = requiredListType(requiredStr("type")),
-            visibility = requiredVisibility(requiredStr("visibility")),
-            ownerUid = requiredStr("ownerUid"),
-        )
-    }
-
-    private fun parseFirestoreRoutineListEntry(documentId: String, data: Map<String, Any?>): RoutineListEntry? {
-        fun str(key: String): String? = (data[key] as? String)?.trim()?.takeIf { it.isNotEmpty() }
-        fun date(key: String): Date? = when (val v = data[key]) {
-            is Timestamp -> v.toDate()
-            is Long -> Date(v)
-            else -> null
-        }
-        fun intVal(key: String, default: Int = 0) = when (val v = data[key]) {
-            is Long -> v.toInt()
-            is Int -> v
-            else -> default
-        }
-        @Suppress("UNCHECKED_CAST")
-        val weekdaysRaw = (data["weekdays"] as? List<*>)?.mapNotNull {
-            when (it) {
-                is Long -> it.toInt()
-                is Int -> it
-                else -> null
+    private data class UserListDto(
+        @DocumentId @Transient
+        val id: String? = null,
+        val familyId: String? = null,
+        @get:PropertyName("name")
+        val name: String? = null,
+        @get:PropertyName("itemName")
+        val itemName: String? = null,
+        val lastUpdated: Date? = null,
+        val dateCreated: Date? = null,
+        val type: String? = null,
+        val visibility: String? = null,
+        val ownerUid: String? = null,
+    ) {
+        fun toDomain(documentId: String): UserList? {
+            val familyIdValue = familyId?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+            val itemNameValue = name?.trim()?.takeIf { it.isNotEmpty() }
+                ?: itemName?.trim()?.takeIf { it.isNotEmpty() }
+                ?: return null
+            val typeValue = ListType.entries.firstOrNull { listType ->
+                type?.trim()?.takeIf { it.isNotEmpty() }?.let { listType.value.equals(it, ignoreCase = true) }
+                    ?: false
             }
-        } ?: emptyList()
+                ?: return null
+            val visibilityValue = Visibility.entries.firstOrNull { listVisibility ->
+                visibility?.trim()?.takeIf { it.isNotEmpty() }?.let { listVisibility.value.equals(it, ignoreCase = true) }
+                    ?: false
+            }
+                ?: return null
 
-        val familyId = str("familyId") ?: return null
-        val listId = str("listId") ?: return null
-        val itemName = str("name") ?: str("itemName") ?: return null
-        val lastUpdated = date("lastUpdated") ?: return null
-        val dateCreated = date("dateCreated") ?: return null
-        val nextDate = date("nextDate") ?: return null
-        val recurrenceUnit = RecurrenceUnit.fromValue(str("recurrenceUnit"))
-        val interval = intVal("interval", 1)
-        if (interval < 1) return null
-        if (recurrenceUnit == RecurrenceUnit.WEEKS && weekdaysRaw.isEmpty()) return null
-
-        val baseEntry = RoutineListEntry(
-            id = documentId,
-            familyId = familyId,
-            listId = listId,
-            itemName = itemName,
-            lastUpdated = lastUpdated,
-            dateCreated = dateCreated,
-            nextDate = nextDate,
-            lastCompletedAt = date("lastCompletedAt"),
-            completionCount = intVal("completionCount"),
-            recurrenceUnit = recurrenceUnit,
-            interval = interval,
-            weekdays = weekdaysRaw,
-            imageUrl = data["imageUrl"] as? String,
-        )
-
-        return baseEntry
+            return UserList(
+                id = documentId,
+                familyId = familyIdValue,
+                itemName = itemNameValue,
+                lastUpdated = lastUpdated ?: return null,
+                dateCreated = dateCreated ?: return null,
+                type = typeValue,
+                visibility = visibilityValue,
+                ownerUid = ownerUid?.trim()?.takeIf { it.isNotEmpty() } ?: return null,
+            )
+        }
     }
 
-    private fun parseFirestoreWishListEntry(documentId: String, data: Map<String, Any?>): WishListEntry? {
-        fun str(key: String): String? = (data[key] as? String)?.trim()?.takeIf { it.isNotEmpty() }
-        fun date(key: String): Date? = when (val v = data[key]) {
-            is Timestamp -> v.toDate()
-            is Long -> Date(v)
-            else -> null
-        }
-        fun boolVal(key: String, default: Boolean = false) = when (val v = data[key]) {
-            is Boolean -> v
-            is Long -> v != 0L
-            else -> default
-        }
-        fun longVal(key: String): Long? = when (val v = data[key]) {
-            is Long -> v
-            is Int -> v.toLong()
-            else -> null
-        }
+    private data class RoutineListEntryDto(
+        @DocumentId @Transient
+        val id: String? = null,
+        val familyId: String? = null,
+        val listId: String? = null,
+        @get:PropertyName("name")
+        val name: String? = null,
+        @get:PropertyName("itemName")
+        val itemName: String? = null,
+        val lastUpdated: Date? = null,
+        val dateCreated: Date? = null,
+        val nextDate: Date? = null,
+        val lastCompletedAt: Date? = null,
+        val completionCount: Int? = null,
+        val recurrenceUnit: String? = null,
+        val interval: Int? = null,
+        val weekdays: List<Long>? = null,
+        val imageUrl: String? = null,
+    ) {
+        fun toDomain(documentId: String): RoutineListEntry? {
+            val familyIdValue = familyId?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+            val listIdValue = listId?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+            val itemNameValue = name?.trim()?.takeIf { it.isNotEmpty() }
+                ?: itemName?.trim()?.takeIf { it.isNotEmpty() }
+                ?: return null
+            val lastUpdatedValue = lastUpdated ?: return null
+            val dateCreatedValue = dateCreated ?: return null
+            val nextDateValue = nextDate ?: return null
+            val recurrenceUnitValue = RecurrenceUnit.entries.firstOrNull {
+                it.value.equals(recurrenceUnit, ignoreCase = true)
+            } ?: return null
+            val intervalValue = interval ?: 1
+            if (intervalValue < 1) return null
+            val weekdaysValue = weekdays?.map { it.toInt() } ?: emptyList()
+            if (recurrenceUnitValue == RecurrenceUnit.WEEKS && weekdaysValue.isEmpty()) return null
 
-        val familyId = str("familyId") ?: return null
-        val listId = str("listId") ?: return null
-        val itemName = str("name") ?: str("itemName") ?: return null
-        val lastUpdated = date("lastUpdated") ?: return null
-        val dateCreated = date("dateCreated") ?: return null
+            return RoutineListEntry(
+                id = documentId,
+                familyId = familyIdValue,
+                listId = listIdValue,
+                itemName = itemNameValue,
+                lastUpdated = lastUpdatedValue,
+                dateCreated = dateCreatedValue,
+                nextDate = nextDateValue,
+                lastCompletedAt = lastCompletedAt,
+                completionCount = completionCount ?: 0,
+                recurrenceUnit = recurrenceUnitValue,
+                interval = intervalValue,
+                weekdays = weekdaysValue,
+                imageUrl = imageUrl,
+            )
+        }
+    }
 
-        return WishListEntry(
-            id = documentId,
-            familyId = familyId,
-            listId = listId,
-            itemName = itemName,
-            lastUpdated = lastUpdated,
-            dateCreated = dateCreated,
-            isPurchased = boolVal("isPurchased"),
-            url = data["url"] as? String,
-            estimatedPriceMinor = longVal("estimatedPriceMinor"),
-            currencyCode = data["currencyCode"] as? String,
-            priority = WishListPriority.fromValue(data["priority"] as? String),
-            notes = data["notes"] as? String,
+    private data class WishListEntryDto(
+        @DocumentId @Transient
+        val id: String? = null,
+        val familyId: String? = null,
+        val listId: String? = null,
+        @get:PropertyName("name")
+        val name: String? = null,
+        @get:PropertyName("itemName")
+        val itemName: String? = null,
+        val lastUpdated: Date? = null,
+        val dateCreated: Date? = null,
+        val isPurchased: Boolean? = null,
+        val url: String? = null,
+        val estimatedPriceMinor: Long? = null,
+        val currencyCode: String? = null,
+        val priority: String? = null,
+        val notes: String? = null,
+    ) {
+        fun toDomain(documentId: String): WishListEntry? {
+            val familyIdValue = familyId?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+            val listIdValue = listId?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+            val itemNameValue = name?.trim()?.takeIf { it.isNotEmpty() }
+                ?: itemName?.trim()?.takeIf { it.isNotEmpty() }
+                ?: return null
+            val lastUpdatedValue = lastUpdated ?: return null
+            val dateCreatedValue = dateCreated ?: return null
+            val priorityValue = WishListPriority.entries.firstOrNull {
+                it.value.equals(priority, ignoreCase = true)
+            } ?: return null
+
+            return WishListEntry(
+                id = documentId,
+                familyId = familyIdValue,
+                listId = listIdValue,
+                itemName = itemNameValue,
+                lastUpdated = lastUpdatedValue,
+                dateCreated = dateCreatedValue,
+                isPurchased = isPurchased ?: false,
+                url = url,
+                estimatedPriceMinor = estimatedPriceMinor,
+                currencyCode = currencyCode,
+                priority = priorityValue,
+                notes = notes,
+            )
+        }
+    }
+
+    private data class NoteEntryDto(
+        @DocumentId @Transient
+        val id: String? = null,
+        val familyId: String? = null,
+        val listId: String? = null,
+        @get:PropertyName("name")
+        val name: String? = null,
+        @get:PropertyName("itemName")
+        val itemName: String? = null,
+        val markdownBody: String? = null,
+        @get:PropertyName("body")
+        val body: String? = null,
+        val lastUpdated: Date? = null,
+        val dateCreated: Date? = null,
+    ) {
+        fun toDomain(documentId: String): NoteEntry? {
+            val familyIdValue = familyId?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+            val listIdValue = listId?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+            val itemNameValue = name?.trim()?.takeIf { it.isNotEmpty() }
+                ?: itemName?.trim()?.takeIf { it.isNotEmpty() }
+                ?: return null
+            val markdownBodyValue = markdownBody?.trim()?.takeIf { it.isNotEmpty() }
+                ?: body?.trim()?.takeIf { it.isNotEmpty() }
+                ?: return null
+            val lastUpdatedValue = lastUpdated ?: return null
+            val dateCreatedValue = dateCreated ?: return null
+
+            return NoteEntry(
+                id = documentId,
+                familyId = familyIdValue,
+                listId = listIdValue,
+                itemName = itemNameValue,
+                markdownBody = markdownBodyValue,
+                lastUpdated = lastUpdatedValue,
+                dateCreated = dateCreatedValue,
+            )
+        }
+    }
+
+    private data class ChecklistEntryDto(
+        @DocumentId @Transient
+        val id: String? = null,
+        val familyId: String? = null,
+        val listId: String? = null,
+        @get:PropertyName("name")
+        val name: String? = null,
+        @get:PropertyName("itemName")
+        val itemName: String? = null,
+        val isChecked: Boolean? = null,
+        val lastUpdated: Date? = null,
+        val dateCreated: Date? = null,
+    ) {
+        fun toDomain(documentId: String): ChecklistEntry? {
+            val familyIdValue = familyId?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+            val listIdValue = listId?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+            val itemNameValue = name?.trim()?.takeIf { it.isNotEmpty() }
+                ?: itemName?.trim()?.takeIf { it.isNotEmpty() }
+                ?: return null
+            val lastUpdatedValue = lastUpdated ?: return null
+            val dateCreatedValue = dateCreated ?: return null
+
+            return ChecklistEntry(
+                id = documentId,
+                familyId = familyIdValue,
+                listId = listIdValue,
+                itemName = itemNameValue,
+                isChecked = isChecked ?: false,
+                lastUpdated = lastUpdatedValue,
+                dateCreated = dateCreatedValue,
+            )
+        }
+    }
+
+    private data class MealPlanEntryDto(
+        @DocumentId @Transient
+        val id: String? = null,
+        val familyId: String? = null,
+        val listId: String? = null,
+        @get:PropertyName("name")
+        val name: String? = null,
+        @get:PropertyName("itemName")
+        val itemName: String? = null,
+        val date: String? = null,
+        val recipeId: String? = null,
+        val customMealName: String? = null,
+        val lastUpdated: Date? = null,
+        val dateCreated: Date? = null,
+    ) {
+        fun toDomain(documentId: String): MealPlanEntry? {
+            val familyIdValue = familyId?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+            val listIdValue = listId?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+            val itemNameValue = name?.trim()?.takeIf { it.isNotEmpty() }
+                ?: itemName?.trim()?.takeIf { it.isNotEmpty() }
+                ?: return null
+            val mealDateValue = date?.trim()?.takeIf { it.isNotEmpty() }
+                ?: return null
+            val lastUpdatedValue = lastUpdated ?: return null
+            val dateCreatedValue = dateCreated ?: return null
+
+            return MealPlanEntry(
+                id = documentId,
+                familyId = familyIdValue,
+                listId = listIdValue,
+                itemName = itemNameValue,
+                date = mealDateValue,
+                recipeId = recipeId?.trim()?.takeIf { it.isNotEmpty() },
+                customMealName = customMealName?.trim()?.takeIf { it.isNotEmpty() },
+                lastUpdated = lastUpdatedValue,
+                dateCreated = dateCreatedValue,
+            )
+        }
+    }
+
+    private data class UserListWriteDto(
+        val familyId: String?,
+        val ownerUid: String?,
+        val visibility: String?,
+        @get:PropertyName("name")
+        val name: String?,
+        val type: String?,
+        val lastUpdated: Date?,
+        val dateCreated: Date?,
+    ) {
+        fun toFirestoreMap(): Map<String, Any?> = mapOf(
+            "familyId" to familyId,
+            "ownerUid" to ownerUid,
+            "visibility" to visibility,
+            "name" to name,
+            "type" to type,
+            "lastUpdated" to lastUpdated,
+            "dateCreated" to dateCreated,
         )
     }
 
-    private fun parseFirestoreNoteEntry(documentId: String, data: Map<String, Any?>): NoteEntry? {
-        fun str(key: String): String? = (data[key] as? String)?.trim()?.takeIf { it.isNotEmpty() }
-        fun date(key: String): Date? = when (val v = data[key]) {
-            is Timestamp -> v.toDate()
-            is Long -> Date(v)
-            else -> null
-        }
-
-        val familyId = str("familyId") ?: return null
-        val listId = str("listId") ?: return null
-        val itemName = str("name") ?: str("itemName") ?: return null
-        val markdownBody = str("markdownBody") ?: str("body") ?: return null
-        val lastUpdated = date("lastUpdated") ?: return null
-        val dateCreated = date("dateCreated") ?: return null
-
-        return NoteEntry(
-            id = documentId,
-            familyId = familyId,
-            listId = listId,
-            itemName = itemName,
-            markdownBody = markdownBody,
-            lastUpdated = lastUpdated,
-            dateCreated = dateCreated,
+    private data class RoutineListEntryWriteDto(
+        val familyId: String?,
+        val listId: String?,
+        @get:PropertyName("name")
+        val name: String?,
+        val lastUpdated: Date?,
+        val dateCreated: Date?,
+        val nextDate: Date?,
+        val lastCompletedAt: Date?,
+        val completionCount: Int?,
+        val recurrenceUnit: String?,
+        val interval: Int?,
+        val weekdays: List<Int>?,
+        val imageUrl: String?,
+    ) {
+        fun toFirestoreMap(): Map<String, Any?> = mapOf(
+            "familyId" to familyId,
+            "listId" to listId,
+            "name" to name,
+            "lastUpdated" to lastUpdated,
+            "dateCreated" to dateCreated,
+            "nextDate" to nextDate,
+            "lastCompletedAt" to lastCompletedAt,
+            "completionCount" to completionCount,
+            "recurrenceUnit" to recurrenceUnit,
+            "interval" to interval,
+            "weekdays" to weekdays,
+            "imageUrl" to imageUrl,
         )
     }
 
-    private fun parseFirestoreChecklistEntry(documentId: String, data: Map<String, Any?>): ChecklistEntry? {
-        fun str(key: String): String? = (data[key] as? String)?.trim()?.takeIf { it.isNotEmpty() }
-        fun date(key: String): Date? = when (val v = data[key]) {
-            is Timestamp -> v.toDate()
-            is Long -> Date(v)
-            else -> null
-        }
-        fun boolVal(key: String, default: Boolean = false) = when (val v = data[key]) {
-            is Boolean -> v
-            is Long -> v != 0L
-            else -> default
-        }
-
-        val familyId = str("familyId") ?: return null
-        val listId = str("listId") ?: return null
-        val itemName = str("name") ?: str("itemName") ?: return null
-        val lastUpdated = date("lastUpdated") ?: return null
-        val dateCreated = date("dateCreated") ?: return null
-
-        return ChecklistEntry(
-            id = documentId,
-            familyId = familyId,
-            listId = listId,
-            itemName = itemName,
-            isChecked = boolVal("isChecked"),
-            lastUpdated = lastUpdated,
-            dateCreated = dateCreated,
+    private data class WishListEntryWriteDto(
+        val familyId: String?,
+        val listId: String?,
+        @get:PropertyName("name")
+        val name: String?,
+        val lastUpdated: Date?,
+        val dateCreated: Date?,
+        val isPurchased: Boolean?,
+        val url: String?,
+        val estimatedPriceMinor: Long?,
+        val currencyCode: String?,
+        val priority: String?,
+        val notes: String?,
+    ) {
+        fun toFirestoreMap(): Map<String, Any?> = mapOf(
+            "familyId" to familyId,
+            "listId" to listId,
+            "name" to name,
+            "lastUpdated" to lastUpdated,
+            "dateCreated" to dateCreated,
+            "isPurchased" to isPurchased,
+            "url" to url,
+            "estimatedPriceMinor" to estimatedPriceMinor,
+            "currencyCode" to currencyCode,
+            "priority" to priority,
+            "notes" to notes,
         )
     }
 
-    private fun parseFirestoreMealPlanEntry(documentId: String, data: Map<String, Any?>): MealPlanEntry? {
-        fun str(key: String): String? = (data[key] as? String)?.trim()?.takeIf { it.isNotEmpty() }
-        fun date(key: String): Date? = when (val v = data[key]) {
-            is Timestamp -> v.toDate()
-            is Long -> Date(v)
-            else -> null
-        }
-
-        val familyId = str("familyId") ?: return null
-        val listId = str("listId") ?: return null
-        val itemName = str("name") ?: str("itemName") ?: return null
-        val mealDate = str("date") ?: return null
-        val lastUpdated = date("lastUpdated") ?: return null
-        val dateCreated = date("dateCreated") ?: return null
-
-        return MealPlanEntry(
-            id = documentId,
-            familyId = familyId,
-            listId = listId,
-            itemName = itemName,
-            date = mealDate,
-            recipeId = data["recipeId"] as? String,
-            customMealName = data["customMealName"] as? String,
-            lastUpdated = lastUpdated,
-            dateCreated = dateCreated,
+    private data class NoteEntryWriteDto(
+        val familyId: String?,
+        val listId: String?,
+        @get:PropertyName("name")
+        val name: String?,
+        val markdownBody: String?,
+        val lastUpdated: Date?,
+        val dateCreated: Date?,
+    ) {
+        fun toFirestoreMap(): Map<String, Any?> = mapOf(
+            "familyId" to familyId,
+            "listId" to listId,
+            "name" to name,
+            "markdownBody" to markdownBody,
+            "lastUpdated" to lastUpdated,
+            "dateCreated" to dateCreated,
         )
     }
 
-    private fun userListToFirestoreMap(list: UserList): Map<String, Any?> = mapOf(
-        "familyId" to list.familyId,
-        "ownerUid" to list.ownerUid,
-        "visibility" to list.visibility.value,
-        "name" to list.itemName,
-        "type" to list.type.value,
-        "lastUpdated" to list.lastUpdated,
-        "dateCreated" to list.dateCreated,
+    private data class ChecklistEntryWriteDto(
+        val familyId: String?,
+        val listId: String?,
+        @get:PropertyName("name")
+        val name: String?,
+        val isChecked: Boolean?,
+        val lastUpdated: Date?,
+        val dateCreated: Date?,
+    ) {
+        fun toFirestoreMap(): Map<String, Any?> = mapOf(
+            "familyId" to familyId,
+            "listId" to listId,
+            "name" to name,
+            "isChecked" to isChecked,
+            "lastUpdated" to lastUpdated,
+            "dateCreated" to dateCreated,
+        )
+    }
+
+    private data class MealPlanEntryWriteDto(
+        val familyId: String?,
+        val listId: String?,
+        @get:PropertyName("name")
+        val name: String?,
+        val date: String?,
+        val recipeId: String?,
+        val customMealName: String?,
+        val lastUpdated: Date?,
+        val dateCreated: Date?,
+    ) {
+        fun toFirestoreMap(): Map<String, Any?> = mapOf(
+            "familyId" to familyId,
+            "listId" to listId,
+            "name" to name,
+            "date" to date,
+            "recipeId" to recipeId,
+            "customMealName" to customMealName,
+            "lastUpdated" to lastUpdated,
+            "dateCreated" to dateCreated,
+        )
+    }
+
+    private fun UserList.toDto(): UserListWriteDto = UserListWriteDto(
+        familyId = familyId,
+        ownerUid = ownerUid,
+        visibility = visibility.value,
+        name = itemName,
+        type = type.value,
+        lastUpdated = lastUpdated,
+        dateCreated = dateCreated,
     )
 
-    private fun listEntryToFirestoreMap(entry: RoutineListEntry): Map<String, Any?> = mapOf(
-        "familyId" to entry.familyId,
-        "listId" to entry.listId,
-        "name" to entry.itemName,
-        "lastUpdated" to entry.lastUpdated,
-        "dateCreated" to entry.dateCreated,
-        "nextDate" to entry.nextDate,
-        "lastCompletedAt" to entry.lastCompletedAt,
-        "completionCount" to entry.completionCount,
-        "recurrenceUnit" to entry.recurrenceUnit.value,
-        "interval" to entry.interval,
-        "weekdays" to entry.weekdays,
-        "imageUrl" to entry.imageUrl,
+    private fun RoutineListEntry.toDto(): RoutineListEntryWriteDto = RoutineListEntryWriteDto(
+        familyId = familyId,
+        listId = listId,
+        name = itemName,
+        lastUpdated = lastUpdated,
+        dateCreated = dateCreated,
+        nextDate = nextDate,
+        lastCompletedAt = lastCompletedAt,
+        completionCount = completionCount,
+        recurrenceUnit = recurrenceUnit.value,
+        interval = interval,
+        weekdays = weekdays,
+        imageUrl = imageUrl,
     )
 
-    private fun wishListEntryToFirestoreMap(entry: WishListEntry): Map<String, Any?> = mapOf(
-        "familyId" to entry.familyId,
-        "listId" to entry.listId,
-        "name" to entry.itemName,
-        "lastUpdated" to entry.lastUpdated,
-        "dateCreated" to entry.dateCreated,
-        "isPurchased" to entry.isPurchased,
-        "url" to entry.url,
-        "estimatedPriceMinor" to entry.estimatedPriceMinor,
-        "currencyCode" to entry.currencyCode,
-        "priority" to entry.priority.value,
-        "notes" to entry.notes,
+    private fun WishListEntry.toDto(): WishListEntryWriteDto = WishListEntryWriteDto(
+        familyId = familyId,
+        listId = listId,
+        name = itemName,
+        lastUpdated = lastUpdated,
+        dateCreated = dateCreated,
+        isPurchased = isPurchased,
+        url = url,
+        estimatedPriceMinor = estimatedPriceMinor,
+        currencyCode = currencyCode,
+        priority = priority.value,
+        notes = notes,
     )
 
-    private fun noteEntryToFirestoreMap(entry: NoteEntry): Map<String, Any?> = mapOf(
-        "familyId" to entry.familyId,
-        "listId" to entry.listId,
-        "name" to entry.itemName,
-        "markdownBody" to entry.markdownBody,
-        "lastUpdated" to entry.lastUpdated,
-        "dateCreated" to entry.dateCreated,
+    private fun NoteEntry.toDto(): NoteEntryWriteDto = NoteEntryWriteDto(
+        familyId = familyId,
+        listId = listId,
+        name = itemName,
+        markdownBody = markdownBody,
+        lastUpdated = lastUpdated,
+        dateCreated = dateCreated,
     )
 
-    private fun checklistEntryToFirestoreMap(entry: ChecklistEntry): Map<String, Any?> = mapOf(
-        "familyId" to entry.familyId,
-        "listId" to entry.listId,
-        "name" to entry.itemName,
-        "isChecked" to entry.isChecked,
-        "lastUpdated" to entry.lastUpdated,
-        "dateCreated" to entry.dateCreated,
+    private fun ChecklistEntry.toDto(): ChecklistEntryWriteDto = ChecklistEntryWriteDto(
+        familyId = familyId,
+        listId = listId,
+        name = itemName,
+        isChecked = isChecked,
+        lastUpdated = lastUpdated,
+        dateCreated = dateCreated,
     )
 
-    private fun mealPlanEntryToFirestoreMap(entry: MealPlanEntry): Map<String, Any?> = mapOf(
-        "familyId" to entry.familyId,
-        "listId" to entry.listId,
-        "name" to entry.itemName,
-        "date" to entry.date,
-        "recipeId" to entry.recipeId,
-        "customMealName" to entry.customMealName,
-        "lastUpdated" to entry.lastUpdated,
-        "dateCreated" to entry.dateCreated,
+    private fun MealPlanEntry.toDto(): MealPlanEntryWriteDto = MealPlanEntryWriteDto(
+        familyId = familyId,
+        listId = listId,
+        name = itemName,
+        date = date,
+        recipeId = recipeId,
+        customMealName = customMealName,
+        lastUpdated = lastUpdated,
+        dateCreated = dateCreated,
     )
 }

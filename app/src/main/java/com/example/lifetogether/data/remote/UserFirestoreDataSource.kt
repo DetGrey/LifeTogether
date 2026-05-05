@@ -9,10 +9,14 @@ import com.example.lifetogether.data.logic.AppErrorThrowable
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.util.Constants
+import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.PropertyName
+import kotlin.jvm.Transient
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import java.util.Date
 import javax.inject.Inject
 
 class UserFirestoreDataSource @Inject constructor(
@@ -25,7 +29,7 @@ class UserFirestoreDataSource @Inject constructor(
             val result = when {
                 error != null -> Result.Failure(AppErrors.fromThrowable(error))
                 snapshot != null && snapshot.exists() -> {
-                    val data = snapshot.toObject(UserInformation::class.java)
+                    val data = snapshot.toObject(UserInformationDto::class.java)?.toDomain(snapshot.id)
                     if (data != null) Result.Success(data)
                     else Result.Failure(AppErrors.unknown("Mapping error"))
                 }
@@ -40,14 +44,17 @@ class UserFirestoreDataSource @Inject constructor(
 
     suspend fun fetchUserInformation(uid: String): Result<UserInformation, AppError> = appResultOfSuspend {
         val snapshot = db.collection(Constants.USER_TABLE).document(uid).get().await()
-        val userInformation = snapshot.toObject(UserInformation::class.java)
+        val userInformation = snapshot.toObject(UserInformationDto::class.java)?.toDomain(snapshot.id)
         userInformation ?: throw AppErrorThrowable(AppErrors.notFound("User not found"))
     }
 
     suspend fun uploadUserInformation(userInformation: UserInformation): Result<Unit, AppError> {
-        val uid = userInformation.uid ?: return Result.Failure(AppErrors.authentication("Cannot upload without being logged in"))
+        val uid = userInformation.uid
+        if (uid.isBlank()) {
+            return Result.Failure(AppErrors.authentication("Cannot upload without being logged in"))
+        }
         return appResultOfSuspend {
-            db.collection(Constants.USER_TABLE).document(uid).set(userInformation).await()
+            db.collection(Constants.USER_TABLE).document(uid).set(userInformation.toDto().toFirestoreMap()).await()
         }
     }
 
@@ -91,3 +98,45 @@ class UserFirestoreDataSource @Inject constructor(
         }
     }
 }
+
+private data class UserInformationDto(
+    @DocumentId @Transient
+    val uid: String? = null,
+    val email: String? = null,
+    val name: String? = null,
+    val birthday: Date? = null,
+    val familyId: String? = null,
+    @get:PropertyName("imageUrl")
+    val imageUrl: String? = null,
+) {
+    fun toDomain(documentId: String): UserInformation? {
+        val uidValue = uid?.takeIf { it.isNotBlank() } ?: documentId.takeIf { it.isNotBlank() } ?: return null
+        val emailValue = email?.takeIf { it.isNotBlank() } ?: return null
+        val nameValue = name?.takeIf { it.isNotBlank() } ?: return null
+        return UserInformation(
+            uid = uidValue,
+            email = emailValue,
+            name = nameValue,
+            birthday = birthday,
+            familyId = familyId,
+            imageUrl = imageUrl,
+        )
+    }
+
+    fun toFirestoreMap(): Map<String, Any?> = mapOf(
+        "email" to email,
+        "name" to name,
+        "birthday" to birthday,
+        "familyId" to familyId,
+        "imageUrl" to imageUrl,
+    )
+}
+
+private fun UserInformation.toDto(): UserInformationDto = UserInformationDto(
+    uid = uid,
+    email = email,
+    name = name,
+    birthday = birthday,
+    familyId = familyId,
+    imageUrl = imageUrl,
+)

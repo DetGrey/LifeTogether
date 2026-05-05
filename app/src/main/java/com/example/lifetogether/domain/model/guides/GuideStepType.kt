@@ -22,11 +22,10 @@ enum class GuideStepType(val value: String) {
     ;
 
     companion object {
-        fun fromValue(value: String?): GuideStepType {
-            if (value.isNullOrBlank()) return NUMBERED
+        fun fromValue(value: String?): GuideStepType? {
+            if (value.isNullOrBlank()) return null
             return entries.firstOrNull { it.value.equals(value, ignoreCase = true) }
                 ?: entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
-                ?: UNKNOWN
         }
     }
 }

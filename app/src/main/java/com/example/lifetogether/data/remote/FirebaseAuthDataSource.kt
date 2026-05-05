@@ -2,7 +2,6 @@ package com.example.lifetogether.data.remote
 
 import com.example.lifetogether.data.logic.AppErrors
 import com.example.lifetogether.data.logic.appResultOfSuspend
-
 import com.example.lifetogether.domain.result.AppError
 
 import android.util.Log
@@ -27,14 +26,11 @@ class FirebaseAuthDataSource@Inject constructor(
 
     suspend fun login(
         user: User,
-    ): Result<UserInformation, AppError> {
+    ): Result<Unit, AppError> {
         Log.d(TAG, "login start")
         return appResultOfSuspend {
             val loginResult = Firebase.auth.signInWithEmailAndPassword(user.email, user.password).await()
-            val firebaseUser = loginResult.user
-            if (firebaseUser != null) {
-                UserInformation(uid = firebaseUser.uid)
-            } else {
+            if (loginResult.user == null) {
                 throw IllegalStateException("Authentication failed")
             }
         }
@@ -57,11 +53,11 @@ class FirebaseAuthDataSource@Inject constructor(
         }
     }
 
-    fun authStateListener(): Flow<Result<UserInformation, AppError>> = callbackFlow {
+    fun authStateListener(): Flow<Result<String, AppError>> = callbackFlow {
         val authStateListener = FirebaseAuth.AuthStateListener { auth ->
             val currentUser = auth.currentUser
             if (currentUser != null) {
-                trySend(Result.Success(UserInformation(uid = currentUser.uid)))
+                trySend(Result.Success(currentUser.uid))
             } else {
                 trySend(Result.Failure(AppErrors.authentication("Authentication failed")))
             }

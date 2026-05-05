@@ -1,7 +1,7 @@
 package com.example.lifetogether.domain.usecase.guide
 
 import com.example.lifetogether.data.logic.AppErrors
-import com.example.lifetogether.domain.logic.GuideParser
+import com.example.lifetogether.domain.logic.GuideJsonParser
 import com.example.lifetogether.domain.repository.GuideRepository
 import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
@@ -29,7 +29,7 @@ class ImportGuidesUseCase @Inject constructor(
         }
 
         val parsedGuides = try {
-            GuideParser.parseJsonGuides(
+            GuideJsonParser.parseJsonGuides(
                 json = json,
                 familyId = familyId,
                 ownerUid = ownerUid,

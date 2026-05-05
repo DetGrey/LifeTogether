@@ -6,8 +6,8 @@ enum class RecurrenceUnit(val value: String) {
     ;
 
     companion object {
-        fun fromValue(value: String?): RecurrenceUnit {
-            return entries.firstOrNull { it.value.equals(value, ignoreCase = true) } ?: DAYS
+        fun fromValue(value: String?): RecurrenceUnit? {
+            return entries.firstOrNull { it.value.equals(value, ignoreCase = true) }
         }
     }
 }

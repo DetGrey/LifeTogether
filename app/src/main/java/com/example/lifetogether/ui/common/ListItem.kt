@@ -103,6 +103,7 @@ fun ListItemPreview() {
         Column {
             ListItem(
                 GroceryItem(
+                    id = "item-1",
                     familyId = "dsuaihfao",
                     category = Category(
                         "🍎",
@@ -118,6 +119,8 @@ fun ListItemPreview() {
             )
             ListItem(
                 GroceryItem(
+                    id = "item-2",
+                    familyId = "dsuaihfao",
                     category = Category(
                         "🍎",
                         "Fruits and vegetables",

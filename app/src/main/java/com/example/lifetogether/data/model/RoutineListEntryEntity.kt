@@ -28,7 +28,7 @@ data class RoutineListEntryEntity(
     @ColumnInfo(name = "completion_count")
     val completionCount: Int = 0,
     @ColumnInfo(name = "recurrence_unit")
-    val recurrenceUnit: RecurrenceUnit = RecurrenceUnit.DAYS,
+    val recurrenceUnit: RecurrenceUnit,
     val interval: Int = 1,
     val weekdays: List<Int> = emptyList(),
     @ColumnInfo(name = "image_data")

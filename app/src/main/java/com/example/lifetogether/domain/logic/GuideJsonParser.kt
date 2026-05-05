@@ -1,7 +1,6 @@
 package com.example.lifetogether.domain.logic
 
 import com.example.lifetogether.domain.model.guides.Guide
-import com.example.lifetogether.domain.model.guides.GuideProgressState
 import com.example.lifetogether.domain.model.guides.GuideResume
 import com.example.lifetogether.domain.model.guides.GuideSection
 import com.example.lifetogether.domain.model.guides.GuideStep
@@ -20,15 +19,36 @@ import kotlinx.serialization.json.longOrNull
 import java.util.Date
 import java.util.UUID
 
-object GuideParser {
+object GuideJsonParser {
     private val json = Json
 
-    fun parseFirestoreGuide(documentId: String, data: Map<String, Any?>): Guide {
-        return parseGuideMap(
-            rawMap = data,
-            idOverride = documentId,
-            preserveProgressHints = false,
-        )
+    fun parseJsonGuides(
+        json: String,
+        familyId: String,
+        ownerUid: String,
+    ): List<Guide> {
+        val root = GuideJsonParser.json.parseToJsonElement(json)
+        val maps = when {
+            root is JsonObject -> listOf(jsonObjectToMap(root))
+            root is JsonArray -> root.mapNotNull { element ->
+                if (element !is JsonObject) return@mapNotNull null
+                jsonObjectToMap(element)
+            }
+
+            else -> emptyList()
+        }
+
+        return maps.mapNotNull { map ->
+            runCatching {
+                parseGuideMap(
+                    rawMap = map,
+                    familyIdOverride = familyId,
+                    ownerUidOverride = ownerUid,
+                    regenerateIds = true,
+                    preserveProgressHints = false,
+                )
+            }.getOrNull()
+        }
     }
 
     fun parseGuideMap(
@@ -37,7 +57,6 @@ object GuideParser {
         familyIdOverride: String? = null,
         ownerUidOverride: String? = null,
         regenerateIds: Boolean = false,
-        defaultVisibility: Visibility = Visibility.PRIVATE,
         preserveProgressHints: Boolean = true,
     ): Guide {
         val normalizedId = idOverride?.takeIf { it.isNotBlank() }
@@ -68,101 +87,14 @@ object GuideParser {
             itemName = itemName,
             description = readString(rawMap, "description"),
             lastUpdated = parseDate(rawMap["lastUpdated"]),
-            visibility = Visibility.fromValue(readString(rawMap, "visibility").ifBlank { defaultVisibility.value }),
+            visibility = Visibility.fromValue(readString(rawMap, "visibility"))
+                ?: throw IllegalArgumentException("Invalid or missing visibility"),
             ownerUid = ownerUid,
             contentVersion = readLong(rawMap, "contentVersion") ?: 1L,
             started = if (preserveProgressHints) readBoolean(rawMap, "started") else false,
             sections = sections,
             resume = if (preserveProgressHints) parseResume(rawMap["resume"]) else null,
         )
-    }
-
-    fun parseJsonGuides(
-        json: String,
-        familyId: String,
-        ownerUid: String,
-        defaultVisibility: Visibility = Visibility.PRIVATE,
-    ): List<Guide> {
-        val root = GuideParser.json.parseToJsonElement(json)
-        val maps = when {
-            root is JsonObject -> listOf(jsonObjectToMap(root))
-            root is JsonArray -> root.mapNotNull { element ->
-                if (element !is JsonObject) return@mapNotNull null
-                jsonObjectToMap(element)
-            }
-
-            else -> emptyList()
-        }
-
-        return maps.mapNotNull { map ->
-            runCatching {
-                parseGuideMap(
-                    rawMap = map,
-                    familyIdOverride = familyId,
-                    ownerUidOverride = ownerUid,
-                    regenerateIds = true,
-                    defaultVisibility = defaultVisibility,
-                    preserveProgressHints = false,
-                )
-            }.getOrNull()
-        }
-    }
-
-    fun guideToFirestoreMap(guide: Guide): Map<String, Any?> {
-        return mutableMapOf(
-            "familyId" to guide.familyId,
-            "ownerUid" to guide.ownerUid,
-            "visibility" to guide.visibility.value,
-            "name" to guide.itemName,
-            "description" to guide.description,
-            "contentVersion" to guide.contentVersion,
-            "lastUpdated" to guide.lastUpdated,
-            "sections" to guide.sections.map { sectionToFirestoreMap(it) },
-        )
-    }
-
-    fun parseGuideProgressMap(
-        documentId: String,
-        data: Map<String, Any?>,
-    ): GuideProgressState? {
-        val familyId = readString(data, "familyId")
-        val uid = readString(data, "uid")
-        val guideId = readString(data, "guideId")
-        if (familyId.isBlank() || uid.isBlank() || guideId.isBlank()) return null
-
-        val completedPointerKeys = asList(data["completedPointerKeys"])
-            .mapNotNull { value -> readNullableString(value) }
-            .filter { it.isNotBlank() }
-
-        return GuideProgressState(
-            id = documentId,
-            familyId = familyId,
-            uid = uid,
-            guideId = guideId,
-            contentVersion = readLong(data, "contentVersion") ?: 1L,
-            started = readBoolean(data, "started"),
-            completedPointerKeys = completedPointerKeys,
-            resume = parseResume(data["resume"]),
-            lastUpdated = parseDate(data["lastUpdated"]),
-            pendingSync = false,
-            localUpdatedAt = parseDate(data["localUpdatedAt"]),
-            lastUploadedAt = parseDateOrNull(data["lastUploadedAt"]),
-        )
-    }
-
-    fun guideProgressToFirestoreMap(progress: GuideProgressState): Map<String, Any?> {
-        return mutableMapOf(
-            "familyId" to progress.familyId,
-            "uid" to progress.uid,
-            "guideId" to progress.guideId,
-            "contentVersion" to progress.contentVersion,
-            "started" to progress.started,
-            "completedPointerKeys" to progress.completedPointerKeys,
-            "resume" to resumeToFirestoreMap(progress.resume),
-            "lastUpdated" to progress.lastUpdated,
-            "localUpdatedAt" to progress.localUpdatedAt,
-            "lastUploadedAt" to progress.lastUploadedAt,
-        ).filterValues { value -> value != null }
     }
 
     private fun parseSection(
@@ -232,10 +164,12 @@ object GuideParser {
             preserveProgressHints = preserveProgressHints,
         )
 
+        val stepType = GuideStepType.fromValue(readString(rawStep, "type")) ?: return emptyList()
+
         val step = GuideStep(
             id = resolveNestedId(readString(rawStep, "id"), regenerateIds),
             name = readString(rawStep, "name"),
-            type = GuideStepType.fromValue(readString(rawStep, "type")),
+            type = stepType,
             title = readString(rawStep, "title"),
             content = readString(rawStep, "content"),
             completed = if (preserveProgressHints) readBoolean(rawStep, "completed", "isCompleted") else false,
@@ -364,7 +298,7 @@ object GuideParser {
                     .orEmpty()
                     .entries
                     .sortedWith(
-                        compareBy<Map.Entry<String, Any?>>(
+                        compareBy(
                             { it.key.toIntOrNull() ?: Int.MAX_VALUE },
                             { it.key },
                         ),
@@ -382,29 +316,6 @@ object GuideParser {
         }
     }
 
-    private fun sectionToFirestoreMap(section: GuideSection): Map<String, Any?> {
-        val normalizedAmount = section.amount.coerceAtLeast(1)
-        val contentSteps = contentStepsForSection(section)
-        return mutableMapOf(
-            "id" to section.id,
-            "orderNumber" to section.orderNumber,
-            "title" to section.title,
-            "subtitle" to section.subtitle,
-            "amount" to normalizedAmount,
-            "comment" to section.comment,
-            "steps" to contentSteps.map(::stepToFirestoreMap),
-        ).filterValues { value -> value != null }
-    }
-
-    private fun contentStepsForSection(section: GuideSection): List<GuideStep> {
-        val sourceSteps = when {
-            section.steps.isNotEmpty() -> section.steps
-            section.stepsProgressByAmount.isNotEmpty() -> section.stepsProgressByAmount.first()
-            else -> emptyList()
-        }
-        return clearStepCompletion(sourceSteps)
-    }
-
     private fun clearStepCompletion(steps: List<GuideStep>): List<GuideStep> {
         return steps.map { step ->
             step.copy(
@@ -415,7 +326,7 @@ object GuideParser {
     }
 
     private fun stepToFirestoreMap(step: GuideStep): Map<String, Any?> {
-        return mutableMapOf<String, Any?>(
+        return mutableMapOf(
             "id" to step.id,
             "name" to step.name.takeIf { it.isNotBlank() },
             "type" to step.type.value,
@@ -424,16 +335,6 @@ object GuideParser {
             "steps" to step.subSteps.takeIf { it.isNotEmpty() }?.map { subStep ->
                 stepToFirestoreMap(subStep)
             },
-        ).filterValues { value -> value != null }
-    }
-
-    private fun resumeToFirestoreMap(resume: GuideResume?): Map<String, Any?>? {
-        if (resume == null) return null
-        return mutableMapOf<String, Any?>(
-            "sectionIndex" to resume.sectionIndex,
-            "sectionAmountIndex" to resume.sectionAmountIndex,
-            "stepIndex" to resume.stepIndex,
-            "subStepIndex" to resume.subStepIndex,
         ).filterValues { value -> value != null }
     }
 
@@ -488,17 +389,6 @@ object GuideParser {
             }
 
             else -> Date()
-        }
-    }
-
-    private fun parseDateOrNull(rawValue: Any?): Date? {
-        if (rawValue == null) return null
-        return when (rawValue) {
-            is Date -> rawValue
-            is Timestamp -> rawValue.toDate()
-            is Number -> Date(rawValue.toLong())
-            is String -> rawValue.toLongOrNull()?.let(::Date)
-            else -> null
         }
     }
 

@@ -28,6 +28,6 @@ data class WishListEntryEntity(
     val estimatedPriceMinor: Long? = null,
     @ColumnInfo(name = "currency_code")
     val currencyCode: String? = null,
-    val priority: WishListPriority = WishListPriority.PLANNED,
+    val priority: WishListPriority,
     val notes: String? = null,
 )

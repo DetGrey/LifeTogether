@@ -86,24 +86,34 @@ private fun GuideStepCardBodyPreview() {
             GuideStepCardBody(
                 step = GuideStep(
                     id = "subsection-1",
+                    name = "Subsection",
                     type = GuideStepType.SUBSECTION,
                     title = "Ears",
+                    content = "",
                     subSteps = listOf(
                         GuideStep(
                             id = "comment-1",
+                            name = "Comment",
                             type = GuideStepType.COMMENT,
+                            title = "",
                             content = "Take a breath before you start.",
+                            subSteps = emptyList(),
                         ),
                         GuideStep(
                             id = "numbered-1",
+                            name = "R1",
                             type = GuideStepType.ROUND,
                             title = "R1",
                             content = "Describe your mood in one sentence.",
+                            subSteps = emptyList(),
                         ),
                         GuideStep(
                             id = "numbered-1",
+                            name = "Step 1",
                             type = GuideStepType.NUMBERED,
+                            title = "",
                             content = "Describe your mood in one sentence.",
+                            subSteps = emptyList(),
                         ),
                     ),
                 ),
@@ -115,9 +125,11 @@ private fun GuideStepCardBodyPreview() {
             GuideStepCardBody(
                 step = GuideStep(
                     id = "numbered-1",
+                    name = "R1",
                     type = GuideStepType.ROUND,
                     title = "R1",
                     content = "Describe your mood in one sentence.",
+                    subSteps = emptyList(),
                 ),
                 stepNumber = 2,
                 textColor = MaterialTheme.colorScheme.onSurface,
@@ -127,8 +139,11 @@ private fun GuideStepCardBodyPreview() {
             GuideStepCardBody(
                 step = GuideStep(
                     id = "numbered-1",
+                    name = "Step 1",
                     type = GuideStepType.NUMBERED,
+                    title = "",
                     content = "Describe your mood in one sentence.",
+                    subSteps = emptyList(),
                 ),
                 stepNumber = 2,
                 textColor = MaterialTheme.colorScheme.onSurface,

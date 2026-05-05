@@ -25,7 +25,9 @@ class ListEntryDetailsFormReducer @Inject constructor() {
         return when (event) {
             is ListEntryDetailsUiEvent.NameChanged -> details.copy(form = details.form.copy(name = event.value))
             is ListEntryDetailsUiEvent.Routine.RecurrenceUnitChanged -> details.copy(
-                form = details.form.copy(recurrenceUnit = RecurrenceUnit.fromValue(event.value)),
+                form = RecurrenceUnit.fromValue(event.value)?.let { unit ->
+                    details.form.copy(recurrenceUnit = unit)
+                } ?: details.form,
             )
             is ListEntryDetailsUiEvent.Routine.IntervalChanged -> details.copy(
                 form = details.form.copy(interval = event.value.filter(Char::isDigit)),
@@ -56,7 +58,9 @@ class ListEntryDetailsFormReducer @Inject constructor() {
             )
             is ListEntryDetailsUiEvent.Wish.CurrencyCodeChanged -> details.copy(form = details.form.copy(currencyCode = event.value))
             is ListEntryDetailsUiEvent.Wish.PriorityChanged -> details.copy(
-                form = details.form.copy(priority = WishListPriority.fromValue(event.value)),
+                form = WishListPriority.fromValue(event.value)?.let { priority ->
+                    details.form.copy(priority = priority)
+                } ?: details.form,
             )
             is ListEntryDetailsUiEvent.Wish.NotesChanged -> details.copy(form = details.form.copy(notes = event.value))
             else -> details

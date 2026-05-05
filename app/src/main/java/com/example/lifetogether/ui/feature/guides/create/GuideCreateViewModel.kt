@@ -94,7 +94,7 @@ class GuideCreateViewModel @Inject constructor(
     private fun addStep(
         sectionId: String,
         content: String,
-        type: GuideStepType = GuideStepType.NUMBERED,
+        type: GuideStepType,
     ) {
         val normalizedContent = content.trim()
         if (normalizedContent.isBlank()) return
@@ -110,7 +110,10 @@ class GuideCreateViewModel @Inject constructor(
                                 GuideStep(
                                     id = UUID.randomUUID().toString(),
                                     type = type,
+                                    name = "",
                                     title = normalizedContent,
+                                    content = "",
+                                    subSteps = emptyList(),
                                 ),
                             )
 
@@ -120,7 +123,10 @@ class GuideCreateViewModel @Inject constructor(
                                 GuideStep(
                                     id = UUID.randomUUID().toString(),
                                     type = type,
+                                    name = "",
+                                    title = "",
                                     content = normalizedContent,
+                                    subSteps = emptyList(),
                                 ),
                             )
                         }
@@ -136,7 +142,10 @@ class GuideCreateViewModel @Inject constructor(
             GuideStep(
                 id = UUID.randomUUID().toString(),
                 type = GuideStepType.ROUND,
+                name = "",
+                title = "",
                 content = draft,
+                subSteps = emptyList(),
             ),
         )
         val (roundRange, sharedContent) = parsedPrefix
@@ -145,7 +154,9 @@ class GuideCreateViewModel @Inject constructor(
                 id = UUID.randomUUID().toString(),
                 type = GuideStepType.ROUND,
                 name = "R$roundNumber",
+                title = "",
                 content = sharedContent,
+                subSteps = emptyList(),
             )
         }
     }
@@ -186,12 +197,14 @@ class GuideCreateViewModel @Inject constructor(
             }
 
         return Guide(
+            id = UUID.randomUUID().toString(),
             familyId = familyId,
             itemName = state.title.trim(),
             description = state.description.trim(),
             lastUpdated = Date(),
             visibility = state.visibility,
             ownerUid = uid,
+            contentVersion = 1L,
             started = false,
             sections = normalizedSections,
             resume = null,

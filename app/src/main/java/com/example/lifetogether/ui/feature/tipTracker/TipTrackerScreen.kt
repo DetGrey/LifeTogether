@@ -156,10 +156,28 @@ private fun TipTrackerScreenPreview() {
         TipTrackerScreen(
             uiState = TipTrackerUiState.Content(
                 tips = listOf(
-                    TipItem(amount = 120f, date = Date()),
+                    TipItem(
+                        id = "tip-1",
+                        familyId = "family-1",
+                        itemName = "Tip",
+                        lastUpdated = Date(),
+                        amount = 120f,
+                        date = Date(),
+                    ),
                 ),
                 stats = TipTrackerStats(),
-                groupedTips = mapOf("01. January 2026" to listOf(TipItem(amount = 120f, date = Date()))),
+                groupedTips = mapOf(
+                    "01. January 2026" to listOf(
+                        TipItem(
+                            id = "tip-1",
+                            familyId = "family-1",
+                            itemName = "Tip",
+                            lastUpdated = Date(),
+                            amount = 120f,
+                            date = Date(),
+                        ),
+                    ),
+                ),
                 calendar = TipTrackerCalendarState(
                     monthLabel = "April",
                     days = listOf(TipTrackerCalendarDay("1 Fri", "100"), TipTrackerCalendarDay("2 Sat")),
@@ -178,10 +196,28 @@ private fun TipTrackerScreenListPreview() {
         TipTrackerScreen(
             uiState = TipTrackerUiState.Content(
                 tips = listOf(
-                    TipItem(amount = 120f, date = Date()),
+                    TipItem(
+                        id = "tip-1",
+                        familyId = "family-1",
+                        itemName = "Tip",
+                        lastUpdated = Date(),
+                        amount = 120f,
+                        date = Date(),
+                    ),
                 ),
                 stats = TipTrackerStats(),
-                groupedTips = mapOf("01. January 2026" to listOf(TipItem(amount = 120f, date = Date()))),
+                groupedTips = mapOf(
+                    "01. January 2026" to listOf(
+                        TipItem(
+                            id = "tip-1",
+                            familyId = "family-1",
+                            itemName = "Tip",
+                            lastUpdated = Date(),
+                            amount = 120f,
+                            date = Date(),
+                        ),
+                    ),
+                ),
                 overviewOption = "List",
                 calendar = TipTrackerCalendarState(),
             ),

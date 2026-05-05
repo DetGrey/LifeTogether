@@ -138,7 +138,7 @@ fun ProfileScreen(
                     }
 
                     Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
-                    TextHeadingLarge(text = userInformation?.name ?: "")
+                    TextHeadingLarge(text = userInformation.name)
                 }
 
                 item {
@@ -153,7 +153,7 @@ fun ProfileScreen(
                                 description = "person icon",
                             ),
                             title = "Name",
-                            value = userInformation?.name ?: "",
+                            value = userInformation.name,
                             onClick = {
                                 onUiEvent(ProfileUiEvent.NameClicked)
                             },
@@ -164,7 +164,7 @@ fun ProfileScreen(
                                 description = "at sign icon",
                             ),
                             title = "Email",
-                            value = userInformation?.email ?: "",
+                            value = userInformation.email,
                         )
                         ProfileDetails(
                             icon = Icon(
@@ -172,7 +172,7 @@ fun ProfileScreen(
                                 description = "cake icon",
                             ),
                             title = "Birthday",
-                            value = userInformation?.birthday?.toFullDateString() ?: "",
+                            value = userInformation.birthday?.toFullDateString() ?: "",
                         )
                         if (isAdmin) {
                             ProfileDetails(
@@ -243,7 +243,7 @@ fun ProfileScreen(
                 }
             }
 
-            if (content.showImageUploadDialog && userInformation?.uid != null) {
+            if (content.showImageUploadDialog) {
                 ImageUploadDialog(
                     onDismiss = { onUiEvent(ProfileUiEvent.ImageUploadDismissed) },
                     onConfirm = { onUiEvent(ProfileUiEvent.ImageUploadConfirmed) },
@@ -266,8 +266,8 @@ fun ProfileScreenPreview() {
             uiState = ProfileUiState.Content(
                 userInformation = UserInformation(
                     uid = "uid-1",
-                    name = "Alex",
                     email = "alex@example.com",
+                    name = "Alex",
                 ),
             ),
             bitmap = null,

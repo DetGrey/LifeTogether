@@ -6,8 +6,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Ingredient(
-    var amount: Double = 0.0,
-    var measureType: MeasureType = MeasureType.GRAM,
-    override var itemName: String = "",
+    var amount: Double,
+    var measureType: MeasureType,
+    override var itemName: String,
     override var completed: Boolean = false,
 ) : Completable

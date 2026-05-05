@@ -22,6 +22,7 @@ import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import java.util.Date
 
 @Composable
 fun RecipesScreen(
@@ -112,8 +113,15 @@ private fun RecipesScreenPreview() {
                 recipes = listOf(
                     Recipe(
                         id = "1",
+                        familyId = "family-1",
                         itemName = "Tomato Soup",
+                        lastUpdated = Date(),
+                        description = "A simple soup.",
+                        ingredients = emptyList(),
+                        instructions = emptyList(),
                         preparationTimeMin = 25,
+                        favourite = false,
+                        servings = 2,
                         tags = listOf("Dinner", "Soup"),
                     ),
                 ),

@@ -45,6 +45,7 @@ import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
 import java.util.regex.Pattern
 import javax.inject.Inject
 
@@ -263,7 +264,7 @@ class AlbumDetailsViewModel @Inject constructor(
     private fun groupMedia() {
         val grouped = currentContentState()?.media.orEmpty()
             .sortedByDescending { it.dateCreated }
-            .groupBy { it.dateCreated?.toFullDateString() ?: "Unknown Date" }
+            .groupBy { it.dateCreated.toFullDateString() }
             .toList()
 
         updateContentState { it.copy(groupedMedia = grouped) }
@@ -434,12 +435,14 @@ class AlbumDetailsViewModel @Inject constructor(
         albumId: String,
         ext: String,
     ): Pair<GalleryImage, String> = withContext(Dispatchers.IO) {
-        val dateCreated = getBestDate(context, uri)
+        val dateCreated = getBestDate(context, uri) ?: Date()
         val itemName = formatMediaName(dateCreated, ext)
 
         val galleryImage = GalleryImage(
+            id = UUID.randomUUID().toString(),
             familyId = familyId,
             itemName = itemName,
+            lastUpdated = dateCreated,
             albumId = albumId,
             dateCreated = dateCreated,
         )
@@ -484,12 +487,15 @@ class AlbumDetailsViewModel @Inject constructor(
         }
         dateCreated = dateCreated ?: Date()
 
-        val itemName = formatMediaName(dateCreated, ext)
+        val resolvedDateCreated = dateCreated
+        val itemName = formatMediaName(resolvedDateCreated, ext)
         val galleryVideo = GalleryVideo(
+            id = UUID.randomUUID().toString(),
             familyId = familyId,
             itemName = itemName,
+            lastUpdated = resolvedDateCreated,
             albumId = albumId,
-            dateCreated = dateCreated,
+            dateCreated = resolvedDateCreated,
             duration = duration,
         )
         return Pair(galleryVideo, ext)

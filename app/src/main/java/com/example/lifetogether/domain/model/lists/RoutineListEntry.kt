@@ -10,10 +10,10 @@ data class RoutineListEntry(
     override var lastUpdated: Date,
     override val dateCreated: Date,
     val nextDate: Date,
+    val recurrenceUnit: RecurrenceUnit,
+    val interval: Int,
+    val weekdays: List<Int>,
     val lastCompletedAt: Date? = null,
     val completionCount: Int = 0,
-    val recurrenceUnit: RecurrenceUnit = RecurrenceUnit.DAYS,
-    val interval: Int = 1,
-    val weekdays: List<Int> = emptyList(),
     val imageUrl: String? = null,
 ) : ListEntry

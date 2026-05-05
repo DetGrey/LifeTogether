@@ -10,7 +10,6 @@ import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.model.GrocerySuggestionEntity
 import com.example.lifetogether.data.remote.GroceryFirestoreDataSource
 import com.example.lifetogether.domain.model.Category
-import com.example.lifetogether.domain.model.Item
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.repository.GroceryRepository
@@ -93,15 +92,13 @@ class GroceryRepositoryImpl @Inject constructor(
         return groceryFirestoreDataSource.syncGrocerySuggestions().map { result ->
             when (result) {
                 is Result.Success -> appResultOf {
-                    val entities = result.data.mapNotNull { suggestion ->
-                        suggestion.id?.let { id ->
-                            GrocerySuggestionEntity(
-                                id = id,
-                                suggestionName = suggestion.suggestionName,
-                                category = suggestion.category,
-                                approxPrice = suggestion.approxPrice,
-                            )
-                        }
+                    val entities = result.data.map { suggestion ->
+                        GrocerySuggestionEntity(
+                            id = suggestion.id,
+                            suggestionName = suggestion.suggestionName,
+                            category = suggestion.category,
+                            approxPrice = suggestion.approxPrice,
+                        )
                     }
                     groceryLocalDataSource.updateGrocerySuggestions(entities)
                 }
@@ -110,7 +107,7 @@ class GroceryRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun saveGroceryItem(item: Item): Result<String, AppError> {
+    override suspend fun saveGroceryItem(item: GroceryItem): Result<String, AppError> {
         return groceryFirestoreDataSource.saveGroceryItem(item)
     }
 

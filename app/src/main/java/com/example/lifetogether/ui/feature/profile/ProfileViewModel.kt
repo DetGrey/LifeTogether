@@ -102,7 +102,7 @@ class ProfileViewModel @Inject constructor(
             it.copy(
                 showConfirmationDialog = true,
                 confirmationDialogType = ProfileConfirmationType.NAME,
-                newName = it.userInformation?.name.orEmpty(),
+                newName = it.userInformation.name,
             )
         }
     }
@@ -156,8 +156,8 @@ class ProfileViewModel @Inject constructor(
         val name = state.newName.trim()
         if (name.isEmpty()) return
 
-        val userInformation = state.userInformation ?: return
-        val uid = userInformation.uid ?: return
+        val userInformation = state.userInformation
+        val uid = userInformation.uid
         val familyId = userInformation.familyId
 
         viewModelScope.launch {

@@ -80,7 +80,7 @@ class UserRepositoryImpl @Inject constructor(
     // ---------- REMOTE
     override suspend fun login(
         user: User,
-    ): Result<UserInformation, AppError> {
+    ): Result<Unit, AppError> {
         Log.d(TAG, "login start")
         return firebaseAuthDataSource.login(user)
     }
@@ -140,9 +140,7 @@ class UserRepositoryImpl @Inject constructor(
         return userFirestoreDataSource.userInformationSnapshotListener(uid).map { result ->
             when (result) {
                 is Result.Success -> appResultOfSuspend {
-                    val hasExistingImage = result.data.uid?.let { uidValue ->
-                        userLocalDataSource.userHasProfileImage(uidValue)
-                    } ?: false
+                    val hasExistingImage = userLocalDataSource.userHasProfileImage(result.data.uid)
 
                     if (!hasExistingImage) {
                         val byteArrayResult = result.data.imageUrl?.let { url ->

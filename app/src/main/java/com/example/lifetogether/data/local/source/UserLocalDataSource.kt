@@ -20,9 +20,8 @@ class UserLocalDataSource @Inject constructor(
         userInformation: UserInformation,
         byteArray: ByteArray? = null,
     ) {
-        val uid = requireNotNull(userInformation.uid) { "Missing user uid" }
         var userEntity = UserEntity(
-            uid = uid,
+            uid = userInformation.uid,
             email = userInformation.email,
             name = userInformation.name,
             birthday = userInformation.birthday,

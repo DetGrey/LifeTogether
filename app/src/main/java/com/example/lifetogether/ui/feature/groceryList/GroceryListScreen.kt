@@ -35,6 +35,7 @@ import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.util.UNCATEGORIZED_CATEGORY
 import com.example.lifetogether.util.UNCATEGORIZED_CATEGORY_NAME
 import com.example.lifetogether.util.priceToString
+import java.util.Date
 
 @Composable
 fun GroceryListScreen(
@@ -223,31 +224,46 @@ private fun GroceryListScreenPreview2() {
                 groceryList = listOf(
                     GroceryItem(
                         id = "4",
+                        familyId = "family-1",
+                        category = UNCATEGORIZED_CATEGORY,
                         itemName = "Apple",
+                        lastUpdated = Date(),
                         approxPrice = 12.0F
                     ),
                     GroceryItem(
                         id = "5",
+                        familyId = "family-1",
+                        category = UNCATEGORIZED_CATEGORY,
                         itemName = "Apple",
+                        lastUpdated = Date(),
                     ),
                 ),
                 categorizedItems = mapOf(
                     UNCATEGORIZED_CATEGORY to listOf(
                         GroceryItem(
                             id = "1",
+                            familyId = "family-1",
+                            category = UNCATEGORIZED_CATEGORY,
                             itemName = "Apple",
+                            lastUpdated = Date(),
                             approxPrice = 12.0F
                         ),
                         GroceryItem(
                             id = "2",
+                            familyId = "family-1",
+                            category = UNCATEGORIZED_CATEGORY,
                             itemName = "Banana",
+                            lastUpdated = Date(),
                         ),
                     )
                 ),
                 completedItems = listOf(
                     GroceryItem(
                         id = "3",
+                        familyId = "family-1",
+                        category = UNCATEGORIZED_CATEGORY,
                         itemName = "Banana",
+                        lastUpdated = Date(),
                     )
                 ),
                 groceryCategories = listOf(UNCATEGORIZED_CATEGORY),

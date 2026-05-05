@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -53,6 +54,7 @@ class SignUpViewModel @Inject constructor(
     private fun signUp() {
         val state = _uiState.value
         val userInformation = UserInformation(
+            uid = UUID.randomUUID().toString(),
             name = state.name,
             email = state.email,
             birthday = state.birthday,

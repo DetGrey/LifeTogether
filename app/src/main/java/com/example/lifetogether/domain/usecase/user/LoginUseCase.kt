@@ -4,7 +4,6 @@ import com.example.lifetogether.domain.result.AppError
 
 import android.util.Log
 import com.example.lifetogether.domain.model.User
-import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.repository.UserRepository
 import com.example.lifetogether.domain.result.Result
 import javax.inject.Inject
@@ -16,7 +15,7 @@ class LoginUseCase @Inject constructor(
         const val TAG = "LoginUseCase"
     }
 
-    suspend operator fun invoke(user: User): Result<UserInformation, AppError> {
+    suspend operator fun invoke(user: User): Result<Unit, AppError> {
         Log.d(TAG, "invoke")
         // TODO Handle the login logic and validation here
 //        val userValidationUseCase = UserValidationUseCase()

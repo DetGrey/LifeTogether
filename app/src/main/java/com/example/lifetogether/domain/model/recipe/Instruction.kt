@@ -5,6 +5,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Instruction(
-    override val itemName: String = "",
+    override val itemName: String,
     override var completed: Boolean = false,
 ) : Completable

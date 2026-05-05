@@ -22,6 +22,7 @@ import com.example.lifetogether.domain.logic.minToHourMinString
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
+import java.util.Date
 
 @Composable
 fun RecipeCard(
@@ -36,7 +37,7 @@ fun RecipeCard(
         modifier = Modifier
             .fillMaxWidth()
             .height(80.dp)
-            .clickable { recipe.id?.let { onClick(it) } },
+        .clickable { onClick(recipe.id) },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
         shape = MaterialTheme.shapes.large,
     ) {
@@ -86,8 +87,16 @@ fun RecipeCardPreview() {
     LifeTogetherTheme {
         RecipeCard(
             Recipe(
+                id = "recipe-1",
+                familyId = "family-1",
                 itemName = "Rød grød med fløde og sovs",
+                lastUpdated = Date(),
+                description = "A classic dessert.",
+                ingredients = emptyList(),
+                instructions = emptyList(),
                 preparationTimeMin = 149,
+                favourite = false,
+                servings = 4,
                 tags = listOf("dinner", "easy", "fast"),
             ),
             onClick = {},

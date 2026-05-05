@@ -8,7 +8,7 @@ import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.Flow
 
 interface UserRepository {
-    suspend fun login(user: User): Result<UserInformation, AppError>
+    suspend fun login(user: User): Result<Unit, AppError>
     suspend fun signUp(user: User, userInformation: UserInformation): Result<UserInformation, AppError>
     fun syncUserInformationFromRemote(uid: String): Flow<Result<Unit, AppError>>
     suspend fun changeName(uid: String, familyId: String?, newName: String): Result<Unit, AppError>

@@ -27,6 +27,7 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.GuideProgress
 import com.example.lifetogether.domain.model.guides.GuideSection
 import com.example.lifetogether.domain.model.guides.GuideStep
+import com.example.lifetogether.domain.model.guides.GuideStepType
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
@@ -162,7 +163,14 @@ private fun Preview() {
                 completedAmount = 4,
                 comment = "comment......",
                 steps = listOf(
-                    GuideStep()
+                    GuideStep(
+                        id = "step-1",
+                        name = "Step 1",
+                        type = GuideStepType.NUMBERED,
+                        title = "",
+                        content = "Example step",
+                        subSteps = emptyList(),
+                    ),
                 )
             ),
             selectedAmountIndex = 1,

@@ -66,14 +66,14 @@ fun SettingsScreen(
                     ) {
                         SettingsItem(
                             icon = Icon(R.drawable.ic_profile_picture, "profile icon"),
-                            title = userInformationState?.name ?: "Username",
+                            title = userInformationState.name,
                             link = "Edit my profile",
                             linkClickable = {
                                 onNavigationEvent(SettingsNavigationEvent.NavigateToProfile)
                             },
                         )
 
-                        if (userInformationState?.familyId is String) {
+                        if (userInformationState.familyId != null) {
                             SettingsItem(
                                 icon = Icon(R.drawable.ic_family, "family icon"),
                                 title = "My family",
@@ -153,6 +153,8 @@ fun SettingsScreenPreview() {
         SettingsScreen(
             uiState = SettingsUiState.Content(
                 userInformation = UserInformation(
+                    uid = "user-1",
+                    email = "alex@example.com",
                     name = "Alex",
                 ),
                 confirmationDialogType = null,

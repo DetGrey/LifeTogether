@@ -174,6 +174,7 @@ class MediaLocalDataSource @Inject constructor(
                                     lastUpdated = mediaItem.lastUpdated,
                                     albumId = mediaItem.albumId,
                                     dateCreated = mediaItem.dateCreated,
+                                    mediaType = mediaItem.mediaType,
                                 )
                             }
 
@@ -185,6 +186,7 @@ class MediaLocalDataSource @Inject constructor(
                                     lastUpdated = mediaItem.lastUpdated,
                                     albumId = mediaItem.albumId,
                                     dateCreated = mediaItem.dateCreated,
+                                    mediaType = mediaItem.mediaType,
                                     duration = mediaItem.videoDuration,
                                 )
                             }

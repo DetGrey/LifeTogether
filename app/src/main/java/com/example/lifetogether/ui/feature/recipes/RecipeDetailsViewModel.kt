@@ -175,8 +175,8 @@ class RecipeDetailsViewModel @Inject constructor(
         editMode: Boolean,
     ): RecipeDetailsUiState.Content {
         val isNewRecipe = recipe == null && recipeId == null
-        val sourceRecipe = recipe ?: originalRecipe ?: Recipe(
-            id = recipeId.orEmpty(),
+        val sourceRecipe = recipe ?: originalRecipe ?: blankRecipe(
+            recipeId = recipeId.orEmpty(),
             familyId = familyId.orEmpty(),
         )
 
@@ -350,8 +350,8 @@ class RecipeDetailsViewModel @Inject constructor(
             return
         }
 
-        val original = originalRecipe ?: Recipe(
-            id = state.recipeId.orEmpty(),
+        val original = originalRecipe ?: blankRecipe(
+            recipeId = state.recipeId.orEmpty(),
             familyId = familyId,
         )
         val recipe = Recipe(
@@ -425,6 +425,22 @@ class RecipeDetailsViewModel @Inject constructor(
         return ingredients.map { ingredient ->
             ingredient.copy(amount = ingredient.amount * multiplier)
         }
+    }
+
+    private fun blankRecipe(recipeId: String, familyId: String): Recipe {
+        return Recipe(
+            id = recipeId,
+            familyId = familyId,
+            itemName = "",
+            lastUpdated = Date(),
+            description = "",
+            ingredients = emptyList(),
+            instructions = emptyList(),
+            preparationTimeMin = 0,
+            favourite = false,
+            servings = 1,
+            tags = emptyList(),
+        )
     }
 
     private fun contentState(): RecipeDetailsUiState.Content? {

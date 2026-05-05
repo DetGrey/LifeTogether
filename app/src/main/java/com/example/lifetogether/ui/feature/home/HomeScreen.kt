@@ -217,6 +217,7 @@ private fun HomeScreenPreview() {
             uiState = HomeUiState.Authenticated(
                 userInformation = UserInformation(
                     uid = "1",
+                    email = "alex@example.com",
                     name = "Alex",
                     familyId = "family-123",
                 ),

@@ -37,7 +37,7 @@ fun AddNewIngredient(
 ) {
     val measureTypeList = remember { MeasureType.entries }
     var changeMeasureTypeExpanded by remember { mutableStateOf(false) }
-    var ingredient by remember { mutableStateOf(Ingredient()) }
+    var ingredient by remember { mutableStateOf(Ingredient(amount = 0.0, measureType = MeasureType.PIECE, itemName = "")) }
     var amount by remember { mutableStateOf("") }
 
     fun updateIngredient(variable: String, value: String) {
@@ -109,7 +109,7 @@ fun AddNewIngredient(
                                 amount,
                             )
                             onAddClick(ingredient)
-                            ingredient = Ingredient()
+                            ingredient = Ingredient(amount = 0.0, measureType = MeasureType.PIECE, itemName = "")
                             amount = ""
                         },
                     verticalAlignment = Alignment.CenterVertically,

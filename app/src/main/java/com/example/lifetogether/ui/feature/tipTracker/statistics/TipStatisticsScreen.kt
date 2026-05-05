@@ -148,7 +148,16 @@ private fun TipStatisticsScreenPreview() {
     LifeTogetherTheme {
         TipStatisticsScreen(
             uiState = TipTrackerUiState.Content(
-                tips = listOf(TipItem(amount = 120f, date = Date())),
+                tips = listOf(
+                    TipItem(
+                        id = "tip-1",
+                        familyId = "family-1",
+                        itemName = "Tip",
+                        lastUpdated = Date(),
+                        amount = 120f,
+                        date = Date(),
+                    ),
+                ),
                 stats = TipTrackerStats(
                     weeklyTotal = 120f,
                     monthlyTotal = 120f,
@@ -158,10 +167,28 @@ private fun TipStatisticsScreenPreview() {
                     monthlyAverage = 120f,
                     yearlyAverage = 120f,
                     totalAverage = 120f,
-                    highestTip = TipItem(amount = 120f, date = Date()),
+                    highestTip = TipItem(
+                        id = "tip-1",
+                        familyId = "family-1",
+                        itemName = "Tip",
+                        lastUpdated = Date(),
+                        amount = 120f,
+                        date = Date(),
+                    ),
                     bestMonth = "January 2026" to 120f,
                 ),
-                groupedTips = mapOf("01. January 2026" to listOf(TipItem(amount = 120f, date = Date()))),
+                groupedTips = mapOf(
+                    "01. January 2026" to listOf(
+                        TipItem(
+                            id = "tip-1",
+                            familyId = "family-1",
+                            itemName = "Tip",
+                            lastUpdated = Date(),
+                            amount = 120f,
+                            date = Date(),
+                        ),
+                    ),
+                ),
                 calendar = TipTrackerCalendarState(),
             ),
             onUiEvent = {},

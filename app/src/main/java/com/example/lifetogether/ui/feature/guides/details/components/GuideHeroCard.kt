@@ -71,6 +71,8 @@ private fun GuideHeroCardPreview() {
                 lastUpdated = Date(1_717_200_000_000),
                 description = "A short guide for cleaning the apartment together.",
                 visibility = Visibility.FAMILY,
+                ownerUid = "uid-1",
+                contentVersion = 1L,
                 started = true,
                 sections = listOf(
                     GuideSection(

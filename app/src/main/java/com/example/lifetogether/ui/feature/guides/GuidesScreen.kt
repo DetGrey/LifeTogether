@@ -51,6 +51,7 @@ import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
+import java.util.Date
 
 @Composable
 fun GuidesScreen(
@@ -290,9 +291,14 @@ private fun GuidesScreenPreview() {
             uiState = GuidesUiState.Content(
                 guides = listOf(
                     Guide(
+                        id = "guide-1",
+                        familyId = "family-1",
                         itemName = "Family reset",
+                        lastUpdated = Date(),
                         description = "Set up a weekly reset plan.",
                         visibility = Visibility.FAMILY,
+                        ownerUid = "uid-1",
+                        contentVersion = 1L,
                         started = true,
                         sections = emptyList(),
                     ),

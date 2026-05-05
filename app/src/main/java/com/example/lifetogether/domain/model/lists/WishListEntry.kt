@@ -13,6 +13,6 @@ data class WishListEntry(
     val url: String? = null,
     val estimatedPriceMinor: Long? = null,
     val currencyCode: String? = null,
-    val priority: WishListPriority = WishListPriority.PLANNED,
+    val priority: WishListPriority,
     val notes: String? = null,
 ) : ListEntry

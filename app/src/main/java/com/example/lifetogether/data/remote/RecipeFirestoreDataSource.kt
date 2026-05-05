@@ -7,14 +7,19 @@ import com.example.lifetogether.domain.result.AppError
 
 import android.util.Log
 import com.example.lifetogether.domain.model.recipe.Recipe
+import com.example.lifetogether.domain.model.recipe.Ingredient
+import com.example.lifetogether.domain.model.recipe.Instruction
 import com.example.lifetogether.domain.result.ListSnapshot
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.util.Constants
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.DocumentId
+import kotlin.jvm.Transient
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import java.util.Date
 import javax.inject.Inject
 
 class RecipeFirestoreDataSource @Inject constructor(
@@ -32,9 +37,12 @@ class RecipeFirestoreDataSource @Inject constructor(
             }
             if (snapshot != null) {
                 val items = snapshot.documents.mapNotNull { doc ->
-                    runCatching { doc.toObject(Recipe::class.java)?.copy(id = doc.id) }
-                        .onFailure { Log.e(TAG, "Failed parsing recipe ${doc.id}", it) }
-                        .getOrNull()
+                    try {
+                        doc.toObject(RecipeDto::class.java)?.toDomain(doc.id)
+                    } catch (throwable: Throwable) {
+                        Log.e(TAG, "Failed parsing recipe ${doc.id}", throwable)
+                        null
+                    }
                 }
                 trySend(Result.Success(ListSnapshot(items))).isSuccess
             } else {
@@ -46,7 +54,7 @@ class RecipeFirestoreDataSource @Inject constructor(
 
     suspend fun saveRecipe(recipe: Recipe): Result<String, AppError> {
         return appResultOfSuspend {
-            val documentReference = db.collection(Constants.RECIPES_TABLE).add(recipe).await()
+            val documentReference = db.collection(Constants.RECIPES_TABLE).add(recipe.toDto().toFirestoreMap()).await()
             documentReference.id
         }
     }
@@ -54,7 +62,7 @@ class RecipeFirestoreDataSource @Inject constructor(
     suspend fun updateRecipe(recipe: Recipe): Result<Unit, AppError> {
         val id = recipe.id
         return appResultOfSuspend {
-            db.collection(Constants.RECIPES_TABLE).document(id).set(recipe, SetOptions.merge()).await()
+            db.collection(Constants.RECIPES_TABLE).document(id).set(recipe.toDto().toFirestoreMap(), SetOptions.merge()).await()
         }
     }
 
@@ -65,9 +73,11 @@ class RecipeFirestoreDataSource @Inject constructor(
     }
 
     suspend fun getRecipeImageUrl(recipeId: String): Result<String, AppError> {
-        val docResult = appResultOfSuspend {
+        val docResult = try {
             val doc = db.collection(Constants.RECIPES_TABLE).document(recipeId).get().await()
-            doc
+            Result.Success(doc)
+        } catch (throwable: Throwable) {
+            Result.Failure(AppErrors.fromThrowable(throwable))
         }
         return when (docResult) {
             is Result.Success -> {
@@ -85,3 +95,74 @@ class RecipeFirestoreDataSource @Inject constructor(
         }
     }
 }
+
+private data class RecipeDto(
+    @DocumentId @Transient
+    val id: String? = null,
+    val familyId: String? = null,
+    val itemName: String? = null,
+    val lastUpdated: Date? = null,
+    val description: String? = null,
+    val ingredients: List<Ingredient>? = null,
+    val instructions: List<Instruction>? = null,
+    val preparationTimeMin: Int? = null,
+    val favourite: Boolean? = null,
+    val servings: Int? = null,
+    val tags: List<String>? = null,
+    val imageUrl: String? = null,
+) {
+    fun toDomain(documentId: String): Recipe? {
+        val familyIdValue = familyId?.takeIf { it.isNotBlank() } ?: return null
+        val itemNameValue = itemName?.takeIf { it.isNotBlank() } ?: return null
+        val lastUpdatedValue = lastUpdated ?: return null
+        val descriptionValue = description ?: return null
+        val ingredientsValue = ingredients ?: return null
+        val instructionsValue = instructions ?: return null
+        val preparationTimeMinValue = preparationTimeMin ?: return null
+        val servingsValue = servings ?: return null
+        val tagsValue = tags ?: return null
+        return Recipe(
+            id = documentId,
+            familyId = familyIdValue,
+            itemName = itemNameValue,
+            lastUpdated = lastUpdatedValue,
+            description = descriptionValue,
+            ingredients = ingredientsValue,
+            instructions = instructionsValue,
+            preparationTimeMin = preparationTimeMinValue,
+            favourite = favourite ?: false,
+            servings = servingsValue,
+            tags = tagsValue,
+            imageUrl = imageUrl,
+        )
+    }
+
+    fun toFirestoreMap(): Map<String, Any?> = mapOf(
+        "familyId" to familyId,
+        "itemName" to itemName,
+        "lastUpdated" to lastUpdated,
+        "description" to description,
+        "ingredients" to ingredients,
+        "instructions" to instructions,
+        "preparationTimeMin" to preparationTimeMin,
+        "favourite" to favourite,
+        "servings" to servings,
+        "tags" to tags,
+        "imageUrl" to imageUrl,
+    )
+}
+
+private fun Recipe.toDto(): RecipeDto = RecipeDto(
+    id = id,
+    familyId = familyId,
+    itemName = itemName,
+    lastUpdated = lastUpdated,
+    description = description,
+    ingredients = ingredients,
+    instructions = instructions,
+    preparationTimeMin = preparationTimeMin,
+    favourite = favourite,
+    servings = servings,
+    tags = tags,
+    imageUrl = imageUrl,
+)

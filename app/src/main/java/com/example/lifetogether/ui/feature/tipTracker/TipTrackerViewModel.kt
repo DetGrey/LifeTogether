@@ -29,6 +29,7 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -299,7 +300,9 @@ class TipTrackerViewModel @Inject constructor(
         }
 
         val tipItem = TipItem(
+            id = UUID.randomUUID().toString(),
             familyId = familyIdValue,
+            itemName = "Tip",
             lastUpdated = Date(System.currentTimeMillis()),
             amount = parsedAmount,
             date = currentState.newItemDate,
