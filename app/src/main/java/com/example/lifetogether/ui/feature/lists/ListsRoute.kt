@@ -15,8 +15,6 @@ import com.example.lifetogether.ui.navigation.ListDetailNavRoute
 fun ListsRoute(
     appNavigator: AppNavigator,
 ) {
-    val viewModel: ListsViewModel = hiltViewModel()
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     FeatureSyncLifecycleBinding(
         keys = setOf(
             SyncKey.USER_LISTS,
@@ -27,6 +25,9 @@ fun ListsRoute(
             SyncKey.MEAL_PLAN_ENTRIES,
         ),
     )
+
+    val viewModel: ListsViewModel = hiltViewModel()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     CollectUiCommands(viewModel.uiCommands)
 
     LaunchedEffect(viewModel) {

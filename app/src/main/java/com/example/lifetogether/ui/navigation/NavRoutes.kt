@@ -34,3 +34,4 @@ sealed interface AppRoute
 @Serializable object GuideGraph
 @Serializable object GalleryGraph
 @Serializable object TipTrackerGraph
+@Serializable object UserListGraph

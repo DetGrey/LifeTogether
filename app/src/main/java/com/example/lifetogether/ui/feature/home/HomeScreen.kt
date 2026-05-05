@@ -111,7 +111,7 @@ fun HomeScreen(
                     .background(MaterialTheme.colorScheme.background)
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(LifeTogetherTokens.spacing.small)
+                    .padding(horizontal = LifeTogetherTokens.spacing.small)
                     .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),

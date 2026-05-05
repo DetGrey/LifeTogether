@@ -113,9 +113,11 @@ fun NavHost(
             composable<GalleryMediaNavRoute> { MediaDetailsRoute(appNavigator) }
         }
 
-        composable<ListsNavRoute> { ListsRoute(appNavigator) }
-        composable<ListDetailNavRoute> { ListDetailsRoute(appNavigator = appNavigator) }
-        composable<ListEntryDetailsNavRoute> { ListEntryDetailsRoute(appNavigator = appNavigator) }
+        navigation<UserListGraph>(startDestination = ListsNavRoute::class) {
+            composable<ListsNavRoute> { ListsRoute(appNavigator) }
+            composable<ListDetailNavRoute> { ListDetailsRoute(appNavigator = appNavigator) }
+            composable<ListEntryDetailsNavRoute> { ListEntryDetailsRoute(appNavigator = appNavigator) }
+        }
 
         navigation<TipTrackerGraph>(startDestination = TipTrackerNavRoute::class) {
             composable<TipTrackerNavRoute> { backStackEntry ->
