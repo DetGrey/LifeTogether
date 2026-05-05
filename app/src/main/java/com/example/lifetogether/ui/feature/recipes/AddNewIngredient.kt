@@ -70,6 +70,7 @@ fun AddNewIngredient(
                 value = ingredient.itemName,
                 onValueChange = { updateIngredient("itemName", it) },
                 label = "Ingredient name...",
+                capitalization = true,
                 keyboardType = KeyboardType.Text,
                 imeAction = ImeAction.Done,
             )

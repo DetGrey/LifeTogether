@@ -74,6 +74,7 @@ fun GuideCreateScreen(
                     value = uiState.title,
                     onValueChange = { onUiEvent(GuideCreateUiEvent.TitleChanged(it)) },
                     label = "Title",
+                    capitalization = true,
                     imeAction = ImeAction.Next,
                     keyboardType = KeyboardType.Text
                 )
@@ -85,6 +86,7 @@ fun GuideCreateScreen(
                     value = uiState.description,
                     onValueChange = { onUiEvent(GuideCreateUiEvent.DescriptionChanged(it)) },
                     label = "Description",
+                    capitalization = true,
                     imeAction = ImeAction.Next,
                     keyboardType = KeyboardType.Text
                 )
@@ -130,6 +132,7 @@ fun GuideCreateScreen(
                             value = newSectionTitle,
                             onValueChange = { newSectionTitle = it },
                             label = "Section title",
+                            capitalization = true,
                             imeAction = ImeAction.Next,
                             keyboardType = KeyboardType.Text
                         )
@@ -198,6 +201,7 @@ fun GuideCreateScreen(
                                 value = stepDrafts[section.id] ?: "",
                                 onValueChange = { stepDrafts[section.id] = it },
                                 label = "Step name",
+                                capitalization = true,
                                 imeAction = ImeAction.Next,
                                 keyboardType = KeyboardType.Text
                             )

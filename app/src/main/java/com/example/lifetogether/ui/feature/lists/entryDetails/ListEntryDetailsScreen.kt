@@ -398,7 +398,8 @@ private fun LazyListScope.wishListEntryForm(
             label = "Notes",
             modifier = Modifier.fillMaxWidth(),
             imeAction = ImeAction.Next,
-            keyboardType = KeyboardType.Text,
+                keyboardType = KeyboardType.Text,
+                capitalization = true,
             enabled = uiState.isEditing,
         )
     }
@@ -478,6 +479,7 @@ private fun LazyListScope.checklistEntryForm(
             modifier = Modifier.fillMaxWidth(),
             imeAction = ImeAction.Next,
             keyboardType = KeyboardType.Text,
+            capitalization = true,
             enabled = uiState.isEditing,
         )
     }
@@ -511,6 +513,7 @@ private fun LazyListScope.mealPlannerEntryForm(
             modifier = Modifier.fillMaxWidth(),
             imeAction = ImeAction.Next,
             keyboardType = KeyboardType.Text,
+            capitalization = true,
             enabled = uiState.isEditing,
         )
     }

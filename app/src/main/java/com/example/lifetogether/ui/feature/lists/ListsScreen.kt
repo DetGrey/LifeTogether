@@ -176,6 +176,7 @@ private fun CreateListDialog(
                     value = name,
                     onValueChange = onNameChange,
                     label = "Name",
+                    capitalization = true,
                     imeAction = ImeAction.Next,
                     keyboardType = KeyboardType.Text
 //                    singleLine = true, //todo add these

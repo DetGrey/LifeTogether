@@ -132,6 +132,7 @@ fun AdminGroceryCategoriesScreen(
                                     onUiEvent(AdminGroceryCategoriesUiEvent.NewCategoryChanged(it))
                                 },
                                 label = "Add category",
+                                capitalization = true,
                                 keyboardType = KeyboardType.Text,
                                 imeAction = ImeAction.Done,
                             )
