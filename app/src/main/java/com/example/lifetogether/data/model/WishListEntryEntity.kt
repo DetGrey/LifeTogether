@@ -24,8 +24,8 @@ data class WishListEntryEntity(
     @ColumnInfo(name = "is_purchased")
     val isPurchased: Boolean = false,
     val url: String? = null,
-    @ColumnInfo(name = "estimated_price_minor")
-    val estimatedPriceMinor: Long? = null,
+    @ColumnInfo(name = "price")
+    val price: Double? = null,
     @ColumnInfo(name = "currency_code")
     val currencyCode: String? = null,
     val priority: WishListPriority,

@@ -7,7 +7,7 @@ data class NoteEntry(
     override val familyId: String,
     override val listId: String,
     override var itemName: String,
-    val markdownBody: String,
+    val body: String,
     override var lastUpdated: Date,
     override val dateCreated: Date,
 ) : ListEntry

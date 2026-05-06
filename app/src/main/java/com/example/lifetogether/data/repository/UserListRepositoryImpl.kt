@@ -18,6 +18,7 @@ import com.example.lifetogether.domain.model.lists.ChecklistEntry
 import com.example.lifetogether.domain.model.lists.ListEntry
 import com.example.lifetogether.domain.model.lists.ListType
 import com.example.lifetogether.domain.model.lists.MealPlanEntry
+import com.example.lifetogether.domain.model.lists.MealType
 import com.example.lifetogether.domain.model.lists.NoteEntry
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.domain.model.lists.UserList
@@ -478,7 +479,7 @@ class UserListRepositoryImpl @Inject constructor(
         dateCreated = dateCreated,
         isPurchased = isPurchased,
         url = url,
-        estimatedPriceMinor = estimatedPriceMinor,
+        price = price,
         currencyCode = currencyCode,
         priority = priority,
         notes = notes,
@@ -489,7 +490,7 @@ class UserListRepositoryImpl @Inject constructor(
         familyId = familyId,
         listId = listId,
         itemName = itemName,
-        markdownBody = markdownBody,
+        body = body,
         lastUpdated = lastUpdated,
         dateCreated = dateCreated,
     )
@@ -512,6 +513,8 @@ class UserListRepositoryImpl @Inject constructor(
         date = date,
         recipeId = recipeId,
         customMealName = customMealName,
+        mealType = MealType.fromValue(mealType) ?: MealType.DINNER,
+        notes = notes,
         lastUpdated = lastUpdated,
         dateCreated = dateCreated,
     )

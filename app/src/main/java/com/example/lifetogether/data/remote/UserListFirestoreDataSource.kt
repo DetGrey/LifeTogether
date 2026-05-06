@@ -17,6 +17,7 @@ import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.model.lists.WishListEntry
 import com.example.lifetogether.domain.model.lists.WishListPriority
+import com.example.lifetogether.domain.model.lists.MealType
 import com.example.lifetogether.domain.result.ListSnapshot
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.util.Constants
@@ -490,7 +491,7 @@ class UserListFirestoreDataSource @Inject constructor(
         val dateCreated: Date? = null,
         val isPurchased: Boolean? = null,
         val url: String? = null,
-        val estimatedPriceMinor: Long? = null,
+        val price: Double? = null,
         val currencyCode: String? = null,
         val priority: String? = null,
         val notes: String? = null,
@@ -516,7 +517,7 @@ class UserListFirestoreDataSource @Inject constructor(
                 dateCreated = dateCreatedValue,
                 isPurchased = isPurchased ?: false,
                 url = url,
-                estimatedPriceMinor = estimatedPriceMinor,
+                price = price,
                 currencyCode = currencyCode,
                 priority = priorityValue,
                 notes = notes,
@@ -533,8 +534,6 @@ class UserListFirestoreDataSource @Inject constructor(
         val name: String? = null,
         @get:PropertyName("itemName")
         val itemName: String? = null,
-        val markdownBody: String? = null,
-        @get:PropertyName("body")
         val body: String? = null,
         val lastUpdated: Date? = null,
         val dateCreated: Date? = null,
@@ -545,9 +544,7 @@ class UserListFirestoreDataSource @Inject constructor(
             val itemNameValue = name?.trim()?.takeIf { it.isNotEmpty() }
                 ?: itemName?.trim()?.takeIf { it.isNotEmpty() }
                 ?: return null
-            val markdownBodyValue = markdownBody?.trim()?.takeIf { it.isNotEmpty() }
-                ?: body?.trim()?.takeIf { it.isNotEmpty() }
-                ?: return null
+            val bodyValue = body?.trim() ?: ""
             val lastUpdatedValue = lastUpdated ?: return null
             val dateCreatedValue = dateCreated ?: return null
 
@@ -556,7 +553,7 @@ class UserListFirestoreDataSource @Inject constructor(
                 familyId = familyIdValue,
                 listId = listIdValue,
                 itemName = itemNameValue,
-                markdownBody = markdownBodyValue,
+                body = bodyValue,
                 lastUpdated = lastUpdatedValue,
                 dateCreated = dateCreatedValue,
             )
@@ -609,6 +606,8 @@ class UserListFirestoreDataSource @Inject constructor(
         val date: String? = null,
         val recipeId: String? = null,
         val customMealName: String? = null,
+        val mealType: String? = null,
+        val notes: String? = null,
         val lastUpdated: Date? = null,
         val dateCreated: Date? = null,
     ) {
@@ -622,6 +621,7 @@ class UserListFirestoreDataSource @Inject constructor(
                 ?: return null
             val lastUpdatedValue = lastUpdated ?: return null
             val dateCreatedValue = dateCreated ?: return null
+            val mealTypeValue = mealType?.let { MealType.fromValue(it) } ?: MealType.DINNER
 
             return MealPlanEntry(
                 id = documentId,
@@ -631,6 +631,8 @@ class UserListFirestoreDataSource @Inject constructor(
                 date = mealDateValue,
                 recipeId = recipeId?.trim()?.takeIf { it.isNotEmpty() },
                 customMealName = customMealName?.trim()?.takeIf { it.isNotEmpty() },
+                mealType = mealTypeValue,
+                notes = notes?.trim().orEmpty(),
                 lastUpdated = lastUpdatedValue,
                 dateCreated = dateCreatedValue,
             )
@@ -698,7 +700,7 @@ class UserListFirestoreDataSource @Inject constructor(
         val dateCreated: Date?,
         val isPurchased: Boolean?,
         val url: String?,
-        val estimatedPriceMinor: Long?,
+        val price: Double?,
         val currencyCode: String?,
         val priority: String?,
         val notes: String?,
@@ -711,7 +713,7 @@ class UserListFirestoreDataSource @Inject constructor(
             "dateCreated" to dateCreated,
             "isPurchased" to isPurchased,
             "url" to url,
-            "estimatedPriceMinor" to estimatedPriceMinor,
+            "price" to price,
             "currencyCode" to currencyCode,
             "priority" to priority,
             "notes" to notes,
@@ -723,7 +725,7 @@ class UserListFirestoreDataSource @Inject constructor(
         val listId: String?,
         @get:PropertyName("name")
         val name: String?,
-        val markdownBody: String?,
+        val body: String?,
         val lastUpdated: Date?,
         val dateCreated: Date?,
     ) {
@@ -731,7 +733,7 @@ class UserListFirestoreDataSource @Inject constructor(
             "familyId" to familyId,
             "listId" to listId,
             "name" to name,
-            "markdownBody" to markdownBody,
+            "body" to body,
             "lastUpdated" to lastUpdated,
             "dateCreated" to dateCreated,
         )
@@ -764,6 +766,8 @@ class UserListFirestoreDataSource @Inject constructor(
         val date: String?,
         val recipeId: String?,
         val customMealName: String?,
+        val mealType: String?,
+        val notes: String?,
         val lastUpdated: Date?,
         val dateCreated: Date?,
     ) {
@@ -774,6 +778,8 @@ class UserListFirestoreDataSource @Inject constructor(
             "date" to date,
             "recipeId" to recipeId,
             "customMealName" to customMealName,
+            "mealType" to mealType,
+            "notes" to notes,
             "lastUpdated" to lastUpdated,
             "dateCreated" to dateCreated,
         )
@@ -812,7 +818,7 @@ class UserListFirestoreDataSource @Inject constructor(
         dateCreated = dateCreated,
         isPurchased = isPurchased,
         url = url,
-        estimatedPriceMinor = estimatedPriceMinor,
+        price = price,
         currencyCode = currencyCode,
         priority = priority.value,
         notes = notes,
@@ -822,7 +828,7 @@ class UserListFirestoreDataSource @Inject constructor(
         familyId = familyId,
         listId = listId,
         name = itemName,
-        markdownBody = markdownBody,
+        body = body,
         lastUpdated = lastUpdated,
         dateCreated = dateCreated,
     )
@@ -843,6 +849,8 @@ class UserListFirestoreDataSource @Inject constructor(
         date = date,
         recipeId = recipeId,
         customMealName = customMealName,
+        mealType = mealType.name,
+        notes = notes,
         lastUpdated = lastUpdated,
         dateCreated = dateCreated,
     )

@@ -16,8 +16,8 @@ data class NoteEntryEntity(
     val listId: String,
     @ColumnInfo(name = "item_name")
     val itemName: String,
-    @ColumnInfo(name = "markdown_body")
-    val markdownBody: String,
+    @ColumnInfo(name = "body")
+    val body: String,
     @ColumnInfo(name = "last_updated")
     val lastUpdated: Date,
     @ColumnInfo(name = "date_created")

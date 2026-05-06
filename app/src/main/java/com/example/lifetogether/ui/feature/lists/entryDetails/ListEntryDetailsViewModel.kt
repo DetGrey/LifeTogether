@@ -114,7 +114,7 @@ class ListEntryDetailsViewModel @Inject constructor(
                     originalDetails = currentContentState()?.details
                     if (entryId != null) {
                         updateContent { it.copy(isEditing = false) }
-                    }
+                    } //todo does not leave the screen and cannot see it was saved. When going back to listentries it doesnt show either before going out to listoverview and back
                 }
 
                 is Result.Failure -> showError(result.error.toUserMessage())

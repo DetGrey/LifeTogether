@@ -5,6 +5,7 @@ import android.net.Uri
 import com.example.lifetogether.domain.model.lists.ChecklistEntry
 import com.example.lifetogether.domain.model.lists.ListType
 import com.example.lifetogether.domain.model.lists.MealPlanEntry
+import com.example.lifetogether.domain.model.lists.MealType
 import com.example.lifetogether.domain.model.lists.NoteEntry
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
@@ -65,7 +66,7 @@ sealed interface EntryDetailsContent {
                         name = entry.itemName,
                         isPurchased = entry.isPurchased,
                         url = entry.url.orEmpty(),
-                        estimatedPriceMinor = entry.estimatedPriceMinor?.toString().orEmpty(),
+                        price = entry.price?.toString().orEmpty(),
                         currencyCode = entry.currencyCode.orEmpty(),
                         priority = entry.priority,
                         notes = entry.notes.orEmpty(),
@@ -89,7 +90,7 @@ sealed interface EntryDetailsContent {
                 return Note(
                     form = NoteEntryFormState(
                         name = entry.itemName,
-                        markdownBody = entry.markdownBody,
+                        body = entry.body,
                     ),
                 )
             }
@@ -134,6 +135,8 @@ sealed interface EntryDetailsContent {
                         date = entry.date,
                         recipeId = entry.recipeId.orEmpty(),
                         customMealName = entry.customMealName.orEmpty(),
+                        mealType = entry.mealType,
+                        notes = entry.notes,
                     ),
                 )
             }
@@ -154,7 +157,7 @@ data class WishEntryFormState(
     val name: String = "",
     val isPurchased: Boolean = false,
     val url: String = "",
-    val estimatedPriceMinor: String = "",
+    val price: String = "",
     val currencyCode: String = "",
     val priority: WishListPriority = WishListPriority.PLANNED,
     val notes: String = "",
@@ -162,8 +165,7 @@ data class WishEntryFormState(
 
 data class NoteEntryFormState(
     val name: String = "",
-    val markdownBody: String = "",
-    val isPreviewMode: Boolean = false,
+    val body: String = "",
 )
 
 data class ChecklistEntryFormState(
@@ -176,6 +178,8 @@ data class MealPlanEntryFormState(
     val date: String = "",
     val recipeId: String = "",
     val customMealName: String = "",
+    val mealType: MealType = MealType.DINNER,
+    val notes: String = "",
 )
 
 sealed interface ListEntryDetailsUiEvent {
@@ -199,15 +203,14 @@ sealed interface ListEntryDetailsUiEvent {
     sealed interface Wish : ListEntryDetailsUiEvent {
         data class PurchasedChanged(val value: Boolean) : Wish
         data class UrlChanged(val value: String) : Wish
-        data class EstimatedPriceMinorChanged(val value: String) : Wish
+        data class PriceChanged(val value: String) : Wish
         data class CurrencyCodeChanged(val value: String) : Wish
         data class PriorityChanged(val value: String) : Wish
         data class NotesChanged(val value: String) : Wish
     }
 
     sealed interface Note : ListEntryDetailsUiEvent {
-        data class MarkdownBodyChanged(val value: String) : Note
-        data class PreviewModeChanged(val value: Boolean) : Note
+        data class BodyChanged(val value: String) : Note
     }
 
     sealed interface Checklist : ListEntryDetailsUiEvent {
@@ -218,6 +221,8 @@ sealed interface ListEntryDetailsUiEvent {
         data class DateChanged(val value: String) : Meal
         data class RecipeIdChanged(val value: String) : Meal
         data class CustomMealNameChanged(val value: String) : Meal
+        data class MealTypeChanged(val value: String) : Meal
+        data class NotesChanged(val value: String) : Meal
     }
 }
 

@@ -6,6 +6,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -24,6 +25,8 @@ fun AppTopBar(
     text: String,
     rightIcon: Icon? = null,
     onRightClick: (() -> Unit)? = null,
+    rightText: String? = null,
+    onRightTextClick: (() -> Unit)? = null,
 ) {
     CenterAlignedTopAppBar(
         title = {
@@ -47,7 +50,15 @@ fun AppTopBar(
             }
         },
         actions = {
-            if (rightIcon != null) {
+            if (rightText != null) {
+                TextButton(onClick = { onRightTextClick?.invoke() }) {
+                    Text(
+                        text = rightText,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            } else if (rightIcon != null) {
                 IconButton(
                     onClick = { onRightClick?.invoke() },
                 ) {

@@ -510,12 +510,12 @@ private fun ListEntryCard(
         }
 
         is WishListEntry -> {
-            val price = entry.estimatedPriceMinor?.let { "$it ${entry.currencyCode.orEmpty()}" } ?: "No price"
+            val price = entry.price?.let { "$it ${entry.currencyCode.orEmpty()}" } ?: "No price"
             val url = entry.url?.takeIf { it.isNotBlank() }?.let { " | $it" }.orEmpty()
             "$price$url"
         }
 
-        is NoteEntry -> entry.markdownBody.take(60)
+        is NoteEntry -> entry.body.take(60)
         is ChecklistEntry -> if (entry.isChecked) "Completed" else "Pending"
         is MealPlanEntry -> "${entry.date} | ${entry.customMealName ?: entry.recipeId.orEmpty()}"
         else -> ""

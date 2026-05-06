@@ -118,7 +118,7 @@ class ListEntryDetailsSaver @Inject constructor(
             dateCreated = now,
             isPurchased = form.isPurchased,
             url = form.url.ifBlank { null },
-            estimatedPriceMinor = form.estimatedPriceMinor.toLongOrNull(),
+            price = form.price.toDoubleOrNull(),
             currencyCode = form.currencyCode.ifBlank { null },
             priority = form.priority,
             notes = form.notes.ifBlank { null },
@@ -143,7 +143,7 @@ class ListEntryDetailsSaver @Inject constructor(
             familyId = familyId,
             listId = listId,
             itemName = form.name.trim(),
-            markdownBody = form.markdownBody,
+            body = form.body,
             lastUpdated = now,
             dateCreated = now,
         )
@@ -194,6 +194,8 @@ class ListEntryDetailsSaver @Inject constructor(
             date = form.date,
             recipeId = form.recipeId.ifBlank { null },
             customMealName = form.customMealName.ifBlank { null },
+            mealType = form.mealType,
+            notes = form.notes,
             lastUpdated = now,
             dateCreated = now,
         )
@@ -215,8 +217,8 @@ class ListEntryDetailsSaver @Inject constructor(
 
             is EntryDetailsContent.Wish -> {
                 if (details.form.name.isBlank()) return "Name cannot be empty"
-                if (details.form.estimatedPriceMinor.isNotBlank() && details.form.estimatedPriceMinor.toLongOrNull() == null) {
-                    return "Estimated price must be a whole number"
+                if (details.form.price.isNotBlank() && details.form.price.toDoubleOrNull() == null) {
+                    return "Price must be a number"
                 }
                 null
             }

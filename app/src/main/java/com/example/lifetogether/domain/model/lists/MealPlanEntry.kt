@@ -10,6 +10,8 @@ data class MealPlanEntry(
     val date: String,
     val recipeId: String? = null,
     val customMealName: String? = null,
+    val mealType: MealType = MealType.DINNER,
+    val notes: String = "",
     override var lastUpdated: Date,
     override val dateCreated: Date,
 ) : ListEntry

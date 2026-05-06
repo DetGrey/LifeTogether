@@ -11,7 +11,7 @@ data class WishListEntry(
     override val dateCreated: Date,
     val isPurchased: Boolean = false,
     val url: String? = null,
-    val estimatedPriceMinor: Long? = null,
+    val price: Double? = null,
     val currencyCode: String? = null,
     val priority: WishListPriority,
     val notes: String? = null,

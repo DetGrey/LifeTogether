@@ -306,7 +306,7 @@ class UserListLocalDataSource @Inject constructor(
         dateCreated = dateCreated,
         isPurchased = isPurchased,
         url = url,
-        estimatedPriceMinor = estimatedPriceMinor,
+        price = price,
         currencyCode = currencyCode,
         priority = priority,
         notes = notes,
@@ -317,7 +317,7 @@ class UserListLocalDataSource @Inject constructor(
         familyId = familyId,
         listId = listId,
         itemName = itemName,
-        markdownBody = markdownBody,
+        body = body,
         lastUpdated = lastUpdated,
         dateCreated = dateCreated,
     )
@@ -340,6 +340,8 @@ class UserListLocalDataSource @Inject constructor(
         date = date,
         recipeId = recipeId,
         customMealName = customMealName,
+        mealType = mealType.name,
+        notes = notes,
         lastUpdated = lastUpdated,
         dateCreated = dateCreated,
     )

@@ -13,6 +13,7 @@ Here are some bugs that need to be fixed:
 - [ ] Wishlist entries is missing name (only name and priority are required by default). 
   - This is a bug with several ListEntry types where the screen doesn't have all the needed elements
 - [ ] A note entry should also be able to add a title (but called itemName)
+- [ ] Weird spacing between the featurecards on homescreen
 
 Here are some questions:
 
@@ -26,3 +27,4 @@ Here are some questions:
 - New note entry should be redesigned and make the textfield be custom with multi-line and other things (box should fill most of the screen)
 - Sometimes when creating a new list (note or checklist) it keeps loading for too long when trying to create it and when going back it doesn't show on the listoverview before leaving to homescreen and coming back
 - Mealplanner should be redesigned
+  - itemName should either be the recipe name or the custom mealname

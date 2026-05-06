@@ -21,6 +21,9 @@ data class MealPlanEntryEntity(
     val recipeId: String? = null,
     @ColumnInfo(name = "custom_meal_name")
     val customMealName: String? = null,
+    @ColumnInfo(name = "meal_type")
+    val mealType: String = "DINNER",
+    val notes: String = "",
     @ColumnInfo(name = "last_updated")
     val lastUpdated: Date,
     @ColumnInfo(name = "date_created")
