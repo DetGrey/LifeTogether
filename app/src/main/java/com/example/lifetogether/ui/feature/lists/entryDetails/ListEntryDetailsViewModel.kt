@@ -102,8 +102,7 @@ class ListEntryDetailsViewModel @Inject constructor(
             is ListEntryDetailsUiEvent.Wish.CurrencyCodeChanged,
             is ListEntryDetailsUiEvent.Wish.PriorityChanged,
             is ListEntryDetailsUiEvent.Wish.NotesChanged,
-            is ListEntryDetailsUiEvent.Note.BodyChanged,
-            is ListEntryDetailsUiEvent.Checklist.CheckedChanged -> updateCurrentDetails { formReducer.reduce(it, event) }
+            is ListEntryDetailsUiEvent.Note.BodyChanged -> updateCurrentDetails { formReducer.reduce(it, event) }
         }
     }
 

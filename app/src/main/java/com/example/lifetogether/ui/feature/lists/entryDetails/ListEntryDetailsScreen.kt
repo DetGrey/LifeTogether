@@ -22,7 +22,6 @@ import com.example.lifetogether.ui.common.image.ImageUploadDialog
 import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.feature.lists.entryDetails.content.ListEntryDetailsContent
 import com.example.lifetogether.ui.feature.lists.entryDetails.content.NoteEntryContent
-import com.example.lifetogether.ui.feature.lists.entryDetails.content.checklistEntryForm
 import com.example.lifetogether.ui.feature.lists.entryDetails.content.mealPlanEntryContent
 import com.example.lifetogether.ui.feature.lists.entryDetails.content.routineEntryForm
 import com.example.lifetogether.ui.feature.lists.entryDetails.content.wishListEntryForm
@@ -116,12 +115,6 @@ fun ListEntryDetailsScreen(
                             onUiEvent = onUiEvent,
                         )
 
-                        is EntryDetailsContent.Checklist -> checklistEntryForm(
-                            uiState = contentState,
-                            formState = details.form,
-                            onUiEvent = onUiEvent,
-                        )
-
                         is EntryDetailsContent.Meal -> mealPlanEntryContent(
                             uiState = uiState,
                             formState = details.form,
@@ -129,7 +122,7 @@ fun ListEntryDetailsScreen(
                             onUiEvent = onUiEvent,
                         )
 
-                        else -> Unit
+                        is EntryDetailsContent.Note -> Unit
                     }
                 }
             }

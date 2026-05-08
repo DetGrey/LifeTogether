@@ -296,11 +296,26 @@ class UserListRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveChecklistEntry(entry: ChecklistEntry): Result<String, AppError> {
-        return userListFirestoreDataSource.saveChecklistEntry(entry)
+        return when (val remoteResult = userListFirestoreDataSource.saveChecklistEntry(entry)) {
+            is Result.Success -> appResultOfSuspend {
+                userListLocalDataSource.updateChecklistEntries(
+                    listOf(
+                        entry.copy(id = remoteResult.data),
+                    ),
+                )
+                remoteResult.data
+            }
+            is Result.Failure -> remoteResult
+        }
     }
 
     override suspend fun updateChecklistEntry(entry: ChecklistEntry): Result<Unit, AppError> {
-        return userListFirestoreDataSource.updateChecklistEntry(entry)
+        return when (val remoteResult = userListFirestoreDataSource.updateChecklistEntry(entry)) {
+            is Result.Success -> appResultOfSuspend {
+                userListLocalDataSource.updateChecklistEntries(listOf(entry))
+            }
+            is Result.Failure -> remoteResult
+        }
     }
 
     override suspend fun deleteChecklistEntries(itemIds: List<String>): Result<Unit, AppError> {

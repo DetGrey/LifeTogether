@@ -3,7 +3,6 @@ package com.example.lifetogether.ui.feature.lists.entryDetails
 import android.content.Context
 import android.net.Uri
 import com.example.lifetogether.domain.logic.RecurrenceCalculator
-import com.example.lifetogether.domain.model.lists.ChecklistEntry
 import com.example.lifetogether.domain.model.lists.MealPlanEntry
 import com.example.lifetogether.domain.model.lists.NoteEntry
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
@@ -35,7 +34,6 @@ class ListEntryDetailsSaver @Inject constructor(
             is EntryDetailsContent.Routine -> saveRoutine(details, entryId, familyId, listId, now, context)
             is EntryDetailsContent.Wish -> saveWish(details, entryId, familyId, listId, now)
             is EntryDetailsContent.Note -> saveNote(details, entryId, familyId, listId, now)
-            is EntryDetailsContent.Checklist -> saveChecklist(details, entryId, familyId, listId, now)
             is EntryDetailsContent.Meal -> saveMeal(details, mealRecipeSearchState, entryId, familyId, listId, now)
         }
     }
@@ -155,30 +153,6 @@ class ListEntryDetailsSaver @Inject constructor(
         }
     }
 
-    private suspend fun saveChecklist(
-        details: EntryDetailsContent.Checklist,
-        entryId: String?,
-        familyId: String,
-        listId: String,
-        now: Date,
-    ): Result<Unit, AppError> {
-        val form = details.form
-        val draft = ChecklistEntry(
-            id = entryId ?: "",
-            familyId = familyId,
-            listId = listId,
-            itemName = form.name.trim(),
-            isChecked = form.isChecked,
-            lastUpdated = now,
-            dateCreated = now,
-        )
-        return if (entryId == null) {
-            userListRepository.saveChecklistEntry(draft).asUnit()
-        } else {
-            userListRepository.updateChecklistEntry(draft).asUnit()
-        }
-    }
-
     private suspend fun saveMeal(
         details: EntryDetailsContent.Meal,
         mealRecipeSearchState: MealRecipeSearchState?,
@@ -232,7 +206,6 @@ class ListEntryDetailsSaver @Inject constructor(
             }
 
             is EntryDetailsContent.Note -> if (details.form.name.isBlank()) "Name cannot be empty" else null
-            is EntryDetailsContent.Checklist -> if (details.form.name.isBlank()) "Name cannot be empty" else null
             is EntryDetailsContent.Meal -> {
                 if (details.form.name.isBlank()) return "Name cannot be empty"
                 if (details.form.date.isBlank()) return "Date cannot be empty"

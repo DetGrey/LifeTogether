@@ -15,6 +15,7 @@ sealed interface ListDetailsUiState {
     data class Content(
         val listContent: ListDetailsListContent,
         val selectedEntryIds: Set<String>,
+        val checklistEditorState: ChecklistEditorState = ChecklistEditorState(),
         val isSelectionMode: Boolean = false,
         val isAllEntriesSelected: Boolean = false,
         val showActionSheet: Boolean = false,
@@ -70,6 +71,11 @@ sealed interface ListDetailsUiEvent {
     data object DismissDeleteSelectedDialog : ListDetailsUiEvent
     data object ConfirmDeleteSelected : ListDetailsUiEvent
     data class ToggleEntryCompleted(val entryId: String) : ListDetailsUiEvent
+    sealed interface Checklist : ListDetailsUiEvent {
+        data class EditRequested(val entryId: String) : Checklist
+        data class NameChanged(val value: String) : Checklist
+        data object ActionClicked : Checklist
+    }
 }
 
 sealed interface ListDetailsNavigationEvent {
@@ -77,3 +83,8 @@ sealed interface ListDetailsNavigationEvent {
     data object NavigateToCreateEntry : ListDetailsNavigationEvent
     data class NavigateToEntryDetails(val entryId: String) : ListDetailsNavigationEvent
 }
+
+data class ChecklistEditorState(
+    val editingEntryId: String? = null,
+    val draftName: String = "",
+)

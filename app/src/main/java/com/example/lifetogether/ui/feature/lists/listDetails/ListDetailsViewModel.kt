@@ -51,11 +51,12 @@ class ListDetailsViewModel @Inject constructor(
     val listId: String = checkNotNull(savedStateHandle["listId"])
 
     private val selectionState = MutableStateFlow(ListDetailsSelectionState())
+    private val checklistEditorState = MutableStateFlow(ChecklistEditorState())
 
     private val contentState: StateFlow<ListDetailsContentSnapshot?> = sessionRepository.sessionState
         .map { state ->
             state.authenticatedUserOrNull?.let { user ->
-                val uid = user.uid ?: return@let null
+                val uid = user.uid
                 val familyId = user.familyId ?: return@let null
                 SessionContext(
                     uid = uid,
@@ -83,21 +84,41 @@ class ListDetailsViewModel @Inject constructor(
     val uiState: StateFlow<ListDetailsUiState> = combine(
         contentState,
         selectionState,
-    ) { content, selection ->
-        content?.toUiState(selection) ?: ListDetailsUiState.Loading
+        checklistEditorState,
+    ) { content, selection, checklistEditor ->
+        content?.toUiState(selection, checklistEditor) ?: ListDetailsUiState.Loading
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = ListDetailsUiState.Loading,
     )
 
-    fun toggleActionSheet(show: Boolean? = null) {
+    fun onUiEvent(event: ListDetailsUiEvent) {
+        when (event) {
+            ListDetailsUiEvent.ToggleActionSheet -> toggleActionSheet()
+            ListDetailsUiEvent.StartSelectionMode -> startSelectionMode()
+            is ListDetailsUiEvent.EnterSelectionMode -> enterSelectionMode(event.entryId)
+            ListDetailsUiEvent.ExitSelectionMode -> exitSelectionMode()
+            is ListDetailsUiEvent.ToggleEntrySelection -> toggleEntrySelection(event.entryId)
+            ListDetailsUiEvent.ToggleAllEntrySelection -> toggleAllEntrySelection()
+            ListDetailsUiEvent.RequestDeleteSelected -> requestDeleteSelected()
+            ListDetailsUiEvent.DismissDeleteSelectedDialog -> dismissDeleteSelectedDialog()
+            ListDetailsUiEvent.ConfirmDeleteSelected -> confirmDeleteSelected()
+            is ListDetailsUiEvent.ToggleEntryCompleted -> toggleEntryCompleted(event.entryId)
+            is ListDetailsUiEvent.Checklist.EditRequested -> startEditingChecklistItem(event.entryId)
+            is ListDetailsUiEvent.Checklist.NameChanged -> updateChecklistDraftName(event.value)
+            ListDetailsUiEvent.Checklist.ActionClicked -> saveChecklistDraft()
+        }
+    }
+
+    private fun toggleActionSheet(show: Boolean? = null) {
         updateSelectionStateIfContent { state, _ ->
             state.copy(showActionSheet = show ?: !state.showActionSheet)
         }
     }
 
-    fun startSelectionMode() {
+    private fun startSelectionMode() {
+        clearChecklistEditorState()
         updateSelectionStateIfContent { state, _ ->
             state.copy(
                 isSelectionModeActive = true,
@@ -106,7 +127,8 @@ class ListDetailsViewModel @Inject constructor(
         }
     }
 
-    fun enterSelectionMode(initialEntryId: String) {
+    private fun enterSelectionMode(initialEntryId: String) {
+        clearChecklistEditorState()
         updateSelectionStateIfContent { state, _ ->
             state.copy(
                 isSelectionModeActive = true,
@@ -116,11 +138,70 @@ class ListDetailsViewModel @Inject constructor(
         }
     }
 
-    fun exitSelectionMode() {
+    private fun exitSelectionMode() {
         selectionState.value = ListDetailsSelectionState()
     }
 
-    fun toggleEntrySelection(entryId: String) {
+    private fun startEditingChecklistItem(entryId: String) {
+        val entry = contentState.value?.listContent?.entries?.filterIsInstance<ChecklistEntry>()
+            ?.firstOrNull { it.id == entryId }
+            ?: return
+        checklistEditorState.value = ChecklistEditorState(
+            editingEntryId = entry.id,
+            draftName = entry.itemName,
+        )
+    }
+
+    private fun updateChecklistDraftName(value: String) {
+        checklistEditorState.update { state ->
+            state.copy(draftName = value)
+        }
+    }
+
+    private fun saveChecklistDraft() {
+        val currentState = contentState.value ?: return
+        if (currentState.listContent.listType != ListType.CHECKLIST) return
+
+        val editorState = checklistEditorState.value
+        val draftName = editorState.draftName.trim()
+        if (draftName.isBlank()) {
+            showError("Name cannot be empty")
+            return
+        }
+
+        val now = Date()
+        val existingEntry = currentState.listContent.entries
+            .filterIsInstance<ChecklistEntry>()
+            .firstOrNull { it.id == editorState.editingEntryId }
+
+        val draft = existingEntry?.copy(
+            itemName = draftName,
+            lastUpdated = now,
+        ) ?: ChecklistEntry(
+            id = "",
+            familyId = currentState.familyId,
+            listId = listId,
+            itemName = draftName,
+            isChecked = false,
+            lastUpdated = now,
+            dateCreated = now,
+        )
+
+        viewModelScope.launch {
+            val result = if (existingEntry == null) {
+                userListRepository.saveChecklistEntry(draft).mapUnitSuccess()
+            } else {
+                userListRepository.updateChecklistEntry(draft)
+            }
+
+            when (result) {
+                is Result.Success -> clearChecklistEditorState()
+                is Result.Failure -> showError(result.error.toUserMessage())
+            }
+        }
+    }
+
+    private fun toggleEntrySelection(entryId: String) {
         updateSelectionStateIfContent { state, _ ->
             val updatedSelection = if (entryId in state.selectedEntryIds) {
                 state.selectedEntryIds - entryId
@@ -135,7 +216,7 @@ class ListDetailsViewModel @Inject constructor(
         }
     }
 
-    fun toggleAllEntrySelection() {
+    private fun toggleAllEntrySelection() {
         updateSelectionStateIfContent { state, content ->
             val allEntryIds = content.listContent.entries.map { it.id }.toSet()
             if (allEntryIds.isEmpty()) {
@@ -152,7 +233,7 @@ class ListDetailsViewModel @Inject constructor(
         }
     }
 
-    fun requestDeleteSelected() {
+    private fun requestDeleteSelected() {
         updateSelectionStateIfContent { state, _ ->
             if (state.selectedEntryIds.isEmpty()) {
                 state.copy(showActionSheet = false)
@@ -165,13 +246,13 @@ class ListDetailsViewModel @Inject constructor(
         }
     }
 
-    fun dismissDeleteSelectedDialog() {
+    private fun dismissDeleteSelectedDialog() {
         updateSelectionStateIfContent { state, _ ->
             state.copy(showDeleteSelectedDialog = false)
         }
     }
 
-    fun confirmDeleteSelected() {
+    private fun confirmDeleteSelected() {
         val currentState = contentState.value ?: return
         val selectedEntryIds = selectionState.value.selectedEntryIds
         val selectedEntries = currentState.listContent.entries.filter { it.id in selectedEntryIds }
@@ -207,7 +288,7 @@ class ListDetailsViewModel @Inject constructor(
         }
     }
 
-    fun toggleEntryCompleted(entryId: String) {
+    private fun toggleEntryCompleted(entryId: String) {
         val entry = contentState.value?.listContent?.entries?.firstOrNull { it.id == entryId } ?: return
         viewModelScope.launch {
             val result = when (entry) {
@@ -357,19 +438,33 @@ class ListDetailsViewModel @Inject constructor(
                 entries = entries.filterIsInstance<com.example.lifetogether.domain.model.lists.MealPlanEntry>(),
             )
         }
-        return ListDetailsContentSnapshot(listContent = listContent)
+        return ListDetailsContentSnapshot(
+            familyId = familyId,
+            listContent = listContent,
+        )
     }
 
     private fun ListDetailsContentSnapshot.toUiState(
         selectionState: ListDetailsSelectionState,
+        checklistEditorState: ChecklistEditorState,
     ): ListDetailsUiState.Content {
         val validEntryIds = listContent.entries.map { it.id }.toSet()
         val selectedEntryIds = selectionState.selectedEntryIds.intersect(validEntryIds)
+        val resolvedChecklistEditorState = if (
+            listContent.listType == ListType.CHECKLIST &&
+            checklistEditorState.editingEntryId != null &&
+            checklistEditorState.editingEntryId !in validEntryIds
+        ) {
+            ChecklistEditorState()
+        } else {
+            checklistEditorState
+        }
 
         return ListDetailsUiState.Content(
             listContent = listContent,
             isSelectionMode = selectionState.isSelectionModeActive && validEntryIds.isNotEmpty(),
             selectedEntryIds = selectedEntryIds,
+            checklistEditorState = resolvedChecklistEditorState,
             isAllEntriesSelected = validEntryIds.isNotEmpty() && selectedEntryIds.size == validEntryIds.size,
             showActionSheet = selectionState.showActionSheet,
             showDeleteSelectedDialog = selectionState.showDeleteSelectedDialog && selectedEntryIds.isNotEmpty(),
@@ -382,6 +477,7 @@ class ListDetailsViewModel @Inject constructor(
     )
 
     private data class ListDetailsContentSnapshot(
+        val familyId: String,
         val listContent: ListDetailsListContent,
     )
 
@@ -391,4 +487,15 @@ class ListDetailsViewModel @Inject constructor(
         val showActionSheet: Boolean = false,
         val showDeleteSelectedDialog: Boolean = false,
     )
+
+    private fun clearChecklistEditorState() {
+        checklistEditorState.value = ChecklistEditorState()
+    }
+
+    private fun <T> Result<T, AppError>.mapUnitSuccess(): Result<Unit, AppError> {
+        return when (this) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> Result.Failure(error)
+        }
+    }
 }

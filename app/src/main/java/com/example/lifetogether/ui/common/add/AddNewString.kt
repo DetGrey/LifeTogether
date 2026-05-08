@@ -29,13 +29,19 @@ import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun AddNewString(
+    modifier: Modifier = Modifier,
     label: String? = null,
+    textValue: String? = null,
+    onTextChange: ((String) -> Unit)? = null,
+    actionLabel: String = "Add",
     onAddClick: (String) -> Unit,
 ) {
-    var textValue by rememberSaveable { mutableStateOf("") }
+    var internalTextValue by rememberSaveable { mutableStateOf("") }
+    val currentTextValue = textValue ?: internalTextValue
+    val handleTextChange = onTextChange ?: { value: String -> internalTextValue = value }
 
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(60.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
@@ -51,8 +57,8 @@ fun AddNewString(
             CustomTextField(
                 modifier = Modifier
                     .weight(1f),
-                value = textValue,
-                onValueChange = { textValue = it },
+                value = currentTextValue,
+                onValueChange = handleTextChange,
                 label = label,
                 keyboardType = KeyboardType.Text,
                 imeAction = ImeAction.Done,
@@ -61,14 +67,16 @@ fun AddNewString(
 
             Row(
                 modifier = Modifier
-                    .padding(LifeTogetherTokens.spacing.small)
-                    .clickable {
-                        onAddClick(textValue)
-                        textValue = ""
-                    },
+                .padding(LifeTogetherTokens.spacing.small)
+                .clickable {
+                    onAddClick(currentTextValue)
+                    if (textValue == null) {
+                        internalTextValue = ""
+                    }
+                },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(text = "Add", color = MaterialTheme.colorScheme.onBackground)
+                Text(text = actionLabel, color = MaterialTheme.colorScheme.onBackground)
 
                 Spacer(modifier = Modifier.width(LifeTogetherTokens.spacing.xSmall))
 

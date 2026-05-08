@@ -14,7 +14,6 @@ class ListEntryDetailsFormReducer @Inject constructor() {
             is EntryDetailsContent.Routine -> reduceRoutine(details, event)
             is EntryDetailsContent.Wish -> reduceWish(details, event)
             is EntryDetailsContent.Note -> reduceNote(details, event)
-            is EntryDetailsContent.Checklist -> reduceChecklist(details, event)
             is EntryDetailsContent.Meal -> reduceMeal(details, event)
         }
     }
@@ -75,17 +74,6 @@ class ListEntryDetailsFormReducer @Inject constructor() {
         return when (event) {
             is ListEntryDetailsUiEvent.NameChanged -> details.copy(form = details.form.copy(name = event.value))
             is ListEntryDetailsUiEvent.Note.BodyChanged -> details.copy(form = details.form.copy(body = event.value))
-            else -> details
-        }
-    }
-
-    private fun reduceChecklist(
-        details: EntryDetailsContent.Checklist,
-        event: ListEntryDetailsUiEvent,
-    ): EntryDetailsContent {
-        return when (event) {
-            is ListEntryDetailsUiEvent.NameChanged -> details.copy(form = details.form.copy(name = event.value))
-            is ListEntryDetailsUiEvent.Checklist.CheckedChanged -> details.copy(form = details.form.copy(isChecked = event.value))
             else -> details
         }
     }

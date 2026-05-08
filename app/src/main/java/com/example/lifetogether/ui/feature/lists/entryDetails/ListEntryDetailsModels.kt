@@ -2,7 +2,6 @@ package com.example.lifetogether.ui.feature.lists.entryDetails
 
 import android.graphics.Bitmap
 import android.net.Uri
-import com.example.lifetogether.domain.model.lists.ChecklistEntry
 import com.example.lifetogether.domain.model.lists.ListType
 import com.example.lifetogether.domain.model.lists.MealPlanEntry
 import com.example.lifetogether.domain.model.lists.MealType
@@ -98,27 +97,6 @@ sealed interface EntryDetailsContent {
         }
     }
 
-    data class Checklist(
-        val form: ChecklistEntryFormState,
-    ) : EntryDetailsContent {
-        override val listType: ListType = ListType.CHECKLIST
-
-        companion object {
-            fun blank(): Checklist {
-                return Checklist(form = ChecklistEntryFormState())
-            }
-
-            fun from(entry: ChecklistEntry): Checklist {
-                return Checklist(
-                    form = ChecklistEntryFormState(
-                        name = entry.itemName,
-                        isChecked = entry.isChecked,
-                    ),
-                )
-            }
-        }
-    }
-
     data class Meal(
         val form: MealPlanEntryFormState,
     ) : EntryDetailsContent {
@@ -167,11 +145,6 @@ data class WishEntryFormState(
 data class NoteEntryFormState(
     val name: String = "",
     val body: String = "",
-)
-
-data class ChecklistEntryFormState(
-    val name: String = "",
-    val isChecked: Boolean = false,
 )
 
 data class RecipeSearchItem(
@@ -231,10 +204,6 @@ sealed interface ListEntryDetailsUiEvent {
 
     sealed interface Note : ListEntryDetailsUiEvent {
         data class BodyChanged(val value: String) : Note
-    }
-
-    sealed interface Checklist : ListEntryDetailsUiEvent {
-        data class CheckedChanged(val value: Boolean) : Checklist
     }
 
     sealed interface Meal : ListEntryDetailsUiEvent {

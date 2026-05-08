@@ -20,20 +20,7 @@ fun ListDetailsRoute(
 
     ListDetailsScreen(
         uiState = uiState,
-        onUiEvent = { event ->
-            when (event) {
-                ListDetailsUiEvent.ToggleActionSheet -> viewModel.toggleActionSheet()
-                ListDetailsUiEvent.StartSelectionMode -> viewModel.startSelectionMode()
-                is ListDetailsUiEvent.EnterSelectionMode -> viewModel.enterSelectionMode(event.entryId)
-                ListDetailsUiEvent.ExitSelectionMode -> viewModel.exitSelectionMode()
-                is ListDetailsUiEvent.ToggleEntrySelection -> viewModel.toggleEntrySelection(event.entryId)
-                ListDetailsUiEvent.ToggleAllEntrySelection -> viewModel.toggleAllEntrySelection()
-                ListDetailsUiEvent.RequestDeleteSelected -> viewModel.requestDeleteSelected()
-                ListDetailsUiEvent.DismissDeleteSelectedDialog -> viewModel.dismissDeleteSelectedDialog()
-                ListDetailsUiEvent.ConfirmDeleteSelected -> viewModel.confirmDeleteSelected()
-                is ListDetailsUiEvent.ToggleEntryCompleted -> viewModel.toggleEntryCompleted(event.entryId)
-            }
-        },
+        onUiEvent = viewModel::onUiEvent,
         onNavigationEvent = { navigationEvent ->
             when (navigationEvent) {
                 ListDetailsNavigationEvent.NavigateBack -> appNavigator.navigateBack()

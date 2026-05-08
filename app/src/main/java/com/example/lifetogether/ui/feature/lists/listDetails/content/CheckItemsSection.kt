@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
@@ -171,6 +172,14 @@ private fun ChecklistCard(
                 style = MaterialTheme.typography.bodyLarge,
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1,
+                textDecoration = if (isCompleted) TextDecoration.LineThrough else TextDecoration.None,
+            )
+        },
+        trailingContent = {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_edit),
+                contentDescription = "edit checklist item",
+                tint = MaterialTheme.colorScheme.onBackground,
             )
         },
     )

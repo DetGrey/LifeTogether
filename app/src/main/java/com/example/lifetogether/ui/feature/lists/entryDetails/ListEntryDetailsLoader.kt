@@ -57,6 +57,15 @@ class ListEntryDetailsLoader @Inject constructor(
                                         ),
                                     )
 
+                                if (list.type == ListType.CHECKLIST) {
+                                    return@flatMapLatest flowOf(
+                                        ListEntryDetailsLoadSnapshot(
+                                            familyId = familyId,
+                                            state = ListEntryDetailsLoadState.Error("Checklist entries are handled in list details"),
+                                        ),
+                                    )
+                                }
+
                                 if (entryId == null) {
                                     flowOf(
                                         ListEntryDetailsLoadSnapshot(
@@ -103,9 +112,9 @@ class ListEntryDetailsLoader @Inject constructor(
                 result.mapData { EntryDetailsContent.Note.from(it) }
             }
 
-            ListType.CHECKLIST -> userListRepository.observeChecklistEntry(entryId).map { result ->
-                result.mapData { EntryDetailsContent.Checklist.from(it) }
-            }
+            ListType.CHECKLIST -> flowOf(
+                Result.Failure(AppError.Validation("Checklist entries are handled in list details")),
+            )
 
             ListType.MEAL_PLANNER -> userListRepository.observeMealPlanEntry(entryId).map { result ->
                 result.mapData { EntryDetailsContent.Meal.from(it) }
@@ -118,7 +127,7 @@ class ListEntryDetailsLoader @Inject constructor(
             ListType.ROUTINE -> EntryDetailsContent.Routine.blank()
             ListType.WISH_LIST -> EntryDetailsContent.Wish.blank()
             ListType.NOTES -> EntryDetailsContent.Note.blank()
-            ListType.CHECKLIST -> EntryDetailsContent.Checklist.blank()
+            ListType.CHECKLIST -> error("Checklist entries are handled in list details")
             ListType.MEAL_PLANNER -> EntryDetailsContent.Meal.blank()
         }
     }

@@ -92,9 +92,15 @@ fun ListDetailsScreen(
                 AddNewString(
                     modifier = Modifier.padding(LifeTogetherTokens.spacing.medium),
                     label = "New checklist item",
-                ) {
-                    //todo save new checklistentry item
-                }
+                    textValue = contentState.checklistEditorState.draftName,
+                    onTextChange = { value ->
+                        onUiEvent(ListDetailsUiEvent.Checklist.NameChanged(value))
+                    },
+                    actionLabel = if (contentState.checklistEditorState.editingEntryId == null) "Add" else "Save",
+                    onAddClick = {
+                        onUiEvent(ListDetailsUiEvent.Checklist.ActionClicked)
+                    },
+                )
             }
         },
     ) { padding ->
@@ -179,7 +185,13 @@ fun ListDetailsScreen(
                             entries = listContent.entries,
                             isSelectionMode = contentState.isSelectionMode,
                             selectedIds = contentState.selectedEntryIds,
-                            onClick = onEntryClick,
+                            onClick = { entryId ->
+                                if (contentState.isSelectionMode) {
+                                    onUiEvent(ListDetailsUiEvent.ToggleEntrySelection(entryId))
+                                } else {
+                                    onUiEvent(ListDetailsUiEvent.Checklist.EditRequested(entryId))
+                                }
+                            },
                             onLongClick = onEntryLongClick,
                             onComplete = onEntryToggleComplete,
                         )
