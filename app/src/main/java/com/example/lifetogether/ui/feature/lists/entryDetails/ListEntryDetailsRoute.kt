@@ -1,6 +1,7 @@
 package com.example.lifetogether.ui.feature.lists.entryDetails
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -40,6 +41,13 @@ fun ListEntryDetailsRoute(
     }
 
     CollectUiCommands(viewModel.uiCommands)
+    LaunchedEffect(viewModel.navigationEvents) {
+        viewModel.navigationEvents.collect { navigationEvent ->
+            when (navigationEvent) {
+                ListEntryDetailsNavigationEvent.NavigateBack -> appNavigator.navigateBack()
+            }
+        }
+    }
 
     ListEntryDetailsScreen(
         uiState = uiState,

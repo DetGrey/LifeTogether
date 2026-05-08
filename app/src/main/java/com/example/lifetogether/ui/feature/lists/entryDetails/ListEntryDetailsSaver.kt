@@ -22,20 +22,21 @@ class ListEntryDetailsSaver @Inject constructor(
 ) {
     suspend fun save(
         details: EntryDetailsContent,
+        mealRecipeSearchState: MealRecipeSearchState? = null,
         entryId: String?,
         familyId: String,
         listId: String,
         now: Date,
         context: Context,
     ): Result<Unit, AppError> {
-        validate(details)?.let { return Result.Failure(AppError.Validation(it)) }
+        validate(details, mealRecipeSearchState)?.let { return Result.Failure(AppError.Validation(it)) }
 
         return when (details) {
             is EntryDetailsContent.Routine -> saveRoutine(details, entryId, familyId, listId, now, context)
             is EntryDetailsContent.Wish -> saveWish(details, entryId, familyId, listId, now)
             is EntryDetailsContent.Note -> saveNote(details, entryId, familyId, listId, now)
             is EntryDetailsContent.Checklist -> saveChecklist(details, entryId, familyId, listId, now)
-            is EntryDetailsContent.Meal -> saveMeal(details, entryId, familyId, listId, now)
+            is EntryDetailsContent.Meal -> saveMeal(details, mealRecipeSearchState, entryId, familyId, listId, now)
         }
     }
 
@@ -180,19 +181,23 @@ class ListEntryDetailsSaver @Inject constructor(
 
     private suspend fun saveMeal(
         details: EntryDetailsContent.Meal,
+        mealRecipeSearchState: MealRecipeSearchState?,
         entryId: String?,
         familyId: String,
         listId: String,
         now: Date,
     ): Result<Unit, AppError> {
         val form = details.form
+        val recipeId = mealRecipeSearchState?.selectedRecipeSearchItem?.id
+            ?.takeIf { it.isNotBlank() }
+            ?: form.recipeId.takeIf { it.isNotBlank() }
         val draft = MealPlanEntry(
             id = entryId ?: "",
             familyId = familyId,
             listId = listId,
             itemName = form.name.trim(),
             date = form.date,
-            recipeId = form.recipeId.ifBlank { null },
+            recipeId = recipeId,
             customMealName = form.customMealName.ifBlank { null },
             mealType = form.mealType,
             notes = form.notes,
@@ -206,7 +211,10 @@ class ListEntryDetailsSaver @Inject constructor(
         }
     }
 
-    private fun validate(details: EntryDetailsContent): String? {
+    private fun validate(
+        details: EntryDetailsContent,
+        mealRecipeSearchState: MealRecipeSearchState?,
+    ): String? {
         return when (details) {
             is EntryDetailsContent.Routine -> {
                 if (details.form.name.isBlank()) return "Name cannot be empty"
@@ -228,10 +236,11 @@ class ListEntryDetailsSaver @Inject constructor(
             is EntryDetailsContent.Meal -> {
                 if (details.form.name.isBlank()) return "Name cannot be empty"
                 if (details.form.date.isBlank()) return "Date cannot be empty"
-                val hasRecipeId = details.form.recipeId.isNotBlank()
-                val hasCustomMeal = details.form.customMealName.isNotBlank()
-                if (hasRecipeId == hasCustomMeal) {
-                    return "Set either recipe ID or custom meal name"
+                val isRecipeMode = mealRecipeSearchState?.mode ?: MealSearchMode.RECIPE
+                if (isRecipeMode == MealSearchMode.RECIPE) {
+                    if (mealRecipeSearchState?.selectedRecipeSearchItem == null) return "Select a recipe"
+                } else {
+                    if (details.form.customMealName.isBlank()) return "Custom meal name cannot be empty"
                 }
                 null
             }

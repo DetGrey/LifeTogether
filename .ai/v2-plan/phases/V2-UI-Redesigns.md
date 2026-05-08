@@ -124,18 +124,30 @@ Scaffold (AppTopBar with ← and optional "Done")
 ## Redesign 2 — Meal Planner Entry Screen
 
 **Target:** `mealEntryForm` inside `ListEntryDetailsScreen.kt`
-**Status:** Design in progress
+**Status:** Design complete, not yet implemented
 
 ### Goal
 
 Create a focused meal-planner-style entry screen that makes it fast to schedule a recipe or a custom meal name for a specific date. The UI should feel consistent with the `NoteEntryContent` approach (its own file) and reuse existing primitives (the TipTracker date picker and `TagOptionRow` chips).
+
+Recipe search is intentionally scoped to a local, VM-owned flow:
+
+- Search by recipe name only.
+- Keep the selected recipe ID hidden in ViewModel state.
+- Show recipe name plus prep time in suggestions.
+- Keep the `Recipe` / `Custom` split for now.
+- Hydrate existing entries by resolving saved recipe IDs back to recipe names from the cached family recipe list.
 
 ---
 
 ### Architecture
 
 - Lift the `when(val details = contentState.details)` dispatch before the `LazyColumn` in `ListEntryDetailsScreen` and dispatch the `Meal` case to a new `MealPlannerEntryContent` in its own file: `ui/feature/lists/entryDetails/MealPlannerEntryContent.kt`.
-- **Same ViewModel** (`ListEntryDetailsViewModel`) — no dedicated ViewModel. UI writes updates via `ListEntryDetailsUiEvent.Meal.*` events already present in `ListEntryDetailsModels.kt`.
+- **Same ViewModel** (`ListEntryDetailsViewModel`) — no dedicated ViewModel.
+- Inject `RecipeRepository` into `ListEntryDetailsViewModel` and observe the family recipe list there.
+- Keep a lightweight `RecipeSearchItem` projection in the VM with only the fields needed for search and display: `id`, `itemName`, `preparationTimeMin`.
+- Filter recipes in the VM, not in Room/DAO. No new DAO query for v1.
+- UI writes updates via `ListEntryDetailsUiEvent.Meal.*` events already present in `ListEntryDetailsModels.kt`.
 - The outer shared save button (`PrimaryButton`) remains in use (unlike Note entries) — the meal entry keeps the normal flow: form edits are saved by the shared save action.
 
 ---
@@ -144,7 +156,7 @@ Create a focused meal-planner-style entry screen that makes it fast to schedule 
 
 - **Date**: Required. Defaults to today. Uses the existing `DatePickerTextField` / `DatePickerDialog` pattern from `TipTracker` and `Signup` screens.
 - **Mode**: `Recipe` vs `Custom` — shown as a compact segmented control (two adjacent chip-style buttons). Only the active mode's input is visible.
-- **Recipe selector** (visible when `Recipe` mode): an as-you-type search field that shows suggestions (name + prep time). Selecting a suggestion sets `recipeId` in the ViewModel. No thumbnails, no servings shown.
+- **Recipe selector** (visible when `Recipe` mode): an as-you-type search field that shows suggestions (name + prep time). Selecting a suggestion sets the hidden recipe ID in the ViewModel and copies the recipe name into the visible field.
 - **Custom name** (visible when `Custom` mode): a single-line text field for a free-form meal name.
 - **Meal type**: single-select `TagOptionRow` chips: Breakfast / Lunch / Dinner / Snack / Other.
 - **Notes**: optional multiline notes area.
@@ -164,15 +176,29 @@ Create a focused meal-planner-style entry screen that makes it fast to schedule 
 
 ---
 
+### Search Behavior
+
+- Search is live while typing, with a small query threshold before suggestions appear.
+- Suggestions appear inline under the recipe field, not as a bottom overlay.
+- Suggestions hide when the field loses focus or a recipe is selected.
+- If the user edits the text after selecting a recipe, the hidden recipe ID is cleared until a new suggestion is selected.
+- When an existing meal entry already has a `recipeId`, the field should hydrate to the recipe name immediately on load.
+
+---
+
 ### Validation & Save
 
-- Minimal validation: `date` must be present and either `recipeId` (for `Recipe` mode) OR `customMealName` (for `Custom` mode) must be non-empty. The shared `SaveClicked` should be no-op / show inline validation until satisfied.
+- Minimal validation: `date` must be present and either a recipe selection or `customMealName` (for `Custom` mode) must be non-empty.
+- Keep the existing invariant that only one of recipe or custom meal is active at a time.
+- Save the selected recipe ID, not the visible recipe name/query text.
+- Sync `itemName` from the selected recipe name so the meal entry displays cleanly in list views.
 
 ---
 
 ### Implementation Notes
 
-- Use `MealPlanEntryFormState` and `ListEntryDetailsUiEvent.Meal.*` events already defined in `ListEntryDetailsModels.kt`.
-- The recipe search dropdown can be implemented gradually: start with a local suggestions list (name + prep time) surfaced from the `RecipesRepository`; wire selection to `RecipeIdChanged`.
+- Split the current overloaded `recipeId` usage into clearer transient and persisted state in the meal entry flow.
+- Keep `customMealName` unchanged for the custom path.
+- Reuse the existing recipe stream already exposed by `RecipeRepository.observeRecipes(familyId)`.
+- Add a dedicated inline suggestions component for the recipe field instead of reusing the grocery popup.
 - Keep visuals simple for this iteration: no thumbnails, only name + prep time.
-

@@ -97,8 +97,12 @@ class ListEntryDetailsFormReducer @Inject constructor() {
         return when (event) {
             is ListEntryDetailsUiEvent.NameChanged -> details.copy(form = details.form.copy(name = event.value))
             is ListEntryDetailsUiEvent.Meal.DateChanged -> details.copy(form = details.form.copy(date = event.value))
-            is ListEntryDetailsUiEvent.Meal.RecipeIdChanged -> details.copy(form = details.form.copy(recipeId = event.value))
-            is ListEntryDetailsUiEvent.Meal.CustomMealNameChanged -> details.copy(form = details.form.copy(customMealName = event.value))
+            is ListEntryDetailsUiEvent.Meal.CustomMealNameChanged -> details.copy(
+                form = details.form.copy(
+                    name = event.value,
+                    customMealName = event.value,
+                ),
+            )
             is ListEntryDetailsUiEvent.Meal.MealTypeChanged -> details.copy(
                 form = MealType.fromDisplayName(event.value)?.let { mealType ->
                     details.form.copy(mealType = mealType)

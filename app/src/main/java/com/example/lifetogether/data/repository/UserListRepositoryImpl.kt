@@ -346,11 +346,27 @@ class UserListRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveMealPlanEntry(entry: MealPlanEntry): Result<String, AppError> {
-        return userListFirestoreDataSource.saveMealPlanEntry(entry)
+        return when (val result = userListFirestoreDataSource.saveMealPlanEntry(entry)) {
+            is Result.Success -> {
+                userListLocalDataSource.updateMealPlanEntries(
+                    listOf(entry.copy(id = result.data)),
+                )
+                Result.Success(result.data)
+            }
+
+            is Result.Failure -> Result.Failure(result.error)
+        }
     }
 
     override suspend fun updateMealPlanEntry(entry: MealPlanEntry): Result<Unit, AppError> {
-        return userListFirestoreDataSource.updateMealPlanEntry(entry)
+        return when (val result = userListFirestoreDataSource.updateMealPlanEntry(entry)) {
+            is Result.Success -> {
+                userListLocalDataSource.updateMealPlanEntries(listOf(entry))
+                Result.Success(Unit)
+            }
+
+            is Result.Failure -> Result.Failure(result.error)
+        }
     }
 
     override suspend fun deleteMealPlanEntries(itemIds: List<String>): Result<Unit, AppError> {

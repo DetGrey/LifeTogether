@@ -17,6 +17,7 @@ sealed interface EntryDetailsUiState {
 
     data class Content(
         val details: EntryDetailsContent,
+        val mealRecipeSearchState: MealRecipeSearchState = MealRecipeSearchState(),
         val isEditing: Boolean = false,
         val showDiscardDialog: Boolean = false,
         val isSaving: Boolean = false,
@@ -173,6 +174,25 @@ data class ChecklistEntryFormState(
     val isChecked: Boolean = false,
 )
 
+data class RecipeSearchItem(
+    val id: String,
+    val itemName: String,
+    val preparationTimeMin: Int,
+)
+
+enum class MealSearchMode {
+    RECIPE,
+    CUSTOM,
+}
+
+data class MealRecipeSearchState(
+    val mode: MealSearchMode = MealSearchMode.RECIPE,
+    val query: String = "",
+    val isSearchFocused: Boolean = false,
+    val selectedRecipeSearchItem: RecipeSearchItem? = null,
+    val suggestions: List<RecipeSearchItem> = emptyList(),
+)
+
 data class MealPlanEntryFormState(
     val name: String = "",
     val date: String = "",
@@ -219,7 +239,10 @@ sealed interface ListEntryDetailsUiEvent {
 
     sealed interface Meal : ListEntryDetailsUiEvent {
         data class DateChanged(val value: String) : Meal
-        data class RecipeIdChanged(val value: String) : Meal
+        data class RecipeQueryChanged(val value: String) : Meal
+        data class RecipeSearchFocusedChanged(val value: Boolean) : Meal
+        data class RecipeSelected(val recipe: RecipeSearchItem) : Meal
+        data class RecipeModeChanged(val mode: MealSearchMode) : Meal
         data class CustomMealNameChanged(val value: String) : Meal
         data class MealTypeChanged(val value: String) : Meal
         data class NotesChanged(val value: String) : Meal

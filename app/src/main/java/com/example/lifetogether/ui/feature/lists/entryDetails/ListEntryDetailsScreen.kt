@@ -125,6 +125,7 @@ fun ListEntryDetailsScreen(
                         is EntryDetailsContent.Meal -> mealPlanEntryContent(
                             uiState = uiState,
                             formState = details.form,
+                            searchState = contentState.mealRecipeSearchState,
                             onUiEvent = onUiEvent,
                         )
 

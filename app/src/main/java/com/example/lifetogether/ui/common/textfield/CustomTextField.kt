@@ -11,6 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -32,6 +33,7 @@ fun CustomTextField(
     capitalization: Boolean = false,
     smaller: Boolean = false,
     enabled: Boolean = true,
+    onFocusChanged: ((Boolean) -> Unit)? = null,
 ) {
     var visualTransformation: VisualTransformation = VisualTransformation.None
     if (keyboardType == KeyboardType.Password) {
@@ -58,7 +60,9 @@ fun CustomTextField(
     }
 
     TextField(
-        modifier = modifier.inputFieldModifier(),
+        modifier = modifier
+            .onFocusChanged { onFocusChanged?.invoke(it.isFocused) }
+            .inputFieldModifier(),
         value = textFieldValue,
         onValueChange = {
             textFieldValue = it
