@@ -38,6 +38,7 @@ import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.text.TextDisplayLarge
 import com.example.lifetogether.ui.common.skeleton.Skeletons
+import com.example.lifetogether.ui.common.text.TextLabel
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
@@ -117,11 +118,10 @@ fun HomeScreen(
                 verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
             ) {
                 item {
-                    Text(
+                    TextLabel(
                         text = "x days together",
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onBackground,
                     )
                 }

@@ -13,7 +13,7 @@ Here are some bugs that need to be fixed:
 - [x] Wishlist entries is missing name (only name and priority are required by default).
 - [ ] A note entry should also be able to add a title (but called itemName)
 - [ ] Weird spacing between the featurecards on homescreen
-- [ ] Some recipes do not show anymore. Make a log for all items that are now filtered away from firestore to see if any had bad format
+- [x] Some recipes do not show anymore. Make a log for all items that are now filtered away from firestore to see if any had bad format
 
 Here are some questions:
 

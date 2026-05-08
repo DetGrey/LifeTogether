@@ -137,7 +137,7 @@ class ListDetailsViewModel @Inject constructor(
 
     fun toggleAllEntrySelection() {
         updateSelectionStateIfContent { state, content ->
-            val allEntryIds = content.entries.map { it.id }.toSet()
+            val allEntryIds = content.listContent.entries.map { it.id }.toSet()
             if (allEntryIds.isEmpty()) {
                 state
             } else if (state.selectedEntryIds.containsAll(allEntryIds)) {
@@ -174,14 +174,14 @@ class ListDetailsViewModel @Inject constructor(
     fun confirmDeleteSelected() {
         val currentState = contentState.value ?: return
         val selectedEntryIds = selectionState.value.selectedEntryIds
-        val selectedEntries = currentState.entries.filter { it.id in selectedEntryIds }
+        val selectedEntries = currentState.listContent.entries.filter { it.id in selectedEntryIds }
         if (selectedEntries.isEmpty()) {
             dismissDeleteSelectedDialog()
             return
         }
 
         viewModelScope.launch {
-            val result = when (currentState.listType) {
+            val result = when (currentState.listContent.listType) {
                 ListType.ROUTINE -> deleteRoutineListEntriesUseCase(selectedEntries.filterIsInstance<RoutineListEntry>())
                 ListType.WISH_LIST -> userListRepository.deleteWishListEntries(selectedEntries.map { it.id })
                 ListType.NOTES -> userListRepository.deleteNoteEntries(selectedEntries.map { it.id })
@@ -208,7 +208,7 @@ class ListDetailsViewModel @Inject constructor(
     }
 
     fun toggleEntryCompleted(entryId: String) {
-        val entry = contentState.value?.entries?.firstOrNull { it.id == entryId } ?: return
+        val entry = contentState.value?.listContent?.entries?.firstOrNull { it.id == entryId } ?: return
         viewModelScope.launch {
             val result = when (entry) {
                 is RoutineListEntry -> {
@@ -250,7 +250,7 @@ class ListDetailsViewModel @Inject constructor(
                 } else {
                     observeListEntries(context.familyId, list).flatMapLatest { entries ->
                         if (list.type == ListType.ROUTINE) {
-                            observeRoutineImageBitmaps(entries.filterIsInstance<RoutineListEntry>())
+                    observeRoutineImageBitmaps(entries.filterIsInstance<RoutineListEntry>())
                                 .map { imageBitmaps ->
                                     list.toContentSnapshot(entries, imageBitmaps)
                                 }
@@ -330,26 +330,45 @@ class ListDetailsViewModel @Inject constructor(
         entries: List<ListEntry>,
         imageBitmaps: Map<String, Bitmap>,
     ): ListDetailsContentSnapshot {
-        return ListDetailsContentSnapshot(
-            listName = itemName,
-            listType = type,
-            entries = entries,
-            imageBitmaps = imageBitmaps,
-        )
+        val listContent = when (type) {
+            ListType.ROUTINE -> ListDetailsListContent.Routines(
+                listName = itemName,
+                entries = entries.filterIsInstance<RoutineListEntry>(),
+                imageBitmaps = imageBitmaps,
+            )
+
+            ListType.WISH_LIST -> ListDetailsListContent.Wishes(
+                listName = itemName,
+                entries = entries.filterIsInstance<WishListEntry>(),
+            )
+
+            ListType.NOTES -> ListDetailsListContent.Notes(
+                listName = itemName,
+                entries = entries.filterIsInstance<com.example.lifetogether.domain.model.lists.NoteEntry>(),
+            )
+
+            ListType.CHECKLIST -> ListDetailsListContent.CheckItems(
+                listName = itemName,
+                entries = entries.filterIsInstance<ChecklistEntry>(),
+            )
+
+            ListType.MEAL_PLANNER -> ListDetailsListContent.MealPlans(
+                listName = itemName,
+                entries = entries.filterIsInstance<com.example.lifetogether.domain.model.lists.MealPlanEntry>(),
+            )
+        }
+        return ListDetailsContentSnapshot(listContent = listContent)
     }
 
     private fun ListDetailsContentSnapshot.toUiState(
         selectionState: ListDetailsSelectionState,
     ): ListDetailsUiState.Content {
-        val validEntryIds = entries.map { it.id }.toSet()
+        val validEntryIds = listContent.entries.map { it.id }.toSet()
         val selectedEntryIds = selectionState.selectedEntryIds.intersect(validEntryIds)
 
         return ListDetailsUiState.Content(
-            listName = listName,
-            listType = listType,
-            entries = entries,
-            imageBitmaps = imageBitmaps,
-            isSelectionModeActive = selectionState.isSelectionModeActive && validEntryIds.isNotEmpty(),
+            listContent = listContent,
+            isSelectionMode = selectionState.isSelectionModeActive && validEntryIds.isNotEmpty(),
             selectedEntryIds = selectedEntryIds,
             isAllEntriesSelected = validEntryIds.isNotEmpty() && selectedEntryIds.size == validEntryIds.size,
             showActionSheet = selectionState.showActionSheet,
@@ -363,10 +382,7 @@ class ListDetailsViewModel @Inject constructor(
     )
 
     private data class ListDetailsContentSnapshot(
-        val listName: String,
-        val listType: ListType,
-        val entries: List<ListEntry>,
-        val imageBitmaps: Map<String, Bitmap>,
+        val listContent: ListDetailsListContent,
     )
 
     private data class ListDetailsSelectionState(

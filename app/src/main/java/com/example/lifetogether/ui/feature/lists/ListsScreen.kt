@@ -35,6 +35,7 @@ import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
+import com.example.lifetogether.ui.common.text.TextLabel
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
@@ -136,14 +137,12 @@ private fun UserListCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
+                TextLabel(
                     text = list.type.name.lowercase().replaceFirstChar { it.uppercase() },
-                    style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
-                Text(
+                TextLabel(
                     text = if (list.visibility == Visibility.FAMILY) "Family" else "Private",
-                    style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }

@@ -16,6 +16,7 @@ import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.guides.GuideSection
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.ui.common.text.TextDefault
+import com.example.lifetogether.ui.common.text.TextLabel
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
@@ -49,9 +50,8 @@ fun GuideHeroCard(guide: Guide) {
                 color = MaterialTheme.colorScheme.onBackground,
             )
 
-            Text(
+            TextLabel(
                 text = if (guide.started) "Started" else "Not started",
-                style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onBackground,
                 fontWeight = FontWeight.SemiBold,
             )

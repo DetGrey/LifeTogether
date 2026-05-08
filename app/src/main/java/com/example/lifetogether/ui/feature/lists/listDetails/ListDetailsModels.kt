@@ -1,23 +1,62 @@
 package com.example.lifetogether.ui.feature.lists.listDetails
 
 import android.graphics.Bitmap
+import com.example.lifetogether.domain.model.lists.ChecklistEntry
 import com.example.lifetogether.domain.model.lists.ListEntry
 import com.example.lifetogether.domain.model.lists.ListType
+import com.example.lifetogether.domain.model.lists.MealPlanEntry
+import com.example.lifetogether.domain.model.lists.NoteEntry
+import com.example.lifetogether.domain.model.lists.RoutineListEntry
+import com.example.lifetogether.domain.model.lists.WishListEntry
 
 sealed interface ListDetailsUiState {
     data object Loading : ListDetailsUiState
 
     data class Content(
-        val listName: String,
-        val listType: ListType,
-        val entries: List<ListEntry>,
-        val imageBitmaps: Map<String, Bitmap>,
+        val listContent: ListDetailsListContent,
         val selectedEntryIds: Set<String>,
-        val isSelectionModeActive: Boolean = false,
+        val isSelectionMode: Boolean = false,
         val isAllEntriesSelected: Boolean = false,
         val showActionSheet: Boolean = false,
         val showDeleteSelectedDialog: Boolean = false,
     ) : ListDetailsUiState
+}
+sealed interface ListDetailsListContent {
+    val listName: String
+    val listType: ListType
+    val entries: List<ListEntry>
+
+    data class Routines(
+        override val listName: String,
+        override val entries: List<RoutineListEntry>,
+        val imageBitmaps: Map<String, Bitmap>,
+    ) : ListDetailsListContent {
+        override val listType: ListType = ListType.ROUTINE
+    }
+    data class Wishes(
+        override val listName: String,
+        override val entries: List<WishListEntry>,
+    ) : ListDetailsListContent {
+        override val listType: ListType = ListType.WISH_LIST
+    }
+    data class Notes(
+        override val listName: String,
+        override val entries: List<NoteEntry>,
+    ) : ListDetailsListContent {
+        override val listType: ListType = ListType.NOTES
+    }
+    data class CheckItems(
+        override val listName: String,
+        override val entries: List<ChecklistEntry>,
+    ) : ListDetailsListContent {
+        override val listType: ListType = ListType.CHECKLIST
+    }
+    data class MealPlans(
+        override val listName: String,
+        override val entries: List<MealPlanEntry>,
+    ) : ListDetailsListContent {
+        override val listType: ListType = ListType.MEAL_PLANNER
+    }
 }
 
 sealed interface ListDetailsUiEvent {

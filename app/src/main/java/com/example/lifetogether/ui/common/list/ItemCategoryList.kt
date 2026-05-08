@@ -27,7 +27,7 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.CompletableItem
 import com.example.lifetogether.domain.model.grocery.GroceryItem
-import com.example.lifetogether.ui.common.ListItem
+import com.example.lifetogether.ui.common.GroceryListItem
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.ui.theme.bodyFontFamily
@@ -97,7 +97,7 @@ fun ItemCategoryList(
         ) {
             Column(modifier = Modifier.padding(top = LifeTogetherTokens.spacing.small)) {
                 itemList.forEach { item ->
-                    ListItem(
+                    GroceryListItem(
                         item = item,
                         onCompleteToggle = { onCompleteToggle(item) },
                         trailingText = if (item is GroceryItem && item.approxPrice != null) {

@@ -49,6 +49,7 @@ import com.example.lifetogether.ui.common.button.SecondaryButton
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
+import com.example.lifetogether.ui.common.text.TextLabel
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import java.util.Date
@@ -344,14 +345,12 @@ private fun GuideOverviewCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
+                TextLabel(
                     text = if (guide.visibility == Visibility.FAMILY) "Family shared" else "Private",
-                    style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
-                Text(
+                TextLabel(
                     text = if (guide.started) "In progress" else "Not started",
-                    style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     fontWeight = FontWeight.SemiBold,
                 )

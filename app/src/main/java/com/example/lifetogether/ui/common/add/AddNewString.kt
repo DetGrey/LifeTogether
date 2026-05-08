@@ -85,7 +85,7 @@ fun AddNewString(
 private fun Preview() {
     LifeTogetherTheme {
         AddNewString(
-            "He"
+            label = "He",
         ) { }
     }
 }

@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem as M3ListItem
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,7 +30,7 @@ import java.text.DecimalFormat
 import java.util.Date
 
 @Composable
-fun ListItem(
+fun GroceryListItem(
     item: Completable,
     onCompleteToggle: () -> Unit,
     trailingText: String? = null,
@@ -47,7 +47,7 @@ fun ListItem(
         text = "$formattedAmount ${item.measureType.unit} ${item.itemName}"
     }
 
-    M3ListItem(
+    ListItem(
         modifier = Modifier.fillMaxWidth(),
         leadingContent = {
             CompletableBox(
@@ -98,10 +98,10 @@ fun ListItem(
 
 @Preview(showBackground = true)
 @Composable
-fun ListItemPreview() {
+fun GroceryListItemPreview() {
     LifeTogetherTheme {
         Column {
-            ListItem(
+            GroceryListItem(
                 GroceryItem(
                     id = "item-1",
                     familyId = "dsuaihfao",
@@ -117,7 +117,7 @@ fun ListItemPreview() {
                 onCompleteToggle = {},
                 onBellClick = {}
             )
-            ListItem(
+            GroceryListItem(
                 GroceryItem(
                     id = "item-2",
                     familyId = "dsuaihfao",

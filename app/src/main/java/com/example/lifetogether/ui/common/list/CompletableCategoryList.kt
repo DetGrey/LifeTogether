@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Completable
-import com.example.lifetogether.ui.common.ListItem
+import com.example.lifetogether.ui.common.GroceryListItem
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.ui.theme.bodyFontFamily
 
@@ -89,7 +89,7 @@ fun CompletableCategoryList(
             Column {
                 Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
                 itemList.forEach { item ->
-                    ListItem(
+                    GroceryListItem(
                         item = item,
                         onCompleteToggle = { onCompleteToggle(item) },
                         onBellClick = {},
