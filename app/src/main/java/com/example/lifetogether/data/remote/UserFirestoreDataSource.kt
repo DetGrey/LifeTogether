@@ -1,17 +1,14 @@
 package com.example.lifetogether.data.remote
 
 import com.example.lifetogether.data.logic.AppErrors
-import com.example.lifetogether.data.logic.appResultOfSuspend
-
-import com.example.lifetogether.domain.result.AppError
-
 import com.example.lifetogether.data.logic.AppErrorThrowable
+import com.example.lifetogether.data.logic.appResultOfSuspend
 import com.example.lifetogether.domain.model.UserInformation
+import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.util.Constants
 import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.PropertyName
 import kotlin.jvm.Transient
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
@@ -22,6 +19,10 @@ import javax.inject.Inject
 class UserFirestoreDataSource @Inject constructor(
     private val db: FirebaseFirestore,
 ) {
+    private companion object {
+        const val TAG = "UserFirestoreDS"
+    }
+
     fun userInformationSnapshotListener(uid: String) = callbackFlow {
         val ref = db.collection(Constants.USER_TABLE).document(uid)
 
@@ -29,7 +30,14 @@ class UserFirestoreDataSource @Inject constructor(
             val result = when {
                 error != null -> Result.Failure(AppErrors.fromThrowable(error))
                 snapshot != null && snapshot.exists() -> {
-                    val data = snapshot.toObject(UserInformationDto::class.java)?.toDomain(snapshot.id)
+                    val data = mapFirestoreDocument(
+                        tag = TAG,
+                        collectionName = Constants.USER_TABLE,
+                        entityName = "UserInformation",
+                        document = snapshot,
+                    ) {
+                        it.toObject(UserInformationDto::class.java)?.toDomain(it.id)
+                    }
                     if (data != null) Result.Success(data)
                     else Result.Failure(AppErrors.unknown("Mapping error"))
                 }
@@ -44,7 +52,14 @@ class UserFirestoreDataSource @Inject constructor(
 
     suspend fun fetchUserInformation(uid: String): Result<UserInformation, AppError> = appResultOfSuspend {
         val snapshot = db.collection(Constants.USER_TABLE).document(uid).get().await()
-        val userInformation = snapshot.toObject(UserInformationDto::class.java)?.toDomain(snapshot.id)
+        val userInformation = mapFirestoreDocument(
+            tag = TAG,
+            collectionName = Constants.USER_TABLE,
+            entityName = "UserInformation",
+            document = snapshot,
+        ) {
+            it.toObject(UserInformationDto::class.java)?.toDomain(it.id)
+        }
         userInformation ?: throw AppErrorThrowable(AppErrors.notFound("User not found"))
     }
 
@@ -106,7 +121,6 @@ private data class UserInformationDto(
     val name: String? = null,
     val birthday: Date? = null,
     val familyId: String? = null,
-    @get:PropertyName("imageUrl")
     val imageUrl: String? = null,
 ) {
     fun toDomain(documentId: String): UserInformation? {

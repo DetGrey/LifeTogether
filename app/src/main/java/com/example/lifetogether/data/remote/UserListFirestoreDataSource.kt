@@ -1,10 +1,7 @@
 package com.example.lifetogether.data.remote
 
 import com.example.lifetogether.data.logic.AppErrors
-
 import com.example.lifetogether.domain.result.AppError
-
-import android.util.Log
 import com.example.lifetogether.data.logic.AppErrorThrowable
 import com.example.lifetogether.data.logic.appResultOfSuspend
 import com.example.lifetogether.domain.model.enums.Visibility
@@ -24,7 +21,6 @@ import com.example.lifetogether.util.Constants
 import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
-import com.google.firebase.firestore.PropertyName
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
@@ -50,13 +46,13 @@ class UserListFirestoreDataSource @Inject constructor(
                 trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
                 return@addSnapshotListener
             }
-            val items = snapshot.documents.mapNotNull { doc ->
-                try {
-                    doc.toObject(UserListDto::class.java)?.toDomain(doc.id)
-                } catch (throwable: Throwable) {
-                    Log.e(TAG, "Failed parsing family user list ${doc.id}", throwable)
-                    null
-                }
+            val items = mapFirestoreDocuments(
+                tag = TAG,
+                collectionName = Constants.USER_LISTS_TABLE,
+                entityName = "UserList",
+                documents = snapshot.documents,
+            ) { doc ->
+                doc.toObject(UserListDto::class.java)?.toDomain(doc.id)
             }
             trySend(Result.Success(ListSnapshot(items))).isSuccess
         }
@@ -77,13 +73,13 @@ class UserListFirestoreDataSource @Inject constructor(
                 trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
                 return@addSnapshotListener
             }
-            val items = snapshot.documents.mapNotNull { doc ->
-                try {
-                    doc.toObject(UserListDto::class.java)?.toDomain(doc.id)
-                } catch (throwable: Throwable) {
-                    Log.e(TAG, "Failed parsing private user list ${doc.id}", throwable)
-                    null
-                }
+            val items = mapFirestoreDocuments(
+                tag = TAG,
+                collectionName = Constants.USER_LISTS_TABLE,
+                entityName = "UserList",
+                documents = snapshot.documents,
+            ) { doc ->
+                doc.toObject(UserListDto::class.java)?.toDomain(doc.id)
             }
             trySend(Result.Success(ListSnapshot(items))).isSuccess
         }
@@ -101,13 +97,13 @@ class UserListFirestoreDataSource @Inject constructor(
                 trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
                 return@addSnapshotListener
             }
-            val items = snapshot.documents.mapNotNull { doc ->
-                try {
-                    doc.toObject(RoutineListEntryDto::class.java)?.toDomain(doc.id)
-                } catch (throwable: Throwable) {
-                    Log.e(TAG, "Failed parsing list entry ${doc.id}", throwable)
-                    null
-                }
+            val items = mapFirestoreDocuments(
+                tag = TAG,
+                collectionName = Constants.ROUTINE_LIST_ENTRIES_TABLE,
+                entityName = "RoutineListEntry",
+                documents = snapshot.documents,
+            ) { doc ->
+                doc.toObject(RoutineListEntryDto::class.java)?.toDomain(doc.id)
             }
             trySend(Result.Success(ListSnapshot(items))).isSuccess
         }
@@ -125,13 +121,13 @@ class UserListFirestoreDataSource @Inject constructor(
                 trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
                 return@addSnapshotListener
             }
-            val items = snapshot.documents.mapNotNull { doc ->
-                try {
-                    doc.toObject(WishListEntryDto::class.java)?.toDomain(doc.id)
-                } catch (throwable: Throwable) {
-                    Log.e(TAG, "Failed parsing wish list entry ${doc.id}", throwable)
-                    null
-                }
+            val items = mapFirestoreDocuments(
+                tag = TAG,
+                collectionName = Constants.WISH_LIST_ENTRIES_TABLE,
+                entityName = "WishListEntry",
+                documents = snapshot.documents,
+            ) { doc ->
+                doc.toObject(WishListEntryDto::class.java)?.toDomain(doc.id)
             }
             trySend(Result.Success(ListSnapshot(items))).isSuccess
         }
@@ -149,13 +145,13 @@ class UserListFirestoreDataSource @Inject constructor(
                 trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
                 return@addSnapshotListener
             }
-            val items = snapshot.documents.mapNotNull { doc ->
-                try {
-                    doc.toObject(NoteEntryDto::class.java)?.toDomain(doc.id)
-                } catch (throwable: Throwable) {
-                    Log.e(TAG, "Failed parsing note entry ${doc.id}", throwable)
-                    null
-                }
+            val items = mapFirestoreDocuments(
+                tag = TAG,
+                collectionName = Constants.NOTE_LIST_ENTRIES_TABLE,
+                entityName = "NoteEntry",
+                documents = snapshot.documents,
+            ) { doc ->
+                doc.toObject(NoteEntryDto::class.java)?.toDomain(doc.id)
             }
             trySend(Result.Success(ListSnapshot(items))).isSuccess
         }
@@ -173,13 +169,13 @@ class UserListFirestoreDataSource @Inject constructor(
                 trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
                 return@addSnapshotListener
             }
-            val items = snapshot.documents.mapNotNull { doc ->
-                try {
-                    doc.toObject(ChecklistEntryDto::class.java)?.toDomain(doc.id)
-                } catch (throwable: Throwable) {
-                    Log.e(TAG, "Failed parsing checklist entry ${doc.id}", throwable)
-                    null
-                }
+            val items = mapFirestoreDocuments(
+                tag = TAG,
+                collectionName = Constants.CHECKLIST_ENTRIES_TABLE,
+                entityName = "ChecklistEntry",
+                documents = snapshot.documents,
+            ) { doc ->
+                doc.toObject(ChecklistEntryDto::class.java)?.toDomain(doc.id)
             }
             trySend(Result.Success(ListSnapshot(items))).isSuccess
         }
@@ -197,13 +193,13 @@ class UserListFirestoreDataSource @Inject constructor(
                 trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
                 return@addSnapshotListener
             }
-            val items = snapshot.documents.mapNotNull { doc ->
-                try {
-                    doc.toObject(MealPlanEntryDto::class.java)?.toDomain(doc.id)
-                } catch (throwable: Throwable) {
-                    Log.e(TAG, "Failed parsing meal plan entry ${doc.id}", throwable)
-                    null
-                }
+            val items = mapFirestoreDocuments(
+                tag = TAG,
+                collectionName = Constants.MEAL_PLAN_ENTRIES_TABLE,
+                entityName = "MealPlanEntry",
+                documents = snapshot.documents,
+            ) { doc ->
+                doc.toObject(MealPlanEntryDto::class.java)?.toDomain(doc.id)
             }
             trySend(Result.Success(ListSnapshot(items))).isSuccess
         }
@@ -385,9 +381,7 @@ class UserListFirestoreDataSource @Inject constructor(
         @DocumentId @Transient
         val id: String? = null,
         val familyId: String? = null,
-        @get:PropertyName("name")
         val name: String? = null,
-        @get:PropertyName("itemName")
         val itemName: String? = null,
         val lastUpdated: Date? = null,
         val dateCreated: Date? = null,
@@ -429,9 +423,7 @@ class UserListFirestoreDataSource @Inject constructor(
         val id: String? = null,
         val familyId: String? = null,
         val listId: String? = null,
-        @get:PropertyName("name")
         val name: String? = null,
-        @get:PropertyName("itemName")
         val itemName: String? = null,
         val lastUpdated: Date? = null,
         val dateCreated: Date? = null,
@@ -483,9 +475,7 @@ class UserListFirestoreDataSource @Inject constructor(
         val id: String? = null,
         val familyId: String? = null,
         val listId: String? = null,
-        @get:PropertyName("name")
         val name: String? = null,
-        @get:PropertyName("itemName")
         val itemName: String? = null,
         val lastUpdated: Date? = null,
         val dateCreated: Date? = null,
@@ -530,9 +520,7 @@ class UserListFirestoreDataSource @Inject constructor(
         val id: String? = null,
         val familyId: String? = null,
         val listId: String? = null,
-        @get:PropertyName("name")
         val name: String? = null,
-        @get:PropertyName("itemName")
         val itemName: String? = null,
         val body: String? = null,
         val lastUpdated: Date? = null,
@@ -565,9 +553,7 @@ class UserListFirestoreDataSource @Inject constructor(
         val id: String? = null,
         val familyId: String? = null,
         val listId: String? = null,
-        @get:PropertyName("name")
         val name: String? = null,
-        @get:PropertyName("itemName")
         val itemName: String? = null,
         val isChecked: Boolean? = null,
         val lastUpdated: Date? = null,
@@ -599,9 +585,7 @@ class UserListFirestoreDataSource @Inject constructor(
         val id: String? = null,
         val familyId: String? = null,
         val listId: String? = null,
-        @get:PropertyName("name")
         val name: String? = null,
-        @get:PropertyName("itemName")
         val itemName: String? = null,
         val date: String? = null,
         val recipeId: String? = null,
@@ -643,7 +627,6 @@ class UserListFirestoreDataSource @Inject constructor(
         val familyId: String?,
         val ownerUid: String?,
         val visibility: String?,
-        @get:PropertyName("name")
         val name: String?,
         val type: String?,
         val lastUpdated: Date?,
@@ -663,7 +646,6 @@ class UserListFirestoreDataSource @Inject constructor(
     private data class RoutineListEntryWriteDto(
         val familyId: String?,
         val listId: String?,
-        @get:PropertyName("name")
         val name: String?,
         val lastUpdated: Date?,
         val dateCreated: Date?,
@@ -694,7 +676,6 @@ class UserListFirestoreDataSource @Inject constructor(
     private data class WishListEntryWriteDto(
         val familyId: String?,
         val listId: String?,
-        @get:PropertyName("name")
         val name: String?,
         val lastUpdated: Date?,
         val dateCreated: Date?,
@@ -723,7 +704,6 @@ class UserListFirestoreDataSource @Inject constructor(
     private data class NoteEntryWriteDto(
         val familyId: String?,
         val listId: String?,
-        @get:PropertyName("name")
         val name: String?,
         val body: String?,
         val lastUpdated: Date?,
@@ -742,7 +722,6 @@ class UserListFirestoreDataSource @Inject constructor(
     private data class ChecklistEntryWriteDto(
         val familyId: String?,
         val listId: String?,
-        @get:PropertyName("name")
         val name: String?,
         val isChecked: Boolean?,
         val lastUpdated: Date?,
@@ -761,7 +740,6 @@ class UserListFirestoreDataSource @Inject constructor(
     private data class MealPlanEntryWriteDto(
         val familyId: String?,
         val listId: String?,
-        @get:PropertyName("name")
         val name: String?,
         val date: String?,
         val recipeId: String?,

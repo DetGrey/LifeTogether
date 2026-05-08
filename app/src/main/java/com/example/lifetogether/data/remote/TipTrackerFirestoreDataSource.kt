@@ -2,17 +2,13 @@ package com.example.lifetogether.data.remote
 
 import com.example.lifetogether.data.logic.AppErrors
 import com.example.lifetogether.data.logic.appResultOfSuspend
-
 import com.example.lifetogether.domain.result.AppError
-
-import android.util.Log
 import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.domain.result.ListSnapshot
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.util.Constants
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.DocumentId
-import com.google.firebase.firestore.PropertyName
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlin.jvm.Transient
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
@@ -34,13 +30,13 @@ class TipTrackerFirestoreDataSource @Inject constructor(
                 return@addSnapshotListener
             }
             if (snapshot != null) {
-                val items = snapshot.documents.mapNotNull { doc ->
-                    try {
-                        doc.toObject(TipItemDto::class.java)?.toDomain(doc.id)
-                    } catch (throwable: Throwable) {
-                        Log.e(TAG, "Failed parsing tip item ${doc.id}", throwable)
-                        null
-                    }
+                val items = mapFirestoreDocuments(
+                    tag = TAG,
+                    collectionName = Constants.TIP_TRACKER_TABLE,
+                    entityName = "TipItem",
+                    documents = snapshot.documents,
+                ) { doc ->
+                    doc.toObject(TipItemDto::class.java)?.toDomain(doc.id)
                 }
                 trySend(Result.Success(ListSnapshot(items))).isSuccess
             } else {
@@ -68,9 +64,7 @@ private data class TipItemDto(
     @DocumentId @Transient
     val id: String? = null,
     val familyId: String? = null,
-    @get:PropertyName("item_name")
     val itemName: String? = null,
-    @get:PropertyName("last_updated")
     val lastUpdated: Date? = null,
     val amount: Float? = null,
     val currency: String? = null,
@@ -79,10 +73,10 @@ private data class TipItemDto(
     fun toDomain(documentId: String): TipItem? {
         val familyIdValue = familyId?.takeIf { it.isNotBlank() } ?: return null
         val itemNameValue = itemName?.takeIf { it.isNotBlank() } ?: return null
-        val lastUpdatedValue = lastUpdated ?: return null
         val amountValue = amount ?: return null
-        val currencyValue = currency?.takeIf { it.isNotBlank() } ?: return null
+        val lastUpdatedValue = lastUpdated ?: date ?: return null
         val dateValue = date ?: return null
+        val currencyValue = currency?.takeIf { it.isNotBlank() } ?: return null
         return TipItem(
             id = documentId,
             familyId = familyIdValue,
@@ -96,8 +90,8 @@ private data class TipItemDto(
 
     fun toFirestoreMap(): Map<String, Any?> = mapOf(
         "familyId" to familyId,
-        "item_name" to itemName,
-        "last_updated" to lastUpdated,
+        "itemName" to itemName,
+        "lastUpdated" to lastUpdated,
         "amount" to amount,
         "currency" to currency,
         "date" to date,
@@ -105,7 +99,6 @@ private data class TipItemDto(
 }
 
 private fun TipItem.toDto(): TipItemDto = TipItemDto(
-    id = id,
     familyId = familyId,
     itemName = itemName,
     lastUpdated = lastUpdated,

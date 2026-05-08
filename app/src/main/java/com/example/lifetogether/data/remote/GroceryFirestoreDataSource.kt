@@ -3,7 +3,6 @@ package com.example.lifetogether.data.remote
 import com.example.lifetogether.data.logic.AppErrors
 import com.example.lifetogether.data.logic.appResultOfSuspend
 import com.example.lifetogether.domain.result.AppError
-import android.util.Log
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
@@ -35,13 +34,13 @@ class GroceryFirestoreDataSource @Inject constructor(
                     return@addSnapshotListener
                 }
                 snapshot?.let { qs ->
-                    val items = qs.documents.mapNotNull { doc ->
-                        try {
-                            doc.toObject(GroceryItemDto::class.java)?.toDomain(doc.id)
-                        } catch (throwable: Throwable) {
-                            Log.e(TAG, "Failed parsing grocery item ${doc.id}", throwable)
-                            null
-                        }
+                    val items = mapFirestoreDocuments(
+                        tag = TAG,
+                        collectionName = Constants.GROCERY_TABLE,
+                        entityName = "GroceryItem",
+                        documents = qs.documents,
+                    ) { doc ->
+                        doc.toObject(GroceryItemDto::class.java)?.toDomain(doc.id)
                     }
                     trySend(Result.Success(items))
                 }
@@ -80,21 +79,21 @@ class GroceryFirestoreDataSource @Inject constructor(
     fun syncCategories(): Flow<Result<List<Category>, AppError>> = callbackFlow {
         val ref = db.collection(Constants.CATEGORY_TABLE)
         val registration = ref.addSnapshotListener { snapshot, e ->
-            if (e != null) {
-                trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
-                return@addSnapshotListener
-            }
-            if (snapshot != null) {
-                val categories = snapshot.documents.mapNotNull { doc ->
-                    try {
-                        doc.toObject(CategoryDto::class.java)?.toDomain()
-                    } catch (throwable: Throwable) {
-                        Log.e(TAG, "Failed parsing category ${doc.id}", throwable)
-                        null
-                    }
+                if (e != null) {
+                    trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
+                    return@addSnapshotListener
                 }
-                trySend(Result.Success(categories)).isSuccess
-            }
+                if (snapshot != null) {
+                    val categories = mapFirestoreDocuments(
+                        tag = TAG,
+                        collectionName = Constants.CATEGORY_TABLE,
+                        entityName = "Category",
+                        documents = snapshot.documents,
+                    ) { doc ->
+                        doc.toObject(CategoryDto::class.java)?.toDomain()
+                    }
+                    trySend(Result.Success(categories)).isSuccess
+                }
         }
         awaitClose { registration.remove() }
     }
@@ -120,21 +119,21 @@ class GroceryFirestoreDataSource @Inject constructor(
     fun syncGrocerySuggestions(): Flow<Result<List<GrocerySuggestion>, AppError>> = callbackFlow {
         val ref = db.collection(Constants.GROCERY_SUGGESTIONS_TABLE)
         val registration = ref.addSnapshotListener { snapshot, e ->
-            if (e != null) {
-                trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
-                return@addSnapshotListener
-            }
-            if (snapshot != null) {
-                val suggestions = snapshot.documents.mapNotNull { doc ->
-                    try {
-                        doc.toObject(GrocerySuggestionDto::class.java)?.toDomain(doc.id)
-                    } catch (throwable: Throwable) {
-                        Log.e(TAG, "Failed parsing grocery suggestion ${doc.id}", throwable)
-                        null
-                    }
+                if (e != null) {
+                    trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
+                    return@addSnapshotListener
                 }
-                trySend(Result.Success(suggestions)).isSuccess
-            }
+                if (snapshot != null) {
+                    val suggestions = mapFirestoreDocuments(
+                        tag = TAG,
+                        collectionName = Constants.GROCERY_SUGGESTIONS_TABLE,
+                        entityName = "GrocerySuggestion",
+                        documents = snapshot.documents,
+                    ) { doc ->
+                        doc.toObject(GrocerySuggestionDto::class.java)?.toDomain(doc.id)
+                    }
+                    trySend(Result.Success(suggestions)).isSuccess
+                }
         }
         awaitClose { registration.remove() }
     }

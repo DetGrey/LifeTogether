@@ -35,9 +35,16 @@ class FamilyFirestoreDataSource @Inject constructor(
             if (snapshot != null && snapshot.exists()) {
                 @Suppress("UNCHECKED_CAST")
                 val membersData = snapshot.get("members") as? List<Map<String, String>> ?: emptyList()
-                val members = membersData.mapNotNull { member ->
-                    val uid = member["uid"]?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
-                    val name = member["name"]?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+                val members = membersData.mapNotNullIndexed { index, member ->
+                    val uid = member["uid"]?.trim()?.takeIf { it.isNotEmpty() }
+                    val name = member["name"]?.trim()?.takeIf { it.isNotEmpty() }
+                    if (uid == null || name == null) {
+                        Log.w(
+                            TAG,
+                            "$FIRESTORE_SKIP_INVALID_DOC_PREFIX collection=${Constants.FAMILIES_TABLE} entity=FamilyMember docId=$familyId reason=missing required fields memberIndex=$index",
+                        )
+                        return@mapNotNullIndexed null
+                    }
                     FamilyMember(uid = uid, name = name)
                 }
                 trySend(
@@ -171,4 +178,15 @@ class FamilyFirestoreDataSource @Inject constructor(
         val tokens = members.mapNotNull { it["fcmToken"] as? String }
         return tokens.ifEmpty { null }
     }
+}
+
+private inline fun <T, R> Iterable<T>.mapNotNullIndexed(transform: (index: Int, T) -> R?): List<R> {
+    val destination = ArrayList<R>()
+    for ((index, item) in this.withIndex()) {
+        val mapped = transform(index, item)
+        if (mapped != null) {
+            destination.add(mapped)
+        }
+    }
+    return destination
 }

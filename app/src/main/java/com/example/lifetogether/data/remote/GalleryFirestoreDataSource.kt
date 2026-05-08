@@ -2,10 +2,7 @@ package com.example.lifetogether.data.remote
 
 import com.example.lifetogether.data.logic.AppErrors
 import com.example.lifetogether.data.logic.appResultOfSuspend
-
 import com.example.lifetogether.domain.result.AppError
-
-import android.util.Log
 import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
@@ -18,7 +15,6 @@ import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.SetOptions
-import com.google.firebase.firestore.PropertyName
 import kotlin.jvm.Transient
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
@@ -40,13 +36,13 @@ class GalleryFirestoreDataSource @Inject constructor(
                 return@addSnapshotListener
             }
             if (snapshot != null) {
-                val items = snapshot.documents.mapNotNull { doc ->
-                    try {
-                        doc.toObject(AlbumDto::class.java)?.toDomain(doc.id)
-                    } catch (throwable: Throwable) {
-                        Log.e(TAG, "Failed parsing album ${doc.id}", throwable)
-                        null
-                    }
+                val items = mapFirestoreDocuments(
+                    tag = TAG,
+                    collectionName = Constants.ALBUMS_TABLE,
+                    entityName = "Album",
+                    documents = snapshot.documents,
+                ) { doc ->
+                    doc.toObject(AlbumDto::class.java)?.toDomain(doc.id)
                 }
                 trySend(Result.Success(ListSnapshot(items))).isSuccess
             } else {
@@ -64,13 +60,13 @@ class GalleryFirestoreDataSource @Inject constructor(
                 return@addSnapshotListener
             }
             if (snapshot != null) {
-                val items = snapshot.documents.mapNotNull { document ->
-                    try {
-                        document.toObject(GalleryMediaDto::class.java)?.toDomain(document.id)
-                    } catch (throwable: Throwable) {
-                        Log.e(TAG, "Error parsing document ${document.id} to GalleryMedia", throwable)
-                        null
-                    }
+                val items = mapFirestoreDocuments(
+                    tag = TAG,
+                    collectionName = Constants.GALLERY_MEDIA_TABLE,
+                    entityName = "GalleryMedia",
+                    documents = snapshot.documents,
+                ) { document ->
+                    document.toObject(GalleryMediaDto::class.java)?.toDomain(document.id)
                 }
                 trySend(Result.Success(ListSnapshot(items, snapshot.metadata.isFromCache))).isSuccess
             } else {
@@ -144,9 +140,7 @@ private data class AlbumDto(
     @DocumentId @Transient
     val id: String? = null,
     val familyId: String? = null,
-    @get:PropertyName("item_name")
     val itemName: String? = null,
-    @get:PropertyName("last_updated")
     val lastUpdated: Date? = null,
     val count: Int? = null,
 ) {
@@ -165,8 +159,8 @@ private data class AlbumDto(
 
     fun toFirestoreMap(): Map<String, Any?> = mapOf(
         "familyId" to familyId,
-        "item_name" to itemName,
-        "last_updated" to lastUpdated,
+        "itemName" to itemName,
+        "lastUpdated" to lastUpdated,
         "count" to count,
     )
 }
@@ -175,29 +169,23 @@ private data class GalleryMediaDto(
     @DocumentId @Transient
     val id: String? = null,
     val familyId: String? = null,
-    @get:PropertyName("item_name")
     val itemName: String? = null,
-    @get:PropertyName("last_updated")
     val lastUpdated: Date? = null,
-    @get:PropertyName("album_id")
     val albumId: String? = null,
-    @get:PropertyName("date_created")
     val dateCreated: Date? = null,
-    @get:PropertyName("media_type")
     val mediaType: String? = null,
-    @get:PropertyName("media_uri")
     val mediaUri: String? = null,
     val thumbnail: ByteArray? = null,
-    @get:PropertyName("video_duration")
     val videoDuration: Long? = null,
 ) {
     fun toDomain(documentId: String): GalleryMedia? {
         val familyIdValue = familyId?.takeIf { it.isNotBlank() } ?: return null
+        val mediaTypeValue = MediaType.fromValue(mediaType) ?: return null
         val itemNameValue = itemName?.takeIf { it.isNotBlank() } ?: return null
         val lastUpdatedValue = lastUpdated ?: return null
         val albumIdValue = albumId?.takeIf { it.isNotBlank() } ?: return null
         val dateCreatedValue = dateCreated ?: return null
-        val mediaTypeValue = MediaType.fromValue(mediaType) ?: return null
+        val mediaUriValue = mediaUri?.takeIf { it.isNotBlank() } ?: return null
         return when (mediaTypeValue) {
             MediaType.IMAGE -> GalleryImage(
                 id = documentId,
@@ -207,7 +195,7 @@ private data class GalleryMediaDto(
                 albumId = albumIdValue,
                 dateCreated = dateCreatedValue,
                 mediaType = mediaTypeValue,
-                mediaUrl = mediaUri,
+                mediaUrl = mediaUriValue,
             )
 
             MediaType.VIDEO -> GalleryVideo(
@@ -218,7 +206,7 @@ private data class GalleryMediaDto(
                 albumId = albumIdValue,
                 dateCreated = dateCreatedValue,
                 mediaType = mediaTypeValue,
-                mediaUrl = mediaUri,
+                mediaUrl = mediaUriValue,
                 duration = videoDuration,
             )
         }
@@ -226,14 +214,14 @@ private data class GalleryMediaDto(
 
     fun toFirestoreMap(): Map<String, Any?> = mapOf(
         "familyId" to familyId,
-        "item_name" to itemName,
-        "last_updated" to lastUpdated,
-        "album_id" to albumId,
-        "date_created" to dateCreated,
-        "media_type" to mediaType,
-        "media_uri" to mediaUri,
+        "itemName" to itemName,
+        "lastUpdated" to lastUpdated,
+        "albumId" to albumId,
+        "dateCreated" to dateCreated,
+        "mediaType" to mediaType,
+        "mediaUri" to mediaUri,
         "thumbnail" to thumbnail,
-        "video_duration" to videoDuration,
+        "videoDuration" to videoDuration,
     )
 
     override fun equals(other: Any?): Boolean {
@@ -280,7 +268,6 @@ private fun Album.toDto(): AlbumDto = AlbumDto(
 )
 
 private fun GalleryMedia.toDto(): GalleryMediaDto = GalleryMediaDto(
-    id = id,
     familyId = familyId,
     itemName = itemName,
     lastUpdated = lastUpdated,

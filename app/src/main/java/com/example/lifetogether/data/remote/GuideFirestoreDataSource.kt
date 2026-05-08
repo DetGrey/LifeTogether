@@ -2,10 +2,7 @@ package com.example.lifetogether.data.remote
 
 import com.example.lifetogether.data.logic.AppErrors
 import com.example.lifetogether.data.logic.appResultOfSuspend
-
 import com.example.lifetogether.domain.result.AppError
-
-import android.util.Log
 import com.example.lifetogether.domain.logic.GuideProgress
 import com.example.lifetogether.domain.logic.GuideRoundGrouping
 import com.example.lifetogether.domain.model.guides.Guide
@@ -20,7 +17,6 @@ import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.util.Constants
 import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.PropertyName
 import com.google.firebase.firestore.SetOptions
 import kotlin.jvm.Transient
 import kotlinx.coroutines.channels.awaitClose
@@ -49,13 +45,13 @@ class GuideFirestoreDataSource @Inject constructor(
                 trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
                 return@addSnapshotListener
             }
-            val guides = snapshot.documents.mapNotNull { document ->
-                try {
-                    document.toObject(GuideDto::class.java)?.toDomain(document.id)
-                } catch (throwable: Throwable) {
-                    Log.e(TAG, "Failed parsing family guide ${document.id}", throwable)
-                    null
-                }
+            val guides = mapFirestoreDocuments(
+                tag = TAG,
+                collectionName = Constants.GUIDES_TABLE,
+                entityName = "Guide",
+                documents = snapshot.documents,
+            ) { document ->
+                document.toObject(GuideDto::class.java)?.toDomain(document.id)
             }
             trySend(Result.Success(ListSnapshot(guides))).isSuccess
         }
@@ -76,13 +72,13 @@ class GuideFirestoreDataSource @Inject constructor(
                 trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
                 return@addSnapshotListener
             }
-            val guides = snapshot.documents.mapNotNull { document ->
-                try {
-                    document.toObject(GuideDto::class.java)?.toDomain(document.id)
-                } catch (throwable: Throwable) {
-                    Log.e(TAG, "Failed parsing private guide ${document.id}", throwable)
-                    null
-                }
+            val guides = mapFirestoreDocuments(
+                tag = TAG,
+                collectionName = Constants.GUIDES_TABLE,
+                entityName = "Guide",
+                documents = snapshot.documents,
+            ) { document ->
+                document.toObject(GuideDto::class.java)?.toDomain(document.id)
             }
             trySend(Result.Success(ListSnapshot(guides))).isSuccess
         }
@@ -102,13 +98,13 @@ class GuideFirestoreDataSource @Inject constructor(
                 trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
                 return@addSnapshotListener
             }
-            val progress = snapshot.documents.mapNotNull { document ->
-                try {
-                    document.toObject(GuideProgressDto::class.java)?.toDomain(document.id)
-                } catch (throwable: Throwable) {
-                    Log.e(TAG, "Failed parsing guide progress ${document.id}", throwable)
-                    null
-                }
+            val progress = mapFirestoreDocuments(
+                tag = TAG,
+                collectionName = Constants.GUIDE_PROGRESS_TABLE,
+                entityName = "GuideProgressState",
+                documents = snapshot.documents,
+            ) { document ->
+                document.toObject(GuideProgressDto::class.java)?.toDomain(document.id)
             }
             trySend(Result.Success(progress)).isSuccess
         }
@@ -170,9 +166,7 @@ private data class GuideDto(
     val familyId: String? = null,
     val ownerUid: String? = null,
     val visibility: String? = null,
-    @get:PropertyName("name")
     val name: String? = null,
-    @get:PropertyName("itemName")
     val itemName: String? = null,
     val description: String? = null,
     val contentVersion: Long? = null,
@@ -220,7 +214,6 @@ private data class GuideDto(
 }
 
 private data class GuideSectionDto(
-    @DocumentId @Transient
     val id: String? = null,
     val orderNumber: Int? = null,
     val title: String? = null,
@@ -264,7 +257,6 @@ private data class GuideSectionDto(
 }
 
 private data class GuideStepDto(
-    @DocumentId @Transient
     val id: String? = null,
     val name: String? = null,
     val type: String? = null,

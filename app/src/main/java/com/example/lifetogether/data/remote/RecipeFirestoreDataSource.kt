@@ -2,10 +2,8 @@ package com.example.lifetogether.data.remote
 
 import com.example.lifetogether.data.logic.AppErrors
 import com.example.lifetogether.data.logic.appResultOfSuspend
-
 import com.example.lifetogether.domain.result.AppError
-
-import android.util.Log
+import com.example.lifetogether.domain.model.enums.MeasureType
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.domain.model.recipe.Instruction
@@ -36,13 +34,13 @@ class RecipeFirestoreDataSource @Inject constructor(
                 return@addSnapshotListener
             }
             if (snapshot != null) {
-                val items = snapshot.documents.mapNotNull { doc ->
-                    try {
-                        doc.toObject(RecipeDto::class.java)?.toDomain(doc.id)
-                    } catch (throwable: Throwable) {
-                        Log.e(TAG, "Failed parsing recipe ${doc.id}", throwable)
-                        null
-                    }
+                val items = mapFirestoreDocuments(
+                    tag = TAG,
+                    collectionName = Constants.RECIPES_TABLE,
+                    entityName = "Recipe",
+                    documents = snapshot.documents,
+                ) { doc ->
+                    doc.toObject(RecipeDto::class.java)?.toDomain(doc.id)
                 }
                 trySend(Result.Success(ListSnapshot(items))).isSuccess
             } else {
@@ -103,8 +101,8 @@ private data class RecipeDto(
     val itemName: String? = null,
     val lastUpdated: Date? = null,
     val description: String? = null,
-    val ingredients: List<Ingredient>? = null,
-    val instructions: List<Instruction>? = null,
+    val ingredients: List<IngredientDto>? = null,
+    val instructions: List<InstructionDto>? = null,
     val preparationTimeMin: Int? = null,
     val favourite: Boolean? = null,
     val servings: Int? = null,
@@ -116,8 +114,8 @@ private data class RecipeDto(
         val itemNameValue = itemName?.takeIf { it.isNotBlank() } ?: return null
         val lastUpdatedValue = lastUpdated ?: return null
         val descriptionValue = description ?: return null
-        val ingredientsValue = ingredients ?: return null
-        val instructionsValue = instructions ?: return null
+        val ingredientsValue = ingredients.orEmpty().mapNotNull { it.toDomain() }
+        val instructionsValue = instructions.orEmpty().mapNotNull { it.toDomain() }
         val preparationTimeMinValue = preparationTimeMin ?: return null
         val servingsValue = servings ?: return null
         val tagsValue = tags ?: return null
@@ -142,8 +140,8 @@ private data class RecipeDto(
         "itemName" to itemName,
         "lastUpdated" to lastUpdated,
         "description" to description,
-        "ingredients" to ingredients,
-        "instructions" to instructions,
+        "ingredients" to ingredients?.map { it.toFirestoreMap() },
+        "instructions" to instructions?.map { it.toFirestoreMap() },
         "preparationTimeMin" to preparationTimeMin,
         "favourite" to favourite,
         "servings" to servings,
@@ -158,11 +156,73 @@ private fun Recipe.toDto(): RecipeDto = RecipeDto(
     itemName = itemName,
     lastUpdated = lastUpdated,
     description = description,
-    ingredients = ingredients,
-    instructions = instructions,
+    ingredients = ingredients.map { it.toDto() },
+    instructions = instructions.map { it.toDto() },
     preparationTimeMin = preparationTimeMin,
     favourite = favourite,
     servings = servings,
     tags = tags,
     imageUrl = imageUrl,
 )
+
+private data class IngredientDto(
+    val amount: Double? = null,
+    val measureType: String? = null,
+    val itemName: String? = null,
+    val completed: Boolean? = null,
+) {
+    fun toDomain(): Ingredient? {
+        val amountValue = amount ?: return null
+        val measureTypeValue = measureType?.toMeasureTypeOrNull() ?: return null
+        val itemNameValue = itemName?.takeIf { it.isNotBlank() } ?: return null
+        return Ingredient(
+            amount = amountValue,
+            measureType = measureTypeValue,
+            itemName = itemNameValue,
+            completed = completed ?: false,
+        )
+    }
+
+    fun toFirestoreMap(): Map<String, Any?> = mapOf(
+        "amount" to amount,
+        "measureType" to measureType,
+        "itemName" to itemName,
+        "completed" to completed,
+    ).filterValues { it != null }
+}
+
+private data class InstructionDto(
+    val itemName: String? = null,
+    val completed: Boolean? = null,
+) {
+    fun toDomain(): Instruction? {
+        val itemNameValue = itemName?.takeIf { it.isNotBlank() } ?: return null
+        return Instruction(
+            itemName = itemNameValue,
+            completed = completed ?: false,
+        )
+    }
+
+    fun toFirestoreMap(): Map<String, Any?> = mapOf(
+        "itemName" to itemName,
+        "completed" to completed,
+    ).filterValues { it != null }
+}
+
+private fun Ingredient.toDto(): IngredientDto = IngredientDto(
+    amount = amount,
+    measureType = measureType.name,
+    itemName = itemName,
+    completed = completed,
+)
+
+private fun Instruction.toDto(): InstructionDto = InstructionDto(
+    itemName = itemName,
+    completed = completed,
+)
+
+private fun String.toMeasureTypeOrNull(): MeasureType? {
+    return MeasureType.entries.firstOrNull { measureType ->
+        measureType.name.equals(this, ignoreCase = true) || measureType.unit.equals(this, ignoreCase = true)
+    }
+}
