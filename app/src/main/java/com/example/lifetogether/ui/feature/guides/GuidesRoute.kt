@@ -4,9 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.event.CollectUiCommands
-import com.example.lifetogether.ui.common.sync.FeatureSyncLifecycleBinding
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.navigation.GuideCreateNavRoute
 import com.example.lifetogether.ui.navigation.GuideDetailsNavRoute
@@ -20,7 +18,6 @@ fun GuidesRoute(
 
     CollectUiCommands(viewModel.uiCommands)
 
-    FeatureSyncLifecycleBinding(keys = setOf(SyncKey.GUIDES))
     GuidesScreen(
         uiState = uiState,
         onUiEvent = viewModel::onEvent,

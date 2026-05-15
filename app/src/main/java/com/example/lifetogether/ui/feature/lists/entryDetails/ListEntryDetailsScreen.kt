@@ -86,6 +86,7 @@ fun ListEntryDetailsScreen(
 
             when (val details = contentState.details) {
                 is EntryDetailsContent.Note -> NoteEntryContent(
+                    padding = padding,
                     uiState = contentState,
                     formState = details.form,
                     isExistingEntry = isExistingEntry,

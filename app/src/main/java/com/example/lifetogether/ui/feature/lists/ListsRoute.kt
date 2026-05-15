@@ -5,9 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.lifetogether.domain.sync.SyncKey
 import com.example.lifetogether.ui.common.event.CollectUiCommands
-import com.example.lifetogether.ui.common.sync.FeatureSyncLifecycleBinding
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.navigation.ListDetailNavRoute
 
@@ -15,17 +13,6 @@ import com.example.lifetogether.ui.navigation.ListDetailNavRoute
 fun ListsRoute(
     appNavigator: AppNavigator,
 ) {
-    FeatureSyncLifecycleBinding(
-        keys = setOf(
-            SyncKey.USER_LISTS,
-            SyncKey.ROUTINE_LIST_ENTRIES,
-            SyncKey.WISH_LIST_ENTRIES,
-            SyncKey.NOTE_ENTRIES,
-            SyncKey.CHECKLIST_ENTRIES,
-            SyncKey.MEAL_PLAN_ENTRIES,
-        ),
-    )
-
     val viewModel: ListsViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     CollectUiCommands(viewModel.uiCommands)

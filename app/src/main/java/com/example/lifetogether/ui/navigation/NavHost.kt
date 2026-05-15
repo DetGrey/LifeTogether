@@ -19,12 +19,14 @@ import com.example.lifetogether.ui.feature.gallery.GalleryGraphObserverRoute
 import com.example.lifetogether.ui.feature.gallery.GalleryScreenRoute
 import com.example.lifetogether.ui.feature.gallery.MediaDetailsRoute
 import com.example.lifetogether.ui.feature.groceryList.GroceryListRoute
+import com.example.lifetogether.ui.feature.guides.GuideGraphObserverRoute
 import com.example.lifetogether.ui.feature.guides.GuidesRoute
 import com.example.lifetogether.ui.feature.guides.create.GuideCreateRoute
 import com.example.lifetogether.ui.feature.guides.details.GuideDetailsRoute
 import com.example.lifetogether.ui.feature.guides.stepplayer.GuideStepPlayerRoute
 import com.example.lifetogether.ui.feature.home.HomeRoute
 import com.example.lifetogether.ui.feature.lists.ListsRoute
+import com.example.lifetogether.ui.feature.lists.UserListGraphObserverRoute
 import com.example.lifetogether.ui.feature.lists.entryDetails.ListEntryDetailsRoute
 import com.example.lifetogether.ui.feature.lists.listDetails.ListDetailsRoute
 import com.example.lifetogether.ui.feature.loading.LoadingRoute
@@ -35,6 +37,7 @@ import com.example.lifetogether.ui.feature.recipes.RecipeDetailsRoute
 import com.example.lifetogether.ui.feature.recipes.RecipesRoute
 import com.example.lifetogether.ui.feature.settings.SettingsRoute
 import com.example.lifetogether.ui.feature.signup.SignupRoute
+import com.example.lifetogether.ui.feature.tipTracker.TipTrackerGraphObserverRoute
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerRoute
 import com.example.lifetogether.ui.feature.tipTracker.statistics.TipStatisticsRoute
 
@@ -47,6 +50,9 @@ fun NavHost(
 ) {
     val appNavigator = AppNavigator(navController)
     GalleryGraphObserverRoute(navController = navController)
+    GuideGraphObserverRoute(navController = navController)
+    UserListGraphObserverRoute(navController = navController)
+    TipTrackerGraphObserverRoute(navController = navController)
 
     androidx.navigation.compose.NavHost(
         navController = navController,

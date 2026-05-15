@@ -2,14 +2,13 @@ package com.example.lifetogether.ui.feature.lists.entryDetails.content
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -20,12 +19,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.example.lifetogether.ui.common.textfield.MarkdownVisualTransformation
 import com.example.lifetogether.ui.feature.lists.entryDetails.EntryDetailsContent
 import com.example.lifetogether.ui.feature.lists.entryDetails.EntryDetailsUiState
@@ -36,16 +33,14 @@ import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun NoteEntryContent(
+    padding: PaddingValues,
     uiState: EntryDetailsUiState.Content,
     formState: NoteEntryFormState,
     isExistingEntry: Boolean,
     onUiEvent: (ListEntryDetailsUiEvent) -> Unit,
 ) {
-    val scrollState = rememberScrollState()
     val titleFocusRequester = remember { FocusRequester() }
     val bodyFocusRequester = remember { FocusRequester() }
-    val screenHeight = LocalWindowInfo.current.containerSize.height.dp
-    val bodyMinHeight = screenHeight * 0.6f
 
     LaunchedEffect(Unit) {
         if (uiState.isEditing && !isExistingEntry) {
@@ -55,20 +50,24 @@ fun NoteEntryContent(
 
     Column(
         modifier = Modifier
+            .padding(padding)
             .fillMaxSize()
-            .verticalScroll(scrollState)
             .padding(horizontal = LifeTogetherTokens.spacing.medium)
             .padding(top = LifeTogetherTokens.spacing.medium),
     ) {
-        BasicTextField( //todo this is never shown when creating a new note
+        BasicTextField(
             value = formState.name,
             onValueChange = { onUiEvent(ListEntryDetailsUiEvent.NameChanged(it)) },
             modifier = Modifier
                 .fillMaxWidth()
                 .focusRequester(titleFocusRequester),
             enabled = uiState.isEditing,
+            singleLine = true,
             textStyle = MaterialTheme.typography.headlineMedium.copy(
                 color = MaterialTheme.colorScheme.onSurface,
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = { bodyFocusRequester.requestFocus() },
             ),
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Sentences,
@@ -98,7 +97,7 @@ fun NoteEntryContent(
             onValueChange = { onUiEvent(ListEntryDetailsUiEvent.Note.BodyChanged(it)) },
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = bodyMinHeight)
+                .weight(1f, fill = true)
                 .focusRequester(bodyFocusRequester)
                 .then(
                     if (!uiState.isEditing) {
@@ -137,6 +136,7 @@ fun NoteEntryContent(
 private fun NoteEntryContentEditPreview() {
     LifeTogetherTheme {
         NoteEntryContent(
+            padding = PaddingValues.Zero,
             uiState = EntryDetailsUiState.Content(
                 details = EntryDetailsContent.Note(form = NoteEntryFormState()),
                 isEditing = true,
@@ -156,6 +156,7 @@ private fun NoteEntryContentEditPreview() {
 private fun NoteEntryContentViewPreview() {
     LifeTogetherTheme {
         NoteEntryContent(
+            padding = PaddingValues.Zero,
             uiState = EntryDetailsUiState.Content(
                 details = EntryDetailsContent.Note(form = NoteEntryFormState()),
                 isEditing = false,
