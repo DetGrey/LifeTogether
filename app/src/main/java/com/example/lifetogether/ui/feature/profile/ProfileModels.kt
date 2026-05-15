@@ -1,5 +1,6 @@
 package com.example.lifetogether.ui.feature.profile
 
+import android.net.Uri
 import com.example.lifetogether.domain.model.UserInformation
 
 sealed interface ProfileUiState {
@@ -8,7 +9,6 @@ sealed interface ProfileUiState {
     data class Content(
         val userInformation: UserInformation,
         val showConfirmationDialog: Boolean = false,
-        val showImageUploadDialog: Boolean = false,
         val confirmationDialogType: ProfileConfirmationType? = null,
         val newName: String = "",
     ) : ProfileUiState
@@ -20,9 +20,7 @@ enum class ProfileConfirmationType {
 }
 
 sealed interface ProfileUiEvent {
-    data object AddImageClicked : ProfileUiEvent
-    data object ImageUploadDismissed : ProfileUiEvent
-    data object ImageUploadConfirmed : ProfileUiEvent
+    data class ImageSelected(val uri: Uri) : ProfileUiEvent
     data object NameClicked : ProfileUiEvent
     data object LogoutClicked : ProfileUiEvent
     data object DismissConfirmationDialog : ProfileUiEvent

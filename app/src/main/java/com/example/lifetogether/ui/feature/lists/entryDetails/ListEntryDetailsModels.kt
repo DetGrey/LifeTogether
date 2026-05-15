@@ -20,7 +20,6 @@ sealed interface EntryDetailsUiState {
         val isEditing: Boolean = false,
         val showDiscardDialog: Boolean = false,
         val isSaving: Boolean = false,
-        val showImageUploadDialog: Boolean = false,
     ) : EntryDetailsUiState
 }
 
@@ -182,9 +181,6 @@ sealed interface ListEntryDetailsUiEvent {
     data object DismissDiscardDialog : ListEntryDetailsUiEvent
     data class NameChanged(val value: String) : ListEntryDetailsUiEvent
     data object SaveClicked : ListEntryDetailsUiEvent
-    data object RequestImageUpload : ListEntryDetailsUiEvent
-    data object DismissImageUpload : ListEntryDetailsUiEvent
-    data object ConfirmImageUpload : ListEntryDetailsUiEvent
 
     sealed interface Routine : ListEntryDetailsUiEvent {
         data class RecurrenceUnitChanged(val value: String) : Routine

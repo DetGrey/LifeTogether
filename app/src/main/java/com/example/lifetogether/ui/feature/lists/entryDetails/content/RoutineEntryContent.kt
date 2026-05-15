@@ -43,7 +43,6 @@ import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 fun LazyListScope.routineEntryForm(
     uiState: EntryDetailsUiState.Content,
-    isExistingEntry: Boolean,
     bitmap: Bitmap?,
     pendingBitmap: Bitmap?,
     onLaunchImagePicker: ((String) -> Unit)? = null,
@@ -51,7 +50,7 @@ fun LazyListScope.routineEntryForm(
     onUiEvent: (ListEntryDetailsUiEvent) -> Unit,
 ) {
     item {
-        val displayBitmap = if (isExistingEntry) bitmap else pendingBitmap
+        val displayBitmap = pendingBitmap ?: bitmap
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -62,11 +61,7 @@ fun LazyListScope.routineEntryForm(
                     MaterialTheme.shapes.extraLarge,
                 )
                 .clickable(enabled = uiState.isEditing) {
-                    if (isExistingEntry) {
-                        onUiEvent(ListEntryDetailsUiEvent.RequestImageUpload)
-                    } else {
-                        onLaunchImagePicker?.invoke("image/*")
-                    }
+                    onLaunchImagePicker?.invoke("image/*")
                 },
             contentAlignment = Alignment.Center,
         ) {
@@ -190,7 +185,6 @@ private fun RoutineEntryContentPreview() {
         ) {
             routineEntryForm(
                 uiState = uiState,
-                isExistingEntry = false,
                 bitmap = null,
                 pendingBitmap = null,
                 onLaunchImagePicker = null,

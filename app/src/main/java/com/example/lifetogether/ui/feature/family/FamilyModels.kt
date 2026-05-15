@@ -1,5 +1,6 @@
 package com.example.lifetogether.ui.feature.family
 
+import android.net.Uri
 import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.model.family.FamilyMember
 
@@ -13,7 +14,6 @@ sealed interface FamilyUiState {
         val showConfirmationDialog: Boolean = false,
         val confirmationDialogType: FamilyConfirmationType? = null,
         val memberToRemove: FamilyMember? = null,
-        val showImageUploadDialog: Boolean = false,
     ) : FamilyUiState
 }
 
@@ -25,9 +25,7 @@ enum class FamilyConfirmationType {
 }
 
 sealed interface FamilyUiEvent {
-    data object AddImageClicked : FamilyUiEvent
-    data object ImageUploadDismissed : FamilyUiEvent
-    data object ImageUploadConfirmed : FamilyUiEvent
+    data class ImageSelected(val uri: Uri) : FamilyUiEvent
     data object AddMemberClicked : FamilyUiEvent
     data object LeaveFamilyClicked : FamilyUiEvent
     data object DeleteFamilyClicked : FamilyUiEvent

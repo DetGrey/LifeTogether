@@ -78,7 +78,6 @@ class FamilyViewModel @Inject constructor(
                             showConfirmationDialog = false,
                             confirmationDialogType = null,
                             memberToRemove = null,
-                            showImageUploadDialog = false,
                         )
                     }
                 }
@@ -103,13 +102,20 @@ class FamilyViewModel @Inject constructor(
             is FamilyUiEvent.RemoveMemberClicked -> showRemoveMemberConfirmation(event.member)
             FamilyUiEvent.DismissConfirmationDialog -> closeConfirmationDialog()
             FamilyUiEvent.ConfirmConfirmationDialog -> confirmConfirmationDialog()
-            FamilyUiEvent.AddImageClicked -> updateContent { it.copy(showImageUploadDialog = true) }
-            FamilyUiEvent.ImageUploadDismissed,
-            FamilyUiEvent.ImageUploadConfirmed -> updateContent { it.copy(showImageUploadDialog = false) }
+            is FamilyUiEvent.ImageSelected -> uploadFamilyImage(event.uri)
         }
     }
 
-    suspend fun uploadFamilyImage(uri: Uri): Result<Unit, AppError> {
+    private fun uploadFamilyImage(uri: Uri) {
+        viewModelScope.launch {
+            when (val result = performFamilyImageUpload(uri)) {
+                is Result.Success -> Unit
+                is Result.Failure -> showError(result.error.toUserMessage())
+            }
+        }
+    }
+
+    private suspend fun performFamilyImageUpload(uri: Uri): Result<Unit, AppError> {
         val familyId = (uiState.value as? FamilyUiState.Content)?.familyId
             ?: return Result.Failure(AppError.Validation("Missing family context"))
         return uploadImageUseCase.invoke(

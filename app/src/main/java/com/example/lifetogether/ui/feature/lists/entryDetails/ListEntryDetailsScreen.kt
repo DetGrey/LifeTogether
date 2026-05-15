@@ -13,12 +13,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
-import com.example.lifetogether.domain.result.AppError
-import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
-import com.example.lifetogether.ui.common.image.ImageUploadDialog
 import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.feature.lists.entryDetails.content.ListEntryDetailsContent
 import com.example.lifetogether.ui.feature.lists.entryDetails.content.NoteEntryContent
@@ -32,9 +29,7 @@ import com.example.lifetogether.ui.theme.LifeTogetherTheme
 fun ListEntryDetailsScreen(
     uiState: EntryDetailsUiState,
     entryId: String? = null,
-    familyId: String? = null,
     bitmap: Bitmap? = null,
-    onImageUpload: suspend (Uri) -> Result<Unit, AppError> = { Result.Success(Unit) },
     onUiEvent: (ListEntryDetailsUiEvent) -> Unit,
     onNavigationEvent: (ListEntryDetailsNavigationEvent) -> Unit,
 ) {
@@ -102,7 +97,6 @@ fun ListEntryDetailsScreen(
                     when (details) {
                         is EntryDetailsContent.Routine -> routineEntryForm(
                             uiState = contentState,
-                            isExistingEntry = isExistingEntry,
                             bitmap = bitmap,
                             pendingBitmap = details.form.pendingImageBitmap,
                             onLaunchImagePicker = { imagePickerLauncher.launch(it) },
@@ -141,17 +135,6 @@ fun ListEntryDetailsScreen(
         )
     }
 
-    if (content?.showImageUploadDialog == true && entryId != null && familyId != null) {
-        ImageUploadDialog(
-            onDismiss = { onUiEvent(ListEntryDetailsUiEvent.DismissImageUpload) },
-            onConfirm = { onUiEvent(ListEntryDetailsUiEvent.ConfirmImageUpload) },
-            onUpload = onImageUpload,
-            dialogTitle = "Upload entry image",
-            dialogMessage = "Select an image for this entry",
-            dismissButtonMessage = "Cancel",
-            confirmButtonMessage = "Upload image",
-        )
-    }
 }
 
 @Preview(showBackground = true)
@@ -171,7 +154,6 @@ fun ListEntryDetailsScreenPreview() {
                 isEditing = true,
                 showDiscardDialog = false,
                 isSaving = false,
-                showImageUploadDialog = false,
             ),
             entryId = null,
             onUiEvent = {},

@@ -1,7 +1,8 @@
 package com.example.lifetogether.ui.feature.family
 
 import android.graphics.Bitmap
-import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -28,13 +29,10 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.model.family.FamilyMember
 import com.example.lifetogether.domain.model.Icon as AppIcon
-import com.example.lifetogether.domain.result.AppError
-import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
-import com.example.lifetogether.ui.common.image.ImageUploadDialog
 import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.feature.profile.ProfileDetails
@@ -46,10 +44,15 @@ import com.example.lifetogether.ui.theme.LifeTogetherTokens
 fun FamilyScreen(
     uiState: FamilyUiState,
     bitmap: Bitmap?,
-    onImageUpload: suspend (Uri) -> Result<Unit, AppError>,
     onUiEvent: (FamilyUiEvent) -> Unit,
     onNavigationEvent: (FamilyNavigationEvent) -> Unit,
 ) {
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+    ) { uri ->
+        uri?.let { onUiEvent(FamilyUiEvent.ImageSelected(it)) }
+    }
+
     Scaffold(
         topBar = {
             AppTopBar(
@@ -118,7 +121,7 @@ fun FamilyScreen(
                                     modifier = Modifier.size(LifeTogetherTokens.sizing.touchTargetMinimum),
                                     contentAlignment = Alignment.Center,
                                 ) {
-                                    AddButton(onClick = { onUiEvent(FamilyUiEvent.AddImageClicked) })
+                                    AddButton(onClick = { imagePickerLauncher.launch("image/*") })
                                 }
                             }
                         }
@@ -221,17 +224,6 @@ fun FamilyScreen(
                 }
             }
 
-            if (content.showImageUploadDialog && familyId != null) {
-                ImageUploadDialog(
-                    onDismiss = { onUiEvent(FamilyUiEvent.ImageUploadDismissed) },
-                    onConfirm = { onUiEvent(FamilyUiEvent.ImageUploadConfirmed) },
-                    onUpload = onImageUpload,
-                    dialogTitle = "Upload family image",
-                    dialogMessage = "Select your new family image",
-                    dismissButtonMessage = "Cancel",
-                    confirmButtonMessage = "Upload image",
-                )
-            }
         }
     }
 }
@@ -252,7 +244,6 @@ fun FamilyScreenPreview() {
                 ),
             ),
             bitmap = null,
-            onImageUpload = { Result.Success(Unit) },
             onUiEvent = {},
             onNavigationEvent = {},
         )

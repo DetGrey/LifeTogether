@@ -50,14 +50,12 @@ class ProfileViewModel @Inject constructor(
                             is ProfileUiState.Loading -> ProfileUiState.Content(
                                 userInformation = state.user,
                                 showConfirmationDialog = false,
-                                showImageUploadDialog = false,
                                 confirmationDialogType = null,
                                 newName = "",
                             )
 
                             is ProfileUiState.Content -> it.copy(
                                 userInformation = state.user,
-                                showImageUploadDialog = false,
                             )
                         }
                     }
@@ -73,10 +71,7 @@ class ProfileViewModel @Inject constructor(
 
     fun onEvent(event: ProfileUiEvent) {
         when (event) {
-            ProfileUiEvent.AddImageClicked -> updateContent { it.copy(showImageUploadDialog = true) }
-            ProfileUiEvent.ImageUploadDismissed,
-            ProfileUiEvent.ImageUploadConfirmed -> updateContent { it.copy(showImageUploadDialog = false) }
-
+            is ProfileUiEvent.ImageSelected -> uploadProfileImage(event.uri)
             ProfileUiEvent.NameClicked -> showNameDialog()
             ProfileUiEvent.LogoutClicked -> showLogoutDialog()
             ProfileUiEvent.DismissConfirmationDialog -> closeConfirmationDialog()
@@ -87,7 +82,16 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    suspend fun uploadProfileImage(uri: Uri): Result<Unit, AppError> {
+    private fun uploadProfileImage(uri: Uri) {
+        viewModelScope.launch {
+            when (val result = performProfileImageUpload(uri)) {
+                is Result.Success -> Unit
+                is Result.Failure -> showError(result.error.toUserMessage())
+            }
+        }
+    }
+
+    private suspend fun performProfileImageUpload(uri: Uri): Result<Unit, AppError> {
         val uid = (uiState.value as? ProfileUiState.Content)?.userInformation?.uid
             ?: return Result.Failure(AppError.Validation("Missing user context"))
         return uploadImageUseCase.invoke(

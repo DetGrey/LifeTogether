@@ -48,7 +48,6 @@ fun ProfileRoute(
         uiState = uiState,
         bitmap = bitmap,
         isAdmin = isAdmin,
-        onImageUpload = viewModel::uploadProfileImage,
         onUiEvent = viewModel::onEvent,
         onNavigationEvent = { navigationEvent ->
             when (navigationEvent) {

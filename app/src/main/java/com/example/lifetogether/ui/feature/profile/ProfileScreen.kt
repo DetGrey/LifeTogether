@@ -1,7 +1,8 @@
 package com.example.lifetogether.ui.feature.profile
 
 import android.graphics.Bitmap
-import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -31,14 +32,11 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.toFullDateString
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.UserInformation
-import com.example.lifetogether.domain.result.AppError
-import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
-import com.example.lifetogether.ui.common.image.ImageUploadDialog
 import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.text.TextHeadingLarge
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
@@ -50,10 +48,15 @@ fun ProfileScreen(
     uiState: ProfileUiState,
     bitmap: Bitmap?,
     isAdmin: Boolean,
-    onImageUpload: suspend (Uri) -> Result<Unit, AppError>,
     onUiEvent: (ProfileUiEvent) -> Unit,
     onNavigationEvent: (ProfileNavigationEvent) -> Unit,
 ) {
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+    ) { uri ->
+        uri?.let { onUiEvent(ProfileUiEvent.ImageSelected(it)) }
+    }
+
     Scaffold(
         topBar = {
             AppTopBar(
@@ -132,7 +135,7 @@ fun ProfileScreen(
                                     .size(LifeTogetherTokens.spacing.xxxLarge),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                AddButton(onClick = { onUiEvent(ProfileUiEvent.AddImageClicked) })
+                                AddButton(onClick = { imagePickerLauncher.launch("image/*") })
                             }
                         }
                     }
@@ -242,18 +245,6 @@ fun ProfileScreen(
                     null -> Unit
                 }
             }
-
-            if (content.showImageUploadDialog) {
-                ImageUploadDialog(
-                    onDismiss = { onUiEvent(ProfileUiEvent.ImageUploadDismissed) },
-                    onConfirm = { onUiEvent(ProfileUiEvent.ImageUploadConfirmed) },
-                    onUpload = onImageUpload,
-                    dialogTitle = "Upload profile photo",
-                    dialogMessage = "Select your new profile photo",
-                    dismissButtonMessage = "Cancel",
-                    confirmButtonMessage = "Upload photo",
-                )
-            }
         }
     }
 }
@@ -272,7 +263,6 @@ fun ProfileScreenPreview() {
             ),
             bitmap = null,
             isAdmin = true,
-            onImageUpload = { Result.Success(Unit) },
             onUiEvent = {},
             onNavigationEvent = {},
         )

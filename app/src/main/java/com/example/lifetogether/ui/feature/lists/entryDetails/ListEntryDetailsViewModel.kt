@@ -7,7 +7,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.repository.RecipeRepository
-import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.ui.common.event.UiCommand
@@ -76,10 +75,6 @@ class ListEntryDetailsViewModel @Inject constructor(
             ListEntryDetailsUiEvent.RequestCancelEdit -> updateContent { it.copy(showDiscardDialog = true) }
             ListEntryDetailsUiEvent.ConfirmDiscard -> confirmDiscard()
             ListEntryDetailsUiEvent.DismissDiscardDialog -> updateContent { it.copy(showDiscardDialog = false) }
-            ListEntryDetailsUiEvent.RequestImageUpload -> updateContent { it.copy(showImageUploadDialog = true) }
-            ListEntryDetailsUiEvent.DismissImageUpload,
-            ListEntryDetailsUiEvent.ConfirmImageUpload -> updateContent { it.copy(showImageUploadDialog = false) }
-
             ListEntryDetailsUiEvent.SaveClicked -> saveEntry()
             is ListEntryDetailsUiEvent.Routine.ImageSelected -> onImageSelected(event.uri)
             is ListEntryDetailsUiEvent.Meal.RecipeQueryChanged -> updateMealRecipeQuery(event.value)
@@ -124,7 +119,6 @@ class ListEntryDetailsViewModel @Inject constructor(
                 isEditing = false,
                 showDiscardDialog = false,
                 isSaving = false,
-                showImageUploadDialog = false,
             )
         }
     }
@@ -165,14 +159,6 @@ class ListEntryDetailsViewModel @Inject constructor(
         }
     }
 
-    suspend fun uploadCurrentEntryImage(uri: Uri): Result<Unit, AppError> {
-        val familyIdValue = _familyId.value ?: return Result.Failure(AppError.Validation("Missing family context"))
-        val existingEntryId = entryId
-            ?: return Result.Failure(AppError.Validation("Entry must be created before uploading image"))
-
-        return entryDetailsSaver.uploadRoutineImage(uri, familyIdValue, existingEntryId, context)
-    }
-
     private fun resetLoadingState() {
         originalDetails = null
         _uiState.value = EntryDetailsUiState.Loading
@@ -205,7 +191,6 @@ class ListEntryDetailsViewModel @Inject constructor(
                     isEditing = isNewEntry,
                     showDiscardDialog = false,
                     isSaving = false,
-                    showImageUploadDialog = false,
                 )
             }
         }
@@ -223,6 +208,24 @@ class ListEntryDetailsViewModel @Inject constructor(
                 )
 
                 else -> details
+            }
+        }
+
+        val shouldUploadImmediately = entryId != null && _familyId.value != null
+        if (!shouldUploadImmediately) {
+            return
+        }
+
+        viewModelScope.launch {
+            val familyIdValue = _familyId.value
+            val existingEntryId = entryId
+            if (familyIdValue.isNullOrBlank() || existingEntryId.isBlank()) {
+                return@launch
+            }
+
+            when (val result = entryDetailsSaver.uploadRoutineImage(uri, familyIdValue, existingEntryId, context)) {
+                is Result.Success -> Unit
+                is Result.Failure -> showError(result.error.toUserMessage())
             }
         }
     }
