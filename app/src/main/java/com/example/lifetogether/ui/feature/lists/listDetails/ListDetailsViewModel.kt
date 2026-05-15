@@ -13,6 +13,7 @@ import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.domain.model.lists.WishListEntry
 import com.example.lifetogether.domain.model.session.authenticatedUserOrNull
+import com.example.lifetogether.domain.repository.RecipeRepository
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.repository.UserListRepository
 import com.example.lifetogether.domain.result.AppError
@@ -46,6 +47,7 @@ class ListDetailsViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     sessionRepository: SessionRepository,
     private val userListRepository: UserListRepository,
+    private val recipeRepository: RecipeRepository,
     private val deleteRoutineListEntriesUseCase: DeleteRoutineListEntriesUseCase,
 ) : ViewModel() {
     val listId: String = checkNotNull(savedStateHandle["listId"])
@@ -146,6 +148,7 @@ class ListDetailsViewModel @Inject constructor(
         val entry = contentState.value?.listContent?.entries?.filterIsInstance<ChecklistEntry>()
             ?.firstOrNull { it.id == entryId }
             ?: return
+        selectionState.value = ListDetailsSelectionState()
         checklistEditorState.value = ChecklistEditorState(
             editingEntryId = entry.id,
             draftName = entry.itemName,
@@ -330,13 +333,18 @@ class ListDetailsViewModel @Inject constructor(
                     flowOf(null)
                 } else {
                     observeListEntries(context.familyId, list).flatMapLatest { entries ->
-                        if (list.type == ListType.ROUTINE) {
-                    observeRoutineImageBitmaps(entries.filterIsInstance<RoutineListEntry>())
+                        when (list.type) {
+                            ListType.ROUTINE -> observeRoutineImageBitmaps(entries.filterIsInstance<RoutineListEntry>())
                                 .map { imageBitmaps ->
                                     list.toContentSnapshot(entries, imageBitmaps)
                                 }
-                        } else {
-                            flowOf(list.toContentSnapshot(entries, emptyMap()))
+
+                            ListType.MEAL_PLANNER -> observeRecipePrepTimes(context.familyId)
+                                .map { recipePrepTimes ->
+                                    list.toContentSnapshot(entries, emptyMap(), recipePrepTimes)
+                                }
+
+                            else -> flowOf(list.toContentSnapshot(entries, emptyMap()))
                         }
                     }
                 }
@@ -387,6 +395,14 @@ class ListDetailsViewModel @Inject constructor(
         }
     }
 
+    private fun observeRecipePrepTimes(familyId: String): Flow<Map<String, Int>> {
+        return recipeRepository.observeRecipes(familyId)
+            .successData()
+            .map { recipes ->
+                recipes.associate { recipe -> recipe.id to recipe.preparationTimeMin }
+            }
+    }
+
     private fun showError(message: String) {
         viewModelScope.launch {
             _uiCommands.send(
@@ -410,6 +426,7 @@ class ListDetailsViewModel @Inject constructor(
     private fun UserList.toContentSnapshot(
         entries: List<ListEntry>,
         imageBitmaps: Map<String, Bitmap>,
+        recipePrepTimes: Map<String, Int> = emptyMap(),
     ): ListDetailsContentSnapshot {
         val listContent = when (type) {
             ListType.ROUTINE -> ListDetailsListContent.Routines(
@@ -436,6 +453,7 @@ class ListDetailsViewModel @Inject constructor(
             ListType.MEAL_PLANNER -> ListDetailsListContent.MealPlans(
                 listName = itemName,
                 entries = entries.filterIsInstance<com.example.lifetogether.domain.model.lists.MealPlanEntry>(),
+                recipePrepTimes = recipePrepTimes,
             )
         }
         return ListDetailsContentSnapshot(

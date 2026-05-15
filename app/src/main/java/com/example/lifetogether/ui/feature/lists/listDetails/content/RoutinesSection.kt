@@ -82,7 +82,7 @@ fun RoutinesSection(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),
+                        horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                     ) {
                         CompletableBox(
                             isCompleted = false,
@@ -113,6 +113,7 @@ fun RoutinesSection(
                         Box(
                             modifier = Modifier
                                 .size(LifeTogetherTokens.sizing.avatarMedium)
+                                .clip(shape = MaterialTheme.shapes.medium)
                                 .background(
                                     color = MaterialTheme.colorScheme.tertiary,
                                     shape = MaterialTheme.shapes.medium,

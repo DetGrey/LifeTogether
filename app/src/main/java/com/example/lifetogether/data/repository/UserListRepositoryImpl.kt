@@ -386,8 +386,10 @@ class UserListRepositoryImpl @Inject constructor(
 
     override suspend fun deleteMealPlanEntries(itemIds: List<String>): Result<Unit, AppError> {
         val remoteDelete = userListFirestoreDataSource.deleteMealPlanEntries(itemIds)
-        if (remoteDelete is Result.Failure) return remoteDelete
-        return userListLocalDataSource.deleteMealPlanEntries(itemIds)
+        return when (remoteDelete) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> remoteDelete
+        }
     }
 
     private fun accessibleListIdsForType(

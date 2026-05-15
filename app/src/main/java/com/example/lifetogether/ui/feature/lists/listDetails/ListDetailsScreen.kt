@@ -185,15 +185,10 @@ fun ListDetailsScreen(
                             entries = listContent.entries,
                             isSelectionMode = contentState.isSelectionMode,
                             selectedIds = contentState.selectedEntryIds,
-                            onClick = { entryId ->
-                                if (contentState.isSelectionMode) {
-                                    onUiEvent(ListDetailsUiEvent.ToggleEntrySelection(entryId))
-                                } else {
-                                    onUiEvent(ListDetailsUiEvent.Checklist.EditRequested(entryId))
-                                }
-                            },
+                            onClick = { entryId -> onUiEvent(ListDetailsUiEvent.ToggleEntrySelection(entryId)) },
                             onLongClick = onEntryLongClick,
                             onComplete = onEntryToggleComplete,
+                            onEdit = { entryId -> onUiEvent(ListDetailsUiEvent.Checklist.EditRequested(entryId)) },
                         )
                         is ListDetailsListContent.Notes -> NotesSection(
                             entries = listContent.entries,
@@ -203,6 +198,7 @@ fun ListDetailsScreen(
                         )
                         is ListDetailsListContent.MealPlans -> MealPlannerListSection(
                             entries = listContent.entries,
+                            recipePrepTimes = listContent.recipePrepTimes,
                             onEntryClick = { onNavigationEvent(ListDetailsNavigationEvent.NavigateToEntryDetails(it.id)) },
                         )
                     }

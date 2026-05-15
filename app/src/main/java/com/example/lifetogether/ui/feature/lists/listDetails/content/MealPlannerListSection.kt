@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,7 +22,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import com.example.lifetogether.domain.logic.minToHourMinString
 import com.example.lifetogether.domain.model.lists.MealPlanEntry
+import com.example.lifetogether.domain.model.lists.MealType
 import com.example.lifetogether.ui.common.button.SecondaryButton
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
@@ -31,15 +35,18 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 import java.time.format.TextStyle
+import java.time.temporal.ChronoUnit
 import java.util.Locale
 
 @Composable
 fun MealPlannerListSection(
     entries: List<MealPlanEntry>,
+    recipePrepTimes: Map<String, Int>,
     onEntryClick: (MealPlanEntry) -> Unit,
 ) {
     MealPlannerWeekPager(
         entries = entries,
+        recipePrepTimes = recipePrepTimes,
         onEntryClick = onEntryClick,
     )
 }
@@ -47,6 +54,7 @@ fun MealPlannerListSection(
 @Composable
 private fun MealPlannerWeekPager(
     entries: List<MealPlanEntry>,
+    recipePrepTimes: Map<String, Int>,
     onEntryClick: (MealPlanEntry) -> Unit,
 ) {
     val parsedEntries = remember(entries) {
@@ -54,11 +62,15 @@ private fun MealPlannerWeekPager(
             parseMealDate(entry.date)?.let { it to entry }
         }
     }
-    val entryByDate = remember(parsedEntries) { parsedEntries.toMap() }
+    val entriesByDate = remember(parsedEntries) {
+        parsedEntries.groupBy({ it.first }, { it.second })
+    }
     val today = remember { LocalDate.now() }
     val currentWeekStart = remember(today) { startOfWeek(today) }
     val weekOffsets = remember(parsedEntries, currentWeekStart) {
-        parsedEntries.map { pair -> java.time.temporal.ChronoUnit.WEEKS.between(currentWeekStart, startOfWeek(pair.first)).toInt() }
+        parsedEntries.map { pair ->
+            ChronoUnit.WEEKS.between(currentWeekStart, startOfWeek(pair.first)).toInt()
+        }
     }
     val minOffset = remember(weekOffsets) { minOf(weekOffsets.minOrNull() ?: 0, -8) }
     val maxOffset = remember(weekOffsets) { maxOf(weekOffsets.maxOrNull() ?: 0, 8) }
@@ -94,9 +106,15 @@ private fun MealPlannerWeekPager(
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
-            ) { //todo can have multiple meals per day and make sure to order correctly as per when you eat which meal
+            ) {
                 items(weekDays) { day ->
-                    val dayEntry = entryByDate[day]
+                    val dayEntries = entriesByDate[day]
+                        .orEmpty()
+                        .sortedWith(
+                            compareBy<MealPlanEntry> { it.mealType.mealOrder }
+                                .thenBy { it.dateCreated }
+                                .thenBy { it.itemName.lowercase() },
+                        )
                     val label = "${day.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)} ${day.dayOfMonth}"
                     Column(
                         modifier = Modifier
@@ -106,9 +124,9 @@ private fun MealPlannerWeekPager(
                                 shape = MaterialTheme.shapes.large,
                             )
                             .padding(LifeTogetherTokens.spacing.medium),
-                        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)
+                        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                     ) {
-                        if (dayEntry == null) {
+                        if (dayEntries.isEmpty()) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -119,39 +137,14 @@ private fun MealPlannerWeekPager(
                         } else {
                             TextDefault(text = label)
 
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(MaterialTheme.shapes.large)
-                                    .background(
-                                        color = MaterialTheme.colorScheme.primaryContainer,
-                                        shape = MaterialTheme.shapes.large,
-                                    )
-                                    .clickable(
-                                        onClick = { onEntryClick(dayEntry) },
-                                    )
-                                    .padding(LifeTogetherTokens.spacing.medium),
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                             ) {
-                                Column(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
-                                ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                    ) {
-                                        TextHeadingMedium(
-                                            text = dayEntry.itemName,
-                                            maxLines = 1,
-                                        )
-                                        TextLabel(
-                                            text = dayEntry.mealType.displayName,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        )
-                                    }
-                                    TextDefault(
-                                        text = "TODO prep time",
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                dayEntries.forEach { dayEntry ->
+                                    MealPlanCard(
+                                        entry = dayEntry,
+                                        prepTimeMin = dayEntry.recipeId?.let { recipePrepTimes[it] },
+                                        onClick = { onEntryClick(dayEntry) },
                                     )
                                 }
                             }
@@ -178,3 +171,49 @@ private fun startOfWeek(date: LocalDate): LocalDate {
     }
     return d
 }
+
+@Composable
+private fun MealPlanCard(
+    entry: MealPlanEntry,
+    prepTimeMin: Int?,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.large)
+            .background(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = MaterialTheme.shapes.large,
+            )
+            .clickable(onClick = onClick)
+            .padding(LifeTogetherTokens.spacing.medium),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            TextLabel(
+                text = entry.mealType.displayName,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.align(Alignment.End),
+            )
+            TextHeadingMedium(text = entry.itemName)
+            if (prepTimeMin != null && prepTimeMin > 0) {
+                Spacer(Modifier.height(LifeTogetherTokens.spacing.small))
+                TextDefault(
+                    text = "Prep time: ${minToHourMinString(prepTimeMin)}",
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
+        }
+    }
+}
+
+private val MealType.mealOrder: Int
+    get() = when (this) {
+        MealType.BREAKFAST -> 0
+        MealType.LUNCH -> 1
+        MealType.DINNER -> 2
+        MealType.SNACK -> 3
+        MealType.OTHER -> 4
+    }

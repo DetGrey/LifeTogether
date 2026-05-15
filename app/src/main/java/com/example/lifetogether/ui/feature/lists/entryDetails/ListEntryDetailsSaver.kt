@@ -51,6 +51,10 @@ class ListEntryDetailsSaver @Inject constructor(
         )
     }
 
+    suspend fun deleteMealPlanEntry(entryId: String): Result<Unit, AppError> {
+        return userListRepository.deleteMealPlanEntries(listOf(entryId))
+    }
+
     private suspend fun saveRoutine(
         details: EntryDetailsContent.Routine,
         entryId: String?,

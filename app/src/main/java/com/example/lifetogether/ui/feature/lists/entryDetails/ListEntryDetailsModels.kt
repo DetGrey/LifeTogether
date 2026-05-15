@@ -19,6 +19,7 @@ sealed interface EntryDetailsUiState {
         val mealRecipeSearchState: MealRecipeSearchState = MealRecipeSearchState(),
         val isEditing: Boolean = false,
         val showDiscardDialog: Boolean = false,
+        val showDeleteDialog: Boolean = false,
         val isSaving: Boolean = false,
     ) : EntryDetailsUiState
 }
@@ -179,6 +180,9 @@ sealed interface ListEntryDetailsUiEvent {
     data object RequestCancelEdit : ListEntryDetailsUiEvent
     data object ConfirmDiscard : ListEntryDetailsUiEvent
     data object DismissDiscardDialog : ListEntryDetailsUiEvent
+    data object RequestDeleteEntry : ListEntryDetailsUiEvent
+    data object ConfirmDeleteEntry : ListEntryDetailsUiEvent
+    data object DismissDeleteDialog : ListEntryDetailsUiEvent
     data class NameChanged(val value: String) : ListEntryDetailsUiEvent
     data object SaveClicked : ListEntryDetailsUiEvent
 

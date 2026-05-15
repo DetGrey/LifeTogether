@@ -46,6 +46,7 @@ class ListEntryDetailsViewModel @Inject constructor(
     private var observedRecipesFamilyId: String? = null
     private var allRecipeSearchItems: List<RecipeSearchItem> = emptyList()
     private var originalDetails: EntryDetailsContent? = null
+    private var isDeletingMealPlanEntry = false
 
     private val _uiState = MutableStateFlow<EntryDetailsUiState>(EntryDetailsUiState.Loading)
     val uiState = _uiState.asStateFlow()
@@ -59,6 +60,9 @@ class ListEntryDetailsViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             contentLoader.observe(listId, entryId).collect { snapshot ->
+                if (isDeletingMealPlanEntry) {
+                    return@collect
+                }
                 _familyId.value = snapshot.familyId
                 when (val state = snapshot.state) {
                     ListEntryDetailsLoadState.Loading -> resetLoadingState()
@@ -75,6 +79,9 @@ class ListEntryDetailsViewModel @Inject constructor(
             ListEntryDetailsUiEvent.RequestCancelEdit -> updateContent { it.copy(showDiscardDialog = true) }
             ListEntryDetailsUiEvent.ConfirmDiscard -> confirmDiscard()
             ListEntryDetailsUiEvent.DismissDiscardDialog -> updateContent { it.copy(showDiscardDialog = false) }
+            ListEntryDetailsUiEvent.RequestDeleteEntry -> updateContent { it.copy(showDeleteDialog = true) }
+            ListEntryDetailsUiEvent.ConfirmDeleteEntry -> deleteMealPlanEntry()
+            ListEntryDetailsUiEvent.DismissDeleteDialog -> updateContent { it.copy(showDeleteDialog = false) }
             ListEntryDetailsUiEvent.SaveClicked -> saveEntry()
             is ListEntryDetailsUiEvent.Routine.ImageSelected -> onImageSelected(event.uri)
             is ListEntryDetailsUiEvent.Meal.RecipeQueryChanged -> updateMealRecipeQuery(event.value)
@@ -118,6 +125,7 @@ class ListEntryDetailsViewModel @Inject constructor(
                 mealRecipeSearchState = restoredSearchState,
                 isEditing = false,
                 showDiscardDialog = false,
+                showDeleteDialog = false,
                 isSaving = false,
             )
         }
@@ -185,11 +193,15 @@ class ListEntryDetailsViewModel @Inject constructor(
                 is EntryDetailsUiState.Loading -> EntryDetailsUiState.Content(
                     details = details,
                     mealRecipeSearchState = when (details) {
-                        is EntryDetailsContent.Meal -> buildMealRecipeSearchState(details, null)
+                        is EntryDetailsContent.Meal -> {
+                            observeRecipes()
+                            buildMealRecipeSearchState(details, null)
+                        }
                         else -> MealRecipeSearchState()
                     },
                     isEditing = isNewEntry,
                     showDiscardDialog = false,
+                    showDeleteDialog = false,
                     isSaving = false,
                 )
             }
@@ -270,6 +282,31 @@ class ListEntryDetailsViewModel @Inject constructor(
                         updateMealSearchStateFromCurrentContent()
                         showError(result.error.toUserMessage())
                     }
+                }
+            }
+        }
+    }
+
+    private fun deleteMealPlanEntry() {
+        val currentState = currentContentState() ?: return
+        val entryIdValue = entryId ?: return
+        if (currentState.details !is EntryDetailsContent.Meal) {
+            return
+        }
+
+        isDeletingMealPlanEntry = true
+        updateContent { it.copy(isSaving = true, showDeleteDialog = false) }
+
+        viewModelScope.launch {
+            when (val result = entryDetailsSaver.deleteMealPlanEntry(entryIdValue)) {
+                is Result.Success -> {
+                    _navigationEvents.send(ListEntryDetailsNavigationEvent.NavigateBack)
+                }
+
+                is Result.Failure -> {
+                    isDeletingMealPlanEntry = false
+                    updateContent { it.copy(isSaving = false) }
+                    showError(result.error.toUserMessage())
                 }
             }
         }

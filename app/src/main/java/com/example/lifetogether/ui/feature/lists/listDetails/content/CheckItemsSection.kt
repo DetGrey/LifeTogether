@@ -6,14 +6,17 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.HorizontalDivider
@@ -48,6 +51,7 @@ fun CheckItemsSection(
     onClick: (String) -> Unit,
     onLongClick: (String) -> Unit,
     onComplete: (String) -> Unit,
+    onEdit: (String) -> Unit,
 ) {
     var completedExpanded by rememberSaveable { mutableStateOf(false) }
     val activeEntries = entries.filterNot { it.isChecked }
@@ -57,7 +61,7 @@ fun CheckItemsSection(
         modifier = Modifier
             .fillMaxSize()
             .padding(bottom = LifeTogetherTokens.spacing.small),
-        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
     ) {
         items(activeEntries) { entry ->
             ChecklistCard(
@@ -68,6 +72,7 @@ fun CheckItemsSection(
                 onClick = { onClick(entry.id) },
                 onLongClick = { onLongClick(entry.id) },
                 onComplete = { onComplete(entry.id) },
+                onEdit = { onEdit(entry.id) },
             )
         }
 
@@ -97,6 +102,7 @@ fun CheckItemsSection(
                                 onClick = { onClick(entry.id) },
                                 onLongClick = { onLongClick(entry.id) },
                                 onComplete = { onComplete(entry.id) },
+                                onEdit = { onEdit(entry.id) },
                             )
                         }
                     }
@@ -147,6 +153,7 @@ private fun ChecklistCard(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onComplete: () -> Unit,
+    onEdit: () -> Unit,
 ) {
     ListItem(
         modifier = Modifier
@@ -158,7 +165,7 @@ private fun ChecklistCard(
                 shape = MaterialTheme.shapes.large,
             )
             .combinedClickable(
-                onClick = onClick,
+                onClick = { if (isSelectionMode) onClick() },
                 onLongClick = onLongClick,
             ),
         leadingContent = {
@@ -178,11 +185,17 @@ private fun ChecklistCard(
             )
         },
         trailingContent = {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_edit),
-                contentDescription = "edit checklist item",
-                tint = MaterialTheme.colorScheme.onBackground,
-            )
+            Box(
+                modifier = Modifier
+                    .size(LifeTogetherTokens.sizing.iconLarge)
+                    .clickable { onEdit() },
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_edit),
+                    contentDescription = "edit checklist item",
+                    tint = MaterialTheme.colorScheme.onBackground,
+                )
+            }
         },
     )
 }

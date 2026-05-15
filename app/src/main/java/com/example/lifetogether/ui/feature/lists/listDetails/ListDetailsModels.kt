@@ -55,6 +55,7 @@ sealed interface ListDetailsListContent {
     data class MealPlans(
         override val listName: String,
         override val entries: List<MealPlanEntry>,
+        val recipePrepTimes: Map<String, Int> = emptyMap(),
     ) : ListDetailsListContent {
         override val listType: ListType = ListType.MEAL_PLANNER
     }
