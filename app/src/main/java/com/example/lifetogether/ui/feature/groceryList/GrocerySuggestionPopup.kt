@@ -1,28 +1,32 @@
 package com.example.lifetogether.ui.feature.groceryList
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.util.priceToString
-import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun GrocerySuggestionPopup(
@@ -32,52 +36,64 @@ fun GrocerySuggestionPopup(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height((75 + 30 * (suggestions.size - 1)).dp),
+            .heightIn(max = 130.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f)),
         shape = MaterialTheme.shapes.large.copy(
             bottomStart = CornerSize(0.dp),
             bottomEnd = CornerSize(0.dp),
         ),
     ) {
-        Column(
+        LazyColumn(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = LifeTogetherTokens.spacing.medium)
-                .padding(top = LifeTogetherTokens.spacing.medium),
+                .fillMaxWidth()
+                .padding(horizontal = LifeTogetherTokens.spacing.medium),
+            contentPadding = PaddingValues(
+                top = LifeTogetherTokens.spacing.medium,
+                bottom = LifeTogetherTokens.spacing.medium,
+            ),
             verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
         ) {
-            for (suggestion in suggestions) {
+            items(
+                items = suggestions,
+                key = { it.id },
+            ) { suggestion ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .heightIn(min = 24.dp)
                         .clickable { onClick(suggestion) },
-                    horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                 ) {
                     Text(
-                        modifier = Modifier.fillMaxWidth(0.45f),
+                        modifier = Modifier.weight(2f),
                         text = "${suggestion.category.emoji} ${suggestion.category.name}",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(3f),
                         text = suggestion.suggestionName,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                     )
-                    suggestion.approxPrice?.let {
-                        Text(
-                            modifier = Modifier
-                                .fillMaxWidth(0.3f),
-                            text = it.priceToString(),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodySmall,
-                            maxLines = 1,
-                        )
+                    Box(
+                        modifier = Modifier.width(50.dp),
+                        contentAlignment = Alignment.CenterEnd,
+                    ) {
+                        suggestion.approxPrice?.let {
+                            Text(
+                                text = it.priceToString(),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
                     }
                 }
             }
@@ -102,20 +118,20 @@ private fun GrocerySuggestionPopupPreview() {
                 ),
                 GrocerySuggestion(
                     id = "suggestion-2",
+                    suggestionName = "Whole grain bread with chocolate",
+                    category = Category(
+                        emoji = "🍞",
+                        name = "Bakery and very long name",
+                    ),
+                    approxPrice = 24.0f,
+                ),
+                GrocerySuggestion(
+                    id = "suggestion-3",
                     suggestionName = "Bananas",
                     category = Category(
                         emoji = "🍌",
                         name = "Fruit",
                     ),
-                ),
-                GrocerySuggestion(
-                    id = "suggestion-3",
-                    suggestionName = "Whole grain bread",
-                    category = Category(
-                        emoji = "🍞",
-                        name = "Bakery",
-                    ),
-                    approxPrice = 24.0f,
                 ),
             ),
             onClick = {},

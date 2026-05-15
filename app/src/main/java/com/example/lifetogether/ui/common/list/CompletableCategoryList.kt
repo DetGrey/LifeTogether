@@ -25,9 +25,11 @@ import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Completable
-import com.example.lifetogether.ui.common.GroceryListItem
+import com.example.lifetogether.domain.model.recipe.Ingredient
+import com.example.lifetogether.ui.common.CompletableListItem
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.ui.theme.bodyFontFamily
+import java.text.DecimalFormat
 
 @Composable
 fun CompletableCategoryList(
@@ -89,10 +91,19 @@ fun CompletableCategoryList(
             Column {
                 Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
                 itemList.forEach { item ->
-                    GroceryListItem(
-                        item = item,
+                    var text = item.itemName
+                    if (item is Ingredient && item.amount > 0) {
+                        val formattedAmount = if (item.amount % 1.0 == 0.0) {
+                            item.amount.toInt()
+                        } else {
+                            DecimalFormat("#.##").format(item.amount)
+                        }
+                        text = "$formattedAmount ${item.measureType.unit} ${item.itemName}"
+                    }
+                    CompletableListItem(
+                        text = text,
+                        isCompleted = item.completed,
                         onCompleteToggle = { onCompleteToggle(item) },
-                        onBellClick = {},
                     )
                 }
             }

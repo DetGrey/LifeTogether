@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.IconButton
@@ -22,11 +23,9 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Completable
 import com.example.lifetogether.domain.model.grocery.GroceryItem
-import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.ui.common.list.CompletableBox
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
-import java.text.DecimalFormat
 import java.util.Date
 
 @Composable
@@ -36,17 +35,6 @@ fun GroceryListItem(
     trailingText: String? = null,
     onBellClick: (() -> Unit)? = null,
 ) {
-    var text = item.itemName
-
-    if (item is Ingredient && item.amount > 0) {
-        val formattedAmount = if (item.amount % 1.0 == 0.0) {
-            item.amount.toInt()
-        } else {
-            DecimalFormat("#.##").format(item.amount)
-        }
-        text = "$formattedAmount ${item.measureType.unit} ${item.itemName}"
-    }
-
     ListItem(
         modifier = Modifier.fillMaxWidth(),
         leadingContent = {
@@ -57,7 +45,7 @@ fun GroceryListItem(
         },
         headlineContent = {
             Text(
-                text = text,
+                text = item.itemName,
                 style = MaterialTheme.typography.bodyLarge,
                 textDecoration = if (item.completed) TextDecoration.LineThrough else TextDecoration.None,
                 overflow = TextOverflow.Ellipsis,
@@ -79,7 +67,9 @@ fun GroceryListItem(
                 if (item is GroceryItem && onBellClick != null) {
                     IconButton(
                         onClick = onBellClick,
-                        modifier = Modifier.padding(start = LifeTogetherTokens.spacing.xSmall),
+                        modifier = Modifier
+                            .padding(start = LifeTogetherTokens.spacing.xSmall)
+                            .size(LifeTogetherTokens.sizing.iconLarge),
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_bell),
@@ -115,7 +105,7 @@ fun GroceryListItemPreview() {
                 ),
                 trailingText = "9 kr.",
                 onCompleteToggle = {},
-                onBellClick = {}
+                onBellClick = null
             )
             GroceryListItem(
                 GroceryItem(

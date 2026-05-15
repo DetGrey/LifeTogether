@@ -146,7 +146,7 @@ private fun ListItemInputBar(
 
             CustomTextField(
                 modifier = Modifier
-                    .weight(1f),
+                    .weight(2f),
                 value = textValue,
                 onValueChange = onTextChange,
                 label = textFieldLabel,
@@ -156,7 +156,7 @@ private fun ListItemInputBar(
             )
 
             CustomTextField(
-                modifier = Modifier.weight(0.65f),
+                modifier = Modifier.weight(1f),
                 value = priceValue,
                 onValueChange = onPriceChange,
                 label = "Price",
@@ -167,6 +167,7 @@ private fun ListItemInputBar(
 
             Row(
                 modifier = Modifier
+                    .padding(end = LifeTogetherTokens.spacing.small)
                     .clickable { onActionClick() },
                 verticalAlignment = Alignment.CenterVertically,
             ) {

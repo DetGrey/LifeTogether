@@ -366,15 +366,12 @@ class GroceryListViewModel @Inject constructor(
     private fun enrichDerivedState(state: GroceryListUiState.Content): GroceryListUiState.Content {
         val completedItems = state.groceryList.filter { item ->
             item.completed
-        }
+        }.sortedByDescending { it.lastUpdated }
         val categorizedItems = updateCategorizedItems(state.groceryList)
-        val currentSuggestions = if (state.newItemText.isNotEmpty()) {
-            state.allGrocerySuggestions.filter { suggestion ->
-                suggestion.suggestionName.startsWith(state.newItemText, ignoreCase = true)
-            }.take(5)
-        } else {
-            emptyList()
-        }
+        val currentSuggestions = searchGrocerySuggestions(
+            query = state.newItemText,
+            suggestions = state.allGrocerySuggestions,
+        )
         val expectedTotalPrice = state.groceryList
             .filter { !it.completed }
             .mapNotNull { it.approxPrice }
