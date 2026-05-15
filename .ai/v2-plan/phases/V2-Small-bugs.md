@@ -11,8 +11,8 @@ Here are some bugs that need to be fixed:
 - [x] In ConfirmationDialogWithTextField make the textfield in auto focus so it opens keyboard
 - [x] Remove all default values from Content UiStates unless absolutely necessary
 - [x] Wishlist entries is missing name (only name and priority are required by default).
-- [ ] A note entry should also be able to add a title (but called itemName)
-- [ ] Weird spacing between the featurecards on homescreen
+- [x] A note entry should also be able to add a title (but called itemName)
+- [x] Weird spacing between the featurecards on homescreen
 - [x] Some recipes do not show anymore. Make a log for all items that are now filtered away from firestore to see if any had bad format
 
 Here are some questions:

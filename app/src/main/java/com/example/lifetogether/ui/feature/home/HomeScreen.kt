@@ -178,28 +178,27 @@ fun HomeScreen(
                                 TextDisplayLarge(section.title)
                             }
 
-                            FlowRow(
-                                maxItemsInEachRow = section.maxItemsInEachRow,
+                            Column(
                                 verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
-                                horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                             ) {
-                                section.items.forEach { item ->
-                                    when (item) {
-                                        is HomeSectionItem.Tile -> FeatureCard(
-                                            title = item.tile.title,
-                                            onClick = {
-                                                onNavigationEvent(HomeNavigationEvent.TileClicked(item.tile))
-                                            },
-                                            icon = item.tile.icon,
-                                        )
-
-                                        HomeSectionItem.Break -> Spacer(
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .height(0.dp),
-                                        )
+                                section.items
+                                    .toTileRows(section.maxItemsInEachRow)
+                                    .forEach { row ->
+                                        FlowRow(
+                                            maxItemsInEachRow = section.maxItemsInEachRow,
+                                            horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                                        ) {
+                                            row.forEach { item ->
+                                                FeatureCard(
+                                                    title = item.tile.title,
+                                                    onClick = {
+                                                        onNavigationEvent(HomeNavigationEvent.TileClicked(item.tile))
+                                                    },
+                                                    icon = item.tile.icon,
+                                                )
+                                            }
+                                        }
                                     }
-                                }
                             }
                         }
                     }
@@ -207,6 +206,36 @@ fun HomeScreen(
             }
         }
     }
+}
+
+private fun List<HomeSectionItem>.toTileRows(maxItemsInEachRow: Int): List<List<HomeSectionItem.Tile>> {
+    val rows = mutableListOf<MutableList<HomeSectionItem.Tile>>()
+    var currentRow = mutableListOf<HomeSectionItem.Tile>()
+
+    for (item in this) {
+        when (item) {
+            is HomeSectionItem.Tile -> {
+                if (currentRow.size == maxItemsInEachRow) {
+                    rows.add(currentRow)
+                    currentRow = mutableListOf()
+                }
+                currentRow.add(item)
+            }
+
+            HomeSectionItem.Break -> {
+                if (currentRow.isNotEmpty()) {
+                    rows.add(currentRow)
+                    currentRow = mutableListOf()
+                }
+            }
+        }
+    }
+
+    if (currentRow.isNotEmpty()) {
+        rows.add(currentRow)
+    }
+
+    return rows
 }
 
 @Preview(showBackground = true)
