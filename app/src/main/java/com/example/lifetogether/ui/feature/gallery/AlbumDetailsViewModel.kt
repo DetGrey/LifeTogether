@@ -102,7 +102,10 @@ class AlbumDetailsViewModel @Inject constructor(
         }
     }
 
-    suspend fun uploadGalleryMediaItems(uris: List<Uri>): Result<Unit, AppError> {
+    suspend fun uploadGalleryMediaItems(
+        uris: List<Uri>,
+        onProgress: (current: Int, total: Int) -> Unit,
+    ): Result<Unit, AppError> {
         val familyIdValue = familyId ?: return Result.Failure(AppError.Validation("Missing family context"))
         val albumIdValue = albumId ?: return Result.Failure(AppError.Validation("Missing album context"))
 
@@ -141,7 +144,11 @@ class AlbumDetailsViewModel @Inject constructor(
             return Result.Failure(AppError.Validation("No supported files found to upload."))
         }
 
-        return uploadGalleryMediaItemsUseCase.invoke(mediaUploadDataList, context)
+        return uploadGalleryMediaItemsUseCase.invoke(
+            mediaUploadList = mediaUploadDataList,
+            context = context,
+            onProgress = onProgress,
+        )
     }
 
     fun onUiEvent(event: AlbumDetailsUiEvent) {

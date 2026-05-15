@@ -20,8 +20,8 @@ interface UserInformationDao {
     @Query("SELECT image_data FROM $USER_TABLE WHERE uid = :uid LIMIT 1")
     fun observeImageByteArray(uid: String): Flow<ByteArray?>
 
-    @Query("SELECT CASE WHEN image_data IS NOT NULL THEN 1 ELSE 0 END FROM $USER_TABLE WHERE uid = :uid LIMIT 1")
-    suspend fun hasImageData(uid: String): Int?
+    @Query("SELECT image_data FROM $USER_TABLE WHERE uid = :uid LIMIT 1")
+    suspend fun getImageByteArray(uid: String): ByteArray?
 
     @Query("DELETE FROM $USER_TABLE")
     fun deleteTable()

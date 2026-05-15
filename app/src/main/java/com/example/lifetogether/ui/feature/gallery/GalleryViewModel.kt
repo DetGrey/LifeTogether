@@ -36,6 +36,9 @@ class GalleryViewModel @Inject constructor(
     private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
     val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
 
+    private val _commands = Channel<GalleryCommand>(Channel.BUFFERED)
+    val commands: Flow<GalleryCommand> = _commands.receiveAsFlow()
+
     private val requestedThumbnails = mutableSetOf<String>()
     private var observeAlbumsJob: Job? = null
     private var familyId: String? = null
@@ -103,7 +106,10 @@ class GalleryViewModel @Inject constructor(
 
         viewModelScope.launch {
             when (val result = galleryRepository.saveAlbum(album)) {
-                is Result.Success -> closeNewAlbumDialog()
+                is Result.Success -> {
+                    closeNewAlbumDialog()
+                    _commands.send(GalleryCommand.NavigateToAlbumMedia(result.data))
+                }
                 is Result.Failure -> showError(result.error.toUserMessage())
             }
         }

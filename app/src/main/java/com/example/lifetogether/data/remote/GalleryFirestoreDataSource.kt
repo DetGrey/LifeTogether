@@ -175,6 +175,7 @@ private data class GalleryMediaDto(
     val dateCreated: Date? = null,
     val mediaType: String? = null,
     val mediaUri: String? = null,
+    val mediaUrl: String? = null,
     val thumbnail: ByteArray? = null,
     val videoDuration: Long? = null,
 ) {
@@ -185,7 +186,7 @@ private data class GalleryMediaDto(
         val lastUpdatedValue = lastUpdated ?: return null
         val albumIdValue = albumId?.takeIf { it.isNotBlank() } ?: return null
         val dateCreatedValue = dateCreated ?: return null
-        val mediaUriValue = mediaUri?.takeIf { it.isNotBlank() } ?: return null
+        val mediaUrlValue =  mediaUrl?.takeIf { it.isNotBlank() } ?: return null
         return when (mediaTypeValue) {
             MediaType.IMAGE -> GalleryImage(
                 id = documentId,
@@ -195,7 +196,7 @@ private data class GalleryMediaDto(
                 albumId = albumIdValue,
                 dateCreated = dateCreatedValue,
                 mediaType = mediaTypeValue,
-                mediaUrl = mediaUriValue,
+                mediaUrl = mediaUrlValue,
             )
 
             MediaType.VIDEO -> GalleryVideo(
@@ -206,7 +207,7 @@ private data class GalleryMediaDto(
                 albumId = albumIdValue,
                 dateCreated = dateCreatedValue,
                 mediaType = mediaTypeValue,
-                mediaUrl = mediaUriValue,
+                mediaUrl = mediaUrlValue,
                 duration = videoDuration,
             )
         }
@@ -220,6 +221,7 @@ private data class GalleryMediaDto(
         "dateCreated" to dateCreated,
         "mediaType" to mediaType,
         "mediaUri" to mediaUri,
+        "mediaUrl" to mediaUrl,
         "thumbnail" to thumbnail,
         "videoDuration" to videoDuration,
     )
@@ -239,6 +241,7 @@ private data class GalleryMediaDto(
         if (dateCreated != other.dateCreated) return false
         if (mediaType != other.mediaType) return false
         if (mediaUri != other.mediaUri) return false
+        if (mediaUrl != other.mediaUrl) return false
         if (!thumbnail.contentEquals(other.thumbnail)) return false
 
         return true
@@ -254,6 +257,7 @@ private data class GalleryMediaDto(
         result = 31 * result + (dateCreated?.hashCode() ?: 0)
         result = 31 * result + (mediaType?.hashCode() ?: 0)
         result = 31 * result + (mediaUri?.hashCode() ?: 0)
+        result = 31 * result + (mediaUrl?.hashCode() ?: 0)
         result = 31 * result + (thumbnail?.contentHashCode() ?: 0)
         return result
     }
@@ -274,7 +278,8 @@ private fun GalleryMedia.toDto(): GalleryMediaDto = GalleryMediaDto(
     albumId = albumId,
     dateCreated = dateCreated,
     mediaType = mediaType.value,
-    mediaUri = mediaUrl,
+    mediaUri = null,
+    mediaUrl = mediaUrl,
     thumbnail = null,
     videoDuration = (this as? GalleryVideo)?.duration,
 )

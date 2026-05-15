@@ -21,6 +21,7 @@ import com.example.lifetogether.domain.repository.UserRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
 class UserRepositoryImpl @Inject constructor(
@@ -34,6 +35,9 @@ class UserRepositoryImpl @Inject constructor(
     private companion object {
         const val TAG = "UserRepositoryImpl"
     }
+
+    private val familyImageUrlCache = ConcurrentHashMap<String, String>()
+    private val profileImageUrlCache = ConcurrentHashMap<String, String>()
 
     fun observeFamilyInformation(familyId: String): Flow<Result<FamilyInformation, AppError>> {
         // Get family information (without members)
@@ -140,18 +144,36 @@ class UserRepositoryImpl @Inject constructor(
         return userFirestoreDataSource.userInformationSnapshotListener(uid).map { result ->
             when (result) {
                 is Result.Success -> appResultOfSuspend {
-                    val hasExistingImage = userLocalDataSource.userHasProfileImage(result.data.uid)
+                    val currentImageUrl = result.data.imageUrl
+                    val cachedImageUrl = profileImageUrlCache[result.data.uid]
+                    val imageChanged = cachedImageUrl != currentImageUrl
+                    val existingImageBytes = userLocalDataSource.getProfileImageByteArray(result.data.uid)
 
-                    if (!hasExistingImage) {
-                        val byteArrayResult = result.data.imageUrl?.let { url ->
-                            storageDataSource.fetchImageByteArray(url)
+                    when {
+                        currentImageUrl == null -> {
+                            userLocalDataSource.updateUserInformation(result.data)
                         }
-                        when (byteArrayResult) {
-                            is Result.Success -> userLocalDataSource.updateUserInformation(result.data, byteArrayResult.data)
-                            is Result.Failure -> userLocalDataSource.updateUserInformation(result.data)
-                            null -> userLocalDataSource.updateUserInformation(result.data)
+
+                        imageChanged || existingImageBytes == null -> {
+                            val byteArrayResult = storageDataSource.fetchImageByteArray(currentImageUrl)
+                            when (byteArrayResult) {
+                                is Result.Success -> userLocalDataSource.updateUserInformation(result.data, byteArrayResult.data)
+                                is Result.Failure -> userLocalDataSource.updateUserInformation(result.data, existingImageBytes)
+                            }
+                        }
+
+                        else -> {
+                            userLocalDataSource.updateUserInformation(result.data, existingImageBytes)
                         }
                     }
+
+                    if (currentImageUrl != null) {
+                        profileImageUrlCache[result.data.uid] = currentImageUrl
+                    } else {
+                        profileImageUrlCache.remove(result.data.uid)
+                    }
+
+                    Unit
                 }
 
                 is Result.Failure -> Result.Failure(result.error)
@@ -163,18 +185,43 @@ class UserRepositoryImpl @Inject constructor(
         return familyFirestoreDataSource.familyInformationSnapshotListener(familyId).map { result ->
             when (result) {
                 is Result.Success -> appResultOfSuspend {
-                    val hasExistingImage = userLocalDataSource.familyHasImage(result.data.familyId)
+                    val cachedImageUrl = familyImageUrlCache[result.data.familyId]
+                    val currentImageUrl = result.data.imageUrl
+                    val imageChanged = cachedImageUrl != currentImageUrl
 
-                    if (!hasExistingImage) {
-                        val byteArrayResult = result.data.imageUrl?.let { url ->
-                            storageDataSource.fetchImageByteArray(url)
-                        }
+                    if (currentImageUrl != null && imageChanged) {
+                        val byteArrayResult = storageDataSource.fetchImageByteArray(currentImageUrl)
                         when (byteArrayResult) {
                             is Result.Success -> userLocalDataSource.updateFamilyInformation(result.data, byteArrayResult.data)
                             is Result.Failure -> userLocalDataSource.updateFamilyInformation(result.data)
-                            null -> userLocalDataSource.updateFamilyInformation(result.data)
+                        }
+                    } else if (currentImageUrl == null) {
+                        userLocalDataSource.updateFamilyInformation(result.data)
+                    } else if (!userLocalDataSource.familyHasImage(result.data.familyId)) {
+                        val byteArrayResult = storageDataSource.fetchImageByteArray(currentImageUrl)
+                        when (byteArrayResult) {
+                            is Result.Success -> userLocalDataSource.updateFamilyInformation(result.data, byteArrayResult.data)
+                            is Result.Failure -> userLocalDataSource.updateFamilyInformation(result.data)
+                        }
+                    } else {
+                        val existingImageBytes = userLocalDataSource.getFamilyImageByteArray(result.data.familyId)
+                        if (existingImageBytes != null) {
+                            userLocalDataSource.updateFamilyInformation(result.data, existingImageBytes)
+                        } else {
+                            val byteArrayResult = storageDataSource.fetchImageByteArray(currentImageUrl)
+                            when (byteArrayResult) {
+                                is Result.Success -> userLocalDataSource.updateFamilyInformation(result.data, byteArrayResult.data)
+                                is Result.Failure -> userLocalDataSource.updateFamilyInformation(result.data)
+                            }
                         }
                     }
+                    if (currentImageUrl != null) {
+                        familyImageUrlCache[result.data.familyId] = currentImageUrl
+                    } else {
+                        familyImageUrlCache.remove(result.data.familyId)
+                    }
+
+                    Unit
                 }
 
                 is Result.Failure -> Result.Failure(result.error)

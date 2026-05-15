@@ -2,20 +2,23 @@ package com.example.lifetogether.ui.feature.gallery
 
 import android.net.Uri
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -50,11 +53,11 @@ import com.example.lifetogether.ui.model.MenuAction
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AlbumDetailsScreen(
     uiState: AlbumDetailsUiState,
-    onImageUpload: suspend (List<Uri>) -> Result<Unit, AppError>,
+    onImageUpload: suspend (List<Uri>, (current: Int, total: Int) -> Unit) -> Result<Unit, AppError>,
     onUiEvent: (AlbumDetailsUiEvent) -> Unit,
     onNavigationEvent: (AlbumDetailsNavigationEvent) -> Unit,
 ) {
@@ -88,11 +91,11 @@ fun AlbumDetailsScreen(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AlbumDetailsContent(
     uiState: AlbumDetailsUiState.Content,
-    onImageUpload: suspend (List<Uri>) -> Result<Unit, AppError>,
+    onImageUpload: suspend (List<Uri>, (current: Int, total: Int) -> Unit) -> Result<Unit, AppError>,
     onUiEvent: (AlbumDetailsUiEvent) -> Unit,
     onNavigationEvent: (AlbumDetailsNavigationEvent) -> Unit,
 ) {
@@ -334,20 +337,26 @@ private fun AlbumDetailsContent(
                             dismissButtonMessage = "Cancel",
                             confirmButtonMessage = "Move",
                             content = {
-                                FlowRow(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    maxItemsInEachRow = 2,
-                                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(max = 320.dp)
+                                        .verticalScroll(rememberScrollState()),
                                 ) {
-                                    for (album in uiState.albums) {
-                                        AlbumCard(
-                                            album.name,
-                                            album.mediaCount,
-                                            album.thumbnail?.toBitmap(),
-                                            onClick = {
-                                                onUiEvent(AlbumDetailsUiEvent.MoveSelectedMediaToAlbum(album.id))
-                                            },
-                                        )
+                                    FlowRow(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        maxItemsInEachRow = 2,
+                                    ) {
+                                        uiState.albums.forEach { album ->
+                                            AlbumCard(
+                                                album.name,
+                                                album.mediaCount,
+                                                album.thumbnail?.toBitmap(),
+                                                onClick = {
+                                                    onUiEvent(AlbumDetailsUiEvent.MoveSelectedMediaToAlbum(album.id))
+                                                },
+                                            )
+                                        }
                                     }
                                 }
                             },
@@ -367,7 +376,7 @@ private fun AlbumDetailsScreenLoadingPreview() {
     LifeTogetherTheme {
         AlbumDetailsScreen(
             uiState = AlbumDetailsUiState.Loading,
-            onImageUpload = { Result.Success(Unit) },
+            onImageUpload = { _, _ -> Result.Success(Unit) },
             onUiEvent = {},
             onNavigationEvent = {},
         )
@@ -405,7 +414,7 @@ private fun AlbumDetailsScreenPreview() {
                 albums = emptyList(),
                 familyId = "family-1",
             ),
-            onImageUpload = { Result.Success(Unit) },
+            onImageUpload = { _, _ -> Result.Success(Unit) },
             onUiEvent = {},
             onNavigationEvent = {},
         )

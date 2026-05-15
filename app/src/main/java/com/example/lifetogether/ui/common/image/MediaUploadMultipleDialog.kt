@@ -67,7 +67,7 @@ import kotlinx.coroutines.withContext
 fun MediaUploadMultipleDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
-    onUpload: suspend (List<Uri>) -> Result<Unit, AppError>,
+    onUpload: suspend (List<Uri>, (current: Int, total: Int) -> Unit) -> Result<Unit, AppError>,
     dialogTitle: String,
     dialogMessage: String,
     dismissButtonMessage: String,
@@ -80,6 +80,7 @@ fun MediaUploadMultipleDialog(
     var selectedMediaUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
     var videoThumbnails by remember { mutableStateOf<Map<Uri, Bitmap?>>(emptyMap()) }
     var uploadState by remember { mutableStateOf<UploadState>(UploadState.Idle) }
+    var uploadProgressText by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
 
     val launcher = rememberLauncherForActivityResult(
@@ -93,6 +94,7 @@ fun MediaUploadMultipleDialog(
             if (validMediaUris.isNotEmpty()) {
                 selectedMediaUris = validMediaUris
                 uploadState = UploadState.Idle
+                uploadProgressText = ""
                 error = ""
 
                 val currentUrisSet = validMediaUris.toSet()
@@ -123,6 +125,7 @@ fun MediaUploadMultipleDialog(
             videoThumbnails = videoThumbnails,
             error = error,
             isUploading = uploadState is UploadState.Uploading,
+            uploadProgressText = uploadProgressText,
             dismissButtonMessage = dismissButtonMessage,
             confirmButtonMessage = confirmButtonMessage,
             onPickMedia = { launcher.launch("*/*") },
@@ -134,20 +137,27 @@ fun MediaUploadMultipleDialog(
                 }
 
                 uploadState = UploadState.Uploading
+                uploadProgressText = ""
                 error = ""
 
                 coroutineScope.launch(Dispatchers.IO) {
-                    when (val result = onUpload(selectedMediaUris)) {
+                    when (val result = onUpload(selectedMediaUris) { current, total ->
+                        coroutineScope.launch(Dispatchers.Main) {
+                            uploadProgressText = "$current of $total uploading"
+                        }
+                    }) {
                         is Result.Success -> {
                             withContext(Dispatchers.Main) {
                                 selectedMediaUris = emptyList()
                                 videoThumbnails = emptyMap()
+                                uploadProgressText = ""
                                 onConfirm()
                             }
                         }
                         is Result.Failure -> {
                             withContext(Dispatchers.Main) {
                                 uploadState = UploadState.Idle
+                                uploadProgressText = ""
                                 error = result.error.toUserMessage()
                             }
                         }
@@ -166,6 +176,7 @@ private fun MediaUploadSheetContent(
     videoThumbnails: Map<Uri, Bitmap?>,
     error: String,
     isUploading: Boolean,
+    uploadProgressText: String,
     dismissButtonMessage: String,
     confirmButtonMessage: String,
     onPickMedia: () -> Unit,
@@ -189,6 +200,7 @@ private fun MediaUploadSheetContent(
             modifier = Modifier.fillMaxWidth(),
             text = "Add Photos & Videos",
             onClick = onPickMedia,
+            enabled = !isUploading,
         )
 
         if (selectedMediaUris.isNotEmpty()) {
@@ -234,11 +246,14 @@ private fun MediaUploadSheetContent(
         }
 
         AnimatedVisibility(
-            visible = error.isNotBlank(),
+            visible = error.isNotBlank() || uploadProgressText.isNotBlank(),
             enter = fadeIn(),
             exit = fadeOut(),
         ) {
-            Text(text = error, color = MaterialTheme.colorScheme.error)
+            Text(
+                text = uploadProgressText.ifBlank { error },
+                color = if (uploadProgressText.isNotBlank()) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error,
+            )
         }
 
         Row(
@@ -252,8 +267,9 @@ private fun MediaUploadSheetContent(
             )
             PrimaryButton(
                 modifier = Modifier.weight(1f),
-                text = confirmButtonMessage,
+                text = if (isUploading) "Uploading..." else confirmButtonMessage,
                 onClick = onConfirm,
+                enabled = selectedMediaUris.isNotEmpty(),
                 loading = isUploading,
             )
         }
@@ -272,6 +288,7 @@ private fun MediaUploadSheetIdlePreview() {
                 videoThumbnails = emptyMap(),
                 error = "",
                 isUploading = false,
+                uploadProgressText = "",
                 dismissButtonMessage = "Cancel",
                 confirmButtonMessage = "Upload",
                 onPickMedia = {},
@@ -294,6 +311,7 @@ private fun MediaUploadSheetErrorPreview() {
                 videoThumbnails = emptyMap(),
                 error = "No files selected.",
                 isUploading = false,
+                uploadProgressText = "",
                 dismissButtonMessage = "Cancel",
                 confirmButtonMessage = "Upload",
                 onPickMedia = {},

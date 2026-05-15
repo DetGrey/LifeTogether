@@ -23,3 +23,7 @@ sealed interface GalleryNavigationEvent {
     data object NavigateBack : GalleryNavigationEvent
     data class NavigateToAlbumMedia(val albumId: String) : GalleryNavigationEvent
 }
+
+sealed interface GalleryCommand {
+    data class NavigateToAlbumMedia(val albumId: String) : GalleryCommand
+}
