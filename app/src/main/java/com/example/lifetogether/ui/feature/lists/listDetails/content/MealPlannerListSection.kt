@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import com.example.lifetogether.domain.model.lists.MealPlanEntry
 import com.example.lifetogether.ui.common.button.SecondaryButton
 import com.example.lifetogether.ui.common.text.TextDefault
@@ -121,6 +122,7 @@ private fun MealPlannerWeekPager(
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .clip(MaterialTheme.shapes.large)
                                     .background(
                                         color = MaterialTheme.colorScheme.primaryContainer,
                                         shape = MaterialTheme.shapes.large,

@@ -199,6 +199,7 @@ fun ListDetailsScreen(
                             entries = listContent.entries,
                             selectedIds = contentState.selectedEntryIds,
                             onClick = onEntryClick,
+                            onLongClick = onEntryLongClick,
                         )
                         is ListDetailsListContent.MealPlans -> MealPlannerListSection(
                             entries = listContent.entries,

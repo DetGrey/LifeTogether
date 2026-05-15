@@ -2,7 +2,7 @@ package com.example.lifetogether.ui.feature.lists.listDetails.content
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.model.lists.NoteEntry
@@ -26,6 +27,7 @@ fun NotesSection(
     entries: List<NoteEntry>,
     selectedIds: Set<String>,
     onClick: (String) -> Unit,
+    onLongClick: (String) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier
@@ -38,6 +40,7 @@ fun NotesSection(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.large)
                     .border(
                         width = if (isSelected) 2.dp else 0.dp,
                         color = if (isSelected) MaterialTheme.colorScheme.tertiary else Color.Transparent,
@@ -47,7 +50,10 @@ fun NotesSection(
                         MaterialTheme.colorScheme.primaryContainer,
                         MaterialTheme.shapes.large
                     )
-                    .clickable { onClick(entry.id) }
+                    .combinedClickable(
+                        onClick = { onClick(entry.id) },
+                        onLongClick = { onLongClick(entry.id) },
+                    )
                     .padding(LifeTogetherTokens.spacing.medium),
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
