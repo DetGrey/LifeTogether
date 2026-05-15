@@ -52,7 +52,7 @@ fun LazyListScope.mealPlanEntryContent(
 ) {
     item {
         val showDatePicker = remember { mutableStateOf(false) }
-        val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+        val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH) }
 
         DatePickerTextField(
             label = "Date",

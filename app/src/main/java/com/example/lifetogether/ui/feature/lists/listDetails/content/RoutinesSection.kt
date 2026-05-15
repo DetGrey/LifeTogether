@@ -50,7 +50,7 @@ fun RoutinesSection(
     ) {
         items(entries) { entry ->
             val bitmap = imageBitmaps[entry.id]
-            val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+            val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH)
             val isSelected = selectedIds.contains(entry.id)
 
             val next = " | Next: ${dateFormat.format(entry.nextDate)}"

@@ -97,7 +97,7 @@ private fun MealPlannerWeekPager(
             ) { //todo can have multiple meals per day and make sure to order correctly as per when you eat which meal
                 items(weekDays) { day ->
                     val dayEntry = entryByDate[day]
-                    val label = "${day.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())} ${day.dayOfMonth}"
+                    val label = "${day.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)} ${day.dayOfMonth}"
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()

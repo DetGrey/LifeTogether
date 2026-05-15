@@ -235,7 +235,7 @@ class TipTrackerViewModel @Inject constructor(
         val daysInMonth = displayedDate.lengthOfMonth()
         val days = (1..daysInMonth).map { day ->
             val date = displayedDate.withDayOfMonth(day)
-            val dayLabel = "$day ${date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault())}"
+            val dayLabel = "$day ${date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)}"
             val total = tips.filterIndexed { index, _ -> tipDates[index] == date }
                 .sumOf { it.amount.toDouble() }
                 .toFloat()
@@ -249,7 +249,7 @@ class TipTrackerViewModel @Inject constructor(
 
         return TipTrackerCalendarState(
             displayedDate = displayedDate,
-            monthLabel = displayedDate.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.US)),
+            monthLabel = displayedDate.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH)),
             summary = TipTrackerCalendarSummary(
                 totalText = formatTipTotal(total),
                 averageText = formatTipTotal(average),
