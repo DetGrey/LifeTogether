@@ -83,7 +83,7 @@ fun ListsScreen(
                     .fillMaxSize()
                     .padding(padding)
                     .padding(LifeTogetherTokens.spacing.small)
-                    .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
+                    .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge), //todo
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
             ) {
@@ -140,7 +140,7 @@ private fun UserListCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 TextLabel(
-                    text = list.type.name.lowercase().replaceFirstChar { it.uppercase() },
+                    text = list.type.displayName,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
                 TextLabel(
@@ -235,10 +235,10 @@ fun UserListCardPreview() {
                 list = UserList(
                     id = "1",
                     familyId = "family-1",
-                    itemName = "Morning Routines",
+                    itemName = "Weekly meals",
                     lastUpdated = Date(),
                     dateCreated = Date(),
-                    type = ListType.ROUTINE,
+                    type = ListType.MEAL_PLANNER,
                     visibility = Visibility.FAMILY,
                     ownerUid = "user-1",
                 ),
@@ -252,6 +252,7 @@ fun UserListCardPreview() {
                     lastUpdated = Date(),
                     dateCreated = Date(),
                     type = ListType.ROUTINE,
+
                     visibility = Visibility.PRIVATE,
                     ownerUid = "user-1",
                 ),
