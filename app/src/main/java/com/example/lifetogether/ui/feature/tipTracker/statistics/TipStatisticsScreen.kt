@@ -3,6 +3,7 @@ package com.example.lifetogether.ui.feature.tipTracker.statistics
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -68,8 +69,8 @@ fun TipStatisticsScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(LifeTogetherTokens.spacing.small)
-                    .padding(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
+                    .padding(LifeTogetherTokens.spacing.small),
+                contentPadding = PaddingValues(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
             ) {

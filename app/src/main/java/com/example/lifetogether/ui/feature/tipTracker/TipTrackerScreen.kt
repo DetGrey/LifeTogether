@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Scaffold
@@ -68,8 +69,8 @@ fun TipTrackerScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(LifeTogetherTokens.spacing.small)
-                    .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
+                    .padding(LifeTogetherTokens.spacing.small),
+                contentPadding = PaddingValues(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
             ) {
