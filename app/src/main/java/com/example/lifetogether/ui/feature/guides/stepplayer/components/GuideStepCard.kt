@@ -1,6 +1,7 @@
 package com.example.lifetogether.ui.feature.guides.stepplayer.components
 
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -41,30 +42,32 @@ fun GuideStepCard(
     val modifier = if (emphasized) Modifier.height(275.dp) else Modifier
 
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(LifeTogetherTokens.spacing.medium),
+        modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = cardColor),
         shape = MaterialTheme.shapes.large,
     ) {
-        TextSubHeadingMedium(
-            text = header,
-            color = textColor,
-        )
-        Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
-        if (step == null) {
-            TextDefault(
-                text = "No step available",
+        Column(
+            modifier = Modifier.padding(LifeTogetherTokens.spacing.medium),
+        ) {
+            TextSubHeadingMedium(
+                text = header,
                 color = textColor,
             )
-        } else {
-            GuideStepCardBody(
-                step = step,
-                stepNumber = stepNumber,
-                textColor = textColor,
-                roundGroupLabel = roundGroupLabel,
-                roundGroupMeta = roundGroupMeta,
-            )
+            Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
+            if (step == null) {
+                TextDefault(
+                    text = "No step available",
+                    color = textColor,
+                )
+            } else {
+                GuideStepCardBody(
+                    step = step,
+                    stepNumber = stepNumber,
+                    textColor = textColor,
+                    roundGroupLabel = roundGroupLabel,
+                    roundGroupMeta = roundGroupMeta,
+                )
+            }
         }
     }
 }

@@ -26,8 +26,8 @@ fun StatsCard(
 ) {
     Card(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(LifeTogetherTokens.spacing.small),
+            .padding(LifeTogetherTokens.spacing.small)
+            .fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
         shape = MaterialTheme.shapes.medium,
     ) {
