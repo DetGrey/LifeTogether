@@ -24,6 +24,7 @@ class RecipeLocalDataSource @Inject constructor(
         byteArrays: Map<String, ByteArray>,
     ) {
         val familyId = items.firstOrNull()?.familyId ?: return
+        val currentItems = recipesDao.getItems(familyId).first()
         var entities = items.map { item ->
             RecipeEntity(
                 id = item.id,
@@ -39,13 +40,11 @@ class RecipeLocalDataSource @Inject constructor(
                 tags = item.tags,
             )
         }
-        if (byteArrays.isNotEmpty()) {
-            entities = entities.map { item ->
-                item.copy(imageData = byteArrays[item.id])
-            }
+        entities = entities.map { item ->
+            val existingImage = currentItems.find { it.id == item.id }?.imageData
+            val newImage = byteArrays[item.id]
+            item.copy(imageData = newImage ?: existingImage)
         }
-
-        val currentItems = recipesDao.getItems(familyId).first()
         val itemsToUpdate = computeItemsToUpdate(
             currentItems = currentItems,
             incomingItems = entities,
@@ -72,4 +71,16 @@ class RecipeLocalDataSource @Inject constructor(
         familyId: String,
         recipeId: String,
     ) = recipesDao.observeImageByteArray(familyId, recipeId)
+
+    suspend fun updateRecipeImageByteArray(
+        familyId: String,
+        recipeId: String,
+        imageData: ByteArray?,
+    ) {
+        recipesDao.updateImageByteArray(
+            familyId = familyId,
+            recipeId = recipeId,
+            imageData = imageData,
+        )
+    }
 }

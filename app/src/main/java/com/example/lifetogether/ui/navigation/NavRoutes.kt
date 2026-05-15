@@ -33,5 +33,6 @@ sealed interface AppRoute
 // Not AppRoute — used only for NavHost graph definitions and ViewModel scoping
 @Serializable object GuideGraph
 @Serializable object GalleryGraph
+@Serializable object RecipeGraph
 @Serializable object TipTrackerGraph
 @Serializable object UserListGraph

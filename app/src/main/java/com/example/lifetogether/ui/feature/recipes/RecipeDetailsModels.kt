@@ -1,5 +1,7 @@
 package com.example.lifetogether.ui.feature.recipes
 
+import android.graphics.Bitmap
+import android.net.Uri
 import com.example.lifetogether.domain.model.Completable
 import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.domain.model.recipe.Instruction
@@ -22,6 +24,7 @@ sealed interface RecipeDetailsUiState {
         val tags: List<String>,
         val expandedStates: Map<String, Boolean>,
         val ingredientsByServings: List<Ingredient>,
+        val localImageBitmap: Bitmap? = null,
         val editMode: Boolean = false,
         val isSaving: Boolean = false,
         val showDeleteConfirmationDialog: Boolean = false,
@@ -44,9 +47,8 @@ sealed interface RecipeDetailsUiEvent {
     data class InstructionCompletedToggled(val instruction: Completable) : RecipeDetailsUiEvent
     data class AddIngredientClicked(val ingredient: Ingredient) : RecipeDetailsUiEvent
     data class AddInstructionClicked(val value: String) : RecipeDetailsUiEvent
-    data object AddImageClicked : RecipeDetailsUiEvent
-    data object ImageUploadDismissed : RecipeDetailsUiEvent
-    data object ImageUploadConfirmed : RecipeDetailsUiEvent
+    data class RecipeImageSelected(val uri: Uri) : RecipeDetailsUiEvent
+    data object DiscardClicked : RecipeDetailsUiEvent
     data object DeleteClicked : RecipeDetailsUiEvent
     data object DismissDeleteConfirmation : RecipeDetailsUiEvent
     data object ConfirmDeleteConfirmation : RecipeDetailsUiEvent

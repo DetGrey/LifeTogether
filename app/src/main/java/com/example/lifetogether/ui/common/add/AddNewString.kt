@@ -68,15 +68,17 @@ fun AddNewString(
             Row(
                 modifier = Modifier
                 .padding(LifeTogetherTokens.spacing.small)
-                .clickable {
-                    onAddClick(currentTextValue)
+                .clickable(
+                    enabled = currentTextValue.isNotBlank()
+                ) {
+                    onAddClick(currentTextValue.trim())
                     if (textValue == null) {
                         internalTextValue = ""
                     }
                 },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(text = actionLabel, color = MaterialTheme.colorScheme.onBackground)
+                Text(text = actionLabel, color = MaterialTheme.colorScheme.secondary)
 
                 Spacer(modifier = Modifier.width(LifeTogetherTokens.spacing.xSmall))
 

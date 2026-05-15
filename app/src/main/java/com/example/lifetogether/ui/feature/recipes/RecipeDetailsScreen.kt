@@ -2,6 +2,8 @@ package com.example.lifetogether.ui.feature.recipes
 
 import android.graphics.Bitmap
 import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -11,6 +13,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -25,6 +28,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -36,13 +41,11 @@ import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.enums.MeasureType
-import com.example.lifetogether.domain.result.AppError
-import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.ui.common.add.AddNewString
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
-import com.example.lifetogether.ui.common.image.ImageUploadDialog
 import com.example.lifetogether.ui.common.button.PrimaryButton
+import com.example.lifetogether.ui.common.button.SecondaryButton
 import com.example.lifetogether.ui.common.list.CompletableCategoryList
 import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.tagOptionRow.TagOption
@@ -57,7 +60,6 @@ import com.example.lifetogether.ui.theme.LifeTogetherTokens
 fun RecipeDetailsScreen(
     uiState: RecipeDetailsUiState,
     bitmap: Bitmap?,
-    onImageUpload: suspend (Uri) -> Result<Unit, AppError>,
     onUiEvent: (RecipeDetailsUiEvent) -> Unit,
     onNavigationEvent: (RecipeDetailsNavigationEvent) -> Unit,
 ) {
@@ -72,7 +74,6 @@ fun RecipeDetailsScreen(
         RecipeDetailsContent(
             uiState = contentState,
             bitmap = bitmap,
-            onImageUpload = onImageUpload,
             onUiEvent = onUiEvent,
             onNavigationEvent = onNavigationEvent,
         )
@@ -83,12 +84,23 @@ fun RecipeDetailsScreen(
 private fun RecipeDetailsContent(
     uiState: RecipeDetailsUiState.Content,
     bitmap: Bitmap?,
-    onImageUpload: suspend (Uri) -> Result<Unit, AppError>,
     onUiEvent: (RecipeDetailsUiEvent) -> Unit,
     onNavigationEvent: (RecipeDetailsNavigationEvent) -> Unit,
 ) {
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+    ) { uri: Uri? ->
+        uri?.let {
+            onUiEvent(RecipeDetailsUiEvent.RecipeImageSelected(it))
+        }
+    }
+
+    val displayedBitmap = uiState.localImageBitmap ?: bitmap
+    val hasRecipeId = uiState.recipeId != null
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = LifeTogetherTokens.spacing.bottomInsetMedium)
     ) {
         item {
             Column(
@@ -101,13 +113,25 @@ private fun RecipeDetailsContent(
                         .height(200.dp)
                         .background(MaterialTheme.colorScheme.tertiary),
                 ) {
-                    if (bitmap != null) {
+                    if (displayedBitmap != null) {
                         Image(
                             modifier = Modifier.fillMaxSize(),
-                            bitmap = bitmap.asImageBitmap(),
+                            bitmap = displayedBitmap.asImageBitmap(),
                             contentDescription = "recipe image",
                             contentScale = ContentScale.Crop,
-                            alpha = 0.7f,
+                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.verticalGradient(
+                                        colorStops = arrayOf(
+                                            0.0f to Color.Transparent,
+                                            0.3f to Color.Transparent,
+                                            1.0f to MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
+                                        ),
+                                    ),
+                                ),
                         )
                     }
 
@@ -138,27 +162,15 @@ private fun RecipeDetailsContent(
                                 end = LifeTogetherTokens.spacing.small,
                                 top = LifeTogetherTokens.spacing.small
                             )
-                            .height(if (!uiState.editMode && uiState.recipeId != null) 40.dp else 50.dp)
+                            .height(40.dp)
                             .aspectRatio(1f)
-                            .clickable(
-                                enabled = if (uiState.editMode) true else uiState.recipeId != null,
-                            ) {
-                                if (uiState.editMode) {
-                                    onUiEvent(RecipeDetailsUiEvent.AddImageClicked)
-                                } else if (uiState.recipeId != null) {
-                                    onUiEvent(RecipeDetailsUiEvent.DeleteClicked)
-                                }
+                            .clickable(enabled = !uiState.editMode && hasRecipeId) {
+                                onUiEvent(RecipeDetailsUiEvent.DeleteClicked)
                             }
                             .align(Alignment.TopEnd),
                         contentAlignment = Alignment.Center,
                     ) {
-                        if (uiState.editMode) {
-                            Text(
-                                text = if (bitmap != null) "Change image" else "Add image",
-                                textAlign = TextAlign.Right,
-                                color = MaterialTheme.colorScheme.onTertiary,
-                            )
-                        } else if (uiState.recipeId != null) {
+                        if (!uiState.editMode && hasRecipeId) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_trashcan),
                                 contentDescription = "trashcan icon",
@@ -167,42 +179,56 @@ private fun RecipeDetailsContent(
                         }
                     }
 
-                    Box(
-                        modifier = Modifier
-                            .padding(
-                                start = LifeTogetherTokens.spacing.small,
-                                end = LifeTogetherTokens.spacing.xxLarge
-                            )
-                            .align(Alignment.BottomStart),
+                    Row(
+                        modifier = Modifier.align(Alignment.BottomStart),
+                        verticalAlignment = Alignment.Bottom
                     ) {
-                        EditableTextField(
-                            text = uiState.itemName,
-                            onTextChange = { onUiEvent(RecipeDetailsUiEvent.ItemNameChanged(it)) },
-                            label = "Recipe name",
-                            isEditable = uiState.editMode,
-                            textStyle = MaterialTheme.typography.displayMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            labelColor = MaterialTheme.colorScheme.onTertiary,
-                        )
-                    }
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(
+                                    start = LifeTogetherTokens.spacing.small,
+                                    end = LifeTogetherTokens.spacing.xxLarge
+                                ),
+                        ) {
+                            EditableTextField(
+                                text = uiState.itemName,
+                                onTextChange = { onUiEvent(RecipeDetailsUiEvent.ItemNameChanged(it)) },
+                                label = "Recipe name",
+                                isEditable = uiState.editMode,
+                                textStyle = MaterialTheme.typography.displayMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                labelColor = MaterialTheme.colorScheme.onTertiary,
+                            )
+                        }
 
-                    Box(
-                        modifier = Modifier
-                            .padding(bottom = LifeTogetherTokens.spacing.xSmall)
-                            .height(40.dp)
-                            .aspectRatio(1f)
-                            .clickable {
-                                onUiEvent(RecipeDetailsUiEvent.EditClicked)
+                        Box(
+                            modifier = Modifier
+                                .padding(LifeTogetherTokens.spacing.xSmall)
+                                .height(40.dp)
+                                .aspectRatio(1f)
+                                .clickable {
+                                    if (uiState.editMode) {
+                                        imagePickerLauncher.launch("image/*")
+                                    } else {
+                                        onUiEvent(RecipeDetailsUiEvent.EditClicked)
+                                    }
+                                },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            if (uiState.editMode) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_gallery),
+                                    contentDescription = "edit icon",
+                                    tint = MaterialTheme.colorScheme.onTertiary,
+                                )
+                            } else if (uiState.recipeId != null) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_edit),
+                                    contentDescription = "edit icon",
+                                    tint = MaterialTheme.colorScheme.onTertiary,
+                                )
                             }
-                            .align(Alignment.BottomEnd),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        if (uiState.recipeId != null) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_edit),
-                                contentDescription = "edit icon",
-                                tint = MaterialTheme.colorScheme.onTertiary,
-                            )
                         }
                     }
                 }
@@ -215,18 +241,16 @@ private fun RecipeDetailsContent(
                     .fillMaxWidth()
                     .padding(LifeTogetherTokens.spacing.small),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.large),
             ) {
-                EditableTextField(
-                    text = uiState.description,
-                    onTextChange = { onUiEvent(RecipeDetailsUiEvent.DescriptionChanged(it)) },
-                    label = "Description",
-                    isEditable = uiState.editMode,
-                    textStyle = MaterialTheme.typography.bodyLarge,
-                )
-
-                if (uiState.editMode) {
-                    Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
+                if (uiState.editMode || uiState.description.isNotBlank()) {
+                    EditableTextField(
+                        text = uiState.description,
+                        onTextChange = { onUiEvent(RecipeDetailsUiEvent.DescriptionChanged(it)) },
+                        label = "Description",
+                        isEditable = uiState.editMode,
+                        textStyle = MaterialTheme.typography.bodyLarge,
+                    )
                 }
 
                 Column {
@@ -394,12 +418,23 @@ private fun RecipeDetailsContent(
                     enter = fadeIn(),
                     exit = fadeOut(),
                 ) {
-                    PrimaryButton(
-                        text = "Save",
-                        onClick = { onUiEvent(RecipeDetailsUiEvent.SaveClicked) },
-                        modifier = Modifier.fillMaxWidth(0.5f),
-                        loading = uiState.isSaving,
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                    ) {
+                        SecondaryButton(
+                            text = "Discard",
+                            onClick = { onUiEvent(RecipeDetailsUiEvent.DiscardClicked) },
+                            modifier = Modifier.weight(1f),
+                            enabled = !uiState.isSaving,
+                        )
+                        PrimaryButton(
+                            text = "Save",
+                            onClick = { onUiEvent(RecipeDetailsUiEvent.SaveClicked) },
+                            modifier = Modifier.weight(1f),
+                            loading = uiState.isSaving,
+                        )
+                    }
                 }
             }
         }
@@ -422,19 +457,6 @@ private fun RecipeDetailsContent(
         )
     }
 
-    if (uiState.showImageUploadDialog) {
-        if (uiState.familyId != null && uiState.recipeId != null) {
-            ImageUploadDialog(
-                onDismiss = { onUiEvent(RecipeDetailsUiEvent.ImageUploadDismissed) },
-                onConfirm = { onUiEvent(RecipeDetailsUiEvent.ImageUploadConfirmed) },
-                onUpload = onImageUpload,
-                dialogTitle = "Upload recipe image",
-                dialogMessage = "Select an image for your recipe",
-                dismissButtonMessage = "Cancel",
-                confirmButtonMessage = "Upload image",
-            )
-        }
-    }
 }
 
 @Preview(showBackground = true)
@@ -445,7 +467,7 @@ private fun RecipeDetailsScreenPreview() {
             uiState = RecipeDetailsUiState.Content(
                 recipeId = "recipe-1",
                 familyId = "family-1",
-                itemName = "Tomato Soup",
+                itemName = "Tomato Soup With chicken",
                 description = "A simple soup.",
                 ingredients = listOf(
                     com.example.lifetogether.domain.model.recipe.Ingredient(
@@ -481,7 +503,6 @@ private fun RecipeDetailsScreenPreview() {
                 ),
             ),
             bitmap = null,
-            onImageUpload = { Result.Success(Unit) },
             onUiEvent = {},
             onNavigationEvent = {},
         )

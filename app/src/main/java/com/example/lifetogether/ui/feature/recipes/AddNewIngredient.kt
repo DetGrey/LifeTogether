@@ -102,19 +102,19 @@ fun AddNewIngredient(
                 )
                 Row(
                     modifier = Modifier
-                        .padding(horizontal = LifeTogetherTokens.spacing.small)
-                        .fillMaxHeight()
-                        .clickable {
-                            updateIngredient(
-                                "amount",
-                                amount,
-                            )
-                            onAddClick(ingredient)
-                            ingredient = Ingredient(amount = 0.0, measureType = MeasureType.PIECE, itemName = "")
-                            amount = ""
-                        },
-                    verticalAlignment = Alignment.CenterVertically,
+                .padding(horizontal = LifeTogetherTokens.spacing.small)
+                .fillMaxHeight()
+                .clickable(
+                    enabled = ingredient.itemName.isNotBlank() && amount.toDoubleOrNull() != null
                 ) {
+                    val trimmedItemName = ingredient.itemName.trim()
+                    val parsedAmount = amount.toDoubleOrNull() ?: return@clickable
+                    onAddClick(ingredient.copy(itemName = trimmedItemName, amount = parsedAmount))
+                    ingredient = Ingredient(amount = 0.0, measureType = MeasureType.PIECE, itemName = "")
+                    amount = ""
+                },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                     Text(text = "Add", color = MaterialTheme.colorScheme.secondary)
 
                     Spacer(modifier = Modifier.width(LifeTogetherTokens.spacing.xSmall))

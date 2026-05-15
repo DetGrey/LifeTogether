@@ -5,6 +5,8 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import com.example.lifetogether.domain.logic.toBitmap
+import com.example.lifetogether.domain.logic.toByteArray
 import com.example.lifetogether.domain.model.Completable
 import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.domain.model.recipe.Instruction
@@ -19,9 +21,11 @@ import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.domain.usecase.image.UploadImageUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
+import com.example.lifetogether.data.local.source.RecipeLocalDataSource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,19 +34,22 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Date
 import javax.inject.Inject
 
 @HiltViewModel
 class RecipeDetailsViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+    private val savedStateHandle: SavedStateHandle,
     private val sessionRepository: SessionRepository,
     private val recipeRepository: RecipeRepository,
+    private val recipeLocalDataSource: RecipeLocalDataSource,
     private val uploadImageUseCase: UploadImageUseCase,
     @param:ApplicationContext private val context: Context,
 ) : ViewModel() {
     companion object {
         private const val RECIPE_ID_ARG = "recipeId"
+        private const val PENDING_IMAGE_URI_ARG = "pendingRecipeImageUri"
     }
 
     private val _uiState = MutableStateFlow<RecipeDetailsUiState>(RecipeDetailsUiState.Loading)
@@ -55,6 +62,7 @@ class RecipeDetailsViewModel @Inject constructor(
     val commands: Flow<RecipeDetailsCommand> = _commands.receiveAsFlow()
 
     private var pendingRecipeId: String? = savedStateHandle[RECIPE_ID_ARG]
+    private var pendingImageUri: Uri? = savedStateHandle.get<String>(PENDING_IMAGE_URI_ARG)?.let(Uri::parse)
     private var currentFamilyId: String? = null
     private var originalRecipe: Recipe? = null
     private var observeRecipeJob: Job? = null
@@ -62,6 +70,10 @@ class RecipeDetailsViewModel @Inject constructor(
     init {
         if (pendingRecipeId == null) {
             _uiState.value = createContentState(editMode = true)
+        }
+
+        if (pendingImageUri != null) {
+            restorePendingImagePreview()
         }
 
         viewModelScope.launch {
@@ -110,11 +122,8 @@ class RecipeDetailsViewModel @Inject constructor(
             is RecipeDetailsUiEvent.InstructionCompletedToggled -> toggleInstructionCompletion(event.instruction)
             is RecipeDetailsUiEvent.AddIngredientClicked -> addIngredient(event.ingredient)
             is RecipeDetailsUiEvent.AddInstructionClicked -> addInstruction(event.value)
-            RecipeDetailsUiEvent.AddImageClicked -> openImageUploadDialog()
-            RecipeDetailsUiEvent.ImageUploadDismissed,
-            RecipeDetailsUiEvent.ImageUploadConfirmed -> updateContent {
-                it.copy(showImageUploadDialog = false)
-            }
+            is RecipeDetailsUiEvent.RecipeImageSelected -> setPendingRecipeImage(event.uri)
+            RecipeDetailsUiEvent.DiscardClicked -> discardChanges()
 
             RecipeDetailsUiEvent.DeleteClicked -> updateContent {
                 if (it.recipeId.isNullOrBlank()) {
@@ -131,20 +140,6 @@ class RecipeDetailsViewModel @Inject constructor(
             RecipeDetailsUiEvent.ConfirmDeleteConfirmation -> deleteRecipe()
             RecipeDetailsUiEvent.SaveClicked -> saveRecipe()
         }
-    }
-
-    suspend fun uploadRecipeImage(uri: Uri): Result<Unit, AppError> {
-        val content = contentState()
-            ?: return Result.Failure(AppError.Validation("Recipe state not ready"))
-        val familyId = content.familyId
-            ?: return Result.Failure(AppError.Validation("Missing family context"))
-        val recipeId = content.recipeId
-            ?: return Result.Failure(AppError.Validation("Recipe must be saved before uploading an image"))
-        return uploadImageUseCase.invoke(
-            uri = uri,
-            imageType = ImageType.RecipeImage(familyId, recipeId),
-            context = context,
-        )
     }
 
     private fun observeRecipe(recipeId: String, familyId: String) {
@@ -204,7 +199,6 @@ class RecipeDetailsViewModel @Inject constructor(
             editMode = editMode,
             isSaving = false,
             showDeleteConfirmationDialog = false,
-            showImageUploadDialog = false,
             servingsExpanded = false,
             expandedStates = defaultExpandedStates(),
             ingredientsByServings = scaleIngredients(
@@ -236,22 +230,13 @@ class RecipeDetailsViewModel @Inject constructor(
     }
 
     private fun restoreRecipe(recipe: Recipe) {
+        clearPendingRecipeImage()
         _uiState.value = createContentState(
             recipe = recipe,
             familyId = currentFamilyId,
             recipeId = pendingRecipeId,
             editMode = false,
         )
-    }
-
-    private fun openImageUploadDialog() {
-        val content = contentState() ?: return
-        if (content.recipeId.isNullOrBlank() || content.familyId.isNullOrBlank()) {
-            return
-        }
-        updateContent {
-            it.copy(showImageUploadDialog = true)
-        }
     }
 
     private fun toggleExpandedState(name: String) {
@@ -298,15 +283,21 @@ class RecipeDetailsViewModel @Inject constructor(
             if (!state.editMode) {
                 state
             } else {
-                val updatedIngredients = state.ingredients + ingredient
-                state.copy(
-                    ingredients = updatedIngredients,
-                    ingredientsByServings = scaleIngredients(
+                val trimmedName = ingredient.itemName.trim()
+                if (trimmedName.isBlank() || ingredient.amount < 0.0) {
+                    state
+                } else {
+                    val sanitizedIngredient = ingredient.copy(itemName = trimmedName)
+                    val updatedIngredients = state.ingredients + sanitizedIngredient
+                    state.copy(
                         ingredients = updatedIngredients,
-                        recipeServings = state.recipeServings,
-                        selectedServings = state.servings.toDoubleOrNull() ?: state.recipeServings.toDouble(),
-                    ),
-                )
+                        ingredientsByServings = scaleIngredients(
+                            ingredients = updatedIngredients,
+                            recipeServings = state.recipeServings,
+                            selectedServings = state.servings.toDoubleOrNull() ?: state.recipeServings.toDouble(),
+                        ),
+                    )
+                }
             }
         }
     }
@@ -316,8 +307,12 @@ class RecipeDetailsViewModel @Inject constructor(
             if (!state.editMode) {
                 state
             } else {
+                val trimmedValue = value.trim()
+                if (trimmedValue.isBlank()) {
+                    return@updateContent state
+                }
                 state.copy(
-                    instructions = state.instructions + Instruction(itemName = value),
+                    instructions = state.instructions + Instruction(itemName = trimmedValue),
                 )
             }
         }
@@ -338,8 +333,9 @@ class RecipeDetailsViewModel @Inject constructor(
 
     private fun saveRecipe() {
         val state = contentState() ?: return
+        val trimmedName = state.itemName.trim()
 
-        if (state.itemName.isEmpty()) {
+        if (trimmedName.isEmpty()) {
             showError("Please write some text first")
             return
         }
@@ -354,22 +350,42 @@ class RecipeDetailsViewModel @Inject constructor(
             recipeId = state.recipeId.orEmpty(),
             familyId = familyId,
         )
+        val trimmedDescription = state.description.trim()
+        val sanitizedIngredients = state.ingredients
+            .mapNotNull { ingredient ->
+                val itemName = ingredient.itemName.trim()
+                if (itemName.isBlank() || ingredient.amount <= 0.0) {
+                    null
+                } else {
+                    ingredient.copy(itemName = itemName)
+                }
+            }
+        val sanitizedInstructions = state.instructions
+            .mapNotNull { instruction ->
+                val itemName = instruction.itemName.trim()
+                if (itemName.isBlank()) {
+                    null
+                } else {
+                    instruction.copy(itemName = itemName)
+                }
+            }
+        val sanitizedTags = state.tagsInput
+            .trim()
+            .split(Regex("\\s+"))
+            .map { it.trim().lowercase() }
+            .filter { it.isNotBlank() }
         val recipe = Recipe(
             id = state.recipeId.orEmpty(),
             familyId = familyId,
-            itemName = state.itemName,
+            itemName = trimmedName,
             lastUpdated = Date(),
-            description = state.description,
-            ingredients = state.ingredients,
-            instructions = state.instructions,
+            description = trimmedDescription,
+            ingredients = sanitizedIngredients,
+            instructions = sanitizedInstructions,
             preparationTimeMin = state.preparationTimeMin.toIntOrNull() ?: original.preparationTimeMin,
             favourite = state.favourite,
             servings = state.servings.toIntOrNull() ?: original.servings,
-            tags = if (state.tagsInput.isNotBlank()) {
-                state.tagsInput.lowercase().split(" ")
-            } else {
-                original.tags
-            },
+            tags = sanitizedTags.ifEmpty { original.tags },
         )
 
         updateContent { it.copy(isSaving = true) }
@@ -377,21 +393,62 @@ class RecipeDetailsViewModel @Inject constructor(
             when {
                 recipe.id.isBlank() -> {
                     when (val result = recipeRepository.saveRecipe(recipe)) {
-                        is Result.Success -> _commands.send(RecipeDetailsCommand.NavigateBack)
+                        is Result.Success -> {
+                            val savedRecipeId = result.data
+                            pendingRecipeId = savedRecipeId
+                            originalRecipe = recipe.copy(
+                                id = savedRecipeId,
+                                lastUpdated = recipe.lastUpdated,
+                            )
+                            finishSaveAfterRecipeSaved(
+                                recipeId = savedRecipeId,
+                                familyId = familyId,
+                                savedRecipe = recipe.copy(id = savedRecipeId),
+                                navigateBack = true,
+                            )
+                        }
+
                         is Result.Failure -> {
                             updateContent { it.copy(isSaving = false) }
                             showError(result.error.toUserMessage())
                         }
                     }
                 }
+
                 else -> {
                     when (val result = recipeRepository.updateRecipe(recipe)) {
-                        is Result.Success -> _commands.send(RecipeDetailsCommand.NavigateBack)
+                        is Result.Success -> {
+                            originalRecipe = recipe
+                            finishSaveAfterRecipeSaved(
+                                recipeId = recipe.id,
+                                familyId = familyId,
+                                savedRecipe = recipe,
+                                navigateBack = false,
+                            )
+                        }
+
                         is Result.Failure -> {
                             updateContent { it.copy(isSaving = false) }
                             showError(result.error.toUserMessage())
                         }
                     }
+                }
+            }
+        }
+    }
+
+    private fun discardChanges() {
+        val content = contentState() ?: return
+        viewModelScope.launch {
+            if (content.recipeId.isNullOrBlank()) {
+                _commands.send(RecipeDetailsCommand.NavigateBack)
+                return@launch
+            }
+
+            originalRecipe?.let { restoreRecipe(it) } ?: run {
+                clearPendingRecipeImage()
+                updateContent {
+                    it.copy(editMode = false)
                 }
             }
         }
@@ -441,6 +498,150 @@ class RecipeDetailsViewModel @Inject constructor(
             servings = 1,
             tags = emptyList(),
         )
+    }
+
+    private fun setPendingRecipeImage(uri: Uri) {
+        pendingImageUri = uri
+        savedStateHandle[PENDING_IMAGE_URI_ARG] = uri.toString()
+
+        viewModelScope.launch {
+            val bitmap = withContext(Dispatchers.IO) {
+                uri.toBitmap(context.contentResolver)
+            } ?: run {
+                clearPendingRecipeImage()
+                showError("Could not load the selected image")
+                return@launch
+            }
+
+            if (pendingImageUri == uri) {
+                updateContent { it.copy(localImageBitmap = bitmap) }
+            }
+        }
+    }
+
+    private fun restorePendingImagePreview() {
+        val uri = pendingImageUri ?: return
+        viewModelScope.launch {
+            val bitmap = withContext(Dispatchers.IO) {
+                uri.toBitmap(context.contentResolver)
+            } ?: run {
+                clearPendingRecipeImage()
+                return@launch
+            }
+
+            if (pendingImageUri == uri) {
+                updateContent { it.copy(localImageBitmap = bitmap) }
+            }
+        }
+    }
+
+    private fun clearPendingRecipeImage() {
+        pendingImageUri = null
+        savedStateHandle[PENDING_IMAGE_URI_ARG] = null
+        updateContent { it.copy(localImageBitmap = null) }
+    }
+
+    private suspend fun uploadRecipeImage(
+        recipeId: String,
+        familyId: String,
+        uri: Uri,
+    ): Result<Unit, AppError> {
+        return uploadImageUseCase.invoke(
+            uri = uri,
+            imageType = ImageType.RecipeImage(familyId, recipeId),
+            context = context,
+        )
+    }
+
+    private suspend fun finishSaveAfterRecipeSaved(
+        recipeId: String,
+        familyId: String,
+        savedRecipe: Recipe,
+        navigateBack: Boolean,
+    ) {
+        val imageUri = pendingImageUri
+        if (imageUri != null) {
+            when (val uploadResult = uploadRecipeImage(
+                recipeId = recipeId,
+                familyId = familyId,
+                uri = imageUri,
+            )) {
+                is Result.Success -> {
+                    val previewBitmap = contentState()?.localImageBitmap
+                    if (previewBitmap != null) {
+                        recipeLocalDataSource.updateRecipeImageByteArray(
+                            familyId = familyId,
+                            recipeId = recipeId,
+                            imageData = previewBitmap.toByteArray(),
+                        )
+                    }
+                    clearPendingRecipeImage()
+                    if (navigateBack) {
+                        _commands.send(RecipeDetailsCommand.NavigateBack)
+                    } else {
+                        updateContent { state ->
+                            state.copy(
+                                recipeId = recipeId,
+                                familyId = familyId,
+                                itemName = savedRecipe.itemName,
+                                description = savedRecipe.description,
+                                ingredients = savedRecipe.ingredients,
+                                instructions = savedRecipe.instructions,
+                                preparationTimeMin = savedRecipe.preparationTimeMin.toString(),
+                                favourite = savedRecipe.favourite,
+                                recipeServings = savedRecipe.servings,
+                                servings = savedRecipe.servings.toString(),
+                                tagsInput = savedRecipe.tags.joinToString(" "),
+                                tags = savedRecipe.tags,
+                                isSaving = false,
+                                editMode = false,
+                                showDeleteConfirmationDialog = false,
+                                servingsExpanded = false,
+                                ingredientsByServings = scaleIngredients(
+                                    ingredients = savedRecipe.ingredients,
+                                    recipeServings = savedRecipe.servings,
+                                    selectedServings = savedRecipe.servings.toDouble(),
+                                ),
+                            )
+                        }
+                    }
+                }
+
+                is Result.Failure -> {
+                    updateContent { it.copy(isSaving = false) }
+                    showError(uploadResult.error.toUserMessage())
+                }
+            }
+        } else {
+            updateContent { state ->
+                state.copy(
+                    recipeId = recipeId,
+                    familyId = familyId,
+                    itemName = savedRecipe.itemName,
+                    description = savedRecipe.description,
+                    ingredients = savedRecipe.ingredients,
+                    instructions = savedRecipe.instructions,
+                    preparationTimeMin = savedRecipe.preparationTimeMin.toString(),
+                    favourite = savedRecipe.favourite,
+                    recipeServings = savedRecipe.servings,
+                    servings = savedRecipe.servings.toString(),
+                    tagsInput = savedRecipe.tags.joinToString(" "),
+                    tags = savedRecipe.tags,
+                    isSaving = false,
+                    editMode = false,
+                    showDeleteConfirmationDialog = false,
+                    servingsExpanded = false,
+                    ingredientsByServings = scaleIngredients(
+                        ingredients = savedRecipe.ingredients,
+                        recipeServings = savedRecipe.servings,
+                        selectedServings = savedRecipe.servings.toDouble(),
+                    ),
+                )
+            }
+            if (navigateBack) {
+                _commands.send(RecipeDetailsCommand.NavigateBack)
+            }
+        }
     }
 
     private fun contentState(): RecipeDetailsUiState.Content? {

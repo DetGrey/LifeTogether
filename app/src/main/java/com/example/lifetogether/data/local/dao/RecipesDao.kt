@@ -25,6 +25,13 @@ interface RecipesDao {
     @Query("SELECT id FROM $RECIPES_TABLE WHERE family_id = :familyId AND image_data IS NOT NULL")
     suspend fun getRecipeIdsWithImages(familyId: String): List<String>
 
+    @Query("UPDATE $RECIPES_TABLE SET image_data = :imageData WHERE family_id = :familyId AND id = :recipeId")
+    suspend fun updateImageByteArray(
+        familyId: String,
+        recipeId: String,
+        imageData: ByteArray?,
+    )
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateItems(items: List<RecipeEntity>)
 

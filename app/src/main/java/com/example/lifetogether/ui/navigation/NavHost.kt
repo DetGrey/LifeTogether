@@ -32,6 +32,7 @@ import com.example.lifetogether.ui.feature.lists.listDetails.ListDetailsRoute
 import com.example.lifetogether.ui.feature.loading.LoadingRoute
 import com.example.lifetogether.ui.feature.login.LoginRoute
 import com.example.lifetogether.ui.feature.profile.ProfileRoute
+import com.example.lifetogether.ui.feature.recipes.RecipeGraphObserverRoute
 import com.example.lifetogether.ui.feature.recipes.CreateRecipeRoute
 import com.example.lifetogether.ui.feature.recipes.RecipeDetailsRoute
 import com.example.lifetogether.ui.feature.recipes.RecipesRoute
@@ -52,6 +53,7 @@ fun NavHost(
     GalleryGraphObserverRoute(navController = navController)
     GuideGraphObserverRoute(navController = navController)
     UserListGraphObserverRoute(navController = navController)
+    RecipeGraphObserverRoute(navController = navController)
     TipTrackerGraphObserverRoute(navController = navController)
 
     androidx.navigation.compose.NavHost(
@@ -80,7 +82,6 @@ fun NavHost(
         composable<LoginNavRoute> { LoginRoute(appNavigator) }
         composable<SignupNavRoute> { SignupRoute(appNavigator) }
         composable<GroceryListNavRoute> { GroceryListRoute(appNavigator) }
-        composable<RecipesNavRoute> { RecipesRoute(appNavigator) }
         composable<GuidesNavRoute> { GuidesRoute(appNavigator) }
         composable<GuideCreateNavRoute> { GuideCreateRoute(appNavigator) }
 
@@ -108,9 +109,12 @@ fun NavHost(
             }
         }
 
-        composable<CreateRecipeNavRoute> { CreateRecipeRoute(appNavigator) }
-        composable<RecipeDetailsNavRoute> {
-            RecipeDetailsRoute(appNavigator = appNavigator)
+        navigation<RecipeGraph>(startDestination = RecipesNavRoute::class) {
+            composable<RecipesNavRoute> { RecipesRoute(appNavigator) }
+            composable<CreateRecipeNavRoute> { CreateRecipeRoute(appNavigator) }
+            composable<RecipeDetailsNavRoute> {
+                RecipeDetailsRoute(appNavigator = appNavigator)
+            }
         }
 
         navigation<GalleryGraph>(startDestination = GalleryNavRoute::class) {

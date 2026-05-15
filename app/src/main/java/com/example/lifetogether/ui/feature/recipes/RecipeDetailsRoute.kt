@@ -7,9 +7,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.ui.common.image.rememberObservedImageBitmap
 import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.common.event.LocalRootSnackbarHostState
-import com.example.lifetogether.ui.common.image.rememberObservedImageBitmap
 import com.example.lifetogether.ui.navigation.AppNavigator
 import kotlinx.coroutines.launch
 
@@ -60,7 +60,6 @@ private fun RecipeDetailsDestination(
     RecipeDetailsScreen(
         uiState = uiState,
         bitmap = bitmap,
-        onImageUpload = viewModel::uploadRecipeImage,
         onUiEvent = viewModel::onEvent,
         onNavigationEvent = { navigationEvent ->
             when (navigationEvent) {
