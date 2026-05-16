@@ -126,7 +126,7 @@ private fun RecipeDetailsContent(
                                         colorStops = arrayOf(
                                             0.0f to Color.Transparent,
                                             0.3f to Color.Transparent,
-                                            1.0f to MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
+                                            1.0f to MaterialTheme.colorScheme.tertiary.copy(alpha = 0.75f),
                                         ),
                                     ),
                                 ),
