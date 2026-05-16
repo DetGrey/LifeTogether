@@ -121,3 +121,4 @@ Here are some questions:
 - [ ] Error messages should not show when null, instead of keeping both a string and boolean.
 - [ ] _Make the image download success and version update dialogs nicer._
 - [ ] _Show a dialog when there is a new version available._
+- [ ] Animate when image is loaded and about to be shown e.g. for recipes and such so it doesn't just pop up

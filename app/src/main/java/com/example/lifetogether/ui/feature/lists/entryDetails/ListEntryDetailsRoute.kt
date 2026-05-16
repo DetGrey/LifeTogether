@@ -19,7 +19,6 @@ fun ListEntryDetailsRoute(
 ) {
     val viewModel: ListEntryDetailsViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val currentUiState by rememberUpdatedState(uiState)
     val familyId by viewModel.familyId.collectAsStateWithLifecycle()
     val entryId = viewModel.entryId
     val content = uiState as? EntryDetailsUiState.Content
@@ -53,7 +52,6 @@ fun ListEntryDetailsRoute(
     ListEntryDetailsScreen(
         uiState = uiState,
         entryId = entryId,
-        familyId = familyId,
         bitmap = bitmap,
         onUiEvent = viewModel::onUiEvent,
         onNavigationEvent = { navigationEvent ->

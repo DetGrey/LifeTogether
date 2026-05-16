@@ -1,13 +1,10 @@
 package com.example.lifetogether.data.local.source
 
-import com.example.lifetogether.data.logic.appResultOf
 import com.example.lifetogether.data.local.dao.MealPlanDao
 import com.example.lifetogether.data.local.source.internal.computeItemsToDelete
 import com.example.lifetogether.data.local.source.internal.computeItemsToUpdate
 import com.example.lifetogether.data.model.MealPlanEntity
 import com.example.lifetogether.domain.model.mealplanner.MealPlan
-import com.example.lifetogether.domain.result.AppError
-import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -20,7 +17,7 @@ class MealPlanLocalDataSource @Inject constructor(
         return mealPlanDao.getItems(familyId)
     }
 
-    fun observeMealPlan(mealPlanId: String): Flow<MealPlanEntity> {
+    fun observeMealPlan(mealPlanId: String): Flow<MealPlanEntity?> {
         return mealPlanDao.getItemById(mealPlanId)
     }
 
@@ -46,10 +43,6 @@ class MealPlanLocalDataSource @Inject constructor(
 
     fun deleteFamilyMealPlans(familyId: String) {
         mealPlanDao.deleteFamilyItems(familyId)
-    }
-
-    fun deleteMealPlans(itemIds: List<String>): Result<Unit, AppError> = appResultOf {
-        mealPlanDao.deleteItems(itemIds)
     }
 
     private fun MealPlan.toEntity() = MealPlanEntity(

@@ -44,7 +44,7 @@ import javax.inject.Inject
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class ListDetailsViewModel @Inject constructor(
-    private val savedStateHandle: SavedStateHandle,
+    savedStateHandle: SavedStateHandle,
     sessionRepository: SessionRepository,
     private val userListRepository: UserListRepository,
     private val deleteRoutineListEntriesUseCase: DeleteRoutineListEntriesUseCase,

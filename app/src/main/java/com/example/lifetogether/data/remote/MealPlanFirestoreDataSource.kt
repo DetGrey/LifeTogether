@@ -67,13 +67,9 @@ class MealPlanFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun deleteMealPlans(mealPlanIds: List<String>): Result<Unit, AppError> {
+    suspend fun deleteMealPlan(mealPlanId: String): Result<Unit, AppError> {
         return appResultOfSuspend {
-            val batch = db.batch()
-            mealPlanIds.forEach { id ->
-                batch.delete(db.collection(Constants.MEAL_PLAN_TABLE).document(id))
-            }
-            batch.commit().await()
+            db.collection(Constants.MEAL_PLAN_TABLE).document(mealPlanId).delete().await()
         }
     }
 

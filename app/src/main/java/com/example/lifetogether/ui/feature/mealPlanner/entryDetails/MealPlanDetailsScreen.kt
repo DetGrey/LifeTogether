@@ -43,7 +43,13 @@ fun MealPlanDetailsScreen(
         topBar = {
             AppTopBar(
                 leftIcon = Icon(resId = R.drawable.ic_back_arrow, description = "back arrow"),
-                onLeftClick = { onNavigationEvent(MealPlanDetailsNavigationEvent.NavigateBack) },
+                onLeftClick = {
+                    if (content?.isEditing == true) {
+                        onUiEvent(MealPlanDetailsUiEvent.RequestCancelEdit)
+                    } else {
+                        onNavigationEvent(MealPlanDetailsNavigationEvent.NavigateBack)
+                    }
+                },
                 text = "Meal Plan",
                 rightIcon = when {
                     !isExistingMealPlan -> null
@@ -55,10 +61,6 @@ fun MealPlanDetailsScreen(
                     isExistingMealPlan -> { { onUiEvent(MealPlanDetailsUiEvent.EnterEditMode) } }
                     else -> null
                 },
-                rightText = if (isExistingMealPlan && content?.isEditing == true) "Cancel" else null,
-                onRightTextClick = if (isExistingMealPlan && content?.isEditing == true) {
-                    { onUiEvent(MealPlanDetailsUiEvent.RequestCancelEdit) }
-                } else null,
             )
         }
     ) { padding ->

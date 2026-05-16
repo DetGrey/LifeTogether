@@ -82,7 +82,16 @@ fun LazyListScope.mealPlanContent(
                             onUiEvent(MealPlanDetailsUiEvent.Meal.RecipeModeChanged(MealSearchMode.RECIPE))
                         }
                     },
-                    text = { Text("Recipe") },
+                    text = {
+                        Text(
+                            text = "Recipe",
+                            color = if (searchState.mode == MealSearchMode.RECIPE) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                        )
+                    },
                 )
                 Tab(
                     selected = searchState.mode == MealSearchMode.CUSTOM,
@@ -91,7 +100,16 @@ fun LazyListScope.mealPlanContent(
                             onUiEvent(MealPlanDetailsUiEvent.Meal.RecipeModeChanged(MealSearchMode.CUSTOM))
                         }
                     },
-                    text = { Text("Custom") },
+                    text = {
+                        Text(
+                            text = "Custom",
+                            color = if (searchState.mode == MealSearchMode.CUSTOM) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                        )
+                    },
                 )
             }
 
@@ -169,14 +187,14 @@ fun LazyListScope.mealPlanContent(
 
     item {
         TextSubHeadingMedium("Meal type")
+        val options = if (uiState.isEditing) MealType.entries.map { it.displayName }
+            else listOf(formState.mealType.displayName)
         TagOptionRow(
-            options = MealType.entries.map { it.displayName },
+            options = options,
             selectedOption = formState.mealType.displayName,
             onSelectedOptionChange = {
-                if (uiState.isEditing) {
-                    onUiEvent(MealPlanDetailsUiEvent.Meal.MealTypeChanged(it))
-                }
-            },
+                if (uiState.isEditing) onUiEvent(MealPlanDetailsUiEvent.Meal.MealTypeChanged(it))
+             },
         )
     }
 

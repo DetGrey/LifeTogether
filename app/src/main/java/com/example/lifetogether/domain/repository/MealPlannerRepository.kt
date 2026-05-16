@@ -11,5 +11,5 @@ interface MealPlannerRepository {
     fun observeMealPlan(mealPlanId: String): Flow<Result<MealPlan, AppError>>
     suspend fun saveMealPlan(mealPlan: MealPlan): Result<String, AppError>
     suspend fun updateMealPlan(mealPlan: MealPlan): Result<Unit, AppError>
-    suspend fun deleteMealPlans(mealPlanIds: List<String>): Result<Unit, AppError>
+    suspend fun deleteMealPlan(mealPlanId: String): Result<Unit, AppError>
 }

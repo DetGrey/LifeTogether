@@ -28,7 +28,6 @@ import com.example.lifetogether.ui.theme.LifeTogetherTheme
 fun ListEntryDetailsScreen(
     uiState: EntryDetailsUiState,
     entryId: String? = null,
-    familyId: String? = null,
     bitmap: Bitmap? = null,
     onUiEvent: (ListEntryDetailsUiEvent) -> Unit,
     onNavigationEvent: (ListEntryDetailsNavigationEvent) -> Unit,

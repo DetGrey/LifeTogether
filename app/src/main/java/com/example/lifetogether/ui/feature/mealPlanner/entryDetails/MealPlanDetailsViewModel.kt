@@ -36,7 +36,6 @@ class MealPlanDetailsViewModel @Inject constructor(
     private var observedRecipesFamilyId: String? = null
     private var allRecipeSearchItems: List<RecipeSearchItem> = emptyList()
     private var originalDetails: MealPlanDetailsContent? = null
-    private var isDeletingMealPlan = false
 
     private val _uiState = MutableStateFlow<MealPlanDetailsUiState>(MealPlanDetailsUiState.Loading)
     val uiState = _uiState.asStateFlow()
@@ -50,9 +49,6 @@ class MealPlanDetailsViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             loader.observe(mealPlanId).collect { snapshot ->
-                if (isDeletingMealPlan) {
-                    return@collect
-                }
                 _familyId.value = snapshot.familyId
                 when (val state = snapshot.state) {
                     MealPlanDetailsLoadState.Loading -> resetLoadingState()
@@ -87,6 +83,10 @@ class MealPlanDetailsViewModel @Inject constructor(
     }
 
     private fun confirmDiscard() {
+        if (mealPlanId == null) {
+            viewModelScope.launch { _commands.send(MealPlanDetailsCommand.NavigateBack) }
+            return
+        }
         val original = originalDetails as? MealPlanDetailsContent.Meal ?: return
         updateContent {
             val restoredSearchState = buildMealRecipeSearchState(
@@ -185,14 +185,10 @@ class MealPlanDetailsViewModel @Inject constructor(
 
     private fun deleteMealPlan() {
         val mealPlanIdValue = mealPlanId ?: return
-        if (isDeletingMealPlan) return
-        isDeletingMealPlan = true
-
         viewModelScope.launch {
             when (val result = saver.deleteMealPlan(mealPlanIdValue)) {
                 is Result.Success -> _commands.send(MealPlanDetailsCommand.NavigateBack)
                 is Result.Failure -> {
-                    isDeletingMealPlan = false
                     updateContent { it.copy(showDeleteDialog = false) }
                     showError(result.error.toUserMessage())
                 }

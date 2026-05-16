@@ -10,6 +10,7 @@ import com.example.lifetogether.domain.repository.MealPlannerRepository
 import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
@@ -48,6 +49,7 @@ class MealPlannerRepositoryImpl @Inject constructor(
 
     override fun observeMealPlan(mealPlanId: String): Flow<Result<MealPlan, AppError>> {
         return mealPlanLocalDataSource.observeMealPlan(mealPlanId)
+            .filterNotNull()
             .map { entity -> appResultOf { entity.toModel() } }
     }
 
@@ -59,8 +61,8 @@ class MealPlannerRepositoryImpl @Inject constructor(
         return mealPlanFirestoreDataSource.updateMealPlan(mealPlan)
     }
 
-    override suspend fun deleteMealPlans(mealPlanIds: List<String>): Result<Unit, AppError> {
-        return mealPlanFirestoreDataSource.deleteMealPlans(mealPlanIds)
+    override suspend fun deleteMealPlan(mealPlanId: String): Result<Unit, AppError> {
+        return mealPlanFirestoreDataSource.deleteMealPlan(mealPlanId)
     }
 
     private fun MealPlanEntity.toModel() = MealPlan(

@@ -17,7 +17,7 @@ interface MealPlanDao {
     suspend fun getItemsOnce(familyId: String): List<MealPlanEntity>
 
     @Query("SELECT * FROM $MEAL_PLAN_TABLE WHERE id = :mealPlanId")
-    fun getItemById(mealPlanId: String): Flow<MealPlanEntity>
+    fun getItemById(mealPlanId: String): Flow<MealPlanEntity?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateItems(items: List<MealPlanEntity>)

@@ -22,7 +22,7 @@ class MealPlanDetailsSaver @Inject constructor(
     }
 
     suspend fun deleteMealPlan(mealPlanId: String): Result<Unit, AppError> {
-        return mealPlannerRepository.deleteMealPlans(listOf(mealPlanId))
+        return mealPlannerRepository.deleteMealPlan(mealPlanId)
     }
 
     private suspend fun saveMeal(
