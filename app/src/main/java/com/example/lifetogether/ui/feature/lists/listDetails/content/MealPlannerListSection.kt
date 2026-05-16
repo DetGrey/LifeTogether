@@ -4,11 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -25,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.logic.minToHourMinString
 import com.example.lifetogether.domain.model.lists.MealPlanEntry
 import com.example.lifetogether.domain.model.lists.MealType
@@ -127,6 +127,7 @@ private fun MealPlannerWeekPager(
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+                contentPadding = PaddingValues(bottom = LifeTogetherTokens.spacing.bottomInsetMedium)
             ) {
                 items(weekDays) { day ->
                     val dayEntries = entriesByDate[day]
@@ -209,15 +210,20 @@ private fun MealPlanCard(
             containerColor = MaterialTheme.colorScheme.primaryContainer
         ),
     ) {
+        val showPrepTime = prepTimeMin != null && prepTimeMin > 0
+        val spacedBy = if (showPrepTime) LifeTogetherTokens.spacing.small else 0.dp
         Column(
-            modifier = Modifier.padding(LifeTogetherTokens.spacing.small),
+            modifier = Modifier.padding(LifeTogetherTokens.spacing.medium),
+            verticalArrangement = Arrangement.spacedBy(spacedBy)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = Arrangement.spacedBy(
+                    LifeTogetherTokens.spacing.small,
+                    Alignment.End
+                ),
             ) {
-                if (prepTimeMin != null && prepTimeMin > 0) {
-                    Spacer(Modifier.height(LifeTogetherTokens.spacing.small))
+                if (showPrepTime) {
                     TextDefault(
                         text = "Prep time: ${minToHourMinString(prepTimeMin)}",
                         color = MaterialTheme.colorScheme.onPrimaryContainer,

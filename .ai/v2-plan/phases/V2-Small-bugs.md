@@ -35,7 +35,7 @@ Here are some questions:
 
 ### Meal planner
 - [x] Show the recipe as a real recipe card (taken from recipe screen) with an image if one exists, and open the recipe when tapped.
-- [ ] Keep older meal plans visible while swiping back after creating a new one. All plans should be visible under the day they are added to
+- [x] Keep older meal plans visible while swiping back after creating a new one. All plans should be visible under the day they are added to
 - [x] After creating a meal plan, return to the week that contains the new entry.
 - [x] Fix recipe search in new meal plan entry details. It used to work.
 
