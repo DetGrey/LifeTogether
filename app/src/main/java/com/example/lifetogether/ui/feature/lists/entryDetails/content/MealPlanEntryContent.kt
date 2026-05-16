@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.logic.minToHourMinString
 import com.example.lifetogether.domain.model.lists.MealType
 import com.example.lifetogether.ui.common.dialog.DatePickerDialog
+import com.example.lifetogether.ui.common.list.MealPlanRecipeCard
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
@@ -34,6 +35,7 @@ import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.common.textfield.DatePickerTextField
 import com.example.lifetogether.ui.feature.lists.entryDetails.EntryDetailsContent
 import com.example.lifetogether.ui.feature.lists.entryDetails.EntryDetailsUiState
+import com.example.lifetogether.ui.feature.lists.entryDetails.ListEntryDetailsNavigationEvent
 import com.example.lifetogether.ui.feature.lists.entryDetails.MealSearchMode
 import com.example.lifetogether.ui.feature.lists.entryDetails.ListEntryDetailsUiEvent
 import com.example.lifetogether.ui.feature.lists.entryDetails.MealPlanEntryFormState
@@ -46,9 +48,11 @@ import java.util.Locale
 
 fun LazyListScope.mealPlanEntryContent(
     uiState: EntryDetailsUiState.Content,
+    familyId: String? = null,
     formState: MealPlanEntryFormState,
     searchState: MealRecipeSearchState,
     onUiEvent: (ListEntryDetailsUiEvent) -> Unit,
+    onNavigationEvent: (ListEntryDetailsNavigationEvent) -> Unit,
 ) {
     item {
         val showDatePicker = remember { mutableStateOf(false) }
@@ -109,30 +113,49 @@ fun LazyListScope.mealPlanEntryContent(
                         ) {
                             val selectedRecipe = searchState.selectedRecipeSearchItem
 
-                            CustomTextField(
-                                value = searchState.query,
-                                onValueChange = { onUiEvent(ListEntryDetailsUiEvent.Meal.RecipeQueryChanged(it)) },
-                                label = "Search recipes by name",
-                                modifier = Modifier.fillMaxWidth(),
-                                imeAction = ImeAction.Next,
-                                keyboardType = KeyboardType.Text,
-                                capitalization = true,
-                                enabled = uiState.isEditing,
-                            )
-
-                            if (selectedRecipe != null && selectedRecipe.preparationTimeMin > 0) {
-                                TextDefault(
-                                    text = "Prep time: ${minToHourMinString(selectedRecipe.preparationTimeMin)}",
-                                    color = MaterialTheme.colorScheme.secondary,
+                            if (uiState.isEditing) {
+                                CustomTextField(
+                                    value = searchState.query,
+                                    onValueChange = { onUiEvent(ListEntryDetailsUiEvent.Meal.RecipeQueryChanged(it)) },
+                                    label = "Search recipes by name",
+                                    modifier = Modifier.fillMaxWidth(),
+                                    imeAction = ImeAction.Next,
+                                    keyboardType = KeyboardType.Text,
+                                    capitalization = true,
                                 )
-                            }
 
-                            if (uiState.isEditing && searchState.suggestions.isNotEmpty()) {
-                                RecipeSearchSuggestions(
-                                    suggestions = searchState.suggestions,
-                                    onSuggestionClick = { suggestion ->
-                                        onUiEvent(ListEntryDetailsUiEvent.Meal.RecipeSelected(suggestion))
+                                if (selectedRecipe != null && selectedRecipe.preparationTimeMin > 0) {
+                                    TextDefault(
+                                        text = "Prep time: ${minToHourMinString(selectedRecipe.preparationTimeMin)}",
+                                        color = MaterialTheme.colorScheme.secondary,
+                                    )
+                                }
+
+                                if (searchState.suggestions.isNotEmpty()) {
+                                    RecipeSearchSuggestions(
+                                        suggestions = searchState.suggestions,
+                                        onSuggestionClick = { suggestion ->
+                                            onUiEvent(ListEntryDetailsUiEvent.Meal.RecipeSelected(suggestion))
+                                        },
+                                    )
+                                }
+                            } else if (selectedRecipe != null && familyId != null) {
+                                MealPlanRecipeCard(
+                                    familyId = familyId,
+                                    recipeId = selectedRecipe.id,
+                                    recipeName = selectedRecipe.itemName,
+                                    mealType = formState.mealType.displayName,
+                                    prepTimeMin = selectedRecipe.preparationTimeMin,
+                                    onClick = {
+                                        onNavigationEvent(
+                                            ListEntryDetailsNavigationEvent.NavigateToRecipeDetails(selectedRecipe.id),
+                                        )
                                     },
+                                )
+                            } else {
+                                TextDefault(
+                                    text = "Recipe",
+                                    color = MaterialTheme.colorScheme.secondary,
                                 )
                             }
                         }
@@ -208,25 +231,25 @@ private fun RecipeSearchSuggestions(
                         ),
                     horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                     verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        modifier = Modifier.fillMaxWidth(0.75f),
-                        text = suggestion.itemName,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        text = minToHourMinString(suggestion.preparationTimeMin),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.secondary,
-                    )
+                    ) {
+                        Text(
+                            modifier = Modifier.weight(1f),
+                            text = suggestion.itemName,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = minToHourMinString(suggestion.preparationTimeMin),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.secondary,
+                        )
+                    }
                 }
             }
         }
     }
-}
 
 @Preview(showBackground = true)
 @Composable
@@ -296,6 +319,7 @@ private fun MealPlannerEntryContentPreview() {
                     ),
                 ),
                 onUiEvent = {},
+                onNavigationEvent = {},
             )
         }
     }

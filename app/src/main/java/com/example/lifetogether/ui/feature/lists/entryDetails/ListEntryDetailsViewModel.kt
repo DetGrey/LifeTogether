@@ -54,8 +54,8 @@ class ListEntryDetailsViewModel @Inject constructor(
     private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
     val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
 
-    private val _navigationEvents = Channel<ListEntryDetailsNavigationEvent>(Channel.BUFFERED)
-    val navigationEvents: Flow<ListEntryDetailsNavigationEvent> = _navigationEvents.receiveAsFlow()
+    private val _commands = Channel<ListEntryDetailsCommand>(Channel.BUFFERED)
+    val commands: Flow<ListEntryDetailsCommand> = _commands.receiveAsFlow()
 
     init {
         viewModelScope.launch {
@@ -158,7 +158,7 @@ class ListEntryDetailsViewModel @Inject constructor(
                         updateContent { it.copy(isEditing = false) }
                     }
                     viewModelScope.launch {
-                        _navigationEvents.send(ListEntryDetailsNavigationEvent.NavigateBack)
+                        _commands.send(ListEntryDetailsCommand.NavigateBack)
                     }
                 }
 
@@ -300,7 +300,7 @@ class ListEntryDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = entryDetailsSaver.deleteMealPlanEntry(entryIdValue)) {
                 is Result.Success -> {
-                    _navigationEvents.send(ListEntryDetailsNavigationEvent.NavigateBack)
+                    _commands.send(ListEntryDetailsCommand.NavigateBack)
                 }
 
                 is Result.Failure -> {
@@ -321,9 +321,10 @@ class ListEntryDetailsViewModel @Inject constructor(
                 query = value,
                 isSearchFocused = true,
                 selectedRecipeSearchItem = if (shouldClearSelection) null else selectedRecipe,
-                suggestions = buildRecipeSuggestions(
+                suggestions = searchMealRecipeSuggestions(
                     query = value,
-                    selectedRecipeSearchItem = if (shouldClearSelection) null else selectedRecipe,
+                    suggestions = allRecipeSearchItems,
+                    selectedRecipeId = if (shouldClearSelection) null else selectedRecipe?.id,
                 ),
             )
             details.copy(
@@ -348,7 +349,11 @@ class ListEntryDetailsViewModel @Inject constructor(
                 mode = mode,
                 query = query,
                 suggestions = if (isRecipeMode) {
-                    buildRecipeSuggestions(query = query, selectedRecipeSearchItem = selectedRecipe)
+                    searchMealRecipeSuggestions(
+                        query = query,
+                        suggestions = allRecipeSearchItems,
+                        selectedRecipeId = selectedRecipe?.id,
+                    )
                 } else {
                     emptyList()
                 },
@@ -429,28 +434,12 @@ class ListEntryDetailsViewModel @Inject constructor(
             query = query,
             isSearchFocused = currentState?.isSearchFocused ?: false,
             selectedRecipeSearchItem = selectedRecipeSearchItem,
-            suggestions = buildRecipeSuggestions(query, selectedRecipeSearchItem),
+            suggestions = searchMealRecipeSuggestions(
+                query = query,
+                suggestions = allRecipeSearchItems,
+                selectedRecipeId = selectedRecipeSearchItem?.id,
+            ),
         )
-    }
-
-    private fun buildRecipeSuggestions(
-        query: String,
-        selectedRecipeSearchItem: RecipeSearchItem?,
-    ): List<RecipeSearchItem> {
-        val trimmedQuery = query.trim()
-        if (trimmedQuery.isEmpty()) {
-            return emptyList()
-        }
-
-        val selectedRecipeId = selectedRecipeSearchItem?.id
-
-        return allRecipeSearchItems
-            .asSequence()
-            .filter { recipe -> recipe.itemName.contains(trimmedQuery, ignoreCase = true) }
-            .filterNot { recipe -> recipe.id == selectedRecipeId }
-            .sortedBy { recipe -> recipe.itemName.lowercase() }
-            .take(5)
-            .toList()
     }
 
     private fun updateMealContent(

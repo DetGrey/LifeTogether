@@ -29,6 +29,7 @@ import com.example.lifetogether.ui.theme.LifeTogetherTheme
 fun ListEntryDetailsScreen(
     uiState: EntryDetailsUiState,
     entryId: String? = null,
+    familyId: String? = null,
     bitmap: Bitmap? = null,
     onUiEvent: (ListEntryDetailsUiEvent) -> Unit,
     onNavigationEvent: (ListEntryDetailsNavigationEvent) -> Unit,
@@ -117,9 +118,11 @@ fun ListEntryDetailsScreen(
 
                         is EntryDetailsContent.Meal -> mealPlanEntryContent(
                             uiState = uiState,
+                            familyId = familyId,
                             formState = details.form,
                             searchState = contentState.mealRecipeSearchState,
                             onUiEvent = onUiEvent,
+                            onNavigationEvent = onNavigationEvent,
                         )
 
                         is EntryDetailsContent.Note -> Unit

@@ -9,6 +9,8 @@ import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.model.lists.ChecklistEntry
 import com.example.lifetogether.domain.model.lists.ListEntry
 import com.example.lifetogether.domain.model.lists.ListType
+import com.example.lifetogether.domain.model.lists.MealPlanEntry
+import com.example.lifetogether.domain.model.lists.NoteEntry
 import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.domain.model.lists.WishListEntry
@@ -22,6 +24,7 @@ import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.domain.usecase.item.DeleteRoutineListEntriesUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
 import dagger.hilt.android.lifecycle.HiltViewModel
+import androidx.lifecycle.asFlow
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,7 +47,7 @@ import javax.inject.Inject
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class ListDetailsViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+    private val savedStateHandle: SavedStateHandle,
     sessionRepository: SessionRepository,
     private val userListRepository: UserListRepository,
     private val recipeRepository: RecipeRepository,
@@ -80,6 +83,21 @@ class ListDetailsViewModel @Inject constructor(
             initialValue = null,
         )
 
+    private val mealPlannerFocusDate: StateFlow<String?> = contentState
+        .flatMapLatest { content ->
+            if (content?.listContent?.listType == ListType.MEAL_PLANNER) {
+                savedStateHandle.getLiveData<String?>(MEAL_PLAN_FOCUS_DATE_RESULT_KEY).asFlow()
+            } else {
+                flowOf(null)
+            }
+        }
+        .distinctUntilChanged()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = null,
+        )
+
     private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
     val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
 
@@ -87,8 +105,14 @@ class ListDetailsViewModel @Inject constructor(
         contentState,
         selectionState,
         checklistEditorState,
-    ) { content, selection, checklistEditor ->
-        content?.toUiState(selection, checklistEditor) ?: ListDetailsUiState.Loading
+        mealPlannerFocusDate,
+    ) { content, selection, checklistEditor, focusDate ->
+        val state = content?.toUiState(selection, checklistEditor) ?: ListDetailsUiState.Loading
+        if (state is ListDetailsUiState.Content) {
+            state.copy(mealPlannerFocusDate = focusDate)
+        } else {
+            state
+        }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -107,6 +131,7 @@ class ListDetailsViewModel @Inject constructor(
             ListDetailsUiEvent.DismissDeleteSelectedDialog -> dismissDeleteSelectedDialog()
             ListDetailsUiEvent.ConfirmDeleteSelected -> confirmDeleteSelected()
             is ListDetailsUiEvent.ToggleEntryCompleted -> toggleEntryCompleted(event.entryId)
+            ListDetailsUiEvent.ClearMealPlannerFocusDate -> clearMealPlannerFocusDate()
             is ListDetailsUiEvent.Checklist.EditRequested -> startEditingChecklistItem(event.entryId)
             is ListDetailsUiEvent.Checklist.NameChanged -> updateChecklistDraftName(event.value)
             ListDetailsUiEvent.Checklist.ActionClicked -> saveChecklistDraft()
@@ -442,7 +467,7 @@ class ListDetailsViewModel @Inject constructor(
 
             ListType.NOTES -> ListDetailsListContent.Notes(
                 listName = itemName,
-                entries = entries.filterIsInstance<com.example.lifetogether.domain.model.lists.NoteEntry>(),
+                entries = entries.filterIsInstance<NoteEntry>(),
             )
 
             ListType.CHECKLIST -> ListDetailsListContent.CheckItems(
@@ -452,7 +477,8 @@ class ListDetailsViewModel @Inject constructor(
 
             ListType.MEAL_PLANNER -> ListDetailsListContent.MealPlans(
                 listName = itemName,
-                entries = entries.filterIsInstance<com.example.lifetogether.domain.model.lists.MealPlanEntry>(),
+                entries = entries.filterIsInstance<MealPlanEntry>(),
+                familyId = familyId,
                 recipePrepTimes = recipePrepTimes,
             )
         }
@@ -479,7 +505,9 @@ class ListDetailsViewModel @Inject constructor(
         }
 
         return ListDetailsUiState.Content(
+            familyId = familyId,
             listContent = listContent,
+            mealPlannerFocusDate = null,
             isSelectionMode = selectionState.isSelectionModeActive && validEntryIds.isNotEmpty(),
             selectedEntryIds = selectedEntryIds,
             checklistEditorState = resolvedChecklistEditorState,
@@ -508,6 +536,10 @@ class ListDetailsViewModel @Inject constructor(
 
     private fun clearChecklistEditorState() {
         checklistEditorState.value = ChecklistEditorState()
+    }
+
+    private fun clearMealPlannerFocusDate() {
+        savedStateHandle[MEAL_PLAN_FOCUS_DATE_RESULT_KEY] = null
     }
 
     private fun <T> Result<T, AppError>.mapUnitSuccess(): Result<Unit, AppError> {

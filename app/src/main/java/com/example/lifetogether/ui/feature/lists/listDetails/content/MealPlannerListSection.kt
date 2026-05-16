@@ -3,7 +3,6 @@ package com.example.lifetogether.ui.feature.lists.listDetails.content
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,13 +14,17 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextAlign
 import com.example.lifetogether.domain.logic.minToHourMinString
 import com.example.lifetogether.domain.model.lists.MealPlanEntry
 import com.example.lifetogether.domain.model.lists.MealType
@@ -42,11 +45,15 @@ import java.util.Locale
 fun MealPlannerListSection(
     entries: List<MealPlanEntry>,
     recipePrepTimes: Map<String, Int>,
+    focusDate: String? = null,
+    onFocusDateHandled: () -> Unit = {},
     onEntryClick: (MealPlanEntry) -> Unit,
 ) {
     MealPlannerWeekPager(
         entries = entries,
         recipePrepTimes = recipePrepTimes,
+        focusDate = focusDate,
+        onFocusDateHandled = onFocusDateHandled,
         onEntryClick = onEntryClick,
     )
 }
@@ -55,6 +62,8 @@ fun MealPlannerListSection(
 private fun MealPlannerWeekPager(
     entries: List<MealPlanEntry>,
     recipePrepTimes: Map<String, Int>,
+    focusDate: String?,
+    onFocusDateHandled: () -> Unit,
     onEntryClick: (MealPlanEntry) -> Unit,
 ) {
     val parsedEntries = remember(entries) {
@@ -78,6 +87,18 @@ private fun MealPlannerWeekPager(
     val currentWeekPage = -minOffset
     val pagerState = rememberPagerState(initialPage = currentWeekPage) { pageCount }
     val coroutineScope = rememberCoroutineScope()
+    val focusWeekStart = remember(focusDate) { focusDate?.let(::parseMealDate)?.let(::startOfWeek) }
+
+    LaunchedEffect(focusWeekStart, pageCount, currentWeekPage) {
+        val weekStart = focusWeekStart ?: return@LaunchedEffect
+        val targetPage = (
+            currentWeekPage + ChronoUnit.WEEKS.between(currentWeekStart, weekStart).toInt()
+            ).coerceIn(0, pageCount - 1)
+        if (pagerState.currentPage != targetPage) {
+            pagerState.scrollToPage(targetPage)
+        }
+        onFocusDateHandled()
+    }
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -178,33 +199,38 @@ private fun MealPlanCard(
     prepTimeMin: Int?,
     onClick: () -> Unit,
 ) {
-    Box(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.large)
-            .background(
-                color = MaterialTheme.colorScheme.primaryContainer,
-                shape = MaterialTheme.shapes.large,
-            )
-            .clickable(onClick = onClick)
-            .padding(LifeTogetherTokens.spacing.medium),
+            .clickable(onClick = onClick),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors().copy(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        ),
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.padding(LifeTogetherTokens.spacing.small),
         ) {
-            TextLabel(
-                text = entry.mealType.displayName,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.align(Alignment.End),
-            )
-            TextHeadingMedium(text = entry.itemName)
-            if (prepTimeMin != null && prepTimeMin > 0) {
-                Spacer(Modifier.height(LifeTogetherTokens.spacing.small))
-                TextDefault(
-                    text = "Prep time: ${minToHourMinString(prepTimeMin)}",
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                if (prepTimeMin != null && prepTimeMin > 0) {
+                    Spacer(Modifier.height(LifeTogetherTokens.spacing.small))
+                    TextDefault(
+                        text = "Prep time: ${minToHourMinString(prepTimeMin)}",
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                }
+                TextLabel(
+                    text = entry.mealType.displayName,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.End,
                 )
             }
+            TextHeadingMedium(text = entry.itemName)
         }
     }
 }

@@ -126,7 +126,10 @@ fun NavHost(
         navigation<UserListGraph>(startDestination = ListsNavRoute::class) {
             composable<ListsNavRoute> { ListsRoute(appNavigator) }
             composable<ListDetailNavRoute> { ListDetailsRoute(appNavigator = appNavigator) }
-            composable<ListEntryDetailsNavRoute> { ListEntryDetailsRoute(appNavigator = appNavigator) }
+            composable<ListEntryDetailsNavRoute> { ListEntryDetailsRoute(
+                appNavigator = appNavigator,
+                navController = navController,
+            ) }
         }
 
         navigation<TipTrackerGraph>(startDestination = TipTrackerNavRoute::class) {

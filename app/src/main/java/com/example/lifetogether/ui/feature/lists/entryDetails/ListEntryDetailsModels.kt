@@ -220,4 +220,9 @@ sealed interface ListEntryDetailsUiEvent {
 
 sealed interface ListEntryDetailsNavigationEvent {
     data object NavigateBack : ListEntryDetailsNavigationEvent
+    data class NavigateToRecipeDetails(val recipeId: String) : ListEntryDetailsNavigationEvent
+}
+
+sealed interface ListEntryDetailsCommand {
+    data object NavigateBack : ListEntryDetailsCommand
 }

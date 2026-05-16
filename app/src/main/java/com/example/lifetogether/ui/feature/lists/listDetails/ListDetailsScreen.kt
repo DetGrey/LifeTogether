@@ -199,7 +199,11 @@ fun ListDetailsScreen(
                         is ListDetailsListContent.MealPlans -> MealPlannerListSection(
                             entries = listContent.entries,
                             recipePrepTimes = listContent.recipePrepTimes,
-                            onEntryClick = { onNavigationEvent(ListDetailsNavigationEvent.NavigateToEntryDetails(it.id)) },
+                            focusDate = contentState.mealPlannerFocusDate,
+                            onFocusDateHandled = { onUiEvent(ListDetailsUiEvent.ClearMealPlannerFocusDate) },
+                            onEntryClick = { entry ->
+                                onNavigationEvent(ListDetailsNavigationEvent.NavigateToEntryDetails(entry.id))
+                            },
                         )
                     }
                 }
@@ -479,6 +483,7 @@ private fun MealPlannerPreview() {
                             dateCreated = Date(),
                         ),
                     ),
+                    familyId = "family-1",
                 ),
             ),
             onUiEvent = {},
@@ -490,6 +495,7 @@ private fun MealPlannerPreview() {
 private fun previewState(
     listContent: ListDetailsListContent,
 ) = ListDetailsUiState.Content(
+    familyId = "family-1",
     listContent = listContent,
     selectedEntryIds = emptySet(),
     isSelectionMode = false,
