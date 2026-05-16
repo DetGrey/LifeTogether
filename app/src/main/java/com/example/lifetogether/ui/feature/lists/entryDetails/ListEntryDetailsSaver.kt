@@ -3,7 +3,6 @@ package com.example.lifetogether.ui.feature.lists.entryDetails
 import android.content.Context
 import android.net.Uri
 import com.example.lifetogether.domain.logic.RecurrenceCalculator
-import com.example.lifetogether.domain.model.lists.MealPlanEntry
 import com.example.lifetogether.domain.model.lists.NoteEntry
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.domain.model.lists.WishListEntry
@@ -21,20 +20,18 @@ class ListEntryDetailsSaver @Inject constructor(
 ) {
     suspend fun save(
         details: EntryDetailsContent,
-        mealRecipeSearchState: MealRecipeSearchState? = null,
         entryId: String?,
         familyId: String,
         listId: String,
         now: Date,
         context: Context,
     ): Result<Unit, AppError> {
-        validate(details, mealRecipeSearchState)?.let { return Result.Failure(AppError.Validation(it)) }
+        validate(details)?.let { return Result.Failure(AppError.Validation(it)) }
 
         return when (details) {
             is EntryDetailsContent.Routine -> saveRoutine(details, entryId, familyId, listId, now, context)
             is EntryDetailsContent.Wish -> saveWish(details, entryId, familyId, listId, now)
             is EntryDetailsContent.Note -> saveNote(details, entryId, familyId, listId, now)
-            is EntryDetailsContent.Meal -> saveMeal(details, mealRecipeSearchState, entryId, familyId, listId, now)
         }
     }
 
@@ -49,10 +46,6 @@ class ListEntryDetailsSaver @Inject constructor(
             imageType = ImageType.RoutineListEntryImage(familyId, entryId),
             context = context,
         )
-    }
-
-    suspend fun deleteMealPlanEntry(entryId: String): Result<Unit, AppError> {
-        return userListRepository.deleteMealPlanEntries(listOf(entryId))
     }
 
     private suspend fun saveRoutine(
@@ -157,41 +150,8 @@ class ListEntryDetailsSaver @Inject constructor(
         }
     }
 
-    private suspend fun saveMeal(
-        details: EntryDetailsContent.Meal,
-        mealRecipeSearchState: MealRecipeSearchState?,
-        entryId: String?,
-        familyId: String,
-        listId: String,
-        now: Date,
-    ): Result<Unit, AppError> {
-        val form = details.form
-        val recipeId = mealRecipeSearchState?.selectedRecipeSearchItem?.id
-            ?.takeIf { it.isNotBlank() }
-            ?: form.recipeId.takeIf { it.isNotBlank() }
-        val draft = MealPlanEntry(
-            id = entryId ?: "",
-            familyId = familyId,
-            listId = listId,
-            itemName = form.name.trim(),
-            date = form.date,
-            recipeId = recipeId,
-            customMealName = form.customMealName.ifBlank { null },
-            mealType = form.mealType,
-            notes = form.notes,
-            lastUpdated = now,
-            dateCreated = now,
-        )
-        return if (entryId == null) {
-            userListRepository.saveMealPlanEntry(draft).asUnit()
-        } else {
-            userListRepository.updateMealPlanEntry(draft).asUnit()
-        }
-    }
-
     private fun validate(
         details: EntryDetailsContent,
-        mealRecipeSearchState: MealRecipeSearchState?,
     ): String? {
         return when (details) {
             is EntryDetailsContent.Routine -> {
@@ -210,17 +170,6 @@ class ListEntryDetailsSaver @Inject constructor(
             }
 
             is EntryDetailsContent.Note -> if (details.form.name.isBlank()) "Name cannot be empty" else null
-            is EntryDetailsContent.Meal -> {
-                if (details.form.name.isBlank()) return "Name cannot be empty"
-                if (details.form.date.isBlank()) return "Date cannot be empty"
-                val isRecipeMode = mealRecipeSearchState?.mode ?: MealSearchMode.RECIPE
-                if (isRecipeMode == MealSearchMode.RECIPE) {
-                    if (mealRecipeSearchState?.selectedRecipeSearchItem == null) return "Select a recipe"
-                } else {
-                    if (details.form.customMealName.isBlank()) return "Custom meal name cannot be empty"
-                }
-                null
-            }
         }
     }
 

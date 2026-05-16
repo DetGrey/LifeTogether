@@ -7,14 +7,12 @@ import com.example.lifetogether.data.logic.appResultOfSuspend
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.lists.ChecklistEntry
 import com.example.lifetogether.domain.model.lists.ListType
-import com.example.lifetogether.domain.model.lists.MealPlanEntry
 import com.example.lifetogether.domain.model.lists.NoteEntry
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.model.lists.WishListEntry
 import com.example.lifetogether.domain.model.lists.WishListPriority
-import com.example.lifetogether.domain.model.lists.MealType
 import com.example.lifetogether.domain.result.ListSnapshot
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.util.Constants
@@ -181,31 +179,6 @@ class UserListFirestoreDataSource @Inject constructor(
         }
         awaitClose { reg.remove() }
     }
-
-    fun familyMealPlanEntriesSnapshotListener(familyId: String) = callbackFlow {
-        val ref = db.collection(Constants.MEAL_PLAN_ENTRIES_TABLE).whereEqualTo("familyId", familyId)
-        val reg = ref.addSnapshotListener { snapshot, e ->
-            if (e != null) {
-                trySend(Result.Failure(AppErrors.fromThrowable(e))).isSuccess
-                return@addSnapshotListener
-            }
-            if (snapshot == null) {
-                trySend(Result.Failure(AppErrors.storage("Empty snapshot"))).isSuccess
-                return@addSnapshotListener
-            }
-            val items = mapFirestoreDocuments(
-                tag = TAG,
-                collectionName = Constants.MEAL_PLAN_ENTRIES_TABLE,
-                entityName = "MealPlanEntry",
-                documents = snapshot.documents,
-            ) { doc ->
-                doc.toObject(MealPlanEntryDto::class.java)?.toDomain(doc.id)
-            }
-            trySend(Result.Success(ListSnapshot(items))).isSuccess
-        }
-        awaitClose { reg.remove() }
-    }
-
     suspend fun saveUserList(userList: UserList): Result<String, AppError> {
         return appResultOfSuspend {
             val id = userList.id.trim()
@@ -320,31 +293,22 @@ class UserListFirestoreDataSource @Inject constructor(
             batch.commit().await()
         }
     }
-
-    suspend fun saveMealPlanEntry(entry: MealPlanEntry): Result<String, AppError> {
+    suspend fun deleteLegacyMealPlannerUserLists(familyId: String): Result<Unit, AppError> {
         return appResultOfSuspend {
-            val doc = db.collection(Constants.MEAL_PLAN_ENTRIES_TABLE)
-                .add(entry.toDto().toFirestoreMap()).await()
-            doc.id
-        }
-    }
-
-    suspend fun updateMealPlanEntry(entry: MealPlanEntry): Result<Unit, AppError> {
-        val id = entry.id
-        if (id.isBlank()) return Result.Failure(AppErrors.validation("Missing meal plan entry id"))
-        return appResultOfSuspend {
-            db.collection(Constants.MEAL_PLAN_ENTRIES_TABLE).document(id)
-                .set(entry.toDto().toFirestoreMap(), SetOptions.merge())
+            val userListDocs = db.collection(Constants.USER_LISTS_TABLE)
+                .whereEqualTo("familyId", familyId)
+                .whereIn("type", listOf("meal_planner", "meal_plan"))
+                .get()
                 .await()
-        }
-    }
 
-    suspend fun deleteMealPlanEntries(itemIds: List<String>): Result<Unit, AppError> {
-        return appResultOfSuspend {
+            val entryDocs = db.collection("list_entries_meal_plan")
+                .whereEqualTo("familyId", familyId)
+                .get()
+                .await()
+
             val batch = db.batch()
-            itemIds.forEach { id ->
-                batch.delete(db.collection(Constants.MEAL_PLAN_ENTRIES_TABLE).document(id))
-            }
+            userListDocs.documents.forEach { batch.delete(it.reference) }
+            entryDocs.documents.forEach { batch.delete(it.reference) }
             batch.commit().await()
         }
     }
@@ -579,50 +543,6 @@ class UserListFirestoreDataSource @Inject constructor(
             )
         }
     }
-
-    private data class MealPlanEntryDto(
-        @DocumentId @Transient
-        val id: String? = null,
-        val familyId: String? = null,
-        val listId: String? = null,
-        val name: String? = null,
-        val itemName: String? = null,
-        val date: String? = null,
-        val recipeId: String? = null,
-        val customMealName: String? = null,
-        val mealType: String? = null,
-        val notes: String? = null,
-        val lastUpdated: Date? = null,
-        val dateCreated: Date? = null,
-    ) {
-        fun toDomain(documentId: String): MealPlanEntry? {
-            val familyIdValue = familyId?.trim()?.takeIf { it.isNotEmpty() } ?: return null
-            val listIdValue = listId?.trim()?.takeIf { it.isNotEmpty() } ?: return null
-            val itemNameValue = name?.trim()?.takeIf { it.isNotEmpty() }
-                ?: itemName?.trim()?.takeIf { it.isNotEmpty() }
-                ?: return null
-            val mealDateValue = date?.trim()?.takeIf { it.isNotEmpty() }
-                ?: return null
-            val lastUpdatedValue = lastUpdated ?: return null
-            val dateCreatedValue = dateCreated ?: return null
-            val mealTypeValue = mealType?.let { MealType.fromValue(it) } ?: MealType.DINNER
-
-            return MealPlanEntry(
-                id = documentId,
-                familyId = familyIdValue,
-                listId = listIdValue,
-                itemName = itemNameValue,
-                date = mealDateValue,
-                recipeId = recipeId?.trim()?.takeIf { it.isNotEmpty() },
-                customMealName = customMealName?.trim()?.takeIf { it.isNotEmpty() },
-                mealType = mealTypeValue,
-                notes = notes?.trim().orEmpty(),
-                lastUpdated = lastUpdatedValue,
-                dateCreated = dateCreatedValue,
-            )
-        }
-    }
-
     private data class UserListWriteDto(
         val familyId: String?,
         val ownerUid: String?,
@@ -736,33 +656,6 @@ class UserListFirestoreDataSource @Inject constructor(
             "dateCreated" to dateCreated,
         )
     }
-
-    private data class MealPlanEntryWriteDto(
-        val familyId: String?,
-        val listId: String?,
-        val name: String?,
-        val date: String?,
-        val recipeId: String?,
-        val customMealName: String?,
-        val mealType: String?,
-        val notes: String?,
-        val lastUpdated: Date?,
-        val dateCreated: Date?,
-    ) {
-        fun toFirestoreMap(): Map<String, Any?> = mapOf(
-            "familyId" to familyId,
-            "listId" to listId,
-            "name" to name,
-            "date" to date,
-            "recipeId" to recipeId,
-            "customMealName" to customMealName,
-            "mealType" to mealType,
-            "notes" to notes,
-            "lastUpdated" to lastUpdated,
-            "dateCreated" to dateCreated,
-        )
-    }
-
     private fun UserList.toDto(): UserListWriteDto = UserListWriteDto(
         familyId = familyId,
         ownerUid = ownerUid,
@@ -816,19 +709,6 @@ class UserListFirestoreDataSource @Inject constructor(
         listId = listId,
         name = itemName,
         isChecked = isChecked,
-        lastUpdated = lastUpdated,
-        dateCreated = dateCreated,
-    )
-
-    private fun MealPlanEntry.toDto(): MealPlanEntryWriteDto = MealPlanEntryWriteDto(
-        familyId = familyId,
-        listId = listId,
-        name = itemName,
-        date = date,
-        recipeId = recipeId,
-        customMealName = customMealName,
-        mealType = mealType.name,
-        notes = notes,
         lastUpdated = lastUpdated,
         dateCreated = dateCreated,
     )

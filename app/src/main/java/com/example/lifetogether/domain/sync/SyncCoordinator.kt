@@ -6,6 +6,7 @@ import com.example.lifetogether.domain.repository.FamilyRepository
 import com.example.lifetogether.domain.repository.GalleryRepository
 import com.example.lifetogether.domain.repository.GroceryRepository
 import com.example.lifetogether.domain.repository.GuideRepository
+import com.example.lifetogether.domain.repository.MealPlannerRepository
 import com.example.lifetogether.domain.repository.RecipeRepository
 import com.example.lifetogether.domain.repository.TipTrackerRepository
 import com.example.lifetogether.domain.repository.UserListRepository
@@ -29,6 +30,7 @@ class SyncCoordinator @Inject constructor(
     private val galleryRepository: GalleryRepository,
     private val tipTrackerRepository: TipTrackerRepository,
     private val guideRepository: GuideRepository,
+    private val mealPlannerRepository: MealPlannerRepository,
     private val userListRepository: UserListRepository,
 ) {
     private val globalSyncKeys = setOf(
@@ -45,12 +47,12 @@ class SyncCoordinator @Inject constructor(
         SyncKey.TIP_TRACKER,
         SyncKey.GALLERY_ALBUMS,
         SyncKey.GALLERY_MEDIA,
+        SyncKey.MEAL_PLANNER,
         SyncKey.USER_LISTS,
         SyncKey.ROUTINE_LIST_ENTRIES,
         SyncKey.WISH_LIST_ENTRIES,
         SyncKey.NOTE_ENTRIES,
         SyncKey.CHECKLIST_ENTRIES,
-        SyncKey.MEAL_PLAN_ENTRIES,
     )
 
     private var syncedUid: String? = null
@@ -217,6 +219,13 @@ class SyncCoordinator @Inject constructor(
                 }
             }
 
+            SyncKey.MEAL_PLANNER -> {
+                val familyId = context.familyId ?: return null
+                startSync(scope, "ObserveMealPlanner", "meal planner sync failure") {
+                    mealPlannerRepository.syncMealPlansFromRemote(familyId)
+                }
+            }
+
             SyncKey.USER_LISTS -> {
                 val uid = context.uid ?: return null
                 val familyId = context.familyId ?: return null
@@ -254,14 +263,6 @@ class SyncCoordinator @Inject constructor(
                 val familyId = context.familyId ?: return null
                 startSync(scope, "SyncChecklistEntriesUseCase", "checklist entries sync failure") {
                     userListRepository.syncChecklistEntriesFromRemote(uid, familyId)
-                }
-            }
-
-            SyncKey.MEAL_PLAN_ENTRIES -> {
-                val uid = context.uid ?: return null
-                val familyId = context.familyId ?: return null
-                startSync(scope, "SyncMealPlanEntriesUseCase", "meal plan entries sync failure") {
-                    userListRepository.syncMealPlanEntriesFromRemote(uid, familyId)
                 }
             }
         }

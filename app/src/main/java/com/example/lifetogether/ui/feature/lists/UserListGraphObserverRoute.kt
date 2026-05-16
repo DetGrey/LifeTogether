@@ -28,7 +28,6 @@ fun UserListGraphObserverRoute(
                 SyncKey.WISH_LIST_ENTRIES,
                 SyncKey.NOTE_ENTRIES,
                 SyncKey.CHECKLIST_ENTRIES,
-                SyncKey.MEAL_PLAN_ENTRIES,
             ),
         )
     }

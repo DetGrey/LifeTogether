@@ -7,7 +7,6 @@ import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.data.local.source.UserListLocalDataSource
 import com.example.lifetogether.data.logic.appResultOfSuspend
 import com.example.lifetogether.data.model.ChecklistEntryEntity
-import com.example.lifetogether.data.model.MealPlanEntryEntity
 import com.example.lifetogether.data.model.NoteEntryEntity
 import com.example.lifetogether.data.model.RoutineListEntryEntity
 import com.example.lifetogether.data.model.UserListEntity
@@ -17,8 +16,6 @@ import com.example.lifetogether.domain.datasource.StorageDataSource
 import com.example.lifetogether.domain.model.lists.ChecklistEntry
 import com.example.lifetogether.domain.model.lists.ListEntry
 import com.example.lifetogether.domain.model.lists.ListType
-import com.example.lifetogether.domain.model.lists.MealPlanEntry
-import com.example.lifetogether.domain.model.lists.MealType
 import com.example.lifetogether.domain.model.lists.NoteEntry
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.domain.model.lists.UserList
@@ -36,6 +33,10 @@ class UserListRepositoryImpl @Inject constructor(
     private val userListLocalDataSource: UserListLocalDataSource,
     private val storageDataSource: StorageDataSource,
 ): UserListRepository {
+    override suspend fun deleteLegacyMealPlannerUserLists(familyId: String): Result<Unit, AppError> {
+        return userListFirestoreDataSource.deleteLegacyMealPlannerUserLists(familyId)
+    }
+
     // USER LIST
     override fun observeUserLists(familyId: String): Flow<Result<List<UserList>, AppError>> {
         return userListLocalDataSource.observeUserLists(familyId)
@@ -324,64 +325,6 @@ class UserListRepositoryImpl @Inject constructor(
         return userListLocalDataSource.deleteChecklistEntries(itemIds)
     }
 
-    // MEAL PLAN ENTRY
-    override fun observeMealPlanEntriesByListId(
-        familyId: String,
-        listId: String,
-    ): Flow<Result<List<MealPlanEntry>, AppError>> {
-        return userListLocalDataSource.observeMealPlanEntriesByListId(familyId, listId)
-            .map { entities ->
-                appResultOf {
-                    entities
-                        .map { it.toModel() }
-                        .sortedByDescending { it.date }
-                }
-            }
-    }
-
-    override fun syncMealPlanEntriesFromRemote(uid: String, familyId: String): Flow<Result<Unit, AppError>> {
-        return syncAccessibleEntriesFromRemote(
-            uid = uid,
-            familyId = familyId,
-            listType = ListType.MEAL_PLANNER,
-            entryFlow = userListFirestoreDataSource.familyMealPlanEntriesSnapshotListener(familyId),
-            failureMessage = "Meal plan entries sync failed",
-            onEmptyEntries = {
-                userListLocalDataSource.deleteFamilyMealPlanEntries(familyId)
-            },
-            onVisibleEntries = { visibleEntries ->
-                userListLocalDataSource.updateMealPlanEntries(visibleEntries)
-            },
-        )
-    }
-
-    override fun observeMealPlanEntry(id: String): Flow<Result<MealPlanEntry, AppError>> {
-        return userListLocalDataSource.observeMealPlanEntry(id)
-            .map { entity -> appResultOf { entity.toModel() } }
-    }
-
-    override suspend fun saveMealPlanEntry(entry: MealPlanEntry): Result<String, AppError> {
-        return when (val result = userListFirestoreDataSource.saveMealPlanEntry(entry)) {
-            is Result.Success -> Result.Success(result.data)
-            is Result.Failure -> Result.Failure(result.error)
-        }
-    }
-
-    override suspend fun updateMealPlanEntry(entry: MealPlanEntry): Result<Unit, AppError> {
-        return when (val result = userListFirestoreDataSource.updateMealPlanEntry(entry)) {
-            is Result.Success -> Result.Success(Unit)
-            is Result.Failure -> Result.Failure(result.error)
-        }
-    }
-
-    override suspend fun deleteMealPlanEntries(itemIds: List<String>): Result<Unit, AppError> {
-        val remoteDelete = userListFirestoreDataSource.deleteMealPlanEntries(itemIds)
-        return when (remoteDelete) {
-            is Result.Success -> Result.Success(Unit)
-            is Result.Failure -> remoteDelete
-        }
-    }
-
     private fun accessibleListIdsForType(
         sharedLists: List<UserList>,
         privateLists: List<UserList>,
@@ -524,20 +467,6 @@ class UserListRepositoryImpl @Inject constructor(
         listId = listId,
         itemName = itemName,
         isChecked = isChecked,
-        lastUpdated = lastUpdated,
-        dateCreated = dateCreated,
-    )
-
-    private fun MealPlanEntryEntity.toModel() = MealPlanEntry(
-        id = id,
-        familyId = familyId,
-        listId = listId,
-        itemName = itemName,
-        date = date,
-        recipeId = recipeId,
-        customMealName = customMealName,
-        mealType = MealType.fromValue(mealType) ?: MealType.DINNER,
-        notes = notes,
         lastUpdated = lastUpdated,
         dateCreated = dateCreated,
     )

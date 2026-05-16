@@ -3,17 +3,15 @@ package com.example.lifetogether.data.model
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.example.lifetogether.util.Constants
+import com.example.lifetogether.util.Constants.MEAL_PLAN_TABLE
 import java.util.Date
 
-@Entity(tableName = Constants.MEAL_PLAN_ENTRIES_TABLE)
-data class MealPlanEntryEntity(
+@Entity(tableName = MEAL_PLAN_TABLE)
+data class MealPlanEntity(
     @PrimaryKey
     val id: String,
     @ColumnInfo(name = "family_id")
     val familyId: String,
-    @ColumnInfo(name = "list_id")
-    val listId: String,
     @ColumnInfo(name = "item_name")
     val itemName: String,
     val date: String,

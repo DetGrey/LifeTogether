@@ -174,7 +174,7 @@ fun LazyListScope.routineEntryForm(
 private fun RoutineEntryContentPreview() {
     LifeTogetherTheme {
         val uiState = EntryDetailsUiState.Content(
-            details = EntryDetailsContent.Meal.blank(),
+            details = EntryDetailsContent.Routine.blank(),
             isEditing = true
         )
         ListEntryDetailsContent(

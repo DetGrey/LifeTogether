@@ -239,7 +239,7 @@ fun UserListCardPreview() {
                     itemName = "Weekly meals",
                     lastUpdated = Date(),
                     dateCreated = Date(),
-                    type = ListType.MEAL_PLANNER,
+                    type = ListType.ROUTINE,
                     visibility = Visibility.FAMILY,
                     ownerUid = "user-1",
                 ),

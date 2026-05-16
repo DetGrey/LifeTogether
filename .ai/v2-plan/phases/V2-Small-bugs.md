@@ -36,17 +36,8 @@ Here are some questions:
 ### Meal planner
 - [x] Show the recipe as a real recipe card (taken from recipe screen) with an image if one exists, and open the recipe when tapped.
 - [x] Keep older meal plans visible while swiping back after creating a new one. All plans should be visible under the day they are added to
-- [x] After creating a meal plan, return to the week that contains the new entry.
+- [x] After creating a meal plan, re turn to the week that contains the new entry.
 - [x] Fix recipe search in new meal plan entry details. It used to work.
-
-Meal planner issues I found while reviewing the result:
-
-- The week pager is still offset-based. The new result handoff fixes “return to the created week”, but the pager can still shift its page mapping when the meal-plan range changes
-  significantly.
-- The read-only meal-plan entry screen still looks like a form in some places because the date, meal type, and notes remain visible. The recipe card is better, but the screen can
-  still feel busy.
-- Custom meal entries and recipe-backed meal entries still use different visuals. That is functional, but it is a noticeable inconsistency in the list details view.
-
 
 ### Grocery
 - [ ] Fix long text layout in Add grocery item.

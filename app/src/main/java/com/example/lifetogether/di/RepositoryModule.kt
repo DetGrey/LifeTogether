@@ -5,6 +5,7 @@ import com.example.lifetogether.data.repository.GalleryRepositoryImpl
 import com.example.lifetogether.data.repository.GroceryRepositoryImpl
 import com.example.lifetogether.data.repository.GuideRepositoryImpl
 import com.example.lifetogether.data.repository.ImageRepositoryImpl
+import com.example.lifetogether.data.repository.MealPlannerRepositoryImpl
 import com.example.lifetogether.data.repository.RecipeRepositoryImpl
 import com.example.lifetogether.data.repository.TipTrackerRepositoryImpl
 import com.example.lifetogether.data.repository.UserListRepositoryImpl
@@ -14,6 +15,7 @@ import com.example.lifetogether.domain.repository.GalleryRepository
 import com.example.lifetogether.domain.repository.GroceryRepository
 import com.example.lifetogether.domain.repository.GuideRepository
 import com.example.lifetogether.domain.repository.ImageRepository
+import com.example.lifetogether.domain.repository.MealPlannerRepository
 import com.example.lifetogether.domain.repository.RecipeRepository
 import com.example.lifetogether.domain.repository.TipTrackerRepository
 import com.example.lifetogether.domain.repository.UserListRepository
@@ -71,4 +73,9 @@ abstract class RepositoryModule {
     abstract fun bindImageRepository(
         imageRepositoryImpl: ImageRepositoryImpl
     ): ImageRepository
+
+    @Binds
+    abstract fun bindMealPlannerRepository(
+        mealPlannerRepositoryImpl: MealPlannerRepositoryImpl
+    ): MealPlannerRepository
 }

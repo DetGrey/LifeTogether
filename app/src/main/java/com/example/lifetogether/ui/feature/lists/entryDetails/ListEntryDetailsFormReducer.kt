@@ -1,6 +1,5 @@
 package com.example.lifetogether.ui.feature.lists.entryDetails
 
-import com.example.lifetogether.domain.model.lists.MealType
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
 import com.example.lifetogether.domain.model.lists.WishListPriority
 import javax.inject.Inject
@@ -14,7 +13,6 @@ class ListEntryDetailsFormReducer @Inject constructor() {
             is EntryDetailsContent.Routine -> reduceRoutine(details, event)
             is EntryDetailsContent.Wish -> reduceWish(details, event)
             is EntryDetailsContent.Note -> reduceNote(details, event)
-            is EntryDetailsContent.Meal -> reduceMeal(details, event)
         }
     }
 
@@ -74,29 +72,6 @@ class ListEntryDetailsFormReducer @Inject constructor() {
         return when (event) {
             is ListEntryDetailsUiEvent.NameChanged -> details.copy(form = details.form.copy(name = event.value))
             is ListEntryDetailsUiEvent.Note.BodyChanged -> details.copy(form = details.form.copy(body = event.value))
-            else -> details
-        }
-    }
-
-    private fun reduceMeal(
-        details: EntryDetailsContent.Meal,
-        event: ListEntryDetailsUiEvent,
-    ): EntryDetailsContent {
-        return when (event) {
-            is ListEntryDetailsUiEvent.NameChanged -> details.copy(form = details.form.copy(name = event.value))
-            is ListEntryDetailsUiEvent.Meal.DateChanged -> details.copy(form = details.form.copy(date = event.value))
-            is ListEntryDetailsUiEvent.Meal.CustomMealNameChanged -> details.copy(
-                form = details.form.copy(
-                    name = event.value,
-                    customMealName = event.value,
-                ),
-            )
-            is ListEntryDetailsUiEvent.Meal.MealTypeChanged -> details.copy(
-                form = MealType.fromDisplayName(event.value)?.let { mealType ->
-                    details.form.copy(mealType = mealType)
-                } ?: details.form,
-            )
-            is ListEntryDetailsUiEvent.Meal.NotesChanged -> details.copy(form = details.form.copy(notes = event.value))
             else -> details
         }
     }

@@ -84,6 +84,13 @@ sealed interface HomeTile {
         override val requiresAdminAccess: Boolean = false
     }
 
+    data object MealPlanner : HomeTile {
+        override val title: String = "Meal Planner"
+        override val icon: Icon = Icon(R.drawable.ic_recipe, "meal planner icon")
+        override val requiresFamilyAccess: Boolean = true
+        override val requiresAdminAccess: Boolean = false
+    }
+
     data object Lists : HomeTile {
         override val title: String = "Lists"
         override val icon: Icon = Icon(R.drawable.ic_guide, "lists icon")

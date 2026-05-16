@@ -3,7 +3,6 @@ package com.example.lifetogether.data.local.source
 import com.example.lifetogether.data.logic.appResultOf
 
 import com.example.lifetogether.data.local.dao.ChecklistEntriesDao
-import com.example.lifetogether.data.local.dao.MealPlanEntriesDao
 import com.example.lifetogether.data.local.dao.NoteEntriesDao
 import com.example.lifetogether.domain.result.AppError
 
@@ -13,13 +12,11 @@ import com.example.lifetogether.data.local.dao.WishListsDao
 import com.example.lifetogether.data.local.source.internal.computeItemsToDelete
 import com.example.lifetogether.data.local.source.internal.computeItemsToUpdate
 import com.example.lifetogether.data.model.ChecklistEntryEntity
-import com.example.lifetogether.data.model.MealPlanEntryEntity
 import com.example.lifetogether.data.model.NoteEntryEntity
 import com.example.lifetogether.data.model.RoutineListEntryEntity
 import com.example.lifetogether.data.model.UserListEntity
 import com.example.lifetogether.data.model.WishListEntryEntity
 import com.example.lifetogether.domain.model.lists.ChecklistEntry
-import com.example.lifetogether.domain.model.lists.MealPlanEntry
 import com.example.lifetogether.domain.model.lists.NoteEntry
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.domain.model.lists.UserList
@@ -38,7 +35,6 @@ class UserListLocalDataSource @Inject constructor(
     private val wishListsDao: WishListsDao,
     private val noteEntriesDao: NoteEntriesDao,
     private val checklistEntriesDao: ChecklistEntriesDao,
-    private val mealPlanEntriesDao: MealPlanEntriesDao,
 ) {
     fun observeUserLists(familyId: String): Flow<List<UserListEntity>> {
         return userListsDao.getItems(familyId)
@@ -72,7 +68,6 @@ class UserListLocalDataSource @Inject constructor(
         wishListsDao.deleteFamilyItems(familyId)
         noteEntriesDao.deleteFamilyItems(familyId)
         checklistEntriesDao.deleteFamilyItems(familyId)
-        mealPlanEntriesDao.deleteFamilyItems(familyId)
         userListsDao.deleteFamilyItems(familyId)
     }
 
@@ -82,7 +77,6 @@ class UserListLocalDataSource @Inject constructor(
             ListType.WISH_LIST -> wishListsDao.deleteByListIds(listOf(listId))
             ListType.NOTES -> noteEntriesDao.deleteByListIds(listOf(listId))
             ListType.CHECKLIST -> checklistEntriesDao.deleteByListIds(listOf(listId))
-            ListType.MEAL_PLANNER -> mealPlanEntriesDao.deleteByListIds(listOf(listId))
         }
     }
 
@@ -245,42 +239,6 @@ class UserListLocalDataSource @Inject constructor(
         checklistEntriesDao.deleteItems(itemIds)
     }
 
-    fun observeMealPlanEntriesByListId(familyId: String, listId: String): Flow<List<MealPlanEntryEntity>> {
-        return mealPlanEntriesDao.getItemsByListId(familyId, listId)
-    }
-
-    fun observeMealPlanEntry(id: String): Flow<MealPlanEntryEntity> {
-        return mealPlanEntriesDao.getItemById(id)
-    }
-
-    suspend fun updateMealPlanEntries(items: List<MealPlanEntry>) {
-        if (items.isEmpty()) return
-        val currentItems = mealPlanEntriesDao.getItems(items.first().familyId).first()
-        val entities = items.map { it.toEntity() }
-        val itemsToUpdate = computeItemsToUpdate(
-            currentItems = currentItems,
-            incomingItems = entities,
-            key = { it.id },
-        )
-        val itemsToDelete = computeItemsToDelete(
-            currentItems = currentItems,
-            incomingItems = entities,
-            key = { it.id },
-        )
-        mealPlanEntriesDao.updateItems(itemsToUpdate)
-        if (itemsToDelete.isNotEmpty()) {
-            mealPlanEntriesDao.deleteItems(itemsToDelete.map { it.id })
-        }
-    }
-
-    fun deleteFamilyMealPlanEntries(familyId: String) {
-        mealPlanEntriesDao.deleteFamilyItems(familyId)
-    }
-
-    fun deleteMealPlanEntries(itemIds: List<String>): Result<Unit, AppError> = appResultOf {
-        mealPlanEntriesDao.deleteItems(itemIds)
-    }
-
     private fun RoutineListEntry.toEntity() = RoutineListEntryEntity(
         id = id,
         familyId = familyId,
@@ -328,20 +286,6 @@ class UserListLocalDataSource @Inject constructor(
         listId = listId,
         itemName = itemName,
         isChecked = isChecked,
-        lastUpdated = lastUpdated,
-        dateCreated = dateCreated,
-    )
-
-    private fun MealPlanEntry.toEntity() = MealPlanEntryEntity(
-        id = id,
-        familyId = familyId,
-        listId = listId,
-        itemName = itemName,
-        date = date,
-        recipeId = recipeId,
-        customMealName = customMealName,
-        mealType = mealType.name,
-        notes = notes,
         lastUpdated = lastUpdated,
         dateCreated = dateCreated,
     )

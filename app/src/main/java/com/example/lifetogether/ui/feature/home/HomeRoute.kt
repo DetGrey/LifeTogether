@@ -17,6 +17,7 @@ import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.navigation.GalleryNavRoute
 import com.example.lifetogether.ui.navigation.GroceryListNavRoute
 import com.example.lifetogether.ui.navigation.GuidesNavRoute
+import com.example.lifetogether.ui.navigation.MealPlannerNavRoute
 import com.example.lifetogether.ui.navigation.ListsNavRoute
 import com.example.lifetogether.ui.navigation.LoginNavRoute
 import com.example.lifetogether.ui.navigation.ProfileNavRoute
@@ -120,6 +121,7 @@ private fun buildHomeSections(isAdmin: Boolean): List<HomeSection> {
             HomeSectionItem.Tile(HomeTile.Gallery),
             HomeSectionItem.Tile(HomeTile.TipTracker),
             HomeSectionItem.Tile(HomeTile.Lists),
+            HomeSectionItem.Tile(HomeTile.MealPlanner),
         ),
     )
 
@@ -166,6 +168,7 @@ private fun handleTileClick(
     when (tile) {
         HomeTile.GroceryList -> appNavigator.navigate(GroceryListNavRoute)
         HomeTile.Recipes -> appNavigator.navigate(RecipesNavRoute)
+        HomeTile.MealPlanner -> appNavigator.navigate(MealPlannerNavRoute)
         HomeTile.Guides -> appNavigator.navigate(GuidesNavRoute)
         HomeTile.Gallery -> appNavigator.navigate(GalleryNavRoute)
         HomeTile.TipTracker -> appNavigator.navigate(TipTrackerNavRoute)

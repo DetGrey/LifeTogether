@@ -3,8 +3,6 @@ package com.example.lifetogether.ui.feature.lists.entryDetails
 import android.graphics.Bitmap
 import android.net.Uri
 import com.example.lifetogether.domain.model.lists.ListType
-import com.example.lifetogether.domain.model.lists.MealPlanEntry
-import com.example.lifetogether.domain.model.lists.MealType
 import com.example.lifetogether.domain.model.lists.NoteEntry
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
@@ -16,10 +14,8 @@ sealed interface EntryDetailsUiState {
 
     data class Content(
         val details: EntryDetailsContent,
-        val mealRecipeSearchState: MealRecipeSearchState = MealRecipeSearchState(),
         val isEditing: Boolean = false,
         val showDiscardDialog: Boolean = false,
-        val showDeleteDialog: Boolean = false,
         val isSaving: Boolean = false,
     ) : EntryDetailsUiState
 }
@@ -97,30 +93,6 @@ sealed interface EntryDetailsContent {
         }
     }
 
-    data class Meal(
-        val form: MealPlanEntryFormState,
-    ) : EntryDetailsContent {
-        override val listType: ListType = ListType.MEAL_PLANNER
-
-        companion object {
-            fun blank(): Meal {
-                return Meal(form = MealPlanEntryFormState())
-            }
-
-            fun from(entry: MealPlanEntry): Meal {
-                return Meal(
-                    form = MealPlanEntryFormState(
-                        name = entry.itemName,
-                        date = entry.date,
-                        recipeId = entry.recipeId.orEmpty(),
-                        customMealName = entry.customMealName.orEmpty(),
-                        mealType = entry.mealType,
-                        notes = entry.notes,
-                    ),
-                )
-            }
-        }
-    }
 }
 
 data class RoutineEntryFormState(
@@ -147,42 +119,11 @@ data class NoteEntryFormState(
     val body: String = "",
 )
 
-data class RecipeSearchItem(
-    val id: String,
-    val itemName: String,
-    val preparationTimeMin: Int,
-)
-
-enum class MealSearchMode {
-    RECIPE,
-    CUSTOM,
-}
-
-data class MealRecipeSearchState(
-    val mode: MealSearchMode = MealSearchMode.RECIPE,
-    val query: String = "",
-    val isSearchFocused: Boolean = false,
-    val selectedRecipeSearchItem: RecipeSearchItem? = null,
-    val suggestions: List<RecipeSearchItem> = emptyList(),
-)
-
-data class MealPlanEntryFormState(
-    val name: String = "",
-    val date: String = "",
-    val recipeId: String = "",
-    val customMealName: String = "",
-    val mealType: MealType = MealType.DINNER,
-    val notes: String = "",
-)
-
 sealed interface ListEntryDetailsUiEvent {
     data object EnterEditMode : ListEntryDetailsUiEvent
     data object RequestCancelEdit : ListEntryDetailsUiEvent
     data object ConfirmDiscard : ListEntryDetailsUiEvent
     data object DismissDiscardDialog : ListEntryDetailsUiEvent
-    data object RequestDeleteEntry : ListEntryDetailsUiEvent
-    data object ConfirmDeleteEntry : ListEntryDetailsUiEvent
-    data object DismissDeleteDialog : ListEntryDetailsUiEvent
     data class NameChanged(val value: String) : ListEntryDetailsUiEvent
     data object SaveClicked : ListEntryDetailsUiEvent
 
@@ -205,22 +146,10 @@ sealed interface ListEntryDetailsUiEvent {
     sealed interface Note : ListEntryDetailsUiEvent {
         data class BodyChanged(val value: String) : Note
     }
-
-    sealed interface Meal : ListEntryDetailsUiEvent {
-        data class DateChanged(val value: String) : Meal
-        data class RecipeQueryChanged(val value: String) : Meal
-        data class RecipeSearchFocusedChanged(val value: Boolean) : Meal
-        data class RecipeSelected(val recipe: RecipeSearchItem) : Meal
-        data class RecipeModeChanged(val mode: MealSearchMode) : Meal
-        data class CustomMealNameChanged(val value: String) : Meal
-        data class MealTypeChanged(val value: String) : Meal
-        data class NotesChanged(val value: String) : Meal
-    }
 }
 
 sealed interface ListEntryDetailsNavigationEvent {
     data object NavigateBack : ListEntryDetailsNavigationEvent
-    data class NavigateToRecipeDetails(val recipeId: String) : ListEntryDetailsNavigationEvent
 }
 
 sealed interface ListEntryDetailsCommand {

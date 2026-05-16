@@ -1,10 +1,9 @@
-package com.example.lifetogether.ui.feature.lists.entryDetails.content
+package com.example.lifetogether.ui.feature.mealPlanner.entryDetails
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -23,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.logic.minToHourMinString
 import com.example.lifetogether.domain.model.lists.MealType
 import com.example.lifetogether.ui.common.dialog.DatePickerDialog
@@ -33,26 +31,18 @@ import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.common.textfield.DatePickerTextField
-import com.example.lifetogether.ui.feature.lists.entryDetails.EntryDetailsContent
-import com.example.lifetogether.ui.feature.lists.entryDetails.EntryDetailsUiState
-import com.example.lifetogether.ui.feature.lists.entryDetails.ListEntryDetailsNavigationEvent
-import com.example.lifetogether.ui.feature.lists.entryDetails.MealSearchMode
-import com.example.lifetogether.ui.feature.lists.entryDetails.ListEntryDetailsUiEvent
-import com.example.lifetogether.ui.feature.lists.entryDetails.MealPlanEntryFormState
-import com.example.lifetogether.ui.feature.lists.entryDetails.MealRecipeSearchState
-import com.example.lifetogether.ui.feature.lists.entryDetails.RecipeSearchItem
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-fun LazyListScope.mealPlanEntryContent(
-    uiState: EntryDetailsUiState.Content,
+fun LazyListScope.mealPlanContent(
+    uiState: MealPlanDetailsUiState.Content,
     familyId: String? = null,
-    formState: MealPlanEntryFormState,
+    formState: MealPlanFormState,
     searchState: MealRecipeSearchState,
-    onUiEvent: (ListEntryDetailsUiEvent) -> Unit,
-    onNavigationEvent: (ListEntryDetailsNavigationEvent) -> Unit,
+    onUiEvent: (MealPlanDetailsUiEvent) -> Unit,
+    onNavigationEvent: (MealPlanDetailsNavigationEvent) -> Unit,
 ) {
     item {
         val showDatePicker = remember { mutableStateOf(false) }
@@ -70,7 +60,7 @@ fun LazyListScope.mealPlanEntryContent(
                 selectedDate = formState.date.takeIf { it.isNotBlank() }?.let { dateFormat.parse(it) },
                 onDismiss = { showDatePicker.value = false },
                 onDateSelected = { selected ->
-                    onUiEvent(ListEntryDetailsUiEvent.Meal.DateChanged(dateFormat.format(selected)))
+                    onUiEvent(MealPlanDetailsUiEvent.Meal.DateChanged(dateFormat.format(selected)))
                     showDatePicker.value = false
                 },
             )
@@ -89,7 +79,7 @@ fun LazyListScope.mealPlanEntryContent(
                     selected = searchState.mode == MealSearchMode.RECIPE,
                     onClick = {
                         if (uiState.isEditing) {
-                            onUiEvent(ListEntryDetailsUiEvent.Meal.RecipeModeChanged(MealSearchMode.RECIPE))
+                            onUiEvent(MealPlanDetailsUiEvent.Meal.RecipeModeChanged(MealSearchMode.RECIPE))
                         }
                     },
                     text = { Text("Recipe") },
@@ -98,7 +88,7 @@ fun LazyListScope.mealPlanEntryContent(
                     selected = searchState.mode == MealSearchMode.CUSTOM,
                     onClick = {
                         if (uiState.isEditing) {
-                            onUiEvent(ListEntryDetailsUiEvent.Meal.RecipeModeChanged(MealSearchMode.CUSTOM))
+                            onUiEvent(MealPlanDetailsUiEvent.Meal.RecipeModeChanged(MealSearchMode.CUSTOM))
                         }
                     },
                     text = { Text("Custom") },
@@ -116,7 +106,7 @@ fun LazyListScope.mealPlanEntryContent(
                             if (uiState.isEditing) {
                                 CustomTextField(
                                     value = searchState.query,
-                                    onValueChange = { onUiEvent(ListEntryDetailsUiEvent.Meal.RecipeQueryChanged(it)) },
+                                    onValueChange = { onUiEvent(MealPlanDetailsUiEvent.Meal.RecipeQueryChanged(it)) },
                                     label = "Search recipes by name",
                                     modifier = Modifier.fillMaxWidth(),
                                     imeAction = ImeAction.Next,
@@ -135,7 +125,7 @@ fun LazyListScope.mealPlanEntryContent(
                                     RecipeSearchSuggestions(
                                         suggestions = searchState.suggestions,
                                         onSuggestionClick = { suggestion ->
-                                            onUiEvent(ListEntryDetailsUiEvent.Meal.RecipeSelected(suggestion))
+                                            onUiEvent(MealPlanDetailsUiEvent.Meal.RecipeSelected(suggestion))
                                         },
                                     )
                                 }
@@ -148,7 +138,7 @@ fun LazyListScope.mealPlanEntryContent(
                                     prepTimeMin = selectedRecipe.preparationTimeMin,
                                     onClick = {
                                         onNavigationEvent(
-                                            ListEntryDetailsNavigationEvent.NavigateToRecipeDetails(selectedRecipe.id),
+                                            MealPlanDetailsNavigationEvent.NavigateToRecipeDetails(selectedRecipe.id),
                                         )
                                     },
                                 )
@@ -163,7 +153,7 @@ fun LazyListScope.mealPlanEntryContent(
                     MealSearchMode.CUSTOM -> {
                         CustomTextField(
                             value = formState.customMealName,
-                            onValueChange = { onUiEvent(ListEntryDetailsUiEvent.Meal.CustomMealNameChanged(it)) },
+                            onValueChange = { onUiEvent(MealPlanDetailsUiEvent.Meal.CustomMealNameChanged(it)) },
                             label = "Meal name",
                             modifier = Modifier.fillMaxWidth(),
                             imeAction = ImeAction.Next,
@@ -184,7 +174,7 @@ fun LazyListScope.mealPlanEntryContent(
             selectedOption = formState.mealType.displayName,
             onSelectedOptionChange = {
                 if (uiState.isEditing) {
-                    onUiEvent(ListEntryDetailsUiEvent.Meal.MealTypeChanged(it))
+                    onUiEvent(MealPlanDetailsUiEvent.Meal.MealTypeChanged(it))
                 }
             },
         )
@@ -193,7 +183,7 @@ fun LazyListScope.mealPlanEntryContent(
     item {
         CustomTextField(
             value = formState.notes,
-            onValueChange = { onUiEvent(ListEntryDetailsUiEvent.Meal.NotesChanged(it)) },
+            onValueChange = { onUiEvent(MealPlanDetailsUiEvent.Meal.NotesChanged(it)) },
             label = "Notes (optional)",
             modifier = Modifier.fillMaxWidth(),
             imeAction = ImeAction.Default,
@@ -231,96 +221,32 @@ private fun RecipeSearchSuggestions(
                         ),
                     horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                     verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            modifier = Modifier.weight(1f),
-                            text = suggestion.itemName,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            text = minToHourMinString(suggestion.preparationTimeMin),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.secondary,
-                        )
-                    }
+                ) {
+                    Text(
+                        modifier = Modifier.weight(1f),
+                        text = suggestion.itemName,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = minToHourMinString(suggestion.preparationTimeMin),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
                 }
             }
         }
     }
+}
 
 @Preview(showBackground = true)
 @Composable
-private fun MealPlannerEntryContentPreview() {
+private fun MealPlanContentPreview() {
     LifeTogetherTheme {
-        ListEntryDetailsContent(
-            padding = PaddingValues(0.dp),
-            contentState = EntryDetailsUiState.Content(
-                details = EntryDetailsContent.Meal.blank(),
-                mealRecipeSearchState = MealRecipeSearchState(
-                    mode = MealSearchMode.RECIPE,
-                    query = "tom",
-                    isSearchFocused = true,
-                    suggestions = listOf(
-                        RecipeSearchItem(
-                            id = "recipe-1",
-                            itemName = "Tomato Soup",
-                            preparationTimeMin = 25,
-                        ),
-                        RecipeSearchItem(
-                            id = "recipe-2",
-                            itemName = "Tomato Pasta",
-                            preparationTimeMin = 35,
-                        ),
-                    ),
-                ),
-                isEditing = true,
-            ),
-            isExistingEntry = false,
-            onUiEvent = {},
-        ) {
-            mealPlanEntryContent(
-                uiState = EntryDetailsUiState.Content(
-                    details = EntryDetailsContent.Meal.blank(),
-                    mealRecipeSearchState = MealRecipeSearchState(
-                        mode = MealSearchMode.RECIPE,
-                        query = "tom",
-                        isSearchFocused = true,
-                        suggestions = listOf(
-                            RecipeSearchItem(
-                                id = "recipe-1",
-                                itemName = "Tomato Soup",
-                                preparationTimeMin = 25,
-                            ),
-                        ),
-                    ),
-                    isEditing = true,
-                ),
-                formState = MealPlanEntryFormState(
-                    name = "tom",
-                    date = "2026-05-08",
-                    recipeId = "",
-                    customMealName = "",
-                    mealType = MealType.DINNER,
-                    notes = "",
-                ),
-                searchState = MealRecipeSearchState(
-                    mode = MealSearchMode.RECIPE,
-                    query = "tom",
-                    isSearchFocused = true,
-                    suggestions = listOf(
-                        RecipeSearchItem(
-                            id = "recipe-1",
-                            itemName = "Tomato Soup",
-                            preparationTimeMin = 25,
-                        ),
-                    ),
-                ),
-                onUiEvent = {},
-                onNavigationEvent = {},
-            )
+        Column {
+            // Preview intentionally left minimal; full preview comes from the screen.
         }
     }
 }

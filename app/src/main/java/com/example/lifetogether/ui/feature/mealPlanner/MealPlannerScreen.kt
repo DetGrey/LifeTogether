@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.feature.lists.listDetails.content
+package com.example.lifetogether.ui.feature.mealPlanner
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,9 +15,11 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -25,10 +27,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.minToHourMinString
-import com.example.lifetogether.domain.model.lists.MealPlanEntry
+import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.lists.MealType
+import com.example.lifetogether.domain.model.mealplanner.MealPlan
+import com.example.lifetogether.ui.common.AppTopBar
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
+import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.button.SecondaryButton
+import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.common.text.TextLabel
@@ -39,57 +47,92 @@ import java.time.LocalDate
 import java.time.format.DateTimeParseException
 import java.time.format.TextStyle
 import java.time.temporal.ChronoUnit
+import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MealPlannerListSection(
-    entries: List<MealPlanEntry>,
-    recipePrepTimes: Map<String, Int>,
-    focusDate: String? = null,
-    onFocusDateHandled: () -> Unit = {},
-    onEntryClick: (MealPlanEntry) -> Unit,
+fun MealPlannerScreen(
+    uiState: MealPlannerUiState,
+    onUiEvent: (MealPlannerUiEvent) -> Unit,
+    onNavigationEvent: (MealPlannerNavigationEvent) -> Unit,
 ) {
-    MealPlannerWeekPager(
-        entries = entries,
-        recipePrepTimes = recipePrepTimes,
-        focusDate = focusDate,
-        onFocusDateHandled = onFocusDateHandled,
-        onEntryClick = onEntryClick,
-    )
+    val isLoading = uiState is MealPlannerUiState.Loading
+    val contentState = uiState as? MealPlannerUiState.Content
+
+    Scaffold(
+        topBar = {
+            AppTopBar(
+                leftIcon = Icon(
+                    resId = R.drawable.ic_back_arrow,
+                    description = "back arrow icon",
+                ),
+                onLeftClick = { onNavigationEvent(MealPlannerNavigationEvent.NavigateBack) },
+                text = "Meal Planner",
+            )
+        },
+        floatingActionButton = {
+            if (!isLoading) {
+                AddButton(
+                    onClick = { onNavigationEvent(MealPlannerNavigationEvent.NavigateToCreateMealPlan()) },
+                )
+            }
+        },
+    ) { padding ->
+        AnimatedLoadingContent(
+            isLoading = isLoading,
+            label = "meal_planner_loading_content",
+            loadingContent = {
+                Skeletons.ListDetail(modifier = Modifier.fillMaxSize())
+            },
+        ) {
+            val content = contentState ?: return@AnimatedLoadingContent
+            MealPlannerWeekPager(
+                mealPlans = content.mealPlans,
+                recipePrepTimes = content.recipePrepTimes,
+                modifier = Modifier
+                    .padding(padding)
+                    .padding(horizontal = LifeTogetherTokens.spacing.small),
+                focusDate = content.focusDate,
+                onFocusDateHandled = { onUiEvent(MealPlannerUiEvent.ClearFocusDate) },
+                onMealPlanClick = { mealPlan ->
+                    onNavigationEvent(MealPlannerNavigationEvent.NavigateToMealPlanDetails(mealPlan.id))
+                },
+                onEmptyDayClick = { date ->
+                    onNavigationEvent(MealPlannerNavigationEvent.NavigateToCreateMealPlan(defaultDate = date.toString()))
+                },
+            )
+        }
+    }
 }
 
 @Composable
 private fun MealPlannerWeekPager(
-    entries: List<MealPlanEntry>,
+    mealPlans: List<MealPlan>,
     recipePrepTimes: Map<String, Int>,
+    modifier: Modifier = Modifier,
     focusDate: String?,
     onFocusDateHandled: () -> Unit,
-    onEntryClick: (MealPlanEntry) -> Unit,
+    onMealPlanClick: (MealPlan) -> Unit,
+    onEmptyDayClick: (LocalDate) -> Unit,
 ) {
-    val parsedEntries = remember(entries) {
-        entries.mapNotNull { entry ->
-            parseMealDate(entry.date)?.let { it to entry }
+    val parsedMealPlans = remember(mealPlans) {
+        mealPlans.mapNotNull { mealPlan ->
+            parseMealDate(mealPlan.date)?.let { it to mealPlan }
         }
     }
-    val entriesByDate = remember(parsedEntries) {
-        parsedEntries.groupBy({ it.first }, { it.second })
+    val mealPlansByDate = remember(parsedMealPlans) {
+        parsedMealPlans.groupBy({ it.first }, { it.second })
     }
     val today = remember { LocalDate.now() }
     val currentWeekStart = remember(today) { startOfWeek(today) }
-    val weekOffsets = remember(parsedEntries, currentWeekStart) {
-        parsedEntries.map { pair ->
-            ChronoUnit.WEEKS.between(currentWeekStart, startOfWeek(pair.first)).toInt()
-        }
-    }
-    val minOffset = remember(weekOffsets) { minOf(weekOffsets.minOrNull() ?: 0, -8) }
-    val maxOffset = remember(weekOffsets) { maxOf(weekOffsets.maxOrNull() ?: 0, 8) }
-    val pageCount = (maxOffset - minOffset + 1).coerceAtLeast(1)
-    val currentWeekPage = -minOffset
+    val pageCount = 4001
+    val currentWeekPage = pageCount / 2
     val pagerState = rememberPagerState(initialPage = currentWeekPage) { pageCount }
     val coroutineScope = rememberCoroutineScope()
     val focusWeekStart = remember(focusDate) { focusDate?.let(::parseMealDate)?.let(::startOfWeek) }
 
-    LaunchedEffect(focusWeekStart, pageCount, currentWeekPage) {
+    LaunchedEffect(focusWeekStart, currentWeekPage) {
         val weekStart = focusWeekStart ?: return@LaunchedEffect
         val targetPage = (
             currentWeekPage + ChronoUnit.WEEKS.between(currentWeekStart, weekStart).toInt()
@@ -101,7 +144,7 @@ private fun MealPlannerWeekPager(
     }
 
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
     ) {
         Row(
@@ -127,13 +170,13 @@ private fun MealPlannerWeekPager(
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
-                contentPadding = PaddingValues(bottom = LifeTogetherTokens.spacing.bottomInsetMedium)
+                contentPadding = PaddingValues(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
             ) {
                 items(weekDays) { day ->
-                    val dayEntries = entriesByDate[day]
+                    val dayMealPlans = mealPlansByDate[day]
                         .orEmpty()
                         .sortedWith(
-                            compareBy<MealPlanEntry> { it.mealType.mealOrder }
+                            compareBy<MealPlan> { it.mealType.mealOrder }
                                 .thenBy { it.dateCreated }
                                 .thenBy { it.itemName.lowercase() },
                         )
@@ -141,16 +184,21 @@ private fun MealPlannerWeekPager(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.large)
                             .background(
                                 color = MaterialTheme.colorScheme.surfaceVariant,
                                 shape = MaterialTheme.shapes.large,
                             )
+                            .clickable(
+                                enabled = dayMealPlans.isEmpty()
+                            ) { onEmptyDayClick(day) }
                             .padding(LifeTogetherTokens.spacing.medium),
                         verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                     ) {
-                        if (dayEntries.isEmpty()) {
+                        if (dayMealPlans.isEmpty()) {
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                             ) {
                                 TextDefault(text = label)
@@ -158,15 +206,14 @@ private fun MealPlannerWeekPager(
                             }
                         } else {
                             TextDefault(text = label)
-
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                             ) {
-                                dayEntries.forEach { dayEntry ->
+                                dayMealPlans.forEach { mealPlan ->
                                     MealPlanCard(
-                                        entry = dayEntry,
-                                        prepTimeMin = dayEntry.recipeId?.let { recipePrepTimes[it] },
-                                        onClick = { onEntryClick(dayEntry) },
+                                        mealPlan = mealPlan,
+                                        prepTimeMin = mealPlan.recipeId?.let { recipePrepTimes[it] },
+                                        onClick = { onMealPlanClick(mealPlan) },
                                     )
                                 }
                             }
@@ -186,17 +233,12 @@ private fun parseMealDate(value: String): LocalDate? {
     }
 }
 
-private fun startOfWeek(date: LocalDate): LocalDate {
-    var d = date
-    while (d.dayOfWeek != DayOfWeek.MONDAY) {
-        d = d.minusDays(1)
-    }
-    return d
-}
+private fun startOfWeek(date: LocalDate): LocalDate =
+    date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
 
 @Composable
 private fun MealPlanCard(
-    entry: MealPlanEntry,
+    mealPlan: MealPlan,
     prepTimeMin: Int?,
     onClick: () -> Unit,
 ) {
@@ -207,21 +249,17 @@ private fun MealPlanCard(
             .clickable(onClick = onClick),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors().copy(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
         ),
     ) {
         val showPrepTime = prepTimeMin != null && prepTimeMin > 0
-        val spacedBy = if (showPrepTime) LifeTogetherTokens.spacing.small else 0.dp
         Column(
             modifier = Modifier.padding(LifeTogetherTokens.spacing.medium),
-            verticalArrangement = Arrangement.spacedBy(spacedBy)
+            verticalArrangement = Arrangement.spacedBy(if (showPrepTime) LifeTogetherTokens.spacing.small else 0.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(
-                    LifeTogetherTokens.spacing.small,
-                    Alignment.End
-                ),
+                horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
             ) {
                 if (showPrepTime) {
                     TextDefault(
@@ -230,13 +268,13 @@ private fun MealPlanCard(
                     )
                 }
                 TextLabel(
-                    text = entry.mealType.displayName,
+                    text = mealPlan.mealType.displayName,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.weight(1f),
                     textAlign = TextAlign.End,
                 )
             }
-            TextHeadingMedium(text = entry.itemName)
+            TextHeadingMedium(text = mealPlan.itemName)
         }
     }
 }

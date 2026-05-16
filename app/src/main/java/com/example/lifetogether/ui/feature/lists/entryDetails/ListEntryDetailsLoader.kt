@@ -115,10 +115,6 @@ class ListEntryDetailsLoader @Inject constructor(
             ListType.CHECKLIST -> flowOf(
                 Result.Failure(AppError.Validation("Checklist entries are handled in list details")),
             )
-
-            ListType.MEAL_PLANNER -> userListRepository.observeMealPlanEntry(entryId).map { result ->
-                result.mapData { EntryDetailsContent.Meal.from(it) }
-            }
         }
     }
 
@@ -128,7 +124,6 @@ class ListEntryDetailsLoader @Inject constructor(
             ListType.WISH_LIST -> EntryDetailsContent.Wish.blank()
             ListType.NOTES -> EntryDetailsContent.Note.blank()
             ListType.CHECKLIST -> error("Checklist entries are handled in list details")
-            ListType.MEAL_PLANNER -> EntryDetailsContent.Meal.blank()
         }
     }
 

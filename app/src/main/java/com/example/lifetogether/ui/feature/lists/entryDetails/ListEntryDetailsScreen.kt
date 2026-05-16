@@ -19,7 +19,6 @@ import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.feature.lists.entryDetails.content.ListEntryDetailsContent
 import com.example.lifetogether.ui.feature.lists.entryDetails.content.NoteEntryContent
-import com.example.lifetogether.ui.feature.lists.entryDetails.content.mealPlanEntryContent
 import com.example.lifetogether.ui.feature.lists.entryDetails.content.routineEntryForm
 import com.example.lifetogether.ui.feature.lists.entryDetails.content.wishListEntryForm
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -44,17 +43,14 @@ fun ListEntryDetailsScreen(
 
     val isExistingEntry = entryId != null
     val isNoteEntry = content?.details is EntryDetailsContent.Note
-    val isMealEntry = content?.details is EntryDetailsContent.Meal
 
     val topBarTitle = if (isNoteEntry) "" else if (isExistingEntry) "Entry details" else "New entry"
     val topBarRightIcon = when {
         isNoteEntry || !isExistingEntry -> null
-        isMealEntry && content.isEditing -> Icon(resId = R.drawable.ic_trashcan, description = "delete meal plan entry")
         else -> Icon(resId = R.drawable.ic_edit, description = "edit entry")
     }
     val topBarRightClick: (() -> Unit)? = if (isExistingEntry && !isNoteEntry) {
         when {
-            isMealEntry && content.isEditing -> { { onUiEvent(ListEntryDetailsUiEvent.RequestDeleteEntry) } }
             content?.isEditing == true -> { { onUiEvent(ListEntryDetailsUiEvent.RequestCancelEdit) } }
             else -> { { onUiEvent(ListEntryDetailsUiEvent.EnterEditMode) } }
         }
@@ -116,15 +112,6 @@ fun ListEntryDetailsScreen(
                             onUiEvent = onUiEvent,
                         )
 
-                        is EntryDetailsContent.Meal -> mealPlanEntryContent(
-                            uiState = uiState,
-                            familyId = familyId,
-                            formState = details.form,
-                            searchState = contentState.mealRecipeSearchState,
-                            onUiEvent = onUiEvent,
-                            onNavigationEvent = onNavigationEvent,
-                        )
-
                         is EntryDetailsContent.Note -> Unit
                     }
                 }
@@ -140,17 +127,6 @@ fun ListEntryDetailsScreen(
             dialogMessage = "Your unsaved changes will be lost.",
             dismissButtonMessage = "Keep editing",
             confirmButtonMessage = "Discard",
-        )
-    }
-
-    if (content?.showDeleteDialog == true) {
-        ConfirmationDialog(
-            onDismiss = { onUiEvent(ListEntryDetailsUiEvent.DismissDeleteDialog) },
-            onConfirm = { onUiEvent(ListEntryDetailsUiEvent.ConfirmDeleteEntry) },
-            dialogTitle = "Delete meal plan entry?",
-            dialogMessage = "This will permanently delete the meal plan entry.",
-            dismissButtonMessage = "Cancel",
-            confirmButtonMessage = "Delete",
         )
     }
 

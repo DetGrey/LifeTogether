@@ -1,0 +1,121 @@
+package com.example.lifetogether.ui.feature.mealPlanner
+
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asFlow
+import androidx.lifecycle.viewModelScope
+import com.example.lifetogether.domain.model.session.authenticatedUserOrNull
+import com.example.lifetogether.domain.repository.MealPlannerRepository
+import com.example.lifetogether.domain.repository.RecipeRepository
+import com.example.lifetogether.domain.repository.SessionRepository
+import com.example.lifetogether.domain.result.Result
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.transformLatest
+import kotlinx.coroutines.flow.SharingStarted
+import javax.inject.Inject
+
+@HiltViewModel
+class MealPlannerViewModel @Inject constructor(
+    private val savedStateHandle: SavedStateHandle,
+    sessionRepository: SessionRepository,
+    private val mealPlannerRepository: MealPlannerRepository,
+    private val recipeRepository: RecipeRepository,
+) : ViewModel() {
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val contentState: StateFlow<MealPlannerUiState.Content?> = sessionRepository.sessionState
+        .map { state ->
+            state.authenticatedUserOrNull?.familyId
+        }
+        .distinctUntilChanged()
+        .flatMapLatest { familyId ->
+            if (familyId == null) {
+                flowOf(null)
+            } else {
+                observeMealPlannerContent(familyId)
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = null,
+        )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val mealPlannerFocusDate: StateFlow<String?> = contentState
+        .flatMapLatest { content ->
+            if (content != null) {
+                savedStateHandle.getLiveData<String?>(MEAL_PLANNER_FOCUS_DATE_RESULT_KEY).asFlow()
+            } else {
+                flowOf(null)
+            }
+        }
+        .distinctUntilChanged()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = null,
+        )
+
+    val uiState: StateFlow<MealPlannerUiState> = combine(
+        contentState,
+        mealPlannerFocusDate,
+    ) { content, focusDate ->
+        content?.copy(focusDate = focusDate) ?: MealPlannerUiState.Loading
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = MealPlannerUiState.Loading,
+    )
+
+    fun onUiEvent(event: MealPlannerUiEvent) {
+        when (event) {
+            MealPlannerUiEvent.ClearFocusDate -> clearFocusDate()
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun observeMealPlannerContent(familyId: String): Flow<MealPlannerUiState.Content> {
+        return mealPlannerRepository.observeMealPlans(familyId)
+            .successData()
+            .flatMapLatest { mealPlans ->
+                observeRecipePrepTimes(familyId).map { recipePrepTimes ->
+                    MealPlannerUiState.Content(
+                        familyId = familyId,
+                        mealPlans = mealPlans,
+                        recipePrepTimes = recipePrepTimes,
+                    )
+                }
+            }
+    }
+
+    private fun observeRecipePrepTimes(familyId: String): Flow<Map<String, Int>> {
+        return recipeRepository.observeRecipes(familyId)
+            .successData()
+            .map { recipes ->
+                recipes.associate { recipe -> recipe.id to recipe.preparationTimeMin }
+            }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun <T> Flow<Result<T, com.example.lifetogether.domain.result.AppError>>.successData(): Flow<T> {
+        return transformLatest { result ->
+            when (result) {
+                is Result.Success -> emit(result.data)
+                is Result.Failure -> Unit
+            }
+        }
+    }
+
+    private fun clearFocusDate() {
+        savedStateHandle[MEAL_PLANNER_FOCUS_DATE_RESULT_KEY] = null
+    }
+}

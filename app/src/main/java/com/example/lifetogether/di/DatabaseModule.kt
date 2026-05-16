@@ -2,6 +2,12 @@ package com.example.lifetogether.di
 
 import android.content.Context
 import androidx.room.Room
+import com.example.lifetogether.data.local.MIGRATION_23_24
+import com.example.lifetogether.data.local.MIGRATION_24_25
+import com.example.lifetogether.data.local.MIGRATION_25_26
+import com.example.lifetogether.data.local.MIGRATION_27_28
+import com.example.lifetogether.data.local.MIGRATION_31_32
+import com.example.lifetogether.data.local.MIGRATION_32_33
 import com.example.lifetogether.data.local.AppDatabase
 import com.example.lifetogether.data.local.dao.AlbumsDao
 import com.example.lifetogether.data.local.dao.ChecklistEntriesDao
@@ -12,7 +18,7 @@ import com.example.lifetogether.data.local.dao.GuideProgressDao
 import com.example.lifetogether.data.local.dao.GuidesDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
-import com.example.lifetogether.data.local.dao.MealPlanEntriesDao
+import com.example.lifetogether.data.local.dao.MealPlanDao
 import com.example.lifetogether.data.local.dao.NoteEntriesDao
 import com.example.lifetogether.data.local.dao.RoutineListsDao
 import com.example.lifetogether.data.local.dao.UserListsDao
@@ -42,10 +48,12 @@ object DatabaseModule {
             .allowMainThreadQueries()
             .fallbackToDestructiveMigration(false)
             .addMigrations(
-                AppDatabase.MIGRATION_23_24,
-                AppDatabase.MIGRATION_24_25,
-                AppDatabase.MIGRATION_25_26,
-                AppDatabase.MIGRATION_27_28,
+                MIGRATION_23_24,
+                MIGRATION_24_25,
+                MIGRATION_25_26,
+                MIGRATION_27_28,
+                MIGRATION_31_32,
+                MIGRATION_32_33,
             )
             .build()
     }
@@ -148,7 +156,7 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideMealPlanEntriesDao(db: AppDatabase): MealPlanEntriesDao {
-        return db.mealPlanEntriesDao()
+    fun provideMealPlanDao(db: AppDatabase): MealPlanDao {
+        return db.mealPlanDao()
     }
 }

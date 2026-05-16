@@ -19,7 +19,7 @@ object Constants {
     const val WISH_LIST_ENTRIES_TABLE = "list_entries_wish"
     const val NOTE_LIST_ENTRIES_TABLE = "list_entries_notes"
     const val CHECKLIST_ENTRIES_TABLE = "list_entries_checklist"
-    const val MEAL_PLAN_ENTRIES_TABLE = "list_entries_meal_plan"
+    const val MEAL_PLAN_TABLE = "meal_plans"
 
     // Generic visibility constants — shared across guides, lists, and future features
     const val VISIBILITY_FAMILY = "family"

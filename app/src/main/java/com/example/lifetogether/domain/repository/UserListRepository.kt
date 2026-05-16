@@ -1,9 +1,7 @@
 package com.example.lifetogether.domain.repository
 
 import com.example.lifetogether.domain.result.AppError
-
 import com.example.lifetogether.domain.model.lists.ChecklistEntry
-import com.example.lifetogether.domain.model.lists.MealPlanEntry
 import com.example.lifetogether.domain.model.lists.NoteEntry
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.domain.model.lists.UserList
@@ -12,6 +10,7 @@ import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.Flow
 
 interface UserListRepository {
+    suspend fun deleteLegacyMealPlannerUserLists(familyId: String): Result<Unit, AppError>
     fun observeUserLists(familyId: String): Flow<Result<List<UserList>, AppError>>
     fun syncUserListsFromRemote(uid: String, familyId: String): Flow<Result<Unit, AppError>>
     suspend fun saveUserList(userList: UserList): Result<String, AppError>
@@ -43,11 +42,4 @@ interface UserListRepository {
     suspend fun saveChecklistEntry(entry: ChecklistEntry): Result<String, AppError>
     suspend fun updateChecklistEntry(entry: ChecklistEntry): Result<Unit, AppError>
     suspend fun deleteChecklistEntries(itemIds: List<String>): Result<Unit, AppError>
-
-    fun observeMealPlanEntriesByListId(familyId: String, listId: String): Flow<Result<List<MealPlanEntry>, AppError>>
-    fun syncMealPlanEntriesFromRemote(uid: String, familyId: String): Flow<Result<Unit, AppError>>
-    fun observeMealPlanEntry(id: String): Flow<Result<MealPlanEntry, AppError>>
-    suspend fun saveMealPlanEntry(entry: MealPlanEntry): Result<String, AppError>
-    suspend fun updateMealPlanEntry(entry: MealPlanEntry): Result<Unit, AppError>
-    suspend fun deleteMealPlanEntries(itemIds: List<String>): Result<Unit, AppError>
 }

@@ -11,12 +11,12 @@ enum class SyncKey {
     TIP_TRACKER,
     GALLERY_ALBUMS,
     GALLERY_MEDIA,
+    MEAL_PLANNER,
     USER_LISTS,
     ROUTINE_LIST_ENTRIES,
     WISH_LIST_ENTRIES,
     NOTE_ENTRIES,
     CHECKLIST_ENTRIES,
-    MEAL_PLAN_ENTRIES,
 }
 
 data class SyncContext(

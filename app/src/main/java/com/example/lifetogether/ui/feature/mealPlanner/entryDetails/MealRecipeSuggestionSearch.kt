@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.feature.lists.entryDetails
+package com.example.lifetogether.ui.feature.mealPlanner.entryDetails
 
 fun searchMealRecipeSuggestions(
     query: String,

@@ -24,8 +24,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Icon
 import com.example.lifetogether.domain.model.lists.ChecklistEntry
-import com.example.lifetogether.domain.model.lists.MealPlanEntry
-import com.example.lifetogether.domain.model.lists.MealType
 import com.example.lifetogether.domain.model.lists.NoteEntry
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
@@ -42,13 +40,11 @@ import com.example.lifetogether.ui.common.list.CompletableBox
 import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.feature.lists.listDetails.content.CheckItemsSection
-import com.example.lifetogether.ui.feature.lists.listDetails.content.MealPlannerListSection
 import com.example.lifetogether.ui.feature.lists.listDetails.content.NotesSection
 import com.example.lifetogether.ui.feature.lists.listDetails.content.RoutinesSection
 import com.example.lifetogether.ui.feature.lists.listDetails.content.WishesSection
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
-import java.time.LocalDate
 import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -196,15 +192,6 @@ fun ListDetailsScreen(
                             onClick = onEntryClick,
                             onLongClick = onEntryLongClick,
                         )
-                        is ListDetailsListContent.MealPlans -> MealPlannerListSection(
-                            entries = listContent.entries,
-                            recipePrepTimes = listContent.recipePrepTimes,
-                            focusDate = contentState.mealPlannerFocusDate,
-                            onFocusDateHandled = { onUiEvent(ListDetailsUiEvent.ClearMealPlannerFocusDate) },
-                            onEntryClick = { entry ->
-                                onNavigationEvent(ListDetailsNavigationEvent.NavigateToEntryDetails(entry.id))
-                            },
-                        )
                     }
                 }
             }
@@ -225,15 +212,13 @@ fun ListDetailsScreen(
             }
 
             false -> {
-                if (contentState.listContent !is ListDetailsListContent.MealPlans) {
-                    listOf(
-                        ActionSheetItem(
-                            label = "Select entries",
-                            onClick = { onUiEvent(ListDetailsUiEvent.StartSelectionMode) },
-                            isEnabled = contentState.listContent.entries.isNotEmpty(),
-                        ),
-                    )
-                } else listOf()
+                listOf(
+                    ActionSheetItem(
+                        label = "Select entries",
+                        onClick = { onUiEvent(ListDetailsUiEvent.StartSelectionMode) },
+                        isEnabled = contentState.listContent.entries.isNotEmpty(),
+                    ),
+                )
             }
         }
 
@@ -439,51 +424,6 @@ private fun ChecklistPreview() {
                             dateCreated = Date(),
                         ),
                     ),
-                ),
-            ),
-            onUiEvent = {},
-            onNavigationEvent = {},
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun MealPlannerPreview() {
-    LifeTogetherTheme {
-        ListDetailsScreen(
-            uiState = previewState(
-                ListDetailsListContent.MealPlans(
-                    listName = "Meal plan",
-                    entries = listOf(
-                        MealPlanEntry(
-                            id = "meal-1",
-                            familyId = "family-1",
-                            listId = "list-1",
-                            itemName = "Pasta night",
-                            date = LocalDate.now().toString(),
-                            recipeId = "recipe-1",
-                            customMealName = null,
-                            mealType = MealType.DINNER,
-                            notes = "Serve with salad.",
-                            lastUpdated = Date(),
-                            dateCreated = Date(),
-                        ),
-                        MealPlanEntry(
-                            id = "meal-2",
-                            familyId = "family-1",
-                            listId = "list-1",
-                            itemName = "Sandwich lunch",
-                            date = LocalDate.now().plusDays(1).toString(),
-                            recipeId = null,
-                            customMealName = "Club sandwich",
-                            mealType = MealType.LUNCH,
-                            notes = "",
-                            lastUpdated = Date(),
-                            dateCreated = Date(),
-                        ),
-                    ),
-                    familyId = "family-1",
                 ),
             ),
             onUiEvent = {},

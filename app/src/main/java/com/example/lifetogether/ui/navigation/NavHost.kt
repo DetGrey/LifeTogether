@@ -25,6 +25,9 @@ import com.example.lifetogether.ui.feature.guides.create.GuideCreateRoute
 import com.example.lifetogether.ui.feature.guides.details.GuideDetailsRoute
 import com.example.lifetogether.ui.feature.guides.stepplayer.GuideStepPlayerRoute
 import com.example.lifetogether.ui.feature.home.HomeRoute
+import com.example.lifetogether.ui.feature.mealPlanner.MealPlannerGraphObserverRoute
+import com.example.lifetogether.ui.feature.mealPlanner.MealPlannerRoute
+import com.example.lifetogether.ui.feature.mealPlanner.entryDetails.MealPlanDetailsRoute
 import com.example.lifetogether.ui.feature.lists.ListsRoute
 import com.example.lifetogether.ui.feature.lists.UserListGraphObserverRoute
 import com.example.lifetogether.ui.feature.lists.entryDetails.ListEntryDetailsRoute
@@ -52,6 +55,7 @@ fun NavHost(
     val appNavigator = AppNavigator(navController)
     GalleryGraphObserverRoute(navController = navController)
     GuideGraphObserverRoute(navController = navController)
+    MealPlannerGraphObserverRoute(navController = navController)
     UserListGraphObserverRoute(navController = navController)
     RecipeGraphObserverRoute(navController = navController)
     TipTrackerGraphObserverRoute(navController = navController)
@@ -117,6 +121,16 @@ fun NavHost(
             }
         }
 
+        navigation<MealPlannerGraph>(startDestination = MealPlannerNavRoute::class) {
+            composable<MealPlannerNavRoute> { MealPlannerRoute(appNavigator) }
+            composable<MealPlanDetailsNavRoute> {
+                MealPlanDetailsRoute(
+                    appNavigator = appNavigator,
+                    navController = navController,
+                )
+            }
+        }
+
         navigation<GalleryGraph>(startDestination = GalleryNavRoute::class) {
             composable<GalleryNavRoute> { GalleryScreenRoute(appNavigator) }
             composable<AlbumMediaNavRoute> { AlbumDetailsRoute(appNavigator) }
@@ -126,10 +140,7 @@ fun NavHost(
         navigation<UserListGraph>(startDestination = ListsNavRoute::class) {
             composable<ListsNavRoute> { ListsRoute(appNavigator) }
             composable<ListDetailNavRoute> { ListDetailsRoute(appNavigator = appNavigator) }
-            composable<ListEntryDetailsNavRoute> { ListEntryDetailsRoute(
-                appNavigator = appNavigator,
-                navController = navController,
-            ) }
+            composable<ListEntryDetailsNavRoute> { ListEntryDetailsRoute(appNavigator = appNavigator) }
         }
 
         navigation<TipTrackerGraph>(startDestination = TipTrackerNavRoute::class) {

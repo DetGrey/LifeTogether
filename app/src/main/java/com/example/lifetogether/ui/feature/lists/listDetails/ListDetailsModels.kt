@@ -4,12 +4,9 @@ import android.graphics.Bitmap
 import com.example.lifetogether.domain.model.lists.ChecklistEntry
 import com.example.lifetogether.domain.model.lists.ListEntry
 import com.example.lifetogether.domain.model.lists.ListType
-import com.example.lifetogether.domain.model.lists.MealPlanEntry
 import com.example.lifetogether.domain.model.lists.NoteEntry
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.domain.model.lists.WishListEntry
-
-const val MEAL_PLAN_FOCUS_DATE_RESULT_KEY = "meal_plan_focus_date"
 
 sealed interface ListDetailsUiState {
     data object Loading : ListDetailsUiState
@@ -17,7 +14,6 @@ sealed interface ListDetailsUiState {
     data class Content(
         val familyId: String,
         val listContent: ListDetailsListContent,
-        val mealPlannerFocusDate: String? = null,
         val selectedEntryIds: Set<String>,
         val checklistEditorState: ChecklistEditorState = ChecklistEditorState(),
         val isSelectionMode: Boolean = false,
@@ -56,14 +52,6 @@ sealed interface ListDetailsListContent {
     ) : ListDetailsListContent {
         override val listType: ListType = ListType.CHECKLIST
     }
-    data class MealPlans(
-        override val listName: String,
-        override val entries: List<MealPlanEntry>,
-        val familyId: String,
-        val recipePrepTimes: Map<String, Int> = emptyMap(),
-    ) : ListDetailsListContent {
-        override val listType: ListType = ListType.MEAL_PLANNER
-    }
 }
 
 sealed interface ListDetailsUiEvent {
@@ -77,7 +65,6 @@ sealed interface ListDetailsUiEvent {
     data object DismissDeleteSelectedDialog : ListDetailsUiEvent
     data object ConfirmDeleteSelected : ListDetailsUiEvent
     data class ToggleEntryCompleted(val entryId: String) : ListDetailsUiEvent
-    data object ClearMealPlannerFocusDate : ListDetailsUiEvent
     sealed interface Checklist : ListDetailsUiEvent {
         data class EditRequested(val entryId: String) : Checklist
         data class NameChanged(val value: String) : Checklist

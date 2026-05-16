@@ -9,13 +9,11 @@ import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.model.lists.ChecklistEntry
 import com.example.lifetogether.domain.model.lists.ListEntry
 import com.example.lifetogether.domain.model.lists.ListType
-import com.example.lifetogether.domain.model.lists.MealPlanEntry
 import com.example.lifetogether.domain.model.lists.NoteEntry
 import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.domain.model.lists.WishListEntry
 import com.example.lifetogether.domain.model.session.authenticatedUserOrNull
-import com.example.lifetogether.domain.repository.RecipeRepository
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.repository.UserListRepository
 import com.example.lifetogether.domain.result.AppError
@@ -24,7 +22,6 @@ import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.domain.usecase.item.DeleteRoutineListEntriesUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
 import dagger.hilt.android.lifecycle.HiltViewModel
-import androidx.lifecycle.asFlow
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -50,7 +47,6 @@ class ListDetailsViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     sessionRepository: SessionRepository,
     private val userListRepository: UserListRepository,
-    private val recipeRepository: RecipeRepository,
     private val deleteRoutineListEntriesUseCase: DeleteRoutineListEntriesUseCase,
 ) : ViewModel() {
     val listId: String = checkNotNull(savedStateHandle["listId"])
@@ -83,21 +79,6 @@ class ListDetailsViewModel @Inject constructor(
             initialValue = null,
         )
 
-    private val mealPlannerFocusDate: StateFlow<String?> = contentState
-        .flatMapLatest { content ->
-            if (content?.listContent?.listType == ListType.MEAL_PLANNER) {
-                savedStateHandle.getLiveData<String?>(MEAL_PLAN_FOCUS_DATE_RESULT_KEY).asFlow()
-            } else {
-                flowOf(null)
-            }
-        }
-        .distinctUntilChanged()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = null,
-        )
-
     private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
     val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
 
@@ -105,14 +86,9 @@ class ListDetailsViewModel @Inject constructor(
         contentState,
         selectionState,
         checklistEditorState,
-        mealPlannerFocusDate,
-    ) { content, selection, checklistEditor, focusDate ->
+    ) { content, selection, checklistEditor ->
         val state = content?.toUiState(selection, checklistEditor) ?: ListDetailsUiState.Loading
-        if (state is ListDetailsUiState.Content) {
-            state.copy(mealPlannerFocusDate = focusDate)
-        } else {
-            state
-        }
+        state
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -131,7 +107,6 @@ class ListDetailsViewModel @Inject constructor(
             ListDetailsUiEvent.DismissDeleteSelectedDialog -> dismissDeleteSelectedDialog()
             ListDetailsUiEvent.ConfirmDeleteSelected -> confirmDeleteSelected()
             is ListDetailsUiEvent.ToggleEntryCompleted -> toggleEntryCompleted(event.entryId)
-            ListDetailsUiEvent.ClearMealPlannerFocusDate -> clearMealPlannerFocusDate()
             is ListDetailsUiEvent.Checklist.EditRequested -> startEditingChecklistItem(event.entryId)
             is ListDetailsUiEvent.Checklist.NameChanged -> updateChecklistDraftName(event.value)
             ListDetailsUiEvent.Checklist.ActionClicked -> saveChecklistDraft()
@@ -295,7 +270,6 @@ class ListDetailsViewModel @Inject constructor(
                 ListType.WISH_LIST -> userListRepository.deleteWishListEntries(selectedEntries.map { it.id })
                 ListType.NOTES -> userListRepository.deleteNoteEntries(selectedEntries.map { it.id })
                 ListType.CHECKLIST -> userListRepository.deleteChecklistEntries(selectedEntries.map { it.id })
-                ListType.MEAL_PLANNER -> userListRepository.deleteMealPlanEntries(selectedEntries.map { it.id })
             }
 
             when (result) {
@@ -364,11 +338,6 @@ class ListDetailsViewModel @Inject constructor(
                                     list.toContentSnapshot(entries, imageBitmaps)
                                 }
 
-                            ListType.MEAL_PLANNER -> observeRecipePrepTimes(context.familyId)
-                                .map { recipePrepTimes ->
-                                    list.toContentSnapshot(entries, emptyMap(), recipePrepTimes)
-                                }
-
                             else -> flowOf(list.toContentSnapshot(entries, emptyMap()))
                         }
                     }
@@ -385,7 +354,6 @@ class ListDetailsViewModel @Inject constructor(
             ListType.WISH_LIST -> userListRepository.observeWishListEntriesByListId(familyId, listId)
             ListType.NOTES -> userListRepository.observeNoteEntriesByListId(familyId, listId)
             ListType.CHECKLIST -> userListRepository.observeChecklistEntriesByListId(familyId, listId)
-            ListType.MEAL_PLANNER -> userListRepository.observeMealPlanEntriesByListId(familyId, listId)
         }.successData()
     }
 
@@ -420,14 +388,6 @@ class ListDetailsViewModel @Inject constructor(
         }
     }
 
-    private fun observeRecipePrepTimes(familyId: String): Flow<Map<String, Int>> {
-        return recipeRepository.observeRecipes(familyId)
-            .successData()
-            .map { recipes ->
-                recipes.associate { recipe -> recipe.id to recipe.preparationTimeMin }
-            }
-    }
-
     private fun showError(message: String) {
         viewModelScope.launch {
             _uiCommands.send(
@@ -451,7 +411,6 @@ class ListDetailsViewModel @Inject constructor(
     private fun UserList.toContentSnapshot(
         entries: List<ListEntry>,
         imageBitmaps: Map<String, Bitmap>,
-        recipePrepTimes: Map<String, Int> = emptyMap(),
     ): ListDetailsContentSnapshot {
         val listContent = when (type) {
             ListType.ROUTINE -> ListDetailsListContent.Routines(
@@ -473,13 +432,6 @@ class ListDetailsViewModel @Inject constructor(
             ListType.CHECKLIST -> ListDetailsListContent.CheckItems(
                 listName = itemName,
                 entries = entries.filterIsInstance<ChecklistEntry>(),
-            )
-
-            ListType.MEAL_PLANNER -> ListDetailsListContent.MealPlans(
-                listName = itemName,
-                entries = entries.filterIsInstance<MealPlanEntry>(),
-                familyId = familyId,
-                recipePrepTimes = recipePrepTimes,
             )
         }
         return ListDetailsContentSnapshot(
@@ -507,7 +459,6 @@ class ListDetailsViewModel @Inject constructor(
         return ListDetailsUiState.Content(
             familyId = familyId,
             listContent = listContent,
-            mealPlannerFocusDate = null,
             isSelectionMode = selectionState.isSelectionModeActive && validEntryIds.isNotEmpty(),
             selectedEntryIds = selectedEntryIds,
             checklistEditorState = resolvedChecklistEditorState,
@@ -536,10 +487,6 @@ class ListDetailsViewModel @Inject constructor(
 
     private fun clearChecklistEditorState() {
         checklistEditorState.value = ChecklistEditorState()
-    }
-
-    private fun clearMealPlannerFocusDate() {
-        savedStateHandle[MEAL_PLAN_FOCUS_DATE_RESULT_KEY] = null
     }
 
     private fun <T> Result<T, AppError>.mapUnitSuccess(): Result<Unit, AppError> {
