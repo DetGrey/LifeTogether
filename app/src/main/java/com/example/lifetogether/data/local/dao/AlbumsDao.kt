@@ -22,9 +22,6 @@ interface AlbumsDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateItems(items: List<AlbumEntity>)
 
-    @Query("DELETE FROM $ALBUMS_TABLE")
-    fun deleteTable()
-
     @Query("DELETE FROM $ALBUMS_TABLE WHERE id IN (:itemIds)")
-    fun deleteItems(itemIds: List<String>)
+    suspend fun deleteItems(itemIds: List<String>)
 }

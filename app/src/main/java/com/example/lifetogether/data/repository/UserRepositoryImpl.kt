@@ -78,7 +78,7 @@ class UserRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun removeSavedUserInformation(): Result<Unit, AppError> {
+    override suspend fun deleteSavedUserInformation(): Result<Unit, AppError> {
         return sessionCleanupLocalDataSource.clearSessionTables()
     }
     // ---------- REMOTE

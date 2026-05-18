@@ -1,9 +1,5 @@
 package com.example.lifetogether.data.local.source
 
-import com.example.lifetogether.data.logic.appResultOf
-
-import com.example.lifetogether.domain.result.AppError
-
 import com.example.lifetogether.data.local.dao.CategoriesDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
@@ -13,7 +9,6 @@ import com.example.lifetogether.data.model.CategoryEntity
 import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.model.GrocerySuggestionEntity
 import com.example.lifetogether.domain.model.Category
-import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
@@ -98,9 +93,4 @@ class GroceryLocalDataSource @Inject constructor(
             groceryListDao.deleteItems(currentFamilyItems.map { it.id })
         }
     }
-
-    fun deleteItems(itemIds: List<String>): Result<Unit, AppError> =
-        appResultOf {
-            groceryListDao.deleteItems(itemIds)
-        }
 }

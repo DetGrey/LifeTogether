@@ -23,10 +23,10 @@ interface RoutineListsDao {
     suspend fun updateItems(items: List<RoutineListEntryEntity>)
 
     @Query("DELETE FROM $ROUTINE_LIST_ENTRIES_TABLE WHERE id IN (:itemIds)")
-    fun deleteItems(itemIds: List<String>)
+    suspend fun deleteItems(itemIds: List<String>)
 
     @Query("DELETE FROM $ROUTINE_LIST_ENTRIES_TABLE WHERE list_id IN (:listIds)")
-    fun deleteByListIds(listIds: List<String>)
+    suspend fun deleteByListIds(listIds: List<String>)
 
     @Query("SELECT image_data FROM $ROUTINE_LIST_ENTRIES_TABLE WHERE id = :entryId LIMIT 1")
     fun observeImageByteArray(entryId: String): Flow<ByteArray?>
@@ -35,5 +35,5 @@ interface RoutineListsDao {
     suspend fun getEntryIdsWithImages(familyId: String): List<String>
 
     @Query("DELETE FROM $ROUTINE_LIST_ENTRIES_TABLE WHERE family_id = :familyId")
-    fun deleteFamilyItems(familyId: String)
+    suspend fun deleteFamilyItems(familyId: String)
 }

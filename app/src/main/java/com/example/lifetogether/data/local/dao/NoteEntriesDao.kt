@@ -23,11 +23,11 @@ interface NoteEntriesDao {
     suspend fun updateItems(items: List<NoteEntryEntity>)
 
     @Query("DELETE FROM $NOTE_LIST_ENTRIES_TABLE WHERE id IN (:itemIds)")
-    fun deleteItems(itemIds: List<String>)
+    suspend fun deleteItems(itemIds: List<String>)
 
     @Query("DELETE FROM $NOTE_LIST_ENTRIES_TABLE WHERE list_id IN (:listIds)")
-    fun deleteByListIds(listIds: List<String>)
+    suspend fun deleteByListIds(listIds: List<String>)
 
     @Query("DELETE FROM $NOTE_LIST_ENTRIES_TABLE WHERE family_id = :familyId")
-    fun deleteFamilyItems(familyId: String)
+    suspend fun deleteFamilyItems(familyId: String)
 }

@@ -17,12 +17,6 @@ interface GroceryListDao {
     @Query("SELECT * FROM $GROCERY_TABLE WHERE family_id = :familyId")
     fun getItems(familyId: String): Flow<List<GroceryListEntity>>
 
-    @Query("SELECT * FROM $GROCERY_TABLE")
-    fun getAllItems(): List<GroceryListEntity>
-
-    @Query("DELETE FROM $GROCERY_TABLE")
-    fun deleteTable()
-
     @Query("DELETE FROM $GROCERY_TABLE WHERE id IN (:itemIds)")
-    fun deleteItems(itemIds: List<String>)
+    suspend fun deleteItems(itemIds: List<String>)
 }

@@ -10,9 +10,6 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TipTrackerDao {
-    @Query("SELECT * FROM $TIP_TRACKER_TABLE")
-    fun getAll(): List<TipEntity>
-
     @Query("SELECT * FROM $TIP_TRACKER_TABLE WHERE family_id = :familyId")
     fun getItems(familyId: String): Flow<List<TipEntity>>
 
@@ -22,9 +19,6 @@ interface TipTrackerDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateItems(items: List<TipEntity>)
 
-    @Query("DELETE FROM $TIP_TRACKER_TABLE")
-    fun deleteTable()
-
     @Query("DELETE FROM $TIP_TRACKER_TABLE WHERE id IN (:itemIds)")
-    fun deleteItems(itemIds: List<String>)
+    suspend fun deleteItems(itemIds: List<String>)
 }

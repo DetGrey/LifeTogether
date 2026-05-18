@@ -23,6 +23,4 @@ interface UserInformationDao {
     @Query("SELECT image_data FROM $USER_TABLE WHERE uid = :uid LIMIT 1")
     suspend fun getImageByteArray(uid: String): ByteArray?
 
-    @Query("DELETE FROM $USER_TABLE")
-    fun deleteTable()
 }

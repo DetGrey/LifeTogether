@@ -1,51 +1,35 @@
 package com.example.lifetogether.data.local.source
 
-import com.example.lifetogether.data.logic.appResultOf
+import com.example.lifetogether.data.logic.appResultOfSuspend
 
 import com.example.lifetogether.domain.result.AppError
 
 import android.content.Context
 import androidx.core.net.toUri
-import com.example.lifetogether.data.local.dao.AlbumsDao
-import com.example.lifetogether.data.local.dao.FamilyInformationDao
+import com.example.lifetogether.data.local.AppDatabase
 import com.example.lifetogether.data.local.dao.GalleryMediaDao
-import com.example.lifetogether.data.local.dao.GroceryListDao
-import com.example.lifetogether.data.local.dao.GuidesDao
-import com.example.lifetogether.data.local.dao.RecipesDao
-import com.example.lifetogether.data.local.dao.UserInformationDao
 import com.example.lifetogether.domain.result.Result
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class SessionCleanupLocalDataSource @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    private val groceryListDao: GroceryListDao,
-    private val recipesDao: RecipesDao,
-    private val userInformationDao: UserInformationDao,
-    private val familyInformationDao: FamilyInformationDao,
+    private val appDatabase: AppDatabase,
     private val galleryMediaDao: GalleryMediaDao,
-    private val albumsDao: AlbumsDao,
-    private val guidesDao: GuidesDao,
 ) {
-    fun clearSessionTables(): Result<Unit, AppError> {
-        return appResultOf {
-            groceryListDao.deleteTable()
-            recipesDao.deleteTable()
-            userInformationDao.deleteTable()
-            familyInformationDao.deleteFamiliesTable()
-            familyInformationDao.deleteFamilyMembersTable()
-
+    suspend fun clearSessionTables(): Result<Unit, AppError> {
+        return appResultOfSuspend {
             val resolver = context.contentResolver
-            val galleryImages = galleryMediaDao.getAll()
-            galleryImages.forEach { item ->
+            galleryMediaDao.getAll().forEach { item ->
                 item.mediaUri?.let { resolver.delete(it.toUri(), null, null) }
             }
-
-            galleryMediaDao.deleteTable()
-            albumsDao.deleteTable()
-            guidesDao.deleteTable()
+            withContext(Dispatchers.IO) {
+                appDatabase.clearAllTables()
+            }
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.example.lifetogether.data.repository
 
 import com.example.lifetogether.data.logic.appResultOf
+import com.example.lifetogether.data.logic.appResultOfSuspend
 
 import com.example.lifetogether.domain.result.AppError
 
@@ -54,7 +55,7 @@ class GroceryRepositoryImpl @Inject constructor(
     override fun syncGroceryItems(familyId: String): Flow<Result<Unit, AppError>> {
         return groceryFirestoreDataSource.syncGroceryItems(familyId).map { result ->
             when (result) {
-                is Result.Success -> appResultOf {
+                is Result.Success -> appResultOfSuspend {
                     if (result.data.isEmpty()) {
                         groceryLocalDataSource.deleteFamilyGroceryItems(familyId)
                     } else {
@@ -80,7 +81,7 @@ class GroceryRepositoryImpl @Inject constructor(
     override fun syncCategories(): Flow<Result<Unit, AppError>> {
         return groceryFirestoreDataSource.syncCategories().map { result ->
             when (result) {
-                is Result.Success -> appResultOf {
+                is Result.Success -> appResultOfSuspend {
                     groceryLocalDataSource.updateCategories(result.data)
                 }
                 is Result.Failure -> Result.Failure(result.error)
@@ -91,7 +92,7 @@ class GroceryRepositoryImpl @Inject constructor(
     override fun syncGrocerySuggestions(): Flow<Result<Unit, AppError>> {
         return groceryFirestoreDataSource.syncGrocerySuggestions().map { result ->
             when (result) {
-                is Result.Success -> appResultOf {
+                is Result.Success -> appResultOfSuspend {
                     val entities = result.data.map { suggestion ->
                         GrocerySuggestionEntity(
                             id = suggestion.id,

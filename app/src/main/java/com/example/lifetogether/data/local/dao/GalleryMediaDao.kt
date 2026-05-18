@@ -44,9 +44,6 @@ interface GalleryMediaDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateItems(items: List<GalleryMediaEntity>)
 
-    @Query("DELETE FROM $GALLERY_MEDIA_TABLE")
-    fun deleteTable()
-
     @Query("DELETE FROM $GALLERY_MEDIA_TABLE WHERE id IN (:itemIds)")
-    fun deleteItems(itemIds: List<String>)
+    suspend fun deleteItems(itemIds: List<String>)
 }

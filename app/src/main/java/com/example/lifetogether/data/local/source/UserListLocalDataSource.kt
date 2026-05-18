@@ -1,6 +1,6 @@
 package com.example.lifetogether.data.local.source
 
-import com.example.lifetogether.data.logic.appResultOf
+import com.example.lifetogether.data.logic.appResultOfSuspend
 
 import com.example.lifetogether.data.local.dao.ChecklistEntriesDao
 import com.example.lifetogether.data.local.dao.NoteEntriesDao
@@ -63,7 +63,7 @@ class UserListLocalDataSource @Inject constructor(
         }
     }
 
-    fun deleteFamilyUserLists(familyId: String) {
+    suspend fun deleteFamilyUserLists(familyId: String) {
         routineListsDao.deleteFamilyItems(familyId)
         wishListsDao.deleteFamilyItems(familyId)
         noteEntriesDao.deleteFamilyItems(familyId)
@@ -71,7 +71,7 @@ class UserListLocalDataSource @Inject constructor(
         userListsDao.deleteFamilyItems(familyId)
     }
 
-    private fun deleteChildEntriesForList(listId: String, listType: ListType) {
+    private suspend fun deleteChildEntriesForList(listId: String, listType: ListType) {
         when (listType) {
             ListType.ROUTINE -> routineListsDao.deleteByListIds(listOf(listId))
             ListType.WISH_LIST -> wishListsDao.deleteByListIds(listOf(listId))
@@ -119,12 +119,12 @@ class UserListLocalDataSource @Inject constructor(
     suspend fun getRoutineEntryIdsWithImages(familyId: String): List<String> =
         routineListsDao.getEntryIdsWithImages(familyId)
 
-    fun deleteFamilyRoutineListEntries(familyId: String) {
+    suspend fun deleteFamilyRoutineListEntries(familyId: String) {
         routineListsDao.deleteFamilyItems(familyId)
     }
 
-    fun deleteRoutineListEntries(itemIds: List<String>): Result<Unit, AppError> =
-        appResultOf {
+    suspend fun deleteRoutineListEntries(itemIds: List<String>): Result<Unit, AppError> =
+        appResultOfSuspend {
             routineListsDao.deleteItems(itemIds)
         }
 
@@ -159,11 +159,11 @@ class UserListLocalDataSource @Inject constructor(
         }
     }
 
-    fun deleteFamilyWishListEntries(familyId: String) {
+    suspend fun deleteFamilyWishListEntries(familyId: String) {
         wishListsDao.deleteFamilyItems(familyId)
     }
 
-    fun deleteWishListEntries(itemIds: List<String>): Result<Unit, AppError> = appResultOf {
+    suspend fun deleteWishListEntries(itemIds: List<String>): Result<Unit, AppError> = appResultOfSuspend {
         wishListsDao.deleteItems(itemIds)
     }
 
@@ -195,11 +195,11 @@ class UserListLocalDataSource @Inject constructor(
         }
     }
 
-    fun deleteFamilyNoteEntries(familyId: String) {
+    suspend fun deleteFamilyNoteEntries(familyId: String) {
         noteEntriesDao.deleteFamilyItems(familyId)
     }
 
-    fun deleteNoteEntries(itemIds: List<String>): Result<Unit, AppError> = appResultOf {
+    suspend fun deleteNoteEntries(itemIds: List<String>): Result<Unit, AppError> = appResultOfSuspend {
         noteEntriesDao.deleteItems(itemIds)
     }
 
@@ -231,11 +231,11 @@ class UserListLocalDataSource @Inject constructor(
         }
     }
 
-    fun deleteFamilyChecklistEntries(familyId: String) {
+    suspend fun deleteFamilyChecklistEntries(familyId: String) {
         checklistEntriesDao.deleteFamilyItems(familyId)
     }
 
-    fun deleteChecklistEntries(itemIds: List<String>): Result<Unit, AppError> = appResultOf {
+    suspend fun deleteChecklistEntries(itemIds: List<String>): Result<Unit, AppError> = appResultOfSuspend {
         checklistEntriesDao.deleteItems(itemIds)
     }
 

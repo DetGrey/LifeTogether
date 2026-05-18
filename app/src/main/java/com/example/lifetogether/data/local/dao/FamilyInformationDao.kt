@@ -38,11 +38,4 @@ interface FamilyInformationDao {
     @Query("SELECT CASE WHEN image_data IS NOT NULL THEN 1 ELSE 0 END FROM ${Constants.FAMILIES_TABLE} WHERE family_id = :familyId LIMIT 1")
     suspend fun hasImageData(familyId: String): Int?
 
-    // Delete all entries in the family table
-    @Query("DELETE FROM ${Constants.FAMILIES_TABLE}")
-    fun deleteFamiliesTable()
-
-    // Delete all entries in the family members table
-    @Query("DELETE FROM ${Constants.FAMILY_MEMBERS_TABLE}")
-    fun deleteFamilyMembersTable()
 }

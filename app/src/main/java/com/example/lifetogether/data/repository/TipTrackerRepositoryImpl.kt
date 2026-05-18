@@ -1,6 +1,7 @@
 package com.example.lifetogether.data.repository
 
 import com.example.lifetogether.data.logic.appResultOf
+import com.example.lifetogether.data.logic.appResultOfSuspend
 
 import com.example.lifetogether.domain.result.AppError
 
@@ -28,7 +29,7 @@ class TipTrackerRepositoryImpl @Inject constructor(
     override fun syncTipsFromRemote(familyId: String): Flow<Result<Unit, AppError>> {
         return tipTrackerFirestoreDataSource.tipTrackerSnapshotListener(familyId).map { result ->
             when (result) {
-                is Result.Success -> appResultOf {
+                is Result.Success -> appResultOfSuspend {
                     if (result.data.items.isEmpty()) {
                         tipTrackerLocalDataSource.deleteFamilyTipItems(familyId)
                     } else {

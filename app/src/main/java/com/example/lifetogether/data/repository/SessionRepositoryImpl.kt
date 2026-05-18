@@ -76,7 +76,7 @@ class SessionRepositoryImpl @Inject constructor(
             is Result.Failure -> remoteResult
             is Result.Success -> {
                 _sessionState.value = SessionState.Unauthenticated
-                when (val localResult = sessionUserRepository.removeSavedUserInformation()) {
+                when (val localResult = sessionUserRepository.deleteSavedUserInformation()) {
                     is Result.Failure -> {
                         Log.e(TAG, "Local session cleanup failed after remote logout: ${localResult.error}")
                         Result.Failure(localResult.error)

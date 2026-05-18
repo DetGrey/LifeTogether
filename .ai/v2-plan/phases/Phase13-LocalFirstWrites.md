@@ -1,6 +1,6 @@
 # Phase 13 — Local-First Writes & DAO Correctness
 
-**Status:** Not started _(Not started → Grill-me in progress → Implementing → Complete)_
+**Status:** Implementing _(Not started → Grill-me in progress → Implementing → Complete)_
 
 ## Goal
 
@@ -70,10 +70,10 @@ Several sync `Flow.map` pipelines use `appResultOf` (non-suspend) while calling 
 Affected: `TipTrackerRepositoryImpl.syncTipsFromRemote` and any other repo where `syncXxx` uses `appResultOf` with suspend calls inside.
 
 ### Subphase 1 Checklist
-- [ ] All 12 DAOs: every `@Query DELETE` method has `suspend`
-- [ ] Cascading `LocalDataSource` delete methods have `suspend`
-- [ ] All sync pipeline `appResultOf` wrappers calling suspend methods changed to `appResultOfSuspend`
-- [ ] Build passes
+- [x] All 12 DAOs: every `@Query DELETE` method has `suspend`
+- [x] Cascading `LocalDataSource` delete methods have `suspend`
+- [x] All sync pipeline `appResultOf` wrappers calling suspend methods changed to `appResultOfSuspend`
+- [x] Build passes
 
 ---
 

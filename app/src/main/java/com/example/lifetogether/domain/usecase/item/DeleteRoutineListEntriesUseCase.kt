@@ -25,7 +25,7 @@ class DeleteRoutineListEntriesUseCase @Inject constructor(
             val imageDeleteResult = imageRepository.deleteMediaFiles(imageUrls)
             if (imageDeleteResult is Result.Failure) throw AppErrorThrowable(imageDeleteResult.error)
 
-            val entryIds = entries.mapNotNull { it.id }
+            val entryIds = entries.map { it.id }
             if (entryIds.isEmpty()) return@appResultOfSuspend
 
             val remoteDeleteResult = userListRepository.deleteRoutineListEntries(entryIds)

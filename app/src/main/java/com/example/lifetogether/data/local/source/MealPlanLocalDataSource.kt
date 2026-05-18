@@ -41,7 +41,7 @@ class MealPlanLocalDataSource @Inject constructor(
         }
     }
 
-    fun deleteFamilyMealPlans(familyId: String) {
+    suspend fun deleteFamilyMealPlans(familyId: String) {
         mealPlanDao.deleteFamilyItems(familyId)
     }
 

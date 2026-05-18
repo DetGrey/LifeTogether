@@ -10,9 +10,6 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface GuidesDao {
-    @Query("SELECT * FROM $GUIDES_TABLE")
-    fun getAll(): List<GuideEntity>
-
     @Query("SELECT * FROM $GUIDES_TABLE WHERE family_id = :familyId")
     fun getItems(familyId: String): Flow<List<GuideEntity>>
 
@@ -25,9 +22,6 @@ interface GuidesDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateItems(items: List<GuideEntity>)
 
-    @Query("DELETE FROM $GUIDES_TABLE")
-    fun deleteTable()
-
     @Query("DELETE FROM $GUIDES_TABLE WHERE id IN (:itemIds)")
-    fun deleteItems(itemIds: List<String>)
+    suspend fun deleteItems(itemIds: List<String>)
 }
