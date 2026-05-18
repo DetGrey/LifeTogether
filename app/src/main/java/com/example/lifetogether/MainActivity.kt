@@ -38,7 +38,6 @@ import com.example.lifetogether.ui.common.snackbar.AppSnackbar
 import com.example.lifetogether.ui.common.snackbar.AppSnackbarVisuals
 import com.example.lifetogether.ui.feature.notification.NotificationService
 import com.example.lifetogether.ui.navigation.NavHost
-import com.example.lifetogether.ui.navigation.routeFromDestinationString
 import com.example.lifetogether.ui.theme.AppTypography
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
@@ -108,7 +107,7 @@ class MainActivity : ComponentActivity() {
 
                     LaunchedEffect(destination, navControllerState) {
                         if (destination != null) {
-                            navControllerState.navigate(routeFromDestinationString(destination))
+                            navControllerState.navigate(notificationService.routeFromDestinationString(destination))
                         }
                     }
 

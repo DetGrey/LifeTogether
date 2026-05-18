@@ -10,6 +10,9 @@ import androidx.core.app.NotificationCompat
 import com.example.lifetogether.MainActivity
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.sendFCMNotification
+import com.example.lifetogether.ui.navigation.AppRoute
+import com.example.lifetogether.ui.navigation.HomeNavRoute
+import com.example.lifetogether.ui.navigation.NotificationDestination
 import com.example.lifetogether.util.Constants
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -73,9 +76,16 @@ class NotificationService @Inject constructor(
         Log.d(TAG, "Trying to create and send notification: $message")
 
         sendFCMNotification(
-            context,
-            tokens,
-            channelId, title, message, smallIconResId, notificationId, priority, autoCancel, destination,
+            context = context,
+            tokens = tokens,
+            channelId = channelId,
+            title = title,
+            message = message,
+            smallIconResId = smallIconResId,
+            notificationId = notificationId,
+            priority = priority,
+            autoCancel = autoCancel,
+            destination = destination,
         )
     }
 
@@ -87,7 +97,7 @@ class NotificationService @Inject constructor(
         notificationId: Int = System.currentTimeMillis().toInt(),
         priority: Int = NotificationCompat.PRIORITY_DEFAULT,
         autoCancel: Boolean = true,
-        destination: String? = null,
+        destination: NotificationDestination? = null,
     ) {
         val notificationBuilder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(smallIconResId)
@@ -104,10 +114,14 @@ class NotificationService @Inject constructor(
         notificationManager.notify(notificationId, notification)
     }
 
-    private fun createPendingIntent(destination: String): PendingIntent {
+    fun routeFromDestinationString(destination: String): AppRoute {
+        return NotificationDestination.fromKey(destination)?.toAppRoute() ?: HomeNavRoute
+    }
+
+    private fun createPendingIntent(destination: NotificationDestination): PendingIntent {
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            putExtra("destination", destination)
+            putExtra("destination", destination.key)
         }
 
         return PendingIntent.getActivity(

@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.lifetogether.R
 import com.example.lifetogether.ui.feature.notification.NotificationService
+import com.example.lifetogether.ui.navigation.NotificationDestination
 import com.example.lifetogether.util.Constants
 import dagger.hilt.android.AndroidEntryPoint
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -34,6 +35,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             val priority = remoteMessage.data["priority"]?.toIntOrNull()
             val autoCancel = remoteMessage.data["autoCancel"]?.toBoolean()
             val destination = remoteMessage.data["destination"]
+            val typedDestination = destination?.let(NotificationDestination::fromKey)
 
             notificationService.createNotification(
                 channelId = channelId ?: Constants.DEFAULT_CHANNEL,
@@ -43,7 +45,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 notificationId = notificationId ?: System.currentTimeMillis().toInt(),
                 priority = priority ?: NotificationCompat.PRIORITY_DEFAULT,
                 autoCancel = autoCancel ?: true,
-                destination = destination,
+                destination = typedDestination,
             )
         }
     }
