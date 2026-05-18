@@ -27,6 +27,7 @@ import com.example.lifetogether.domain.usecase.image.UploadGalleryMediaItemsUseC
 import com.example.lifetogether.ui.common.event.UiCommand
 import com.example.lifetogether.ui.common.snackbar.SnackbarSeverity
 import com.example.lifetogether.ui.model.MenuAction
+import com.example.lifetogether.ui.navigation.AlbumMediaNavRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
@@ -48,6 +49,7 @@ import java.util.Locale
 import java.util.UUID
 import java.util.regex.Pattern
 import javax.inject.Inject
+import androidx.navigation.toRoute
 
 @HiltViewModel
 class AlbumDetailsViewModel @Inject constructor(
@@ -74,7 +76,7 @@ class AlbumDetailsViewModel @Inject constructor(
     private var observeAlbumJob: Job? = null
     private var observeAlbumMediaJob: Job? = null
     private var familyId: String? = null
-    private val albumId: String? = savedStateHandle["albumId"]
+    private val albumId: String = savedStateHandle.toRoute<AlbumMediaNavRoute>().albumId
 
     private var syncRetryAttempts = 0
     private val maxSyncRetryAttempts = 3
@@ -107,7 +109,6 @@ class AlbumDetailsViewModel @Inject constructor(
         onProgress: (current: Int, total: Int) -> Unit,
     ): Result<Unit, AppError> {
         val familyIdValue = familyId ?: return Result.Failure(AppError.Validation("Missing family context"))
-        val albumIdValue = albumId ?: return Result.Failure(AppError.Validation("Missing album context"))
 
         val mediaUploadDataList = mutableListOf<MediaUploadData>()
 
@@ -116,7 +117,7 @@ class AlbumDetailsViewModel @Inject constructor(
             when {
                 mimeType?.startsWith("image/") == true -> {
                     val extension = getMimeTypeExtension(mimeType) ?: ".jpeg"
-                    val metadata = extractImageMetadata(context, uri, familyIdValue, albumIdValue, extension)
+                    val metadata = extractImageMetadata(context, uri, familyIdValue, albumId, extension)
                     mediaUploadDataList.add(
                         MediaUploadData.ImageUpload(
                             uri = uri,
@@ -128,7 +129,7 @@ class AlbumDetailsViewModel @Inject constructor(
 
                 mimeType?.startsWith("video/") == true -> {
                     val extension = getMimeTypeExtension(mimeType) ?: ".mp4"
-                    val metadata = extractVideoMetadata(context, uri, familyIdValue, albumIdValue, extension)
+                    val metadata = extractVideoMetadata(context, uri, familyIdValue, albumId, extension)
                     mediaUploadDataList.add(
                         MediaUploadData.VideoUpload(
                             uri = uri,
@@ -176,11 +177,10 @@ class AlbumDetailsViewModel @Inject constructor(
 
     private fun observeAlbum() {
         val familyIdValue = familyId ?: return
-        val albumIdValue = albumId ?: return
 
         observeAlbumJob?.cancel()
         observeAlbumJob = viewModelScope.launch {
-            galleryRepository.observeAlbumById(familyIdValue, albumIdValue).collect { result ->
+            galleryRepository.observeAlbumById(familyIdValue, albumId).collect { result ->
                 when (result) {
                     is Result.Success -> {
                         val album = result.data
@@ -201,7 +201,6 @@ class AlbumDetailsViewModel @Inject constructor(
 
     private fun observeAlbumMedia() {
         val familyIdValue = familyId ?: return
-        val albumIdValue = albumId ?: return
 
         observeAlbumMediaJob?.cancel()
         observeAlbumMediaJob = viewModelScope.launch {
@@ -210,7 +209,7 @@ class AlbumDetailsViewModel @Inject constructor(
                 updateContentState { it.copy(isSyncing = true) }
             }
 
-            galleryRepository.observeAlbumMedia(familyIdValue, albumIdValue).collect { result ->
+            galleryRepository.observeAlbumMedia(familyIdValue, albumId).collect { result ->
                 when (result) {
                     is Result.Success -> handleMediaSuccess(result.data)
                     is Result.Failure -> handleMediaFailure(result.error.toUserMessage())
@@ -418,10 +417,10 @@ class AlbumDetailsViewModel @Inject constructor(
     }
 
     private fun moveSelectedMediaToAlbum(newAlbumId: String) {
-        val oldAlbumId = albumId ?: return
         val contentState = currentContentState() ?: return
         val selectedMedia = contentState.selectedMedia
         if (selectedMedia.isEmpty() || newAlbumId == contentState.album?.id || newAlbumId.isEmpty()) return
+        val oldAlbumId = albumId
 
         viewModelScope.launch {
             when (val result = moveMediaToAlbumUseCase.invoke(selectedMedia, newAlbumId, oldAlbumId)) {

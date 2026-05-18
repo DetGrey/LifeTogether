@@ -9,6 +9,7 @@ import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.ui.common.event.UiCommand
+import com.example.lifetogether.ui.navigation.ListEntryDetailsNavRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
+import androidx.navigation.toRoute
 
 @HiltViewModel
 class ListEntryDetailsViewModel @Inject constructor(
@@ -33,8 +35,9 @@ class ListEntryDetailsViewModel @Inject constructor(
         val WEEKDAYS: List<String> = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
     }
 
-    private val listId: String = checkNotNull(savedStateHandle["listId"])
-    val entryId: String? = savedStateHandle["entryId"]
+    private val route = savedStateHandle.toRoute<ListEntryDetailsNavRoute>()
+    private val listId: String = route.listId
+    val entryId: String? = route.entryId
 
     private val _familyId = MutableStateFlow<String?>(null)
     val familyId = _familyId.asStateFlow()

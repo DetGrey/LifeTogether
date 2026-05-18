@@ -14,6 +14,7 @@ import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.ui.common.event.UiCommand
+import com.example.lifetogether.ui.navigation.GuideDetailsNavRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -26,6 +27,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
+import androidx.navigation.toRoute
 
 @HiltViewModel
 class GuideDetailsViewModel @Inject constructor(
@@ -33,7 +35,7 @@ class GuideDetailsViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
     private val guideRepository: GuideRepository,
 ) : ViewModel() {
-    private val guideId: String = checkNotNull(savedStateHandle["guideId"])
+    private val guideId: String = savedStateHandle.toRoute<GuideDetailsNavRoute>().guideId
     private var familyId: String? = null
     private var uid: String? = null
     private var guideJob: Job? = null
@@ -371,7 +373,7 @@ class GuideDetailsViewModel @Inject constructor(
     }
 
     private fun normalizeFetchedGuide(guide: Guide, fallbackGuideId: String): Guide {
-        val resolvedId = guide.id?.takeIf { it.isNotBlank() } ?: fallbackGuideId
+        val resolvedId = guide.id.takeIf { it.isNotBlank() } ?: fallbackGuideId
         return if (guide.id == resolvedId) guide else guide.copy(id = resolvedId)
     }
 

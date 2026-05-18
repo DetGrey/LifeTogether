@@ -36,7 +36,6 @@ import com.example.lifetogether.ui.feature.loading.LoadingRoute
 import com.example.lifetogether.ui.feature.login.LoginRoute
 import com.example.lifetogether.ui.feature.profile.ProfileRoute
 import com.example.lifetogether.ui.feature.recipes.RecipeGraphObserverRoute
-import com.example.lifetogether.ui.feature.recipes.CreateRecipeRoute
 import com.example.lifetogether.ui.feature.recipes.RecipeDetailsRoute
 import com.example.lifetogether.ui.feature.recipes.RecipesRoute
 import com.example.lifetogether.ui.feature.settings.SettingsRoute
@@ -115,7 +114,6 @@ fun NavHost(
 
         navigation<RecipeGraph>(startDestination = RecipesNavRoute::class) {
             composable<RecipesNavRoute> { RecipesRoute(appNavigator) }
-            composable<CreateRecipeNavRoute> { CreateRecipeRoute(appNavigator) }
             composable<RecipeDetailsNavRoute> {
                 RecipeDetailsRoute(appNavigator = appNavigator)
             }

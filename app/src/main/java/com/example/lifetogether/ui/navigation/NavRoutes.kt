@@ -17,8 +17,7 @@ sealed interface AppRoute
 @Serializable object RecipesNavRoute : AppRoute
 @Serializable object GuidesNavRoute : AppRoute
 @Serializable object GuideCreateNavRoute : AppRoute
-@Serializable object CreateRecipeNavRoute : AppRoute
-@Serializable data class RecipeDetailsNavRoute(val recipeId: String) : AppRoute
+@Serializable data class RecipeDetailsNavRoute(val recipeId: String? = null) : AppRoute
 @Serializable data class GuideDetailsNavRoute(val guideId: String) : AppRoute
 @Serializable data class GuideStepPlayerNavRoute(val guideId: String) : AppRoute
 @Serializable object GalleryNavRoute : AppRoute

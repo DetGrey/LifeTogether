@@ -14,6 +14,7 @@ import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.ui.common.event.UiCommand
+import com.example.lifetogether.ui.navigation.GuideStepPlayerNavRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -26,6 +27,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import java.util.Date
 import javax.inject.Inject
+import androidx.navigation.toRoute
 
 @HiltViewModel
 class GuideStepPlayerViewModel @Inject constructor(
@@ -43,7 +45,7 @@ class GuideStepPlayerViewModel @Inject constructor(
         COMPLETE_IF_NEEDED,
     }
 
-    private val guideId: String = checkNotNull(savedStateHandle["guideId"])
+    private val guideId: String = savedStateHandle.toRoute<GuideStepPlayerNavRoute>().guideId
 
     private var familyId: String? = null
     private var uid: String? = null

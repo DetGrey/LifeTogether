@@ -7,6 +7,7 @@ import com.example.lifetogether.domain.repository.RecipeRepository
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.ui.common.event.UiCommand
+import com.example.lifetogether.ui.navigation.MealPlanDetailsNavRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
+import androidx.navigation.toRoute
 
 @HiltViewModel
 class MealPlanDetailsViewModel @Inject constructor(
@@ -26,8 +28,9 @@ class MealPlanDetailsViewModel @Inject constructor(
     private val saver: MealPlanDetailsSaver,
     private val recipeRepository: RecipeRepository,
 ) : ViewModel() {
-    val mealPlanId: String? = savedStateHandle["mealPlanId"]
-    private val defaultDate: String? = savedStateHandle["defaultDate"]
+    private val route = savedStateHandle.toRoute<MealPlanDetailsNavRoute>()
+    val mealPlanId: String? = route.mealPlanId
+    private val defaultDate: String? = route.defaultDate
 
     private val _familyId = MutableStateFlow<String?>(null)
     val familyId = _familyId.asStateFlow()

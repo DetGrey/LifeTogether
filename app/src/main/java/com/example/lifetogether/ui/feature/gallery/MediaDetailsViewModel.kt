@@ -13,6 +13,7 @@ import com.example.lifetogether.domain.usecase.gallery.DeleteMediaUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
 import com.example.lifetogether.ui.common.snackbar.SnackbarSeverity
 import com.example.lifetogether.ui.model.MenuAction
+import com.example.lifetogether.ui.navigation.GalleryMediaNavRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -25,6 +26,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import androidx.navigation.toRoute
 
 @HiltViewModel
 class MediaDetailsViewModel @Inject constructor(
@@ -41,8 +43,9 @@ class MediaDetailsViewModel @Inject constructor(
 
     private var familyId: String? = null
     private var loadAlbumMediaJob: Job? = null
-    private val albumId: String? = savedStateHandle["albumId"]
-    private val initialIndex: Int = savedStateHandle["initialIndex"] ?: 0
+    private val mediaRoute = savedStateHandle.toRoute<GalleryMediaNavRoute>()
+    private val albumId: String = mediaRoute.albumId
+    private val initialIndex: Int = mediaRoute.initialIndex
 
     init {
         viewModelScope.launch {
@@ -75,11 +78,10 @@ class MediaDetailsViewModel @Inject constructor(
 
     private fun observeAlbumMedia() {
         val familyIdValue = familyId ?: return
-        val albumIdValue = albumId ?: return
 
         loadAlbumMediaJob?.cancel()
         loadAlbumMediaJob = viewModelScope.launch {
-            galleryRepository.observeAlbumMedia(familyIdValue, albumIdValue).collect { result ->
+            galleryRepository.observeAlbumMedia(familyIdValue, albumId).collect { result ->
                 when (result) {
                     is Result.Success -> {
                         _uiState.update { state ->

@@ -21,6 +21,7 @@ import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.domain.usecase.item.DeleteRoutineListEntriesUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
+import com.example.lifetogether.ui.navigation.ListDetailNavRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -41,6 +42,7 @@ import kotlinx.coroutines.flow.update
 import java.util.Date
 import java.util.UUID
 import javax.inject.Inject
+import androidx.navigation.toRoute
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -50,7 +52,7 @@ class ListDetailsViewModel @Inject constructor(
     private val userListRepository: UserListRepository,
     private val deleteRoutineListEntriesUseCase: DeleteRoutineListEntriesUseCase,
 ) : ViewModel() {
-    val listId: String = checkNotNull(savedStateHandle["listId"])
+    val listId: String = savedStateHandle.toRoute<ListDetailNavRoute>().listId
 
     private val selectionState = MutableStateFlow(ListDetailsSelectionState())
     private val checklistEditorState = MutableStateFlow(ChecklistEditorState())

@@ -14,21 +14,7 @@ import com.example.lifetogether.ui.navigation.AppNavigator
 import kotlinx.coroutines.launch
 
 @Composable
-fun CreateRecipeRoute(
-    appNavigator: AppNavigator,
-) {
-    RecipeDetailsDestination(appNavigator = appNavigator)
-}
-
-@Composable
 fun RecipeDetailsRoute(
-    appNavigator: AppNavigator,
-) {
-    RecipeDetailsDestination(appNavigator = appNavigator)
-}
-
-@Composable
-private fun RecipeDetailsDestination(
     appNavigator: AppNavigator,
 ) {
     val viewModel: RecipeDetailsViewModel = hiltViewModel()
