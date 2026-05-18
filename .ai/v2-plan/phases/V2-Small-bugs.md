@@ -122,3 +122,13 @@ Here are some questions:
 - [ ] _Make the image download success and version update dialogs nicer._
 - [ ] _Show a dialog when there is a new version available._
 - [ ] Animate when image is loaded and about to be shown e.g. for recipes and such so it doesn't just pop up
+
+
+## Shelved changes:
+Fixing clickable area in ProfileDetails.kt
+
+Trying out two-row AddNewListItem.kt
+
+WishesSection.kt spacing fixed
+
+CompletableListItem.kt can have multiline (should fix instructions)
