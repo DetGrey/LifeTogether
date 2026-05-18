@@ -1,6 +1,6 @@
 # Phase 4 — Navigation Type-Safety
 
-**Status:** Implementing _(Not started → Grill-me in progress → Implementing → Complete)_
+**Status:** Complete _(Not started → Grill-me in progress → Implementing → Complete)_
 
 ## Goal
 
@@ -48,6 +48,17 @@ Nested graph objects carry no args. Each destination carries its own:
 - `@Serializable data class GuideStepPlayerNavRoute(val guideId: String) : AppRoute`
 
 Navigation goes directly to the start destination (e.g. `navigate(GuideDetailsNavRoute(guideId))`), not to the graph entry point. Nested graphs exist solely for ViewModel scoping and lifecycle binding.
+
+### Destination argument access
+
+- Destination `ViewModel`s must not read navigation arguments through `SavedStateHandle` string keys.
+- Typed `NavRoute` arguments are part of the route contract, and route wrappers own argument extraction and translation.
+
+### Notification entry point exception
+
+- The only accepted raw destination string path is the notification entry point.
+- The notification layer maps the string to a typed `AppRoute` before navigation occurs.
+- No other navigation path may build or consume raw route strings.
 
 ### `NavOptions`: `launchSingleTop` universal default
 

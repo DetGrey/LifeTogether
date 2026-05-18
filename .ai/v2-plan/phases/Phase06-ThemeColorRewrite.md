@@ -34,6 +34,9 @@ Rewrite `Color.kt` to use private raw colors mapped to semantic Material 3 roles
 - **8dp Baseline Grid:** All spacing, padding, and dimensions must use multiples of 8dp. Half-steps (4dp) are allowed only for tight internal component spacing. Arbitrary values like `10.dp` or `15.dp` are banned.
 - **Shape Tokens:** No ad hoc `RoundedCornerShape(Xdp)` in feature screens. Use `MaterialTheme.shapes`. Primary action buttons use `shapes.extraLarge` or `CircleShape`; cards/containers use `shapes.medium` or `shapes.large`.
 - **App-specific Token Layer:** Strictly foundational. Limited to generic `Spacing` (multiples of 8dp + 4dp half-step) and basic `Sizing` (e.g., 24dp for icons, 48dp for minimum touch targets). Component-specific paddings (like card internal padding) are deferred to Phase 7.
+- `LifeTogetherTokens.spacing` is for `Spacer` sizing, padding, and spacing-like gaps.
+- `LifeTogetherTokens.sizing` is for icons and other shared affordance sizes.
+- Real component heights and widths do not need to be forced through the sizing tokens when they are part of the actual element layout.
 - Raw hex colors must be `private` in `Color.kt`; UI accesses colors only through `MaterialTheme.colorScheme`.
 - Palette naming uses explicit theme scope (`DarkPalette`/`LightPalette`) instead of ambiguous `Raw...` names.
 - Text and headings use neutral `onSurface` / `onSurfaceVariant` — never vibrant brand colors.

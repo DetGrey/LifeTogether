@@ -137,6 +137,8 @@ Standardise how UI elements appear, how loading states are communicated, how nav
 - Save failures show a snackbar error only, with no retry action in this phase.
 - Download flows keep snackbar-style progress messages and should not be converted into inline save spinners.
 
+> Architecture note: the app-level repository contract already documents local-first optimistic persistence where meaningful. Phase 9's interaction rule here only refers to the visible UI treatment of save flows.
+
 ## Subphases
 
 - [x] 9.1 Remove `SyncUpdatingText` and simplify the sync lifecycle

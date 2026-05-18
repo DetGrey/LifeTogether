@@ -30,6 +30,7 @@ ViewModel → Repository → LocalDS (write Room immediately) → Flow → ViewM
 ```
 
 The Firestore snapshot listener stays active. Its role changes from *source of UI truth* to *server-correction mechanism* — it reconciles any divergence caused by another device or a conflict.
+This is now the intended write model for the app: Room-first optimistic writes, immediate UI updates from local Flow observation, then Firestore sync in the background of that user action.
 
 ---
 

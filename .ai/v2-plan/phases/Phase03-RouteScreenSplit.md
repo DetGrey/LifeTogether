@@ -32,6 +32,13 @@ Separate every feature screen into a route composable (Android wiring) and a scr
 - shared base type is `UiCommand`
 - shared command is `UiCommand.ShowSnackbar(message, actionLabel?)`
 - feature command types are `<Feature>Command : UiCommand`
+- `NavigationEvent` is UI-only and only flows from screen to route.
+- If a `ViewModel` needs to trigger navigation, it emits a one-shot command on its command flow and the route translates that into a `Navigator` call.
+- Feature-local `Command` types live alongside the feature `UiState`, `UiEvent`, and `NavigationEvent` models when the feature has a `Models.kt` file.
+- Every screen composable must have a real `@Preview` that renders the actual screen inside `LifeTogetherTheme` with representative state and callbacks.
+- Placeholder previews or previews that do not execute the real screen composable are not allowed.
+- Each screen should have at most one meaningful `Scaffold`.
+- Do not add extra scaffolds only for error or snackbar handling; those are handled by the shared root snackbar host and route command collection.
 - Shared command scope for this phase is **snackbar/error only** (`ShowSnackbar`); navigation and other one-off effects stay feature-local.
 - Feature layers emit typed `Command`s (via `Channel`) — they do not render error dialogs directly.
 - Input API migration is required in this phase: split screens must migrate `ViewModel` input handling to typed `UiEvent` dispatch (`onEvent(event)`), not keep ad-hoc public method callbacks.
@@ -41,6 +48,8 @@ Separate every feature screen into a route composable (Android wiring) and a scr
 - `Route` maps `<Feature>UiEvent` to `viewModel.onEvent(...)`.
 - `ViewModel` exposes lifecycle-collected state (`StateFlow<UiState>`) and one-shot commands (`Flow<UiCommand>`).
 - `Screen` never calls `ViewModel` methods directly.
+- Route layers pass UI input into `ViewModel.onEvent(...)`; feature screens do not call ad hoc public viewmodel methods for screen interaction.
+- Feature-local command flows are collected in the route and translated there into navigation or other one-off side effects.
 - For screens with both VM-bound actions and nav-only actions, keep separate callbacks instead of folding navigation into `UiEvent`.
 - Keep `NavigationEvent` in the feature `Models.kt` file alongside the other models when that file exists.
 - Any navigation triggered by `ViewModel` logic is emitted as a `Command`, not a `UiEvent`.

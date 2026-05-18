@@ -1,6 +1,6 @@
 # Phase 2 — Data Layer Deepening
 
-**Status:** Implementing _(Not started → Grill-me in progress → Implementing → Complete)_
+**Status:** Complete _(Not started → Grill-me in progress → Implementing → Complete)_
 
 ## Goal
 
@@ -19,9 +19,12 @@ Deepen the repository layer using a Ports & Adapters approach, introduce a funct
 - The data/domain layer must never throw raw exceptions for expected failures — catch and return `Result.Failure`.
 - Repositories become deep modules: they own mapping logic and data source orchestration internally.
 - Split `LocalDataSource` by feature domain (Groceries, Recipes, Albums, Guides, etc.) — no more god-object.
+- The old `LocalDataSource` god-object is gone in current architecture; repositories depend on focused local sources directly.
 - **Offline-First / SSOT mandate:** UI observes only the local database via `Flow`. When a refresh is requested, the repository fetches from network, saves to local DB, and finishes. ViewModels must never consume network data directly.
+- Current repository observation contract is `Flow<Result<T, AppError>>` for migrated slices, not a bare local flow.
 - Delete passthrough use cases that do nothing but call a single repository method. ViewModels call repositories directly for simple operations. Use cases are reserved for complex/reused business logic only.
 - Logging cleanup: all `println(...)` in data and domain layers replaced with `Log.d(...)`.
+- Global logging rule: `println(...)` is banned across the entire codebase; use `Log.d/w/e` instead and avoid sensitive data.
 - Error model for Phase 2: one shared `AppError` hierarchy across domains.
 - Streaming contract default: `Flow<T>` for local observation + explicit `refresh()/write` commands returning `Result`.
 - `LocalDataSource` split strategy: full split in Phase 2; no new production callsites may depend on the god-object.
@@ -40,10 +43,12 @@ Deepen the repository layer using a Ports & Adapters approach, introduce a funct
   - Decompose the current god-object local source into per-domain local sources.
   - Rewire DI so repositories depend on focused local data sources.
   - Do not add new production callsites to the old god-object local API.
+  - Reflect the split in current-state docs once the phase update is complete.
 - [ ] 2.3 Deepen repositories with Offline-First / SSOT per vertical domain slice
-  - Reads exposed to UI observe local DB (`Flow<T>`).
+  - Reads exposed to UI may surface as `Flow<Result<T, AppError>>` in migrated slices to preserve explicit error state.
   - Refresh/write operations perform remote fetch + local persistence inside repositories and return `Result`.
   - Mapping/orchestration logic moves from higher layers into repositories.
+  - Create/update/delete operations are local-first and optimistic, with rollback on remote failure where meaningful.
   - Domain slices:
     - lists/grocery
     - recipes/guides
@@ -57,6 +62,7 @@ Deepen the repository layer using a Ports & Adapters approach, introduce a funct
   - Keep use cases that add orchestration/business rules.
 - [ ] 2.6 Logging cleanup in `data/` and `domain/`
   - Replace `println(...)` with `Log.d/w/e` as appropriate.
+  - Extend the cleanup to any touched UI or app-shell code so the repo follows the global no-`println` rule.
   - Keep tags consistent and avoid sensitive data in logs.
 - [ ] 2.7 Verification discipline for each issue slice
   - Compile after each issue slice before commit.
@@ -80,7 +86,7 @@ Deepen the repository layer using a Ports & Adapters approach, introduce a funct
 - [ ] Refresh/write orchestration (remote + local persistence) is owned by repositories, not ViewModels/use cases.
 - [ ] Passthrough use cases in migrated slices are removed and call sites updated.
 - [ ] Repository boundaries in migrated slices no longer expose legacy listener wrappers.
-- [ ] `println(...)` is removed from `data/` and `domain/`.
+- [ ] `println(...)` is removed from `data/`, `domain/`, and any touched UI/app-shell code.
 
 ### Test cases
 
@@ -88,7 +94,7 @@ Deepen the repository layer using a Ports & Adapters approach, introduce a funct
 - [ ] Expected repository failure paths return `Result.Failure(AppError)` without raw exception leaks.
 - [ ] ViewModel call sites compile and work after passthrough use case removals.
 - [ ] Repository contracts in migrated slices compile with strict `Result` signatures.
-- [ ] `rg "println\\(" app/src/main/java/com/example/lifetogether/data app/src/main/java/com/example/lifetogether/domain` returns no matches.
+- [ ] `rg "println\\(" app/src/main/java/com/example/lifetogether` returns no matches.
 - [ ] Compilation passes after each issue slice and at phase integration checkpoints.
 
 ## GitHub Issues

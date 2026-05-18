@@ -1,6 +1,6 @@
 # Phase 1 — Session Boundary Cleanup
 
-**Status:** Implementing _(Not started → Grill-me in progress → Implementing → Complete)_
+**Status:** Complete _(Not started → Grill-me in progress → Implementing → Complete)_
 
 ## Goal
 
@@ -23,6 +23,13 @@ Extract durable app session state into a dedicated `SessionRepository`, move obs
 - FCM token syncing sits behind a dedicated service/use case boundary; root coordinator triggers it, does not own the logic.
 - Feature ViewModels inject `SessionRepository` directly via Hilt — they do not receive session data through the UI tree.
 - `NavHost` and route composables must have no knowledge of session orchestration.
+- `LoadingRoute` is the app's startup/auth gate and only redirects based on `SessionRepository.sessionState`.
+- Route composables may still do direct session checks for narrow route-local guards, but they must not grow into a second session layer.
+- Feature-specific screen state must come from the feature ViewModel, not from route-local session extraction.
+- Routes own wiring, screens stay stateless where possible, and one-off UI effects should flow through `CollectUiCommands(...)`.
+- Direct `LocalRootSnackbarHostState.showSnackbar(...)` calls are allowed only for route-local guards or other helpers that are not driven by a ViewModel-owned error flow.
+- `SyncCoordinator` owns remote sync orchestration; graph observer routes only bind and release `SyncKey`s based on visibility.
+- Session-aware feature ViewModels own their own restart/cancel/reset behavior when identity context changes.
 
 ## Subphases
 

@@ -13,6 +13,7 @@ Meal planner will become its own top-level feature and will no longer be part of
 - Existing meal-planner code can be copied into new files where needed.
 - The old `ListType.MEAL_PLANNER` path will be removed completely.
 - No compatibility migration is needed because the old meal planner only exists on a test device.
+- Meal planner is a standalone top-level feature, not a `UserList` subfeature.
 
 ## Checklist
 

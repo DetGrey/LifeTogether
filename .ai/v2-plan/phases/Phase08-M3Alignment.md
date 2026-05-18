@@ -1,6 +1,6 @@
 # Phase 8 — Native Material 3 Alignment
 
-**Status:** Implementing _(Not started → Grill-me in progress → Implementing → Complete)_
+**Status:** Complete _(Not started → Grill-me in progress → Implementing → Complete)_
 
 ## Goal
 
@@ -54,16 +54,16 @@ Phase 8 excludes non-visual plumbing such as `ViewModel`s, routes, DI helpers, e
 - `ui/common/image/DisplayImageFromUri.kt`
 - `ui/common/image/DisplayVideoFromUri.kt`
 - `ui/common/image/rememberObservedImageBitmap`
-- `ActionSheet` is an experimental native bottom-sheet path; `OverflowMenu` stays for now until we decide which action-surface pattern the app should standardize on.
+- `ActionSheet` is the preferred shared action surface for new menu-style actions; `OverflowMenu` remains the legacy surface for existing callers only.
 - The gallery media-details bottom panel should become a native bottom-sheet pattern rather than a custom offset/snap panel; keep `MediaInfoPanel` only as inline content if needed.
 
-| Current component                            | M3 candidate                          | Notes                                                 |
-|----------------------------------------------|---------------------------------------|-------------------------------------------------------|
-| `ui/common/TopBar.kt`                        | `CenterAlignedTopAppBar`              | Default target; exceptions allowed per screen         |
-| `ui/common/dialog/CustomAlertDialog.kt`      | Snackbar/banner alert variant         | Replace with the shared snackbar family; remove shell |
-| `ui/common/dialog/ErrorAlertDialog.kt`       | Snackbar / banner (from Phase 3)      | Already removed; no remaining file                    |
-| `ui/common/dialog/DatePickerDialog.kt`       | `DatePickerDialog` + remembered state | Native shared picker helper                            |
-| `ui/common/button/AddButton.kt`              | `FloatingActionButton`                | Same icon/color everywhere; can become canonical FAB  |
+| Current component                       | M3 candidate                          | Notes                                                 |
+|-----------------------------------------|---------------------------------------|-------------------------------------------------------|
+| `ui/common/TopBar.kt`                   | `CenterAlignedTopAppBar`              | Default target; exceptions allowed per screen         |
+| `ui/common/dialog/CustomAlertDialog.kt` | Snackbar/banner alert variant         | Replace with the shared snackbar family; remove shell |
+| `ui/common/dialog/ErrorAlertDialog.kt`  | Snackbar / banner (from Phase 3)      | Already removed; no remaining file                    |
+| `ui/common/dialog/DatePickerDialog.kt`  | `DatePickerDialog` + remembered state | Native shared picker helper                           |
+| `ui/common/button/AddButton.kt`         | `FloatingActionButton`                | Same icon/color everywhere; can become canonical FAB  |
 
 ## Key Decisions Already Made
 
@@ -87,6 +87,9 @@ Phase 8 excludes non-visual plumbing such as `ViewModel`s, routes, DI helpers, e
 - `ConfirmationDialog` should remain the canonical shared confirm/cancel `AlertDialog` wrapper.
 - The shared snackbar family should keep the existing top-center host placement and dismissal behavior for both error and normal alerts.
 - The typography helpers in `ui/common/text/` should stay as the canonical shared text API for now.
+- Prefer native Material 3 primitives first.
+- Keep a shared wrapper only when it centralizes repeated styling or behavior that would otherwise be duplicated across screens.
+- Shared wrappers should stay canonical and narrow, not become another layer of custom theming logic.
 - Small shared visual helpers such as `CompletableBox`, `TagOptionRow`, and `OverflowMenu` should be reviewed individually and kept if they encode a repeated interaction or semantic pattern that would otherwise be duplicated.
 - `ListItem` should be rebuilt from native M3 row/list primitives, but can remain the canonical shared row wrapper if the app needs one place for completed-item formatting and optional trailing actions.
 - `CompletableBox` should stay as the canonical shared completion toggle wrapper, implemented with native M3 building blocks.
@@ -143,7 +146,7 @@ The following component decisions have been explicitly agreed and should be trea
 - `StatsCard`, `TipsList`, `TipsCalendar`, `ListEditorContainer`, and `GrocerySuggestionsEditor` stay feature-local and are rebuilt on native primitives.
 - `ProfileDetails` becomes a native `Card` row.
 - `SettingsItem` becomes a native `Card` row.
-- `OverflowMenu` remains in the codebase for now, but the app should use `ActionSheet` for new action-surface usage.
+- `ActionSheet` is the preferred shared action surface for new menu-style actions; `OverflowMenu` remains the legacy surface for existing callers only.
 - `GuideDetailsScreen`, `AlbumDetailsScreen`, and `MediaDetailsScreen` now use `ActionSheet` for their action surfaces while keeping `OverflowMenu` only as the legacy shell.
 - `AddNewIngredient`, `RecipeOverview`, `AlbumContainer`, and the other tile-like surfaces should not change their general layout, only their native shell.
 - The add/edit rows keep their current visual language, including the shared colors, spacing, and the inline text + `>` affordance.
