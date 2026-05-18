@@ -66,19 +66,55 @@ class RecipeRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveRecipe(recipe: Recipe): Result<String, AppError> {
-        return recipeFirestoreDataSource.saveRecipe(recipe)
+        recipeLocalDataSource.upsertRecipe(recipe.toEntity())
+        return when (val result = recipeFirestoreDataSource.saveRecipe(recipe)) {
+            is Result.Success -> Result.Success(recipe.id)
+            is Result.Failure -> {
+                recipeLocalDataSource.deleteRecipe(recipe.id)
+                Result.Failure(result.error)
+            }
+        }
     }
 
     override suspend fun updateRecipe(recipe: Recipe): Result<Unit, AppError> {
-        return recipeFirestoreDataSource.updateRecipe(recipe)
+        val oldEntity = recipeLocalDataSource.getRecipeOnce(recipe.id)
+        recipeLocalDataSource.upsertRecipe(recipe.toEntity(oldEntity?.imageData))
+        return when (val result = recipeFirestoreDataSource.updateRecipe(recipe)) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> {
+                if (oldEntity != null) recipeLocalDataSource.upsertRecipe(oldEntity)
+                else recipeLocalDataSource.deleteRecipe(recipe.id)
+                Result.Failure(result.error)
+            }
+        }
     }
 
     override suspend fun deleteRecipe(recipeId: String): Result<Unit, AppError> {
+        val oldEntity = recipeLocalDataSource.getRecipeOnce(recipeId)
+        recipeLocalDataSource.deleteRecipe(recipeId)
         return when (val result = recipeFirestoreDataSource.deleteRecipe(recipeId)) {
             is Result.Success -> Result.Success(Unit)
-            is Result.Failure -> Result.Failure(result.error)
+            is Result.Failure -> {
+                if (oldEntity != null) recipeLocalDataSource.upsertRecipe(oldEntity)
+                Result.Failure(result.error)
+            }
         }
     }
+
+    private fun Recipe.toEntity(imageData: ByteArray? = null) = RecipeEntity(
+        id = id,
+        familyId = familyId,
+        itemName = itemName,
+        lastUpdated = lastUpdated,
+        description = description,
+        ingredients = ingredients,
+        instructions = instructions,
+        preparationTimeMin = preparationTimeMin,
+        favourite = favourite,
+        servings = servings,
+        tags = tags,
+        imageData = imageData
+    )
 
     private fun RecipeEntity.toModel() = Recipe(
         id = id,

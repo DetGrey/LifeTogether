@@ -19,6 +19,9 @@ interface NoteEntriesDao {
     @Query("SELECT * FROM $NOTE_LIST_ENTRIES_TABLE WHERE id = :id")
     fun getItemById(id: String): Flow<NoteEntryEntity>
 
+    @Query("SELECT * FROM $NOTE_LIST_ENTRIES_TABLE WHERE id = :id LIMIT 1")
+    suspend fun getItemOnce(id: String): NoteEntryEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateItems(items: List<NoteEntryEntity>)
 

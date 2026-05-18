@@ -39,6 +39,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import java.util.Date
+import java.util.UUID
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -181,7 +182,7 @@ class ListDetailsViewModel @Inject constructor(
             itemName = draftName,
             lastUpdated = now,
         ) ?: ChecklistEntry(
-            id = "",
+            id = UUID.randomUUID().toString(),
             familyId = currentState.familyId,
             listId = listId,
             itemName = draftName,

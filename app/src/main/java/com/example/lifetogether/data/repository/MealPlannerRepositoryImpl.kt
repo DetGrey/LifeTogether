@@ -38,7 +38,7 @@ class MealPlannerRepositoryImpl @Inject constructor(
                         if (visibleEntries.isEmpty()) {
                             mealPlanLocalDataSource.deleteFamilyMealPlans(familyId)
                         } else {
-                            mealPlanLocalDataSource.updateMealPlans(visibleEntries)
+                            mealPlanLocalDataSource.updateMealPlans(visibleEntries.map { it.toEntity() })
                         }
                     }
 
@@ -54,16 +54,53 @@ class MealPlannerRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveMealPlan(mealPlan: MealPlan): Result<String, AppError> {
-        return mealPlanFirestoreDataSource.saveMealPlan(mealPlan)
+        mealPlanLocalDataSource.upsertMealPlan(mealPlan.toEntity())
+        return when (val result = mealPlanFirestoreDataSource.saveMealPlan(mealPlan)) {
+            is Result.Success -> Result.Success(mealPlan.id)
+            is Result.Failure -> {
+                mealPlanLocalDataSource.deleteMealPlan(mealPlan.id)
+                Result.Failure(result.error)
+            }
+        }
     }
 
     override suspend fun updateMealPlan(mealPlan: MealPlan): Result<Unit, AppError> {
-        return mealPlanFirestoreDataSource.updateMealPlan(mealPlan)
+        val oldEntity = mealPlanLocalDataSource.getMealPlanOnce(mealPlan.id)
+        mealPlanLocalDataSource.upsertMealPlan(mealPlan.toEntity())
+        return when (val result = mealPlanFirestoreDataSource.updateMealPlan(mealPlan)) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> {
+                if (oldEntity != null) mealPlanLocalDataSource.upsertMealPlan(oldEntity)
+                else mealPlanLocalDataSource.deleteMealPlan(mealPlan.id)
+                Result.Failure(result.error)
+            }
+        }
     }
 
     override suspend fun deleteMealPlan(mealPlanId: String): Result<Unit, AppError> {
-        return mealPlanFirestoreDataSource.deleteMealPlan(mealPlanId)
+        val oldEntity = mealPlanLocalDataSource.getMealPlanOnce(mealPlanId)
+        mealPlanLocalDataSource.deleteMealPlan(mealPlanId)
+        return when (val result = mealPlanFirestoreDataSource.deleteMealPlan(mealPlanId)) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> {
+                if (oldEntity != null) mealPlanLocalDataSource.upsertMealPlan(oldEntity)
+                Result.Failure(result.error)
+            }
+        }
     }
+
+    private fun MealPlan.toEntity() = MealPlanEntity(
+        id = id,
+        familyId = familyId,
+        itemName = itemName,
+        date = date,
+        recipeId = recipeId,
+        customMealName = customMealName,
+        mealType = mealType.name,
+        notes = notes,
+        lastUpdated = lastUpdated,
+        dateCreated = dateCreated,
+    )
 
     private fun MealPlanEntity.toModel() = MealPlan(
         id = id,

@@ -49,6 +49,12 @@ class AlbumLocalDataSource @Inject constructor(
         albumsDao.deleteItems(itemsToDelete.map { it.id })
     }
 
+    suspend fun getAlbumOnce(id: String): AlbumEntity? = albumsDao.getItemOnce(id)
+
+    suspend fun upsertAlbum(entity: AlbumEntity) = albumsDao.updateItems(listOf(entity))
+
+    suspend fun deleteAlbum(id: String) = albumsDao.deleteItems(listOf(id))
+
     suspend fun deleteFamilyAlbums(familyId: String) {
         albumsDao.getItems(familyId).firstOrNull()?.let { currentFamilyItems ->
             albumsDao.deleteItems(currentFamilyItems.map { it.id })

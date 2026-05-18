@@ -59,6 +59,12 @@ class RecipeLocalDataSource @Inject constructor(
         recipesDao.deleteItems(itemsToDelete.map { it.id })
     }
 
+    suspend fun getRecipeOnce(id: String): RecipeEntity? = recipesDao.getItemOnce(id)
+
+    suspend fun upsertRecipe(entity: RecipeEntity) = recipesDao.updateItems(listOf(entity))
+
+    suspend fun deleteRecipe(id: String) = recipesDao.deleteItems(listOf(id))
+
     suspend fun deleteFamilyRecipes(familyId: String) {
         recipesDao.getItems(familyId).firstOrNull()?.let { currentFamilyItems ->
             recipesDao.deleteItems(currentFamilyItems.map { it.id })

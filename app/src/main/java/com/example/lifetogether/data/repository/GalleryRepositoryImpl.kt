@@ -87,7 +87,14 @@ class GalleryRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveAlbum(album: Album): Result<String, AppError> {
-        return galleryFirestoreDataSource.saveAlbum(album)
+        albumLocalDataSource.upsertAlbum(album.toEntity())
+        return when (val result = galleryFirestoreDataSource.saveAlbum(album)) {
+            is Result.Success -> Result.Success(album.id)
+            is Result.Failure -> {
+                albumLocalDataSource.deleteAlbum(album.id)
+                Result.Failure(result.error)
+            }
+        }
     }
 
     override suspend fun fetchAlbumThumbnail(albumId: String) {
@@ -125,11 +132,27 @@ class GalleryRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteAlbum(albumId: String): Result<Unit, AppError> {
-        return galleryFirestoreDataSource.deleteAlbum(albumId)
+        val oldEntity = albumLocalDataSource.getAlbumOnce(albumId)
+        albumLocalDataSource.deleteAlbum(albumId)
+        return when (val result = galleryFirestoreDataSource.deleteAlbum(albumId)) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> {
+                if (oldEntity != null) albumLocalDataSource.upsertAlbum(oldEntity)
+                Result.Failure(result.error)
+            }
+        }
     }
 
     override suspend fun deleteGalleryMedia(mediaIds: List<String>): Result<Unit, AppError> {
-        return galleryFirestoreDataSource.deleteGalleryMedia(mediaIds)
+        val oldEntities = mediaLocalDataSource.getMediaItemsByIds(mediaIds)
+        mediaLocalDataSource.deleteMediaItems(mediaIds)
+        return when (val result = galleryFirestoreDataSource.deleteGalleryMedia(mediaIds)) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> {
+                if (oldEntities.isNotEmpty()) mediaLocalDataSource.restoreMediaItems(oldEntities)
+                Result.Failure(result.error)
+            }
+        }
     }
 
     override suspend fun updateAlbumCount(albumId: String, count: Int): Result<Unit, AppError> {
@@ -322,8 +345,25 @@ class GalleryRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateAlbum(album: Album): Result<Unit, AppError> {
-        return galleryFirestoreDataSource.updateAlbum(album)
+        val oldEntity = albumLocalDataSource.getAlbumOnce(album.id)
+        albumLocalDataSource.upsertAlbum(album.toEntity())
+        return when (val result = galleryFirestoreDataSource.updateAlbum(album)) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> {
+                if (oldEntity != null) albumLocalDataSource.upsertAlbum(oldEntity)
+                else albumLocalDataSource.deleteAlbum(album.id)
+                Result.Failure(result.error)
+            }
+        }
     }
+
+    private fun Album.toEntity() = AlbumEntity(
+        id = id,
+        familyId = familyId,
+        itemName = itemName,
+        lastUpdated = lastUpdated,
+        count = count,
+    )
 
     private fun AlbumEntity.toModel() = Album(
         id = id,

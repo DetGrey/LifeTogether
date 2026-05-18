@@ -9,8 +9,11 @@ import com.example.lifetogether.domain.repository.MealPlannerRepository
 import com.example.lifetogether.domain.repository.RecipeRepository
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.result.Result
+import com.example.lifetogether.domain.result.toUserMessage
+import com.example.lifetogether.ui.common.event.UiCommand
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -18,9 +21,11 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -30,6 +35,10 @@ class MealPlannerViewModel @Inject constructor(
     private val mealPlannerRepository: MealPlannerRepository,
     private val recipeRepository: RecipeRepository,
 ) : ViewModel() {
+
+    private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
+    val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
+
     @OptIn(ExperimentalCoroutinesApi::class)
     private val contentState: StateFlow<MealPlannerUiState.Content?> = sessionRepository.sessionState
         .map { state ->
@@ -110,8 +119,14 @@ class MealPlannerViewModel @Inject constructor(
         return transformLatest { result ->
             when (result) {
                 is Result.Success -> emit(result.data)
-                is Result.Failure -> Unit
+                is Result.Failure -> showError(result.error.toUserMessage())
             }
+        }
+    }
+
+    private fun showError(message: String) {
+        viewModelScope.launch {
+            _uiCommands.send(UiCommand.ShowSnackbar(message = message, withDismissAction = true))
         }
     }
 

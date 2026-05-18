@@ -70,6 +70,12 @@ class GuideLocalDataSource @Inject constructor(
         }
     }
 
+    suspend fun getGuideOnce(id: String): GuideEntity? = guidesDao.getItemOnce(id)
+
+    suspend fun upsertGuide(entity: GuideEntity) = guidesDao.updateItems(listOf(entity))
+
+    suspend fun deleteGuide(id: String) = guidesDao.deleteItems(listOf(id))
+
     suspend fun upsertGuides(items: List<Guide>) {
         if (items.isEmpty()) return
         val entities = items.map { item ->

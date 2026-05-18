@@ -144,17 +144,38 @@ class GuideRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveGuide(guide: Guide): Result<String, AppError> {
-        return guideFirestoreDataSource.saveGuide(guide)
+        guideLocalDataSource.upsertGuide(guide.toEntity())
+        return when (val result = guideFirestoreDataSource.saveGuide(guide)) {
+            is Result.Success -> Result.Success(guide.id)
+            is Result.Failure -> {
+                guideLocalDataSource.deleteGuide(guide.id)
+                Result.Failure(result.error)
+            }
+        }
     }
 
     override suspend fun updateGuide(guide: Guide): Result<Unit, AppError> {
-        return guideFirestoreDataSource.updateGuide(guide)
+        val oldEntity = guideLocalDataSource.getGuideOnce(guide.id)
+        guideLocalDataSource.upsertGuide(guide.toEntity())
+        return when (val result = guideFirestoreDataSource.updateGuide(guide)) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> {
+                if (oldEntity != null) guideLocalDataSource.upsertGuide(oldEntity)
+                else guideLocalDataSource.deleteGuide(guide.id)
+                Result.Failure(result.error)
+            }
+        }
     }
 
     override suspend fun deleteGuide(guideId: String): Result<Unit, AppError> {
+        val oldEntity = guideLocalDataSource.getGuideOnce(guideId)
+        guideLocalDataSource.deleteGuide(guideId)
         return when (val result = guideFirestoreDataSource.deleteGuide(guideId)) {
             is Result.Success -> Result.Success(Unit)
-            is Result.Failure -> Result.Failure(result.error)
+            is Result.Failure -> {
+                if (oldEntity != null) guideLocalDataSource.upsertGuide(oldEntity)
+                Result.Failure(result.error)
+            }
         }
     }
 
@@ -200,6 +221,20 @@ class GuideRepositoryImpl @Inject constructor(
             }
         }
     }
+
+    private fun Guide.toEntity() = GuideEntity(
+        id = id,
+        familyId = familyId,
+        itemName = itemName,
+        lastUpdated = lastUpdated,
+        description = description,
+        visibility = visibility,
+        ownerUid = ownerUid,
+        contentVersion = contentVersion,
+        started = started,
+        sections = sections,
+        resume = resume,
+    )
 
     private fun GuideEntity.toModel() = Guide(
         id = id,

@@ -88,6 +88,12 @@ class GroceryLocalDataSource @Inject constructor(
         groceryListDao.deleteItems(itemsToDelete.map { it.id })
     }
 
+    suspend fun getGroceryItemOnce(id: String): GroceryListEntity? = groceryListDao.getItemOnce(id)
+
+    suspend fun upsertGroceryItem(entity: GroceryListEntity) = groceryListDao.updateItems(listOf(entity))
+
+    suspend fun deleteGroceryItem(id: String) = groceryListDao.deleteItems(listOf(id))
+
     suspend fun deleteFamilyGroceryItems(familyId: String) {
         groceryListDao.getItems(familyId).firstOrNull()?.let { currentFamilyItems ->
             groceryListDao.deleteItems(currentFamilyItems.map { it.id })

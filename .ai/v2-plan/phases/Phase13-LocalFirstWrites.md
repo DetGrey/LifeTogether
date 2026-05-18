@@ -1,6 +1,6 @@
 # Phase 13 — Local-First Writes & DAO Correctness
 
-**Status:** Implementing _(Not started → Grill-me in progress → Implementing → Complete)_
+**Status:** Complete _(Not started → Grill-me in progress → Implementing → Complete)_
 
 ## Goal
 
@@ -170,12 +170,12 @@ All `saveFoo()` methods that currently use `collection.add(dto)` must change to 
 **Recipe image upload note:** the image upload happens after `saveRecipe`/`updateRecipe` succeeds in Firestore (it needs the document ID and the storage path). With optimistic writes, `saveRecipe` still writes to Room first, then Firestore, then triggers the image upload — the sequence is unchanged except the recipe appears in the list immediately.
 
 ### Subphase 2 Checklist
-- [ ] `MealPlannerViewModel` has `_uiCommands`, `showError()`, `successData()` emits errors
-- [ ] `MealPlannerRoute` calls `CollectUiCommands(viewModel.uiCommands)`
-- [ ] All in-scope repositories implement optimistic create/update/delete
-- [ ] All in-scope Firestore DataSources use `document(id).set()` for creates
-- [ ] All in-scope LocalDataSources have `insertFoo`, `deleteFoo(id)`, `getFooOnce(id)` methods
-- [ ] Build passes
+- [x] `MealPlannerViewModel` has `_uiCommands`, `showError()`, `successData()` emits errors
+- [x] `MealPlannerRoute` calls `CollectUiCommands(viewModel.uiCommands)`
+- [x] All in-scope repositories implement optimistic create/update/delete
+- [x] All in-scope Firestore DataSources use `document(id).set()` for creates
+- [x] All in-scope LocalDataSources have `insertFoo`, `deleteFoo(id)`, `getFooOnce(id)` methods
+- [x] Build passes
 
 ---
 

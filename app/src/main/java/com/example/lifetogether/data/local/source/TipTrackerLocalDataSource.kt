@@ -17,6 +17,12 @@ class TipTrackerLocalDataSource @Inject constructor(
 ) {
     fun observeTips(familyId: String): Flow<List<TipEntity>> = tipTrackerDao.getItems(familyId)
 
+    suspend fun getTipOnce(id: String): TipEntity? = tipTrackerDao.getItemOnce(id)
+
+    suspend fun upsertTip(entity: TipEntity) = tipTrackerDao.updateItems(listOf(entity))
+
+    suspend fun deleteTip(id: String) = tipTrackerDao.deleteItems(listOf(id))
+
     suspend fun updateTipTracker(items: List<TipItem>) {
         val familyId = items.firstOrNull()?.familyId ?: return
         val entities = items.map { item ->

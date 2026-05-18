@@ -16,12 +16,7 @@ import com.example.lifetogether.data.model.NoteEntryEntity
 import com.example.lifetogether.data.model.RoutineListEntryEntity
 import com.example.lifetogether.data.model.UserListEntity
 import com.example.lifetogether.data.model.WishListEntryEntity
-import com.example.lifetogether.domain.model.lists.ChecklistEntry
-import com.example.lifetogether.domain.model.lists.NoteEntry
-import com.example.lifetogether.domain.model.lists.RoutineListEntry
-import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.model.lists.ListType
-import com.example.lifetogether.domain.model.lists.WishListEntry
 import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -39,11 +34,13 @@ class UserListLocalDataSource @Inject constructor(
     fun observeUserLists(familyId: String): Flow<List<UserListEntity>> {
         return userListsDao.getItems(familyId)
     }
+    suspend fun upsertUserList(entity: UserListEntity) = userListsDao.updateItems(listOf(entity))
 
-    suspend fun updateUserLists(items: List<UserList>) {
-        if (items.isEmpty()) return
-        val entities = items.map { it.toEntity() }
-        val currentItems = userListsDao.getItems(items.first().familyId).first()
+    suspend fun deleteUserList(id: String) = userListsDao.deleteItems(listOf(id))
+
+    suspend fun updateUserLists(entities: List<UserListEntity>) {
+        if (entities.isEmpty()) return
+        val currentItems = userListsDao.getItems(entities.first().familyId).first()
         val itemsToUpdate = computeItemsToUpdate(
             currentItems = currentItems,
             incomingItems = entities,
@@ -89,27 +86,30 @@ class UserListLocalDataSource @Inject constructor(
     }
 
     suspend fun updateRoutineListEntries(
-        items: List<RoutineListEntry>,
+        entities: List<RoutineListEntryEntity>,
         byteArrays: Map<String, ByteArray> = emptyMap(),
     ) {
-        if (items.isEmpty()) return
-        val currentItems = routineListsDao.getItems(items.first().familyId).first()
-        var entities = items.map { it.toEntity() }
-        entities = entities.map { entity ->
-            val existingImage = currentItems.find { it.id == entity.id }?.imageData
+        if (entities.isEmpty()) return
+        val currentItems = routineListsDao.getItems(entities.first().familyId).first()
+        val currentItemsById = currentItems.associateBy { it.id }
+
+        val localEntities = entities.map { entity ->
+            val existingImage = currentItemsById[entity.id]?.imageData
             val newImage = byteArrays[entity.id]
             entity.copy(imageData = newImage ?: existingImage)
         }
+
         val itemsToUpdate = computeItemsToUpdate(
             currentItems = currentItems,
-            incomingItems = entities,
+            incomingItems = localEntities,
             key = { it.id },
         )
         val itemsToDelete = computeItemsToDelete(
             currentItems = currentItems,
-            incomingItems = entities,
+            incomingItems = localEntities,
             key = { it.id },
         )
+
         routineListsDao.updateItems(itemsToUpdate)
         if (itemsToDelete.isNotEmpty()) {
             routineListsDao.deleteItems(itemsToDelete.map { it.id })
@@ -118,6 +118,10 @@ class UserListLocalDataSource @Inject constructor(
 
     suspend fun getRoutineEntryIdsWithImages(familyId: String): List<String> =
         routineListsDao.getEntryIdsWithImages(familyId)
+
+    suspend fun getRoutineEntryOnce(id: String): RoutineListEntryEntity? = routineListsDao.getItemOnce(id)
+
+    suspend fun upsertRoutineEntry(entity: RoutineListEntryEntity) = routineListsDao.updateItems(listOf(entity))
 
     suspend fun deleteFamilyRoutineListEntries(familyId: String) {
         routineListsDao.deleteFamilyItems(familyId)
@@ -139,10 +143,9 @@ class UserListLocalDataSource @Inject constructor(
         return wishListsDao.getItemById(id)
     }
 
-    suspend fun updateWishListEntries(items: List<WishListEntry>) {
-        if (items.isEmpty()) return
-        val currentItems = wishListsDao.getItems(items.first().familyId).first()
-        val entities = items.map { it.toEntity() }
+    suspend fun updateWishListEntries(entities: List<WishListEntryEntity>) {
+        if (entities.isEmpty()) return
+        val currentItems = wishListsDao.getItems(entities.first().familyId).first()
         val itemsToUpdate = computeItemsToUpdate(
             currentItems = currentItems,
             incomingItems = entities,
@@ -158,6 +161,10 @@ class UserListLocalDataSource @Inject constructor(
             wishListsDao.deleteItems(itemsToDelete.map { it.id })
         }
     }
+
+    suspend fun getWishEntryOnce(id: String): WishListEntryEntity? = wishListsDao.getItemOnce(id)
+
+    suspend fun upsertWishEntry(entity: WishListEntryEntity) = wishListsDao.updateItems(listOf(entity))
 
     suspend fun deleteFamilyWishListEntries(familyId: String) {
         wishListsDao.deleteFamilyItems(familyId)
@@ -175,10 +182,9 @@ class UserListLocalDataSource @Inject constructor(
         return noteEntriesDao.getItemById(id)
     }
 
-    suspend fun updateNoteEntries(items: List<NoteEntry>) {
-        if (items.isEmpty()) return
-        val currentItems = noteEntriesDao.getItems(items.first().familyId).first()
-        val entities = items.map { it.toEntity() }
+    suspend fun updateNoteEntries(entities: List<NoteEntryEntity>) {
+        if (entities.isEmpty()) return
+        val currentItems = noteEntriesDao.getItems(entities.first().familyId).first()
         val itemsToUpdate = computeItemsToUpdate(
             currentItems = currentItems,
             incomingItems = entities,
@@ -194,6 +200,10 @@ class UserListLocalDataSource @Inject constructor(
             noteEntriesDao.deleteItems(itemsToDelete.map { it.id })
         }
     }
+
+    suspend fun getNoteEntryOnce(id: String): NoteEntryEntity? = noteEntriesDao.getItemOnce(id)
+
+    suspend fun upsertNoteEntry(entity: NoteEntryEntity) = noteEntriesDao.updateItems(listOf(entity))
 
     suspend fun deleteFamilyNoteEntries(familyId: String) {
         noteEntriesDao.deleteFamilyItems(familyId)
@@ -211,10 +221,9 @@ class UserListLocalDataSource @Inject constructor(
         return checklistEntriesDao.getItemById(id)
     }
 
-    suspend fun updateChecklistEntries(items: List<ChecklistEntry>) {
-        if (items.isEmpty()) return
-        val currentItems = checklistEntriesDao.getItems(items.first().familyId).first()
-        val entities = items.map { it.toEntity() }
+    suspend fun updateChecklistEntries(entities: List<ChecklistEntryEntity>) {
+        if (entities.isEmpty()) return
+        val currentItems = checklistEntriesDao.getItems(entities.first().familyId).first()
         val itemsToUpdate = computeItemsToUpdate(
             currentItems = currentItems,
             incomingItems = entities,
@@ -231,6 +240,10 @@ class UserListLocalDataSource @Inject constructor(
         }
     }
 
+    suspend fun getChecklistEntryOnce(id: String): ChecklistEntryEntity? = checklistEntriesDao.getItemOnce(id)
+
+    suspend fun upsertChecklistEntry(entity: ChecklistEntryEntity) = checklistEntriesDao.updateItems(listOf(entity))
+
     suspend fun deleteFamilyChecklistEntries(familyId: String) {
         checklistEntriesDao.deleteFamilyItems(familyId)
     }
@@ -238,66 +251,4 @@ class UserListLocalDataSource @Inject constructor(
     suspend fun deleteChecklistEntries(itemIds: List<String>): Result<Unit, AppError> = appResultOfSuspend {
         checklistEntriesDao.deleteItems(itemIds)
     }
-
-    private fun RoutineListEntry.toEntity() = RoutineListEntryEntity(
-        id = id,
-        familyId = familyId,
-        listId = listId,
-        itemName = itemName,
-        lastUpdated = lastUpdated,
-        dateCreated = dateCreated,
-        nextDate = nextDate,
-        lastCompletedAt = lastCompletedAt,
-        completionCount = completionCount,
-        recurrenceUnit = recurrenceUnit,
-        interval = interval,
-        weekdays = weekdays,
-        imageData = null,
-    )
-
-    private fun WishListEntry.toEntity() = WishListEntryEntity(
-        id = id,
-        familyId = familyId,
-        listId = listId,
-        itemName = itemName,
-        lastUpdated = lastUpdated,
-        dateCreated = dateCreated,
-        isPurchased = isPurchased,
-        url = url,
-        price = price,
-        currencyCode = currencyCode,
-        priority = priority,
-        notes = notes,
-    )
-
-    private fun NoteEntry.toEntity() = NoteEntryEntity(
-        id = id,
-        familyId = familyId,
-        listId = listId,
-        itemName = itemName,
-        body = body,
-        lastUpdated = lastUpdated,
-        dateCreated = dateCreated,
-    )
-
-    private fun ChecklistEntry.toEntity() = ChecklistEntryEntity(
-        id = id,
-        familyId = familyId,
-        listId = listId,
-        itemName = itemName,
-        isChecked = isChecked,
-        lastUpdated = lastUpdated,
-        dateCreated = dateCreated,
-    )
-
-    private fun UserList.toEntity() = UserListEntity(
-        id = id,
-        familyId = familyId,
-        itemName = itemName,
-        lastUpdated = lastUpdated,
-        dateCreated = dateCreated,
-        type = type,
-        visibility = visibility,
-        ownerUid = ownerUid,
-    )
 }

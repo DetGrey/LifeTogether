@@ -192,11 +192,12 @@ class UserListFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun saveRoutineListEntry(entry: RoutineListEntry): Result<String, AppError> {
+    suspend fun saveRoutineListEntry(entry: RoutineListEntry): Result<Unit, AppError> {
         return appResultOfSuspend {
-            val doc = db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE)
-                .add(entry.toDto().toFirestoreMap()).await()
-            doc.id
+            db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE)
+                .document(entry.id)
+                .set(entry.toDto().toFirestoreMap())
+                .await()
         }
     }
 
@@ -210,11 +211,12 @@ class UserListFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun saveWishListEntry(entry: WishListEntry): Result<String, AppError> {
+    suspend fun saveWishListEntry(entry: WishListEntry): Result<Unit, AppError> {
         return appResultOfSuspend {
-            val doc = db.collection(Constants.WISH_LIST_ENTRIES_TABLE)
-                .add(entry.toDto().toFirestoreMap()).await()
-            doc.id
+            db.collection(Constants.WISH_LIST_ENTRIES_TABLE)
+                .document(entry.id)
+                .set(entry.toDto().toFirestoreMap())
+                .await()
         }
     }
 
@@ -238,11 +240,12 @@ class UserListFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun saveNoteEntry(entry: NoteEntry): Result<String, AppError> {
+    suspend fun saveNoteEntry(entry: NoteEntry): Result<Unit, AppError> {
         return appResultOfSuspend {
-            val doc = db.collection(Constants.NOTE_LIST_ENTRIES_TABLE)
-                .add(entry.toDto().toFirestoreMap()).await()
-            doc.id
+            db.collection(Constants.NOTE_LIST_ENTRIES_TABLE)
+                .document(entry.id)
+                .set(entry.toDto().toFirestoreMap())
+                .await()
         }
     }
 
@@ -266,11 +269,12 @@ class UserListFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun saveChecklistEntry(entry: ChecklistEntry): Result<String, AppError> {
+    suspend fun saveChecklistEntry(entry: ChecklistEntry): Result<Unit, AppError> {
         return appResultOfSuspend {
-            val doc = db.collection(Constants.CHECKLIST_ENTRIES_TABLE)
-                .add(entry.toDto().toFirestoreMap()).await()
-            doc.id
+            db.collection(Constants.CHECKLIST_ENTRIES_TABLE)
+                .document(entry.id)
+                .set(entry.toDto().toFirestoreMap())
+                .await()
         }
     }
 

@@ -48,11 +48,12 @@ class GroceryFirestoreDataSource @Inject constructor(
         awaitClose { registration.remove() }
     }
 
-    suspend fun saveGroceryItem(groceryItem: GroceryItem): Result<String, AppError> {
+    suspend fun saveGroceryItem(groceryItem: GroceryItem): Result<Unit, AppError> {
         return appResultOfSuspend {
-            val doc = db.collection(Constants.GROCERY_TABLE)
-                .add(groceryItem.toDto().toFirestoreMap()).await()
-            doc.id
+            db.collection(Constants.GROCERY_TABLE)
+                .document(groceryItem.id)
+                .set(groceryItem.toDto().toFirestoreMap())
+                .await()
         }
     }
 

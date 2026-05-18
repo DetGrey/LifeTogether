@@ -69,7 +69,7 @@ class UserListRepositoryImpl @Inject constructor(
                     if (merged.isEmpty()) {
                         userListLocalDataSource.deleteFamilyUserLists(familyId)
                     } else {
-                        userListLocalDataSource.updateUserLists(merged.toList())
+                        userListLocalDataSource.updateUserLists(merged.map { it.toEntity() })
                     }
                 }
             }
@@ -77,7 +77,14 @@ class UserListRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveUserList(userList: UserList): Result<String, AppError> {
-        return userListFirestoreDataSource.saveUserList(userList)
+        userListLocalDataSource.upsertUserList(userList.toEntity())
+        return when (val result = userListFirestoreDataSource.saveUserList(userList)) {
+            is Result.Success -> Result.Success(userList.id)
+            is Result.Failure -> {
+                userListLocalDataSource.deleteUserList(userList.id)
+                Result.Failure(result.error)
+            }
+        }
     }
     
     // ROUTINE ENTRY
@@ -118,7 +125,7 @@ class UserListRepositoryImpl @Inject constructor(
                     }
                 }
                 userListLocalDataSource.updateRoutineListEntries(
-                    visibleEntries,
+                    visibleEntries.map { it.toEntity() },
                     byteArrays,
                 )
             },
@@ -140,17 +147,39 @@ class UserListRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveRoutineListEntry(entry: RoutineListEntry): Result<String, AppError> {
-        return userListFirestoreDataSource.saveRoutineListEntry(entry)
+        userListLocalDataSource.upsertRoutineEntry(entry.toEntity())
+        return when (val result = userListFirestoreDataSource.saveRoutineListEntry(entry)) {
+            is Result.Success -> Result.Success(entry.id)
+            is Result.Failure -> {
+                userListLocalDataSource.deleteRoutineListEntries(listOf(entry.id))
+                Result.Failure(result.error)
+            }
+        }
     }
 
     override suspend fun updateRoutineListEntry(entry: RoutineListEntry): Result<Unit, AppError> {
-        return userListFirestoreDataSource.updateRoutineListEntry(entry)
+        val oldEntity = userListLocalDataSource.getRoutineEntryOnce(entry.id)
+        userListLocalDataSource.upsertRoutineEntry(entry.toEntity(oldEntity?.imageData))
+        return when (val result = userListFirestoreDataSource.updateRoutineListEntry(entry)) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> {
+                if (oldEntity != null) userListLocalDataSource.upsertRoutineEntry(oldEntity)
+                else userListLocalDataSource.deleteRoutineListEntries(listOf(entry.id))
+                Result.Failure(result.error)
+            }
+        }
     }
 
     override suspend fun deleteRoutineListEntries(itemIds: List<String>): Result<Unit, AppError> {
-        val remoteDelete = userListFirestoreDataSource.deleteRoutineListEntries(itemIds)
-        if (remoteDelete is Result.Failure) return remoteDelete
-        return userListLocalDataSource.deleteRoutineListEntries(itemIds)
+        val oldEntities = itemIds.mapNotNull { userListLocalDataSource.getRoutineEntryOnce(it) }
+        userListLocalDataSource.deleteRoutineListEntries(itemIds)
+        return when (val result = userListFirestoreDataSource.deleteRoutineListEntries(itemIds)) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> {
+                oldEntities.forEach { userListLocalDataSource.upsertRoutineEntry(it) }
+                Result.Failure(result.error)
+            }
+        }
     }
 
     // WISH LIST ENTRY
@@ -183,7 +212,7 @@ class UserListRepositoryImpl @Inject constructor(
                 userListLocalDataSource.deleteFamilyWishListEntries(familyId)
             },
             onVisibleEntries = { visibleEntries ->
-                userListLocalDataSource.updateWishListEntries(visibleEntries)
+                userListLocalDataSource.updateWishListEntries(visibleEntries.map { it.toEntity() })
             },
         )
     }
@@ -194,17 +223,39 @@ class UserListRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveWishListEntry(entry: WishListEntry): Result<String, AppError> {
-        return userListFirestoreDataSource.saveWishListEntry(entry)
+        userListLocalDataSource.upsertWishEntry(entry.toEntity())
+        return when (val result = userListFirestoreDataSource.saveWishListEntry(entry)) {
+            is Result.Success -> Result.Success(entry.id)
+            is Result.Failure -> {
+                userListLocalDataSource.deleteWishListEntries(listOf(entry.id))
+                Result.Failure(result.error)
+            }
+        }
     }
 
     override suspend fun updateWishListEntry(entry: WishListEntry): Result<Unit, AppError> {
-        return userListFirestoreDataSource.updateWishListEntry(entry)
+        val oldEntity = userListLocalDataSource.getWishEntryOnce(entry.id)
+        userListLocalDataSource.upsertWishEntry(entry.toEntity())
+        return when (val result = userListFirestoreDataSource.updateWishListEntry(entry)) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> {
+                if (oldEntity != null) userListLocalDataSource.upsertWishEntry(oldEntity)
+                else userListLocalDataSource.deleteWishListEntries(listOf(entry.id))
+                Result.Failure(result.error)
+            }
+        }
     }
 
     override suspend fun deleteWishListEntries(itemIds: List<String>): Result<Unit, AppError> {
-        val remoteDelete = userListFirestoreDataSource.deleteWishListEntries(itemIds)
-        if (remoteDelete is Result.Failure) return remoteDelete
-        return userListLocalDataSource.deleteWishListEntries(itemIds)
+        val oldEntities = itemIds.mapNotNull { userListLocalDataSource.getWishEntryOnce(it) }
+        userListLocalDataSource.deleteWishListEntries(itemIds)
+        return when (val result = userListFirestoreDataSource.deleteWishListEntries(itemIds)) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> {
+                oldEntities.forEach { userListLocalDataSource.upsertWishEntry(it) }
+                Result.Failure(result.error)
+            }
+        }
     }
 
     // NOTE ENTRY
@@ -233,7 +284,7 @@ class UserListRepositoryImpl @Inject constructor(
                 userListLocalDataSource.deleteFamilyNoteEntries(familyId)
             },
             onVisibleEntries = { visibleEntries ->
-                userListLocalDataSource.updateNoteEntries(visibleEntries)
+                userListLocalDataSource.updateNoteEntries(visibleEntries.map { it.toEntity() })
             },
         )
     }
@@ -244,17 +295,39 @@ class UserListRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveNoteEntry(entry: NoteEntry): Result<String, AppError> {
-        return userListFirestoreDataSource.saveNoteEntry(entry)
+        userListLocalDataSource.upsertNoteEntry(entry.toEntity())
+        return when (val result = userListFirestoreDataSource.saveNoteEntry(entry)) {
+            is Result.Success -> Result.Success(entry.id)
+            is Result.Failure -> {
+                userListLocalDataSource.deleteNoteEntries(listOf(entry.id))
+                Result.Failure(result.error)
+            }
+        }
     }
 
     override suspend fun updateNoteEntry(entry: NoteEntry): Result<Unit, AppError> {
-        return userListFirestoreDataSource.updateNoteEntry(entry)
+        val oldEntity = userListLocalDataSource.getNoteEntryOnce(entry.id)
+        userListLocalDataSource.upsertNoteEntry(entry.toEntity())
+        return when (val result = userListFirestoreDataSource.updateNoteEntry(entry)) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> {
+                if (oldEntity != null) userListLocalDataSource.upsertNoteEntry(oldEntity)
+                else userListLocalDataSource.deleteNoteEntries(listOf(entry.id))
+                Result.Failure(result.error)
+            }
+        }
     }
 
     override suspend fun deleteNoteEntries(itemIds: List<String>): Result<Unit, AppError> {
-        val remoteDelete = userListFirestoreDataSource.deleteNoteEntries(itemIds)
-        if (remoteDelete is Result.Failure) return remoteDelete
-        return userListLocalDataSource.deleteNoteEntries(itemIds)
+        val oldEntities = itemIds.mapNotNull { userListLocalDataSource.getNoteEntryOnce(it) }
+        userListLocalDataSource.deleteNoteEntries(itemIds)
+        return when (val result = userListFirestoreDataSource.deleteNoteEntries(itemIds)) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> {
+                oldEntities.forEach { userListLocalDataSource.upsertNoteEntry(it) }
+                Result.Failure(result.error)
+            }
+        }
     }
 
     // CHECKLIST ENTRY
@@ -286,7 +359,7 @@ class UserListRepositoryImpl @Inject constructor(
                 userListLocalDataSource.deleteFamilyChecklistEntries(familyId)
             },
             onVisibleEntries = { visibleEntries ->
-                userListLocalDataSource.updateChecklistEntries(visibleEntries)
+                userListLocalDataSource.updateChecklistEntries(visibleEntries.map { it.toEntity() })
             },
         )
     }
@@ -297,32 +370,39 @@ class UserListRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveChecklistEntry(entry: ChecklistEntry): Result<String, AppError> {
-        return when (val remoteResult = userListFirestoreDataSource.saveChecklistEntry(entry)) {
-            is Result.Success -> appResultOfSuspend {
-                userListLocalDataSource.updateChecklistEntries(
-                    listOf(
-                        entry.copy(id = remoteResult.data),
-                    ),
-                )
-                remoteResult.data
+        userListLocalDataSource.upsertChecklistEntry(entry.toEntity())
+        return when (val result = userListFirestoreDataSource.saveChecklistEntry(entry)) {
+            is Result.Success -> Result.Success(entry.id)
+            is Result.Failure -> {
+                userListLocalDataSource.deleteChecklistEntries(listOf(entry.id))
+                Result.Failure(result.error)
             }
-            is Result.Failure -> remoteResult
         }
     }
 
     override suspend fun updateChecklistEntry(entry: ChecklistEntry): Result<Unit, AppError> {
-        return when (val remoteResult = userListFirestoreDataSource.updateChecklistEntry(entry)) {
-            is Result.Success -> appResultOfSuspend {
-                userListLocalDataSource.updateChecklistEntries(listOf(entry))
+        val oldEntity = userListLocalDataSource.getChecklistEntryOnce(entry.id)
+        userListLocalDataSource.upsertChecklistEntry(entry.toEntity())
+        return when (val result = userListFirestoreDataSource.updateChecklistEntry(entry)) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> {
+                if (oldEntity != null) userListLocalDataSource.upsertChecklistEntry(oldEntity)
+                else userListLocalDataSource.deleteChecklistEntries(listOf(entry.id))
+                Result.Failure(result.error)
             }
-            is Result.Failure -> remoteResult
         }
     }
 
     override suspend fun deleteChecklistEntries(itemIds: List<String>): Result<Unit, AppError> {
-        val remoteDelete = userListFirestoreDataSource.deleteChecklistEntries(itemIds)
-        if (remoteDelete is Result.Failure) return remoteDelete
-        return userListLocalDataSource.deleteChecklistEntries(itemIds)
+        val oldEntities = itemIds.mapNotNull { userListLocalDataSource.getChecklistEntryOnce(it) }
+        userListLocalDataSource.deleteChecklistEntries(itemIds)
+        return when (val result = userListFirestoreDataSource.deleteChecklistEntries(itemIds)) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> {
+                oldEntities.forEach { userListLocalDataSource.upsertChecklistEntry(it) }
+                Result.Failure(result.error)
+            }
+        }
     }
 
     private fun accessibleListIdsForType(
@@ -469,5 +549,67 @@ class UserListRepositoryImpl @Inject constructor(
         isChecked = isChecked,
         lastUpdated = lastUpdated,
         dateCreated = dateCreated,
+    )
+
+    private fun RoutineListEntry.toEntity(imageData: ByteArray? = null) = RoutineListEntryEntity(
+        id = id,
+        familyId = familyId,
+        listId = listId,
+        itemName = itemName,
+        lastUpdated = lastUpdated,
+        dateCreated = dateCreated,
+        nextDate = nextDate,
+        lastCompletedAt = lastCompletedAt,
+        completionCount = completionCount,
+        recurrenceUnit = recurrenceUnit,
+        interval = interval,
+        weekdays = weekdays,
+        imageData = imageData,
+    )
+
+    private fun WishListEntry.toEntity() = WishListEntryEntity(
+        id = id,
+        familyId = familyId,
+        listId = listId,
+        itemName = itemName,
+        lastUpdated = lastUpdated,
+        dateCreated = dateCreated,
+        isPurchased = isPurchased,
+        url = url,
+        price = price,
+        currencyCode = currencyCode,
+        priority = priority,
+        notes = notes,
+    )
+
+    private fun NoteEntry.toEntity() = NoteEntryEntity(
+        id = id,
+        familyId = familyId,
+        listId = listId,
+        itemName = itemName,
+        body = body,
+        lastUpdated = lastUpdated,
+        dateCreated = dateCreated,
+    )
+
+    private fun ChecklistEntry.toEntity() = ChecklistEntryEntity(
+        id = id,
+        familyId = familyId,
+        listId = listId,
+        itemName = itemName,
+        isChecked = isChecked,
+        lastUpdated = lastUpdated,
+        dateCreated = dateCreated,
+    )
+
+    private fun UserList.toEntity() = UserListEntity(
+        id = id,
+        familyId = familyId,
+        itemName = itemName,
+        lastUpdated = lastUpdated,
+        dateCreated = dateCreated,
+        type = type,
+        visibility = visibility,
+        ownerUid = ownerUid,
     )
 }

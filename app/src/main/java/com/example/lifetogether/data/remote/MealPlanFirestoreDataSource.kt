@@ -49,11 +49,12 @@ class MealPlanFirestoreDataSource @Inject constructor(
         awaitClose { reg.remove() }
     }
 
-    suspend fun saveMealPlan(mealPlan: MealPlan): Result<String, AppError> {
+    suspend fun saveMealPlan(mealPlan: MealPlan): Result<Unit, AppError> {
         return appResultOfSuspend {
-            val doc = db.collection(Constants.MEAL_PLAN_TABLE)
-                .add(mealPlan.toDto().toFirestoreMap()).await()
-            doc.id
+            db.collection(Constants.MEAL_PLAN_TABLE)
+                .document(mealPlan.id)
+                .set(mealPlan.toDto().toFirestoreMap())
+                .await()
         }
     }
 

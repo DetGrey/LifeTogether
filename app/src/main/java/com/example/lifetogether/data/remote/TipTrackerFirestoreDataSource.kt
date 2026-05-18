@@ -46,10 +46,12 @@ class TipTrackerFirestoreDataSource @Inject constructor(
         awaitClose { registration.remove() }
     }
 
-    suspend fun saveTip(tip: TipItem): Result<String, AppError> {
+    suspend fun saveTip(tip: TipItem): Result<Unit, AppError> {
         return appResultOfSuspend {
-            val doc = db.collection(Constants.TIP_TRACKER_TABLE).add(tip.toDto().toFirestoreMap()).await()
-            doc.id
+            db.collection(Constants.TIP_TRACKER_TABLE)
+                .document(tip.id)
+                .set(tip.toDto().toFirestoreMap())
+                .await()
         }
     }
 

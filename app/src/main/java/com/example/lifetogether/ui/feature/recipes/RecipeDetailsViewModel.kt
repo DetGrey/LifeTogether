@@ -23,6 +23,7 @@ import com.example.lifetogether.domain.usecase.image.UploadImageUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
 import com.example.lifetogether.data.local.source.RecipeLocalDataSource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.UUID
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
@@ -375,7 +376,7 @@ class RecipeDetailsViewModel @Inject constructor(
             .map { it.trim().lowercase() }
             .filter { it.isNotBlank() }
         val recipe = Recipe(
-            id = state.recipeId.orEmpty(),
+            id = state.recipeId.takeIf { !it.isNullOrBlank() } ?: UUID.randomUUID().toString(),
             familyId = familyId,
             itemName = trimmedName,
             lastUpdated = Date(),
@@ -391,7 +392,7 @@ class RecipeDetailsViewModel @Inject constructor(
         updateContent { it.copy(isSaving = true) }
         viewModelScope.launch {
             when {
-                recipe.id.isBlank() -> {
+                state.recipeId.isNullOrBlank() -> {
                     when (val result = recipeRepository.saveRecipe(recipe)) {
                         is Result.Success -> {
                             val savedRecipeId = result.data

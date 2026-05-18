@@ -111,11 +111,12 @@ class GuideFirestoreDataSource @Inject constructor(
         awaitClose { registration.remove() }
     }
 
-    suspend fun saveGuide(guide: Guide): Result<String, AppError> {
+    suspend fun saveGuide(guide: Guide): Result<Unit, AppError> {
         return appResultOfSuspend {
-            val upload = guide.toDto().toFirestoreMap()
-            val doc = db.collection(Constants.GUIDES_TABLE).add(upload).await()
-            doc.id
+            db.collection(Constants.GUIDES_TABLE)
+                .document(guide.id)
+                .set(guide.toDto().toFirestoreMap())
+                .await()
         }
     }
 

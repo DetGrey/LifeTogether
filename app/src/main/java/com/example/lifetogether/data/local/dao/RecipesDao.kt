@@ -16,6 +16,9 @@ interface RecipesDao {
     @Query("SELECT * FROM $RECIPES_TABLE WHERE family_id = :familyId AND id = :id LIMIT 1")
     fun getItemById(familyId: String, id: String): RecipeEntity?
 
+    @Query("SELECT * FROM $RECIPES_TABLE WHERE id = :id LIMIT 1")
+    suspend fun getItemOnce(id: String): RecipeEntity?
+
     @Query("SELECT * FROM $RECIPES_TABLE WHERE family_id = :familyId AND id = :id LIMIT 1")
     fun getItemByIdFlow(familyId: String, id: String): Flow<RecipeEntity?>
 

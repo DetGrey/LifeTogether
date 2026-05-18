@@ -51,6 +51,13 @@ class MediaLocalDataSource @Inject constructor(
         return latestMediaId?.let { regenerateAndPersistThumbnail(it) }
     }
 
+    suspend fun getMediaItemsByIds(ids: List<String>): List<GalleryMediaEntity> =
+        ids.mapNotNull { galleryMediaDao.getItemByIdDirect(it) }
+
+    suspend fun deleteMediaItems(ids: List<String>) = galleryMediaDao.deleteItems(ids)
+
+    suspend fun restoreMediaItems(entities: List<GalleryMediaEntity>) = galleryMediaDao.updateItems(entities)
+
     suspend fun getExistingGalleryMediaInfo(
         familyId: String,
     ): Map<String, Pair<String?, String?>> {

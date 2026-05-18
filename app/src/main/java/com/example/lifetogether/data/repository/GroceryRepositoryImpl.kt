@@ -2,7 +2,6 @@ package com.example.lifetogether.data.repository
 
 import com.example.lifetogether.data.logic.appResultOf
 import com.example.lifetogether.data.logic.appResultOfSuspend
-
 import com.example.lifetogether.domain.result.AppError
 
 import com.example.lifetogether.data.local.source.GroceryLocalDataSource
@@ -109,15 +108,39 @@ class GroceryRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveGroceryItem(item: GroceryItem): Result<String, AppError> {
-        return groceryFirestoreDataSource.saveGroceryItem(item)
+        groceryLocalDataSource.upsertGroceryItem(item.toEntity())
+        return when (val result = groceryFirestoreDataSource.saveGroceryItem(item)) {
+            is Result.Success -> Result.Success(item.id)
+            is Result.Failure -> {
+                groceryLocalDataSource.deleteGroceryItem(item.id)
+                Result.Failure(result.error)
+            }
+        }
     }
 
     override suspend fun toggleGroceryItemBought(item: GroceryItem): Result<Unit, AppError> {
-        return groceryFirestoreDataSource.toggleGroceryItemCompletion(item)
+        val oldEntity = groceryLocalDataSource.getGroceryItemOnce(item.id)
+        groceryLocalDataSource.upsertGroceryItem(item.toEntity())
+        return when (val result = groceryFirestoreDataSource.toggleGroceryItemCompletion(item)) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> {
+                if (oldEntity != null) groceryLocalDataSource.upsertGroceryItem(oldEntity)
+                else groceryLocalDataSource.deleteGroceryItem(item.id)
+                Result.Failure(result.error)
+            }
+        }
     }
 
     override suspend fun deleteGroceryItems(itemIds: List<String>): Result<Unit, AppError> {
-        return groceryFirestoreDataSource.deleteGroceryItems(itemIds)
+        val oldEntities = itemIds.mapNotNull { groceryLocalDataSource.getGroceryItemOnce(it) }
+        itemIds.forEach { groceryLocalDataSource.deleteGroceryItem(it) }
+        return when (val result = groceryFirestoreDataSource.deleteGroceryItems(itemIds)) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> {
+                oldEntities.forEach { groceryLocalDataSource.upsertGroceryItem(it) }
+                Result.Failure(result.error)
+            }
+        }
     }
 
     override suspend fun addCategory(category: Category): Result<Unit, AppError> {
@@ -140,6 +163,16 @@ class GroceryRepositoryImpl @Inject constructor(
         return groceryFirestoreDataSource.deleteGrocerySuggestion(grocerySuggestion)
     }
     
+    private fun GroceryItem.toEntity() = GroceryListEntity(
+        id = id,
+        familyId = familyId,
+        name = itemName,
+        lastUpdated = lastUpdated,
+        completed = completed,
+        category = category,
+        approxPrice = approxPrice,
+    )
+
     private fun GroceryListEntity.toModel() = GroceryItem(
         id = id,
         familyId = familyId,

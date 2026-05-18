@@ -50,10 +50,12 @@ class RecipeFirestoreDataSource @Inject constructor(
         awaitClose { registration.remove() }
     }
 
-    suspend fun saveRecipe(recipe: Recipe): Result<String, AppError> {
+    suspend fun saveRecipe(recipe: Recipe): Result<Unit, AppError> {
         return appResultOfSuspend {
-            val documentReference = db.collection(Constants.RECIPES_TABLE).add(recipe.toDto().toFirestoreMap()).await()
-            documentReference.id
+            db.collection(Constants.RECIPES_TABLE)
+                .document(recipe.id)
+                .set(recipe.toDto().toFirestoreMap())
+                .await()
         }
     }
 

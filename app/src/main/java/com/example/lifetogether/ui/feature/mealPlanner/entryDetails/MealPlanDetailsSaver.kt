@@ -5,6 +5,7 @@ import com.example.lifetogether.domain.repository.MealPlannerRepository
 import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import java.util.Date
+import java.util.UUID
 import javax.inject.Inject
 
 class MealPlanDetailsSaver @Inject constructor(
@@ -43,7 +44,7 @@ class MealPlanDetailsSaver @Inject constructor(
                 ?: form.name.trim()
         }
         val draft = MealPlan(
-            id = mealPlanId ?: "",
+            id = mealPlanId ?: UUID.randomUUID().toString(),
             familyId = familyId,
             itemName = itemName,
             date = form.date,

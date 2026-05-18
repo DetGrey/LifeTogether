@@ -12,6 +12,7 @@ import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.usecase.image.UploadImageUseCase
 import java.util.Date
+import java.util.UUID
 import javax.inject.Inject
 
 class ListEntryDetailsSaver @Inject constructor(
@@ -60,7 +61,7 @@ class ListEntryDetailsSaver @Inject constructor(
         val interval = form.interval.toInt()
         val weekdays = form.selectedWeekdays.sorted()
         val tempEntry = RoutineListEntry(
-            id = entryId ?: "",
+            id = entryId ?: UUID.randomUUID().toString(),
             familyId = familyId,
             listId = listId,
             itemName = form.name.trim(),
@@ -106,7 +107,7 @@ class ListEntryDetailsSaver @Inject constructor(
     ): Result<Unit, AppError> {
         val form = details.form
         val draft = WishListEntry(
-            id = entryId ?: "",
+            id = entryId ?: UUID.randomUUID().toString(),
             familyId = familyId,
             listId = listId,
             itemName = form.name.trim(),
@@ -135,7 +136,7 @@ class ListEntryDetailsSaver @Inject constructor(
     ): Result<Unit, AppError> {
         val form = details.form
         val draft = NoteEntry(
-            id = entryId ?: "",
+            id = entryId ?: UUID.randomUUID().toString(),
             familyId = familyId,
             listId = listId,
             itemName = form.name.trim(),

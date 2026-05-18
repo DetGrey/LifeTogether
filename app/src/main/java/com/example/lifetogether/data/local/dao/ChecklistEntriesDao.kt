@@ -19,6 +19,9 @@ interface ChecklistEntriesDao {
     @Query("SELECT * FROM $CHECKLIST_ENTRIES_TABLE WHERE id = :id")
     fun getItemById(id: String): Flow<ChecklistEntryEntity>
 
+    @Query("SELECT * FROM $CHECKLIST_ENTRIES_TABLE WHERE id = :id LIMIT 1")
+    suspend fun getItemOnce(id: String): ChecklistEntryEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateItems(items: List<ChecklistEntryEntity>)
 

@@ -4,7 +4,6 @@ import com.example.lifetogether.data.local.dao.MealPlanDao
 import com.example.lifetogether.data.local.source.internal.computeItemsToDelete
 import com.example.lifetogether.data.local.source.internal.computeItemsToUpdate
 import com.example.lifetogether.data.model.MealPlanEntity
-import com.example.lifetogether.domain.model.mealplanner.MealPlan
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -21,10 +20,9 @@ class MealPlanLocalDataSource @Inject constructor(
         return mealPlanDao.getItemById(mealPlanId)
     }
 
-    suspend fun updateMealPlans(items: List<MealPlan>) {
-        if (items.isEmpty()) return
-        val currentItems = mealPlanDao.getItemsOnce(items.first().familyId)
-        val entities = items.map { it.toEntity() }
+    suspend fun updateMealPlans(entities: List<MealPlanEntity>) {
+        if (entities.isEmpty()) return
+        val currentItems = mealPlanDao.getItemsOnce(entities.first().familyId)
         val itemsToUpdate = computeItemsToUpdate(
             currentItems = currentItems,
             incomingItems = entities,
@@ -41,20 +39,13 @@ class MealPlanLocalDataSource @Inject constructor(
         }
     }
 
+    suspend fun getMealPlanOnce(id: String): MealPlanEntity? = mealPlanDao.getItemOnce(id)
+
+    suspend fun upsertMealPlan(entity: MealPlanEntity) = mealPlanDao.updateItems(listOf(entity))
+
+    suspend fun deleteMealPlan(id: String) = mealPlanDao.deleteItems(listOf(id))
+
     suspend fun deleteFamilyMealPlans(familyId: String) {
         mealPlanDao.deleteFamilyItems(familyId)
     }
-
-    private fun MealPlan.toEntity() = MealPlanEntity(
-        id = id,
-        familyId = familyId,
-        itemName = itemName,
-        date = date,
-        recipeId = recipeId,
-        customMealName = customMealName,
-        mealType = mealType.name,
-        notes = notes,
-        lastUpdated = lastUpdated,
-        dateCreated = dateCreated,
-    )
 }

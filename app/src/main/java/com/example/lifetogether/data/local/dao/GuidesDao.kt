@@ -16,6 +16,9 @@ interface GuidesDao {
     @Query("SELECT * FROM $GUIDES_TABLE WHERE family_id = :familyId AND id = :id LIMIT 1")
     fun getItemById(familyId: String, id: String): GuideEntity?
 
+    @Query("SELECT * FROM $GUIDES_TABLE WHERE id = :id LIMIT 1")
+    suspend fun getItemOnce(id: String): GuideEntity?
+
     @Query("SELECT * FROM $GUIDES_TABLE WHERE family_id = :familyId AND id = :id LIMIT 1")
     fun getItemByIdFlow(familyId: String, id: String): Flow<GuideEntity?>
 

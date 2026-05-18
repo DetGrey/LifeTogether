@@ -16,6 +16,9 @@ interface TipTrackerDao {
     @Query("SELECT * FROM $TIP_TRACKER_TABLE WHERE family_id = :familyId AND id = :id LIMIT 1")
     fun getItemById(familyId: String, id: String): TipEntity?
 
+    @Query("SELECT * FROM $TIP_TRACKER_TABLE WHERE id = :id LIMIT 1")
+    suspend fun getItemOnce(id: String): TipEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateItems(items: List<TipEntity>)
 

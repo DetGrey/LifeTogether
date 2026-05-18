@@ -76,10 +76,12 @@ class GalleryFirestoreDataSource @Inject constructor(
         awaitClose { registration.remove() }
     }
 
-    suspend fun saveAlbum(album: Album): Result<String, AppError> {
+    suspend fun saveAlbum(album: Album): Result<Unit, AppError> {
         return appResultOfSuspend {
-            val doc = db.collection(Constants.ALBUMS_TABLE).add(album.toDto().toFirestoreMap()).await()
-            doc.id
+            db.collection(Constants.ALBUMS_TABLE)
+                .document(album.id)
+                .set(album.toDto().toFirestoreMap())
+                .await()
         }
     }
 
