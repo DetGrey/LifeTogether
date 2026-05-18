@@ -1,12 +1,10 @@
 package com.example.lifetogether.ui.feature.gallery
 
 import android.net.Uri
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -45,7 +43,7 @@ import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.common.image.MediaUploadMultipleDialog
-import com.example.lifetogether.ui.common.list.CompletableBox
+import com.example.lifetogether.ui.common.list.SelectionModeBar
 import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
@@ -143,39 +141,15 @@ private fun AlbumDetailsContent(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
             ) {
-                when (uiState.isSelectionModeActive) {
-                    true -> {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(20.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                CompletableBox(
-                                    isCompleted = uiState.isAllMediaSelected,
-                                    onCompleteToggle = {
-                                        onUiEvent(AlbumDetailsUiEvent.ToggleAllMediaSelection)
-                                    },
-                                )
-                                TextDefault(text = "All")
-                            }
-                            val selectedMediaCount = uiState.selectedMedia.size
-                            TextDefault(text = "$selectedMediaCount selected")
-                            TextDefault(
-                                text = "Cancel",
-                                modifier = Modifier.clickable {
-                                    onUiEvent(AlbumDetailsUiEvent.ToggleSelectionMode)
-                                },
-                            )
-                        }
-                    }
-
-                    false -> Spacer(modifier = Modifier.height(20.dp))
+                if (uiState.isSelectionModeActive) {
+                    SelectionModeBar(
+                        selectedCount = uiState.selectedMedia.size,
+                        isAllSelected = uiState.isAllMediaSelected,
+                        onToggleAll = { onUiEvent(AlbumDetailsUiEvent.ToggleAllMediaSelection) },
+                        onCancel = { onUiEvent(AlbumDetailsUiEvent.ToggleSelectionMode) },
+                    )
+                } else {
+                    Spacer(modifier = Modifier.height(20.dp))
                 }
 
                 if (uiState.media.isEmpty()) {

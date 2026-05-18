@@ -86,7 +86,20 @@ class UserListRepositoryImpl @Inject constructor(
             }
         }
     }
-    
+
+    override suspend fun deleteUserList(listId: String): Result<Unit, AppError> {
+        val oldEntity = userListLocalDataSource.getUserListOnce(listId)
+            ?: return Result.Failure(AppErrors.notFound("List not found"))
+        userListLocalDataSource.deleteUserListWithEntries(listId, oldEntity.type)
+        return when (val result = userListFirestoreDataSource.deleteUserList(listId, oldEntity.type)) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> {
+                userListLocalDataSource.upsertUserList(oldEntity)
+                Result.Failure(result.error)
+            }
+        }
+    }
+
     // ROUTINE ENTRY
     override fun observeRoutineListEntriesByListId(
         familyId: String,

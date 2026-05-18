@@ -72,6 +72,34 @@ class ListsViewModel @Inject constructor(
             is ListsUiEvent.CreateListTypeChanged -> updateContentState { it.copy(newListType = event.value) }
             is ListsUiEvent.CreateListVisibilityChanged -> updateContentState { it.copy(newListVisibility = event.value) }
             ListsUiEvent.ConfirmCreateListClicked -> createList()
+            ListsUiEvent.ToggleActionSheet -> updateContentState { it.copy(showActionSheet = !it.showActionSheet) }
+            ListsUiEvent.StartSelectionMode -> updateContentState { it.copy(isSelectionMode = true, showActionSheet = false) }
+            is ListsUiEvent.EnterSelectionMode -> updateContentState {
+                it.copy(isSelectionMode = true, selectedListIds = setOf(event.listId))
+            }
+            ListsUiEvent.ExitSelectionMode -> updateContentState {
+                it.copy(isSelectionMode = false, selectedListIds = emptySet(), isAllSelected = false)
+            }
+            is ListsUiEvent.ToggleListSelection -> updateContentState { state ->
+                val updated = if (state.selectedListIds.contains(event.listId)) {
+                    state.selectedListIds - event.listId
+                } else {
+                    state.selectedListIds + event.listId
+                }
+                state.copy(selectedListIds = updated, isAllSelected = updated.size == state.userLists.size)
+            }
+            ListsUiEvent.ToggleAllListSelection -> updateContentState { state ->
+                if (state.isAllSelected) {
+                    state.copy(selectedListIds = emptySet(), isAllSelected = false)
+                } else {
+                    state.copy(selectedListIds = state.userLists.map { it.id }.toSet(), isAllSelected = true)
+                }
+            }
+            ListsUiEvent.RequestDeleteSelected -> updateContentState {
+                it.copy(showActionSheet = false, showDeleteSelectedDialog = true)
+            }
+            ListsUiEvent.DismissDeleteSelectedDialog -> updateContentState { it.copy(showDeleteSelectedDialog = false) }
+            ListsUiEvent.ConfirmDeleteSelected -> deleteSelectedLists()
         }
     }
 
@@ -150,6 +178,17 @@ class ListsViewModel @Inject constructor(
                     updateContentState { it.copy(isSaving = false) }
                     showError(result.error.toUserMessage())
                 }
+            }
+        }
+    }
+
+    private fun deleteSelectedLists() {
+        val ids = currentContentState()?.selectedListIds ?: return
+        updateContentState { it.copy(showDeleteSelectedDialog = false, isSelectionMode = false, selectedListIds = emptySet(), isAllSelected = false) }
+        viewModelScope.launch {
+            ids.forEach { listId ->
+                val result = userListRepository.deleteUserList(listId)
+                if (result is Result.Failure) showError(result.error.toUserMessage())
             }
         }
     }

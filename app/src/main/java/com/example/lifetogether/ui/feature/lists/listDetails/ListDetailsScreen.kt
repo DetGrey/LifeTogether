@@ -4,14 +4,10 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,9 +32,8 @@ import com.example.lifetogether.ui.common.add.AddNewString
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
-import com.example.lifetogether.ui.common.list.CompletableBox
+import com.example.lifetogether.ui.common.list.SelectionModeBar
 import com.example.lifetogether.ui.common.skeleton.Skeletons
-import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.feature.lists.listDetails.content.CheckItemsSection
 import com.example.lifetogether.ui.feature.lists.listDetails.content.NotesSection
 import com.example.lifetogether.ui.feature.lists.listDetails.content.RoutinesSection
@@ -236,46 +231,6 @@ fun ListDetailsScreen(
             dialogMessage = "Are you sure you want to delete the selected entries?",
             dismissButtonMessage = "Cancel",
             confirmButtonMessage = "Delete selected",
-        )
-    }
-}
-
-@Composable
-private fun SelectionModeBar(
-    selectedCount: Int,
-    isAllSelected: Boolean,
-    onToggleAll: () -> Unit,
-    onCancel: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(
-                top = LifeTogetherTokens.spacing.small,
-                bottom = LifeTogetherTokens.spacing.medium
-            ),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            CompletableBox(
-                isCompleted = isAllSelected,
-                onCompleteToggle = onToggleAll,
-            )
-            TextDefault(text = "All")
-        }
-
-        TextDefault(text = "$selectedCount selected")
-
-        TextDefault(
-            text = "Cancel",
-            modifier = Modifier.combinedClickable(
-                onClick = onCancel,
-                onLongClick = onCancel,
-            ),
         )
     }
 }

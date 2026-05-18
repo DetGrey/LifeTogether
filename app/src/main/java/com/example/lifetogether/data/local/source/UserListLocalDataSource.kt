@@ -36,7 +36,14 @@ class UserListLocalDataSource @Inject constructor(
     }
     suspend fun upsertUserList(entity: UserListEntity) = userListsDao.updateItems(listOf(entity))
 
+    suspend fun getUserListOnce(id: String): UserListEntity? = userListsDao.getItemOnce(id)
+
     suspend fun deleteUserList(id: String) = userListsDao.deleteItems(listOf(id))
+
+    suspend fun deleteUserListWithEntries(listId: String, listType: ListType) {
+        deleteChildEntriesForList(listId, listType)
+        deleteUserList(listId)
+    }
 
     suspend fun updateUserLists(entities: List<UserListEntity>) {
         if (entities.isEmpty()) return

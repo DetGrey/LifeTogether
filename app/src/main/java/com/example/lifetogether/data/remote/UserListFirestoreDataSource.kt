@@ -327,6 +327,25 @@ class UserListFirestoreDataSource @Inject constructor(
         }
     }
 
+    suspend fun deleteUserList(listId: String, listType: ListType): Result<Unit, AppError> {
+        return appResultOfSuspend {
+            val entriesTable = when (listType) {
+                ListType.ROUTINE -> Constants.ROUTINE_LIST_ENTRIES_TABLE
+                ListType.WISH_LIST -> Constants.WISH_LIST_ENTRIES_TABLE
+                ListType.NOTES -> Constants.NOTE_LIST_ENTRIES_TABLE
+                ListType.CHECKLIST -> Constants.CHECKLIST_ENTRIES_TABLE
+            }
+            val batch = db.batch()
+            batch.delete(db.collection(Constants.USER_LISTS_TABLE).document(listId))
+            val entries = db.collection(entriesTable)
+                .whereEqualTo("listId", listId)
+                .get()
+                .await()
+            entries.documents.forEach { batch.delete(it.reference) }
+            batch.commit().await()
+        }
+    }
+
     suspend fun getRoutineListEntryImageUrl(entryId: String): Result<String, AppError> = appResultOfSuspend {
         val doc = db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE)
             .document(entryId)
