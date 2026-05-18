@@ -32,7 +32,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
-import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
@@ -58,7 +58,7 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             AppTopBar(
-                leftIcon = Icon(
+                leftAppIcon = AppIcon(
                     resId = R.drawable.ic_profile_picture,
                     description = "profile picture icon",
                 ),
@@ -66,7 +66,7 @@ fun HomeScreen(
                     onNavigationEvent(HomeNavigationEvent.ProfileClicked)
                 },
                 text = "Life Together",
-                rightIcon = Icon(
+                rightAppIcon = AppIcon(
                     resId = R.drawable.ic_settings,
                     description = "settings icon",
                 ),
@@ -194,7 +194,7 @@ fun HomeScreen(
                                                     onClick = {
                                                         onNavigationEvent(HomeNavigationEvent.TileClicked(item.tile))
                                                     },
-                                                    icon = item.tile.icon,
+                                                    appIcon = item.tile.appIcon,
                                                 )
                                             }
                                         }

@@ -14,16 +14,16 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
-import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppTopBar(
-    leftIcon: Icon,
+    leftAppIcon: AppIcon,
     onLeftClick: (() -> Unit)? = null,
     text: String,
-    rightIcon: Icon? = null,
+    rightAppIcon: AppIcon? = null,
     onRightClick: (() -> Unit)? = null,
     rightText: String? = null,
     onRightTextClick: (() -> Unit)? = null,
@@ -43,8 +43,8 @@ fun AppTopBar(
                 onClick = { onLeftClick?.invoke() },
             ) {
                 Icon(
-                    painter = painterResource(id = leftIcon.resId),
-                    contentDescription = leftIcon.description,
+                    painter = painterResource(id = leftAppIcon.resId),
+                    contentDescription = leftAppIcon.description,
                     tint = MaterialTheme.colorScheme.onBackground,
                 )
             }
@@ -58,13 +58,13 @@ fun AppTopBar(
                         color = MaterialTheme.colorScheme.primary,
                     )
                 }
-            } else if (rightIcon != null) {
+            } else if (rightAppIcon != null) {
                 IconButton(
                     onClick = { onRightClick?.invoke() },
                 ) {
                     Icon(
-                        painter = painterResource(id = rightIcon.resId),
-                        contentDescription = rightIcon.description,
+                        painter = painterResource(id = rightAppIcon.resId),
+                        contentDescription = rightAppIcon.description,
                         tint = MaterialTheme.colorScheme.onBackground,
                     )
                 }
@@ -85,12 +85,12 @@ fun AppTopBar(
 fun AppTopBarPreview() {
     LifeTogetherTheme {
         AppTopBar(
-            leftIcon = Icon(
+            leftAppIcon = AppIcon(
                 resId = R.drawable.ic_profile_picture,
                 description = "",
             ),
             text = "A Life Together",
-            rightIcon = Icon(
+            rightAppIcon = AppIcon(
                 resId = R.drawable.ic_settings,
                 description = "",
             ),

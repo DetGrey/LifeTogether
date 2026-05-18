@@ -23,14 +23,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
-import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.ui.theme.AppTypography
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun SettingsItem(
-    icon: Icon,
+    appIcon: AppIcon,
     title: String,
     titleClickable: (() -> Unit)? = null,
     link: String? = null,
@@ -51,8 +51,8 @@ fun SettingsItem(
                     .weight(1f),
             ) {
                 Icon(
-                    painter = painterResource(id = icon.resId),
-                    contentDescription = icon.description,
+                    painter = painterResource(id = appIcon.resId),
+                    contentDescription = appIcon.description,
                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
@@ -112,7 +112,7 @@ fun SettingsItemPreview() {
     LifeTogetherTheme {
         ProvideTextStyle(value = AppTypography.bodyMedium) {
             SettingsItem(
-                icon = Icon(R.drawable.ic_profile_picture, "profile icon"),
+                appIcon = AppIcon(R.drawable.ic_profile_picture, "profile icon"),
                 title = "Username",
                 link = "Edit my profile",
             )

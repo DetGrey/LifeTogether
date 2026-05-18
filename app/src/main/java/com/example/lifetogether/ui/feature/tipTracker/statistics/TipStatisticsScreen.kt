@@ -16,7 +16,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.toFullDateString
-import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
@@ -43,7 +43,7 @@ fun TipStatisticsScreen(
     Scaffold(
         topBar = {
             AppTopBar(
-                leftIcon = Icon(
+                leftAppIcon = AppIcon(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
                 ),

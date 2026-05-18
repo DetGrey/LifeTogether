@@ -11,7 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
-import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.enums.SettingsConfirmationTypes
 import com.example.lifetogether.ui.common.AppTopBar
@@ -31,7 +31,7 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             AppTopBar(
-                leftIcon = Icon(
+                leftAppIcon = AppIcon(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
                 ),
@@ -65,7 +65,7 @@ fun SettingsScreen(
                         verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
                     ) {
                         SettingsItem(
-                            icon = Icon(R.drawable.ic_profile_picture, "profile icon"),
+                            appIcon = AppIcon(R.drawable.ic_profile_picture, "profile icon"),
                             title = userInformationState.name,
                             link = "Edit my profile",
                             linkClickable = {
@@ -75,7 +75,7 @@ fun SettingsScreen(
 
                         if (userInformationState.familyId != null) {
                             SettingsItem(
-                                icon = Icon(R.drawable.ic_family, "family icon"),
+                                appIcon = AppIcon(R.drawable.ic_family, "family icon"),
                                 title = "My family",
                                 link = "Edit family",
                                 linkClickable = {
@@ -84,7 +84,7 @@ fun SettingsScreen(
                             )
                         } else {
                             SettingsItem(
-                                icon = Icon(R.drawable.ic_family, "family icon"),
+                                appIcon = AppIcon(R.drawable.ic_family, "family icon"),
                                 title = "Join a family",
                                 titleClickable = {
                                     onUiEvent(SettingsUiEvent.JoinFamilyClicked)
@@ -97,7 +97,7 @@ fun SettingsScreen(
                         }
 
                         SettingsItem(
-                            icon = Icon(R.drawable.ic_bell, "bell icon"),
+                            appIcon = AppIcon(R.drawable.ic_bell, "bell icon"),
                             title = "Notifications",
                             link = "Manage notifications",
                             linkClickable = null,

@@ -21,7 +21,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
-import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
@@ -32,7 +32,7 @@ fun FlowRowScope.FeatureCard(
     title: String,
     fullWidth: Boolean = false,
     onClick: () -> Unit,
-    icon: Icon = Icon(R.drawable.ic_reload, "icon not found"),
+    appIcon: AppIcon = AppIcon(R.drawable.ic_reload, "icon not found"),
 ) {
     Card(
         modifier = Modifier
@@ -51,8 +51,8 @@ fun FlowRowScope.FeatureCard(
             verticalArrangement = Arrangement.Center,
         ) {
             androidx.compose.material3.Icon(
-                painter = painterResource(id = icon.resId),
-                contentDescription = icon.description,
+                painter = painterResource(id = appIcon.resId),
+                contentDescription = appIcon.description,
                 modifier = Modifier.height(50.dp),
                 tint = MaterialTheme.colorScheme.tertiary,
             )

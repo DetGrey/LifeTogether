@@ -17,7 +17,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
-import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.add.AddNewListItem
@@ -39,7 +39,7 @@ fun AdminGrocerySuggestionsScreen(
     Scaffold(
         topBar = {
             AppTopBar(
-                leftIcon = Icon(
+                leftAppIcon = AppIcon(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
                 ),

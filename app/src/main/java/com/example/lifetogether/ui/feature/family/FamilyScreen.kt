@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.model.family.FamilyMember
-import com.example.lifetogether.domain.model.Icon as AppIcon
+import com.example.lifetogether.domain.model.AppIcon as AppIcon
 import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.button.AddButton
@@ -56,7 +56,7 @@ fun FamilyScreen(
     Scaffold(
         topBar = {
             AppTopBar(
-                leftIcon = AppIcon(
+                leftAppIcon = AppIcon(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
                 ),
@@ -130,7 +130,7 @@ fun FamilyScreen(
 
                         members.forEach { member ->
                             ProfileDetails(
-                                icon = AppIcon(
+                                appIcon = AppIcon(
                                     resId = R.drawable.ic_profile,
                                     description = "person icon",
                                 ),
@@ -149,7 +149,7 @@ fun FamilyScreen(
                         TextHeadingMedium(text = "Settings")
 
                         SettingsItem(
-                            icon = AppIcon(R.drawable.ic_profile, "profile icon"),
+                            appIcon = AppIcon(R.drawable.ic_profile, "profile icon"),
                             title = "Add family member",
                             link = "Share family ID",
                             linkClickable = {
@@ -158,7 +158,7 @@ fun FamilyScreen(
                         )
 
                         SettingsItem(
-                            icon = AppIcon(R.drawable.ic_logout, "logout icon"),
+                            appIcon = AppIcon(R.drawable.ic_logout, "logout icon"),
                             title = "Leave family",
                             link = "Leave",
                             linkClickable = {
@@ -167,7 +167,7 @@ fun FamilyScreen(
                         )
 
                         SettingsItem(
-                            icon = AppIcon(R.drawable.ic_logout, "logout icon"),
+                            appIcon = AppIcon(R.drawable.ic_logout, "logout icon"),
                             title = "Delete family",
                             link = "Delete",
                             linkClickable = {

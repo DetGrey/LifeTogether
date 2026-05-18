@@ -18,7 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
-import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.lists.ChecklistEntry
 import com.example.lifetogether.domain.model.lists.NoteEntry
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
@@ -56,13 +56,13 @@ fun ListDetailsScreen(
     Scaffold(
         topBar = {
             AppTopBar(
-                leftIcon = Icon(
+                leftAppIcon = AppIcon(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
                 ),
                 onLeftClick = { onNavigationEvent(ListDetailsNavigationEvent.NavigateBack) },
                 text = listName,
-                rightIcon = Icon(
+                rightAppIcon = AppIcon(
                     resId = R.drawable.ic_overflow_menu,
                     description = "overflow menu",
                 ),

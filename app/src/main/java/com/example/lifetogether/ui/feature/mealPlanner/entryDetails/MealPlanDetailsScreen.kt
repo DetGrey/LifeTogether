@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
-import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.button.PrimaryButton
@@ -42,7 +42,7 @@ fun MealPlanDetailsScreen(
     Scaffold(
         topBar = {
             AppTopBar(
-                leftIcon = Icon(resId = R.drawable.ic_back_arrow, description = "back arrow"),
+                leftAppIcon = AppIcon(resId = R.drawable.ic_back_arrow, description = "back arrow"),
                 onLeftClick = {
                     if (content?.isEditing == true) {
                         onUiEvent(MealPlanDetailsUiEvent.RequestCancelEdit)
@@ -51,10 +51,10 @@ fun MealPlanDetailsScreen(
                     }
                 },
                 text = "Meal Plan",
-                rightIcon = when {
+                rightAppIcon = when {
                     !isExistingMealPlan -> null
-                    content?.isEditing == true -> Icon(resId = R.drawable.ic_trashcan, description = "delete meal plan entry")
-                    else -> Icon(resId = R.drawable.ic_edit, description = "edit meal plan entry")
+                    content?.isEditing == true -> AppIcon(resId = R.drawable.ic_trashcan, description = "delete meal plan entry")
+                    else -> AppIcon(resId = R.drawable.ic_edit, description = "edit meal plan entry")
                 },
                 onRightClick = when {
                     isExistingMealPlan && content?.isEditing == true -> { { onUiEvent(MealPlanDetailsUiEvent.RequestDeleteMealPlan) } }

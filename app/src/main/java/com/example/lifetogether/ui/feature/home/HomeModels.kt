@@ -1,7 +1,7 @@
 package com.example.lifetogether.ui.feature.home
 
 import android.graphics.Bitmap
-import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.R
 
@@ -45,69 +45,69 @@ sealed interface HomeSectionItem {
 
 sealed interface HomeTile {
     val title: String
-    val icon: Icon
+    val appIcon: AppIcon
     val requiresFamilyAccess: Boolean
     val requiresAdminAccess: Boolean
 
     data object GroceryList : HomeTile {
         override val title: String = "Grocery list"
-        override val icon: Icon = Icon(R.drawable.ic_grocery, "groceries basket icon")
+        override val appIcon: AppIcon = AppIcon(R.drawable.ic_grocery, "groceries basket icon")
         override val requiresFamilyAccess: Boolean = true
         override val requiresAdminAccess: Boolean = false
     }
 
     data object Recipes : HomeTile {
         override val title: String = "Recipes"
-        override val icon: Icon = Icon(R.drawable.ic_recipe, "recipes chef hat icon")
+        override val appIcon: AppIcon = AppIcon(R.drawable.ic_recipe, "recipes chef hat icon")
         override val requiresFamilyAccess: Boolean = true
         override val requiresAdminAccess: Boolean = false
     }
 
     data object Guides : HomeTile {
         override val title: String = "Guides"
-        override val icon: Icon = Icon(R.drawable.ic_guide, "guides icon")
+        override val appIcon: AppIcon = AppIcon(R.drawable.ic_guide, "guides icon")
         override val requiresFamilyAccess: Boolean = true
         override val requiresAdminAccess: Boolean = false
     }
 
     data object Gallery : HomeTile {
         override val title: String = "Gallery"
-        override val icon: Icon = Icon(R.drawable.ic_gallery, "image gallery icon")
+        override val appIcon: AppIcon = AppIcon(R.drawable.ic_gallery, "image gallery icon")
         override val requiresFamilyAccess: Boolean = true
         override val requiresAdminAccess: Boolean = false
     }
 
     data object TipTracker : HomeTile {
         override val title: String = "Tip Tracker"
-        override val icon: Icon = Icon(R.drawable.ic_tip, "money tip icon")
+        override val appIcon: AppIcon = AppIcon(R.drawable.ic_tip, "money tip icon")
         override val requiresFamilyAccess: Boolean = true
         override val requiresAdminAccess: Boolean = false
     }
 
     data object MealPlanner : HomeTile {
         override val title: String = "Meal Planner"
-        override val icon: Icon = Icon(R.drawable.ic_recipe, "meal planner icon")
+        override val appIcon: AppIcon = AppIcon(R.drawable.ic_recipe, "meal planner icon")
         override val requiresFamilyAccess: Boolean = true
         override val requiresAdminAccess: Boolean = false
     }
 
     data object Lists : HomeTile {
         override val title: String = "Lists"
-        override val icon: Icon = Icon(R.drawable.ic_guide, "lists icon")
+        override val appIcon: AppIcon = AppIcon(R.drawable.ic_guide, "lists icon")
         override val requiresFamilyAccess: Boolean = true
         override val requiresAdminAccess: Boolean = false
     }
 
     data object AdminGroceryCategories : HomeTile {
         override val title: String = "Grocery categories"
-        override val icon: Icon = Icon(R.drawable.ic_grocery, "groceries basket icon")
+        override val appIcon: AppIcon = AppIcon(R.drawable.ic_grocery, "groceries basket icon")
         override val requiresFamilyAccess: Boolean = true
         override val requiresAdminAccess: Boolean = true
     }
 
     data object AdminGrocerySuggestions : HomeTile {
         override val title: String = "Grocery suggestions"
-        override val icon: Icon = Icon(R.drawable.ic_grocery, "groceries basket icon")
+        override val appIcon: AppIcon = AppIcon(R.drawable.ic_grocery, "groceries basket icon")
         override val requiresFamilyAccess: Boolean = true
         override val requiresAdminAccess: Boolean = true
     }

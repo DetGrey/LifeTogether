@@ -122,6 +122,7 @@ Here are some questions:
 - [ ] _Make the image download success and version update dialogs nicer._
 - [ ] _Show a dialog when there is a new version available._
 - [ ] Animate when image is loaded and about to be shown e.g. for recipes and such so it doesn't just pop up
+- [ ] Pressing back on phone should be interupted in selection mode on all screens that have it so it just leaves selection mode instead of navigating back
 
 
 ## Shelved changes:

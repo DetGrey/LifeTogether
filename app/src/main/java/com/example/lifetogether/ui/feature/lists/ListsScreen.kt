@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
-import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.lists.ListType
 import com.example.lifetogether.domain.model.lists.UserList
@@ -68,13 +68,13 @@ fun ListsScreen(
     Scaffold(
         topBar = {
             AppTopBar(
-                leftIcon = Icon(
+                leftAppIcon = AppIcon(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
                 ),
                 onLeftClick = { onNavigationEvent(ListsNavigationEvent.NavigateBack) },
                 text = "Lists",
-                rightIcon = if (contentState != null) Icon(
+                rightAppIcon = if (contentState != null) AppIcon(
                     resId = R.drawable.ic_overflow_menu,
                     description = "overflow menu",
                 ) else null,

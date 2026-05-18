@@ -29,7 +29,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.toBitmap
-import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.gallery.Album
 import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
@@ -66,7 +66,7 @@ fun AlbumDetailsScreen(
             Scaffold(
                 topBar = {
                     AppTopBar(
-                        leftIcon = Icon(
+                        leftAppIcon = AppIcon(
                             resId = R.drawable.ic_back_arrow,
                             description = "back arrow icon",
                         ),
@@ -102,13 +102,13 @@ private fun AlbumDetailsContent(
     Scaffold(
         topBar = {
             AppTopBar(
-                leftIcon = Icon(
+                leftAppIcon = AppIcon(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
                 ),
                 onLeftClick = { onNavigationEvent(AlbumDetailsNavigationEvent.NavigateBack) },
                 text = uiState.album?.itemName ?: "Album images",
-                rightIcon = Icon(
+                rightAppIcon = AppIcon(
                     resId = R.drawable.ic_overflow_menu,
                     description = "overflow menu",
                 ),

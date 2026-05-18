@@ -11,7 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
-import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
 import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
@@ -44,9 +44,9 @@ fun ListEntryDetailsScreen(
     val isNoteEntry = content?.details is EntryDetailsContent.Note
 
     val topBarTitle = if (isNoteEntry) "" else if (isExistingEntry) "Entry details" else "New entry"
-    val topBarRightIcon = when {
+    val topBarRightAppIcon = when {
         isNoteEntry || !isExistingEntry -> null
-        else -> Icon(resId = R.drawable.ic_edit, description = "edit entry")
+        else -> AppIcon(resId = R.drawable.ic_edit, description = "edit entry")
     }
     val topBarRightClick: (() -> Unit)? = if (isExistingEntry && !isNoteEntry) {
         when {
@@ -59,10 +59,10 @@ fun ListEntryDetailsScreen(
     Scaffold(
         topBar = {
             AppTopBar(
-                leftIcon = Icon(resId = R.drawable.ic_back_arrow, description = "back arrow"),
+                leftAppIcon = AppIcon(resId = R.drawable.ic_back_arrow, description = "back arrow"),
                 onLeftClick = { onNavigationEvent(ListEntryDetailsNavigationEvent.NavigateBack) },
                 text = topBarTitle,
-                rightIcon = topBarRightIcon,
+                rightAppIcon = topBarRightAppIcon,
                 onRightClick = topBarRightClick,
                 rightText = topBarRightText,
                 onRightTextClick = if (topBarRightText != null) {

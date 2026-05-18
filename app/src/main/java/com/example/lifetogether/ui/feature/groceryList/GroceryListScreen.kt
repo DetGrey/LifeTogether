@@ -28,7 +28,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
-import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.logic.toAbbreviatedDateString
 import com.example.lifetogether.ui.common.AppTopBar
@@ -75,7 +75,7 @@ fun GroceryListScreen(
     Scaffold(
         topBar = {
             AppTopBar(
-                leftIcon = Icon(
+                leftAppIcon = AppIcon(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
                 ),

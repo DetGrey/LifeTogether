@@ -18,7 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
-import com.example.lifetogether.domain.model.Icon as AppIcon
+import com.example.lifetogether.domain.model.AppIcon as AppIcon
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.ui.common.ActionSheet
@@ -49,7 +49,7 @@ fun GuideDetailsScreen(
     Scaffold(
         topBar = {
             AppTopBar(
-                leftIcon = AppIcon(
+                leftAppIcon = AppIcon(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
                 ),
@@ -57,7 +57,7 @@ fun GuideDetailsScreen(
                     onNavigationEvent(GuideDetailsNavigationEvent.NavigateBack)
                 },
                 text = "Guide details",
-                rightIcon = AppIcon(
+                rightAppIcon = AppIcon(
                     resId = R.drawable.ic_overflow_menu,
                     description = "overflow menu",
                 ),

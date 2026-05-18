@@ -30,7 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.toFullDateString
-import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
@@ -60,7 +60,7 @@ fun ProfileScreen(
     Scaffold(
         topBar = {
             AppTopBar(
-                leftIcon = Icon(
+                leftAppIcon = AppIcon(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
                 ),
@@ -68,7 +68,7 @@ fun ProfileScreen(
                     onNavigationEvent(ProfileNavigationEvent.NavigateBack)
                 },
                 text = "Profile",
-                rightIcon = Icon(
+                rightAppIcon = AppIcon(
                     resId = R.drawable.ic_settings,
                     description = "settings icon",
                 ),
@@ -151,7 +151,7 @@ fun ProfileScreen(
                         TextHeadingMedium(text = "Personal details")
 
                         ProfileDetails(
-                            icon = Icon(
+                            appIcon = AppIcon(
                                 resId = R.drawable.ic_profile,
                                 description = "person icon",
                             ),
@@ -162,7 +162,7 @@ fun ProfileScreen(
                             },
                         )
                         ProfileDetails(
-                            icon = Icon(
+                            appIcon = AppIcon(
                                 resId = R.drawable.ic_email,
                                 description = "at sign icon",
                             ),
@@ -170,7 +170,7 @@ fun ProfileScreen(
                             value = userInformation.email,
                         )
                         ProfileDetails(
-                            icon = Icon(
+                            appIcon = AppIcon(
                                 resId = R.drawable.ic_cake,
                                 description = "cake icon",
                             ),
@@ -179,7 +179,7 @@ fun ProfileScreen(
                         )
                         if (isAdmin) {
                             ProfileDetails(
-                                icon = Icon(
+                                appIcon = AppIcon(
                                     resId = R.drawable.ic_settings,
                                     description = "settings icon",
                                 ),
@@ -189,7 +189,7 @@ fun ProfileScreen(
                         }
                         // TODO: Implement password change flow and re-enable this row.
                         ProfileDetails(
-                            icon = Icon(
+                            appIcon = AppIcon(
                                 resId = R.drawable.ic_password_asterisk,
                                 description = "password icon",
                             ),
@@ -198,7 +198,7 @@ fun ProfileScreen(
                             enabled = false,
                         )
                         ProfileDetails(
-                            icon = Icon(
+                            appIcon = AppIcon(
                                 resId = R.drawable.ic_logout,
                                 description = "logout icon",
                             ),

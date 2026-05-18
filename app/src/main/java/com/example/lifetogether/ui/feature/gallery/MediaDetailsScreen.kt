@@ -31,7 +31,7 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.durationToString
 import com.example.lifetogether.domain.logic.toAbbreviatedDateString
 import com.example.lifetogether.domain.logic.toDateTimeString
-import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
@@ -59,7 +59,7 @@ fun MediaDetailsScreen(
         topBar = {
             val content = uiState as? MediaDetailsUiState.Content
             AppTopBar(
-                leftIcon = Icon(
+                leftAppIcon = AppIcon(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
                 ),
@@ -70,7 +70,7 @@ fun MediaDetailsScreen(
                     ?.dateCreated
                     ?.toAbbreviatedDateString()
                     ?: "Media",
-                rightIcon = Icon(
+                rightAppIcon = AppIcon(
                     resId = R.drawable.ic_overflow_menu,
                     description = "overflow menu",
                 ),
@@ -224,7 +224,7 @@ private fun MediaDetailsPanelContent(media: GalleryMedia) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         TextDefault(
-            text = media.dateCreated?.toDateTimeString() ?: "Unknown date",
+            text = media.dateCreated.toDateTimeString()
         )
 
         if (media is GalleryVideo) {

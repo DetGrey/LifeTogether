@@ -23,13 +23,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
-import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun ProfileDetails(
-    icon: Icon,
+    appIcon: AppIcon,
     title: String,
     value: String,
     enabled: Boolean = true,
@@ -64,8 +64,8 @@ fun ProfileDetails(
                 Icon(
                     modifier = Modifier
                         .fillMaxSize(),
-                    painter = painterResource(id = icon.resId),
-                    contentDescription = icon.description,
+                    painter = painterResource(id = appIcon.resId),
+                    contentDescription = appIcon.description,
                     tint = MaterialTheme.colorScheme.onSecondary,
                 )
             }
@@ -122,7 +122,7 @@ fun ProfileDetails(
 fun ProfileDetailsPreview() {
     LifeTogetherTheme {
         ProfileDetails(
-            icon = Icon(R.drawable.ic_profile, ""),
+            appIcon = AppIcon(R.drawable.ic_profile, ""),
             title = "Name",
             value = "Ane",
         )

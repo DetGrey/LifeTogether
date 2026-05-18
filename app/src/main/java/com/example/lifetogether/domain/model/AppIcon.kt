@@ -1,6 +1,6 @@
 package com.example.lifetogether.domain.model
 
-data class Icon(
+data class AppIcon(
     val resId: Int,
     val description: String,
 )

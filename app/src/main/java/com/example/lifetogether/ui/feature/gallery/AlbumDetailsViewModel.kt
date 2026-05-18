@@ -709,14 +709,16 @@ class AlbumDetailsViewModel @Inject constructor(
         if (mediaId == null) return
         val contentState = currentContentState() ?: return
 
-        if (contentState.selectedMedia.contains(mediaId)) {
-            updateContentState { state ->
-                state.copy(selectedMedia = state.selectedMedia - mediaId)
-            }
+        val updated = if (contentState.selectedMedia.contains(mediaId)) {
+            contentState.selectedMedia - mediaId
         } else {
-            updateContentState { state ->
-                state.copy(selectedMedia = state.selectedMedia + mediaId)
-            }
+            contentState.selectedMedia + mediaId
+        }
+        updateContentState { state ->
+            state.copy(
+                selectedMedia = updated,
+                isAllMediaSelected = updated.size == state.media.size && state.media.isNotEmpty(),
+            )
         }
     }
 
