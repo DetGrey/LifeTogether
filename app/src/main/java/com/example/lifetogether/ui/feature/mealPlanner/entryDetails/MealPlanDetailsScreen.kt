@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Scaffold
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,6 +39,10 @@ fun MealPlanDetailsScreen(
     val content = uiState as? MealPlanDetailsUiState.Content
     val isLoading = uiState is MealPlanDetailsUiState.Loading
     val isExistingMealPlan = mealPlanId != null
+
+    BackHandler(enabled = content?.isEditing == true) {
+        onUiEvent(MealPlanDetailsUiEvent.RequestCancelEdit)
+    }
 
     Scaffold(
         topBar = {

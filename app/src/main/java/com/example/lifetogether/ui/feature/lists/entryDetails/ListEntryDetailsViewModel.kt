@@ -70,8 +70,13 @@ class ListEntryDetailsViewModel @Inject constructor(
 
     fun onUiEvent(event: ListEntryDetailsUiEvent) {
         when (event) {
-            ListEntryDetailsUiEvent.EnterEditMode -> updateContent { it.copy(isEditing = true) }
-            ListEntryDetailsUiEvent.RequestCancelEdit -> updateContent { it.copy(showDiscardDialog = true) }
+            ListEntryDetailsUiEvent.EnterEditMode -> updateContent {
+                it.copy(
+                    isEditing = true,
+                    showDiscardDialog = false,
+                )
+            }
+            ListEntryDetailsUiEvent.RequestCancelEdit -> requestCancelEdit()
             ListEntryDetailsUiEvent.ConfirmDiscard -> confirmDiscard()
             ListEntryDetailsUiEvent.DismissDiscardDialog -> updateContent { it.copy(showDiscardDialog = false) }
             ListEntryDetailsUiEvent.SaveClicked -> saveEntry()
@@ -91,7 +96,12 @@ class ListEntryDetailsViewModel @Inject constructor(
     }
 
     fun confirmDiscard() {
-        val original = originalDetails ?: return
+        val original = originalDetails
+        if (entryId == null || original == null) {
+            viewModelScope.launch { _commands.send(ListEntryDetailsCommand.NavigateBack) }
+            return
+        }
+
         updateContent {
             it.copy(
                 details = original,
@@ -201,6 +211,20 @@ class ListEntryDetailsViewModel @Inject constructor(
 
     private fun currentContentState(): EntryDetailsUiState.Content? {
         return _uiState.value as? EntryDetailsUiState.Content
+    }
+
+    private fun requestCancelEdit() {
+        val content = currentContentState() ?: return
+        if (hasUnsavedChanges(content)) {
+            updateContent { it.copy(showDiscardDialog = true) }
+        } else {
+            confirmDiscard()
+        }
+    }
+
+    private fun hasUnsavedChanges(content: EntryDetailsUiState.Content): Boolean {
+        val original = originalDetails ?: return false
+        return content.details != original
     }
 
     private fun updateContent(block: (EntryDetailsUiState.Content) -> EntryDetailsUiState.Content) {

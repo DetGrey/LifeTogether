@@ -1,25 +1,16 @@
 package com.example.lifetogether.ui.feature.lists.entryDetails.content
 
 import android.graphics.Bitmap
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -27,8 +18,7 @@ import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.common.tagOptionRow.TagOption
-import com.example.lifetogether.ui.common.image.AnimatedBitmapImage
-import com.example.lifetogether.ui.common.text.TextDefault
+import com.example.lifetogether.ui.common.image.EditableImageCard
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.feature.lists.entryDetails.EntryDetailsContent
@@ -43,58 +33,17 @@ fun LazyListScope.routineEntryForm(
     uiState: EntryDetailsUiState.Content,
     bitmap: Bitmap?,
     pendingBitmap: Bitmap?,
-    onLaunchImagePicker: ((String) -> Unit)? = null,
+    onLaunchImagePicker: (String) -> Unit,
     formState: RoutineEntryFormState,
     onUiEvent: (ListEntryDetailsUiEvent) -> Unit,
 ) {
     item {
         val displayBitmap = pendingBitmap ?: bitmap
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(180.dp)
-                .clip(MaterialTheme.shapes.extraLarge)
-                .background(
-                    MaterialTheme.colorScheme.surfaceVariant,
-                    MaterialTheme.shapes.extraLarge,
-                )
-                .clickable(enabled = uiState.isEditing) {
-                    onLaunchImagePicker?.invoke("image/*")
-                },
-            contentAlignment = Alignment.Center,
-        ) {
-            if (displayBitmap == null) {
-                TextDefault(
-                    text = if (uiState.isEditing) "Tap to add image" else "No image",
-                )
-            }
-            AnimatedBitmapImage(
-                bitmap = displayBitmap,
-                modifier = Modifier.fillMaxSize(),
-                contentDescription = "entry image",
-            )
-
-            if (uiState.isEditing) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(LifeTogetherTokens.spacing.small)
-                        .background(
-                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
-                            shape = MaterialTheme.shapes.small,
-                        )
-                        .padding(
-                            horizontal = LifeTogetherTokens.spacing.small,
-                            vertical = LifeTogetherTokens.spacing.xSmall,
-                        ),
-                ) {
-                    Text(
-                        text = if (displayBitmap != null) "Change image" else "Add image",
-                        style = MaterialTheme.typography.labelSmall,
-                    )
-                }
-            }
-        }
+        EditableImageCard(
+            bitmap = displayBitmap,
+            isEditing = uiState.isEditing,
+            onLaunchImagePicker = onLaunchImagePicker,
+        )
     }
 
     item {
@@ -183,7 +132,7 @@ private fun RoutineEntryContentPreview() {
                 uiState = uiState,
                 bitmap = null,
                 pendingBitmap = null,
-                onLaunchImagePicker = null,
+                onLaunchImagePicker = {},
                 formState = RoutineEntryFormState(
                     name = "Water the plants",
                     recurrenceUnit = RecurrenceUnit.WEEKS,

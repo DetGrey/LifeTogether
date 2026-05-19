@@ -60,9 +60,34 @@ fun transparentTextFieldColors(
         focusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
         unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
         disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        focusedIndicatorColor =Color.Transparent,
+        focusedIndicatorColor = Color.Transparent,
         unfocusedIndicatorColor = Color.Transparent,
         disabledIndicatorColor = Color.Transparent,
+        cursorColor = textColor,
+        errorCursorColor = MaterialTheme.colorScheme.error,
+    )
+}
+
+@Composable
+fun fadedTextFieldColors(
+    textColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+): TextFieldColors {
+    val containerColor = MaterialTheme.colorScheme.surfaceVariant
+    val labelColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)
+
+    return TextFieldDefaults.colors(
+        focusedContainerColor = containerColor,
+        unfocusedContainerColor = containerColor,
+        disabledContainerColor = containerColor,
+        focusedTextColor = textColor,
+        unfocusedTextColor = textColor,
+        disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
+        focusedLabelColor = labelColor,
+        unfocusedLabelColor = labelColor,
+        disabledLabelColor = labelColor,
+        focusedIndicatorColor = containerColor,
+        unfocusedIndicatorColor = containerColor,
+        disabledIndicatorColor = containerColor,
         cursorColor = textColor,
         errorCursorColor = MaterialTheme.colorScheme.error,
     )

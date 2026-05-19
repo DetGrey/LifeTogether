@@ -64,8 +64,13 @@ class MealPlanDetailsViewModel @Inject constructor(
 
     fun onUiEvent(event: MealPlanDetailsUiEvent) {
         when (event) {
-            MealPlanDetailsUiEvent.EnterEditMode -> updateContent { it.copy(isEditing = true) }
-            MealPlanDetailsUiEvent.RequestCancelEdit -> updateContent { it.copy(showDiscardDialog = true) }
+            MealPlanDetailsUiEvent.EnterEditMode -> updateContent {
+                it.copy(
+                    isEditing = true,
+                    showDiscardDialog = false,
+                )
+            }
+            MealPlanDetailsUiEvent.RequestCancelEdit -> requestCancelEdit()
             MealPlanDetailsUiEvent.ConfirmDiscard -> confirmDiscard()
             MealPlanDetailsUiEvent.DismissDiscardDialog -> updateContent { it.copy(showDiscardDialog = false) }
             MealPlanDetailsUiEvent.RequestDeleteMealPlan -> updateContent { it.copy(showDeleteDialog = true) }
@@ -104,6 +109,15 @@ class MealPlanDetailsViewModel @Inject constructor(
                 showDeleteDialog = false,
                 isSaving = false,
             )
+        }
+    }
+
+    private fun requestCancelEdit() {
+        val content = currentContentState() ?: return
+        if (hasUnsavedChanges(content)) {
+            updateContent { it.copy(showDiscardDialog = true) }
+        } else {
+            confirmDiscard()
         }
     }
 
@@ -415,6 +429,11 @@ class MealPlanDetailsViewModel @Inject constructor(
 
     private fun currentContentState(): MealPlanDetailsUiState.Content? {
         return _uiState.value as? MealPlanDetailsUiState.Content
+    }
+
+    private fun hasUnsavedChanges(content: MealPlanDetailsUiState.Content): Boolean {
+        val original = originalDetails ?: return false
+        return content.details != original
     }
 
     private fun updateContent(block: (MealPlanDetailsUiState.Content) -> MealPlanDetailsUiState.Content) {

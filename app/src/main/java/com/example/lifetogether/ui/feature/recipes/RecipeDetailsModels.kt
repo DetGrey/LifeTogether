@@ -27,6 +27,7 @@ sealed interface RecipeDetailsUiState {
         val localImageBitmap: Bitmap? = null,
         val editMode: Boolean = false,
         val isSaving: Boolean = false,
+        val showDiscardConfirmationDialog: Boolean = false,
         val showDeleteConfirmationDialog: Boolean = false,
         val showImageUploadDialog: Boolean = false,
         val servingsExpanded: Boolean = false,
@@ -49,6 +50,8 @@ sealed interface RecipeDetailsUiEvent {
     data class AddInstructionClicked(val value: String) : RecipeDetailsUiEvent
     data class RecipeImageSelected(val uri: Uri) : RecipeDetailsUiEvent
     data object DiscardClicked : RecipeDetailsUiEvent
+    data object DismissDiscardConfirmation : RecipeDetailsUiEvent
+    data object ConfirmDiscardConfirmation : RecipeDetailsUiEvent
     data object DeleteClicked : RecipeDetailsUiEvent
     data object DismissDeleteConfirmation : RecipeDetailsUiEvent
     data object ConfirmDeleteConfirmation : RecipeDetailsUiEvent

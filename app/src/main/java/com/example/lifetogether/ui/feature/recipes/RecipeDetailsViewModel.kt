@@ -125,6 +125,8 @@ class RecipeDetailsViewModel @Inject constructor(
             is RecipeDetailsUiEvent.AddInstructionClicked -> addInstruction(event.value)
             is RecipeDetailsUiEvent.RecipeImageSelected -> setPendingRecipeImage(event.uri)
             RecipeDetailsUiEvent.DiscardClicked -> discardChanges()
+            RecipeDetailsUiEvent.DismissDiscardConfirmation -> dismissDiscardConfirmation()
+            RecipeDetailsUiEvent.ConfirmDiscardConfirmation -> performDiscardChanges()
 
             RecipeDetailsUiEvent.DeleteClicked -> updateContent {
                 if (it.recipeId.isNullOrBlank()) {
@@ -199,6 +201,7 @@ class RecipeDetailsViewModel @Inject constructor(
             tags = sourceRecipe.tags,
             editMode = editMode,
             isSaving = false,
+            showDiscardConfirmationDialog = false,
             showDeleteConfirmationDialog = false,
             servingsExpanded = false,
             expandedStates = defaultExpandedStates(),
@@ -226,7 +229,7 @@ class RecipeDetailsViewModel @Inject constructor(
         if (content.editMode) {
             originalRecipe?.let { restoreRecipe(it) }
         } else {
-            updateContent { it.copy(editMode = true) }
+            updateContent { it.copy(editMode = true, showDiscardConfirmationDialog = false) }
         }
     }
 
@@ -440,8 +443,24 @@ class RecipeDetailsViewModel @Inject constructor(
 
     private fun discardChanges() {
         val content = contentState() ?: return
+        if (hasUnsavedChanges(content)) {
+            updateContent { it.copy(showDiscardConfirmationDialog = true) }
+            return
+        }
+
+        performDiscardChanges()
+    }
+
+    private fun dismissDiscardConfirmation() {
+        updateContent { it.copy(showDiscardConfirmationDialog = false) }
+    }
+
+    private fun performDiscardChanges() {
+        val content = contentState() ?: return
         viewModelScope.launch {
             if (content.recipeId.isNullOrBlank()) {
+                clearPendingRecipeImage()
+                updateContent { it.copy(showDiscardConfirmationDialog = false) }
                 _commands.send(RecipeDetailsCommand.NavigateBack)
                 return@launch
             }
@@ -449,10 +468,38 @@ class RecipeDetailsViewModel @Inject constructor(
             originalRecipe?.let { restoreRecipe(it) } ?: run {
                 clearPendingRecipeImage()
                 updateContent {
-                    it.copy(editMode = false)
+                    it.copy(
+                        editMode = false,
+                        showDiscardConfirmationDialog = false,
+                    )
                 }
             }
         }
+    }
+
+    private fun hasUnsavedChanges(content: RecipeDetailsUiState.Content): Boolean {
+        val original = originalRecipe
+        if (original == null) {
+            return content.itemName.isNotBlank() ||
+                content.description.isNotBlank() ||
+                content.ingredients.isNotEmpty() ||
+                content.instructions.isNotEmpty() ||
+                content.preparationTimeMin.isNotBlank() ||
+                content.favourite ||
+                content.servings.isNotBlank() ||
+                content.tagsInput.isNotBlank() ||
+                pendingImageUri != null
+        }
+
+        return content.itemName != original.itemName ||
+            content.description != original.description ||
+            content.ingredients != original.ingredients ||
+            content.instructions != original.instructions ||
+            content.preparationTimeMin != original.preparationTimeMin.toString() ||
+            content.favourite != original.favourite ||
+            content.servings != original.servings.toString() ||
+            content.tagsInput != original.tags.joinToString(" ") ||
+            pendingImageUri != null
     }
 
     private fun deleteRecipe() {
@@ -591,6 +638,7 @@ class RecipeDetailsViewModel @Inject constructor(
                                 tags = savedRecipe.tags,
                                 isSaving = false,
                                 editMode = false,
+                                showDiscardConfirmationDialog = false,
                                 showDeleteConfirmationDialog = false,
                                 servingsExpanded = false,
                                 ingredientsByServings = scaleIngredients(
@@ -625,6 +673,7 @@ class RecipeDetailsViewModel @Inject constructor(
                     tags = savedRecipe.tags,
                     isSaving = false,
                     editMode = false,
+                    showDiscardConfirmationDialog = false,
                     showDeleteConfirmationDialog = false,
                     servingsExpanded = false,
                     ingredientsByServings = scaleIngredients(

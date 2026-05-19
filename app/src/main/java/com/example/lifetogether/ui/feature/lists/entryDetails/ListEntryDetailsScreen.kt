@@ -2,6 +2,7 @@ package com.example.lifetogether.ui.feature.lists.entryDetails
 
 import android.graphics.Bitmap
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -56,11 +57,21 @@ fun ListEntryDetailsScreen(
     } else null
     val topBarRightText = if (isNoteEntry && content.isEditing) "Done" else null
 
+    BackHandler(enabled = content?.isEditing == true) {
+        onUiEvent(ListEntryDetailsUiEvent.RequestCancelEdit)
+    }
+
     Scaffold(
         topBar = {
             AppTopBar(
                 leftAppIcon = AppIcon(resId = R.drawable.ic_back_arrow, description = "back arrow"),
-                onLeftClick = { onNavigationEvent(ListEntryDetailsNavigationEvent.NavigateBack) },
+                onLeftClick = {
+                    if (content?.isEditing == true) {
+                        onUiEvent(ListEntryDetailsUiEvent.RequestCancelEdit)
+                    } else {
+                        onNavigationEvent(ListEntryDetailsNavigationEvent.NavigateBack)
+                    }
+                },
                 text = topBarTitle,
                 rightAppIcon = topBarRightAppIcon,
                 onRightClick = topBarRightClick,
