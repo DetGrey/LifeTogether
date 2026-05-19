@@ -1,6 +1,7 @@
 package com.example.lifetogether.ui.feature.gallery
 
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
@@ -99,6 +100,10 @@ private fun AlbumDetailsContent(
 ) {
     val pullToRefreshState = rememberPullToRefreshState()
 
+    BackHandler(enabled = uiState.isSelectionModeActive) {
+        onUiEvent(AlbumDetailsUiEvent.ToggleSelectionMode)
+    }
+
     Scaffold(
         topBar = {
             AppTopBar(
@@ -106,7 +111,13 @@ private fun AlbumDetailsContent(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
                 ),
-                onLeftClick = { onNavigationEvent(AlbumDetailsNavigationEvent.NavigateBack) },
+                onLeftClick = {
+                    if (uiState.isSelectionModeActive) {
+                        onUiEvent(AlbumDetailsUiEvent.ToggleSelectionMode)
+                    } else {
+                        onNavigationEvent(AlbumDetailsNavigationEvent.NavigateBack)
+                    }
+                },
                 text = uiState.album?.itemName ?: "Album images",
                 rightAppIcon = AppIcon(
                     resId = R.drawable.ic_overflow_menu,

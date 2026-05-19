@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
@@ -65,6 +66,10 @@ fun ListsScreen(
     val contentState = uiState as? ListsUiState.Content
     val isLoading = uiState is ListsUiState.Loading
 
+    BackHandler(enabled = contentState?.isSelectionMode == true) {
+        onUiEvent(ListsUiEvent.ExitSelectionMode)
+    }
+
     Scaffold(
         topBar = {
             AppTopBar(
@@ -72,7 +77,13 @@ fun ListsScreen(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
                 ),
-                onLeftClick = { onNavigationEvent(ListsNavigationEvent.NavigateBack) },
+                onLeftClick = {
+                    if (contentState?.isSelectionMode == true) {
+                        onUiEvent(ListsUiEvent.ExitSelectionMode)
+                    } else {
+                        onNavigationEvent(ListsNavigationEvent.NavigateBack)
+                    }
+                },
                 text = "Lists",
                 rightAppIcon = if (contentState != null) AppIcon(
                     resId = R.drawable.ic_overflow_menu,

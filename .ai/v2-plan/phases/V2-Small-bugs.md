@@ -149,8 +149,7 @@ Here are some questions:
 - [ ] _Make the image download success and version update dialogs nicer._
 - [ ] _Show a dialog when there is a new version available._
 - [x] Animate when image is loaded and about to be shown e.g. for recipes, routine and such so it doesn't just pop up
-- [ ] Pressing back on phone should be interupted in selection mode on all screens that have it so it just leaves selection mode instead of navigating back
-  - (TODO SOON)
+- [x] Pressing back on phone should be interupted in selection mode on all screens that have it so it just leaves selection mode instead of navigating back
 - [ ] Change how dialogs are shown with enabled parameter instead of "contentState?.showRenameListDialog == true"
   - Maybe even handle some of the events inside instead of many events inside viewmodel per dialog (RequestRenameList, DismissRenameListDialog,RenameListNameChanged,ConfirmRenameList)
   - (TODO SOON)
