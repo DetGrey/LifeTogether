@@ -126,6 +126,13 @@ Historical phase decisions remain in `.ai/v2-plan/` and are not duplicated here.
 - Typed `NavRoute` arguments are part of the route contract, and route wrappers own argument extraction and translation.
 - The only accepted raw destination string path is the notification entry point, where the notification layer maps the string to a typed `AppRoute` before navigation occurs.
 - No other navigation path may build or consume raw route strings.
+- Login success clears the whole stack and goes to `Home`.
+- Logout clears the whole stack and goes to `Login`.
+- Loading screen transitions clear the stack instead of leaving `Loading` underneath.
+- Home navigation uses a top-level helper so profile, settings, and other top-level destinations do not accumulate duplicate history.
+- Profile and Settings keep their local back relationship:
+  - `Profile -> Settings` pushes `Settings`
+  - `Settings -> Profile` goes back to the existing `Profile` when that is the previous screen
 - Shared UI state should be modeled explicitly instead of inferred from ad hoc booleans when the feature already has a formal state model.
 - Feature-specific state that drives a screen should come from the feature ViewModel, not from route-local session extraction.
 

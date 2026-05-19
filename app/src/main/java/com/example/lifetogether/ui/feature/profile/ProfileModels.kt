@@ -34,5 +34,5 @@ sealed interface ProfileNavigationEvent {
 }
 
 sealed interface ProfileCommand {
-    data object NavigateToHome : ProfileCommand
+    data object NavigateToLogin : ProfileCommand
 }

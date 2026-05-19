@@ -7,8 +7,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.ui.common.di.rememberSessionRepository
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.navigation.HomeNavRoute
 import com.example.lifetogether.ui.navigation.LoginNavRoute
+import com.example.lifetogether.ui.navigation.HomeNavRoute
 
 @Composable
 fun LoadingRoute(
@@ -19,8 +19,8 @@ fun LoadingRoute(
 
     LaunchedEffect(sessionState) {
         when (sessionState) {
-            is SessionState.Authenticated -> appNavigator.navigate(HomeNavRoute)
-            SessionState.Unauthenticated -> appNavigator.navigate(LoginNavRoute)
+            is SessionState.Authenticated -> appNavigator.clearAndNavigate(HomeNavRoute)
+            SessionState.Unauthenticated -> appNavigator.clearAndNavigate(LoginNavRoute)
             SessionState.Loading -> Unit
         }
     }

@@ -12,7 +12,7 @@ import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.common.event.LocalRootSnackbarHostState
 import com.example.lifetogether.ui.common.image.rememberObservedImageBitmap
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.navigation.HomeNavRoute
+import com.example.lifetogether.ui.navigation.LoginNavRoute
 import com.example.lifetogether.ui.navigation.SettingsNavRoute
 import kotlinx.coroutines.launch
 
@@ -39,7 +39,7 @@ fun ProfileRoute(
     LaunchedEffect(viewModel.commands) {
         viewModel.commands.collect { command ->
             when (command) {
-                ProfileCommand.NavigateToHome -> appNavigator.navigate(HomeNavRoute)
+                ProfileCommand.NavigateToLogin -> appNavigator.clearAndNavigate(LoginNavRoute)
             }
         }
     }
@@ -52,7 +52,7 @@ fun ProfileRoute(
         onNavigationEvent = { navigationEvent ->
             when (navigationEvent) {
                 ProfileNavigationEvent.NavigateBack -> appNavigator.navigateBack()
-                ProfileNavigationEvent.NavigateToSettings -> appNavigator.navigate(SettingsNavRoute)
+                ProfileNavigationEvent.NavigateToSettings -> appNavigator.navigateTopLevel(SettingsNavRoute)
             }
         },
     )

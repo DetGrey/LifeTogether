@@ -144,7 +144,7 @@ class ProfileViewModel @Inject constructor(
             when (val result = sessionRepository.signOut()) {
                 is Result.Success -> {
                     closeConfirmationDialog()
-                    _commands.send(ProfileCommand.NavigateToHome)
+                    _commands.send(ProfileCommand.NavigateToLogin)
                 }
 
                 is Result.Failure -> {

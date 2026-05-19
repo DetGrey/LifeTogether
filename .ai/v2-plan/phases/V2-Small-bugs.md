@@ -44,8 +44,9 @@ Here are some questions:
 - [ ] _Add an amount field to grocery items_.
 
 ### Lists
-- [ ] Add a more menu for deleting entries in lists overview screen that deletes the whole list and entries.
+- [x] Add a more menu for deleting entries in lists overview screen that deletes the whole list and entries.
 - [ ] Wishlist items with no description should have no extra spacing and no empty text in listdetails.
+- [ ] Add rename inside list details when not in selection mode
 
 ### Recipes
 - [ ] Add a search bar in recipes.
@@ -58,6 +59,17 @@ Here are some questions:
   - _Probably need a new type of recipe card for searching which includes the tag/ingredient etc that got matched in the search so the user knows why it's showing_
 - [ ] _Export or share recipes as PDF_.
 - [ ] _Ingredients and instructions need stable IDs_.
+- [ ] When adding ingredients, do not start capitalized
+- [ ] Recipe servings should be 1 to 100 instead of few predefined
+- [ ] Ingredient add to grocery list button when grocery suggestion exists
+  - Show informational snackbar (version of error snackbar) if already exists on grocery list so it doesn't get added twice from this
+  - It can still be added twice from the grocery screen itself though
+  - Be able to handle ingredients or suggestions that has a s e.g. banana and bananas should be connected to same
+- [ ] Have add to meal plan button on recipes that autofill with that recipe and opens the create meal plan
+- [ ] Recipe card with image (two options)
+  - Have prep time below title and image box to the right a bit like routines
+  - Or have image behind with gradient from the left with prep and title to the left
+- Recipe instructions cannot be read since they should be multiline
 
 ### Guides
 - [ ] Add guide manually does not work that well.
@@ -93,7 +105,7 @@ Here are some questions:
 - [ ] Change x days together so it is only shown if a date is added to family info.
   - This means that a new variable should be added to the data class
 - [ ] _Add special day under family settings or the countdown page._
-- [ ] On login, go to the home screen and do not keep any back stack.
+- [ ] Clickable area is wrong in personal details
 
 ### Family memories and widgets
 - [ ] _Add likes and dislikes for food and everything else._
@@ -107,9 +119,16 @@ Here are some questions:
 - [ ] _Add travel goals for countries to visit and see._
   - This could just be part of a user list
 - [ ] _Add mood-based suggestions for when down, sad, or exhausted._
+- [ ] _Traveller_
+  - Map with pins for where we have visited, lived and bucket list
+  - When clicked it shows bottom sheet with city, country, to-from date, possible to attach album to easily find it again
+  - Filter which pins to show (default visited+lived)
+  - In album info show if connected to traveller pin and make it clickable
 
 ### Navigation
 - [ ] Migrate to Navigation 3.
+- [x] On login, go to the home screen and do not keep any back stack.
+- [x] Cannot have multiple profile or settings in back stack. Maybe same for other ones
 
 ### Shared architecture and tooling
 - [ ] Replace `DropDown.kt` `.menuAnchor` usage because it is deprecated if possible without very complex code.
@@ -123,7 +142,6 @@ Here are some questions:
 - [ ] _Show a dialog when there is a new version available._
 - [ ] Animate when image is loaded and about to be shown e.g. for recipes and such so it doesn't just pop up
 - [ ] Pressing back on phone should be interupted in selection mode on all screens that have it so it just leaves selection mode instead of navigating back
-
 
 ## Shelved changes:
 Fixing clickable area in ProfileDetails.kt

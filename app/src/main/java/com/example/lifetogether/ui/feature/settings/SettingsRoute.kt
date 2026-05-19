@@ -24,7 +24,7 @@ fun SettingsRoute(
         onNavigationEvent = { navigationEvent ->
             when (navigationEvent) {
                 SettingsNavigationEvent.NavigateBack -> appNavigator.navigateBack()
-                SettingsNavigationEvent.NavigateToProfile -> appNavigator.navigate(ProfileNavRoute)
+                SettingsNavigationEvent.NavigateToProfile -> appNavigator.navigateTopLevel(ProfileNavRoute)
                 SettingsNavigationEvent.NavigateToFamily -> appNavigator.navigate(FamilyNavRoute)
             }
         },

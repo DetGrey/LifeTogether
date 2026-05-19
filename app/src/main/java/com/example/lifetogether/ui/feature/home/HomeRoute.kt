@@ -75,21 +75,21 @@ fun HomeRoute(
             when (navigationEvent) {
                 HomeNavigationEvent.ProfileClicked -> {
                     if (userInformation != null) {
-                        appNavigator.navigate(ProfileNavRoute)
+                        appNavigator.navigateTopLevel(ProfileNavRoute)
                     } else {
-                        appNavigator.navigate(LoginNavRoute)
+                        appNavigator.clearAndNavigate(LoginNavRoute)
                     }
                 }
 
-                HomeNavigationEvent.SettingsClicked -> appNavigator.navigate(SettingsNavRoute)
+                HomeNavigationEvent.SettingsClicked -> appNavigator.navigateTopLevel(SettingsNavRoute)
 
                 HomeNavigationEvent.StatusCardClicked -> {
                     when (sessionState) {
                         SessionState.Loading -> Unit
-                        SessionState.Unauthenticated -> appNavigator.navigate(LoginNavRoute)
+                        SessionState.Unauthenticated -> appNavigator.clearAndNavigate(LoginNavRoute)
                         is SessionState.Authenticated -> {
                             if (userInformation?.familyId == null) {
-                                appNavigator.navigate(SettingsNavRoute)
+                                appNavigator.navigateTopLevel(SettingsNavRoute)
                             }
                         }
                     }
@@ -166,14 +166,14 @@ private fun handleTileClick(
     }
 
     when (tile) {
-        HomeTile.GroceryList -> appNavigator.navigate(GroceryListNavRoute)
-        HomeTile.Recipes -> appNavigator.navigate(RecipesNavRoute)
-        HomeTile.MealPlanner -> appNavigator.navigate(MealPlannerNavRoute)
-        HomeTile.Guides -> appNavigator.navigate(GuidesNavRoute)
-        HomeTile.Gallery -> appNavigator.navigate(GalleryNavRoute)
-        HomeTile.TipTracker -> appNavigator.navigate(TipTrackerNavRoute)
-        HomeTile.Lists -> appNavigator.navigate(ListsNavRoute)
-        HomeTile.AdminGroceryCategories -> appNavigator.navigate(AdminGroceryCategoriesNavRoute)
-        HomeTile.AdminGrocerySuggestions -> appNavigator.navigate(AdminGrocerySuggestionsNavRoute)
+        HomeTile.GroceryList -> appNavigator.navigateTopLevel(GroceryListNavRoute)
+        HomeTile.Recipes -> appNavigator.navigateTopLevel(RecipesNavRoute)
+        HomeTile.MealPlanner -> appNavigator.navigateTopLevel(MealPlannerNavRoute)
+        HomeTile.Guides -> appNavigator.navigateTopLevel(GuidesNavRoute)
+        HomeTile.Gallery -> appNavigator.navigateTopLevel(GalleryNavRoute)
+        HomeTile.TipTracker -> appNavigator.navigateTopLevel(TipTrackerNavRoute)
+        HomeTile.Lists -> appNavigator.navigateTopLevel(ListsNavRoute)
+        HomeTile.AdminGroceryCategories -> appNavigator.navigateTopLevel(AdminGroceryCategoriesNavRoute)
+        HomeTile.AdminGrocerySuggestions -> appNavigator.navigateTopLevel(AdminGrocerySuggestionsNavRoute)
     }
 }

@@ -18,5 +18,5 @@ sealed interface LoginNavigationEvent {
 }
 
 sealed interface LoginCommand {
-    data object NavigateBackOnSuccess : LoginCommand
+    data object NavigateToHome : LoginCommand
 }

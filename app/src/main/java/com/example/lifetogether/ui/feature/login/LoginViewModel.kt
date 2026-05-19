@@ -44,7 +44,7 @@ class LoginViewModel @Inject constructor(
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch {
             when (val loginResult = loginUseCase.invoke(User(state.email, state.password))) {
-                is Result.Success -> _commands.send(LoginCommand.NavigateBackOnSuccess)
+                is Result.Success -> _commands.send(LoginCommand.NavigateToHome)
                 is Result.Failure -> {
                     _uiState.update { it.copy(isLoading = false) }
                     _uiCommands.send(

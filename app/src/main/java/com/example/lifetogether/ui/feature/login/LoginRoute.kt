@@ -7,6 +7,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.HomeNavRoute
 import com.example.lifetogether.ui.navigation.SignupNavRoute
 
 @Composable
@@ -21,7 +22,7 @@ fun LoginRoute(
     LaunchedEffect(viewModel.commands) {
         viewModel.commands.collect { command ->
             when (command) {
-                LoginCommand.NavigateBackOnSuccess -> appNavigator.navigateBack()
+                LoginCommand.NavigateToHome -> appNavigator.clearAndNavigate(HomeNavRoute)
             }
         }
     }
