@@ -5,14 +5,17 @@ import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.lifetogether.domain.logic.ingredientMatchesSuggestion
 import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.model.Completable
+import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.domain.model.recipe.Instruction
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.model.toggleCompleted
+import com.example.lifetogether.domain.repository.GroceryRepository
 import com.example.lifetogether.domain.repository.RecipeRepository
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.result.AppError
@@ -20,6 +23,7 @@ import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.domain.usecase.image.UploadImageUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
+import com.example.lifetogether.ui.common.snackbar.SnackbarSeverity
 import com.example.lifetogether.ui.navigation.RecipeDetailsNavRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.UUID
@@ -29,6 +33,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -44,6 +49,7 @@ class RecipeDetailsViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val sessionRepository: SessionRepository,
     private val recipeRepository: RecipeRepository,
+    private val groceryRepository: GroceryRepository,
     private val uploadImageUseCase: UploadImageUseCase,
     @param:ApplicationContext private val context: Context,
 ) : ViewModel() {
@@ -67,6 +73,7 @@ class RecipeDetailsViewModel @Inject constructor(
     private var currentFamilyId: String? = null
     private var originalRecipe: Recipe? = null
     private var observeRecipeJob: Job? = null
+    private var latestSuggestions: List<com.example.lifetogether.domain.model.grocery.GrocerySuggestion> = emptyList()
 
     init {
         if (pendingRecipeId == null) {
@@ -75,6 +82,15 @@ class RecipeDetailsViewModel @Inject constructor(
 
         if (pendingImageUri != null) {
             restorePendingImagePreview()
+        }
+
+        viewModelScope.launch {
+            groceryRepository.observeGrocerySuggestions().collect { result ->
+                if (result is Result.Success) {
+                    latestSuggestions = result.data
+                    updateContent { it.copy(grocerySuggestions = result.data) }
+                }
+            }
         }
 
         viewModelScope.launch {
@@ -142,6 +158,7 @@ class RecipeDetailsViewModel @Inject constructor(
 
             RecipeDetailsUiEvent.ConfirmDeleteConfirmation -> deleteRecipe()
             RecipeDetailsUiEvent.SaveClicked -> saveRecipe()
+            is RecipeDetailsUiEvent.AddIngredientToGroceryList -> addIngredientToGroceryList(event.ingredient)
         }
     }
 
@@ -199,6 +216,7 @@ class RecipeDetailsViewModel @Inject constructor(
             servings = if (recipe == null && recipeId == null) "" else servings,
             tagsInput = sourceRecipe.tags.joinToString(" "),
             tags = sourceRecipe.tags,
+            grocerySuggestions = latestSuggestions,
             editMode = editMode,
             isSaving = false,
             showDiscardConfirmationDialog = false,
@@ -696,6 +714,53 @@ class RecipeDetailsViewModel @Inject constructor(
     private fun updateContent(transform: (RecipeDetailsUiState.Content) -> RecipeDetailsUiState.Content) {
         _uiState.update { state ->
             (state as? RecipeDetailsUiState.Content)?.let(transform) ?: state
+        }
+    }
+
+    private fun addIngredientToGroceryList(ingredient: Ingredient) {
+        val familyId = currentFamilyId ?: return
+        val content = contentState() ?: return
+        val matchingSuggestion = content.grocerySuggestions.find { suggestion ->
+            ingredientMatchesSuggestion(ingredient.itemName, suggestion.suggestionName)
+        } ?: return
+
+        viewModelScope.launch {
+            val groceryResult = groceryRepository.observeGroceryItems(familyId).first()
+            if (groceryResult is Result.Success) {
+                val alreadyOnList = groceryResult.data
+                    .filter { !it.completed }
+                    .any { item ->
+                        ingredientMatchesSuggestion(item.itemName, matchingSuggestion.suggestionName) &&
+                            item.category == matchingSuggestion.category
+                    }
+                if (alreadyOnList) {
+                    _uiCommands.send(
+                        UiCommand.ShowSnackbar(
+                            message = "${matchingSuggestion.suggestionName} is already on your grocery list",
+                            severity = SnackbarSeverity.Info,
+                        ),
+                    )
+                    return@launch
+                }
+            }
+
+            val newItem = GroceryItem(
+                id = UUID.randomUUID().toString(),
+                familyId = familyId,
+                itemName = matchingSuggestion.suggestionName,
+                lastUpdated = Date(),
+                category = matchingSuggestion.category,
+                approxPrice = matchingSuggestion.approxPrice,
+            )
+            when (val result = groceryRepository.saveGroceryItem(newItem)) {
+                is Result.Success -> _uiCommands.send(
+                    UiCommand.ShowSnackbar(
+                        message = "${matchingSuggestion.suggestionName} added to grocery list",
+                        severity = SnackbarSeverity.Info,
+                    ),
+                )
+                is Result.Failure -> showError(result.error.toUserMessage())
+            }
         }
     }
 

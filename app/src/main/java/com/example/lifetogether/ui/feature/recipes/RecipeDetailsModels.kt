@@ -3,6 +3,7 @@ package com.example.lifetogether.ui.feature.recipes
 import android.graphics.Bitmap
 import android.net.Uri
 import com.example.lifetogether.domain.model.Completable
+import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.domain.model.recipe.Instruction
 
@@ -24,6 +25,7 @@ sealed interface RecipeDetailsUiState {
         val tags: List<String>,
         val expandedStates: Map<String, Boolean>,
         val ingredientsByServings: List<Ingredient>,
+        val grocerySuggestions: List<GrocerySuggestion> = emptyList(),
         val localImageBitmap: Bitmap? = null,
         val editMode: Boolean = false,
         val isSaving: Boolean = false,
@@ -56,6 +58,7 @@ sealed interface RecipeDetailsUiEvent {
     data object DismissDeleteConfirmation : RecipeDetailsUiEvent
     data object ConfirmDeleteConfirmation : RecipeDetailsUiEvent
     data object SaveClicked : RecipeDetailsUiEvent
+    data class AddIngredientToGroceryList(val ingredient: Ingredient) : RecipeDetailsUiEvent
 }
 
 sealed interface RecipeDetailsNavigationEvent {

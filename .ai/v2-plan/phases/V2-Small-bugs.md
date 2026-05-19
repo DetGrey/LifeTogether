@@ -20,7 +20,6 @@ Here are some questions:
 - The AppTopBar is much taller than it used to be. Can it be changed in any way? Might be because of TextDisplayLarge
 - ListItem seems too high compared to legacy - is that true?
   - Go back to use custom instead of native M3ListItem
-- profile screen email icon should be updated so need to make a new one
 - I have to check if this is still a problem
   - EditableTextField textfield is not tall enough to handle textStyle = MaterialTheme.typography.displayMedium (should be dynamic)
   - I want it on all screens I think since the skeleton is almost not shown at all
@@ -41,6 +40,7 @@ Here are some questions:
 
 ### Grocery
 - [?] Fix long text layout in Add grocery item.
+- [ ] Need more bottom spacing if using double row AddGroceryItem
 - [ ] _Add an amount field to grocery items_.
 
 ### Lists
@@ -153,3 +153,9 @@ Here are some questions:
 - [ ] Change how dialogs are shown with enabled parameter instead of "contentState?.showRenameListDialog == true"
   - Maybe even handle some of the events inside instead of many events inside viewmodel per dialog (RequestRenameList, DismissRenameListDialog,RenameListNameChanged,ConfirmRenameList)
   - (TODO SOON)
+
+## Icons
+- [ ] Make Grocery icon with a plus for the RecipeDetails
+- [ ] Make search icon
+- [ ] Make new rounded icons (V2)
+- [ ] Make thinner email icon (profile screen email icon should be updated so need to make a new one)

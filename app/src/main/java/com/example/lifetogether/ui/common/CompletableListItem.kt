@@ -17,6 +17,7 @@ fun CompletableListItem(
     text: String,
     isCompleted: Boolean,
     onCompleteToggle: () -> Unit,
+    trailingContent: (@Composable () -> Unit)? = null,
 ) {
     ListItem(
         modifier = Modifier.fillMaxWidth(),
@@ -34,6 +35,7 @@ fun CompletableListItem(
                 overflow = TextOverflow.Ellipsis,
             )
         },
+        trailingContent = trailingContent,
         colors = ListItemDefaults.colors(
             containerColor = Color.Transparent,
         ),

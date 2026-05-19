@@ -39,6 +39,7 @@ fun CompletableCategoryList(
     onClick: () -> Unit,
     onCompleteToggle: (Completable) -> Unit,
     onDelete: (() -> Unit)? = null,
+    trailingContent: ((Completable) -> (@Composable () -> Unit)?)? = null,
 ) {
     Column(modifier = Modifier.padding(bottom = LifeTogetherTokens.spacing.xLarge)) {
         Column(
@@ -104,6 +105,7 @@ fun CompletableCategoryList(
                         text = text,
                         isCompleted = item.completed,
                         onCompleteToggle = { onCompleteToggle(item) },
+                        trailingContent = trailingContent?.invoke(item),
                     )
                 }
             }
