@@ -8,6 +8,7 @@ import com.example.lifetogether.data.local.MIGRATION_25_26
 import com.example.lifetogether.data.local.MIGRATION_27_28
 import com.example.lifetogether.data.local.MIGRATION_31_32
 import com.example.lifetogether.data.local.MIGRATION_32_33
+import com.example.lifetogether.data.local.MIGRATION_33_34
 import com.example.lifetogether.data.local.AppDatabase
 import com.example.lifetogether.data.local.dao.AlbumsDao
 import com.example.lifetogether.data.local.dao.ChecklistEntriesDao
@@ -54,6 +55,7 @@ object DatabaseModule {
                 MIGRATION_27_28,
                 MIGRATION_31_32,
                 MIGRATION_32_33,
+                MIGRATION_33_34,
             )
             .build()
     }

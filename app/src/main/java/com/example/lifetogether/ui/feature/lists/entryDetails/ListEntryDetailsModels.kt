@@ -8,6 +8,7 @@ import com.example.lifetogether.domain.model.lists.RecurrenceUnit
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.domain.model.lists.WishListEntry
 import com.example.lifetogether.domain.model.lists.WishListPriority
+import java.util.Date
 
 sealed interface EntryDetailsUiState {
     data object Loading : EntryDetailsUiState
@@ -40,6 +41,10 @@ sealed interface EntryDetailsContent {
                         recurrenceUnit = entry.recurrenceUnit,
                         interval = entry.interval.toString(),
                         selectedWeekdays = entry.weekdays.toSet(),
+                        dateCreated = entry.dateCreated,
+                        lastCompletedAt = entry.lastCompletedAt,
+                        completionCount = entry.completionCount,
+                        imageUrl = entry.imageUrl,
                     ),
                 )
             }
@@ -102,6 +107,10 @@ data class RoutineEntryFormState(
     val selectedWeekdays: Set<Int> = emptySet(),
     val pendingImageUri: Uri? = null,
     val pendingImageBitmap: Bitmap? = null,
+    val dateCreated: Date? = null,
+    val lastCompletedAt: Date? = null,
+    val completionCount: Int = 0,
+    val imageUrl: String? = null,
 )
 
 data class WishEntryFormState(

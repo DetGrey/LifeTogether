@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.MaterialTheme
@@ -28,14 +27,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
+import com.example.lifetogether.ui.common.image.AnimatedBitmapImage
 import com.example.lifetogether.ui.common.text.TextDisplayLarge
 import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.text.TextLabel
@@ -135,14 +133,11 @@ fun HomeScreen(
                             .background(color = MaterialTheme.colorScheme.surfaceVariant),
                     ) {
                         val bitmap = content.bitmap
-                        if (bitmap != null) {
-                            Image(
-                                modifier = Modifier.fillMaxSize(),
-                                bitmap = bitmap.asImageBitmap(),
-                                contentDescription = "family image",
-                                contentScale = ContentScale.Crop,
-                            )
-                        }
+                        AnimatedBitmapImage(
+                            bitmap = bitmap,
+                            modifier = Modifier.fillMaxSize(),
+                            contentDescription = "family image",
+                        )
                     }
                 }
 

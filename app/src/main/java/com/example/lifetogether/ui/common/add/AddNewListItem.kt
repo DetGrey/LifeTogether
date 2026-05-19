@@ -112,14 +112,22 @@ private fun ListItemInputBar(
 
     Card(
         modifier = Modifier
-            .fillMaxWidth()
-            .height(60.dp),
+            .fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
         shape = MaterialTheme.shapes.large,
     ) {
+        CustomTextField(
+            value = textValue,
+            onValueChange = onTextChange,
+            label = textFieldLabel,
+            keyboardType = KeyboardType.Text,
+            imeAction = ImeAction.Next,
+            capitalization = true,
+        )
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .height(60.dp)
                 .padding(horizontal = LifeTogetherTokens.spacing.small),
             horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),
             verticalAlignment = Alignment.CenterVertically,
@@ -143,17 +151,6 @@ private fun ListItemInputBar(
             ) {
                 Text(text = selectedCategory.emoji)
             }
-
-            CustomTextField(
-                modifier = Modifier
-                    .weight(2f),
-                value = textValue,
-                onValueChange = onTextChange,
-                label = textFieldLabel,
-                keyboardType = KeyboardType.Text,
-                imeAction = ImeAction.Next,
-                capitalization = true,
-            )
 
             CustomTextField(
                 modifier = Modifier.weight(1f),
@@ -227,7 +224,7 @@ private fun Preview() {
                 onCategoryChange = { },
             )
             EditListItem(
-                textValue = "Banana",
+                textValue = "Banana and chocolate cake",
                 onTextChange = { },
                 priceValue = "",
                 onPriceChange = { },

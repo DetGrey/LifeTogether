@@ -24,6 +24,9 @@ interface FamilyInformationDao {
     @Query("SELECT * FROM ${Constants.FAMILIES_TABLE} WHERE family_id = :familyId LIMIT 1")
     fun getFamilyInfo(familyId: String): Flow<FamilyEntity>
 
+    @Query("SELECT * FROM ${Constants.FAMILIES_TABLE} WHERE family_id = :familyId LIMIT 1")
+    suspend fun getFamilyOnce(familyId: String): FamilyEntity?
+
     // Query to get family members by familyId (FamilyMemberEntity)
     @Query("SELECT * FROM ${Constants.FAMILY_MEMBERS_TABLE} WHERE family_id = :familyId")
     fun observeFamilyMembers(familyId: String): Flow<List<FamilyMemberEntity>>
@@ -32,10 +35,16 @@ interface FamilyInformationDao {
     @Query("SELECT image_data FROM ${Constants.FAMILIES_TABLE} WHERE family_id = :familyId LIMIT 1")
     fun observeImageByteArray(familyId: String): Flow<ByteArray?>
 
-    @Query("SELECT image_data FROM ${Constants.FAMILIES_TABLE} WHERE family_id = :familyId LIMIT 1")
-    suspend fun getImageByteArray(familyId: String): ByteArray?
+    @Query("UPDATE ${Constants.FAMILIES_TABLE} SET image_data = :imageData WHERE family_id = :familyId")
+    suspend fun updateImageByteArray(
+        familyId: String,
+        imageData: ByteArray?,
+    )
 
-    @Query("SELECT CASE WHEN image_data IS NOT NULL THEN 1 ELSE 0 END FROM ${Constants.FAMILIES_TABLE} WHERE family_id = :familyId LIMIT 1")
-    suspend fun hasImageData(familyId: String): Int?
+    @Query("UPDATE ${Constants.FAMILIES_TABLE} SET image_url = :imageUrl WHERE family_id = :familyId")
+    suspend fun updateImageUrl(
+        familyId: String,
+        imageUrl: String?,
+    )
 
 }

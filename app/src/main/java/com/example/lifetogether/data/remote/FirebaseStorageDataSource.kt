@@ -10,6 +10,7 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import com.example.lifetogether.data.logic.ImageProcessor
+import com.example.lifetogether.domain.model.image.UploadedImage
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.datasource.StorageDataSource
@@ -28,7 +29,7 @@ class FirebaseStorageDataSource @Inject constructor(
         uri: Uri,
         imageType: ImageType,
         context: Context,
-    ): Result<String, AppError> {
+    ): Result<UploadedImage, AppError> {
         return appResultOfSuspend {
             Log.d("FirebaseStorageDS", "uploadPhoto uri: $uri")
 
@@ -47,7 +48,10 @@ class FirebaseStorageDataSource @Inject constructor(
             // Get the download URL
             val downloadUrl = photoRef.downloadUrl.await()
             Log.d("FirebaseStorageDS", "uploadPhoto success. Download URL: $downloadUrl")
-            downloadUrl.toString()
+            UploadedImage(
+                downloadUrl = downloadUrl.toString(),
+                byteArray = processedImage.data,
+            )
         }
     }
 

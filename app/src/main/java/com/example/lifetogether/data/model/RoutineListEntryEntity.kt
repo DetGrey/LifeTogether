@@ -33,6 +33,8 @@ data class RoutineListEntryEntity(
     val weekdays: List<Int> = emptyList(),
     @ColumnInfo(name = "image_data")
     val imageData: ByteArray? = null,
+    @ColumnInfo(name = "image_url")
+    val imageUrl: String? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -54,6 +56,7 @@ data class RoutineListEntryEntity(
             if (other.imageData == null) return false
             if (!imageData.contentEquals(other.imageData)) return false
         } else if (other.imageData != null) return false
+        if (imageUrl != other.imageUrl) return false
 
         return true
     }
@@ -72,6 +75,7 @@ data class RoutineListEntryEntity(
         result = 31 * result + interval
         result = 31 * result + weekdays.hashCode()
         result = 31 * result + (imageData?.contentHashCode() ?: 0)
+        result = 31 * result + (imageUrl?.hashCode() ?: 0)
         return result
     }
 }

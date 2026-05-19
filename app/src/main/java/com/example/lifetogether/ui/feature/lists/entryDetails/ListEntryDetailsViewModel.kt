@@ -12,6 +12,7 @@ import com.example.lifetogether.ui.common.event.UiCommand
 import com.example.lifetogether.ui.navigation.ListEntryDetailsNavRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Date
 import javax.inject.Inject
 import androidx.navigation.toRoute
@@ -104,6 +106,7 @@ class ListEntryDetailsViewModel @Inject constructor(
         val content = currentContentState() ?: return showError("Entry is not ready yet")
         val activeFamilyId = _familyId.value ?: return showError("Missing family context")
         val now = Date()
+        val shouldStayOnScreen = entryId != null && content.details is EntryDetailsContent.Routine
 
         updateContent { it.copy(isSaving = true) }
 
@@ -122,11 +125,12 @@ class ListEntryDetailsViewModel @Inject constructor(
             when (result) {
                 is Result.Success -> {
                     originalDetails = currentContentState()?.details
-                    if (entryId != null) {
+                    if (shouldStayOnScreen) {
                         updateContent { it.copy(isEditing = false) }
-                    }
-                    viewModelScope.launch {
-                        _commands.send(ListEntryDetailsCommand.NavigateBack)
+                    } else {
+                        viewModelScope.launch {
+                            _commands.send(ListEntryDetailsCommand.NavigateBack)
+                        }
                     }
                 }
 
@@ -141,6 +145,11 @@ class ListEntryDetailsViewModel @Inject constructor(
     }
 
     private fun showContent(details: EntryDetailsContent, isNewEntry: Boolean) {
+        val currentState = _uiState.value
+        if (currentState is EntryDetailsUiState.Content && currentState.isEditing && !currentState.isSaving) {
+            return
+        }
+
         originalDetails = details
         _uiState.update { current ->
             when (current) {
@@ -156,35 +165,25 @@ class ListEntryDetailsViewModel @Inject constructor(
     }
 
     private fun onImageSelected(uri: Uri) {
-        val bitmap = uri.toBitmap(context.contentResolver)
-        updateCurrentDetails { details ->
-            when (details) {
-                is EntryDetailsContent.Routine -> details.copy(
-                    form = details.form.copy(
-                        pendingImageUri = uri,
-                        pendingImageBitmap = bitmap,
-                    ),
-                )
-
-                else -> details
-            }
-        }
-
-        val shouldUploadImmediately = entryId != null && _familyId.value != null
-        if (!shouldUploadImmediately) {
-            return
-        }
-
         viewModelScope.launch {
-            val familyIdValue = _familyId.value
-            val existingEntryId = entryId
-            if (familyIdValue.isNullOrBlank() || existingEntryId.isBlank()) {
+            val bitmap = withContext(Dispatchers.IO) {
+                uri.toBitmap(context.contentResolver)
+            } ?: run {
+                showError("Could not load the selected image")
                 return@launch
             }
 
-            when (val result = entryDetailsSaver.uploadRoutineImage(uri, familyIdValue, existingEntryId, context)) {
-                is Result.Success -> Unit
-                is Result.Failure -> showError(result.error.toUserMessage())
+            updateCurrentDetails { details ->
+                when (details) {
+                    is EntryDetailsContent.Routine -> details.copy(
+                        form = details.form.copy(
+                            pendingImageUri = uri,
+                            pendingImageBitmap = bitmap,
+                        ),
+                    )
+
+                    else -> details
+                }
             }
         }
     }

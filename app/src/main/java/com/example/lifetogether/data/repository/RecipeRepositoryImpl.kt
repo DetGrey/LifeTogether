@@ -34,14 +34,18 @@ class RecipeRepositoryImpl @Inject constructor(
                     if (result.data.items.isEmpty()) {
                         recipeLocalDataSource.deleteFamilyRecipes(familyId)
                     } else {
-                        val existingRecipeIdsWithImages = recipeLocalDataSource.getRecipeIdsWithImages(familyId)
+                        val currentRecipesById = recipeLocalDataSource.getRecipesOnce(familyId).associateBy { it.id }
                         val byteArrays: MutableMap<String, ByteArray> = mutableMapOf()
                         for (recipe in result.data.items) {
-                            if (existingRecipeIdsWithImages.contains(recipe.id)) {
-                                continue
-                            }
-                            val byteArrayResult = recipe.imageUrl?.let { url ->
-                                storageDataSource.fetchImageByteArray(url)
+                            val imageUrl = recipe.imageUrl
+                            val currentRecipe = currentRecipesById[recipe.id]
+                            val shouldDownloadImage = imageUrl != null && (
+                                currentRecipe?.imageUrl != imageUrl || currentRecipe.imageData == null
+                            )
+                            val byteArrayResult = if (shouldDownloadImage) {
+                                storageDataSource.fetchImageByteArray(imageUrl)
+                            } else {
+                                null
                             }
                             if (byteArrayResult is Result.Success) {
                                 byteArrays[recipe.id] = byteArrayResult.data
@@ -78,7 +82,7 @@ class RecipeRepositoryImpl @Inject constructor(
 
     override suspend fun updateRecipe(recipe: Recipe): Result<Unit, AppError> {
         val oldEntity = recipeLocalDataSource.getRecipeOnce(recipe.id)
-        recipeLocalDataSource.upsertRecipe(recipe.toEntity(oldEntity?.imageData))
+        recipeLocalDataSource.upsertRecipe(recipe.toEntity(oldEntity?.imageData, oldEntity?.imageUrl))
         return when (val result = recipeFirestoreDataSource.updateRecipe(recipe)) {
             is Result.Success -> Result.Success(Unit)
             is Result.Failure -> {
@@ -101,7 +105,10 @@ class RecipeRepositoryImpl @Inject constructor(
         }
     }
 
-    private fun Recipe.toEntity(imageData: ByteArray? = null) = RecipeEntity(
+    private fun Recipe.toEntity(
+        imageData: ByteArray? = null,
+        imageUrl: String? = null,
+    ) = RecipeEntity(
         id = id,
         familyId = familyId,
         itemName = itemName,
@@ -113,7 +120,8 @@ class RecipeRepositoryImpl @Inject constructor(
         favourite = favourite,
         servings = servings,
         tags = tags,
-        imageData = imageData
+        imageData = imageData,
+        imageUrl = imageUrl ?: this.imageUrl,
     )
 
     private fun RecipeEntity.toModel() = Recipe(
@@ -128,5 +136,6 @@ class RecipeRepositoryImpl @Inject constructor(
         favourite = favourite,
         servings = servings,
         tags = tags,
+        imageUrl = imageUrl,
     )
 }

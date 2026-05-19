@@ -6,7 +6,6 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.logic.toBitmap
-import com.example.lifetogether.domain.logic.toByteArray
 import com.example.lifetogether.domain.model.Completable
 import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.domain.model.recipe.Instruction
@@ -21,7 +20,6 @@ import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.domain.usecase.image.UploadImageUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
-import com.example.lifetogether.data.local.source.RecipeLocalDataSource
 import com.example.lifetogether.ui.navigation.RecipeDetailsNavRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.UUID
@@ -46,7 +44,6 @@ class RecipeDetailsViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val sessionRepository: SessionRepository,
     private val recipeRepository: RecipeRepository,
-    private val recipeLocalDataSource: RecipeLocalDataSource,
     private val uploadImageUseCase: UploadImageUseCase,
     @param:ApplicationContext private val context: Context,
 ) : ViewModel() {
@@ -550,11 +547,14 @@ class RecipeDetailsViewModel @Inject constructor(
         familyId: String,
         uri: Uri,
     ): Result<Unit, AppError> {
-        return uploadImageUseCase.invoke(
+        return when (val result = uploadImageUseCase.invoke(
             uri = uri,
             imageType = ImageType.RecipeImage(familyId, recipeId),
             context = context,
-        )
+        )) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> Result.Failure(result.error)
+        }
     }
 
     private suspend fun finishSaveAfterRecipeSaved(
@@ -571,14 +571,6 @@ class RecipeDetailsViewModel @Inject constructor(
                 uri = imageUri,
             )) {
                 is Result.Success -> {
-                    val previewBitmap = contentState()?.localImageBitmap
-                    if (previewBitmap != null) {
-                        recipeLocalDataSource.updateRecipeImageByteArray(
-                            familyId = familyId,
-                            recipeId = recipeId,
-                            imageData = previewBitmap.toByteArray(),
-                        )
-                    }
                     clearPendingRecipeImage()
                     if (navigateBack) {
                         _commands.send(RecipeDetailsCommand.NavigateBack)

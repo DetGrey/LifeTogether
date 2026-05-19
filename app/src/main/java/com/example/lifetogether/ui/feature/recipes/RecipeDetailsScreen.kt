@@ -7,7 +7,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,8 +28,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -45,6 +42,7 @@ import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.button.SecondaryButton
 import com.example.lifetogether.ui.common.list.CompletableCategoryList
+import com.example.lifetogether.ui.common.image.AnimatedBitmapImage
 import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.tagOptionRow.TagOption
 import com.example.lifetogether.ui.common.text.TextDefault
@@ -111,13 +109,12 @@ private fun RecipeDetailsContent(
                         .height(200.dp)
                         .background(MaterialTheme.colorScheme.tertiary),
                 ) {
+                    AnimatedBitmapImage(
+                        bitmap = displayedBitmap,
+                        modifier = Modifier.fillMaxSize(),
+                        contentDescription = "recipe image",
+                    )
                     if (displayedBitmap != null) {
-                        Image(
-                            modifier = Modifier.fillMaxSize(),
-                            bitmap = displayedBitmap.asImageBitmap(),
-                            contentDescription = "recipe image",
-                            contentScale = ContentScale.Crop,
-                        )
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()

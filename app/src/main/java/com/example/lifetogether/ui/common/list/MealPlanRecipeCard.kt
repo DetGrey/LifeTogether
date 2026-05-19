@@ -1,6 +1,5 @@
 package com.example.lifetogether.ui.common.list
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -18,12 +17,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.logic.minToHourMinString
 import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.ui.common.image.AnimatedBitmapImage
 import com.example.lifetogether.ui.common.image.rememberObservedImageBitmap
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextLabel
@@ -58,13 +56,12 @@ fun MealPlanRecipeCard(
                 .fillMaxWidth()
                 .height(190.dp),
         ) {
+            AnimatedBitmapImage(
+                bitmap = bitmap,
+                modifier = Modifier.fillMaxSize(),
+                contentDescription = "recipe image",
+            )
             if (bitmap != null) {
-                Image(
-                    bitmap = bitmap.asImageBitmap(),
-                    contentDescription = "recipe image",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                )
                 Box(
                     modifier = Modifier
                         .fillMaxSize()

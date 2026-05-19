@@ -1,7 +1,6 @@
 package com.example.lifetogether.ui.feature.gallery
 
 import android.graphics.Bitmap
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,11 +17,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
+import com.example.lifetogether.ui.common.image.AnimatedBitmapImage
 import com.example.lifetogether.ui.common.text.TextBodyLarge
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -47,19 +45,17 @@ fun AlbumCard(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
             shape = MaterialTheme.shapes.large,
         ) {
-            if (bitmap != null) {
-                Image(
-                    bitmap = bitmap.asImageBitmap(),
-                    contentDescription = "image",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            } else {
+            if (bitmap == null) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_gallery),
                     contentDescription = "gallery icon",
                 )
             }
+            AnimatedBitmapImage(
+                bitmap = bitmap,
+                modifier = Modifier.fillMaxSize(),
+                contentDescription = "image",
+            )
         }
         Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
         TextBodyLarge(

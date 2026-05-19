@@ -3,6 +3,15 @@ package com.example.lifetogether.data.local
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+val MIGRATION_33_34 = object : Migration(33, 34) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `users` ADD COLUMN `image_url` TEXT")
+        db.execSQL("ALTER TABLE `families` ADD COLUMN `image_url` TEXT")
+        db.execSQL("ALTER TABLE `recipes` ADD COLUMN `image_url` TEXT")
+        db.execSQL("ALTER TABLE `list_entries_routine` ADD COLUMN `image_url` TEXT")
+    }
+}
+
 val MIGRATION_32_33 = object : Migration(32, 33) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("DELETE FROM `user_lists` WHERE `type` = 'MEAL_PLANNER'")

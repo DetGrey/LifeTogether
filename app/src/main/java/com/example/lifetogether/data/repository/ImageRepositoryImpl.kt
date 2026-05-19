@@ -16,6 +16,7 @@ import com.example.lifetogether.data.remote.FamilyFirestoreDataSource
 import com.example.lifetogether.data.remote.RecipeFirestoreDataSource
 import com.example.lifetogether.data.remote.UserFirestoreDataSource
 import com.example.lifetogether.data.remote.UserListFirestoreDataSource
+import com.example.lifetogether.domain.model.image.UploadedImage
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.datasource.StorageDataSource
@@ -79,8 +80,17 @@ class ImageRepositoryImpl @Inject constructor(
         uri: Uri,
         imageType: ImageType,
         context: Context,
-    ): Result<String, AppError> {
-        return storageDataSource.uploadPhoto(uri, imageType, context)
+    ): Result<UploadedImage, AppError> {
+        return when (val uploadResult = storageDataSource.uploadPhoto(uri, imageType, context)) {
+            is Result.Success -> {
+                when (val persistResult = persistUploadedImageBytes(imageType, uploadResult.data.byteArray)) {
+                    is Result.Success -> Result.Success(uploadResult.data)
+                    is Result.Failure -> Result.Failure(persistResult.error)
+                }
+            }
+
+            is Result.Failure -> Result.Failure(uploadResult.error)
+        }
     }
 
     override suspend fun deleteImage(
@@ -113,12 +123,74 @@ class ImageRepositoryImpl @Inject constructor(
         url: String,
         imageType: ImageType,
     ): Result<Unit, AppError> {
-        return when (imageType) {
+        val remoteResult = when (imageType) {
             is ImageType.ProfileImage -> userFirestoreDataSource.saveUserImageUrl(imageType.uid, url)
             is ImageType.FamilyImage -> familyFirestoreDataSource.saveFamilyImageUrl(imageType.familyId, url)
             is ImageType.RecipeImage -> recipeFirestoreDataSource.saveRecipeImageUrl(imageType.recipeId, url)
             is ImageType.RoutineListEntryImage -> userListFirestoreDataSource.saveRoutineListEntryImageUrl(imageType.entryId, url)
             is ImageType.GalleryMedia -> Result.Failure(AppErrors.validation("Image type is not connected to one specific document"))
+        }
+        return when (remoteResult) {
+            is Result.Success -> {
+                when (val localResult = persistImageUrl(imageType, url)) {
+                    is Result.Success -> Result.Success(Unit)
+                    is Result.Failure -> localResult
+                }
+            }
+
+            is Result.Failure -> remoteResult
+        }
+    }
+
+    private suspend fun persistUploadedImageBytes(
+        imageType: ImageType,
+        byteArray: ByteArray,
+    ): Result<Unit, AppError> {
+        return try {
+            when (imageType) {
+                is ImageType.ProfileImage -> userLocalDataSource.updateProfileImageByteArray(imageType.uid, byteArray)
+                is ImageType.FamilyImage -> userLocalDataSource.updateFamilyImageByteArray(imageType.familyId, byteArray)
+                is ImageType.RecipeImage -> recipeLocalDataSource.updateRecipeImageByteArray(
+                    familyId = imageType.familyId,
+                    recipeId = imageType.recipeId,
+                    imageData = byteArray,
+                )
+                is ImageType.RoutineListEntryImage -> userListLocalDataSource.updateRoutineImageByteArray(
+                    familyId = imageType.familyId,
+                    entryId = imageType.entryId,
+                    imageData = byteArray,
+                )
+                is ImageType.GalleryMedia -> Unit
+            }
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Result.Failure(AppErrors.fromThrowable(e))
+        }
+    }
+
+    private suspend fun persistImageUrl(
+        imageType: ImageType,
+        url: String,
+    ): Result<Unit, AppError> {
+        return try {
+            when (imageType) {
+                is ImageType.ProfileImage -> userLocalDataSource.updateProfileImageUrl(imageType.uid, url)
+                is ImageType.FamilyImage -> userLocalDataSource.updateFamilyImageUrl(imageType.familyId, url)
+                is ImageType.RecipeImage -> recipeLocalDataSource.updateRecipeImageUrl(
+                    familyId = imageType.familyId,
+                    recipeId = imageType.recipeId,
+                    imageUrl = url,
+                )
+                is ImageType.RoutineListEntryImage -> userListLocalDataSource.updateRoutineImageUrl(
+                    familyId = imageType.familyId,
+                    entryId = imageType.entryId,
+                    imageUrl = url,
+                )
+                is ImageType.GalleryMedia -> Unit
+            }
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Result.Failure(AppErrors.fromThrowable(e))
         }
     }
 }

@@ -17,10 +17,22 @@ interface UserInformationDao {
     @Query("SELECT * FROM $USER_TABLE WHERE uid = :uid LIMIT 1")
     fun getItems(uid: String): Flow<UserEntity?>
 
+    @Query("SELECT * FROM $USER_TABLE WHERE uid = :uid LIMIT 1")
+    suspend fun getItemOnce(uid: String): UserEntity?
+
     @Query("SELECT image_data FROM $USER_TABLE WHERE uid = :uid LIMIT 1")
     fun observeImageByteArray(uid: String): Flow<ByteArray?>
 
-    @Query("SELECT image_data FROM $USER_TABLE WHERE uid = :uid LIMIT 1")
-    suspend fun getImageByteArray(uid: String): ByteArray?
+    @Query("UPDATE $USER_TABLE SET image_data = :imageData WHERE uid = :uid")
+    suspend fun updateImageByteArray(
+        uid: String,
+        imageData: ByteArray?,
+    )
+
+    @Query("UPDATE $USER_TABLE SET image_url = :imageUrl WHERE uid = :uid")
+    suspend fun updateImageUrl(
+        uid: String,
+        imageUrl: String?,
+    )
 
 }

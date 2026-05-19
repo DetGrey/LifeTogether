@@ -92,6 +92,8 @@ class UserListLocalDataSource @Inject constructor(
         return routineListsDao.getItemsByListId(familyId, listId)
     }
 
+    suspend fun getRoutineEntriesOnce(familyId: String): List<RoutineListEntryEntity> = routineListsDao.getItems(familyId).first()
+
     suspend fun updateRoutineListEntries(
         entities: List<RoutineListEntryEntity>,
         byteArrays: Map<String, ByteArray> = emptyMap(),
@@ -101,9 +103,16 @@ class UserListLocalDataSource @Inject constructor(
         val currentItemsById = currentItems.associateBy { it.id }
 
         val localEntities = entities.map { entity ->
-            val existingImage = currentItemsById[entity.id]?.imageData
+            val existingItem = currentItemsById[entity.id]
             val newImage = byteArrays[entity.id]
-            entity.copy(imageData = newImage ?: existingImage)
+            val existingImageUrl = existingItem?.imageUrl
+            val existingImageData = existingItem?.imageData
+            val imageData = when {
+                newImage != null -> newImage
+                existingImageUrl == entity.imageUrl -> existingImageData
+                else -> null
+            }
+            entity.copy(imageData = imageData)
         }
 
         val itemsToUpdate = computeItemsToUpdate(
@@ -123,10 +132,31 @@ class UserListLocalDataSource @Inject constructor(
         }
     }
 
-    suspend fun getRoutineEntryIdsWithImages(familyId: String): List<String> =
-        routineListsDao.getEntryIdsWithImages(familyId)
-
     suspend fun getRoutineEntryOnce(id: String): RoutineListEntryEntity? = routineListsDao.getItemOnce(id)
+
+    suspend fun updateRoutineImageByteArray(
+        familyId: String,
+        entryId: String,
+        imageData: ByteArray?,
+    ) {
+        routineListsDao.updateImageByteArray(
+            familyId = familyId,
+            entryId = entryId,
+            imageData = imageData,
+        )
+    }
+
+    suspend fun updateRoutineImageUrl(
+        familyId: String,
+        entryId: String,
+        imageUrl: String?,
+    ) {
+        routineListsDao.updateImageUrl(
+            familyId = familyId,
+            entryId = entryId,
+            imageUrl = imageUrl,
+        )
+    }
 
     suspend fun upsertRoutineEntry(entity: RoutineListEntryEntity) = routineListsDao.updateItems(listOf(entity))
 

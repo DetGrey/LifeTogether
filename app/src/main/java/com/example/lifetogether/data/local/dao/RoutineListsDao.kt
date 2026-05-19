@@ -34,8 +34,19 @@ interface RoutineListsDao {
     @Query("SELECT image_data FROM $ROUTINE_LIST_ENTRIES_TABLE WHERE id = :entryId LIMIT 1")
     fun observeImageByteArray(entryId: String): Flow<ByteArray?>
 
-    @Query("SELECT id FROM $ROUTINE_LIST_ENTRIES_TABLE WHERE family_id = :familyId AND image_data IS NOT NULL")
-    suspend fun getEntryIdsWithImages(familyId: String): List<String>
+    @Query("UPDATE $ROUTINE_LIST_ENTRIES_TABLE SET image_data = :imageData WHERE family_id = :familyId AND id = :entryId")
+    suspend fun updateImageByteArray(
+        familyId: String,
+        entryId: String,
+        imageData: ByteArray?,
+    )
+
+    @Query("UPDATE $ROUTINE_LIST_ENTRIES_TABLE SET image_url = :imageUrl WHERE family_id = :familyId AND id = :entryId")
+    suspend fun updateImageUrl(
+        familyId: String,
+        entryId: String,
+        imageUrl: String?,
+    )
 
     @Query("DELETE FROM $ROUTINE_LIST_ENTRIES_TABLE WHERE family_id = :familyId")
     suspend fun deleteFamilyItems(familyId: String)

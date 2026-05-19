@@ -1,7 +1,6 @@
 package com.example.lifetogether.ui.feature.lists.entryDetails.content
 
 import android.graphics.Bitmap
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,8 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -30,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.common.tagOptionRow.TagOption
+import com.example.lifetogether.ui.common.image.AnimatedBitmapImage
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.common.textfield.CustomTextField
@@ -65,18 +63,16 @@ fun LazyListScope.routineEntryForm(
                 },
             contentAlignment = Alignment.Center,
         ) {
-            if (displayBitmap != null) {
-                Image(
-                    modifier = Modifier.fillMaxSize(),
-                    bitmap = displayBitmap.asImageBitmap(),
-                    contentDescription = "entry image",
-                    contentScale = ContentScale.Crop,
-                )
-            } else {
+            if (displayBitmap == null) {
                 TextDefault(
                     text = if (uiState.isEditing) "Tap to add image" else "No image",
                 )
             }
+            AnimatedBitmapImage(
+                bitmap = displayBitmap,
+                modifier = Modifier.fillMaxSize(),
+                contentDescription = "entry image",
+            )
 
             if (uiState.isEditing) {
                 Box(

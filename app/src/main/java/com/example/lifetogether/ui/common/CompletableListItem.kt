@@ -32,7 +32,6 @@ fun CompletableListItem(
                 style = MaterialTheme.typography.bodyLarge,
                 textDecoration = if (isCompleted) TextDecoration.LineThrough else TextDecoration.None,
                 overflow = TextOverflow.Ellipsis,
-                maxLines = 1,
             )
         },
         colors = ListItemDefaults.colors(

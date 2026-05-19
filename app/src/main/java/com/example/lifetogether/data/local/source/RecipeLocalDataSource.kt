@@ -25,7 +25,15 @@ class RecipeLocalDataSource @Inject constructor(
     ) {
         val familyId = items.firstOrNull()?.familyId ?: return
         val currentItems = recipesDao.getItems(familyId).first()
-        var entities = items.map { item ->
+        val currentItemsById = currentItems.associateBy { it.id }
+        val entities = items.map { item ->
+            val existingItem = currentItemsById[item.id]
+            val newImage = byteArrays[item.id]
+            val imageData = when {
+                newImage != null -> newImage
+                existingItem?.imageUrl == item.imageUrl -> existingItem?.imageData
+                else -> null
+            }
             RecipeEntity(
                 id = item.id,
                 familyId = item.familyId,
@@ -38,12 +46,9 @@ class RecipeLocalDataSource @Inject constructor(
                 favourite = item.favourite,
                 servings = item.servings,
                 tags = item.tags,
+                imageData = imageData,
+                imageUrl = item.imageUrl,
             )
-        }
-        entities = entities.map { item ->
-            val existingImage = currentItems.find { it.id == item.id }?.imageData
-            val newImage = byteArrays[item.id]
-            item.copy(imageData = newImage ?: existingImage)
         }
         val itemsToUpdate = computeItemsToUpdate(
             currentItems = currentItems,
@@ -61,6 +66,8 @@ class RecipeLocalDataSource @Inject constructor(
 
     suspend fun getRecipeOnce(id: String): RecipeEntity? = recipesDao.getItemOnce(id)
 
+    suspend fun getRecipesOnce(familyId: String): List<RecipeEntity> = recipesDao.getItems(familyId).first()
+
     suspend fun upsertRecipe(entity: RecipeEntity) = recipesDao.updateItems(listOf(entity))
 
     suspend fun deleteRecipe(id: String) = recipesDao.deleteItems(listOf(id))
@@ -70,8 +77,6 @@ class RecipeLocalDataSource @Inject constructor(
             recipesDao.deleteItems(currentFamilyItems.map { it.id })
         }
     }
-
-    suspend fun getRecipeIdsWithImages(familyId: String): Set<String> = recipesDao.getRecipeIdsWithImages(familyId).toSet()
 
     fun observeImageByteArray(
         familyId: String,
@@ -87,6 +92,18 @@ class RecipeLocalDataSource @Inject constructor(
             familyId = familyId,
             recipeId = recipeId,
             imageData = imageData,
+        )
+    }
+
+    suspend fun updateRecipeImageUrl(
+        familyId: String,
+        recipeId: String,
+        imageUrl: String?,
+    ) {
+        recipesDao.updateImageUrl(
+            familyId = familyId,
+            recipeId = recipeId,
+            imageUrl = imageUrl,
         )
     }
 }

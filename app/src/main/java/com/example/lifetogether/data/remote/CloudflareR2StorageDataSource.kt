@@ -21,6 +21,7 @@ import aws.smithy.kotlin.runtime.net.url.Url
 import com.example.lifetogether.BuildConfig
 import com.example.lifetogether.data.logic.ImageProcessor
 import com.example.lifetogether.di.IoDispatcher
+import com.example.lifetogether.domain.model.image.UploadedImage
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.datasource.StorageDataSource
@@ -76,7 +77,7 @@ class CloudflareR2StorageDataSource @Inject constructor(
         uri: Uri,
         imageType: ImageType,
         context: Context,
-    ): Result<String, AppError> {
+    ): Result<UploadedImage, AppError> {
         return appResultOfSuspend {
             // Process image (rotate, resize, compress)
             val processedImage = imageProcessor.processImage(uri, imageType, context)
@@ -101,7 +102,10 @@ class CloudflareR2StorageDataSource @Inject constructor(
 
             // Return the R2.dev public URL
             val downloadUrl = "$PUBLIC_URL_BASE/$objectKey"
-            downloadUrl
+            UploadedImage(
+                downloadUrl = downloadUrl,
+                byteArray = processedImage.data,
+            )
         }
     }
 

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
@@ -26,11 +27,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.logic.toAbbreviatedDateString
+import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.add.AddNewListItem
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
@@ -224,9 +227,10 @@ fun GroceryListScreen(
                     onClick = { suggestion ->
                         onUiEvent(GroceryListUiEvent.SuggestionClicked(suggestion))
                     },
+                    modifier = Modifier.offset(y = 16.dp)
                 )
             }
-            AddNewListItem( //todo make the GrocerySuggestionPopup overlap a bit behind it
+            AddNewListItem(
                 textValue = contentState?.newItemText.orEmpty(),
                 onTextChange = { onUiEvent(GroceryListUiEvent.NewItemTextChanged(it)) },
                 priceValue = contentState?.newItemPrice.orEmpty(),
@@ -255,19 +259,7 @@ fun GroceryListScreen(
 
 @Preview(showBackground = true)
 @Composable
-private fun GroceryListScreenPreview() {
-    LifeTogetherTheme {
-        GroceryListScreen(
-            uiState = GroceryListUiState.Loading,
-            onUiEvent = {},
-            onNavigationEvent = {},
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun GroceryListScreenPreview2() {
+private fun GroceryListScreenContentPreview() {
     LifeTogetherTheme {
         GroceryListScreen(
             uiState = GroceryListUiState.Content(
@@ -322,9 +314,25 @@ private fun GroceryListScreenPreview2() {
                 ),
                 expectedTotalPrice = 40.0F,
                 allGrocerySuggestions = emptyList(),
-                currentGrocerySuggestions = emptyList(),
+                currentGrocerySuggestions = listOf(GrocerySuggestion(
+                    id = "294814r",
+                    suggestionName = "Suggestion 1",
+                    category = UNCATEGORIZED_CATEGORY,
+                )),
                 completedSectionExpanded = true,
             ),
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun GroceryListScreenLoadingPreview() {
+    LifeTogetherTheme {
+        GroceryListScreen(
+            uiState = GroceryListUiState.Loading,
             onUiEvent = {},
             onNavigationEvent = {},
         )

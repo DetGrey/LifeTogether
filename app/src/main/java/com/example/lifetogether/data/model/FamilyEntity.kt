@@ -13,6 +13,8 @@ data class FamilyEntity(
 
     @ColumnInfo(name = "image_data")
     val imageData: ByteArray? = null,
+    @ColumnInfo(name = "image_url")
+    val imageUrl: String? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -25,6 +27,7 @@ data class FamilyEntity(
             if (other.imageData == null) return false
             if (!imageData.contentEquals(other.imageData)) return false
         } else if (other.imageData != null) return false
+        if (imageUrl != other.imageUrl) return false
 
         return true
     }
@@ -32,6 +35,7 @@ data class FamilyEntity(
     override fun hashCode(): Int {
         var result = familyId.hashCode()
         result = 31 * result + (imageData?.contentHashCode() ?: 0)
+        result = 31 * result + (imageUrl?.hashCode() ?: 0)
         return result
     }
 }

@@ -1,7 +1,6 @@
 package com.example.lifetogether.ui.feature.lists.entryDetails
 
 import android.content.Context
-import android.net.Uri
 import com.example.lifetogether.domain.logic.RecurrenceCalculator
 import com.example.lifetogether.domain.model.lists.NoteEntry
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
@@ -36,19 +35,6 @@ class ListEntryDetailsSaver @Inject constructor(
         }
     }
 
-    suspend fun uploadRoutineImage(
-        uri: Uri,
-        familyId: String,
-        entryId: String,
-        context: Context,
-    ): Result<Unit, AppError> {
-        return uploadImageUseCase.invoke(
-            uri = uri,
-            imageType = ImageType.RoutineListEntryImage(familyId, entryId),
-            context = context,
-        )
-    }
-
     private suspend fun saveRoutine(
         details: EntryDetailsContent.Routine,
         entryId: String?,
@@ -60,17 +46,21 @@ class ListEntryDetailsSaver @Inject constructor(
         val form = details.form
         val interval = form.interval.toInt()
         val weekdays = form.selectedWeekdays.sorted()
+        val routineId = entryId ?: UUID.randomUUID().toString()
         val tempEntry = RoutineListEntry(
-            id = entryId ?: UUID.randomUUID().toString(),
+            id = routineId,
             familyId = familyId,
             listId = listId,
             itemName = form.name.trim(),
             lastUpdated = now,
-            dateCreated = now,
+            dateCreated = form.dateCreated ?: now,
             nextDate = now,
+            lastCompletedAt = form.lastCompletedAt,
+            completionCount = form.completionCount,
             recurrenceUnit = form.recurrenceUnit,
             interval = interval,
             weekdays = weekdays,
+            imageUrl = form.imageUrl,
         )
         val calculatedNextDate = RecurrenceCalculator.nextDate(tempEntry, now)
         val draft = tempEntry.copy(nextDate = calculatedNextDate)
@@ -91,7 +81,20 @@ class ListEntryDetailsSaver @Inject constructor(
                 is Result.Failure -> Result.Failure(saveResult.error)
             }
         } else {
-            when (val updateResult = userListRepository.updateRoutineListEntry(draft)) {
+            val entryWithImage = if (form.pendingImageUri != null) {
+                when (val uploadResult = uploadImageUseCase.invoke(
+                    uri = form.pendingImageUri,
+                    imageType = ImageType.RoutineListEntryImage(familyId, routineId),
+                    context = context,
+                )) {
+                    is Result.Success -> draft.copy(imageUrl = uploadResult.data.downloadUrl)
+                    is Result.Failure -> draft
+                }
+            } else {
+                draft
+            }
+
+            when (val updateResult = userListRepository.updateRoutineListEntry(entryWithImage)) {
                 is Result.Success -> Result.Success(Unit)
                 is Result.Failure -> Result.Failure(updateResult.error)
             }

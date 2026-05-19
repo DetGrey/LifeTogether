@@ -1,10 +1,10 @@
 package com.example.lifetogether.domain.usecase.image
 
 import com.example.lifetogether.domain.result.AppError
-
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import com.example.lifetogether.domain.model.image.UploadedImage
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.repository.ImageRepository
 import com.example.lifetogether.domain.result.Result
@@ -21,13 +21,13 @@ class UploadImageUseCase @Inject constructor(
         uri: Uri,
         imageType: ImageType,
         context: Context,
-    ): Result<Unit, AppError> {
+    ): Result<UploadedImage, AppError> {
         Log.d(TAG, "invoke")
         val firebaseStorageResult = imageRepository.uploadImage(uri, imageType, context)
         Log.d(TAG, "uploadImage completed")
         when (firebaseStorageResult) {
             is Result.Success -> {
-                val url = firebaseStorageResult.data
+                val url = firebaseStorageResult.data.downloadUrl
                 Log.d(TAG, "image upload returned url; updating references")
                 val firestoreDeleteOldImageResult = imageRepository.deleteImage(imageType)
 
@@ -36,7 +36,10 @@ class UploadImageUseCase @Inject constructor(
                 if (firestoreDeleteOldImageResult is Result.Failure && firestoreNewUrlResult is Result.Success) {
                     return firestoreDeleteOldImageResult
                 }
-                return firestoreNewUrlResult
+                return when (firestoreNewUrlResult) {
+                    is Result.Success -> Result.Success(firebaseStorageResult.data)
+                    is Result.Failure -> firestoreNewUrlResult
+                }
             }
             is Result.Failure -> {
                 return Result.Failure(firebaseStorageResult.error)

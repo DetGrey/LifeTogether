@@ -235,20 +235,12 @@ private fun WishCard(
                     maxLines = 1,
                 )
             }
-
-            Column(
-                modifier = Modifier.padding(top = LifeTogetherTokens.spacing.xSmall),
-                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),
-            ) {
-
-
-                if (!wishNotesSnippet.isNullOrBlank()) {
-                    TextDefault(
-                        text = wishNotesSnippet,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        maxLines = 2,
-                    )
-                }
+            if (!wishNotesSnippet.isNullOrBlank()) {
+                TextDefault(
+                    text = wishNotesSnippet,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    maxLines = 2,
+                )
             }
         }
     }

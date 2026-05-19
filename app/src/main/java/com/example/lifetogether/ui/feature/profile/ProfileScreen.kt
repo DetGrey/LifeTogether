@@ -3,7 +3,6 @@ package com.example.lifetogether.ui.feature.profile
 import android.graphics.Bitmap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,8 +22,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -36,6 +33,7 @@ import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
+import com.example.lifetogether.ui.common.image.AnimatedBitmapImage
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.text.TextHeadingLarge
@@ -112,14 +110,7 @@ fun ProfileScreen(
                                     .background(color = MaterialTheme.colorScheme.onBackground),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                if (bitmap != null) {
-                                    Image(
-                                        modifier = Modifier.fillMaxSize(),
-                                        bitmap = bitmap.asImageBitmap(),
-                                        contentDescription = "profile picture",
-                                        contentScale = ContentScale.Crop,
-                                    )
-                                } else {
+                                if (bitmap == null) {
                                     androidx.compose.material3.Icon(
                                         modifier = Modifier.fillMaxSize(),
                                         painter = painterResource(id = R.drawable.ic_avatar),
@@ -127,6 +118,11 @@ fun ProfileScreen(
                                         tint = Color.Unspecified,
                                     )
                                 }
+                                AnimatedBitmapImage(
+                                    bitmap = bitmap,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentDescription = "profile picture",
+                                )
                             }
 
                             Box(

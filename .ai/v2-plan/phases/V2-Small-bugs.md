@@ -40,12 +40,12 @@ Here are some questions:
 - [x] Fix recipe search in new meal plan entry details. It used to work.
 
 ### Grocery
-- [ ] Fix long text layout in Add grocery item.
+- [?] Fix long text layout in Add grocery item.
 - [ ] _Add an amount field to grocery items_.
 
 ### Lists
 - [x] Add a more menu for deleting entries in lists overview screen that deletes the whole list and entries.
-- [ ] Wishlist items with no description should have no extra spacing and no empty text in listdetails.
+- [x] Wishlist items with no description should have no extra spacing and no empty text in listdetails.
 - [ ] Add rename inside list details when not in selection mode
 
 ### Recipes
@@ -69,12 +69,12 @@ Here are some questions:
 - [ ] Recipe card with image (two options)
   - Have prep time below title and image box to the right a bit like routines
   - Or have image behind with gradient from the left with prep and title to the left
-- Recipe instructions cannot be read since they should be multiline
+- [x] Recipe instructions cannot be read since they should be multiline
 
 ### Guides
 - [ ] Add guide manually does not work that well.
 - [ ] _Make the UI nicer_.
-- [ ] OptionRow should not have dividers inside guides.
+- [x] OptionRow should not have dividers inside guides.
 - [ ] Make the step content text inside the step player bigger.
 - [ ] The step player should show whether a step is completed and show the datetime of completion/last edited.
 - [ ] When changing guide visibility, do not reset progress since progress is private anyway.
@@ -104,8 +104,9 @@ Here are some questions:
   - Use predefined messages in code instead of Firestore to reduce fetching.
 - [ ] Change x days together so it is only shown if a date is added to family info.
   - This means that a new variable should be added to the data class
+  - (TODO SOON)
 - [ ] _Add special day under family settings or the countdown page._
-- [ ] Clickable area is wrong in personal details
+- [x] Clickable area is wrong in personal details
 
 ### Family memories and widgets
 - [ ] _Add likes and dislikes for food and everything else._
@@ -140,14 +141,10 @@ Here are some questions:
 - [ ] Error messages should not show when null, instead of keeping both a string and boolean.
 - [ ] _Make the image download success and version update dialogs nicer._
 - [ ] _Show a dialog when there is a new version available._
-- [ ] Animate when image is loaded and about to be shown e.g. for recipes and such so it doesn't just pop up
+- [x] Animate when image is loaded and about to be shown e.g. for recipes, routine and such so it doesn't just pop up
 - [ ] Pressing back on phone should be interupted in selection mode on all screens that have it so it just leaves selection mode instead of navigating back
+  - (TODO SOON)
 
 ## Shelved changes:
-Fixing clickable area in ProfileDetails.kt
 
 Trying out two-row AddNewListItem.kt
-
-WishesSection.kt spacing fixed
-
-CompletableListItem.kt can have multiline (should fix instructions)

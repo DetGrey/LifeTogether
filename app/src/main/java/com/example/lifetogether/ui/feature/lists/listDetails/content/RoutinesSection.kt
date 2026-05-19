@@ -1,7 +1,6 @@
 package com.example.lifetogether.ui.feature.lists.listDetails.content
 
 import android.graphics.Bitmap
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
@@ -21,11 +20,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.ui.common.list.CompletableBox
+import com.example.lifetogether.ui.common.image.AnimatedBitmapImage
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
@@ -120,14 +118,11 @@ fun RoutinesSection(
                                 ),
                             contentAlignment = Alignment.Center,
                         ) {
-                            bitmap?.let {
-                                Image(
-                                    bitmap = it.asImageBitmap(),
-                                    contentDescription = "entry image",
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop,
-                                )
-                            }
+                            AnimatedBitmapImage(
+                                bitmap = bitmap,
+                                modifier = Modifier.fillMaxSize(),
+                                contentDescription = "entry image",
+                            )
                         }
                     }
                 }

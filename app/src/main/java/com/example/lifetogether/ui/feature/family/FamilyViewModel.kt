@@ -118,11 +118,14 @@ class FamilyViewModel @Inject constructor(
     private suspend fun performFamilyImageUpload(uri: Uri): Result<Unit, AppError> {
         val familyId = (uiState.value as? FamilyUiState.Content)?.familyId
             ?: return Result.Failure(AppError.Validation("Missing family context"))
-        return uploadImageUseCase.invoke(
+        return when (val result = uploadImageUseCase.invoke(
             uri = uri,
             imageType = ImageType.FamilyImage(familyId),
             context = context,
-        )
+        )) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> Result.Failure(result.error)
+        }
     }
 
     private fun observeFamilyInformation(familyId: String?) {

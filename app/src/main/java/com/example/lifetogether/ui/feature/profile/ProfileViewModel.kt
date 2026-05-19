@@ -94,11 +94,14 @@ class ProfileViewModel @Inject constructor(
     private suspend fun performProfileImageUpload(uri: Uri): Result<Unit, AppError> {
         val uid = (uiState.value as? ProfileUiState.Content)?.userInformation?.uid
             ?: return Result.Failure(AppError.Validation("Missing user context"))
-        return uploadImageUseCase.invoke(
+        return when (val result = uploadImageUseCase.invoke(
             uri = uri,
             imageType = ImageType.ProfileImage(uid),
             context = context,
-        )
+        )) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> Result.Failure(result.error)
+        }
     }
 
     private fun showNameDialog() {

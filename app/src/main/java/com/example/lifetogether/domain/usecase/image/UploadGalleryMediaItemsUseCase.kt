@@ -94,8 +94,8 @@ class UploadGalleryMediaItemsUseCase @Inject constructor(
 
                         when (val fileUploadResult = imageRepository.uploadImage(uri, imageType, context)) {
                             is Result.Success -> {
-                                Log.d(TAG, "Image $itemName uploaded: ${fileUploadResult.data}")
-                                successfullyUploadedMedia.add(mediaType.copy(mediaUrl = fileUploadResult.data))
+                                Log.d(TAG, "Image $itemName uploaded: ${fileUploadResult.data.downloadUrl}")
+                                successfullyUploadedMedia.add(mediaType.copy(mediaUrl = fileUploadResult.data.downloadUrl))
                             }
 
                             is Result.Failure -> {

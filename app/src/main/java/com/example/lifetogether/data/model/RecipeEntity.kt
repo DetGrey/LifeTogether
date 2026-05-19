@@ -29,6 +29,8 @@ data class RecipeEntity(
     val tags: List<String>,
     @ColumnInfo(name = "image_data")
     val imageData: ByteArray? = null,
+    @ColumnInfo(name = "image_url")
+    val imageUrl: String? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -51,6 +53,7 @@ data class RecipeEntity(
             if (other.imageData == null) return false
             if (!imageData.contentEquals(other.imageData)) return false
         } else if (other.imageData != null) return false
+        if (imageUrl != other.imageUrl) return false
 
         return true
     }
@@ -68,6 +71,7 @@ data class RecipeEntity(
         result = 31 * result + servings
         result = 31 * result + tags.hashCode()
         result = 31 * result + (imageData?.contentHashCode() ?: 0)
+        result = 31 * result + (imageUrl?.hashCode() ?: 0)
         return result
     }
 }

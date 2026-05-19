@@ -32,9 +32,10 @@ import com.example.lifetogether.util.priceToString
 fun GrocerySuggestionPopup(
     suggestions: List<GrocerySuggestion>,
     onClick: (GrocerySuggestion) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .heightIn(max = 130.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f)),
@@ -46,10 +47,11 @@ fun GrocerySuggestionPopup(
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = LifeTogetherTokens.spacing.medium),
+                .padding(horizontal = LifeTogetherTokens.spacing.medium)
+                .padding(bottom = LifeTogetherTokens.spacing.medium),
             contentPadding = PaddingValues(
-                top = LifeTogetherTokens.spacing.medium,
-                bottom = LifeTogetherTokens.spacing.medium,
+                top = LifeTogetherTokens.spacing.small,
+                bottom = LifeTogetherTokens.spacing.small,
             ),
             verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
         ) {

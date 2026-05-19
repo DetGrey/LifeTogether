@@ -126,12 +126,18 @@ class UserListRepositoryImpl @Inject constructor(
                 userListLocalDataSource.deleteFamilyRoutineListEntries(familyId)
             },
             onVisibleEntries = { visibleEntries ->
-                val existingIdsWithImages = userListLocalDataSource.getRoutineEntryIdsWithImages(familyId)
+                val currentEntriesById = userListLocalDataSource.getRoutineEntriesOnce(familyId).associateBy { it.id }
                 val byteArrays: MutableMap<String, ByteArray> = mutableMapOf()
                 for (entry in visibleEntries) {
-                    if (existingIdsWithImages.contains(entry.id)) continue
-                    val byteArrayResult = entry.imageUrl?.let { url ->
-                        storageDataSource.fetchImageByteArray(url)
+                    val imageUrl = entry.imageUrl
+                    val currentEntry = currentEntriesById[entry.id]
+                    val shouldDownloadImage = imageUrl != null && (
+                        currentEntry?.imageUrl != imageUrl || currentEntry.imageData == null
+                    )
+                    val byteArrayResult = if (shouldDownloadImage) {
+                        storageDataSource.fetchImageByteArray(imageUrl)
+                    } else {
+                        null
                     }
                     if (byteArrayResult is Result.Success) {
                         byteArrays[entry.id] = byteArrayResult.data
@@ -172,7 +178,7 @@ class UserListRepositoryImpl @Inject constructor(
 
     override suspend fun updateRoutineListEntry(entry: RoutineListEntry): Result<Unit, AppError> {
         val oldEntity = userListLocalDataSource.getRoutineEntryOnce(entry.id)
-        userListLocalDataSource.upsertRoutineEntry(entry.toEntity(oldEntity?.imageData))
+        userListLocalDataSource.upsertRoutineEntry(entry.toEntity(oldEntity?.imageData, oldEntity?.imageUrl))
         return when (val result = userListFirestoreDataSource.updateRoutineListEntry(entry)) {
             is Result.Success -> Result.Success(Unit)
             is Result.Failure -> {
@@ -527,6 +533,7 @@ class UserListRepositoryImpl @Inject constructor(
         recurrenceUnit = recurrenceUnit,
         interval = interval,
         weekdays = weekdays,
+        imageUrl = imageUrl,
     )
 
     private fun WishListEntryEntity.toModel() = WishListEntry(
@@ -564,7 +571,10 @@ class UserListRepositoryImpl @Inject constructor(
         dateCreated = dateCreated,
     )
 
-    private fun RoutineListEntry.toEntity(imageData: ByteArray? = null) = RoutineListEntryEntity(
+    private fun RoutineListEntry.toEntity(
+        imageData: ByteArray? = null,
+        imageUrl: String? = null,
+    ) = RoutineListEntryEntity(
         id = id,
         familyId = familyId,
         listId = listId,
@@ -578,6 +588,7 @@ class UserListRepositoryImpl @Inject constructor(
         interval = interval,
         weekdays = weekdays,
         imageData = imageData,
+        imageUrl = imageUrl ?: this.imageUrl,
     )
 
     private fun WishListEntry.toEntity() = WishListEntryEntity(
