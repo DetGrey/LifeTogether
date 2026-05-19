@@ -142,7 +142,7 @@ fun MealPlanDetailsScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun MealPlanDetailsScreenPreview() {
+private fun MealPlanDetailsScreenPreview() {
     LifeTogetherTheme {
     }
 }

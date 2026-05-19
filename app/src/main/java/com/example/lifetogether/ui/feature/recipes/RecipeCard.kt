@@ -83,7 +83,7 @@ fun RecipeCard(
 
 @Preview(showBackground = true)
 @Composable
-fun RecipeCardPreview() {
+private fun RecipeCardPreview() {
     LifeTogetherTheme {
         RecipeCard(
             Recipe(

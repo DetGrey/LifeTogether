@@ -88,7 +88,7 @@ fun GroceryListItem(
 
 @Preview(showBackground = true)
 @Composable
-fun GroceryListItemPreview() {
+private fun GroceryListItemPreview() {
     LifeTogetherTheme {
         Column {
             GroceryListItem(

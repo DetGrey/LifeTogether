@@ -108,7 +108,7 @@ fun SettingsItem(
 
 @Preview
 @Composable
-fun SettingsItemPreview() {
+private fun SettingsItemPreview() {
     LifeTogetherTheme {
         ProvideTextStyle(value = AppTypography.bodyMedium) {
             SettingsItem(

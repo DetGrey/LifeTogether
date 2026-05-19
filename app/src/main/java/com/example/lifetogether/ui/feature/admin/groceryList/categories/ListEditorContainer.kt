@@ -56,7 +56,7 @@ fun ListEditorContainer(
 
 @Preview(showBackground = true)
 @Composable
-fun ListEditorContainerPreview() {
+private fun ListEditorContainerPreview() {
     LifeTogetherTheme {
         ListEditorContainer(listOf("🍎 Fruits and vegetables", "🍞 Bakery", "❄️ Frozen food")) { }
     }

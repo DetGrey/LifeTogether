@@ -65,7 +65,7 @@ fun <T> ConfirmationDialogWithDropdown(
 
 @Preview
 @Composable
-fun ConfirmationDialogWithDropdownPreview() {
+private fun ConfirmationDialogWithDropdownPreview() {
     LifeTogetherTheme {
         ConfirmationDialogWithDropdown(
             onDismiss = { },

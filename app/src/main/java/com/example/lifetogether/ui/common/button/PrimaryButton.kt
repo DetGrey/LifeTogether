@@ -57,7 +57,7 @@ fun PrimaryButton(
 
 @Preview(showBackground = true)
 @Composable
-fun PrimaryButtonPreview() {
+private fun PrimaryButtonPreview() {
     LifeTogetherTheme {
         Column {
             PrimaryButton(

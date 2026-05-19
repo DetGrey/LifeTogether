@@ -69,7 +69,7 @@ fun FlowRowScope.FeatureCard(
 @OptIn(ExperimentalLayoutApi::class)
 @Preview(showBackground = true)
 @Composable
-fun FeatureCardPreview() {
+private fun FeatureCardPreview() {
     LifeTogetherTheme {
         FlowRow(
             modifier = Modifier.fillMaxWidth(),

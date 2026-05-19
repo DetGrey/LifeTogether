@@ -319,7 +319,7 @@ private fun CreateListDialog(
 
 @Preview(showBackground = true)
 @Composable
-fun UserListCardPreview() {
+private fun UserListCardPreview() {
     LifeTogetherTheme {
         Column(
             modifier = Modifier.padding(LifeTogetherTokens.spacing.medium),
@@ -361,7 +361,7 @@ fun UserListCardPreview() {
 
 @Preview(showBackground = true)
 @Composable
-fun CreateListDialogPreview() {
+private fun CreateListDialogPreview() {
     LifeTogetherTheme {
         CreateListDialog(
             name = "Morning Routines",

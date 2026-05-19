@@ -247,7 +247,7 @@ fun ProfileScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun ProfileScreenPreview() {
+private fun ProfileScreenPreview() {
     LifeTogetherTheme {
         ProfileScreen(
             uiState = ProfileUiState.Content(

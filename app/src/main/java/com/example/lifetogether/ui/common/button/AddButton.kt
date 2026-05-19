@@ -33,7 +33,7 @@ fun AddButton(
 
 @Preview(showBackground = true)
 @Composable
-fun AddButtonPreview() {
+private fun AddButtonPreview() {
     LifeTogetherTheme {
         AddButton(onClick = {})
     }

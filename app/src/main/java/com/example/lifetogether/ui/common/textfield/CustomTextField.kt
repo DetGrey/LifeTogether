@@ -85,7 +85,7 @@ fun CustomTextField(
 
 @Preview
 @Composable
-fun CustomTextFieldPreview() {
+private fun CustomTextFieldPreview() {
     LifeTogetherTheme {
         CustomTextField(
             value = "email@email.com",

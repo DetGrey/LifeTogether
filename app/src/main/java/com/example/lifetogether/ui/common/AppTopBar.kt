@@ -82,7 +82,7 @@ fun AppTopBar(
 
 @Preview(showBackground = true)
 @Composable
-fun AppTopBarPreview() {
+private fun AppTopBarPreview() {
     LifeTogetherTheme {
         AppTopBar(
             leftAppIcon = AppIcon(

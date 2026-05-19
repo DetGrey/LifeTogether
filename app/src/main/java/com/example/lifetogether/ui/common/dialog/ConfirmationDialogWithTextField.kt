@@ -75,7 +75,7 @@ fun ConfirmationDialogWithTextField(
 
 @Preview
 @Composable
-fun ConfirmationDialogWithTextFieldPreview() {
+private fun ConfirmationDialogWithTextFieldPreview() {
     LifeTogetherTheme {
         ConfirmationDialogWithTextField(
             onDismiss = { },

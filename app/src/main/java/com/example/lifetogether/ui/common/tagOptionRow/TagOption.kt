@@ -52,7 +52,7 @@ fun TagOption(
 
 @Preview(showBackground = true)
 @Composable
-fun ListEntryDetailsScreenPreview() {
+private fun ListEntryDetailsScreenPreview() {
     LifeTogetherTheme {
         Column {
             TagOption(

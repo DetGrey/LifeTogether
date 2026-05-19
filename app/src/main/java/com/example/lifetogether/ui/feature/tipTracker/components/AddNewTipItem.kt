@@ -126,7 +126,7 @@ fun AddNewTipItem(
 
 @Preview(showBackground = true)
 @Composable
-fun ListEntryCardDailyPreview() {
+private fun ListEntryCardDailyPreview() {
     LifeTogetherTheme {
         AddNewTipItem(
             textValue = "133",

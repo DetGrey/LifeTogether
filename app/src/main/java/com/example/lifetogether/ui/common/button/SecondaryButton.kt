@@ -34,7 +34,7 @@ fun SecondaryButton(
 
 @Preview(showBackground = true)
 @Composable
-fun SecondaryButtonPreview() {
+private fun SecondaryButtonPreview() {
     LifeTogetherTheme {
         SecondaryButton(
             text = "Cancel",

@@ -60,10 +60,8 @@ Here are some questions:
   - _Probably need a new type of recipe card for searching which includes the tag/ingredient etc that got matched in the search so the user knows why it's showing_
 - [ ] _Export or share recipes as PDF_.
 - [ ] _Ingredients and instructions need stable IDs_.
-- [ ] When adding ingredients, do not start capitalized
-  - (TODO SOON)
-- [ ] Recipe servings should be 1 to 100 instead of few predefined
-  - (TODO SOON)
+- [x] When adding ingredients, do not start capitalized
+- [x] Recipe servings should be 1 to 100 instead of few predefined
 - [ ] Ingredient add to grocery list button when grocery suggestion exists
   - Show informational snackbar (version of error snackbar) if already exists on grocery list so it doesn't get added twice from this
   - It can still be added twice from the grocery screen itself though
@@ -71,18 +69,15 @@ Here are some questions:
   - (TODO WOULD LIKE TO IMPLEMENT)
 - [ ] Have add to meal plan button on recipes that autofill with that recipe and opens the create meal plan
   - (TODO WOULD LIKE TO IMPLEMENT)
-- [ ] Recipe card with image (two options)
+- [x] Recipe card with image (two options)
   - Have prep time below title and image box to the right a bit like routines
   - Or have image behind with gradient from the left with prep and title to the left
-  - (TODO SOON)
 - [x] Recipe instructions cannot be read since they should be multiline
 
 ### Guides
 - [ ] Add guide manually does not work that well.
 - [ ] _Make the UI nicer_.
 - [x] OptionRow should not have dividers inside guides.
-- [ ] Make the step content text inside the step player bigger.
-  - (TODO SOON)
 - [ ] The step player should show whether a step is completed and show the datetime of completion/last edited.
   - (TODO SOON)
 - [ ] When changing guide visibility, do not reset progress since progress is private anyway.

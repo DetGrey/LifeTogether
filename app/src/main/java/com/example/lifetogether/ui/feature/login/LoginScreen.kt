@@ -97,7 +97,7 @@ fun LoginScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun LoginScreenPreview() {
+private fun LoginScreenPreview() {
     LifeTogetherTheme {
         LoginScreen(
             uiState = LoginUiState(

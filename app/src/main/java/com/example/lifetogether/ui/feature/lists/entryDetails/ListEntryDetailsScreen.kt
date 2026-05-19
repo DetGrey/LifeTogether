@@ -133,7 +133,7 @@ fun ListEntryDetailsScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun ListEntryDetailsScreenPreview() {
+private fun ListEntryDetailsScreenPreview() {
     LifeTogetherTheme {
         ListEntryDetailsScreen(
             uiState = EntryDetailsUiState.Content(

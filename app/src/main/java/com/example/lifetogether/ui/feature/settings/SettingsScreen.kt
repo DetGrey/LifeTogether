@@ -148,7 +148,7 @@ fun SettingsScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun SettingsScreenPreview() {
+private fun SettingsScreenPreview() {
     LifeTogetherTheme {
         SettingsScreen(
             uiState = SettingsUiState.Content(

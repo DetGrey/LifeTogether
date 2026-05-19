@@ -137,7 +137,7 @@ fun ItemCategoryList(
 
 @Preview(showBackground = true)
 @Composable
-fun ItemCategoryListPreview() {
+private fun ItemCategoryListPreview() {
     LifeTogetherTheme {
         ItemCategoryList(
             category = Category(

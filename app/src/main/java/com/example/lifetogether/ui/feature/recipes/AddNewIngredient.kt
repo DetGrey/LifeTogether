@@ -70,7 +70,6 @@ fun AddNewIngredient(
                 value = ingredient.itemName,
                 onValueChange = { updateIngredient("itemName", it) },
                 label = "Ingredient name...",
-                capitalization = true,
                 keyboardType = KeyboardType.Text,
                 imeAction = ImeAction.Done,
             )
@@ -131,7 +130,7 @@ fun AddNewIngredient(
 
 @Preview(showBackground = true)
 @Composable
-fun Preview() {
+private fun Preview() {
     LifeTogetherTheme {
         AddNewIngredient(
             onAddClick = {}

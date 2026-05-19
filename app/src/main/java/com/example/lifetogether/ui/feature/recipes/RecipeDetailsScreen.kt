@@ -52,6 +52,8 @@ import com.example.lifetogether.domain.model.recipe.Instruction
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
+private val recipeServingsOptions = (1..100).map(Int::toString)
+
 @Composable
 fun RecipeDetailsScreen(
     uiState: RecipeDetailsUiState,
@@ -283,7 +285,7 @@ private fun RecipeDetailsContent(
                                     onUiEvent(RecipeDetailsUiEvent.ServingsChanged(it))
                                 },
                                 label = "E.g. 2",
-                                isEditable = uiState.editMode,
+                                isEditable = true,
                                 textStyle = MaterialTheme.typography.bodySmall,
                                 keyboardType = KeyboardType.Number,
                                 imeAction = ImeAction.Done,
@@ -295,8 +297,7 @@ private fun RecipeDetailsContent(
                                 onExpandedChange = {
                                     onUiEvent(RecipeDetailsUiEvent.ServingsExpandedChanged(it))
                                 },
-                                options = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
-                                    "12", "15", "20", "30", "40"),
+                                options = recipeServingsOptions,
                                 label = null,
                                 onValueChangedEvent = {
                                     onUiEvent(RecipeDetailsUiEvent.ServingsChanged(it))

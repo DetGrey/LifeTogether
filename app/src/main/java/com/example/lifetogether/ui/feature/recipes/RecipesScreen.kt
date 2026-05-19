@@ -87,7 +87,7 @@ fun RecipesScreen(
                         verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                     ) {
                         for (recipe in content.recipes) {
-                            RecipeCard(
+                            RecipeCardV2(
                                 recipe = recipe,
                                 onClick = {
                                     onNavigationEvent(

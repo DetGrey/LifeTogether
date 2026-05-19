@@ -225,7 +225,7 @@ fun FamilyScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun FamilyScreenPreview() {
+private fun FamilyScreenPreview() {
     LifeTogetherTheme {
         FamilyScreen(
             uiState = FamilyUiState.Content(

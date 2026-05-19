@@ -71,7 +71,7 @@ fun Dropdown(
 
 @Preview
 @Composable
-fun DropdownPreview() {
+private fun DropdownPreview() {
     LifeTogetherTheme {
         Box(Modifier.fillMaxSize()) {
             Dropdown(

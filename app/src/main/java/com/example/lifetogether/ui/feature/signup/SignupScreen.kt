@@ -133,7 +133,7 @@ fun SignupScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun SignupScreenPreview() {
+private fun SignupScreenPreview() {
     LifeTogetherTheme {
         SignupScreen(
             uiState = SignupUiState(

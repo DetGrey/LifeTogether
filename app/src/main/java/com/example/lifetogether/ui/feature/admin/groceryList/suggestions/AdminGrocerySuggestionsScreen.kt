@@ -167,7 +167,7 @@ fun AdminGrocerySuggestionsScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun AdminGrocerySuggestionsScreenPreview() {
+private fun AdminGrocerySuggestionsScreenPreview() {
     val category = Category(emoji = "🥦", name = "Vegetables")
     LifeTogetherTheme {
         AdminGrocerySuggestionsScreen(

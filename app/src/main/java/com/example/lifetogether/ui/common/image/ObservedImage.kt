@@ -6,6 +6,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.model.sealed.ImageState
@@ -17,6 +18,10 @@ fun rememberObservedImageBitmap(
     imageType: ImageType?,
     onError: (String) -> Unit = {},
 ): Bitmap? {
+    if (LocalInspectionMode.current) {
+        return null
+    }
+
     val observeImageStateUseCase = rememberObserveImageStateUseCase()
     val currentOnError by rememberUpdatedState(onError)
     val imageStateFlow = remember(imageType, observeImageStateUseCase) {

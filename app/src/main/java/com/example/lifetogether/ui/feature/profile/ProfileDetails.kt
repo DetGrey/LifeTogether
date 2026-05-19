@@ -121,7 +121,7 @@ fun ProfileDetails(
 
 @Preview
 @Composable
-fun ProfileDetailsPreview() {
+private fun ProfileDetailsPreview() {
     LifeTogetherTheme {
         ProfileDetails(
             appIcon = AppIcon(R.drawable.ic_profile, ""),

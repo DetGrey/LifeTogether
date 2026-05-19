@@ -45,7 +45,7 @@ fun DatePickerTextField(
 
 @Preview
 @Composable
-fun DatePickerPreview() {
+private fun DatePickerPreview() {
     LifeTogetherTheme {
         DatePickerTextField(label = "Birthday", date = null, onClick = {})
     }
