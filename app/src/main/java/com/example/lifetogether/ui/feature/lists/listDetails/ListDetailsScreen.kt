@@ -32,6 +32,7 @@ import com.example.lifetogether.ui.common.add.AddNewString
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
+import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.common.list.SelectionModeBar
 import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.feature.lists.listDetails.content.CheckItemsSection
@@ -209,6 +210,10 @@ fun ListDetailsScreen(
             false -> {
                 listOf(
                     ActionSheetItem(
+                        label = "Rename list",
+                        onClick = { onUiEvent(ListDetailsUiEvent.RequestRenameList) },
+                    ),
+                    ActionSheetItem(
                         label = "Select entries",
                         onClick = { onUiEvent(ListDetailsUiEvent.StartSelectionMode) },
                         isEnabled = contentState.listContent.entries.isNotEmpty(),
@@ -220,6 +225,21 @@ fun ListDetailsScreen(
         ActionSheet(
             onDismiss = { onUiEvent(ListDetailsUiEvent.ToggleActionSheet) },
             actionsList = actions,
+        )
+    }
+
+    if (contentState?.showRenameListDialog == true) {
+        ConfirmationDialogWithTextField(
+            onDismiss = { onUiEvent(ListDetailsUiEvent.DismissRenameListDialog) },
+            onConfirm = { onUiEvent(ListDetailsUiEvent.ConfirmRenameList) },
+            dialogTitle = "Rename list",
+            dialogMessage = "Enter a new name for the list",
+            dismissButtonMessage = "Cancel",
+            confirmButtonMessage = "Rename list",
+            textValue = contentState.renameListText,
+            onTextValueChange = { onUiEvent(ListDetailsUiEvent.RenameListNameChanged(it)) },
+            label = "New list name",
+            capitalization = true,
         )
     }
 

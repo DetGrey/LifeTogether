@@ -14,6 +14,7 @@ interface UserListRepository {
     fun observeUserLists(familyId: String): Flow<Result<List<UserList>, AppError>>
     fun syncUserListsFromRemote(uid: String, familyId: String): Flow<Result<Unit, AppError>>
     suspend fun saveUserList(userList: UserList): Result<String, AppError>
+    suspend fun updateUserList(userList: UserList): Result<Unit, AppError>
     suspend fun deleteUserList(listId: String): Result<Unit, AppError>
     fun observeRoutineListEntriesByListId(familyId: String, listId: String): Flow<Result<List<RoutineListEntry>, AppError>>
     fun syncRoutineListEntriesFromRemote(uid: String, familyId: String): Flow<Result<Unit, AppError>>

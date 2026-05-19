@@ -87,6 +87,19 @@ class UserListRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun updateUserList(userList: UserList): Result<Unit, AppError> {
+        val oldEntity = userListLocalDataSource.getUserListOnce(userList.id)
+            ?: return Result.Failure(AppErrors.notFound("List not found"))
+        userListLocalDataSource.upsertUserList(userList.toEntity())
+        return when (val result = userListFirestoreDataSource.saveUserList(userList)) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> {
+                userListLocalDataSource.upsertUserList(oldEntity)
+                Result.Failure(result.error)
+            }
+        }
+    }
+
     override suspend fun deleteUserList(listId: String): Result<Unit, AppError> {
         val oldEntity = userListLocalDataSource.getUserListOnce(listId)
             ?: return Result.Failure(AppErrors.notFound("List not found"))

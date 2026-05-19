@@ -46,7 +46,7 @@ Here are some questions:
 ### Lists
 - [x] Add a more menu for deleting entries in lists overview screen that deletes the whole list and entries.
 - [x] Wishlist items with no description should have no extra spacing and no empty text in listdetails.
-- [ ] Add rename inside list details when not in selection mode
+- [x] Add rename inside list details when not in selection mode
 
 ### Recipes
 - [ ] Add a search bar in recipes.
@@ -56,19 +56,25 @@ Here are some questions:
     - if searching for a recipe name it should show it
     - if searching for a specific ingredient it should also list those
     - And so on
+  - (TODO SOON)
   - _Probably need a new type of recipe card for searching which includes the tag/ingredient etc that got matched in the search so the user knows why it's showing_
 - [ ] _Export or share recipes as PDF_.
 - [ ] _Ingredients and instructions need stable IDs_.
 - [ ] When adding ingredients, do not start capitalized
+  - (TODO SOON)
 - [ ] Recipe servings should be 1 to 100 instead of few predefined
+  - (TODO SOON)
 - [ ] Ingredient add to grocery list button when grocery suggestion exists
   - Show informational snackbar (version of error snackbar) if already exists on grocery list so it doesn't get added twice from this
   - It can still be added twice from the grocery screen itself though
   - Be able to handle ingredients or suggestions that has a s e.g. banana and bananas should be connected to same
+  - (TODO WOULD LIKE TO IMPLEMENT)
 - [ ] Have add to meal plan button on recipes that autofill with that recipe and opens the create meal plan
+  - (TODO WOULD LIKE TO IMPLEMENT)
 - [ ] Recipe card with image (two options)
   - Have prep time below title and image box to the right a bit like routines
   - Or have image behind with gradient from the left with prep and title to the left
+  - (TODO SOON)
 - [x] Recipe instructions cannot be read since they should be multiline
 
 ### Guides
@@ -76,8 +82,11 @@ Here are some questions:
 - [ ] _Make the UI nicer_.
 - [x] OptionRow should not have dividers inside guides.
 - [ ] Make the step content text inside the step player bigger.
+  - (TODO SOON)
 - [ ] The step player should show whether a step is completed and show the datetime of completion/last edited.
+  - (TODO SOON)
 - [ ] When changing guide visibility, do not reset progress since progress is private anyway.
+  - (TODO SOON)
 
 ### Search and discovery
 - [ ] _Add filtering for all, notes, guides, and lists_.
@@ -128,23 +137,25 @@ Here are some questions:
 
 ### Navigation
 - [ ] Migrate to Navigation 3.
+  - (TODO WOULD LIKE TO IMPLEMENT)
 - [x] On login, go to the home screen and do not keep any back stack.
 - [x] Cannot have multiple profile or settings in back stack. Maybe same for other ones
 
 ### Shared architecture and tooling
 - [ ] Replace `DropDown.kt` `.menuAnchor` usage because it is deprecated if possible without very complex code.
   - Maybe just rewrite the way to use dropdowns to a more new and native way?
+  - (TODO WOULD LIKE TO IMPLEMENT)
 - [ ] Try `@PreviewScreenSizes`.
 - [ ] The Profiler can see all classes in memory and other things.
 - [ ] _Repositories should probably be singletons and stateless._
 - [ ] _Use SQLCipher for Room encryption._
 - [ ] Error messages should not show when null, instead of keeping both a string and boolean.
+  - (TODO SOON) - check if it's not already fine
 - [ ] _Make the image download success and version update dialogs nicer._
 - [ ] _Show a dialog when there is a new version available._
 - [x] Animate when image is loaded and about to be shown e.g. for recipes, routine and such so it doesn't just pop up
 - [ ] Pressing back on phone should be interupted in selection mode on all screens that have it so it just leaves selection mode instead of navigating back
   - (TODO SOON)
-
-## Shelved changes:
-
-Trying out two-row AddNewListItem.kt
+- [ ] Change how dialogs are shown with enabled parameter instead of "contentState?.showRenameListDialog == true"
+  - Maybe even handle some of the events inside instead of many events inside viewmodel per dialog (RequestRenameList, DismissRenameListDialog,RenameListNameChanged,ConfirmRenameList)
+  - (TODO SOON)

@@ -19,6 +19,8 @@ sealed interface ListDetailsUiState {
         val isSelectionMode: Boolean = false,
         val isAllEntriesSelected: Boolean = false,
         val showActionSheet: Boolean = false,
+        val showRenameListDialog: Boolean = false,
+        val renameListText: String = "",
         val showDeleteSelectedDialog: Boolean = false,
     ) : ListDetailsUiState
 }
@@ -64,6 +66,10 @@ sealed interface ListDetailsUiEvent {
     data object RequestDeleteSelected : ListDetailsUiEvent
     data object DismissDeleteSelectedDialog : ListDetailsUiEvent
     data object ConfirmDeleteSelected : ListDetailsUiEvent
+    data object RequestRenameList : ListDetailsUiEvent
+    data object DismissRenameListDialog : ListDetailsUiEvent
+    data class RenameListNameChanged(val value: String) : ListDetailsUiEvent
+    data object ConfirmRenameList : ListDetailsUiEvent
     data class ToggleEntryCompleted(val entryId: String) : ListDetailsUiEvent
     sealed interface Checklist : ListDetailsUiEvent {
         data class EditRequested(val entryId: String) : Checklist

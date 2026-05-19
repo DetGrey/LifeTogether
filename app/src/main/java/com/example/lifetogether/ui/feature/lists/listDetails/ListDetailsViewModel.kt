@@ -54,6 +54,7 @@ class ListDetailsViewModel @Inject constructor(
 ) : ViewModel() {
     val listId: String = savedStateHandle.toRoute<ListDetailNavRoute>().listId
 
+    private var currentList: UserList? = null
     private val selectionState = MutableStateFlow(ListDetailsSelectionState())
     private val checklistEditorState = MutableStateFlow(ChecklistEditorState())
 
@@ -109,6 +110,10 @@ class ListDetailsViewModel @Inject constructor(
             ListDetailsUiEvent.RequestDeleteSelected -> requestDeleteSelected()
             ListDetailsUiEvent.DismissDeleteSelectedDialog -> dismissDeleteSelectedDialog()
             ListDetailsUiEvent.ConfirmDeleteSelected -> confirmDeleteSelected()
+            ListDetailsUiEvent.RequestRenameList -> requestRenameList()
+            ListDetailsUiEvent.DismissRenameListDialog -> dismissRenameListDialog()
+            is ListDetailsUiEvent.RenameListNameChanged -> updateRenameListText(event.value)
+            ListDetailsUiEvent.ConfirmRenameList -> confirmRenameList()
             is ListDetailsUiEvent.ToggleEntryCompleted -> toggleEntryCompleted(event.entryId)
             is ListDetailsUiEvent.Checklist.EditRequested -> startEditingChecklistItem(event.entryId)
             is ListDetailsUiEvent.Checklist.NameChanged -> updateChecklistDraftName(event.value)
@@ -252,6 +257,57 @@ class ListDetailsViewModel @Inject constructor(
         }
     }
 
+    private fun requestRenameList() {
+        val list = currentList ?: return
+        updateSelectionStateIfContent { state, _ ->
+            state.copy(
+                showActionSheet = false,
+                showRenameListDialog = true,
+                renameListText = list.itemName,
+            )
+        }
+    }
+
+    private fun dismissRenameListDialog() {
+        updateSelectionStateIfContent { state, _ ->
+            state.copy(
+                showRenameListDialog = false,
+                renameListText = "",
+            )
+        }
+    }
+
+    private fun updateRenameListText(value: String) {
+        updateSelectionStateIfContent { state, _ ->
+            state.copy(renameListText = value)
+        }
+    }
+
+    private fun confirmRenameList() {
+        val current = currentList ?: return
+        val newName = selectionState.value.renameListText.trim()
+        if (newName.isBlank()) {
+            showError("List name cannot be empty")
+            return
+        }
+        if (newName == current.itemName) {
+            showError("List already called $newName")
+            return
+        }
+
+        val updatedList = current.copy(
+            itemName = newName,
+            lastUpdated = Date(),
+        )
+
+        viewModelScope.launch {
+            when (val result = userListRepository.updateUserList(updatedList)) {
+                is Result.Success -> dismissRenameListDialog()
+                is Result.Failure -> showError(result.error.toUserMessage())
+            }
+        }
+    }
+
     private fun dismissDeleteSelectedDialog() {
         updateSelectionStateIfContent { state, _ ->
             state.copy(showDeleteSelectedDialog = false)
@@ -331,6 +387,7 @@ class ListDetailsViewModel @Inject constructor(
             .successData()
             .map { lists -> lists.firstOrNull { it.id == listId } }
             .flatMapLatest { list ->
+                currentList = list
                 if (list == null) {
                     flowOf(null)
                 } else {
@@ -467,6 +524,8 @@ class ListDetailsViewModel @Inject constructor(
             checklistEditorState = resolvedChecklistEditorState,
             isAllEntriesSelected = validEntryIds.isNotEmpty() && selectedEntryIds.size == validEntryIds.size,
             showActionSheet = selectionState.showActionSheet,
+            showRenameListDialog = selectionState.showRenameListDialog,
+            renameListText = selectionState.renameListText,
             showDeleteSelectedDialog = selectionState.showDeleteSelectedDialog && selectedEntryIds.isNotEmpty(),
         )
     }
@@ -485,6 +544,8 @@ class ListDetailsViewModel @Inject constructor(
         val isSelectionModeActive: Boolean = false,
         val selectedEntryIds: Set<String> = emptySet(),
         val showActionSheet: Boolean = false,
+        val showRenameListDialog: Boolean = false,
+        val renameListText: String = "",
         val showDeleteSelectedDialog: Boolean = false,
     )
 
