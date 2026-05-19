@@ -80,15 +80,6 @@ Historical phase decisions remain in `.ai/v2-plan/` and are not duplicated here.
 - `LoadingRoute` is the app's startup/auth gate and only redirects based on `SessionRepository.sessionState`.
 - `LoadingRoute` does not own app business logic.
 
-## Feature Boundaries
-
-- Meal planner is a standalone top-level feature, not a `UserList` subfeature.
-- Meal planner has its own graph, routes, repository, sync flow, and home discovery entry.
-- The meal planner overview is the week pager itself.
-- There is one meal planner per family.
-- Meal-plan create/edit/detail routes stay within the meal planner feature boundary.
-- The old `ListType.MEAL_PLANNER` path is no longer part of the architecture.
-
 ## UI Command and Snackbar Contract
 
 - The app uses the shared `UiCommand` channel pattern for transient UI effects.
@@ -105,23 +96,8 @@ Historical phase decisions remain in `.ai/v2-plan/` and are not duplicated here.
 - `AppSnackbar` is the shared snackbar renderer for both normal and progress snackbars.
 - Route-local helpers such as image-loading callbacks may still use the shared snackbar host directly when they are not driven by a ViewModel-owned error flow.
 
-## Route / Screen Rule
+## Navigation
 
-- Routes collect state and wire side effects.
-- Screens render state and emit callbacks only.
-- Screens are expected to stay stateless where possible.
-- Navigation, snackbar collection, lifecycle wiring, and feature command collection belong in routes, not screens.
-- Route layers collect `StateFlow` with `collectAsStateWithLifecycle()`, not `collectAsState()`.
-- Route layers pass UI input into `ViewModel.onEvent(...)`; feature screens should not call ad hoc public viewmodel methods for screen interaction.
-- Feature-local command flows are collected in the route and translated there into navigation or other one-off side effects.
-- `NavigationEvent` is a screen-to-route contract only. Screens emit navigation intents through `onNavigationEvent`, and routes translate those intents into `Navigator` calls.
-- ViewModels never emit or consume `NavigationEvent`.
-- When a ViewModel needs to navigate, it emits a one-shot command on its own command flow and the route handles that command.
-- Feature-local `Command` types live alongside the feature's `UiState`, `UiEvent`, and `NavigationEvent` models when the feature already has a `Models.kt` file.
-- Every screen composable must have a real `@Preview` that renders the actual screen inside `LifeTogetherTheme` with representative state and callbacks.
-- Comment-only placeholder previews or previews that do not execute the real screen composable are not acceptable.
-- Each screen should have at most one meaningful `Scaffold`.
-- Do not add extra scaffolds only for error or snackbar handling; those concerns belong to the shared root snackbar host and route command collection.
 - Destination `ViewModel`s must not read navigation arguments through `SavedStateHandle` string keys.
 - Typed `NavRoute` arguments are part of the route contract, and route wrappers own argument extraction and translation.
 - The only accepted raw destination string path is the notification entry point, where the notification layer maps the string to a typed `AppRoute` before navigation occurs.
@@ -133,8 +109,37 @@ Historical phase decisions remain in `.ai/v2-plan/` and are not duplicated here.
 - Profile and Settings keep their local back relationship:
   - `Profile -> Settings` pushes `Settings`
   - `Settings -> Profile` goes back to the existing `Profile` when that is the previous screen
+
+## Route / Screen / ViewModel Contract
+
+### Route Responsibilities
+
+- Routes collect state and wire side effects.
+- Navigation, snackbar collection, lifecycle wiring, and feature command collection belong in routes, not screens.
+- Route layers collect `StateFlow` with `collectAsStateWithLifecycle()`, not `collectAsState()`.
+- Route layers pass UI input into `ViewModel.onEvent(...)`; feature screens should not call ad hoc public viewmodel methods for screen interaction.
+- Feature-local command flows are collected in the route and translated there into navigation or other one-off side effects.
+
+### Screen Responsibilities
+
+- Screens render state and emit callbacks only.
+- Screens are expected to stay stateless where possible.
+
+### ViewModel Responsibilities
+
+- `NavigationEvent` is a screen-to-route contract only. Screens emit navigation intents through `onNavigationEvent`, and routes translate those intents into `Navigator` calls.
+- ViewModels never emit or consume `NavigationEvent`.
+- When a ViewModel needs to navigate, it emits a one-shot command on its own command flow and the route handles that command.
+- Feature-local `Command` types live alongside the feature's `UiState`, `UiEvent`, and `NavigationEvent` models when the feature already has a `Models.kt` file.
 - Shared UI state should be modeled explicitly instead of inferred from ad hoc booleans when the feature already has a formal state model.
 - Feature-specific state that drives a screen should come from the feature ViewModel, not from route-local session extraction.
+
+### Composition and Preview Rules
+
+- Every screen composable must have a real `@Preview` that renders the actual screen inside `LifeTogetherTheme` with representative state and callbacks.
+- Comment-only placeholder previews or previews that do not execute the real screen composable are not acceptable.
+- Each screen should have at most one meaningful `Scaffold`.
+- Do not add extra scaffolds only for error or snackbar handling; those concerns belong to the shared root snackbar host and route command collection.
 
 ## Session-Driven Startup
 
