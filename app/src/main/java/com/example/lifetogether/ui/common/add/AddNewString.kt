@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
@@ -22,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
@@ -30,11 +28,12 @@ import com.example.lifetogether.ui.theme.LifeTogetherTokens
 @Composable
 fun AddNewString(
     modifier: Modifier = Modifier,
+    onAddClick: (String) -> Unit,
     label: String? = null,
     textValue: String? = null,
     onTextChange: ((String) -> Unit)? = null,
     actionLabel: String = "Add",
-    onAddClick: (String) -> Unit,
+    showTwoLines: Boolean = false,
 ) {
     var internalTextValue by rememberSaveable { mutableStateOf("") }
     val currentTextValue = textValue ?: internalTextValue
@@ -42,8 +41,7 @@ fun AddNewString(
 
     Card(
         modifier = modifier
-            .fillMaxWidth()
-            .height(60.dp),
+            .fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
         shape = MaterialTheme.shapes.large,
     ) {
@@ -52,7 +50,7 @@ fun AddNewString(
                 .fillMaxWidth()
                 .padding(horizontal = LifeTogetherTokens.spacing.small),
             horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = if (showTwoLines) Alignment.Bottom else Alignment.CenterVertically,
         ) {
             CustomTextField(
                 modifier = Modifier
@@ -63,19 +61,20 @@ fun AddNewString(
                 keyboardType = KeyboardType.Text,
                 imeAction = ImeAction.Done,
                 capitalization = true,
+                maxLines = if (showTwoLines) 4 else 1,
             )
 
             Row(
                 modifier = Modifier
-                .padding(LifeTogetherTokens.spacing.small)
-                .clickable(
-                    enabled = currentTextValue.isNotBlank()
-                ) {
-                    onAddClick(currentTextValue.trim())
-                    if (textValue == null) {
-                        internalTextValue = ""
-                    }
-                },
+                    .padding(LifeTogetherTokens.spacing.small)
+                    .clickable(
+                        enabled = currentTextValue.isNotBlank(),
+                    ) {
+                        onAddClick(currentTextValue.trim())
+                        if (textValue == null) {
+                            internalTextValue = ""
+                        }
+                    },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(text = actionLabel, color = MaterialTheme.colorScheme.secondary)
@@ -96,6 +95,7 @@ private fun Preview() {
     LifeTogetherTheme {
         AddNewString(
             label = "He",
-        ) { }
+            onAddClick = {},
+        )
     }
 }

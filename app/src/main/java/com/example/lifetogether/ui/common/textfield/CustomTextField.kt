@@ -33,6 +33,7 @@ fun CustomTextField(
     capitalization: Boolean = false,
     smaller: Boolean = false,
     enabled: Boolean = true,
+    maxLines: Int = 1,
     onFocusChanged: ((Boolean) -> Unit)? = null,
 ) {
     var visualTransformation: VisualTransformation = VisualTransformation.None
@@ -62,7 +63,7 @@ fun CustomTextField(
     TextField(
         modifier = modifier
             .onFocusChanged { onFocusChanged?.invoke(it.isFocused) }
-            .inputFieldModifier(),
+            .inputFieldModifier(multiline = maxLines > 1),
         value = textFieldValue,
         onValueChange = {
             textFieldValue = it
@@ -78,6 +79,8 @@ fun CustomTextField(
             keyboardType = keyboardType,
             imeAction = imeAction,
         ),
+        minLines = 1,
+        maxLines = maxLines,
         colors = filledTextFieldColors(),
         isError = false, // TODO https://medium.com/@rzmeneghelo/how-to-validate-fields-using-jetpack-compose-in-android-43be70597e82
     )

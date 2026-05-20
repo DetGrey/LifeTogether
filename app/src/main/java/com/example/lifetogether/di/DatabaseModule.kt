@@ -2,6 +2,7 @@ package com.example.lifetogether.di
 
 import android.content.Context
 import androidx.room.Room
+import com.example.lifetogether.data.local.MIGRATION_34_35
 import com.example.lifetogether.data.local.MIGRATION_23_24
 import com.example.lifetogether.data.local.MIGRATION_24_25
 import com.example.lifetogether.data.local.MIGRATION_25_26
@@ -56,6 +57,7 @@ object DatabaseModule {
                 MIGRATION_31_32,
                 MIGRATION_32_33,
                 MIGRATION_33_34,
+                MIGRATION_34_35,
             )
             .build()
     }

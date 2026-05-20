@@ -3,12 +3,9 @@ package com.example.lifetogether.data.model
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.example.lifetogether.domain.model.recipe.Ingredient
-import com.example.lifetogether.domain.model.recipe.Instruction
 import com.example.lifetogether.util.Constants
 import java.util.Date
 
-// Assuming you have an Entity for your lists that includes a count
 @Entity(tableName = Constants.RECIPES_TABLE)
 data class RecipeEntity(
     @PrimaryKey
@@ -20,8 +17,6 @@ data class RecipeEntity(
     @ColumnInfo(name = "last_updated")
     val lastUpdated: Date,
     val description: String,
-    val ingredients: List<Ingredient>,
-    val instructions: List<Instruction>,
     @ColumnInfo(name = "preparation_time_min")
     val preparationTimeMin: Int,
     val favourite: Boolean,
@@ -43,8 +38,6 @@ data class RecipeEntity(
         if (itemName != other.itemName) return false
         if (lastUpdated != other.lastUpdated) return false
         if (description != other.description) return false
-        if (ingredients != other.ingredients) return false
-        if (instructions != other.instructions) return false
         if (preparationTimeMin != other.preparationTimeMin) return false
         if (favourite != other.favourite) return false
         if (servings != other.servings) return false
@@ -64,8 +57,6 @@ data class RecipeEntity(
         result = 31 * result + itemName.hashCode()
         result = 31 * result + lastUpdated.hashCode()
         result = 31 * result + description.hashCode()
-        result = 31 * result + ingredients.hashCode()
-        result = 31 * result + instructions.hashCode()
         result = 31 * result + preparationTimeMin
         result = 31 * result + favourite.hashCode()
         result = 31 * result + servings

@@ -17,10 +17,11 @@ fun CompletableListItem(
     text: String,
     isCompleted: Boolean,
     onCompleteToggle: () -> Unit,
+    modifier: Modifier = Modifier,
     trailingContent: (@Composable () -> Unit)? = null,
 ) {
     ListItem(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         leadingContent = {
             CompletableBox(
                 isCompleted = isCompleted,

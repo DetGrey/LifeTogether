@@ -15,9 +15,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,7 +25,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.domain.model.enums.MeasureType
-import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.ui.common.dropdown.Dropdown
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -33,28 +32,21 @@ import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun AddNewIngredient(
-    onAddClick: (Ingredient) -> Unit,
+    modifier: Modifier = Modifier,
+    itemName: String,
+    onItemNameChange: (String) -> Unit,
+    amount: String,
+    onAmountChange: (String) -> Unit,
+    measureType: MeasureType,
+    onMeasureTypeChange: (MeasureType) -> Unit,
+    actionLabel: String = "Add",
+    onActionClick: () -> Unit,
 ) {
     val measureTypeList = remember { MeasureType.entries }
     var changeMeasureTypeExpanded by remember { mutableStateOf(false) }
-    var ingredient by remember { mutableStateOf(Ingredient(amount = 0.0, measureType = MeasureType.PIECE, itemName = "")) }
-    var amount by remember { mutableStateOf("") }
-
-    fun updateIngredient(variable: String, value: String) {
-        when (variable) {
-            "amount" -> ingredient = ingredient.copy(amount = value.toDoubleOrNull() ?: 0.0)
-            "measureType" -> {
-                val selectedType = measureTypeList.find { it.unit == value }
-                if (selectedType != null) {
-                    ingredient = ingredient.copy(measureType = selectedType)
-                }
-            }
-            "itemName" -> ingredient = ingredient.copy(itemName = value)
-        }
-    }
 
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -67,8 +59,8 @@ fun AddNewIngredient(
                 .padding(bottom = LifeTogetherTokens.spacing.small),
         ) {
             CustomTextField(
-                value = ingredient.itemName,
-                onValueChange = { updateIngredient("itemName", it) },
+                value = itemName,
+                onValueChange = onItemNameChange,
                 label = "Ingredient name...",
                 keyboardType = KeyboardType.Text,
                 imeAction = ImeAction.Done,
@@ -77,9 +69,7 @@ fun AddNewIngredient(
             Row(Modifier.height(IntrinsicSize.Min)) {
                 CustomTextField(
                     value = amount,
-                    onValueChange = {
-                        amount = it
-                    },
+                    onValueChange = onAmountChange,
                     label = "Amount",
                     keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Done,
@@ -87,7 +77,7 @@ fun AddNewIngredient(
                 )
 
                 Dropdown(
-                    selectedValue = ingredient.measureType.unit,
+                    selectedValue = measureType.unit,
                     expanded = changeMeasureTypeExpanded,
                     onExpandedChange = {
                         changeMeasureTypeExpanded = it
@@ -95,26 +85,22 @@ fun AddNewIngredient(
                     options = measureTypeList.map { it.unit },
                     label = null,
                     onValueChangedEvent = {
-                        updateIngredient("measureType", it)
+                        measureTypeList.find { measureTypeEntry -> measureTypeEntry.unit == it }?.let(onMeasureTypeChange)
                     },
                     modifier = Modifier.weight(1f)
                 )
                 Row(
                     modifier = Modifier
-                .padding(horizontal = LifeTogetherTokens.spacing.small)
-                .fillMaxHeight()
-                .clickable(
-                    enabled = ingredient.itemName.isNotBlank() && amount.toDoubleOrNull() != null
+                        .padding(horizontal = LifeTogetherTokens.spacing.small)
+                        .fillMaxHeight()
+                        .clickable(
+                            enabled = itemName.isNotBlank() && amount.toDoubleOrNull() != null,
+                        ) {
+                            onActionClick()
+                        },
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    val trimmedItemName = ingredient.itemName.trim()
-                    val parsedAmount = amount.toDoubleOrNull() ?: return@clickable
-                    onAddClick(ingredient.copy(itemName = trimmedItemName, amount = parsedAmount))
-                    ingredient = Ingredient(amount = 0.0, measureType = MeasureType.PIECE, itemName = "")
-                    amount = ""
-                },
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                    Text(text = "Add", color = MaterialTheme.colorScheme.secondary)
+                    Text(text = actionLabel, color = MaterialTheme.colorScheme.secondary)
 
                     Spacer(modifier = Modifier.width(LifeTogetherTokens.spacing.xSmall))
 
@@ -133,7 +119,13 @@ fun AddNewIngredient(
 private fun Preview() {
     LifeTogetherTheme {
         AddNewIngredient(
-            onAddClick = {}
+            itemName = "Tomatoes",
+            onItemNameChange = {},
+            amount = "3",
+            onAmountChange = {},
+            measureType = MeasureType.PIECE,
+            onMeasureTypeChange = {},
+            onActionClick = {},
         )
     }
 }

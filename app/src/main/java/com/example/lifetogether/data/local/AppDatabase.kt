@@ -31,6 +31,8 @@ import com.example.lifetogether.data.model.GuideEntity
 import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.model.GrocerySuggestionEntity
 import com.example.lifetogether.data.model.MealPlanEntity
+import com.example.lifetogether.data.model.RecipeIngredientEntity
+import com.example.lifetogether.data.model.RecipeInstructionEntity
 import com.example.lifetogether.data.model.NoteEntryEntity
 import com.example.lifetogether.data.model.RoutineListEntryEntity
 import com.example.lifetogether.data.model.UserListEntity
@@ -48,6 +50,8 @@ import com.example.lifetogether.data.model.WishListEntryEntity
         FamilyEntity::class,
         FamilyMemberEntity::class,
         RecipeEntity::class,
+        RecipeIngredientEntity::class,
+        RecipeInstructionEntity::class,
         AlbumEntity::class,
         GalleryMediaEntity::class,
         TipEntity::class,
@@ -60,7 +64,7 @@ import com.example.lifetogether.data.model.WishListEntryEntity
         ChecklistEntryEntity::class,
         MealPlanEntity::class,
     ],
-    version = 34,
+    version = 35,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)

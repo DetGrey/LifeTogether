@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.logic.ingredientMatchesSuggestion
 import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.model.Completable
+import com.example.lifetogether.domain.model.enums.MeasureType
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.domain.model.recipe.Instruction
@@ -111,54 +112,59 @@ class RecipeDetailsViewModel @Inject constructor(
 
     fun onEvent(event: RecipeDetailsUiEvent) {
         when (event) {
-            RecipeDetailsUiEvent.EditClicked -> toggleEditMode()
-            is RecipeDetailsUiEvent.ItemNameChanged -> updateContent {
+            RecipeDetailsUiEvent.Editor.EditClicked -> toggleEditMode()
+            is RecipeDetailsUiEvent.Editor.ItemNameChanged -> updateContent {
                 it.copy(itemName = event.value)
             }
-
-            is RecipeDetailsUiEvent.DescriptionChanged -> updateContent {
+            is RecipeDetailsUiEvent.Editor.DescriptionChanged -> updateContent {
                 it.copy(description = event.value)
             }
-
-            is RecipeDetailsUiEvent.PreparationTimeChanged -> updateContent {
+            is RecipeDetailsUiEvent.Editor.PreparationTimeChanged -> updateContent {
                 it.copy(preparationTimeMin = event.value)
             }
-
-            is RecipeDetailsUiEvent.ServingsChanged -> updateContentAndIngredientsByServings(event.value)
-            is RecipeDetailsUiEvent.ServingsExpandedChanged -> updateContent {
+            is RecipeDetailsUiEvent.Editor.ServingsChanged -> updateContentAndIngredientsByServings(event.value)
+            is RecipeDetailsUiEvent.Editor.ServingsExpandedChanged -> updateContent {
                 it.copy(servingsExpanded = event.value)
             }
-
-            is RecipeDetailsUiEvent.TagsChanged -> updateContent {
+            is RecipeDetailsUiEvent.Editor.TagsChanged -> updateContent {
                 it.copy(tagsInput = event.value)
             }
+            RecipeDetailsUiEvent.Editor.ToggleIngredientsExpanded -> toggleExpandedState("ingredients")
+            RecipeDetailsUiEvent.Editor.ToggleInstructionsExpanded -> toggleExpandedState("instructions")
+            is RecipeDetailsUiEvent.Editor.RecipeImageSelected -> setPendingRecipeImage(event.uri)
 
-            RecipeDetailsUiEvent.ToggleIngredientsExpanded -> toggleExpandedState("ingredients")
-            RecipeDetailsUiEvent.ToggleInstructionsExpanded -> toggleExpandedState("instructions")
-            is RecipeDetailsUiEvent.IngredientCompletedToggled -> toggleIngredientCompletion(event.ingredient)
-            is RecipeDetailsUiEvent.InstructionCompletedToggled -> toggleInstructionCompletion(event.instruction)
-            is RecipeDetailsUiEvent.AddIngredientClicked -> addIngredient(event.ingredient)
-            is RecipeDetailsUiEvent.AddInstructionClicked -> addInstruction(event.value)
-            is RecipeDetailsUiEvent.RecipeImageSelected -> setPendingRecipeImage(event.uri)
-            RecipeDetailsUiEvent.DiscardClicked -> discardChanges()
-            RecipeDetailsUiEvent.DismissDiscardConfirmation -> dismissDiscardConfirmation()
-            RecipeDetailsUiEvent.ConfirmDiscardConfirmation -> performDiscardChanges()
+            is RecipeDetailsUiEvent.IngredientEvent.CompletedToggled -> toggleIngredientCompletion(event.ingredient)
+            is RecipeDetailsUiEvent.InstructionEvent.CompletedToggled -> toggleInstructionCompletion(event.instruction)
+            is RecipeDetailsUiEvent.IngredientEvent.EditClicked -> startEditingIngredient(event.ingredientId)
+            is RecipeDetailsUiEvent.IngredientEvent.Moved -> moveIngredient(event.fromIndex, event.toIndex)
+            is RecipeDetailsUiEvent.IngredientEvent.NameChanged -> updateIngredientDraft { it.copy(itemName = event.value) }
+            is RecipeDetailsUiEvent.IngredientEvent.AmountChanged -> updateIngredientDraft { it.copy(amount = event.value) }
+            is RecipeDetailsUiEvent.IngredientEvent.MeasureTypeChanged -> updateIngredientDraft { it.copy(measureType = event.value) }
+            is RecipeDetailsUiEvent.InstructionEvent.TextChanged -> updateContent { it.copy(instructionDraft = event.value) }
+            RecipeDetailsUiEvent.IngredientEvent.CancelEdit -> clearIngredientDraft()
+            is RecipeDetailsUiEvent.IngredientEvent.AddClicked -> addIngredient(event.ingredient)
 
-            RecipeDetailsUiEvent.DeleteClicked -> updateContent {
+            is RecipeDetailsUiEvent.InstructionEvent.EditClicked -> startEditingInstruction(event.instructionId)
+            is RecipeDetailsUiEvent.InstructionEvent.Moved -> moveInstruction(event.fromIndex, event.toIndex)
+            RecipeDetailsUiEvent.InstructionEvent.CancelEdit -> clearInstructionDraft()
+            is RecipeDetailsUiEvent.InstructionEvent.AddClicked -> addInstruction(event.value)
+            is RecipeDetailsUiEvent.IngredientEvent.AddToGroceryList -> addIngredientToGroceryList(event.ingredient)
+
+            RecipeDetailsUiEvent.DialogEvent.DiscardClicked -> discardChanges()
+            RecipeDetailsUiEvent.DialogEvent.DismissDiscardConfirmation -> dismissDiscardConfirmation()
+            RecipeDetailsUiEvent.DialogEvent.ConfirmDiscardConfirmation -> performDiscardChanges()
+            RecipeDetailsUiEvent.DialogEvent.DeleteClicked -> updateContent {
                 if (it.recipeId.isNullOrBlank()) {
                     it
                 } else {
                     it.copy(showDeleteConfirmationDialog = true)
                 }
             }
-
-            RecipeDetailsUiEvent.DismissDeleteConfirmation -> updateContent {
+            RecipeDetailsUiEvent.DialogEvent.DismissDeleteConfirmation -> updateContent {
                 it.copy(showDeleteConfirmationDialog = false)
             }
-
-            RecipeDetailsUiEvent.ConfirmDeleteConfirmation -> deleteRecipe()
-            RecipeDetailsUiEvent.SaveClicked -> saveRecipe()
-            is RecipeDetailsUiEvent.AddIngredientToGroceryList -> addIngredientToGroceryList(event.ingredient)
+            RecipeDetailsUiEvent.DialogEvent.ConfirmDeleteConfirmation -> deleteRecipe()
+            RecipeDetailsUiEvent.DialogEvent.SaveClicked -> saveRecipe()
         }
     }
 
@@ -216,6 +222,10 @@ class RecipeDetailsViewModel @Inject constructor(
             servings = if (recipe == null && recipeId == null) "" else servings,
             tagsInput = sourceRecipe.tags.joinToString(" "),
             tags = sourceRecipe.tags,
+            ingredientDraft = RecipeIngredientDraftState(),
+            instructionDraft = "",
+            editingIngredientId = null,
+            editingInstructionId = null,
             grocerySuggestions = latestSuggestions,
             editMode = editMode,
             isSaving = false,
@@ -247,7 +257,16 @@ class RecipeDetailsViewModel @Inject constructor(
         if (content.editMode) {
             originalRecipe?.let { restoreRecipe(it) }
         } else {
-            updateContent { it.copy(editMode = true, showDiscardConfirmationDialog = false) }
+            updateContent {
+                it.copy(
+                    editMode = true,
+                    showDiscardConfirmationDialog = false,
+                    editingIngredientId = null,
+                    editingInstructionId = null,
+                    ingredientDraft = RecipeIngredientDraftState(),
+                    instructionDraft = "",
+                )
+            }
         }
     }
 
@@ -275,7 +294,7 @@ class RecipeDetailsViewModel @Inject constructor(
     private fun toggleIngredientCompletion(ingredient: Completable) {
         updateContent { state ->
             if (state.editMode) {
-                val updatedIngredients = state.ingredients.toggleCompleted(ingredient.itemName)
+                val updatedIngredients = state.ingredients.toggleCompleted(ingredient.id)
                 state.copy(
                     ingredients = updatedIngredients,
                     ingredientsByServings = scaleIngredients(
@@ -286,7 +305,7 @@ class RecipeDetailsViewModel @Inject constructor(
                 )
             } else {
                 state.copy(
-                    ingredientsByServings = state.ingredientsByServings.toggleCompleted(ingredient.itemName),
+                    ingredientsByServings = state.ingredientsByServings.toggleCompleted(ingredient.id),
                 )
             }
         }
@@ -295,7 +314,7 @@ class RecipeDetailsViewModel @Inject constructor(
     private fun toggleInstructionCompletion(instruction: Completable) {
         updateContent {
             it.copy(
-                instructions = it.instructions.toggleCompleted(instruction.itemName),
+                instructions = it.instructions.toggleCompleted(instruction.id),
             )
         }
     }
@@ -310,7 +329,21 @@ class RecipeDetailsViewModel @Inject constructor(
                     state
                 } else {
                     val sanitizedIngredient = ingredient.copy(itemName = trimmedName)
-                    val updatedIngredients = state.ingredients + sanitizedIngredient
+                    val updatedIngredients = if (state.editingIngredientId != null) {
+                        state.ingredients.map { current ->
+                            if (current.id == state.editingIngredientId) {
+                                sanitizedIngredient.copy(
+                                    id = current.id,
+                                    sortOrder = current.sortOrder,
+                                )
+                            } else {
+                                current
+                            }
+                        }
+                    } else {
+                        val nextSortOrder = (state.ingredients.maxOfOrNull { it.sortOrder } ?: -1) + 1
+                        state.ingredients + sanitizedIngredient.copy(sortOrder = nextSortOrder)
+                    }
                     state.copy(
                         ingredients = updatedIngredients,
                         ingredientsByServings = scaleIngredients(
@@ -318,6 +351,8 @@ class RecipeDetailsViewModel @Inject constructor(
                             recipeServings = state.recipeServings,
                             selectedServings = state.servings.toDoubleOrNull() ?: state.recipeServings.toDouble(),
                         ),
+                        ingredientDraft = RecipeIngredientDraftState(),
+                        editingIngredientId = null,
                     )
                 }
             }
@@ -333,10 +368,102 @@ class RecipeDetailsViewModel @Inject constructor(
                 if (trimmedValue.isBlank()) {
                     return@updateContent state
                 }
+                val updatedInstructions = if (state.editingInstructionId != null) {
+                    state.instructions.map { current ->
+                        if (current.id == state.editingInstructionId) current.copy(itemName = trimmedValue) else current
+                    }
+                } else {
+                    val nextSortOrder = (state.instructions.maxOfOrNull { it.sortOrder } ?: -1) + 1
+                    state.instructions + Instruction(itemName = trimmedValue, sortOrder = nextSortOrder)
+                }
                 state.copy(
-                    instructions = state.instructions + Instruction(itemName = trimmedValue),
+                    instructions = updatedInstructions,
+                    instructionDraft = "",
+                    editingInstructionId = null,
                 )
             }
+        }
+    }
+
+    private fun moveIngredient(fromIndex: Int, toIndex: Int) {
+        updateContent { state ->
+            if (!state.editMode) {
+                state
+            } else {
+                val updatedIngredients = state.ingredients.moveAndReindexIngredients(fromIndex, toIndex)
+                state.copy(
+                    ingredients = updatedIngredients,
+                    ingredientsByServings = scaleIngredients(
+                        ingredients = updatedIngredients,
+                        recipeServings = state.recipeServings,
+                        selectedServings = state.servings.toDoubleOrNull() ?: state.recipeServings.toDouble(),
+                    ),
+                )
+            }
+        }
+    }
+
+    private fun moveInstruction(fromIndex: Int, toIndex: Int) {
+        updateContent { state ->
+            if (!state.editMode) {
+                state
+            } else {
+                state.copy(
+                    instructions = state.instructions.moveAndReindexInstructions(fromIndex, toIndex),
+                )
+            }
+        }
+    }
+
+    private fun startEditingIngredient(ingredientId: String) {
+        updateContent { state ->
+            val ingredient = state.ingredients.firstOrNull { it.id == ingredientId } ?: return@updateContent state
+            state.copy(
+                editingIngredientId = ingredientId,
+                editingInstructionId = null,
+                ingredientDraft = RecipeIngredientDraftState(
+                    itemName = ingredient.itemName,
+                    amount = ingredient.amount.toString(),
+                    measureType = ingredient.measureType,
+                ),
+                instructionDraft = "",
+            )
+        }
+    }
+
+    private fun startEditingInstruction(instructionId: String) {
+        updateContent { state ->
+            val instruction = state.instructions.firstOrNull { it.id == instructionId } ?: return@updateContent state
+            state.copy(
+                editingInstructionId = instructionId,
+                editingIngredientId = null,
+                instructionDraft = instruction.itemName,
+                ingredientDraft = RecipeIngredientDraftState(),
+            )
+        }
+    }
+
+    private fun updateIngredientDraft(transform: (RecipeIngredientDraftState) -> RecipeIngredientDraftState) {
+        updateContent { state ->
+            state.copy(ingredientDraft = transform(state.ingredientDraft))
+        }
+    }
+
+    private fun clearIngredientDraft() {
+        updateContent { state ->
+            state.copy(
+                editingIngredientId = null,
+                ingredientDraft = RecipeIngredientDraftState(),
+            )
+        }
+    }
+
+    private fun clearInstructionDraft() {
+        updateContent { state ->
+            state.copy(
+                editingInstructionId = null,
+                instructionDraft = "",
+            )
         }
     }
 
@@ -374,21 +501,21 @@ class RecipeDetailsViewModel @Inject constructor(
         )
         val trimmedDescription = state.description.trim()
         val sanitizedIngredients = state.ingredients
-            .mapNotNull { ingredient ->
+            .mapIndexedNotNull { index, ingredient ->
                 val itemName = ingredient.itemName.trim()
                 if (itemName.isBlank() || ingredient.amount <= 0.0) {
                     null
                 } else {
-                    ingredient.copy(itemName = itemName)
+                    ingredient.copy(itemName = itemName, sortOrder = index)
                 }
             }
         val sanitizedInstructions = state.instructions
-            .mapNotNull { instruction ->
+            .mapIndexedNotNull { index, instruction ->
                 val itemName = instruction.itemName.trim()
                 if (itemName.isBlank()) {
                     null
                 } else {
-                    instruction.copy(itemName = itemName)
+                    instruction.copy(itemName = itemName, sortOrder = index)
                 }
             }
         val sanitizedTags = state.tagsInput
@@ -489,6 +616,10 @@ class RecipeDetailsViewModel @Inject constructor(
                     it.copy(
                         editMode = false,
                         showDiscardConfirmationDialog = false,
+                        editingIngredientId = null,
+                        editingInstructionId = null,
+                        ingredientDraft = RecipeIngredientDraftState(),
+                        instructionDraft = "",
                     )
                 }
             }
@@ -506,6 +637,8 @@ class RecipeDetailsViewModel @Inject constructor(
                 content.favourite ||
                 content.servings.isNotBlank() ||
                 content.tagsInput.isNotBlank() ||
+                isIngredientDraftDirty(content) ||
+                isInstructionDraftDirty(content) ||
                 pendingImageUri != null
         }
 
@@ -517,7 +650,37 @@ class RecipeDetailsViewModel @Inject constructor(
             content.favourite != original.favourite ||
             content.servings != original.servings.toString() ||
             content.tagsInput != original.tags.joinToString(" ") ||
+            isIngredientDraftDirty(content) ||
+            isInstructionDraftDirty(content) ||
             pendingImageUri != null
+    }
+
+    private fun isIngredientDraftDirty(content: RecipeDetailsUiState.Content): Boolean {
+        val draft = content.ingredientDraft
+        val editingId = content.editingIngredientId
+        return if (editingId == null) {
+            draft.itemName.isNotBlank() ||
+                draft.amount.isNotBlank() ||
+                draft.measureType != MeasureType.PIECE
+        } else {
+            val currentIngredient = content.ingredients.firstOrNull { it.id == editingId } ?: return draft.itemName.isNotBlank() ||
+                draft.amount.isNotBlank() ||
+                draft.measureType != MeasureType.PIECE
+            draft.itemName != currentIngredient.itemName ||
+                draft.amount != currentIngredient.amount.toString() ||
+                draft.measureType != currentIngredient.measureType
+        }
+    }
+
+    private fun isInstructionDraftDirty(content: RecipeDetailsUiState.Content): Boolean {
+        val draft = content.instructionDraft
+        val editingId = content.editingInstructionId
+        return if (editingId == null) {
+            draft.isNotBlank()
+        } else {
+            val currentInstruction = content.instructions.firstOrNull { it.id == editingId } ?: return draft.isNotBlank()
+            draft != currentInstruction.itemName
+        }
     }
 
     private fun deleteRecipe() {
@@ -548,6 +711,28 @@ class RecipeDetailsViewModel @Inject constructor(
         return ingredients.map { ingredient ->
             ingredient.copy(amount = ingredient.amount * multiplier)
         }
+    }
+
+    private fun List<Ingredient>.moveAndReindexIngredients(fromIndex: Int, toIndex: Int): List<Ingredient> {
+        if (isEmpty()) return this
+        if (fromIndex !in indices || toIndex !in indices || fromIndex == toIndex) {
+            return mapIndexed { index, ingredient -> ingredient.copy(sortOrder = index) }
+        }
+        val mutable = toMutableList()
+        val item = mutable.removeAt(fromIndex)
+        mutable.add(toIndex, item)
+        return mutable.mapIndexed { index, ingredient -> ingredient.copy(sortOrder = index) }
+    }
+
+    private fun List<Instruction>.moveAndReindexInstructions(fromIndex: Int, toIndex: Int): List<Instruction> {
+        if (isEmpty()) return this
+        if (fromIndex !in indices || toIndex !in indices || fromIndex == toIndex) {
+            return mapIndexed { index, instruction -> instruction.copy(sortOrder = index) }
+        }
+        val mutable = toMutableList()
+        val item = mutable.removeAt(fromIndex)
+        mutable.add(toIndex, item)
+        return mutable.mapIndexed { index, instruction -> instruction.copy(sortOrder = index) }
     }
 
     private fun blankRecipe(recipeId: String, familyId: String): Recipe {
@@ -659,6 +844,10 @@ class RecipeDetailsViewModel @Inject constructor(
                                 showDiscardConfirmationDialog = false,
                                 showDeleteConfirmationDialog = false,
                                 servingsExpanded = false,
+                                editingIngredientId = null,
+                                editingInstructionId = null,
+                                ingredientDraft = RecipeIngredientDraftState(),
+                                instructionDraft = "",
                                 ingredientsByServings = scaleIngredients(
                                     ingredients = savedRecipe.ingredients,
                                     recipeServings = savedRecipe.servings,
@@ -694,6 +883,10 @@ class RecipeDetailsViewModel @Inject constructor(
                     showDiscardConfirmationDialog = false,
                     showDeleteConfirmationDialog = false,
                     servingsExpanded = false,
+                    editingIngredientId = null,
+                    editingInstructionId = null,
+                    ingredientDraft = RecipeIngredientDraftState(),
+                    instructionDraft = "",
                     ingredientsByServings = scaleIngredients(
                         ingredients = savedRecipe.ingredients,
                         recipeServings = savedRecipe.servings,

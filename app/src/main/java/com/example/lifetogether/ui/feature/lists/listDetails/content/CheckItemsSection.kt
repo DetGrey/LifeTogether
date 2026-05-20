@@ -180,7 +180,6 @@ private fun ChecklistCard(
                 text = entry.itemName,
                 style = MaterialTheme.typography.bodyLarge,
                 overflow = TextOverflow.Ellipsis,
-                maxLines = 1,
                 textDecoration = if (isCompleted) TextDecoration.LineThrough else TextDecoration.None,
             )
         },

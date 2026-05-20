@@ -16,8 +16,10 @@ import com.google.firebase.firestore.DocumentId
 import kotlin.jvm.Transient
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.util.Date
+import java.util.UUID
 import javax.inject.Inject
 
 class RecipeFirestoreDataSource @Inject constructor(
@@ -34,13 +36,26 @@ class RecipeFirestoreDataSource @Inject constructor(
                 return@addSnapshotListener
             }
             if (snapshot != null) {
+                val migrationCandidates = mutableListOf<Pair<String, Recipe>>()
                 val items = mapFirestoreDocuments(
                     tag = TAG,
                     collectionName = Constants.RECIPES_TABLE,
                     entityName = "Recipe",
                     documents = snapshot.documents,
                 ) { doc ->
-                    doc.toObject(RecipeDto::class.java)?.toDomain(doc.id)
+                    doc.toObject(RecipeDto::class.java)?.toDomainResult(doc.id)?.also { result ->
+                        if (result.needsChildIdBackfill) {
+                            migrationCandidates += doc.id to result.recipe
+                        }
+                    }?.recipe
+                }
+                migrationCandidates.forEach { (documentId, recipe) ->
+                    launch {
+                        db.collection(Constants.RECIPES_TABLE)
+                            .document(documentId)
+                            .set(recipe.toDto().toFirestoreMap(), SetOptions.merge())
+                            .await()
+                    }
                 }
                 trySend(Result.Success(ListSnapshot(items))).isSuccess
             } else {
@@ -111,29 +126,36 @@ private data class RecipeDto(
     val tags: List<String>? = null,
     val imageUrl: String? = null,
 ) {
-    fun toDomain(documentId: String): Recipe? {
+
+    fun toDomainResult(documentId: String): RecipeDomainResult? {
         val familyIdValue = familyId?.takeIf { it.isNotBlank() } ?: return null
         val itemNameValue = itemName?.takeIf { it.isNotBlank() } ?: return null
         val lastUpdatedValue = lastUpdated ?: return null
         val descriptionValue = description ?: return null
-        val ingredientsValue = ingredients.orEmpty().mapNotNull { it.toDomain() }
-        val instructionsValue = instructions.orEmpty().mapNotNull { it.toDomain() }
+        val ingredientsDtos = ingredients.orEmpty()
+        val instructionsDtos = instructions.orEmpty()
+        val ingredientsValue = ingredientsDtos.mapIndexedNotNull { index, dto -> dto.toDomain(index) }
+        val instructionsValue = instructionsDtos.mapIndexedNotNull { index, dto -> dto.toDomain(index) }
         val preparationTimeMinValue = preparationTimeMin ?: return null
         val servingsValue = servings ?: return null
         val tagsValue = tags ?: return null
-        return Recipe(
-            id = documentId,
-            familyId = familyIdValue,
-            itemName = itemNameValue,
-            lastUpdated = lastUpdatedValue,
-            description = descriptionValue,
-            ingredients = ingredientsValue,
-            instructions = instructionsValue,
-            preparationTimeMin = preparationTimeMinValue,
-            favourite = favourite ?: false,
-            servings = servingsValue,
-            tags = tagsValue,
-            imageUrl = imageUrl,
+        return RecipeDomainResult(
+            recipe = Recipe(
+                id = documentId,
+                familyId = familyIdValue,
+                itemName = itemNameValue,
+                lastUpdated = lastUpdatedValue,
+                description = descriptionValue,
+                ingredients = ingredientsValue,
+                instructions = instructionsValue,
+                preparationTimeMin = preparationTimeMinValue,
+                favourite = favourite ?: false,
+                servings = servingsValue,
+                tags = tagsValue,
+                imageUrl = imageUrl,
+            ),
+            needsChildIdBackfill = ingredientsDtos.any { it.needsBackfill() } ||
+                instructionsDtos.any { it.needsBackfill() },
         )
     }
 
@@ -168,50 +190,74 @@ private fun Recipe.toDto(): RecipeDto = RecipeDto(
 )
 
 private data class IngredientDto(
+    val id: String? = null,
+    val sortOrder: Int? = null,
     val amount: Double? = null,
     val measureType: String? = null,
     val itemName: String? = null,
     val completed: Boolean? = null,
 ) {
-    fun toDomain(): Ingredient? {
+    fun toDomain(fallbackSortOrder: Int): Ingredient? {
+        val idValue = id?.takeIf { it.isNotBlank() } ?: UUID.randomUUID().toString()
         val amountValue = amount ?: return null
         val measureTypeValue = measureType?.toMeasureTypeOrNull() ?: return null
         val itemNameValue = itemName?.takeIf { it.isNotBlank() } ?: return null
         return Ingredient(
+            id = idValue,
             amount = amountValue,
             measureType = measureTypeValue,
             itemName = itemNameValue,
             completed = completed ?: false,
+            sortOrder = sortOrder ?: fallbackSortOrder,
         )
     }
 
     fun toFirestoreMap(): Map<String, Any?> = mapOf(
+        "id" to id,
+        "sortOrder" to sortOrder,
         "amount" to amount,
         "measureType" to measureType,
         "itemName" to itemName,
         "completed" to completed,
     ).filterValues { it != null }
+
+    fun needsBackfill(): Boolean {
+        return id.isNullOrBlank() || sortOrder == null
+    }
 }
 
 private data class InstructionDto(
+    val id: String? = null,
+    val sortOrder: Int? = null,
     val itemName: String? = null,
     val completed: Boolean? = null,
 ) {
-    fun toDomain(): Instruction? {
+    fun toDomain(fallbackSortOrder: Int): Instruction? {
+        val idValue = id?.takeIf { it.isNotBlank() } ?: UUID.randomUUID().toString()
         val itemNameValue = itemName?.takeIf { it.isNotBlank() } ?: return null
         return Instruction(
+            id = idValue,
             itemName = itemNameValue,
             completed = completed ?: false,
+            sortOrder = sortOrder ?: fallbackSortOrder,
         )
     }
 
     fun toFirestoreMap(): Map<String, Any?> = mapOf(
+        "id" to id,
+        "sortOrder" to sortOrder,
         "itemName" to itemName,
         "completed" to completed,
     ).filterValues { it != null }
+
+    fun needsBackfill(): Boolean {
+        return id.isNullOrBlank() || sortOrder == null
+    }
 }
 
 private fun Ingredient.toDto(): IngredientDto = IngredientDto(
+    id = id,
+    sortOrder = sortOrder,
     amount = amount,
     measureType = measureType.name,
     itemName = itemName,
@@ -219,8 +265,15 @@ private fun Ingredient.toDto(): IngredientDto = IngredientDto(
 )
 
 private fun Instruction.toDto(): InstructionDto = InstructionDto(
+    id = id,
+    sortOrder = sortOrder,
     itemName = itemName,
     completed = completed,
+)
+
+private data class RecipeDomainResult(
+    val recipe: Recipe,
+    val needsChildIdBackfill: Boolean,
 )
 
 private fun String.toMeasureTypeOrNull(): MeasureType? {

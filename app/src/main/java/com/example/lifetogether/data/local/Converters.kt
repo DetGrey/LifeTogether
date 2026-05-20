@@ -3,8 +3,6 @@ package com.example.lifetogether.data.local
 import androidx.room.TypeConverter
 import com.example.lifetogether.domain.model.guides.GuideResume
 import com.example.lifetogether.domain.model.guides.GuideSection
-import com.example.lifetogether.domain.model.recipe.Ingredient
-import com.example.lifetogether.domain.model.recipe.Instruction
 import java.util.Date
 import kotlinx.serialization.json.Json
 
@@ -33,28 +31,6 @@ class Converters {
 
     @TypeConverter
     fun fromListString(list: List<String>): String {
-        return json.encodeToString(list)
-    }
-
-    @TypeConverter
-    fun fromIngredientList(value: String): List<Ingredient> {
-        if (value.isBlank()) return emptyList()
-        return runCatching { json.decodeFromString<List<Ingredient>>(value) }.getOrDefault(emptyList())
-    }
-
-    @TypeConverter
-    fun fromListIngredient(list: List<Ingredient>): String {
-        return json.encodeToString(list)
-    }
-
-    @TypeConverter
-    fun fromInstructionList(value: String): List<Instruction> {
-        if (value.isBlank()) return emptyList()
-        return runCatching { json.decodeFromString<List<Instruction>>(value) }.getOrDefault(emptyList())
-    }
-
-    @TypeConverter
-    fun fromListInstruction(list: List<Instruction>): String {
         return json.encodeToString(list)
     }
 

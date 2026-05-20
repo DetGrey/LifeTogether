@@ -13,10 +13,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.size
@@ -53,6 +55,7 @@ import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.textfield.EditableTextField
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
+import sh.calvin.reorderable.ReorderableListItemScope
 
 private val recipeServingsOptions = (1..100).map(Int::toString)
 
@@ -69,7 +72,7 @@ fun RecipeDetailsScreen(
     val showEditAction = hasRecipeId && !contentState.editMode
 
     BackHandler(enabled = contentState?.editMode == true) {
-        onUiEvent(RecipeDetailsUiEvent.DiscardClicked)
+        onUiEvent(RecipeDetailsUiEvent.DialogEvent.DiscardClicked)
     }
 
     Scaffold(
@@ -81,7 +84,7 @@ fun RecipeDetailsScreen(
                 ),
                 onLeftClick = {
                     if (contentState?.editMode == true) {
-                        onUiEvent(RecipeDetailsUiEvent.DiscardClicked)
+                        onUiEvent(RecipeDetailsUiEvent.DialogEvent.DiscardClicked)
                     } else {
                         onNavigationEvent(RecipeDetailsNavigationEvent.NavigateBack)
                     }
@@ -99,9 +102,9 @@ fun RecipeDetailsScreen(
                     )
                 } else { null },
                 onRightClick = if (showDeleteAction) {
-                    { onUiEvent(RecipeDetailsUiEvent.DeleteClicked) }
+                    { onUiEvent(RecipeDetailsUiEvent.DialogEvent.DeleteClicked) }
                 } else if (showEditAction) {
-                    { onUiEvent(RecipeDetailsUiEvent.EditClicked) }
+                    { onUiEvent(RecipeDetailsUiEvent.Editor.EditClicked) }
                 } else { null },
             )
         },
@@ -137,7 +140,7 @@ private fun RecipeDetailsContent(
         contract = ActivityResultContracts.GetContent(),
     ) { uri: Uri? ->
         uri?.let {
-            onUiEvent(RecipeDetailsUiEvent.RecipeImageSelected(it))
+            onUiEvent(RecipeDetailsUiEvent.Editor.RecipeImageSelected(it))
         }
     }
 
@@ -158,7 +161,7 @@ private fun RecipeDetailsContent(
             ) {
                 EditableTextField(
                     text = uiState.itemName,
-                    onTextChange = { onUiEvent(RecipeDetailsUiEvent.ItemNameChanged(it)) },
+                    onTextChange = { onUiEvent(RecipeDetailsUiEvent.Editor.ItemNameChanged(it)) },
                     label = "Recipe name",
                     isEditable = uiState.editMode,
                     textStyle = MaterialTheme.typography.displayMedium,
@@ -180,7 +183,7 @@ private fun RecipeDetailsContent(
             if (uiState.editMode || uiState.description.isNotBlank()) {
                 EditableTextField(
                     text = uiState.description,
-                    onTextChange = { onUiEvent(RecipeDetailsUiEvent.DescriptionChanged(it)) },
+                    onTextChange = { onUiEvent(RecipeDetailsUiEvent.Editor.DescriptionChanged(it)) },
                     label = "Description",
                     isEditable = uiState.editMode,
                     textStyle = MaterialTheme.typography.bodyLarge,
@@ -203,7 +206,7 @@ private fun RecipeDetailsContent(
                     EditableTextField(
                         text = uiState.preparationTimeMin,
                         onTextChange = {
-                            onUiEvent(RecipeDetailsUiEvent.PreparationTimeChanged(it))
+                            onUiEvent(RecipeDetailsUiEvent.Editor.PreparationTimeChanged(it))
                         },
                         label = "E.g. 30",
                         isEditable = uiState.editMode,
@@ -225,7 +228,7 @@ private fun RecipeDetailsContent(
                         EditableTextField(
                             text = uiState.servings,
                             onTextChange = {
-                                onUiEvent(RecipeDetailsUiEvent.ServingsChanged(it))
+                                onUiEvent(RecipeDetailsUiEvent.Editor.ServingsChanged(it))
                             },
                             label = "E.g. 2",
                             isEditable = true,
@@ -239,12 +242,12 @@ private fun RecipeDetailsContent(
                             selectedValue = uiState.servings,
                             expanded = uiState.servingsExpanded,
                             onExpandedChange = {
-                                onUiEvent(RecipeDetailsUiEvent.ServingsExpandedChanged(it))
+                                onUiEvent(RecipeDetailsUiEvent.Editor.ServingsExpandedChanged(it))
                             },
                             options = recipeServingsOptions,
                             label = null,
                             onValueChangedEvent = {
-                                onUiEvent(RecipeDetailsUiEvent.ServingsChanged(it))
+                                onUiEvent(RecipeDetailsUiEvent.Editor.ServingsChanged(it))
                             },
                         )
                     }
@@ -262,7 +265,7 @@ private fun RecipeDetailsContent(
                         EditableTextField(
                             text = uiState.tagsInput,
                             onTextChange = {
-                                onUiEvent(RecipeDetailsUiEvent.TagsChanged(it))
+                                onUiEvent(RecipeDetailsUiEvent.Editor.TagsChanged(it))
                             },
                             label = "E.g. \"dinner pasta\"",
                             isEditable = true,
@@ -294,12 +297,15 @@ private fun RecipeDetailsContent(
                     itemList = if (uiState.editMode) uiState.ingredients else uiState.ingredientsByServings,
                     expanded = expanded,
                     onClick = {
-                        onUiEvent(RecipeDetailsUiEvent.ToggleIngredientsExpanded)
+                        onUiEvent(RecipeDetailsUiEvent.Editor.ToggleIngredientsExpanded)
                     },
                     onCompleteToggle = {
-                        onUiEvent(RecipeDetailsUiEvent.IngredientCompletedToggled(it))
+                        onUiEvent(RecipeDetailsUiEvent.IngredientEvent.CompletedToggled(it))
                     },
-                    trailingContent = if (!uiState.editMode) { item ->
+                    onReorder = if (uiState.editMode) { fromIndex, toIndex ->
+                        onUiEvent(RecipeDetailsUiEvent.IngredientEvent.Moved(fromIndex, toIndex))
+                    } else null,
+                    trailingContent = if (!uiState.editMode) { _, item, _ ->
                         val hasMatch = item is Ingredient && uiState.grocerySuggestions.any { suggestion ->
                             ingredientMatchesSuggestion(item.itemName, suggestion.suggestionName)
                         }
@@ -312,12 +318,26 @@ private fun RecipeDetailsContent(
                                     modifier = Modifier
                                         .size(LifeTogetherTokens.sizing.iconLarge)
                                         .clickable {
-                                        onUiEvent(RecipeDetailsUiEvent.AddIngredientToGroceryList(item))
-                                    },
+                                            onUiEvent(RecipeDetailsUiEvent.IngredientEvent.AddToGroceryList(item))
+                                        },
                                 )
                             }
                         } else null
-                    } else null,
+                    } else { _, item, scope ->
+                        {
+                            RecipeItemEditActions(
+                                isCancelling = uiState.editingIngredientId == item.id,
+                                onEditClick = {
+                                    if (uiState.editingIngredientId == item.id) {
+                                        onUiEvent(RecipeDetailsUiEvent.IngredientEvent.CancelEdit)
+                                    } else {
+                                        onUiEvent(RecipeDetailsUiEvent.IngredientEvent.EditClicked(item.id))
+                                    }
+                                },
+                                reorderScope = scope,
+                            )
+                        }
+                    },
                 )
             }
 
@@ -327,8 +347,29 @@ private fun RecipeDetailsContent(
                 exit = fadeOut(),
             ) {
                 AddNewIngredient(
-                    onAddClick = {
-                        onUiEvent(RecipeDetailsUiEvent.AddIngredientClicked(it))
+                    itemName = uiState.ingredientDraft.itemName,
+                    onItemNameChange = {
+                        onUiEvent(RecipeDetailsUiEvent.IngredientEvent.NameChanged(it))
+                    },
+                    amount = uiState.ingredientDraft.amount,
+                    onAmountChange = {
+                        onUiEvent(RecipeDetailsUiEvent.IngredientEvent.AmountChanged(it))
+                    },
+                    measureType = uiState.ingredientDraft.measureType,
+                    onMeasureTypeChange = {
+                        onUiEvent(RecipeDetailsUiEvent.IngredientEvent.MeasureTypeChanged(it))
+                    },
+                    actionLabel = if (uiState.editingIngredientId != null) "Save" else "Add",
+                    onActionClick = {
+                        onUiEvent(
+                            RecipeDetailsUiEvent.IngredientEvent.AddClicked(
+                                Ingredient(
+                                    amount = uiState.ingredientDraft.amount.toDoubleOrNull() ?: 0.0,
+                                    measureType = uiState.ingredientDraft.measureType,
+                                    itemName = uiState.ingredientDraft.itemName,
+                                ),
+                            ),
+                        )
                     },
                 )
             }
@@ -344,11 +385,29 @@ private fun RecipeDetailsContent(
                     itemList = uiState.instructions,
                     expanded = expanded,
                     onClick = {
-                        onUiEvent(RecipeDetailsUiEvent.ToggleInstructionsExpanded)
+                        onUiEvent(RecipeDetailsUiEvent.Editor.ToggleInstructionsExpanded)
                     },
                     onCompleteToggle = {
-                        onUiEvent(RecipeDetailsUiEvent.InstructionCompletedToggled(it))
+                        onUiEvent(RecipeDetailsUiEvent.InstructionEvent.CompletedToggled(it))
                     },
+                    onReorder = if (uiState.editMode) { fromIndex, toIndex ->
+                        onUiEvent(RecipeDetailsUiEvent.InstructionEvent.Moved(fromIndex, toIndex))
+                    } else null,
+                    trailingContent = if (uiState.editMode) { _, item, scope ->
+                        {
+                            RecipeItemEditActions(
+                                isCancelling = uiState.editingInstructionId == item.id,
+                                onEditClick = {
+                                    if (uiState.editingInstructionId == item.id) {
+                                        onUiEvent(RecipeDetailsUiEvent.InstructionEvent.CancelEdit)
+                                    } else {
+                                        onUiEvent(RecipeDetailsUiEvent.InstructionEvent.EditClicked(item.id))
+                                    }
+                                },
+                                reorderScope = scope,
+                            )
+                        }
+                    } else null,
                 )
 
                 AnimatedVisibility(
@@ -357,10 +416,16 @@ private fun RecipeDetailsContent(
                     exit = fadeOut(),
                 ) {
                     AddNewString(
-                        label = "Add new instruction",
-                        onAddClick = {
-                            onUiEvent(RecipeDetailsUiEvent.AddInstructionClicked(it))
+                        label = if (uiState.editingInstructionId != null) "Edit instruction" else "Add new instruction",
+                        textValue = uiState.instructionDraft,
+                        onTextChange = {
+                            onUiEvent(RecipeDetailsUiEvent.InstructionEvent.TextChanged(it))
                         },
+                        actionLabel = if (uiState.editingInstructionId != null) "Save" else "Add",
+                        onAddClick = {
+                            onUiEvent(RecipeDetailsUiEvent.InstructionEvent.AddClicked(uiState.instructionDraft))
+                        },
+                        showTwoLines = true,
                     )
                 }
             }
@@ -378,13 +443,13 @@ private fun RecipeDetailsContent(
                 ) {
                     SecondaryButton(
                         text = "Discard",
-                        onClick = { onUiEvent(RecipeDetailsUiEvent.DiscardClicked) },
+                        onClick = { onUiEvent(RecipeDetailsUiEvent.DialogEvent.DiscardClicked) },
                         modifier = Modifier.weight(1f),
                         enabled = !uiState.isSaving,
                     )
                     PrimaryButton(
                         text = "Save",
-                        onClick = { onUiEvent(RecipeDetailsUiEvent.SaveClicked) },
+                        onClick = { onUiEvent(RecipeDetailsUiEvent.DialogEvent.SaveClicked) },
                         modifier = Modifier.weight(1f),
                         loading = uiState.isSaving,
                     )
@@ -396,10 +461,10 @@ private fun RecipeDetailsContent(
     if (uiState.showDeleteConfirmationDialog && uiState.recipeId != null) {
         ConfirmationDialog(
             onDismiss = {
-                onUiEvent(RecipeDetailsUiEvent.DismissDeleteConfirmation)
+                onUiEvent(RecipeDetailsUiEvent.DialogEvent.DismissDeleteConfirmation)
             },
             onConfirm = {
-                onUiEvent(RecipeDetailsUiEvent.ConfirmDeleteConfirmation)
+                onUiEvent(RecipeDetailsUiEvent.DialogEvent.ConfirmDeleteConfirmation)
             },
             dialogTitle = "Delete recipe",
             dialogMessage = "Are you sure you want to the recipe?",
@@ -411,10 +476,10 @@ private fun RecipeDetailsContent(
     if (uiState.showDiscardConfirmationDialog) {
         ConfirmationDialog(
             onDismiss = {
-                onUiEvent(RecipeDetailsUiEvent.DismissDiscardConfirmation)
+                onUiEvent(RecipeDetailsUiEvent.DialogEvent.DismissDiscardConfirmation)
             },
             onConfirm = {
-                onUiEvent(RecipeDetailsUiEvent.ConfirmDiscardConfirmation)
+                onUiEvent(RecipeDetailsUiEvent.DialogEvent.ConfirmDiscardConfirmation)
             },
             dialogTitle = "Discard changes?",
             dialogMessage = "Your unsaved changes will be lost.",
@@ -423,6 +488,41 @@ private fun RecipeDetailsContent(
         )
     }
 
+}
+
+@Composable
+private fun RecipeItemEditActions(
+    isCancelling: Boolean,
+    onEditClick: () -> Unit,
+    reorderScope: ReorderableListItemScope?,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_edit),
+            contentDescription = if (isCancelling) "Cancel item edit" else "Edit item",
+            tint = if (isCancelling) {
+                MaterialTheme.colorScheme.error
+            } else {
+                MaterialTheme.colorScheme.onBackground
+            },
+            modifier = Modifier
+                .size(LifeTogetherTokens.sizing.iconLarge)
+                .clickable { onEditClick() },
+        )
+        Spacer(modifier = Modifier.width(LifeTogetherTokens.spacing.xSmall))
+        if (reorderScope != null) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_drag_handle),
+                contentDescription = "Reorder item",
+                tint = MaterialTheme.colorScheme.secondary,
+                modifier = with(reorderScope) {
+                    Modifier
+                        .size(LifeTogetherTokens.sizing.iconLarge)
+                        .longPressDraggableHandle()
+                },
+            )
+        }
+    }
 }
 
 @Preview(showBackground = true)

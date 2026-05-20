@@ -2,6 +2,7 @@ package com.example.lifetogether.ui.common.textfield
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
@@ -14,10 +15,16 @@ import androidx.compose.ui.unit.dp
 private val AppInputHeight = 60.dp
 
 @Composable
-fun Modifier.inputFieldModifier(): Modifier {
-    return fillMaxWidth()
-        .height(AppInputHeight)
-        .clip(shape = MaterialTheme.shapes.large)
+fun Modifier.inputFieldModifier(multiline: Boolean = false): Modifier {
+    return if (multiline) {
+        fillMaxWidth()
+            .heightIn(min = AppInputHeight)
+            .clip(shape = MaterialTheme.shapes.large)
+    } else {
+        fillMaxWidth()
+            .height(AppInputHeight)
+            .clip(shape = MaterialTheme.shapes.large)
+    }
 }
 
 @Composable

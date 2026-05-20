@@ -152,6 +152,7 @@ dependencies {
     implementation(libs.coil)
     implementation(libs.coil.compose)
     implementation(libs.zoomable.image.coil)
+    implementation(libs.reorderable)
     implementation(libs.accompanist.permissions)
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui)

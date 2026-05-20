@@ -19,6 +19,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -29,6 +30,8 @@ import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.ui.common.CompletableListItem
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.ui.theme.bodyFontFamily
+import sh.calvin.reorderable.ReorderableColumn
+import sh.calvin.reorderable.ReorderableListItemScope
 import java.text.DecimalFormat
 
 @Composable
@@ -39,19 +42,20 @@ fun CompletableCategoryList(
     onClick: () -> Unit,
     onCompleteToggle: (Completable) -> Unit,
     onDelete: (() -> Unit)? = null,
-    trailingContent: ((Completable) -> (@Composable () -> Unit)?)? = null,
+    trailingContent: ((index: Int, item: Completable, reorderScope: ReorderableListItemScope?) -> (@Composable () -> Unit)?)? = null,
+    onReorder: ((fromIndex: Int, toIndex: Int) -> Unit)? = null,
 ) {
     Column(modifier = Modifier.padding(bottom = LifeTogetherTokens.spacing.xLarge)) {
         Column(
             modifier = Modifier
-                    .padding(horizontal = LifeTogetherTokens.spacing.xSmall)
+                .padding(horizontal = LifeTogetherTokens.spacing.xSmall)
                 .clickable { onClick() },
-                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                        .height(LifeTogetherTokens.sizing.iconMedium),
+                    .height(LifeTogetherTokens.sizing.iconMedium),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Row {
@@ -89,24 +93,63 @@ fun CompletableCategoryList(
             enter = expandVertically() + fadeIn(),
             exit = shrinkVertically() + fadeOut(),
         ) {
-            Column {
-                Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
-                itemList.forEach { item ->
-                    var text = item.itemName
-                    if (item is Ingredient && item.amount > 0) {
-                        val formattedAmount = if (item.amount % 1.0 == 0.0) {
-                            item.amount.toInt()
-                        } else {
-                            DecimalFormat("#.##").format(item.amount)
+            if (onReorder != null) {
+                ReorderableColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    list = itemList,
+                    onSettle = { fromIndex, toIndex ->
+                        onReorder(fromIndex, toIndex)
+                    },
+                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                ) { index, item, _ ->
+                    key(item.id) {
+                        ReorderableItem {
+                            val itemText = when {
+                                item is Ingredient && item.amount > 0 -> {
+                                    val formattedAmount = if (item.amount % 1.0 == 0.0) {
+                                        item.amount.toInt()
+                                    } else {
+                                        DecimalFormat("#.##").format(item.amount)
+                                    }
+                                    "$formattedAmount ${item.measureType.unit} ${item.itemName}"
+                                }
+
+                                else -> item.itemName
+                            }
+                            CompletableListItem(
+                                text = itemText,
+                                isCompleted = item.completed,
+                                onCompleteToggle = { onCompleteToggle(item) },
+                                trailingContent = trailingContent?.invoke(index, item, this),
+                            )
                         }
-                        text = "$formattedAmount ${item.measureType.unit} ${item.itemName}"
                     }
-                    CompletableListItem(
-                        text = text,
-                        isCompleted = item.completed,
-                        onCompleteToggle = { onCompleteToggle(item) },
-                        trailingContent = trailingContent?.invoke(item),
-                    )
+                }
+            } else {
+                Column {
+                    Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
+                    itemList.forEachIndexed { index, item ->
+                        key(item.id) {
+                            val itemText = when {
+                                item is Ingredient && item.amount > 0 -> {
+                                    val formattedAmount = if (item.amount % 1.0 == 0.0) {
+                                        item.amount.toInt()
+                                    } else {
+                                        DecimalFormat("#.##").format(item.amount)
+                                    }
+                                    "$formattedAmount ${item.measureType.unit} ${item.itemName}"
+                                }
+
+                                else -> item.itemName
+                            }
+                            CompletableListItem(
+                                text = itemText,
+                                isCompleted = item.completed,
+                                onCompleteToggle = { onCompleteToggle(item) },
+                                trailingContent = trailingContent?.invoke(index, item, null),
+                            )
+                        }
+                    }
                 }
             }
         }

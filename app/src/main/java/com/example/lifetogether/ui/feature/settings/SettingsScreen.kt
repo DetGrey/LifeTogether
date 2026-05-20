@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
+import com.example.lifetogether.BuildConfig
 import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.enums.SettingsConfirmationTypes
@@ -19,6 +20,7 @@ import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.common.skeleton.Skeletons
+import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
@@ -102,6 +104,17 @@ fun SettingsScreen(
                             link = "Manage notifications",
                             linkClickable = null,
                         )
+                    }
+                }
+
+                item {
+                    Column(
+                        modifier = Modifier.padding(top = LifeTogetherTokens.spacing.large),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),
+                    ) {
+                        TextDefault(text = "Version ${BuildConfig.VERSION_NAME}")
+                        TextDefault(text = "User ID: ${userInformationState.uid}")
                     }
                 }
             }
