@@ -74,7 +74,7 @@ fun ItemCategoryListHeader(
                     Icon(
                         painter = painterResource(id = R.drawable.ic_trashcan),
                         contentDescription = "trashcan icon",
-                        tint = MaterialTheme.colorScheme.onBackground,
+                        tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier.clickable { onDelete() },
                     )
                 }

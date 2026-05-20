@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -45,7 +46,7 @@ fun CompletableCategoryList(
     trailingContent: ((index: Int, item: Completable, reorderScope: ReorderableListItemScope?) -> (@Composable () -> Unit)?)? = null,
     onReorder: ((fromIndex: Int, toIndex: Int) -> Unit)? = null,
 ) {
-    Column(modifier = Modifier.padding(bottom = LifeTogetherTokens.spacing.xLarge)) {
+    Column(modifier = Modifier.padding(bottom = LifeTogetherTokens.spacing.small)) {
         Column(
             modifier = Modifier
                 .padding(horizontal = LifeTogetherTokens.spacing.xSmall)
@@ -88,6 +89,7 @@ fun CompletableCategoryList(
             }
             HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.primary)
         }
+
         AnimatedVisibility(
             visible = expanded,
             enter = expandVertically() + fadeIn(),
@@ -120,6 +122,16 @@ fun CompletableCategoryList(
                                 text = itemText,
                                 isCompleted = item.completed,
                                 onCompleteToggle = { onCompleteToggle(item) },
+                                leadingContent = {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.ic_drag_handle),
+                                            contentDescription = "Reorder item",
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier
+                                                .size(LifeTogetherTokens.sizing.iconLarge)
+                                                .longPressDraggableHandle(),
+                                        )
+                                },
                                 trailingContent = trailingContent?.invoke(index, item, this),
                             )
                         }

@@ -50,8 +50,7 @@ Here are some questions:
 - [x] Add a more menu for deleting entries in lists overview screen that deletes the whole list and entries.
 - [x] Wishlist items with no description should have no extra spacing and no empty text in listdetails.
 - [x] Add rename inside list details when not in selection mode
-- [ ] Checklist should support multiple lines
-  - (TODO IN PROGRESS)
+- [x] Checklist should support multiple lines
 
 ### Recipes
 - [ ] Add a search bar in recipes.
@@ -70,19 +69,17 @@ Here are some questions:
 - [x] Ingredient add to grocery list button when grocery suggestion exists
   - Show informational snackbar (version of error snackbar) if already exists on grocery list so it doesn't get added twice from this
   - It can still be added twice from the grocery screen itself though
-  - Be able to handle ingredients or suggeståions that has a s e.g. banana and bananas should be connected to same
+  - Be able to handle ingredients or suggestions that has a s e.g. banana and bananas should be connected to same
 - [ ] Have add to meal plan button on recipes that autofill with that recipe and opens the create meal plan
   - (TODO WOULD LIKE TO IMPLEMENT)
 - [x] Recipe card with image (two options)
   - Have prep time below title and image box to the right a bit like routines
   - Or have image behind with gradient from the left with prep and title to the left
 - [x] Recipe instructions cannot be read since they should be multiline
-- [ ] Edit recipe ingredients or instructions
+- [x] Edit recipe ingredients or instructions
   - Test with husbie changing red sauce to our version
-  - (TODO IN PROGRESS)
 - [x] Make it possible to change order of instructions and ingredients
-  - (TODO IN PROGRESS)
-- [ ] Make add instructions field taller to fit two lines
+- [x] Make add instructions field taller to fit two lines
 
 ### Guides
 - [ ] Add guide manually does not work that well.
@@ -123,9 +120,11 @@ Here are some questions:
 - [x] Clickable area is wrong in personal details
 
 ### Setting
-- [ ] Show app version at the bottom of settings along with user id if logged in
-  - (TODO IN PROGRESS)
+- [x] Show app version at the bottom of settings along with user id if logged in
 - [ ] How does settings work if not logged in?
+
+### TipTracker
+- [ ] Rebuild list of tips (maybe as a card)
 
 ### Family memories and widgets
 - [ ] _Add likes and dislikes for food and everything else._

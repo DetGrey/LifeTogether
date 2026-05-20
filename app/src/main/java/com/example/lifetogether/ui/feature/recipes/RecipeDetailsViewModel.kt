@@ -136,6 +136,7 @@ class RecipeDetailsViewModel @Inject constructor(
             is RecipeDetailsUiEvent.IngredientEvent.CompletedToggled -> toggleIngredientCompletion(event.ingredient)
             is RecipeDetailsUiEvent.InstructionEvent.CompletedToggled -> toggleInstructionCompletion(event.instruction)
             is RecipeDetailsUiEvent.IngredientEvent.EditClicked -> startEditingIngredient(event.ingredientId)
+            is RecipeDetailsUiEvent.IngredientEvent.DeleteClicked -> requestIngredientDelete(event.ingredientId)
             is RecipeDetailsUiEvent.IngredientEvent.Moved -> moveIngredient(event.fromIndex, event.toIndex)
             is RecipeDetailsUiEvent.IngredientEvent.NameChanged -> updateIngredientDraft { it.copy(itemName = event.value) }
             is RecipeDetailsUiEvent.IngredientEvent.AmountChanged -> updateIngredientDraft { it.copy(amount = event.value) }
@@ -145,6 +146,7 @@ class RecipeDetailsViewModel @Inject constructor(
             is RecipeDetailsUiEvent.IngredientEvent.AddClicked -> addIngredient(event.ingredient)
 
             is RecipeDetailsUiEvent.InstructionEvent.EditClicked -> startEditingInstruction(event.instructionId)
+            is RecipeDetailsUiEvent.InstructionEvent.DeleteClicked -> requestInstructionDelete(event.instructionId)
             is RecipeDetailsUiEvent.InstructionEvent.Moved -> moveInstruction(event.fromIndex, event.toIndex)
             RecipeDetailsUiEvent.InstructionEvent.CancelEdit -> clearInstructionDraft()
             is RecipeDetailsUiEvent.InstructionEvent.AddClicked -> addInstruction(event.value)
@@ -157,13 +159,13 @@ class RecipeDetailsViewModel @Inject constructor(
                 if (it.recipeId.isNullOrBlank()) {
                     it
                 } else {
-                    it.copy(showDeleteConfirmationDialog = true)
+                    it.copy(deleteConfirmationTarget = RecipeDeleteConfirmationTarget.Recipe)
                 }
             }
             RecipeDetailsUiEvent.DialogEvent.DismissDeleteConfirmation -> updateContent {
-                it.copy(showDeleteConfirmationDialog = false)
+                it.copy(deleteConfirmationTarget = null)
             }
-            RecipeDetailsUiEvent.DialogEvent.ConfirmDeleteConfirmation -> deleteRecipe()
+            RecipeDetailsUiEvent.DialogEvent.ConfirmDeleteConfirmation -> confirmDelete()
             RecipeDetailsUiEvent.DialogEvent.SaveClicked -> saveRecipe()
         }
     }
@@ -230,7 +232,7 @@ class RecipeDetailsViewModel @Inject constructor(
             editMode = editMode,
             isSaving = false,
             showDiscardConfirmationDialog = false,
-            showDeleteConfirmationDialog = false,
+            deleteConfirmationTarget = null,
             servingsExpanded = false,
             expandedStates = defaultExpandedStates(),
             ingredientsByServings = scaleIngredients(
@@ -683,6 +685,31 @@ class RecipeDetailsViewModel @Inject constructor(
         }
     }
 
+    private fun requestIngredientDelete(ingredientId: String) {
+        updateContent { state ->
+            state.copy(
+                deleteConfirmationTarget = RecipeDeleteConfirmationTarget.Ingredient(ingredientId),
+            )
+        }
+    }
+
+    private fun requestInstructionDelete(instructionId: String) {
+        updateContent { state ->
+            state.copy(
+                deleteConfirmationTarget = RecipeDeleteConfirmationTarget.Instruction(instructionId),
+            )
+        }
+    }
+
+    private fun confirmDelete() {
+        val target = contentState()?.deleteConfirmationTarget ?: return
+        when (target) {
+            RecipeDeleteConfirmationTarget.Recipe -> deleteRecipe()
+            is RecipeDeleteConfirmationTarget.Ingredient -> deleteIngredient(target.ingredientId)
+            is RecipeDeleteConfirmationTarget.Instruction -> deleteInstruction(target.instructionId)
+        }
+    }
+
     private fun deleteRecipe() {
         val recipeId = contentState()?.recipeId?.takeIf { it.isNotBlank() } ?: run {
             showError("Recipe not saved - no id")
@@ -694,7 +721,40 @@ class RecipeDetailsViewModel @Inject constructor(
                 is Result.Success -> _commands.send(RecipeDetailsCommand.NavigateBack)
                 is Result.Failure -> showError(result.error.toUserMessage())
             }
-            updateContent { it.copy(showDeleteConfirmationDialog = false) }
+            updateContent {
+                it.copy(
+                    deleteConfirmationTarget = null,
+                )
+            }
+        }
+    }
+
+    private fun deleteIngredient(ingredientId: String) {
+        updateContent { state ->
+            val updatedIngredients = state.ingredients.filterNot { it.id == ingredientId }
+            state.copy(
+                ingredients = updatedIngredients,
+                ingredientsByServings = scaleIngredients(
+                    ingredients = updatedIngredients,
+                    recipeServings = state.recipeServings,
+                    selectedServings = state.servings.toDoubleOrNull() ?: state.recipeServings.toDouble(),
+                ),
+                editingIngredientId = if (state.editingIngredientId == ingredientId) null else state.editingIngredientId,
+                ingredientDraft = if (state.editingIngredientId == ingredientId) RecipeIngredientDraftState() else state.ingredientDraft,
+                deleteConfirmationTarget = null,
+            )
+        }
+    }
+
+    private fun deleteInstruction(instructionId: String) {
+        updateContent { state ->
+            val updatedInstructions = state.instructions.filterNot { it.id == instructionId }
+            state.copy(
+                instructions = updatedInstructions,
+                editingInstructionId = if (state.editingInstructionId == instructionId) null else state.editingInstructionId,
+                instructionDraft = if (state.editingInstructionId == instructionId) "" else state.instructionDraft,
+                deleteConfirmationTarget = null,
+            )
         }
     }
 
@@ -842,7 +902,7 @@ class RecipeDetailsViewModel @Inject constructor(
                                 isSaving = false,
                                 editMode = false,
                                 showDiscardConfirmationDialog = false,
-                                showDeleteConfirmationDialog = false,
+                                deleteConfirmationTarget = null,
                                 servingsExpanded = false,
                                 editingIngredientId = null,
                                 editingInstructionId = null,
@@ -881,7 +941,7 @@ class RecipeDetailsViewModel @Inject constructor(
                     isSaving = false,
                     editMode = false,
                     showDiscardConfirmationDialog = false,
-                    showDeleteConfirmationDialog = false,
+                    deleteConfirmationTarget = null,
                     servingsExpanded = false,
                     editingIngredientId = null,
                     editingInstructionId = null,

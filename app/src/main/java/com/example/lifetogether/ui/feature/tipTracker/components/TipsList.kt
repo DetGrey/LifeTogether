@@ -95,7 +95,7 @@ fun TipsList(
                                 Icon(
                                     painter = painterResource(id = R.drawable.ic_trashcan),
                                     contentDescription = "Delete icon",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    tint = MaterialTheme.colorScheme.error,
                                 )
                             }
                         }

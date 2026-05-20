@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.size
@@ -55,7 +54,6 @@ import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.textfield.EditableTextField
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
-import sh.calvin.reorderable.ReorderableListItemScope
 
 private val recipeServingsOptions = (1..100).map(Int::toString)
 
@@ -323,7 +321,7 @@ private fun RecipeDetailsContent(
                                 )
                             }
                         } else null
-                    } else { _, item, scope ->
+                    } else { _, item, _ ->
                         {
                             RecipeItemEditActions(
                                 isCancelling = uiState.editingIngredientId == item.id,
@@ -334,7 +332,9 @@ private fun RecipeDetailsContent(
                                         onUiEvent(RecipeDetailsUiEvent.IngredientEvent.EditClicked(item.id))
                                     }
                                 },
-                                reorderScope = scope,
+                                onDeleteClick = {
+                                    onUiEvent(RecipeDetailsUiEvent.IngredientEvent.DeleteClicked(item.id))
+                                },
                             )
                         }
                     },
@@ -373,6 +373,7 @@ private fun RecipeDetailsContent(
                     },
                 )
             }
+            Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.medium))
         }
 
         item {
@@ -393,7 +394,7 @@ private fun RecipeDetailsContent(
                     onReorder = if (uiState.editMode) { fromIndex, toIndex ->
                         onUiEvent(RecipeDetailsUiEvent.InstructionEvent.Moved(fromIndex, toIndex))
                     } else null,
-                    trailingContent = if (uiState.editMode) { _, item, scope ->
+                    trailingContent = if (uiState.editMode) { _, item, _ ->
                         {
                             RecipeItemEditActions(
                                 isCancelling = uiState.editingInstructionId == item.id,
@@ -404,7 +405,9 @@ private fun RecipeDetailsContent(
                                         onUiEvent(RecipeDetailsUiEvent.InstructionEvent.EditClicked(item.id))
                                     }
                                 },
-                                reorderScope = scope,
+                                onDeleteClick = {
+                                    onUiEvent(RecipeDetailsUiEvent.InstructionEvent.DeleteClicked(item.id))
+                                },
                             )
                         }
                     } else null,
@@ -429,6 +432,7 @@ private fun RecipeDetailsContent(
                     )
                 }
             }
+            Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.medium))
         }
 
         item {
@@ -452,13 +456,24 @@ private fun RecipeDetailsContent(
                         onClick = { onUiEvent(RecipeDetailsUiEvent.DialogEvent.SaveClicked) },
                         modifier = Modifier.weight(1f),
                         loading = uiState.isSaving,
-                    )
-                }
+                )
             }
         }
     }
+    }
 
-    if (uiState.showDeleteConfirmationDialog && uiState.recipeId != null) {
+    if (uiState.deleteConfirmationTarget != null) {
+        val deleteTarget = uiState.deleteConfirmationTarget
+        val dialogTitle = when (deleteTarget) {
+            RecipeDeleteConfirmationTarget.Recipe -> "Delete recipe"
+            is RecipeDeleteConfirmationTarget.Ingredient -> "Delete ingredient"
+            is RecipeDeleteConfirmationTarget.Instruction -> "Delete instruction"
+        }
+        val dialogMessage = when (deleteTarget) {
+            RecipeDeleteConfirmationTarget.Recipe -> "Are you sure you want to delete the recipe?"
+            is RecipeDeleteConfirmationTarget.Ingredient -> "Are you sure you want to delete this ingredient?"
+            is RecipeDeleteConfirmationTarget.Instruction -> "Are you sure you want to delete this instruction?"
+        }
         ConfirmationDialog(
             onDismiss = {
                 onUiEvent(RecipeDetailsUiEvent.DialogEvent.DismissDeleteConfirmation)
@@ -466,8 +481,8 @@ private fun RecipeDetailsContent(
             onConfirm = {
                 onUiEvent(RecipeDetailsUiEvent.DialogEvent.ConfirmDeleteConfirmation)
             },
-            dialogTitle = "Delete recipe",
-            dialogMessage = "Are you sure you want to the recipe?",
+            dialogTitle = dialogTitle,
+            dialogMessage = dialogMessage,
             dismissButtonMessage = "Cancel",
             confirmButtonMessage = "Delete",
         )
@@ -494,9 +509,12 @@ private fun RecipeDetailsContent(
 private fun RecipeItemEditActions(
     isCancelling: Boolean,
     onEditClick: () -> Unit,
-    reorderScope: ReorderableListItemScope?,
+    onDeleteClick: () -> Unit,
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)
+    ) {
         Icon(
             painter = painterResource(id = R.drawable.ic_edit),
             contentDescription = if (isCancelling) "Cancel item edit" else "Edit item",
@@ -509,23 +527,31 @@ private fun RecipeItemEditActions(
                 .size(LifeTogetherTokens.sizing.iconLarge)
                 .clickable { onEditClick() },
         )
-        Spacer(modifier = Modifier.width(LifeTogetherTokens.spacing.xSmall))
-        if (reorderScope != null) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_drag_handle),
-                contentDescription = "Reorder item",
-                tint = MaterialTheme.colorScheme.secondary,
-                modifier = with(reorderScope) {
-                    Modifier
-                        .size(LifeTogetherTokens.sizing.iconLarge)
-                        .longPressDraggableHandle()
-                },
-            )
-        }
+        Icon(
+            painter = painterResource(id = R.drawable.ic_trashcan),
+            contentDescription = "Delete item",
+            tint = MaterialTheme.colorScheme.error,
+            modifier = Modifier
+                .size(LifeTogetherTokens.sizing.iconLarge)
+                .clickable { onDeleteClick() },
+        )
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, name = "Recipe details loading")
+@Composable
+private fun RecipeDetailsScreenLoadingPreview() {
+    LifeTogetherTheme {
+        RecipeDetailsScreen(
+            uiState = RecipeDetailsUiState.Loading,
+            bitmap = null,
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Recipe details", heightDp = 1000)
 @Composable
 private fun RecipeDetailsScreenPreview() {
     LifeTogetherTheme {
@@ -537,13 +563,21 @@ private fun RecipeDetailsScreenPreview() {
                 description = "A simple soup.",
                 ingredients = listOf(
                     Ingredient(
+                        id = "ingredient-1",
                         measureType = MeasureType.PIECE,
                         itemName = "Tomatoes",
                         amount = 3.0,
                     ),
+                    Ingredient(
+                        id = "ingredient-2",
+                        measureType = MeasureType.PIECE,
+                        itemName = "Chicken",
+                        amount = 2.0,
+                    ),
                 ),
                 instructions = listOf(
-                    Instruction(itemName = "Blend everything"),
+                    Instruction(id = "instruction-1", itemName = "Blend everything"),
+                    Instruction(id = "instruction-2", itemName = "Simmer for 10 minutes"),
                 ),
                 preparationTimeMin = "30",
                 favourite = false,
@@ -553,7 +587,6 @@ private fun RecipeDetailsScreenPreview() {
                 tags = listOf("Dinner", "Soup"),
                 editMode = false,
                 isSaving = false,
-                showDeleteConfirmationDialog = false,
                 showImageUploadDialog = false,
                 servingsExpanded = false,
                 expandedStates = mapOf(
@@ -562,11 +595,84 @@ private fun RecipeDetailsScreenPreview() {
                 ),
                 ingredientsByServings = listOf(
                     Ingredient(
+                        id = "ingredient-1",
                         measureType = MeasureType.PIECE,
                         itemName = "Tomatoes",
                         amount = 3.0,
                     ),
+                    Ingredient(
+                        id = "ingredient-2",
+                        measureType = MeasureType.PIECE,
+                        itemName = "Chicken",
+                        amount = 2.0,
+                    ),
                 ),
+                deleteConfirmationTarget = null,
+            ),
+            bitmap = null,
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Recipe details edit mode", heightDp = 1400)
+@Composable
+private fun RecipeDetailsScreenEditModePreview() {
+    LifeTogetherTheme {
+        RecipeDetailsScreen(
+            uiState = RecipeDetailsUiState.Content(
+                recipeId = "recipe-1",
+                familyId = "family-1",
+                itemName = "Tomato Soup With chicken",
+                description = "A simple soup.",
+                ingredients = listOf(
+                    Ingredient(
+                        id = "ingredient-1",
+                        measureType = MeasureType.PIECE,
+                        itemName = "Tomatoes",
+                        amount = 3.0,
+                    ),
+                    Ingredient(
+                        id = "ingredient-2",
+                        measureType = MeasureType.PIECE,
+                        itemName = "Chicken",
+                        amount = 2.0,
+                    ),
+                ),
+                instructions = listOf(
+                    Instruction(id = "instruction-1", itemName = "Blend everything"),
+                    Instruction(id = "instruction-2", itemName = "Simmer for 10 minutes"),
+                ),
+                preparationTimeMin = "30",
+                favourite = false,
+                recipeServings = 2,
+                servings = "2",
+                tagsInput = "Dinner Soup",
+                tags = listOf("Dinner", "Soup"),
+                editMode = true,
+                isSaving = false,
+                showImageUploadDialog = false,
+                servingsExpanded = false,
+                expandedStates = mapOf(
+                    "ingredients" to true,
+                    "instructions" to true,
+                ),
+                ingredientsByServings = listOf(
+                    Ingredient(
+                        id = "ingredient-1",
+                        measureType = MeasureType.PIECE,
+                        itemName = "Tomatoes",
+                        amount = 3.0,
+                    ),
+                    Ingredient(
+                        id = "ingredient-2",
+                        measureType = MeasureType.PIECE,
+                        itemName = "Chicken",
+                        amount = 2.0,
+                    ),
+                ),
+                deleteConfirmationTarget = null,
             ),
             bitmap = null,
             onUiEvent = {},

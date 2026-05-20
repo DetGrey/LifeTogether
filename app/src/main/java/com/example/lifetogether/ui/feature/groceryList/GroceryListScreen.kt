@@ -101,7 +101,9 @@ fun GroceryListScreen(
                 modifier = Modifier
                     .padding(padding)
                     .padding(LifeTogetherTokens.spacing.small),
-                contentPadding = PaddingValues(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
+                contentPadding = PaddingValues(
+                    bottom = LifeTogetherTokens.spacing.bottomInsetLarge * 2
+                ),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
             ) {

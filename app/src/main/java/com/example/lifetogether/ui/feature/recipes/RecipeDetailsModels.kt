@@ -35,7 +35,7 @@ sealed interface RecipeDetailsUiState {
         val editMode: Boolean = false,
         val isSaving: Boolean = false,
         val showDiscardConfirmationDialog: Boolean = false,
-        val showDeleteConfirmationDialog: Boolean = false,
+        val deleteConfirmationTarget: RecipeDeleteConfirmationTarget? = null,
         val showImageUploadDialog: Boolean = false,
         val servingsExpanded: Boolean = false,
     ) : RecipeDetailsUiState
@@ -46,6 +46,12 @@ data class RecipeIngredientDraftState(
     val amount: String = "",
     val measureType: MeasureType = MeasureType.PIECE,
 )
+
+sealed interface RecipeDeleteConfirmationTarget {
+    data object Recipe : RecipeDeleteConfirmationTarget
+    data class Ingredient(val ingredientId: String) : RecipeDeleteConfirmationTarget
+    data class Instruction(val instructionId: String) : RecipeDeleteConfirmationTarget
+}
 
 sealed interface RecipeDetailsUiEvent {
     sealed interface Editor : RecipeDetailsUiEvent {
@@ -64,6 +70,7 @@ sealed interface RecipeDetailsUiEvent {
     sealed interface IngredientEvent : RecipeDetailsUiEvent {
         data class CompletedToggled(val ingredient: Completable) : IngredientEvent
         data class EditClicked(val ingredientId: String) : IngredientEvent
+        data class DeleteClicked(val ingredientId: String) : IngredientEvent
         data class Moved(val fromIndex: Int, val toIndex: Int) : IngredientEvent
         data class NameChanged(val value: String) : IngredientEvent
         data class AmountChanged(val value: String) : IngredientEvent
@@ -76,6 +83,7 @@ sealed interface RecipeDetailsUiEvent {
     sealed interface InstructionEvent : RecipeDetailsUiEvent {
         data class CompletedToggled(val instruction: Completable) : InstructionEvent
         data class EditClicked(val instructionId: String) : InstructionEvent
+        data class DeleteClicked(val instructionId: String) : InstructionEvent
         data class Moved(val fromIndex: Int, val toIndex: Int) : InstructionEvent
         data class TextChanged(val value: String) : InstructionEvent
         data object CancelEdit : InstructionEvent

@@ -18,15 +18,20 @@ fun CompletableListItem(
     isCompleted: Boolean,
     onCompleteToggle: () -> Unit,
     modifier: Modifier = Modifier,
+    leadingContent: (@Composable () -> Unit)? = null,
     trailingContent: (@Composable () -> Unit)? = null,
 ) {
     ListItem(
         modifier = modifier.fillMaxWidth(),
         leadingContent = {
-            CompletableBox(
-                isCompleted = isCompleted,
-                onCompleteToggle = onCompleteToggle,
-            )
+            if (leadingContent != null) {
+                leadingContent()
+            } else {
+                CompletableBox(
+                    isCompleted = isCompleted,
+                    onCompleteToggle = onCompleteToggle,
+                )
+            }
         },
         headlineContent = {
             Text(
