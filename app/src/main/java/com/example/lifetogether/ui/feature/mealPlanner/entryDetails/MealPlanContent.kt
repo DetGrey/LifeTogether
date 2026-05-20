@@ -170,7 +170,7 @@ fun LazyListScope.mealPlanContent(
                     }
                     MealSearchMode.CUSTOM -> {
                         CustomTextField(
-                            value = formState.customMealName,
+                            value = formState.customMealName.orEmpty(),
                             onValueChange = { onUiEvent(MealPlanDetailsUiEvent.Meal.CustomMealNameChanged(it)) },
                             label = "Meal name",
                             modifier = Modifier.fillMaxWidth(),

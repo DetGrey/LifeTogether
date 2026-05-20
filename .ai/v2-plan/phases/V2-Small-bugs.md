@@ -37,13 +37,12 @@ Here are some questions:
 - [x] Keep older meal plans visible while swiping back after creating a new one. All plans should be visible under the day they are added to
 - [x] After creating a meal plan, re turn to the week that contains the new entry.
 - [x] Fix recipe search in new meal plan entry details. It used to work.
-- [ ] Meal plan recipe Vs custom
+- [x] Meal plan recipe Vs custom
   - One should always be null so when changing between custom and recipe, so both aren't saved
 
 ### Grocery
-- [?] Fix long text layout in Add grocery item.
-- [ ] Need more bottom spacing if using double row AddGroceryItem
-  - (TODO SOON)
+- [x] Fix long text layout in Add grocery item.
+- [x] Need more bottom spacing if using double row AddGroceryItem
 - [ ] _Add an amount field to grocery items_.
 
 ### Lists
@@ -124,7 +123,7 @@ Here are some questions:
 - [ ] How does settings work if not logged in?
 
 ### TipTracker
-- [ ] Rebuild list of tips (maybe as a card)
+- [x] Rebuild list of tips (maybe as a card)
 
 ### Family memories and widgets
 - [ ] _Add likes and dislikes for food and everything else._

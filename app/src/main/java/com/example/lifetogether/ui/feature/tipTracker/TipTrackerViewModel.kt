@@ -2,7 +2,6 @@ package com.example.lifetogether.ui.feature.tipTracker
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.logic.toFullDateString
 import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.SessionRepository
@@ -127,14 +126,12 @@ class TipTrackerViewModel @Inject constructor(
     private fun handleTipsSuccess(tipItems: List<TipItem>) {
         val sortedTips = tipItems.sortedByDescending { it.date }
         val stats = calculateStats(sortedTips)
-        val groupedTips = sortedTips.groupBy { it.date.toFullDateString() }
 
         _uiState.update { state ->
             when (state) {
                 is TipTrackerUiState.Loading -> TipTrackerUiState.Content(
                     tips = sortedTips,
                     stats = stats,
-                    groupedTips = groupedTips,
                     calendar = buildCalendarState(
                         displayedDate = LocalDate.now(),
                         tips = sortedTips,
@@ -144,7 +141,6 @@ class TipTrackerViewModel @Inject constructor(
                 is TipTrackerUiState.Content -> state.copy(
                     tips = sortedTips,
                     stats = stats,
-                    groupedTips = groupedTips,
                     calendar = buildCalendarState(
                         displayedDate = state.calendar.displayedDate,
                         tips = sortedTips,

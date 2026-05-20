@@ -30,8 +30,8 @@ sealed interface MealPlanDetailsContent {
                     form = MealPlanFormState(
                         name = mealPlan.itemName,
                         date = mealPlan.date,
-                        recipeId = mealPlan.recipeId.orEmpty(),
-                        customMealName = mealPlan.customMealName.orEmpty(),
+                        recipeId = mealPlan.recipeId?.takeIf { it.isNotBlank() },
+                        customMealName = mealPlan.customMealName?.takeIf { it.isNotBlank() },
                         mealType = mealPlan.mealType,
                         notes = mealPlan.notes,
                     ),
@@ -63,8 +63,8 @@ data class MealRecipeSearchState(
 data class MealPlanFormState(
     val name: String = "",
     val date: String = "",
-    val recipeId: String = "",
-    val customMealName: String = "",
+    val recipeId: String? = null,
+    val customMealName: String? = null,
     val mealType: MealType = MealType.DINNER,
     val notes: String = "",
 )

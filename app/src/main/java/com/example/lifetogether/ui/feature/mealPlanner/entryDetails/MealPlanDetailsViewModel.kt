@@ -276,7 +276,12 @@ class MealPlanDetailsViewModel @Inject constructor(
 
     private fun selectRecipe(recipe: RecipeSearchItem) {
         updateMealContent { details, _ ->
-            details to MealRecipeSearchState(
+            details.copy(
+                form = details.form.copy(
+                    recipeId = recipe.id,
+                    customMealName = null,
+                ),
+            ) to MealRecipeSearchState(
                 mode = MealSearchMode.RECIPE,
                 query = recipe.itemName,
                 isSearchFocused = false,
@@ -288,16 +293,24 @@ class MealPlanDetailsViewModel @Inject constructor(
 
     private fun updateMealMode(mode: MealSearchMode) {
         updateMealContent { details, state ->
+            val updatedDetails = details.copy(
+                form = details.form.copy(
+                    recipeId = if (mode == MealSearchMode.RECIPE) details.form.recipeId else null,
+                    customMealName = if (mode == MealSearchMode.CUSTOM) details.form.customMealName else null,
+                ),
+            )
             val updatedState = if (mode == MealSearchMode.RECIPE) {
-                buildMealRecipeSearchState(details, state.copy(mode = mode))
+                buildMealRecipeSearchState(updatedDetails, state.copy(mode = mode))
             } else {
                 state.copy(
                     mode = mode,
+                    query = "",
+                    selectedRecipeSearchItem = null,
                     suggestions = emptyList(),
                     isSearchFocused = false,
                 )
             }
-            details to updatedState
+            updatedDetails to updatedState
         }
     }
 
@@ -305,7 +318,10 @@ class MealPlanDetailsViewModel @Inject constructor(
         updateCurrentDetails { details ->
             val meal = details as? MealPlanDetailsContent.Meal ?: return@updateCurrentDetails details
             meal.copy(
-                form = meal.form.copy(customMealName = value),
+                form = meal.form.copy(
+                    customMealName = value,
+                    recipeId = null,
+                ),
             )
         }
     }
@@ -376,11 +392,15 @@ class MealPlanDetailsViewModel @Inject constructor(
         details: MealPlanDetailsContent.Meal,
         currentState: MealRecipeSearchState?,
     ): MealRecipeSearchState {
-        val selectedRecipeId = details.form.recipeId.ifBlank { null }
+        val selectedRecipeId = details.form.recipeId?.takeIf { it.isNotBlank() }
         val selectedRecipe = selectedRecipeId?.let { recipeId ->
             allRecipeSearchItems.firstOrNull { it.id == recipeId }
         }
-        val mode = currentState?.mode ?: if (details.form.customMealName.isNotBlank()) MealSearchMode.CUSTOM else MealSearchMode.RECIPE
+        val mode = currentState?.mode ?: when {
+            !details.form.customMealName.isNullOrBlank() -> MealSearchMode.CUSTOM
+            selectedRecipeId != null -> MealSearchMode.RECIPE
+            else -> MealSearchMode.RECIPE
+        }
         val query = currentState?.query?.takeIf { it.isNotBlank() }
             ?: selectedRecipe?.itemName.orEmpty()
         val selectedRecipeItem = selectedRecipe ?: currentState?.selectedRecipeSearchItem

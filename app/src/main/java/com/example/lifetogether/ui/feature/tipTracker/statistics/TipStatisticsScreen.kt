@@ -178,18 +178,6 @@ private fun TipStatisticsScreenPreview() {
                     ),
                     bestMonth = "January 2026" to 120f,
                 ),
-                groupedTips = mapOf(
-                    "01. January 2026" to listOf(
-                        TipItem(
-                            id = "tip-1",
-                            familyId = "family-1",
-                            itemName = "Tip",
-                            lastUpdated = Date(),
-                            amount = 120f,
-                            date = Date(),
-                        ),
-                    ),
-                ),
                 calendar = TipTrackerCalendarState(),
             ),
             onUiEvent = {},

@@ -2,11 +2,11 @@ package com.example.lifetogether.ui.feature.tipTracker
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -21,8 +21,8 @@ import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.feature.tipTracker.components.AddNewTipItem
+import com.example.lifetogether.ui.feature.tipTracker.components.TipCard
 import com.example.lifetogether.ui.feature.tipTracker.components.TipsCalendar
-import com.example.lifetogether.ui.feature.tipTracker.components.TipsList
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import java.util.Date
@@ -65,50 +65,53 @@ fun TipTrackerScreen(
         ) {
             val content = uiState as? TipTrackerUiState.Content ?: return@AnimatedLoadingContent
 
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(LifeTogetherTokens.spacing.small),
-                contentPadding = PaddingValues(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
-            ) {
-                item {
-                    Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
-                        if (content.tips.isNotEmpty()) {
-                            TagOptionRow(
-                                options = listOf("Calendar", "List"),
-                                selectedOption = content.overviewOption,
-                                onSelectedOptionChange = {
-                                    onUiEvent(TipTrackerUiEvent.OverviewOptionSelected(it))
-                                },
-                                center = true,
-                            )
-                            when (content.overviewOption) {
-                                "Calendar" -> {
-                                    TipsCalendar(
-                                        calendar = content.calendar,
-                                        onPreviousMonthClick = {
-                                            onUiEvent(TipTrackerUiEvent.PreviousMonthClicked)
-                                        },
-                                        onCurrentMonthClick = {
-                                            onUiEvent(TipTrackerUiEvent.CurrentMonthClicked)
-                                        },
-                                        onNextMonthClick = {
-                                            onUiEvent(TipTrackerUiEvent.NextMonthClicked)
-                                        },
-                                    )
-                                }
+            if (content.tips.isNotEmpty()) {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(LifeTogetherTokens.spacing.small),
+                    contentPadding = PaddingValues(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                ) {
+                    item {
+                        TagOptionRow(
+                            options = listOf("Calendar", "List"),
+                            selectedOption = content.overviewOption,
+                            onSelectedOptionChange = {
+                                onUiEvent(TipTrackerUiEvent.OverviewOptionSelected(it))
+                            },
+                            center = true,
+                        )
+                    }
 
-                                "List" -> {
-                                    TipsList(
-                                        content.groupedTips,
-                                        onDeleteClick = {
-                                            onUiEvent(TipTrackerUiEvent.DeleteTipClicked(it))
-                                        },
-                                    )
-                                }
+                    when (content.overviewOption) {
+                        "Calendar" -> {
+                            item {
+                                TipsCalendar(
+                                    calendar = content.calendar,
+                                    onPreviousMonthClick = {
+                                        onUiEvent(TipTrackerUiEvent.PreviousMonthClicked)
+                                    },
+                                    onCurrentMonthClick = {
+                                        onUiEvent(TipTrackerUiEvent.CurrentMonthClicked)
+                                    },
+                                    onNextMonthClick = {
+                                        onUiEvent(TipTrackerUiEvent.NextMonthClicked)
+                                    },
+                                )
+                            }
+                        }
+
+                        "List" -> {
+                            items(content.tips, key = { it.id }) { tip ->
+                                TipCard(
+                                    tip = tip,
+                                    onDeleteClick = {
+                                        onUiEvent(TipTrackerUiEvent.DeleteTipClicked(tip))
+                                    }
+                                )
                             }
                         }
                     }
@@ -167,18 +170,6 @@ private fun TipTrackerScreenPreview() {
                     ),
                 ),
                 stats = TipTrackerStats(),
-                groupedTips = mapOf(
-                    "01. January 2026" to listOf(
-                        TipItem(
-                            id = "tip-1",
-                            familyId = "family-1",
-                            itemName = "Tip",
-                            lastUpdated = Date(),
-                            amount = 120f,
-                            date = Date(),
-                        ),
-                    ),
-                ),
                 calendar = TipTrackerCalendarState(
                     monthLabel = "April",
                     days = listOf(TipTrackerCalendarDay("1 Fri", "100"), TipTrackerCalendarDay("2 Sat")),
@@ -207,18 +198,6 @@ private fun TipTrackerScreenListPreview() {
                     ),
                 ),
                 stats = TipTrackerStats(),
-                groupedTips = mapOf(
-                    "01. January 2026" to listOf(
-                        TipItem(
-                            id = "tip-1",
-                            familyId = "family-1",
-                            itemName = "Tip",
-                            lastUpdated = Date(),
-                            amount = 120f,
-                            date = Date(),
-                        ),
-                    ),
-                ),
                 overviewOption = "List",
                 calendar = TipTrackerCalendarState(),
             ),

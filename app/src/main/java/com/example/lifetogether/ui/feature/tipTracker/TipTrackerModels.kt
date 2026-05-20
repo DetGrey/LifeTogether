@@ -43,7 +43,6 @@ sealed interface TipTrackerUiState {
     data class Content(
         val tips: List<TipItem>,
         val stats: TipTrackerStats,
-        val groupedTips: Map<String, List<TipItem>>,
         val calendar: TipTrackerCalendarState,
         val selectedTip: TipItem? = null,
         val overviewOption: String = "Calendar",

@@ -13,7 +13,7 @@ class MealPlanDetailsSaver @Inject constructor(
 ) {
     suspend fun save(
         details: MealPlanDetailsContent.Meal,
-        mealRecipeSearchState: MealRecipeSearchState? = null,
+        mealRecipeSearchState: MealRecipeSearchState,
         mealPlanId: String?,
         familyId: String,
         now: Date,
@@ -28,20 +28,22 @@ class MealPlanDetailsSaver @Inject constructor(
 
     private suspend fun saveMeal(
         details: MealPlanDetailsContent.Meal,
-        mealRecipeSearchState: MealRecipeSearchState?,
+        mealRecipeSearchState: MealRecipeSearchState,
         mealPlanId: String?,
         familyId: String,
         now: Date,
     ): Result<Unit, AppError> {
         val form = details.form
-        val recipeId = mealRecipeSearchState?.selectedRecipeSearchItem?.id
-            ?.takeIf { it.isNotBlank() }
-            ?: form.recipeId.takeIf { it.isNotBlank() }
-        val itemName = when (mealRecipeSearchState?.mode) {
-            MealSearchMode.CUSTOM -> form.customMealName.trim()
-            else -> mealRecipeSearchState?.selectedRecipeSearchItem?.itemName
-                ?.takeIf { it.isNotBlank() }
-                ?: form.name.trim()
+        val mode = mealRecipeSearchState.mode
+        val recipeSearchItem = mealRecipeSearchState.selectedRecipeSearchItem
+        val customMealName = form.customMealName?.trim()
+        val recipeId = when (mode) {
+            MealSearchMode.RECIPE -> recipeSearchItem?.id
+            MealSearchMode.CUSTOM -> null
+        }
+        val itemName = when (mode) {
+            MealSearchMode.RECIPE -> recipeSearchItem?.itemName.orEmpty()
+            MealSearchMode.CUSTOM -> customMealName.orEmpty()
         }
         val draft = MealPlan(
             id = mealPlanId ?: UUID.randomUUID().toString(),
@@ -49,7 +51,7 @@ class MealPlanDetailsSaver @Inject constructor(
             itemName = itemName,
             date = form.date,
             recipeId = recipeId,
-            customMealName = form.customMealName.ifBlank { null },
+            customMealName = customMealName?.takeIf { it.isNotBlank() },
             mealType = form.mealType,
             notes = form.notes,
             lastUpdated = now,
@@ -71,7 +73,7 @@ class MealPlanDetailsSaver @Inject constructor(
         return if (mode == MealSearchMode.RECIPE) {
             if (mealRecipeSearchState?.selectedRecipeSearchItem == null) "Select a recipe" else null
         } else {
-            if (details.form.customMealName.isBlank()) "Custom meal name cannot be empty" else null
+            if (details.form.customMealName.isNullOrBlank()) "Custom meal name cannot be empty" else null
         }
     }
 
