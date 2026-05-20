@@ -70,6 +70,7 @@ Here are some questions:
   - It can still be added twice from the grocery screen itself though
   - Be able to handle ingredients or suggestions that has a s e.g. banana and bananas should be connected to same
 - [ ] Have add to meal plan button on recipes that autofill with that recipe and opens the create meal plan
+  - Make it an floating action button maybe?
   - (TODO WOULD LIKE TO IMPLEMENT)
 - [x] Recipe card with image (two options)
   - Have prep time below title and image box to the right a bit like routines
@@ -157,8 +158,6 @@ Here are some questions:
 - [ ] The Profiler can see all classes in memory and other things.
 - [ ] _Repositories should probably be singletons and stateless._
 - [ ] _Use SQLCipher for Room encryption._
-- [ ] Error messages should not show when null, instead of keeping both a string and boolean.
-  - (TODO SOON) - check if it's not already fine
 - [ ] _Make the image download success and version update dialogs nicer._
 - [ ] _Show a dialog when there is a new version available._
 - [x] Animate when image is loaded and about to be shown e.g. for recipes, routine and such so it doesn't just pop up
@@ -166,11 +165,9 @@ Here are some questions:
 - [ ] Change how dialogs are shown with enabled parameter instead of "contentState?.showRenameListDialog == true"
   - Maybe even handle some of the events inside instead of many events inside viewmodel per dialog (RequestRenameList, DismissRenameListDialog,RenameListNameChanged,ConfirmRenameList)
   - (TODO SOON)
-- [ ] Update libs versions
-  - (TODO SOON)
-- [ ] Delete things from Converters.kt
-  - (TODO SOON)
-- [ ] Update sdk to version 37
+- [x] Update libs versions
+- [x] Update sdk to version 37
+- [ ] Fix settings.gradle.kts warnings
   - (TODO SOON)
 
 ## Icons

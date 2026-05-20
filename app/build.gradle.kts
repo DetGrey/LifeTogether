@@ -14,7 +14,7 @@ plugins {
 
 android {
     namespace = "com.example.lifetogether"
-    compileSdk = 36
+    compileSdk = 37
 
     // --- Load Signing Properties ---
     val localProps = gradleLocalProperties(rootDir, providers)
@@ -48,7 +48,7 @@ android {
     defaultConfig {
         applicationId = "com.example.lifetogether"
         minSdk = 31
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "1.5.0"
 
