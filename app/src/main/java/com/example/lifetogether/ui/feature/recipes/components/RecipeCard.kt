@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.feature.recipes
+package com.example.lifetogether.ui.feature.recipes.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement

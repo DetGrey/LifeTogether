@@ -173,6 +173,7 @@ Here are some questions:
 ## Icons
 - [ ] Make Grocery icon with a plus for the RecipeDetails
 - [ ] Make search icon
+- [ ] Make close (X) button
 - [ ] Make meal plan icon
 - [ ] Make drag handle icon
 - [ ] Make new rounded icons (V2)

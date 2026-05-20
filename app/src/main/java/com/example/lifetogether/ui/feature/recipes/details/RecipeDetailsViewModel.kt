@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.feature.recipes
+package com.example.lifetogether.ui.feature.recipes.details
 
 import android.content.Context
 import android.net.Uri
@@ -44,6 +44,7 @@ import kotlinx.coroutines.withContext
 import java.util.Date
 import javax.inject.Inject
 import androidx.navigation.toRoute
+import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 
 @HiltViewModel
 class RecipeDetailsViewModel @Inject constructor(
@@ -74,7 +75,7 @@ class RecipeDetailsViewModel @Inject constructor(
     private var currentFamilyId: String? = null
     private var originalRecipe: Recipe? = null
     private var observeRecipeJob: Job? = null
-    private var latestSuggestions: List<com.example.lifetogether.domain.model.grocery.GrocerySuggestion> = emptyList()
+    private var latestSuggestions: List<GrocerySuggestion> = emptyList()
 
     init {
         if (pendingRecipeId == null) {

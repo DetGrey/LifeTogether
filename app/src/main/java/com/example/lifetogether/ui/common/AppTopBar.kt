@@ -23,6 +23,7 @@ fun AppTopBar(
     leftAppIcon: AppIcon,
     onLeftClick: (() -> Unit)? = null,
     text: String,
+    titleContent: (@Composable () -> Unit)? = null,
     rightAppIcon: AppIcon? = null,
     onRightClick: (() -> Unit)? = null,
     rightText: String? = null,
@@ -30,13 +31,17 @@ fun AppTopBar(
 ) {
     CenterAlignedTopAppBar(
         title = {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.displayMedium,
-                color = MaterialTheme.colorScheme.primary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            if (titleContent != null) {
+                titleContent()
+            } else {
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.displayMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         },
         navigationIcon = {
             IconButton(

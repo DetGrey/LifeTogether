@@ -55,6 +55,10 @@ class RecipesViewModel @Inject constructor(
     fun onEvent(event: RecipesUiEvent) {
         when (event) {
             is RecipesUiEvent.TagSelected -> selectTag(event.tag)
+            RecipesUiEvent.SearchIconClicked -> openSearch()
+            is RecipesUiEvent.SearchQueryChanged -> updateSearchQuery(event.value)
+            RecipesUiEvent.SearchClearClicked -> clearSearchQuery()
+            RecipesUiEvent.SearchCancelClicked -> closeSearch()
         }
     }
 
@@ -75,9 +79,15 @@ class RecipesViewModel @Inject constructor(
                         val contentState = currentContentState()
                         if (contentState == null) {
                             _uiState.value = RecipesUiState.Content(
-                                recipes = applyTagFilter(result.data, "All"),
+                                recipes = applyFilters(
+                                    recipes = result.data,
+                                    selectedTag = "All",
+                                    searchQuery = "",
+                                ),
                                 tagsList = buildTagsList(result.data),
                                 selectedTag = "All",
+                                searchQuery = "",
+                                isSearchActive = false,
                             )
                         } else {
                             updateRecipesContent()
@@ -101,11 +111,42 @@ class RecipesViewModel @Inject constructor(
         updateRecipesContent()
     }
 
+    private fun openSearch() {
+        updateRecipesContent { state ->
+            state.copy(isSearchActive = true)
+        }
+    }
+
+    private fun updateSearchQuery(value: String) {
+        updateRecipesContent { state ->
+            state.copy(searchQuery = value.trimStart())
+        }
+    }
+
+    private fun clearSearchQuery() {
+        updateRecipesContent { state ->
+            state.copy(searchQuery = "")
+        }
+    }
+
+    private fun closeSearch() {
+        updateRecipesContent { state ->
+            state.copy(
+                searchQuery = "",
+                isSearchActive = false,
+            )
+        }
+    }
+
     private fun updateRecipesContent(transform: ((RecipesUiState.Content) -> RecipesUiState.Content)? = null) {
         _uiState.update { state ->
             val contentState = state as? RecipesUiState.Content ?: return@update state
             val updatedState = transform?.invoke(contentState) ?: contentState
-            val filteredRecipes = applyTagFilter(allRecipes, updatedState.selectedTag)
+            val filteredRecipes = applyFilters(
+                recipes = allRecipes,
+                selectedTag = updatedState.selectedTag,
+                searchQuery = updatedState.searchQuery,
+            )
             updatedState.copy(
                 recipes = filteredRecipes,
                 tagsList = buildTagsList(allRecipes),
@@ -117,8 +158,12 @@ class RecipesViewModel @Inject constructor(
         return _uiState.value as? RecipesUiState.Content
     }
 
-    private fun applyTagFilter(recipes: List<Recipe>, selectedTag: String): List<Recipe> {
-        val filtered = if (selectedTag == "All") {
+    private fun applyFilters(
+        recipes: List<Recipe>,
+        selectedTag: String,
+        searchQuery: String,
+    ): List<Recipe> {
+        val tagFiltered = if (selectedTag == "All") {
             recipes
         } else {
             recipes.filter { recipe ->
@@ -127,7 +172,19 @@ class RecipesViewModel @Inject constructor(
                 }
             }
         }
-        return filtered.sortedBy { it.itemName.lowercase() }
+        val search = searchQuery.trim().lowercase()
+        val searched = if (search.isBlank()) {
+            tagFiltered
+        } else {
+            tagFiltered.filter { recipe ->
+                recipe.itemName.contains(search, ignoreCase = true) ||
+                    recipe.tags.any { tag -> tag.contains(search, ignoreCase = true) } ||
+                    recipe.ingredients.any { ingredient ->
+                        ingredient.itemName.contains(search, ignoreCase = true)
+                    }
+            }
+        }
+        return searched.sortedBy { it.itemName.lowercase() }
     }
 
     private fun buildTagsList(recipes: List<Recipe>): List<String> {

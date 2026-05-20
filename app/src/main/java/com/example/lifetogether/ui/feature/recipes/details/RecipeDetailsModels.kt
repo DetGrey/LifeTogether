@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.feature.recipes
+package com.example.lifetogether.ui.feature.recipes.details
 
 import android.graphics.Bitmap
 import android.net.Uri
