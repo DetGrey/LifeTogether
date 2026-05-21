@@ -510,7 +510,7 @@ class RecipeDetailsViewModel @AssistedInject constructor(
         val sanitizedIngredients = state.ingredients
             .mapIndexedNotNull { index, ingredient ->
                 val itemName = ingredient.itemName.trim()
-                if (itemName.isBlank() || ingredient.amount <= 0.0) {
+                if (itemName.isBlank() || ingredient.amount < 0.0) {
                     null
                 } else {
                     ingredient.copy(itemName = itemName, sortOrder = index)

@@ -94,7 +94,7 @@ fun AddNewIngredient(
                         .padding(horizontal = LifeTogetherTokens.spacing.small)
                         .fillMaxHeight()
                         .clickable(
-                            enabled = itemName.isNotBlank() && amount.toDoubleOrNull() != null,
+                            enabled = itemName.isNotBlank(),
                         ) {
                             onActionClick()
                         },
