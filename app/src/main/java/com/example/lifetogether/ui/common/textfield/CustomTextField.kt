@@ -1,5 +1,6 @@
 package com.example.lifetogether.ui.common.textfield
 
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,6 +36,7 @@ fun CustomTextField(
     enabled: Boolean = true,
     maxLines: Int = 1,
     onFocusChanged: ((Boolean) -> Unit)? = null,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
 ) {
     var visualTransformation: VisualTransformation = VisualTransformation.None
     if (keyboardType == KeyboardType.Password) {
@@ -79,6 +81,7 @@ fun CustomTextField(
             keyboardType = keyboardType,
             imeAction = imeAction,
         ),
+        keyboardActions = keyboardActions,
         minLines = 1,
         maxLines = maxLines,
         colors = filledTextFieldColors(),

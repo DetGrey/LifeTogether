@@ -14,6 +14,7 @@ import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.ui.common.event.UiCommand
+import com.example.lifetogether.ui.common.snackbar.SnackbarSeverity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -64,15 +65,22 @@ class GuideCreateViewModel @Inject constructor(
             is GuideCreateUiEvent.DescriptionChanged -> updateState { it.copy(description = event.value) }
             is GuideCreateUiEvent.VisibilityChanged -> updateState { it.copy(visibility = event.value) }
             is GuideCreateUiEvent.AddSectionRequested -> addSection(event.title, event.amount)
+            is GuideCreateUiEvent.DeleteSectionRequested -> deleteSection(event.sectionId)
+            is GuideCreateUiEvent.SectionMoved -> moveSection(event.fromIndex, event.toIndex)
             is GuideCreateUiEvent.AddStepRequested -> addStep(event.sectionId, event.content, event.type)
+            is GuideCreateUiEvent.DeleteStepRequested -> deleteStep(event.sectionId, event.stepId)
+            is GuideCreateUiEvent.StepMoved -> moveStep(event.sectionId, event.fromIndex, event.toIndex)
+            is GuideCreateUiEvent.StepDraftChanged -> updateState {
+                it.copy(stepDrafts = it.stepDrafts + (event.sectionId to event.value))
+            }
+            is GuideCreateUiEvent.StepTypeDraftChanged -> updateState {
+                it.copy(stepTypeDrafts = it.stepTypeDrafts + (event.sectionId to event.type))
+            }
             GuideCreateUiEvent.SaveClicked -> saveGuide()
         }
     }
 
-    private fun addSection(
-        sectionTitle: String,
-        amount: Int = 1,
-    ) {
+    private fun addSection(sectionTitle: String, amount: Int = 1) {
         val currentSections = _uiState.value.sections
         val normalizedTitle = sectionTitle.trim().ifBlank {
             "Section ${currentSections.size + 1}"
@@ -91,13 +99,34 @@ class GuideCreateViewModel @Inject constructor(
         }
     }
 
-    private fun addStep(
-        sectionId: String,
-        content: String,
-        type: GuideStepType,
-    ) {
+    private fun deleteSection(sectionId: String) {
+        updateState { state ->
+            state.copy(
+                sections = state.sections
+                    .filter { it.id != sectionId }
+                    .mapIndexed { index, section -> section.copy(orderNumber = index + 1) },
+                stepDrafts = state.stepDrafts - sectionId,
+                stepTypeDrafts = state.stepTypeDrafts - sectionId,
+            )
+        }
+    }
+
+    private fun moveSection(fromIndex: Int, toIndex: Int) {
+        updateState { state ->
+            val mutable = state.sections.toMutableList()
+            mutable.add(toIndex, mutable.removeAt(fromIndex))
+            state.copy(
+                sections = mutable.mapIndexed { index, section -> section.copy(orderNumber = index + 1) },
+            )
+        }
+    }
+
+    private fun addStep(sectionId: String, content: String, type: GuideStepType) {
         val normalizedContent = content.trim()
-        if (normalizedContent.isBlank()) return
+        if (normalizedContent.isBlank()) {
+            showInfo("Type some content before adding a step")
+            return
+        }
 
         updateState { state ->
             state.copy(
@@ -116,9 +145,7 @@ class GuideCreateViewModel @Inject constructor(
                                     subSteps = emptyList(),
                                 ),
                             )
-
                             GuideStepType.ROUND -> expandRoundDraft(normalizedContent)
-
                             else -> listOf(
                                 GuideStep(
                                     id = UUID.randomUUID().toString(),
@@ -131,6 +158,33 @@ class GuideCreateViewModel @Inject constructor(
                             )
                         }
                         section.copy(steps = section.steps + newSteps)
+                    }
+                },
+                stepDrafts = state.stepDrafts + (sectionId to ""),
+            )
+        }
+    }
+
+    private fun deleteStep(sectionId: String, stepId: String) {
+        updateState { state ->
+            state.copy(
+                sections = state.sections.map { section ->
+                    if (section.id != sectionId) section
+                    else section.copy(steps = section.steps.filter { it.id != stepId })
+                },
+            )
+        }
+    }
+
+    private fun moveStep(sectionId: String, fromIndex: Int, toIndex: Int) {
+        updateState { state ->
+            state.copy(
+                sections = state.sections.map { section ->
+                    if (section.id != sectionId) section
+                    else {
+                        val mutable = section.steps.toMutableList()
+                        mutable.add(toIndex, mutable.removeAt(fromIndex))
+                        section.copy(steps = mutable)
                     }
                 },
             )
@@ -232,6 +286,18 @@ class GuideCreateViewModel @Inject constructor(
                 UiCommand.ShowSnackbar(
                     message = message,
                     withDismissAction = true,
+                ),
+            )
+        }
+    }
+
+    private fun showInfo(message: String) {
+        viewModelScope.launch {
+            _uiCommands.send(
+                UiCommand.ShowSnackbar(
+                    message = message,
+                    withDismissAction = true,
+                    severity = SnackbarSeverity.Info,
                 ),
             )
         }

@@ -25,6 +25,11 @@ class AppNavigator(private val backStack: NavBackStack<NavKey>) : Navigator {
         backStack.add(route)
     }
 
+    fun navigateReplacing(route: AppRoute) {
+        if (backStack.size > 1) backStack.removeLast()
+        backStack.add(route)
+    }
+
     fun navigateTopLevel(route: AppRoute) {
         when (route) {
             is HomeNavRoute -> popToHome()

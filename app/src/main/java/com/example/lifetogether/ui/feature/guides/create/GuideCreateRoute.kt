@@ -21,7 +21,7 @@ fun GuideCreateRoute(
         viewModel.commands.collect { command ->
             when (command) {
                 is GuideCreateCommand.NavigateToGuideDetails -> {
-                    appNavigator.navigate(GuideDetailsNavRoute(command.guideId))
+                    appNavigator.navigateReplacing(GuideDetailsNavRoute(command.guideId))
                 }
             }
         }
