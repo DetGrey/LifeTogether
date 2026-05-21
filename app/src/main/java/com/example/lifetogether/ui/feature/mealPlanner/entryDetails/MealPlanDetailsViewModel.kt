@@ -31,6 +31,7 @@ class MealPlanDetailsViewModel @Inject constructor(
     private val route = savedStateHandle.toRoute<MealPlanDetailsNavRoute>()
     val mealPlanId: String? = route.mealPlanId
     private val defaultDate: String? = route.defaultDate
+    private val preselectedRecipeId: String? = route.preselectedRecipeId
 
     private val _familyId = MutableStateFlow<String?>(null)
     val familyId = _familyId.asStateFlow()
@@ -38,7 +39,7 @@ class MealPlanDetailsViewModel @Inject constructor(
     private var observeRecipesJob: Job? = null
     private var observedRecipesFamilyId: String? = null
     private var allRecipeSearchItems: List<RecipeSearchItem> = emptyList()
-    private var originalDetails: MealPlanDetailsContent? = null
+    private var originalForm: MealPlanFormState? = null
 
     private val _uiState = MutableStateFlow<MealPlanDetailsUiState>(MealPlanDetailsUiState.Loading)
     val uiState = _uiState.asStateFlow()
@@ -55,7 +56,7 @@ class MealPlanDetailsViewModel @Inject constructor(
                 _familyId.value = snapshot.familyId
                 when (val state = snapshot.state) {
                     MealPlanDetailsLoadState.Loading -> resetLoadingState()
-                    is MealPlanDetailsLoadState.Content -> showContent(state.details, state.isNewEntry)
+                    is MealPlanDetailsLoadState.Content -> showContent(state.form, state.isNewEntry)
                     is MealPlanDetailsLoadState.Error -> showError(state.message)
                 }
             }
@@ -86,7 +87,7 @@ class MealPlanDetailsViewModel @Inject constructor(
             is MealPlanDetailsUiEvent.Meal.CustomMealNameChanged -> updateMealCustomName(event.value)
             is MealPlanDetailsUiEvent.Meal.DateChanged,
             is MealPlanDetailsUiEvent.Meal.MealTypeChanged,
-            is MealPlanDetailsUiEvent.Meal.NotesChanged -> updateCurrentDetails { reduce(it, event) }
+            is MealPlanDetailsUiEvent.Meal.NotesChanged -> updateForm { reduce(it, event) }
         }
     }
 
@@ -95,15 +96,11 @@ class MealPlanDetailsViewModel @Inject constructor(
             viewModelScope.launch { _commands.send(MealPlanDetailsCommand.NavigateBack) }
             return
         }
-        val original = originalDetails as? MealPlanDetailsContent.Meal ?: return
+        val original = originalForm ?: return
         updateContent {
-            val restoredSearchState = buildMealRecipeSearchState(
-                details = original,
-                currentState = it.mealRecipeSearchState,
-            )
             it.copy(
-                details = original,
-                mealRecipeSearchState = restoredSearchState,
+                form = original,
+                mealRecipeSearchState = buildMealRecipeSearchState(form = original, currentState = it.mealRecipeSearchState),
                 isEditing = false,
                 showDiscardDialog = false,
                 showDeleteDialog = false,
@@ -123,7 +120,7 @@ class MealPlanDetailsViewModel @Inject constructor(
 
     private fun saveMealPlan() {
         val content = currentContentState() ?: return showError("Entry is not ready yet")
-        val details = content.details as? MealPlanDetailsContent.Meal ?: return showError("Entry is not ready yet")
+        val form = content.form
         val activeFamilyId = _familyId.value ?: return showError("Missing family context")
         val now = Date()
 
@@ -131,7 +128,7 @@ class MealPlanDetailsViewModel @Inject constructor(
 
         viewModelScope.launch {
             val result = saver.save(
-                details = details,
+                form = form,
                 mealRecipeSearchState = content.mealRecipeSearchState,
                 mealPlanId = mealPlanId,
                 familyId = activeFamilyId,
@@ -142,7 +139,7 @@ class MealPlanDetailsViewModel @Inject constructor(
 
             when (result) {
                 is Result.Success -> {
-                    originalDetails = currentContentState()?.details
+                    originalForm = currentContentState()?.form
                     if (mealPlanId != null) {
                         updateContent { it.copy(isEditing = false) }
                     }
@@ -155,47 +152,39 @@ class MealPlanDetailsViewModel @Inject constructor(
     }
 
     private fun resetLoadingState() {
-        originalDetails = null
+        originalForm = null
         _uiState.value = MealPlanDetailsUiState.Loading
     }
 
-    private fun showContent(details: MealPlanDetailsContent, isNewEntry: Boolean) {
-        val effectiveDetails = if (isNewEntry && !defaultDate.isNullOrBlank()) {
-            val meal = details as? MealPlanDetailsContent.Meal
-            if (meal != null && meal.form.date.isBlank()) {
-                meal.copy(form = meal.form.copy(date = defaultDate))
-            } else details
-        } else details
-        originalDetails = effectiveDetails
+    private fun showContent(form: MealPlanFormState, isNewEntry: Boolean) {
+        val effectiveForm = if (isNewEntry) {
+            form.copy(
+                date = if (form.date.isBlank() && !defaultDate.isNullOrBlank()) defaultDate else form.date,
+                recipeId = if (!preselectedRecipeId.isNullOrBlank()) preselectedRecipeId else form.recipeId,
+            )
+        } else form
+
+        originalForm = effectiveForm
         _uiState.update { current ->
             when (current) {
                 is MealPlanDetailsUiState.Content -> {
-                    var mealRecipeSearchState = MealRecipeSearchState()
-                    if (current.details is MealPlanDetailsContent.Meal) {
-                        observeRecipes()
-                        mealRecipeSearchState = buildMealRecipeSearchState(
-                            details = current.details,
-                            currentState = current.mealRecipeSearchState,
-                        )
-                    }
+                    observeRecipes()
                     current.copy(
-                        details = effectiveDetails,
-                        mealRecipeSearchState = mealRecipeSearchState,
+                        form = effectiveForm,
+                        mealRecipeSearchState = buildMealRecipeSearchState(effectiveForm, current.mealRecipeSearchState),
                     )
                 }
-                MealPlanDetailsUiState.Loading -> MealPlanDetailsUiState.Content(
-                    details = effectiveDetails,
-                    mealRecipeSearchState = when (effectiveDetails) {
-                        is MealPlanDetailsContent.Meal -> {
-                            observeRecipes()
-                            buildMealRecipeSearchState(effectiveDetails, null)
-                        }
-                    },
-                    isEditing = isNewEntry,
-                    showDiscardDialog = false,
-                    showDeleteDialog = false,
-                    isSaving = false,
-                )
+                MealPlanDetailsUiState.Loading -> {
+                    observeRecipes()
+                    MealPlanDetailsUiState.Content(
+                        form = effectiveForm,
+                        mealRecipeSearchState = buildMealRecipeSearchState(effectiveForm, null),
+                        isEditing = isNewEntry,
+                        showDiscardDialog = false,
+                        showDeleteDialog = false,
+                        isSaving = false,
+                    )
+                }
             }
         }
     }
@@ -250,7 +239,7 @@ class MealPlanDetailsViewModel @Inject constructor(
     }
 
     private fun updateMealRecipeQuery(value: String) {
-        updateMealContent { details, state ->
+        updateMealContent { form, state ->
             val trimmed = value.trimStart()
             val selectedRecipe = if (trimmed.isBlank()) {
                 null
@@ -259,14 +248,12 @@ class MealPlanDetailsViewModel @Inject constructor(
             } else {
                 null
             }
-
             val suggestions = searchMealRecipeSuggestions(
                 query = trimmed,
                 suggestions = allRecipeSearchItems,
                 selectedRecipeId = selectedRecipe?.id,
             )
-
-            details to state.copy(
+            form to state.copy(
                 query = trimmed,
                 selectedRecipeSearchItem = selectedRecipe,
                 suggestions = suggestions,
@@ -275,13 +262,8 @@ class MealPlanDetailsViewModel @Inject constructor(
     }
 
     private fun selectRecipe(recipe: RecipeSearchItem) {
-        updateMealContent { details, _ ->
-            details.copy(
-                form = details.form.copy(
-                    recipeId = recipe.id,
-                    customMealName = null,
-                ),
-            ) to MealRecipeSearchState(
+        updateMealContent { form, _ ->
+            form.copy(recipeId = recipe.id, customMealName = null) to MealRecipeSearchState(
                 mode = MealSearchMode.RECIPE,
                 query = recipe.itemName,
                 isSearchFocused = false,
@@ -292,15 +274,13 @@ class MealPlanDetailsViewModel @Inject constructor(
     }
 
     private fun updateMealMode(mode: MealSearchMode) {
-        updateMealContent { details, state ->
-            val updatedDetails = details.copy(
-                form = details.form.copy(
-                    recipeId = if (mode == MealSearchMode.RECIPE) details.form.recipeId else null,
-                    customMealName = if (mode == MealSearchMode.CUSTOM) details.form.customMealName else null,
-                ),
+        updateMealContent { form, state ->
+            val updatedForm = form.copy(
+                recipeId = if (mode == MealSearchMode.RECIPE) form.recipeId else null,
+                customMealName = if (mode == MealSearchMode.CUSTOM) form.customMealName else null,
             )
             val updatedState = if (mode == MealSearchMode.RECIPE) {
-                buildMealRecipeSearchState(updatedDetails, state.copy(mode = mode))
+                buildMealRecipeSearchState(updatedForm, state.copy(mode = mode))
             } else {
                 state.copy(
                     mode = mode,
@@ -310,26 +290,18 @@ class MealPlanDetailsViewModel @Inject constructor(
                     isSearchFocused = false,
                 )
             }
-            updatedDetails to updatedState
+            updatedForm to updatedState
         }
     }
 
     private fun updateMealCustomName(value: String) {
-        updateCurrentDetails { details ->
-            val meal = details as? MealPlanDetailsContent.Meal ?: return@updateCurrentDetails details
-            meal.copy(
-                form = meal.form.copy(
-                    customMealName = value,
-                    recipeId = null,
-                ),
-            )
-        }
+        updateForm { form -> form.copy(customMealName = value, recipeId = null) }
     }
 
-    private fun updateCurrentDetails(block: (MealPlanDetailsContent) -> MealPlanDetailsContent) {
+    private fun updateForm(block: (MealPlanFormState) -> MealPlanFormState) {
         _uiState.update { current ->
             if (current is MealPlanDetailsUiState.Content) {
-                current.copy(details = block(current.details))
+                current.copy(form = block(current.form))
             } else {
                 current
             }
@@ -338,40 +310,25 @@ class MealPlanDetailsViewModel @Inject constructor(
     }
 
     private fun updateMealContent(
-        block: (MealPlanDetailsContent.Meal, MealRecipeSearchState) -> Pair<MealPlanDetailsContent, MealRecipeSearchState>,
+        block: (MealPlanFormState, MealRecipeSearchState) -> Pair<MealPlanFormState, MealRecipeSearchState>,
     ) {
         _uiState.update { current ->
             if (current is MealPlanDetailsUiState.Content) {
-                val meal = current.details as? MealPlanDetailsContent.Meal ?: return@update current
-                val (updatedDetails, updatedSearchState) = block(meal, current.mealRecipeSearchState)
-                current.copy(
-                    details = updatedDetails,
-                    mealRecipeSearchState = updatedSearchState,
-                )
+                val (updatedForm, updatedSearchState) = block(current.form, current.mealRecipeSearchState)
+                current.copy(form = updatedForm, mealRecipeSearchState = updatedSearchState)
             } else {
                 current
             }
         }
     }
 
-    private fun reduce(
-        details: MealPlanDetailsContent,
-        event: MealPlanDetailsUiEvent,
-    ): MealPlanDetailsContent {
-        val meal = details as? MealPlanDetailsContent.Meal ?: return details
+    private fun reduce(form: MealPlanFormState, event: MealPlanDetailsUiEvent): MealPlanFormState {
         return when (event) {
-            is MealPlanDetailsUiEvent.Meal.DateChanged -> meal.copy(
-                form = meal.form.copy(date = event.value),
+            is MealPlanDetailsUiEvent.Meal.DateChanged -> form.copy(date = event.value)
+            is MealPlanDetailsUiEvent.Meal.MealTypeChanged -> form.copy(
+                mealType = com.example.lifetogether.domain.model.lists.MealType.fromDisplayName(event.value) ?: form.mealType,
             )
-            is MealPlanDetailsUiEvent.Meal.MealTypeChanged -> meal.copy(
-                form = meal.form.copy(
-                    mealType = com.example.lifetogether.domain.model.lists.MealType.fromDisplayName(event.value)
-                        ?: meal.form.mealType,
-                ),
-            )
-            is MealPlanDetailsUiEvent.Meal.NotesChanged -> meal.copy(
-                form = meal.form.copy(notes = event.value),
-            )
+            is MealPlanDetailsUiEvent.Meal.NotesChanged -> form.copy(notes = event.value)
             is MealPlanDetailsUiEvent.Meal.RecipeQueryChanged,
             is MealPlanDetailsUiEvent.Meal.RecipeSearchFocusedChanged,
             is MealPlanDetailsUiEvent.Meal.RecipeSelected,
@@ -384,25 +341,22 @@ class MealPlanDetailsViewModel @Inject constructor(
             MealPlanDetailsUiEvent.RequestDeleteMealPlan,
             MealPlanDetailsUiEvent.ConfirmDeleteMealPlan,
             MealPlanDetailsUiEvent.DismissDeleteDialog,
-            MealPlanDetailsUiEvent.SaveClicked -> meal
+            MealPlanDetailsUiEvent.SaveClicked -> form
         }
     }
 
     private fun buildMealRecipeSearchState(
-        details: MealPlanDetailsContent.Meal,
+        form: MealPlanFormState,
         currentState: MealRecipeSearchState?,
     ): MealRecipeSearchState {
-        val selectedRecipeId = details.form.recipeId?.takeIf { it.isNotBlank() }
-        val selectedRecipe = selectedRecipeId?.let { recipeId ->
-            allRecipeSearchItems.firstOrNull { it.id == recipeId }
-        }
+        val selectedRecipeId = form.recipeId?.takeIf { it.isNotBlank() }
+        val selectedRecipe = selectedRecipeId?.let { id -> allRecipeSearchItems.firstOrNull { it.id == id } }
         val mode = currentState?.mode ?: when {
-            !details.form.customMealName.isNullOrBlank() -> MealSearchMode.CUSTOM
+            !form.customMealName.isNullOrBlank() -> MealSearchMode.CUSTOM
             selectedRecipeId != null -> MealSearchMode.RECIPE
             else -> MealSearchMode.RECIPE
         }
-        val query = currentState?.query?.takeIf { it.isNotBlank() }
-            ?: selectedRecipe?.itemName.orEmpty()
+        val query = currentState?.query?.takeIf { it.isNotBlank() } ?: selectedRecipe?.itemName.orEmpty()
         val selectedRecipeItem = selectedRecipe ?: currentState?.selectedRecipeSearchItem
         val suggestions = if (mode == MealSearchMode.RECIPE) {
             searchMealRecipeSuggestions(
@@ -424,11 +378,11 @@ class MealPlanDetailsViewModel @Inject constructor(
 
     private fun updateMealSearchStateFromCurrentContent() {
         val current = _uiState.value
-        if (current is MealPlanDetailsUiState.Content && current.details is MealPlanDetailsContent.Meal) {
+        if (current is MealPlanDetailsUiState.Content) {
             _uiState.update {
                 current.copy(
                     mealRecipeSearchState = buildMealRecipeSearchState(
-                        details = current.details,
+                        form = current.form,
                         currentState = current.mealRecipeSearchState,
                     ),
                 )
@@ -452,8 +406,8 @@ class MealPlanDetailsViewModel @Inject constructor(
     }
 
     private fun hasUnsavedChanges(content: MealPlanDetailsUiState.Content): Boolean {
-        val original = originalDetails ?: return false
-        return content.details != original
+        val original = originalForm ?: return false
+        return content.form != original
     }
 
     private fun updateContent(block: (MealPlanDetailsUiState.Content) -> MealPlanDetailsUiState.Content) {

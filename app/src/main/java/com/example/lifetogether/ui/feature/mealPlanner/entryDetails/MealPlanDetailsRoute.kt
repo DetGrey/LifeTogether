@@ -29,11 +29,11 @@ fun MealPlanDetailsRoute(
             when (command) {
                 MealPlanDetailsCommand.NavigateBack -> {
                     val content = currentUiState as? MealPlanDetailsUiState.Content
-                    val mealDetails = content?.details as? MealPlanDetailsContent.Meal
-                    if (mealPlanId == null && mealDetails != null) {
+                    val form = content?.form
+                    if (mealPlanId == null && form != null) {
                         navController.previousBackStackEntry?.savedStateHandle?.set(
                             MEAL_PLANNER_FOCUS_DATE_RESULT_KEY,
-                            mealDetails.form.date,
+                            form.date,
                         )
                     }
                     appNavigator.navigateBack()

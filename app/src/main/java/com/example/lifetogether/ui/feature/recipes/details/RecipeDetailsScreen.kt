@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -107,6 +108,18 @@ fun RecipeDetailsScreen(
                 } else { null },
             )
         },
+        floatingActionButton = {
+            val recipeId = contentState?.recipeId
+            if (contentState?.editMode == false && recipeId != null) {
+                PrimaryButton(
+                    text = "Add to Meal Plan",
+                    onClick = {
+                        onNavigationEvent(RecipeDetailsNavigationEvent.NavigateToMealPlan(recipeId))
+                    },
+                )
+            }
+        },
+        floatingActionButtonPosition = FabPosition.Center,
     ) { padding ->
         AnimatedLoadingContent(
             isLoading = uiState is RecipeDetailsUiState.Loading,
@@ -317,7 +330,11 @@ private fun RecipeDetailsContent(
                                     modifier = Modifier
                                         .size(LifeTogetherTokens.sizing.iconLarge)
                                         .clickable {
-                                            onUiEvent(RecipeDetailsUiEvent.IngredientEvent.AddToGroceryList(item))
+                                            onUiEvent(
+                                                RecipeDetailsUiEvent.IngredientEvent.AddToGroceryList(
+                                                    item
+                                                )
+                                            )
                                         },
                                 )
                             }

@@ -24,7 +24,7 @@ sealed interface AppRoute
 @Serializable data class AlbumMediaNavRoute(val albumId: String) : AppRoute
 @Serializable data class GalleryMediaNavRoute(val albumId: String, val initialIndex: Int) : AppRoute
 @Serializable object MealPlannerNavRoute : AppRoute
-@Serializable data class MealPlanDetailsNavRoute(val mealPlanId: String? = null, val defaultDate: String? = null) : AppRoute
+@Serializable data class MealPlanDetailsNavRoute(val mealPlanId: String? = null, val defaultDate: String? = null, val preselectedRecipeId: String? = null) : AppRoute
 @Serializable object ListsNavRoute : AppRoute
 @Serializable data class ListDetailNavRoute(val listId: String) : AppRoute
 @Serializable data class ListEntryDetailsNavRoute(val listId: String, val entryId: String? = null) : AppRoute

@@ -11,6 +11,7 @@ import com.example.lifetogether.ui.common.image.rememberObservedImageBitmap
 import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.common.event.LocalRootSnackbarHostState
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.MealPlanDetailsNavRoute
 import kotlinx.coroutines.launch
 
 @Composable
@@ -50,6 +51,8 @@ fun RecipeDetailsRoute(
         onNavigationEvent = { navigationEvent ->
             when (navigationEvent) {
                 RecipeDetailsNavigationEvent.NavigateBack -> appNavigator.navigateBack()
+                is RecipeDetailsNavigationEvent.NavigateToMealPlan ->
+                    appNavigator.navigate(MealPlanDetailsNavRoute(preselectedRecipeId = navigationEvent.recipeId))
             }
         },
     )

@@ -77,7 +77,6 @@ fun MealPlanDetailsScreen(
             },
         ) {
             val contentState = content ?: return@AnimatedLoadingContent
-            val details = contentState.details as? MealPlanDetailsContent.Meal ?: return@AnimatedLoadingContent
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -91,10 +90,8 @@ fun MealPlanDetailsScreen(
                     ),
                 ) {
                     mealPlanContent(
-                        uiState = contentState,
+                        contentState = contentState,
                         familyId = familyId,
-                        formState = details.form,
-                        searchState = contentState.mealRecipeSearchState,
                         onUiEvent = onUiEvent,
                         onNavigationEvent = onNavigationEvent,
                     )

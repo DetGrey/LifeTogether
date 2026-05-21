@@ -103,6 +103,7 @@ sealed interface RecipeDetailsUiEvent {
 
 sealed interface RecipeDetailsNavigationEvent {
     data object NavigateBack : RecipeDetailsNavigationEvent
+    data class NavigateToMealPlan(val recipeId: String) : RecipeDetailsNavigationEvent
 }
 
 sealed interface RecipeDetailsCommand {

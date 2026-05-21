@@ -37,13 +37,14 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 fun LazyListScope.mealPlanContent(
-    uiState: MealPlanDetailsUiState.Content,
+    contentState: MealPlanDetailsUiState.Content,
     familyId: String? = null,
-    formState: MealPlanFormState,
-    searchState: MealRecipeSearchState,
     onUiEvent: (MealPlanDetailsUiEvent) -> Unit,
     onNavigationEvent: (MealPlanDetailsNavigationEvent) -> Unit,
 ) {
+    val formState = contentState.form
+    val searchState = contentState.mealRecipeSearchState
+
     item {
         val showDatePicker = remember { mutableStateOf(false) }
         val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH) }
@@ -78,7 +79,7 @@ fun LazyListScope.mealPlanContent(
                 Tab(
                     selected = searchState.mode == MealSearchMode.RECIPE,
                     onClick = {
-                        if (uiState.isEditing) {
+                        if (contentState.isEditing) {
                             onUiEvent(MealPlanDetailsUiEvent.Meal.RecipeModeChanged(MealSearchMode.RECIPE))
                         }
                     },
@@ -96,7 +97,7 @@ fun LazyListScope.mealPlanContent(
                 Tab(
                     selected = searchState.mode == MealSearchMode.CUSTOM,
                     onClick = {
-                        if (uiState.isEditing) {
+                        if (contentState.isEditing) {
                             onUiEvent(MealPlanDetailsUiEvent.Meal.RecipeModeChanged(MealSearchMode.CUSTOM))
                         }
                     },
@@ -121,7 +122,7 @@ fun LazyListScope.mealPlanContent(
                         ) {
                             val selectedRecipe = searchState.selectedRecipeSearchItem
 
-                            if (uiState.isEditing) {
+                            if (contentState.isEditing) {
                                 CustomTextField(
                                     value = searchState.query,
                                     onValueChange = { onUiEvent(MealPlanDetailsUiEvent.Meal.RecipeQueryChanged(it)) },
@@ -177,7 +178,7 @@ fun LazyListScope.mealPlanContent(
                             imeAction = ImeAction.Next,
                             keyboardType = KeyboardType.Text,
                             capitalization = true,
-                            enabled = uiState.isEditing,
+                            enabled = contentState.isEditing,
                         )
                     }
                 }
@@ -187,13 +188,13 @@ fun LazyListScope.mealPlanContent(
 
     item {
         TextSubHeadingMedium("Meal type")
-        val options = if (uiState.isEditing) MealType.entries.map { it.displayName }
+        val options = if (contentState.isEditing) MealType.entries.map { it.displayName }
             else listOf(formState.mealType.displayName)
         TagOptionRow(
             options = options,
             selectedOption = formState.mealType.displayName,
             onSelectedOptionChange = {
-                if (uiState.isEditing) onUiEvent(MealPlanDetailsUiEvent.Meal.MealTypeChanged(it))
+                if (contentState.isEditing) onUiEvent(MealPlanDetailsUiEvent.Meal.MealTypeChanged(it))
              },
         )
     }
@@ -207,7 +208,7 @@ fun LazyListScope.mealPlanContent(
             imeAction = ImeAction.Default,
             keyboardType = KeyboardType.Text,
             capitalization = true,
-            enabled = uiState.isEditing,
+            enabled = contentState.isEditing,
         )
     }
 }

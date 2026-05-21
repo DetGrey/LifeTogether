@@ -7,38 +7,13 @@ sealed interface MealPlanDetailsUiState {
     data object Loading : MealPlanDetailsUiState
 
     data class Content(
-        val details: MealPlanDetailsContent,
+        val form: MealPlanFormState,
         val mealRecipeSearchState: MealRecipeSearchState = MealRecipeSearchState(),
         val isEditing: Boolean = false,
         val showDiscardDialog: Boolean = false,
         val showDeleteDialog: Boolean = false,
         val isSaving: Boolean = false,
     ) : MealPlanDetailsUiState
-}
-
-sealed interface MealPlanDetailsContent {
-    data class Meal(
-        val form: MealPlanFormState,
-    ) : MealPlanDetailsContent {
-        companion object {
-            fun blank(): Meal {
-                return Meal(form = MealPlanFormState())
-            }
-
-            fun from(mealPlan: MealPlan): Meal {
-                return Meal(
-                    form = MealPlanFormState(
-                        name = mealPlan.itemName,
-                        date = mealPlan.date,
-                        recipeId = mealPlan.recipeId?.takeIf { it.isNotBlank() },
-                        customMealName = mealPlan.customMealName?.takeIf { it.isNotBlank() },
-                        mealType = mealPlan.mealType,
-                        notes = mealPlan.notes,
-                    ),
-                )
-            }
-        }
-    }
 }
 
 data class RecipeSearchItem(
@@ -67,7 +42,18 @@ data class MealPlanFormState(
     val customMealName: String? = null,
     val mealType: MealType = MealType.DINNER,
     val notes: String = "",
-)
+) {
+    companion object {
+        fun from(mealPlan: MealPlan): MealPlanFormState = MealPlanFormState(
+            name = mealPlan.itemName,
+            date = mealPlan.date,
+            recipeId = mealPlan.recipeId?.takeIf { it.isNotBlank() },
+            customMealName = mealPlan.customMealName?.takeIf { it.isNotBlank() },
+            mealType = mealPlan.mealType,
+            notes = mealPlan.notes,
+        )
+    }
+}
 
 sealed interface MealPlanDetailsUiEvent {
     data object EnterEditMode : MealPlanDetailsUiEvent

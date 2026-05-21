@@ -12,14 +12,14 @@ class MealPlanDetailsSaver @Inject constructor(
     private val mealPlannerRepository: MealPlannerRepository,
 ) {
     suspend fun save(
-        details: MealPlanDetailsContent.Meal,
+        form: MealPlanFormState,
         mealRecipeSearchState: MealRecipeSearchState,
         mealPlanId: String?,
         familyId: String,
         now: Date,
     ): Result<Unit, AppError> {
-        validate(details, mealRecipeSearchState)?.let { return Result.Failure(AppError.Validation(it)) }
-        return saveMeal(details, mealRecipeSearchState, mealPlanId, familyId, now)
+        validate(form, mealRecipeSearchState)?.let { return Result.Failure(AppError.Validation(it)) }
+        return saveMeal(form, mealRecipeSearchState, mealPlanId, familyId, now)
     }
 
     suspend fun deleteMealPlan(mealPlanId: String): Result<Unit, AppError> {
@@ -27,13 +27,12 @@ class MealPlanDetailsSaver @Inject constructor(
     }
 
     private suspend fun saveMeal(
-        details: MealPlanDetailsContent.Meal,
+        form: MealPlanFormState,
         mealRecipeSearchState: MealRecipeSearchState,
         mealPlanId: String?,
         familyId: String,
         now: Date,
     ): Result<Unit, AppError> {
-        val form = details.form
         val mode = mealRecipeSearchState.mode
         val recipeSearchItem = mealRecipeSearchState.selectedRecipeSearchItem
         val customMealName = form.customMealName?.trim()
@@ -65,15 +64,15 @@ class MealPlanDetailsSaver @Inject constructor(
     }
 
     private fun validate(
-        details: MealPlanDetailsContent.Meal,
+        form: MealPlanFormState,
         mealRecipeSearchState: MealRecipeSearchState?,
     ): String? {
-        if (details.form.date.isBlank()) return "Date cannot be empty"
+        if (form.date.isBlank()) return "Date cannot be empty"
         val mode = mealRecipeSearchState?.mode ?: MealSearchMode.RECIPE
         return if (mode == MealSearchMode.RECIPE) {
             if (mealRecipeSearchState?.selectedRecipeSearchItem == null) "Select a recipe" else null
         } else {
-            if (details.form.customMealName.isNullOrBlank()) "Custom meal name cannot be empty" else null
+            if (form.customMealName.isNullOrBlank()) "Custom meal name cannot be empty" else null
         }
     }
 

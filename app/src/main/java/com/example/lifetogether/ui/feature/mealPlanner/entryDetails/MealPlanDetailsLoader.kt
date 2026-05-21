@@ -1,5 +1,6 @@
 package com.example.lifetogether.ui.feature.mealPlanner.entryDetails
 
+import com.example.lifetogether.domain.model.mealplanner.MealPlan
 import com.example.lifetogether.domain.model.session.authenticatedUserOrNull
 import com.example.lifetogether.domain.repository.MealPlannerRepository
 import com.example.lifetogether.domain.repository.SessionRepository
@@ -23,7 +24,7 @@ sealed interface MealPlanDetailsLoadState {
     data object Loading : MealPlanDetailsLoadState
 
     data class Content(
-        val details: MealPlanDetailsContent,
+        val form: MealPlanFormState,
         val isNewEntry: Boolean,
     ) : MealPlanDetailsLoadState
 
@@ -50,34 +51,33 @@ class MealPlanDetailsLoader @Inject constructor(
                             MealPlanDetailsLoadSnapshot(
                                 familyId = familyId,
                                 state = MealPlanDetailsLoadState.Content(
-                                    details = MealPlanDetailsContent.Meal.blank(),
+                                    form = MealPlanFormState(),
                                     isNewEntry = true,
                                 ),
                             ),
                         )
                     } else {
-                        mealPlannerRepository.observeMealPlan(mealPlanId).map { mealPlanResult ->
-                            mealPlanResult.mapData { MealPlanDetailsContent.Meal.from(it) }
-                                .toLoadSnapshot(familyId)
+                        mealPlannerRepository.observeMealPlan(mealPlanId).map { result ->
+                            result.mapToForm().toLoadSnapshot(familyId)
                         }
                     }
                 }
             }
     }
 
-    private fun <T> Result<T, AppError>.mapData(transform: (T) -> MealPlanDetailsContent): Result<MealPlanDetailsContent, AppError> {
+    private fun Result<MealPlan, AppError>.mapToForm(): Result<MealPlanFormState, AppError> {
         return when (this) {
-            is Result.Success -> Result.Success(transform(data))
+            is Result.Success -> Result.Success(MealPlanFormState.from(data))
             is Result.Failure -> Result.Failure(error)
         }
     }
 
-    private fun Result<MealPlanDetailsContent, AppError>.toLoadSnapshot(familyId: String): MealPlanDetailsLoadSnapshot {
+    private fun Result<MealPlanFormState, AppError>.toLoadSnapshot(familyId: String): MealPlanDetailsLoadSnapshot {
         return when (this) {
             is Result.Success -> MealPlanDetailsLoadSnapshot(
                 familyId = familyId,
                 state = MealPlanDetailsLoadState.Content(
-                    details = data,
+                    form = data,
                     isNewEntry = false,
                 ),
             )
