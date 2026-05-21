@@ -403,6 +403,7 @@ class GuideDetailsViewModel @AssistedInject constructor(
             isUpdatingVisibility = currentState?.isUpdatingVisibility ?: false,
             isStartingGuide = currentState?.isStartingGuide ?: false,
             isDeletingGuide = currentState?.isDeletingGuide ?: false,
+            isOwner = guide.ownerUid == uid,
         )
     }
 

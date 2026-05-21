@@ -33,6 +33,7 @@ Historical phase decisions remain in `.ai/v2-plan/` and are not duplicated here.
 - `OverflowMenu` remains as the legacy action surface for existing callers only.
 - Shared text wrappers in `ui/common/text/` stay available as the canonical text API.
 - Feature-local helper cards and layout shells should stay feature-local unless they are clearly repeated across screens.
+- Trashcan icons should be tinted with `MaterialTheme.colorScheme.error` wherever they appear.
 
 ## Motion And Loading
 
@@ -98,8 +99,14 @@ Historical phase decisions remain in `.ai/v2-plan/` and are not duplicated here.
 
 ## Navigation
 
-- Destination `ViewModel`s must not read navigation arguments through `SavedStateHandle` string keys.
-- Typed `NavRoute` arguments are part of the route contract, and route wrappers own argument extraction and translation.
+- The app uses Navigation 3 as the navigation foundation.
+- `AppRoute` is the typed route contract and also implements `NavKey`.
+- `NavHost` owns the root `NavBackStack<NavKey>` and renders destinations through `NavDisplay`.
+- `AppNavigator` is a back-stack reducer over Navigation 3 state, not a `NavController` wrapper.
+- `AppNavigator` exposes `navigate(...)`, `navigateBack()`, `navigateTopLevel(...)`, `navigateReplacing(...)`, `clearAndNavigate(...)`, and typed `navigateBack(result)` for one-shot return flows.
+- The app uses a typed `NavigationResult` channel for back results; the current implemented case is `MealPlannerFocusDate`.
+- Destination `ViewModel`s do not read navigation arguments through `SavedStateHandle` string keys.
+- Route wrappers own argument extraction and translate typed route keys into screen-specific inputs.
 - The only accepted raw destination string path is the notification entry point, where the notification layer maps the string to a typed `AppRoute` before navigation occurs.
 - No other navigation path may build or consume raw route strings.
 - Login success clears the whole stack and goes to `Home`.
@@ -109,6 +116,8 @@ Historical phase decisions remain in `.ai/v2-plan/` and are not duplicated here.
 - Profile and Settings keep their local back relationship:
   - `Profile -> Settings` pushes `Settings`
   - `Settings -> Profile` goes back to the existing `Profile` when that is the previous screen
+- `TipTrackerGraph` is the one explicit shared-stack marker that keeps `TipTrackerRoute` and `TipStatisticsRoute` on the same `ViewModelStore`.
+- Route sync activation is driven directly from the current top route through `RouteSyncBinding`, rather than through graph observer routes.
 
 ## Route / Screen / ViewModel Contract
 
@@ -119,6 +128,7 @@ Historical phase decisions remain in `.ai/v2-plan/` and are not duplicated here.
 - Route layers collect `StateFlow` with `collectAsStateWithLifecycle()`, not `collectAsState()`.
 - Route layers pass UI input into `ViewModel.onEvent(...)`; feature screens should not call ad hoc public viewmodel methods for screen interaction.
 - Feature-local command flows are collected in the route and translated there into navigation or other one-off side effects.
+- Navigation arguments are passed into routes as typed route keys, and routes translate those keys into the feature inputs the screen and viewmodel need.
 
 ### Screen Responsibilities
 
@@ -133,6 +143,7 @@ Historical phase decisions remain in `.ai/v2-plan/` and are not duplicated here.
 - Feature-local `Command` types live alongside the feature's `UiState`, `UiEvent`, and `NavigationEvent` models when the feature already has a `Models.kt` file.
 - Shared UI state should be modeled explicitly instead of inferred from ad hoc booleans when the feature already has a formal state model.
 - Feature-specific state that drives a screen should come from the feature ViewModel, not from route-local session extraction.
+- ViewModels may still use assisted injection for typed route arguments where a route key needs to be turned into constructor input.
 
 ### Composition and Preview Rules
 
@@ -152,9 +163,10 @@ Historical phase decisions remain in `.ai/v2-plan/` and are not duplicated here.
 
 - `SyncCoordinator` owns remote sync orchestration.
 - The root coordinator ViewModel triggers sync context changes in response to session changes.
-- Feature graph observer routes act only as visibility gates for sync keys.
-- `FeatureSyncLifecycleBinding` acquires and releases `SyncKey`s based on graph visibility.
-- Graph observer routes do not perform the actual sync work themselves.
+- The old graph observer route layer is gone.
+- `RouteSyncBinding` maps the current top route to the active `SyncKey` set at the nav-host level.
+- `FeatureSyncLifecycleBinding` is still used by feature routes that need explicit sync-key ownership, and it acquires/releases `SyncKey`s based on the composable lifecycle.
+- Sync work still lives in `SyncCoordinator`; routes and bindings only activate or release the relevant keys.
 
 ## Logging Policy
 

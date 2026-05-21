@@ -1,5 +1,6 @@
-package com.example.lifetogether.ui.feature.guides.create
+package com.example.lifetogether.ui.feature.guides.edit
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,9 +37,13 @@ import com.example.lifetogether.domain.model.guides.GuideSection
 import com.example.lifetogether.domain.model.guides.GuideStep
 import com.example.lifetogether.domain.model.guides.GuideStepType
 import com.example.lifetogether.ui.common.AppTopBar
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.button.PrimaryButton
+import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dropdown.Dropdown
+import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.text.TextDefault
+import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.common.text.TextLabel
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -46,14 +51,17 @@ import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import sh.calvin.reorderable.ReorderableColumn
 
 @Composable
-fun GuideCreateScreen(
-    uiState: GuideCreateUiState,
-    onUiEvent: (GuideCreateUiEvent) -> Unit,
-    onNavigationEvent: (GuideCreateNavigationEvent) -> Unit,
+fun GuideEditScreen(
+    uiState: GuideEditUiState,
+    onUiEvent: (GuideEditUiEvent) -> Unit,
 ) {
+    val content = uiState as? GuideEditUiState.Content
+
     var visibilityExpanded by remember { mutableStateOf(false) }
     var newSectionTitle by remember { mutableStateOf("") }
     var newSectionAmount by remember { mutableStateOf("1") }
+
+    BackHandler { onUiEvent(GuideEditUiEvent.DiscardClicked) }
 
     Scaffold(
         topBar = {
@@ -62,8 +70,8 @@ fun GuideCreateScreen(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
                 ),
-                onLeftClick = { onNavigationEvent(GuideCreateNavigationEvent.NavigateBack) },
-                text = "Create guide",
+                onLeftClick = { onUiEvent(GuideEditUiEvent.DiscardClicked) },
+                text = if (content?.isEditMode == true) "Edit guide" else "Create guide",
             )
         },
         bottomBar = {
@@ -76,158 +84,212 @@ fun GuideCreateScreen(
                 PrimaryButton(
                     modifier = Modifier.fillMaxWidth(),
                     text = "Save guide",
-                    onClick = { onUiEvent(GuideCreateUiEvent.SaveClicked) },
-                    loading = uiState.isSaving,
+                    onClick = { onUiEvent(GuideEditUiEvent.SaveClicked) },
+                    loading = content?.isSaving == true,
                 )
             }
         },
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(LifeTogetherTokens.spacing.small),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+        AnimatedLoadingContent(
+            isLoading = uiState is GuideEditUiState.Loading,
+            label = "edit_guide_loading_content",
+            loadingContent = {
+                Skeletons.FormEdit(modifier = Modifier.fillMaxSize())
+            },
         ) {
-            item {
-                CustomTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    value = uiState.title,
-                    onValueChange = { onUiEvent(GuideCreateUiEvent.TitleChanged(it)) },
-                    label = "Title",
-                    capitalization = true,
-                    imeAction = ImeAction.Next,
-                    keyboardType = KeyboardType.Text,
-                )
-            }
-
-            item {
-                CustomTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    value = uiState.description,
-                    onValueChange = { onUiEvent(GuideCreateUiEvent.DescriptionChanged(it)) },
-                    label = "Description",
-                    capitalization = true,
-                    imeAction = ImeAction.Next,
-                    keyboardType = KeyboardType.Text,
-                )
-            }
-
-            item {
-                Dropdown(
-                    selectedValue = if (uiState.visibility == Visibility.FAMILY) "Family shared" else "Private",
-                    expanded = visibilityExpanded,
-                    onExpandedChange = { visibilityExpanded = it },
-                    options = listOf("Private", "Family shared"),
-                    label = "Visibility",
-                    onValueChangedEvent = {
-                        onUiEvent(
-                            GuideCreateUiEvent.VisibilityChanged(
-                                if (it == "Family shared") Visibility.FAMILY else Visibility.PRIVATE,
-                            ),
-                        )
-                    },
-                )
-            }
-
-            // ─── Add section form ──────────────────────────────────────────────
-            item {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),
-                ) {
-                    TextDefault(text = "Sections (optional)")
+            val content = uiState as? GuideEditUiState.Content ?: return@AnimatedLoadingContent
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(LifeTogetherTokens.spacing.small),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+            ) {
+                item {
                     CustomTextField(
-                        value = newSectionTitle,
-                        onValueChange = { newSectionTitle = it },
-                        label = "Section title",
+                        modifier = Modifier.fillMaxWidth(),
+                        value = content.title,
+                        onValueChange = { onUiEvent(GuideEditUiEvent.TitleChanged(it)) },
+                        label = "Title",
                         capitalization = true,
                         imeAction = ImeAction.Next,
                         keyboardType = KeyboardType.Text,
                     )
-                    Row(
+                }
+
+                item {
+                    CustomTextField(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        CustomTextField(
-                            modifier = Modifier.weight(0.6f),
-                            value = newSectionAmount,
-                            onValueChange = { newSectionAmount = it.filter { c -> c.isDigit() } },
-                            label = "Repetitions",
-                            imeAction = ImeAction.Done,
-                            keyboardType = KeyboardType.Number,
-                        )
-                        PrimaryButton(
-                            text = "Add",
-                            onClick = {
-                                val amount = newSectionAmount.toIntOrNull() ?: 1
-                                onUiEvent(GuideCreateUiEvent.AddSectionRequested(newSectionTitle, amount))
-                                newSectionTitle = ""
-                                newSectionAmount = "1"
-                            },
-                        )
-                    }
-                    Text(
-                        text = "Repetitions: how many times to run through this section",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                        value = content.description,
+                        onValueChange = { onUiEvent(GuideEditUiEvent.DescriptionChanged(it)) },
+                        label = "Description",
+                        capitalization = true,
+                        imeAction = ImeAction.Next,
+                        keyboardType = KeyboardType.Text,
                     )
                 }
-            }
 
-            // ─── Sections list ────────────────────────────────────────────────
-            if (uiState.sections.isNotEmpty()) {
                 item {
-                    ReorderableColumn(
-                        modifier = Modifier.fillMaxWidth(),
-                        list = uiState.sections,
-                        onSettle = { from, to ->
-                            onUiEvent(GuideCreateUiEvent.SectionMoved(from, to))
+                    Dropdown(
+                        selectedValue = if (content.visibility == Visibility.FAMILY) "Family shared" else "Private",
+                        expanded = visibilityExpanded,
+                        onExpandedChange = { visibilityExpanded = it },
+                        options = listOf("Private", "Family shared"),
+                        label = "Visibility",
+                        onValueChangedEvent = {
+                            onUiEvent(
+                                GuideEditUiEvent.VisibilityChanged(
+                                    if (it == "Family shared") Visibility.FAMILY else Visibility.PRIVATE,
+                                ),
+                            )
                         },
-                        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
-                    ) { _, section, _ ->
-                        key(section.id) {
-                            ReorderableItem {
-                                val sectionDragModifier = Modifier.longPressDraggableHandle()
-                                SectionCard(
-                                    section = section,
-                                    stepDraft = uiState.stepDrafts[section.id] ?: "",
-                                    stepTypeDraft = uiState.stepTypeDrafts[section.id]
-                                        ?: GuideStepType.NUMBERED,
-                                    sectionDragModifier = sectionDragModifier,
-                                    onStepDraftChange = {
-                                        onUiEvent(GuideCreateUiEvent.StepDraftChanged(section.id, it))
-                                    },
-                                    onStepTypeDraftChange = {
-                                        onUiEvent(GuideCreateUiEvent.StepTypeDraftChanged(section.id, it))
-                                    },
-                                    onAddStep = { content, type ->
-                                        onUiEvent(
-                                            GuideCreateUiEvent.AddStepRequested(section.id, content, type),
+                    )
+                }
+
+                // ─── Add section form ──────────────────────────────────────────────
+                item {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),
+                    ) {
+                        TextDefault(text = "Sections (optional)")
+                        CustomTextField(
+                            value = newSectionTitle,
+                            onValueChange = { newSectionTitle = it },
+                            label = "Section title",
+                            capitalization = true,
+                            imeAction = ImeAction.Next,
+                            keyboardType = KeyboardType.Text,
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            CustomTextField(
+                                modifier = Modifier.weight(0.6f),
+                                value = newSectionAmount,
+                                onValueChange = {
+                                    newSectionAmount = it.filter { ch -> ch.isDigit() }
+                                },
+                                label = "Repetitions",
+                                imeAction = ImeAction.Done,
+                                keyboardType = KeyboardType.Number,
+                            )
+                            PrimaryButton(
+                                text = "Add",
+                                onClick = {
+                                    val amount = newSectionAmount.toIntOrNull() ?: 1
+                                    onUiEvent(
+                                        GuideEditUiEvent.AddSectionRequested(
+                                            newSectionTitle,
+                                            amount
                                         )
-                                    },
-                                    onDeleteSection = {
-                                        onUiEvent(GuideCreateUiEvent.DeleteSectionRequested(section.id))
-                                    },
-                                    onDeleteStep = { stepId ->
-                                        onUiEvent(
-                                            GuideCreateUiEvent.DeleteStepRequested(section.id, stepId),
-                                        )
-                                    },
-                                    onStepMoved = { from, to ->
-                                        onUiEvent(GuideCreateUiEvent.StepMoved(section.id, from, to))
-                                    },
-                                )
+                                    )
+                                    newSectionTitle = ""
+                                    newSectionAmount = "1"
+                                },
+                            )
+                        }
+                        Text(
+                            text = "Repetitions: how many times to run through this section",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                        )
+                    }
+                }
+
+                // ─── Sections list ────────────────────────────────────────────────
+                if (content.sections.isNotEmpty()) {
+                    item {
+                        ReorderableColumn(
+                            modifier = Modifier.fillMaxWidth(),
+                            list = content.sections,
+                            onSettle = { from, to ->
+                                onUiEvent(GuideEditUiEvent.SectionMoved(from, to))
+                            },
+                            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+                        ) { _, section, _ ->
+                            key(section.id) {
+                                ReorderableItem {
+                                    val sectionDragModifier = Modifier.longPressDraggableHandle()
+                                    SectionCard(
+                                        section = section,
+                                        stepDraft = content.stepDrafts[section.id] ?: "",
+                                        stepTypeDraft = content.stepTypeDrafts[section.id]
+                                            ?: GuideStepType.NUMBERED,
+                                        sectionDragModifier = sectionDragModifier,
+                                        onStepDraftChange = {
+                                            onUiEvent(
+                                                GuideEditUiEvent.StepDraftChanged(
+                                                    section.id,
+                                                    it
+                                                )
+                                            )
+                                        },
+                                        onStepTypeDraftChange = {
+                                            onUiEvent(
+                                                GuideEditUiEvent.StepTypeDraftChanged(
+                                                    section.id,
+                                                    it
+                                                )
+                                            )
+                                        },
+                                        onAddStep = { stepContent, type ->
+                                            onUiEvent(
+                                                GuideEditUiEvent.AddStepRequested(
+                                                    section.id,
+                                                    stepContent,
+                                                    type
+                                                ),
+                                            )
+                                        },
+                                        onDeleteSection = {
+                                            onUiEvent(
+                                                GuideEditUiEvent.DeleteSectionRequested(
+                                                    section.id
+                                                )
+                                            )
+                                        },
+                                        onDeleteStep = { stepId ->
+                                            onUiEvent(
+                                                GuideEditUiEvent.DeleteStepRequested(
+                                                    section.id,
+                                                    stepId
+                                                ),
+                                            )
+                                        },
+                                        onStepMoved = { from, to ->
+                                            onUiEvent(
+                                                GuideEditUiEvent.StepMoved(
+                                                    section.id,
+                                                    from,
+                                                    to
+                                                )
+                                            )
+                                        },
+                                    )
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            item { Spacer(modifier = Modifier.padding(LifeTogetherTokens.spacing.small)) }
+                item { Spacer(modifier = Modifier.padding(LifeTogetherTokens.spacing.small)) }
+            }
         }
+    }
+
+    if (content?.showDiscardDialog == true) {
+        ConfirmationDialog(
+            onDismiss = { onUiEvent(GuideEditUiEvent.DismissDiscardDialog) },
+            onConfirm = { onUiEvent(GuideEditUiEvent.ConfirmDiscard) },
+            dialogTitle = "Discard changes?",
+            dialogMessage = "Your unsaved changes will be lost.",
+            dismissButtonMessage = "Keep editing",
+            confirmButtonMessage = "Discard",
+        )
     }
 }
 
@@ -263,22 +325,20 @@ private fun SectionCard(
                 Icon(
                     painter = painterResource(R.drawable.ic_drag_handle),
                     contentDescription = "Drag to reorder section",
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    tint = MaterialTheme.colorScheme.secondary,
                     modifier = sectionDragModifier.size(LifeTogetherTokens.sizing.iconLarge),
                 )
-                Text(
+                TextHeadingMedium(
                     text = buildString {
                         append(section.title)
                         if (section.amount > 1) append(" (×${section.amount})")
                     },
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.weight(1f),
                 )
                 Icon(
                     painter = painterResource(R.drawable.ic_trashcan),
                     contentDescription = "Delete section",
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier
                         .size(LifeTogetherTokens.sizing.iconMedium)
                         .clickable { onDeleteSection() },
@@ -380,7 +440,7 @@ private fun StepRow(
         Icon(
             painter = painterResource(R.drawable.ic_trashcan),
             contentDescription = "Delete step",
-            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+            tint = MaterialTheme.colorScheme.error,
             modifier = Modifier
                 .size(LifeTogetherTokens.sizing.iconMedium)
                 .clickable { onDelete() },
@@ -417,10 +477,10 @@ private fun fromStepTypeLabel(label: String): GuideStepType = when (label) {
 
 @Preview(showBackground = true)
 @Composable
-private fun GuideCreateScreenPreview() {
+private fun GuideEditScreenPreview() {
     LifeTogetherTheme {
-        GuideCreateScreen(
-            uiState = GuideCreateUiState(
+        GuideEditScreen(
+            uiState = GuideEditUiState.Content(
                 title = "Family reset",
                 description = "A simple weekly reset guide",
                 visibility = Visibility.PRIVATE,
@@ -435,7 +495,6 @@ private fun GuideCreateScreenPreview() {
                 ),
             ),
             onUiEvent = {},
-            onNavigationEvent = {},
         )
     }
 }

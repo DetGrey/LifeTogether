@@ -78,11 +78,10 @@ Here are some questions:
 - 
 ### Guides
 - [x] OptionRow should not have dividers inside guides.
-- [ ] _Make the UI nicer_.
-- [ ] Add guide manually does not work that well.
-- [ ] The step player should show whether a step is completed and show the datetime of completion/last edited.
-  - (TODO WOULD LIKE TO IMPLEMENT)
+- [x] Add guide manually does not work that well.
 - [x] When changing guide visibility, do not reset progress since progress is private anyway.
+- [ ] _Make the UI nicer_.
+- [ ] _The step player should show whether a step is completed and show the datetime of completion/last edited._
 
 ### Gallery media
 - [x] The uploaded images should keep the original quality
@@ -99,13 +98,12 @@ Here are some questions:
 
 ### Family and relationship features
 - [x] Clickable area is wrong in personal details
+- [x] Change x days together so it is only shown if a date is added to family info.
+  - This means that a new variable should be added to the data class
 - [ ] _Add special day under family settings or the countdown page._
 - [ ] _Add a love button that sends a loving notification to all other family members except yourself._
   - Disable the love button for 30 seconds after click to avoid spamming.
   - Use predefined messages in code instead of Firestore to reduce fetching.
-- [ ] Change x days together so it is only shown if a date is added to family info.
-  - This means that a new variable should be added to the data class
-  - (TODO SOON)
 
 ### Setting
 - [x] Show app version at the bottom of settings along with user id if logged in
@@ -178,15 +176,9 @@ Looking at the unchecked items, here's my read:
 
 These are bugs or broken functionality — not features:
 
-**Guides**
-- "Add guide manually does not work that well" — if it's broken, it's broken. Needs investigation before release.
-
 **Gallery**
 - Video thumbnail fallback handling, DATE_TAKEN query, date inconsistency between videos and images — these are correctness bugs visible to users.
 - "Decide what should happen when `updateGalleryMedia()` download fails" — missing error handling is a release risk.
-
-**Family**
-- "Change x days together so it is only shown if a date is added" — marked TODO SOON. Currently shows garbage if no date is set.
 
 **Settings**
 - "How does settings work if not logged in?" — this is actually a question but it implies you haven't verified it. Worth checking before release in case it crashes.

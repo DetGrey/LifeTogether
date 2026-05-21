@@ -7,6 +7,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.GuideEditNavRoute
 import com.example.lifetogether.ui.navigation.GuideStepPlayerNavRoute
 
 @Composable
@@ -45,6 +46,9 @@ fun GuideDetailsRoute(
                 GuideDetailsNavigationEvent.NavigateBack -> {
                     guideDetailsViewModel.flushPendingChanges()
                     appNavigator.navigateBack()
+                }
+                GuideDetailsNavigationEvent.NavigateToEditGuide -> {
+                    appNavigator.navigate(GuideEditNavRoute(guideId = guideId))
                 }
             }
         },

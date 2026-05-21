@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.feature.guides.create
+package com.example.lifetogether.ui.feature.guides.edit
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,6 +15,9 @@ import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.ui.common.event.UiCommand
 import com.example.lifetogether.ui.common.snackbar.SnackbarSeverity
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -26,67 +29,125 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Date
 import java.util.UUID
-import javax.inject.Inject
 
-@HiltViewModel
-class GuideCreateViewModel @Inject constructor(
+@HiltViewModel(assistedFactory = GuideEditViewModel.Factory::class)
+class GuideEditViewModel @AssistedInject constructor(
+    @Assisted val guideId: String?,
     private val sessionRepository: SessionRepository,
     private val guideRepository: GuideRepository,
 ) : ViewModel() {
+
+    @AssistedFactory
+    interface Factory {
+        fun create(guideId: String?): GuideEditViewModel
+    }
+
     private var familyId: String? = null
     private var uid: String? = null
+    private var originalGuide: Guide? = null
 
-    private val _uiState = MutableStateFlow(GuideCreateUiState())
-    val uiState: StateFlow<GuideCreateUiState> = _uiState.asStateFlow()
+    private val initialState: GuideEditUiState = if (guideId != null) {
+        GuideEditUiState.Loading
+    } else {
+        GuideEditUiState.Content()
+    }
+
+    private val _uiState = MutableStateFlow(initialState)
+    val uiState: StateFlow<GuideEditUiState> = _uiState.asStateFlow()
 
     private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
     val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
 
-    private val _commands = Channel<GuideCreateCommand>(Channel.BUFFERED)
-    val commands: Flow<GuideCreateCommand> = _commands.receiveAsFlow()
+    private val _commands = Channel<GuideEditCommand>(Channel.BUFFERED)
+    val commands: Flow<GuideEditCommand> = _commands.receiveAsFlow()
 
     init {
         viewModelScope.launch {
             sessionRepository.sessionState.collect { state ->
                 val authenticated = state as? SessionState.Authenticated
-                familyId = authenticated?.user?.familyId
-                uid = authenticated?.user?.uid
+                val newFamilyId = authenticated?.user?.familyId
+                val newUid = authenticated?.user?.uid
                 if (state is SessionState.Unauthenticated) {
                     familyId = null
                     uid = null
+                } else if (newFamilyId != null && newUid != null) {
+                    val firstLoad = familyId == null && uid == null
+                    familyId = newFamilyId
+                    uid = newUid
+                    if (firstLoad && guideId != null) {
+                        loadGuide(newFamilyId, guideId, newUid)
+                    }
                 }
             }
         }
     }
 
-    fun onEvent(event: GuideCreateUiEvent) {
+    private fun loadGuide(familyId: String, guideId: String, uid: String) {
+        viewModelScope.launch {
+            guideRepository.observeGuideById(familyId, guideId, uid).collect { result ->
+                when (result) {
+                    is Result.Success -> {
+                        val guide = result.data
+                        if (originalGuide == null) {
+                            originalGuide = guide
+                            _uiState.value = GuideEditUiState.Content(
+                                title = guide.itemName,
+                                description = guide.description,
+                                visibility = guide.visibility,
+                                sections = guide.sections,
+                                isEditMode = true,
+                            )
+                        }
+                        return@collect
+                    }
+                    is Result.Failure -> {
+                        showError(result.error.toUserMessage())
+                        return@collect
+                    }
+                }
+            }
+        }
+    }
+
+    fun onEvent(event: GuideEditUiEvent) {
         when (event) {
-            is GuideCreateUiEvent.TitleChanged -> updateState { it.copy(title = event.value) }
-            is GuideCreateUiEvent.DescriptionChanged -> updateState { it.copy(description = event.value) }
-            is GuideCreateUiEvent.VisibilityChanged -> updateState { it.copy(visibility = event.value) }
-            is GuideCreateUiEvent.AddSectionRequested -> addSection(event.title, event.amount)
-            is GuideCreateUiEvent.DeleteSectionRequested -> deleteSection(event.sectionId)
-            is GuideCreateUiEvent.SectionMoved -> moveSection(event.fromIndex, event.toIndex)
-            is GuideCreateUiEvent.AddStepRequested -> addStep(event.sectionId, event.content, event.type)
-            is GuideCreateUiEvent.DeleteStepRequested -> deleteStep(event.sectionId, event.stepId)
-            is GuideCreateUiEvent.StepMoved -> moveStep(event.sectionId, event.fromIndex, event.toIndex)
-            is GuideCreateUiEvent.StepDraftChanged -> updateState {
+            is GuideEditUiEvent.TitleChanged -> updateContent { it.copy(title = event.value) }
+            is GuideEditUiEvent.DescriptionChanged -> updateContent { it.copy(description = event.value) }
+            is GuideEditUiEvent.VisibilityChanged -> updateContent { it.copy(visibility = event.value) }
+            is GuideEditUiEvent.AddSectionRequested -> addSection(event.title, event.amount)
+            is GuideEditUiEvent.DeleteSectionRequested -> deleteSection(event.sectionId)
+            is GuideEditUiEvent.SectionMoved -> moveSection(event.fromIndex, event.toIndex)
+            is GuideEditUiEvent.AddStepRequested -> addStep(event.sectionId, event.content, event.type)
+            is GuideEditUiEvent.DeleteStepRequested -> deleteStep(event.sectionId, event.stepId)
+            is GuideEditUiEvent.StepMoved -> moveStep(event.sectionId, event.fromIndex, event.toIndex)
+            is GuideEditUiEvent.StepDraftChanged -> updateContent {
                 it.copy(stepDrafts = it.stepDrafts + (event.sectionId to event.value))
             }
-            is GuideCreateUiEvent.StepTypeDraftChanged -> updateState {
+            is GuideEditUiEvent.StepTypeDraftChanged -> updateContent {
                 it.copy(stepTypeDrafts = it.stepTypeDrafts + (event.sectionId to event.type))
             }
-            GuideCreateUiEvent.SaveClicked -> saveGuide()
+            GuideEditUiEvent.SaveClicked -> saveGuide()
+            GuideEditUiEvent.DiscardClicked -> {
+                if (_uiState.value is GuideEditUiState.Loading) {
+                    viewModelScope.launch { _commands.send(GuideEditCommand.NavigateBack) }
+                } else {
+                    updateContent { it.copy(showDiscardDialog = true) }
+                }
+            }
+            GuideEditUiEvent.DismissDiscardDialog -> updateContent { it.copy(showDiscardDialog = false) }
+            GuideEditUiEvent.ConfirmDiscard -> viewModelScope.launch {
+                _commands.send(GuideEditCommand.NavigateBack)
+            }
         }
     }
 
     private fun addSection(sectionTitle: String, amount: Int = 1) {
-        val currentSections = _uiState.value.sections
+        val currentSections = currentContent()?.sections ?: return
         val normalizedTitle = sectionTitle.trim().ifBlank {
             "Section ${currentSections.size + 1}"
         }
         val normalizedAmount = amount.coerceAtLeast(1)
-        updateState {
+        updateContent {
             it.copy(
                 sections = currentSections + GuideSection(
                     id = UUID.randomUUID().toString(),
@@ -100,7 +161,7 @@ class GuideCreateViewModel @Inject constructor(
     }
 
     private fun deleteSection(sectionId: String) {
-        updateState { state ->
+        updateContent { state ->
             state.copy(
                 sections = state.sections
                     .filter { it.id != sectionId }
@@ -112,7 +173,7 @@ class GuideCreateViewModel @Inject constructor(
     }
 
     private fun moveSection(fromIndex: Int, toIndex: Int) {
-        updateState { state ->
+        updateContent { state ->
             val mutable = state.sections.toMutableList()
             mutable.add(toIndex, mutable.removeAt(fromIndex))
             state.copy(
@@ -128,7 +189,7 @@ class GuideCreateViewModel @Inject constructor(
             return
         }
 
-        updateState { state ->
+        updateContent { state ->
             state.copy(
                 sections = state.sections.map { section ->
                     if (section.id != sectionId) {
@@ -166,7 +227,7 @@ class GuideCreateViewModel @Inject constructor(
     }
 
     private fun deleteStep(sectionId: String, stepId: String) {
-        updateState { state ->
+        updateContent { state ->
             state.copy(
                 sections = state.sections.map { section ->
                     if (section.id != sectionId) section
@@ -177,7 +238,7 @@ class GuideCreateViewModel @Inject constructor(
     }
 
     private fun moveStep(sectionId: String, fromIndex: Int, toIndex: Int) {
-        updateState { state ->
+        updateContent { state ->
             state.copy(
                 sections = state.sections.map { section ->
                     if (section.id != sectionId) section
@@ -218,7 +279,7 @@ class GuideCreateViewModel @Inject constructor(
     private fun saveGuide() {
         val activeFamilyId = familyId
         val activeUid = uid
-        val currentState = _uiState.value
+        val currentState = currentContent() ?: return
 
         if (activeFamilyId.isNullOrBlank() || activeUid.isNullOrBlank()) {
             showError("Please connect to a family first")
@@ -229,27 +290,25 @@ class GuideCreateViewModel @Inject constructor(
             return
         }
 
-        val guide = buildGuideFromState(
-            familyId = activeFamilyId,
-            uid = activeUid,
-            state = currentState,
-        )
-
-        persistGuide(guide)
+        if (currentState.isEditMode) {
+            val base = originalGuide ?: run {
+                showError("Could not load original guide")
+                return
+            }
+            persistUpdate(buildUpdatedGuide(base, currentState))
+        } else {
+            persistNew(buildNewGuide(activeFamilyId, activeUid, currentState))
+        }
     }
 
-    private fun buildGuideFromState(
+    private fun buildNewGuide(
         familyId: String,
         uid: String,
-        state: GuideCreateUiState,
+        state: GuideEditUiState.Content,
     ): Guide {
-        val normalizedSections = state.sections
-            .mapIndexed { index, section ->
-                GuideProgress.updateSectionCompletion(
-                    section.copy(orderNumber = index + 1),
-                )
-            }
-
+        val normalizedSections = state.sections.mapIndexed { index, section ->
+            GuideProgress.updateSectionCompletion(section.copy(orderNumber = index + 1))
+        }
         return Guide(
             id = UUID.randomUUID().toString(),
             familyId = familyId,
@@ -265,15 +324,44 @@ class GuideCreateViewModel @Inject constructor(
         )
     }
 
-    private fun persistGuide(guide: Guide) {
-        _uiState.update { it.copy(isSaving = true) }
+    private fun buildUpdatedGuide(base: Guide, state: GuideEditUiState.Content): Guide {
+        val normalizedSections = state.sections.mapIndexed { index, section ->
+            GuideProgress.updateSectionCompletion(section.copy(orderNumber = index + 1))
+        }
+        return base.copy(
+            itemName = state.title.trim(),
+            description = state.description.trim(),
+            lastUpdated = Date(),
+            visibility = state.visibility,
+            contentVersion = base.contentVersion + 1,
+            sections = normalizedSections,
+        )
+    }
+
+    private fun persistNew(guide: Guide) {
+        updateContent { it.copy(isSaving = true) }
         viewModelScope.launch {
             when (val result = guideRepository.saveGuide(guide)) {
                 is Result.Success -> {
-                    _commands.send(GuideCreateCommand.NavigateToGuideDetails(result.data))
+                    _commands.send(GuideEditCommand.NavigateToGuideDetails(result.data))
                 }
                 is Result.Failure -> {
-                    _uiState.update { it.copy(isSaving = false) }
+                    updateContent { it.copy(isSaving = false) }
+                    showError(result.error.toUserMessage())
+                }
+            }
+        }
+    }
+
+    private fun persistUpdate(guide: Guide) {
+        updateContent { it.copy(isSaving = true) }
+        viewModelScope.launch {
+            when (val result = guideRepository.updateGuide(guide)) {
+                is Result.Success -> {
+                    _commands.send(GuideEditCommand.NavigateToGuideDetails(guide.id))
+                }
+                is Result.Failure -> {
+                    updateContent { it.copy(isSaving = false) }
                     showError(result.error.toUserMessage())
                 }
             }
@@ -303,7 +391,12 @@ class GuideCreateViewModel @Inject constructor(
         }
     }
 
-    private fun updateState(transform: (GuideCreateUiState) -> GuideCreateUiState) {
-        _uiState.update(transform)
+    private fun currentContent(): GuideEditUiState.Content? =
+        _uiState.value as? GuideEditUiState.Content
+
+    private fun updateContent(transform: (GuideEditUiState.Content) -> GuideEditUiState.Content) {
+        _uiState.update { state ->
+            if (state is GuideEditUiState.Content) transform(state) else state
+        }
     }
 }

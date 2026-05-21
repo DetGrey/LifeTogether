@@ -28,7 +28,7 @@ import com.example.lifetogether.ui.feature.gallery.GalleryScreenRoute
 import com.example.lifetogether.ui.feature.gallery.MediaDetailsRoute
 import com.example.lifetogether.ui.feature.groceryList.GroceryListRoute
 import com.example.lifetogether.ui.feature.guides.GuidesRoute
-import com.example.lifetogether.ui.feature.guides.create.GuideCreateRoute
+import com.example.lifetogether.ui.feature.guides.edit.GuideEditRoute
 import com.example.lifetogether.ui.feature.guides.details.GuideDetailsRoute
 import com.example.lifetogether.ui.feature.guides.stepplayer.GuideStepPlayerRoute
 import com.example.lifetogether.ui.feature.home.HomeRoute
@@ -140,7 +140,9 @@ fun NavHost(deepLinkRoute: AppRoute? = null) {
 
             // ─── Guides ────────────────────────────────────────────────────
             entry<GuidesNavRoute> { GuidesRoute(appNavigator) }
-            entry<GuideCreateNavRoute> { GuideCreateRoute(appNavigator) }
+            entry<GuideEditNavRoute> { key ->
+                GuideEditRoute(appNavigator = appNavigator, guideId = key.guideId)
+            }
             entry<GuideDetailsNavRoute> { key ->
                 GuideDetailsRoute(appNavigator = appNavigator, guideId = key.guideId)
             }

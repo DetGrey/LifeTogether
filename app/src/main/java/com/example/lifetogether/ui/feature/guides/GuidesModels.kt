@@ -26,6 +26,6 @@ sealed interface GuidesUiEvent {
 
 sealed interface GuidesNavigationEvent {
     data object NavigateBack : GuidesNavigationEvent
-    data object NavigateToGuideCreate : GuidesNavigationEvent
+    data object NavigateToGuideEdit : GuidesNavigationEvent
     data class NavigateToGuideDetails(val guideId: String) : GuidesNavigationEvent
 }

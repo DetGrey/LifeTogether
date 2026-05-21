@@ -3,6 +3,7 @@ package com.example.lifetogether.ui.feature.guides.details
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -21,6 +22,7 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.AppIcon as AppIcon
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.guides.Guide
+import com.example.lifetogether.domain.model.guides.GuideSection
 import com.example.lifetogether.ui.common.ActionSheet
 import com.example.lifetogether.ui.common.ActionSheetItem
 import com.example.lifetogether.ui.common.AppTopBar
@@ -84,6 +86,7 @@ fun GuideDetailsScreen(
                     .padding(horizontal = LifeTogetherTokens.spacing.small),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                contentPadding = PaddingValues(bottom = LifeTogetherTokens.spacing.bottomInsetMedium)
             ) {
                 val guide = content.guide
                 if (guide == null) {
@@ -178,9 +181,28 @@ fun GuideDetailsScreen(
             "Share with family"
         }
 
-        ActionSheet(
-            onDismiss = { showOverflowMenu = false },
-            actionsList = listOf(
+        val actions = buildList {
+            if (uiState.isOwner) {
+                add(
+                    ActionSheetItem(
+                        label = "Edit guide",
+                        onClick = {
+                            showOverflowMenu = false
+                            onNavigationEvent(GuideDetailsNavigationEvent.NavigateToEditGuide)
+                        },
+                    ),
+                )
+            }
+            add(
+                ActionSheetItem(
+                    label = visibilityActionLabel,
+                    onClick = {
+                        showOverflowMenu = false
+                        onUiEvent(GuideDetailsUiEvent.ToggleVisibilityClicked)
+                    },
+                ),
+            )
+            add(
                 ActionSheetItem(
                     label = "Reset all progress",
                     onClick = {
@@ -189,13 +211,8 @@ fun GuideDetailsScreen(
                     },
                     isDestructive = true,
                 ),
-                ActionSheetItem(
-                    label = visibilityActionLabel,
-                    onClick = {
-                        showOverflowMenu = false
-                        onUiEvent(GuideDetailsUiEvent.ToggleVisibilityClicked)
-                    },
-                ),
+            )
+            add(
                 ActionSheetItem(
                     label = "Delete guide",
                     onClick = {
@@ -204,7 +221,12 @@ fun GuideDetailsScreen(
                     },
                     isDestructive = true,
                 ),
-            ),
+            )
+        }
+
+        ActionSheet(
+            onDismiss = { showOverflowMenu = false },
+            actionsList = actions,
         )
     }
 
@@ -253,11 +275,19 @@ private fun GuideDetailsScreenPreview() {
                     ownerUid = "uid-1",
                     contentVersion = 1L,
                     started = true,
-                    sections = emptyList(),
+                    sections = listOf(
+                        GuideSection(
+                            id = "section-1",
+                            orderNumber = 1,
+                            title = "Morning routine",
+                            amount = 2,
+                            steps = emptyList(),
+                        ),
+                    ),
                 ),
-                sectionExpandedState = emptyMap(),
-                selectedSectionAmountState = emptyMap(),
-                canToggleAmountState = emptyMap(),
+                sectionExpandedState = mapOf("section-1" to true),
+                selectedSectionAmountState = mapOf("section-1" to 0),
+                canToggleAmountState = mapOf("section-1" to setOf(0)),
             ),
             onUiEvent = {},
             onNavigationEvent = {},

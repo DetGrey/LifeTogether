@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.feature.guides.create
+package com.example.lifetogether.ui.feature.guides.edit
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -10,30 +10,28 @@ import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.navigation.GuideDetailsNavRoute
 
 @Composable
-fun GuideCreateRoute(
+fun GuideEditRoute(
     appNavigator: AppNavigator,
+    guideId: String? = null,
 ) {
-    val viewModel: GuideCreateViewModel = hiltViewModel()
+    val viewModel: GuideEditViewModel =
+        hiltViewModel<GuideEditViewModel, GuideEditViewModel.Factory> { it.create(guideId) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     CollectUiCommands(viewModel.uiCommands)
 
     LaunchedEffect(viewModel) {
         viewModel.commands.collect { command ->
             when (command) {
-                is GuideCreateCommand.NavigateToGuideDetails -> {
+                is GuideEditCommand.NavigateToGuideDetails -> {
                     appNavigator.navigateReplacing(GuideDetailsNavRoute(command.guideId))
                 }
+                GuideEditCommand.NavigateBack -> appNavigator.navigateBack()
             }
         }
     }
 
-    GuideCreateScreen(
+    GuideEditScreen(
         uiState = uiState,
         onUiEvent = viewModel::onEvent,
-        onNavigationEvent = { navigationEvent ->
-            when (navigationEvent) {
-                GuideCreateNavigationEvent.NavigateBack -> appNavigator.navigateBack()
-            }
-        },
     )
 }

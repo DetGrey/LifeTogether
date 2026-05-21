@@ -88,7 +88,12 @@ fun GuideSectionCard(
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
                     TextDefault(
-                        text = "${progress.first}/${progress.second} steps completed • ${selectedAmountProgress.first}/${selectedAmountProgress.second} in selected part",
+                        text = buildString {
+                            append("${progress.first}/${progress.second} steps completed")
+                            if (normalizedAmount > 1) {
+                                append(" • ${selectedAmountProgress.first}/${selectedAmountProgress.second} in selected part")
+                            }
+                        },
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
                 }
@@ -105,6 +110,7 @@ fun GuideSectionCard(
                 modifier = Modifier.fillMaxWidth(),
                 progress = { progressPercent / 100f },
                 trackColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f),
+                drawStopIndicator = {},
             )
 
             if (!section.comment.isNullOrBlank()) {

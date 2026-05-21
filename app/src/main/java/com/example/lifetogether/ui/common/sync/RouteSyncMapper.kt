@@ -10,7 +10,7 @@ import com.example.lifetogether.ui.navigation.AlbumMediaNavRoute
 import com.example.lifetogether.ui.navigation.AppRoute
 import com.example.lifetogether.ui.navigation.GalleryMediaNavRoute
 import com.example.lifetogether.ui.navigation.GalleryNavRoute
-import com.example.lifetogether.ui.navigation.GuideCreateNavRoute
+import com.example.lifetogether.ui.navigation.GuideEditNavRoute
 import com.example.lifetogether.ui.navigation.GuideDetailsNavRoute
 import com.example.lifetogether.ui.navigation.GuidesNavRoute
 import com.example.lifetogether.ui.navigation.GuideStepPlayerNavRoute
@@ -36,7 +36,7 @@ fun AppRoute.activeSyncKeys(): Set<SyncKey> = when (this) {
         SyncKey.NOTE_ENTRIES,
         SyncKey.CHECKLIST_ENTRIES,
     )
-    is GuidesNavRoute, is GuideCreateNavRoute, is GuideDetailsNavRoute, is GuideStepPlayerNavRoute -> setOf(SyncKey.GUIDES)
+    is GuidesNavRoute, is GuideEditNavRoute, is GuideDetailsNavRoute, is GuideStepPlayerNavRoute -> setOf(SyncKey.GUIDES)
     is TipTrackerNavRoute, is TipStatisticsNavRoute, is TipTrackerGraph -> setOf(SyncKey.TIP_TRACKER)
     else -> emptySet()
 }

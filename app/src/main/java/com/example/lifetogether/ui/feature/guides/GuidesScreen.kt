@@ -167,7 +167,7 @@ fun GuidesScreen(
                             text = "Create guide manually",
                             onClick = {
                                 onUiEvent(GuidesUiEvent.CloseAddOptionsDialog)
-                                onNavigationEvent(GuidesNavigationEvent.NavigateToGuideCreate)
+                                onNavigationEvent(GuidesNavigationEvent.NavigateToGuideEdit)
                             },
                         )
 

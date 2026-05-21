@@ -14,6 +14,7 @@ sealed interface GuideDetailsUiState {
         val isUpdatingVisibility: Boolean = false,
         val isStartingGuide: Boolean = false,
         val isDeletingGuide: Boolean = false,
+        val isOwner: Boolean = false,
     ) : GuideDetailsUiState
 }
 
@@ -29,6 +30,7 @@ sealed interface GuideDetailsUiEvent {
 
 sealed interface GuideDetailsNavigationEvent {
     data object NavigateBack : GuideDetailsNavigationEvent
+    data object NavigateToEditGuide : GuideDetailsNavigationEvent
 }
 
 sealed interface GuideDetailsCommand {

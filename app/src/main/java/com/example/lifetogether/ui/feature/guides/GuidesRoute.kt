@@ -6,7 +6,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.navigation.GuideCreateNavRoute
+import com.example.lifetogether.ui.navigation.GuideEditNavRoute
 import com.example.lifetogether.ui.navigation.GuideDetailsNavRoute
 
 @Composable
@@ -24,7 +24,9 @@ fun GuidesRoute(
         onNavigationEvent = { navigationEvent ->
             when (navigationEvent) {
                 GuidesNavigationEvent.NavigateBack -> appNavigator.navigateBack()
-                GuidesNavigationEvent.NavigateToGuideCreate -> appNavigator.navigate(GuideCreateNavRoute)
+                GuidesNavigationEvent.NavigateToGuideEdit -> {
+                    appNavigator.navigate(GuideEditNavRoute())
+                }
                 is GuidesNavigationEvent.NavigateToGuideDetails -> {
                     appNavigator.navigate(GuideDetailsNavRoute(navigationEvent.guideId))
                 }
