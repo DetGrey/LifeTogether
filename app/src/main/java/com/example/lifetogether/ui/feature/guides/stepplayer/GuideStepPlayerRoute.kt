@@ -1,12 +1,13 @@
 package com.example.lifetogether.ui.feature.guides.stepplayer
 
-import androidx.activity.compose.BackHandler
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.navigation.AppNavigator
+import kotlinx.coroutines.flow.collect
 
 @Composable
 fun GuideStepPlayerRoute(
@@ -26,7 +27,8 @@ fun GuideStepPlayerRoute(
         appNavigator.navigateBack()
     }
 
-    BackHandler {
+    PredictiveBackHandler { progress ->
+        progress.collect()
         navigateBack()
     }
 
