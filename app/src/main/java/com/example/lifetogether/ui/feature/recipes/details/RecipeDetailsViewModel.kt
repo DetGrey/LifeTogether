@@ -25,7 +25,9 @@ import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.domain.usecase.image.UploadImageUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
 import com.example.lifetogether.ui.common.snackbar.SnackbarSeverity
-import com.example.lifetogether.ui.navigation.RecipeDetailsNavRoute
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.UUID
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -42,12 +44,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Date
-import javax.inject.Inject
-import androidx.navigation.toRoute
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 
-@HiltViewModel
-class RecipeDetailsViewModel @Inject constructor(
+@HiltViewModel(assistedFactory = RecipeDetailsViewModel.Factory::class)
+class RecipeDetailsViewModel @AssistedInject constructor(
+    @Assisted val recipeId: String?,
     private val savedStateHandle: SavedStateHandle,
     private val sessionRepository: SessionRepository,
     private val recipeRepository: RecipeRepository,
@@ -55,11 +56,14 @@ class RecipeDetailsViewModel @Inject constructor(
     private val uploadImageUseCase: UploadImageUseCase,
     @param:ApplicationContext private val context: Context,
 ) : ViewModel() {
+    @AssistedFactory
+    interface Factory {
+        fun create(recipeId: String?): RecipeDetailsViewModel
+    }
+
     companion object {
         private const val PENDING_IMAGE_URI_ARG = "pendingRecipeImageUri"
     }
-
-    private val recipeRoute = savedStateHandle.toRoute<RecipeDetailsNavRoute>()
 
     private val _uiState = MutableStateFlow<RecipeDetailsUiState>(RecipeDetailsUiState.Loading)
     val uiState: StateFlow<RecipeDetailsUiState> = _uiState.asStateFlow()
@@ -70,7 +74,7 @@ class RecipeDetailsViewModel @Inject constructor(
     private val _commands = Channel<RecipeDetailsCommand>(Channel.BUFFERED)
     val commands: Flow<RecipeDetailsCommand> = _commands.receiveAsFlow()
 
-    private var pendingRecipeId: String? = recipeRoute.recipeId
+    private var pendingRecipeId: String? = recipeId
     private var pendingImageUri: Uri? = savedStateHandle.get<String>(PENDING_IMAGE_URI_ARG)?.let(Uri::parse)
     private var currentFamilyId: String? = null
     private var originalRecipe: Recipe? = null

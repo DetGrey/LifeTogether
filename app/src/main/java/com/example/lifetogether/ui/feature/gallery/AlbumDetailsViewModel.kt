@@ -4,7 +4,6 @@ import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.logic.toFullDateString
@@ -27,7 +26,9 @@ import com.example.lifetogether.domain.usecase.image.UploadGalleryMediaItemsUseC
 import com.example.lifetogether.ui.common.event.UiCommand
 import com.example.lifetogether.ui.common.snackbar.SnackbarSeverity
 import com.example.lifetogether.ui.model.MenuAction
-import com.example.lifetogether.ui.navigation.AlbumMediaNavRoute
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
@@ -48,12 +49,10 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import java.util.regex.Pattern
-import javax.inject.Inject
-import androidx.navigation.toRoute
 
-@HiltViewModel
-class AlbumDetailsViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+@HiltViewModel(assistedFactory = AlbumDetailsViewModel.Factory::class)
+class AlbumDetailsViewModel @AssistedInject constructor(
+    @Assisted val albumId: String,
     private val sessionRepository: SessionRepository,
     private val galleryRepository: GalleryRepository,
     private val moveMediaToAlbumUseCase: MoveMediaToAlbumUseCase,
@@ -63,6 +62,11 @@ class AlbumDetailsViewModel @Inject constructor(
     private val uploadGalleryMediaItemsUseCase: UploadGalleryMediaItemsUseCase,
     @param:ApplicationContext private val context: Context,
 ) : ViewModel() {
+    @AssistedFactory
+    interface Factory {
+        fun create(albumId: String): AlbumDetailsViewModel
+    }
+
     private val _uiState = MutableStateFlow<AlbumDetailsUiState>(AlbumDetailsUiState.Loading)
     val uiState: StateFlow<AlbumDetailsUiState> = _uiState.asStateFlow()
 
@@ -76,7 +80,6 @@ class AlbumDetailsViewModel @Inject constructor(
     private var observeAlbumJob: Job? = null
     private var observeAlbumMediaJob: Job? = null
     private var familyId: String? = null
-    private val albumId: String = savedStateHandle.toRoute<AlbumMediaNavRoute>().albumId
 
     private var syncRetryAttempts = 0
     private val maxSyncRetryAttempts = 3

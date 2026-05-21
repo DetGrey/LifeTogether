@@ -1,7 +1,6 @@
 package com.example.lifetogether.ui.feature.lists.listDetails
 
 import android.graphics.Bitmap
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.logic.RecurrenceCalculator
@@ -21,7 +20,9 @@ import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.domain.usecase.item.DeleteRoutineListEntriesUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
-import com.example.lifetogether.ui.navigation.ListDetailNavRoute
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -41,18 +42,19 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import java.util.Date
 import java.util.UUID
-import javax.inject.Inject
-import androidx.navigation.toRoute
 
 @OptIn(ExperimentalCoroutinesApi::class)
-@HiltViewModel
-class ListDetailsViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+@HiltViewModel(assistedFactory = ListDetailsViewModel.Factory::class)
+class ListDetailsViewModel @AssistedInject constructor(
+    @Assisted val listId: String,
     sessionRepository: SessionRepository,
     private val userListRepository: UserListRepository,
     private val deleteRoutineListEntriesUseCase: DeleteRoutineListEntriesUseCase,
 ) : ViewModel() {
-    val listId: String = savedStateHandle.toRoute<ListDetailNavRoute>().listId
+    @AssistedFactory
+    interface Factory {
+        fun create(listId: String): ListDetailsViewModel
+    }
 
     private var currentList: UserList? = null
     private val selectionState = MutableStateFlow(ListDetailsSelectionState())

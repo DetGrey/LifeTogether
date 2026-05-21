@@ -1,6 +1,5 @@
 package com.example.lifetogether.ui.feature.gallery
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.model.SaveProgress
@@ -13,7 +12,9 @@ import com.example.lifetogether.domain.usecase.gallery.DeleteMediaUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
 import com.example.lifetogether.ui.common.snackbar.SnackbarSeverity
 import com.example.lifetogether.ui.model.MenuAction
-import com.example.lifetogether.ui.navigation.GalleryMediaNavRoute
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -25,16 +26,20 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
-import androidx.navigation.toRoute
 
-@HiltViewModel
-class MediaDetailsViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+@HiltViewModel(assistedFactory = MediaDetailsViewModel.Factory::class)
+class MediaDetailsViewModel @AssistedInject constructor(
+    @Assisted val albumId: String,
+    @Assisted val initialIndex: Int,
     private val sessionRepository: SessionRepository,
     private val galleryRepository: GalleryRepository,
     private val deleteMediaUseCase: DeleteMediaUseCase,
 ) : ViewModel() {
+    @AssistedFactory
+    interface Factory {
+        fun create(albumId: String, initialIndex: Int): MediaDetailsViewModel
+    }
+
     private val _uiState = MutableStateFlow<MediaDetailsUiState>(MediaDetailsUiState.Loading)
     val uiState: StateFlow<MediaDetailsUiState> = _uiState.asStateFlow()
 
@@ -43,9 +48,6 @@ class MediaDetailsViewModel @Inject constructor(
 
     private var familyId: String? = null
     private var loadAlbumMediaJob: Job? = null
-    private val mediaRoute = savedStateHandle.toRoute<GalleryMediaNavRoute>()
-    private val albumId: String = mediaRoute.albumId
-    private val initialIndex: Int = mediaRoute.initialIndex
 
     init {
         viewModelScope.launch {

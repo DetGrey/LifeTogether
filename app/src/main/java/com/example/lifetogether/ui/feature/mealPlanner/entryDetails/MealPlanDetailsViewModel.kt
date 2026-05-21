@@ -1,13 +1,14 @@
 package com.example.lifetogether.ui.feature.mealPlanner.entryDetails
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.repository.RecipeRepository
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.ui.common.event.UiCommand
-import com.example.lifetogether.ui.navigation.MealPlanDetailsNavRoute
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -18,20 +19,24 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Date
-import javax.inject.Inject
-import androidx.navigation.toRoute
 
-@HiltViewModel
-class MealPlanDetailsViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+@HiltViewModel(assistedFactory = MealPlanDetailsViewModel.Factory::class)
+class MealPlanDetailsViewModel @AssistedInject constructor(
+    @Assisted("mealPlanId") val mealPlanId: String?,
+    @Assisted("defaultDate") val defaultDate: String?,
+    @Assisted("preselectedRecipeId") val preselectedRecipeId: String?,
     private val loader: MealPlanDetailsLoader,
     private val saver: MealPlanDetailsSaver,
     private val recipeRepository: RecipeRepository,
 ) : ViewModel() {
-    private val route = savedStateHandle.toRoute<MealPlanDetailsNavRoute>()
-    val mealPlanId: String? = route.mealPlanId
-    private val defaultDate: String? = route.defaultDate
-    private val preselectedRecipeId: String? = route.preselectedRecipeId
+    @AssistedFactory
+    interface Factory {
+        fun create(
+            @Assisted("mealPlanId") mealPlanId: String?,
+            @Assisted("defaultDate") defaultDate: String?,
+            @Assisted("preselectedRecipeId") preselectedRecipeId: String?,
+        ): MealPlanDetailsViewModel
+    }
 
     private val _familyId = MutableStateFlow<String?>(null)
     val familyId = _familyId.asStateFlow()

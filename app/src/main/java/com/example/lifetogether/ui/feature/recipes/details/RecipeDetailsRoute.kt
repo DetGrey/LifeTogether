@@ -17,8 +17,10 @@ import kotlinx.coroutines.launch
 @Composable
 fun RecipeDetailsRoute(
     appNavigator: AppNavigator,
+    recipeId: String?,
 ) {
-    val viewModel: RecipeDetailsViewModel = hiltViewModel()
+    val viewModel: RecipeDetailsViewModel =
+        hiltViewModel<RecipeDetailsViewModel, RecipeDetailsViewModel.Factory> { it.create(recipeId) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = LocalRootSnackbarHostState.current
     val coroutineScope = rememberCoroutineScope()

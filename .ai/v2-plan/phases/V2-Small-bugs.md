@@ -147,8 +147,7 @@ Here are some questions:
   - In album info show if connected to traveller pin and make it clickable
 
 ### Navigation
-- [ ] Migrate to Navigation 3.
-  - (TODO WOULD LIKE TO IMPLEMENT)
+- [x] Migrate to Navigation 3.
 - [x] On login, go to the home screen and do not keep any back stack.
 - [x] Cannot have multiple profile or settings in back stack. Maybe same for other ones
 

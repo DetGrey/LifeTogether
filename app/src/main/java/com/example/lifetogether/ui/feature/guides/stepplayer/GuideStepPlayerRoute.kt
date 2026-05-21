@@ -5,16 +5,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.ViewModelStoreOwner
 import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.navigation.AppNavigator
 
 @Composable
 fun GuideStepPlayerRoute(
     appNavigator: AppNavigator,
-    viewModelStoreOwner: ViewModelStoreOwner,
+    guideId: String,
 ) {
-    val guideStepPlayerViewModel: GuideStepPlayerViewModel = hiltViewModel(viewModelStoreOwner)
+    val guideStepPlayerViewModel =
+        hiltViewModel<GuideStepPlayerViewModel, GuideStepPlayerViewModel.Factory> {
+            it.create(guideId)
+        }
     val uiState by guideStepPlayerViewModel.uiState.collectAsStateWithLifecycle()
 
     CollectUiCommands(guideStepPlayerViewModel.uiCommands)

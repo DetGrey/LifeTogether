@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.navigation.AppNavigator
@@ -13,9 +12,10 @@ import com.example.lifetogether.ui.navigation.GuideStepPlayerNavRoute
 @Composable
 fun GuideDetailsRoute(
     appNavigator: AppNavigator,
-    viewModelStoreOwner: ViewModelStoreOwner,
+    guideId: String,
 ) {
-    val guideDetailsViewModel: GuideDetailsViewModel = hiltViewModel(viewModelStoreOwner)
+    val guideDetailsViewModel =
+        hiltViewModel<GuideDetailsViewModel, GuideDetailsViewModel.Factory> { it.create(guideId) }
     val uiState by guideDetailsViewModel.uiState.collectAsStateWithLifecycle()
 
     CollectUiCommands(guideDetailsViewModel.uiCommands)

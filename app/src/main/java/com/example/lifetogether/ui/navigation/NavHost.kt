@@ -1,46 +1,49 @@
 package com.example.lifetogether.ui.navigation
 
-import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
-import androidx.navigation.NavBackStackEntry
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.navigation
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.ui.NavDisplay
+import com.example.lifetogether.ui.common.sync.RouteSyncBinding
 import com.example.lifetogether.ui.feature.admin.groceryList.categories.AdminGroceryCategoriesRoute
 import com.example.lifetogether.ui.feature.admin.groceryList.suggestions.AdminGrocerySuggestionsRoute
 import com.example.lifetogether.ui.feature.family.FamilyRoute
 import com.example.lifetogether.ui.feature.gallery.AlbumDetailsRoute
-import com.example.lifetogether.ui.feature.gallery.GalleryGraphObserverRoute
 import com.example.lifetogether.ui.feature.gallery.GalleryScreenRoute
 import com.example.lifetogether.ui.feature.gallery.MediaDetailsRoute
 import com.example.lifetogether.ui.feature.groceryList.GroceryListRoute
-import com.example.lifetogether.ui.feature.guides.GuideGraphObserverRoute
 import com.example.lifetogether.ui.feature.guides.GuidesRoute
 import com.example.lifetogether.ui.feature.guides.create.GuideCreateRoute
 import com.example.lifetogether.ui.feature.guides.details.GuideDetailsRoute
 import com.example.lifetogether.ui.feature.guides.stepplayer.GuideStepPlayerRoute
 import com.example.lifetogether.ui.feature.home.HomeRoute
-import com.example.lifetogether.ui.feature.mealPlanner.MealPlannerGraphObserverRoute
-import com.example.lifetogether.ui.feature.mealPlanner.MealPlannerRoute
-import com.example.lifetogether.ui.feature.mealPlanner.entryDetails.MealPlanDetailsRoute
 import com.example.lifetogether.ui.feature.lists.ListsRoute
-import com.example.lifetogether.ui.feature.lists.UserListGraphObserverRoute
 import com.example.lifetogether.ui.feature.lists.entryDetails.ListEntryDetailsRoute
 import com.example.lifetogether.ui.feature.lists.listDetails.ListDetailsRoute
 import com.example.lifetogether.ui.feature.loading.LoadingRoute
 import com.example.lifetogether.ui.feature.login.LoginRoute
+import com.example.lifetogether.ui.feature.mealPlanner.MealPlannerRoute
+import com.example.lifetogether.ui.feature.mealPlanner.entryDetails.MealPlanDetailsRoute
 import com.example.lifetogether.ui.feature.profile.ProfileRoute
-import com.example.lifetogether.ui.feature.recipes.RecipeGraphObserverRoute
-import com.example.lifetogether.ui.feature.recipes.details.RecipeDetailsRoute
 import com.example.lifetogether.ui.feature.recipes.RecipesRoute
+import com.example.lifetogether.ui.feature.recipes.details.RecipeDetailsRoute
 import com.example.lifetogether.ui.feature.settings.SettingsRoute
 import com.example.lifetogether.ui.feature.signup.SignupRoute
-import com.example.lifetogether.ui.feature.tipTracker.TipTrackerGraphObserverRoute
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerRoute
 import com.example.lifetogether.ui.feature.tipTracker.statistics.TipStatisticsRoute
 
@@ -48,140 +51,155 @@ private const val RouteTransitionDurationMillis = 450
 private const val RouteTransitionFadeInitialAlpha = 0.92f
 
 @Composable
-fun NavHost(
-    navController: NavHostController,
-) {
-    val appNavigator = AppNavigator(navController)
-    GalleryGraphObserverRoute(navController = navController)
-    GuideGraphObserverRoute(navController = navController)
-    MealPlannerGraphObserverRoute(navController = navController)
-    UserListGraphObserverRoute(navController = navController)
-    RecipeGraphObserverRoute(navController = navController)
-    TipTrackerGraphObserverRoute(navController = navController)
+fun NavHost(deepLinkRoute: AppRoute? = null) {
+    val backStack = rememberNavBackStack(LoadingNavRoute)
+    val appNavigator = remember(backStack) { AppNavigator(backStack) }
 
-    androidx.navigation.compose.NavHost(
-        navController = navController,
-        startDestination = LoadingNavRoute,
-        enterTransition = {
-            routeEnterTransition(AnimatedContentTransitionScope.SlideDirection.Left)
-        },
-        exitTransition = {
-            routeExitTransition(AnimatedContentTransitionScope.SlideDirection.Left)
-        },
-        popEnterTransition = {
-            routeEnterTransition(AnimatedContentTransitionScope.SlideDirection.Right)
-        },
-        popExitTransition = {
-            routeExitTransition(AnimatedContentTransitionScope.SlideDirection.Right)
-        },
-    ) {
-        composable<AdminGroceryCategoriesNavRoute> { AdminGroceryCategoriesRoute(appNavigator) }
-        composable<AdminGrocerySuggestionsNavRoute> { AdminGrocerySuggestionsRoute(appNavigator) }
-        composable<LoadingNavRoute> { LoadingRoute(appNavigator) }
-        composable<HomeNavRoute> { HomeRoute(appNavigator) }
-        composable<ProfileNavRoute> { ProfileRoute(appNavigator) }
-        composable<FamilyNavRoute> { FamilyRoute(appNavigator) }
-        composable<SettingsNavRoute> { SettingsRoute(appNavigator) }
-        composable<LoginNavRoute> { LoginRoute(appNavigator) }
-        composable<SignupNavRoute> { SignupRoute(appNavigator) }
-        composable<GroceryListNavRoute> { GroceryListRoute(appNavigator) }
-        composable<GuidesNavRoute> { GuidesRoute(appNavigator) }
-        composable<GuideCreateNavRoute> { GuideCreateRoute(appNavigator) }
-
-        navigation<GuideGraph>(startDestination = GuideDetailsNavRoute::class) {
-            composable<GuideDetailsNavRoute> { backStackEntry ->
-                val guideGraphEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry<GuideGraph>()
-                }
-
-                GuideDetailsRoute(
-                    appNavigator = appNavigator,
-                    viewModelStoreOwner = guideGraphEntry,
-                )
-            }
-
-            composable<GuideStepPlayerNavRoute> { backStackEntry ->
-                val guideGraphEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry<GuideGraph>()
-                }
-
-                GuideStepPlayerRoute(
-                    appNavigator = appNavigator,
-                    viewModelStoreOwner = guideGraphEntry,
-                )
-            }
-        }
-
-        navigation<RecipeGraph>(startDestination = RecipesNavRoute::class) {
-            composable<RecipesNavRoute> { RecipesRoute(appNavigator) }
-            composable<RecipeDetailsNavRoute> {
-                RecipeDetailsRoute(appNavigator = appNavigator)
-            }
-        }
-
-        navigation<MealPlannerGraph>(startDestination = MealPlannerNavRoute::class) {
-            composable<MealPlannerNavRoute> { MealPlannerRoute(appNavigator) }
-            composable<MealPlanDetailsNavRoute> {
-                MealPlanDetailsRoute(
-                    appNavigator = appNavigator,
-                    navController = navController,
-                )
-            }
-        }
-
-        navigation<GalleryGraph>(startDestination = GalleryNavRoute::class) {
-            composable<GalleryNavRoute> { GalleryScreenRoute(appNavigator) }
-            composable<AlbumMediaNavRoute> { AlbumDetailsRoute(appNavigator) }
-            composable<GalleryMediaNavRoute> { MediaDetailsRoute(appNavigator) }
-        }
-
-        navigation<UserListGraph>(startDestination = ListsNavRoute::class) {
-            composable<ListsNavRoute> { ListsRoute(appNavigator) }
-            composable<ListDetailNavRoute> { ListDetailsRoute(appNavigator = appNavigator) }
-            composable<ListEntryDetailsNavRoute> { ListEntryDetailsRoute(appNavigator = appNavigator) }
-        }
-
-        navigation<TipTrackerGraph>(startDestination = TipTrackerNavRoute::class) {
-            composable<TipTrackerNavRoute> { backStackEntry ->
-                val graphEntry = remember(backStackEntry) { navController.getBackStackEntry<TipTrackerGraph>() }
-                TipTrackerRoute(viewModelStoreOwner = graphEntry, appNavigator = appNavigator)
-            }
-            composable<TipStatisticsNavRoute> { backStackEntry ->
-                val graphEntry = remember(backStackEntry) { navController.getBackStackEntry<TipTrackerGraph>() }
-                TipStatisticsRoute(viewModelStoreOwner = graphEntry, appNavigator = appNavigator)
-            }
+    LaunchedEffect(deepLinkRoute) {
+        if (deepLinkRoute != null) {
+            appNavigator.navigateTopLevel(deepLinkRoute)
         }
     }
-}
 
-private fun routeTransitionSpec() =
-    tween<Float>(
-        durationMillis = RouteTransitionDurationMillis,
-        easing = FastOutSlowInEasing,
+    // ViewModelStore map for graph-scoped entries (TipTrackerGraph).
+    // Stores are keyed by the graph marker route object and cleared when that
+    // marker is no longer in the back stack.
+    val graphStores = remember { HashMap<NavKey, ViewModelStore>() }
+    SideEffect {
+        val staleKeys = graphStores.keys.filter { key -> !backStack.contains(key) }
+        staleKeys.forEach { key -> graphStores.remove(key)?.clear() }
+    }
+
+    // Sync activation driven directly by the current top route
+    val currentRoute = backStack.lastOrNull() as? AppRoute
+    RouteSyncBinding(route = currentRoute)
+
+    val enterTransition = slideInHorizontally(
+        animationSpec = tween(RouteTransitionDurationMillis, easing = FastOutSlowInEasing),
+        initialOffsetX = { it },
+    ) + fadeIn(
+        animationSpec = tween(RouteTransitionDurationMillis, easing = FastOutSlowInEasing),
+        initialAlpha = RouteTransitionFadeInitialAlpha,
+    )
+    val exitTransition = slideOutHorizontally(
+        animationSpec = tween(RouteTransitionDurationMillis, easing = FastOutSlowInEasing),
+        targetOffsetX = { -it },
+    ) + fadeOut(
+        animationSpec = tween(RouteTransitionDurationMillis, easing = FastOutSlowInEasing),
+        targetAlpha = RouteTransitionFadeInitialAlpha,
+    )
+    val popEnterTransition = slideInHorizontally(
+        animationSpec = tween(RouteTransitionDurationMillis, easing = FastOutSlowInEasing),
+        initialOffsetX = { -it },
+    ) + fadeIn(
+        animationSpec = tween(RouteTransitionDurationMillis, easing = FastOutSlowInEasing),
+        initialAlpha = RouteTransitionFadeInitialAlpha,
+    )
+    val popExitTransition = slideOutHorizontally(
+        animationSpec = tween(RouteTransitionDurationMillis, easing = FastOutSlowInEasing),
+        targetOffsetX = { it },
+    ) + fadeOut(
+        animationSpec = tween(RouteTransitionDurationMillis, easing = FastOutSlowInEasing),
+        targetAlpha = RouteTransitionFadeInitialAlpha,
     )
 
-private fun AnimatedContentTransitionScope<NavBackStackEntry>.routeEnterTransition(
-    direction: AnimatedContentTransitionScope.SlideDirection,
-) = slideIntoContainer(
-    direction,
-    animationSpec = tween(
-        durationMillis = RouteTransitionDurationMillis,
-        easing = FastOutSlowInEasing,
-    ),
-) + fadeIn(
-    animationSpec = routeTransitionSpec(),
-    initialAlpha = RouteTransitionFadeInitialAlpha,
-)
+    NavDisplay(
+        backStack = backStack,
+        onBack = { appNavigator.navigateBack() },
+        entryDecorators = listOf(
+            rememberSaveableStateHolderNavEntryDecorator(),
+            rememberViewModelStoreNavEntryDecorator(),
+        ),
+        transitionSpec = { enterTransition togetherWith exitTransition },
+        popTransitionSpec = { popEnterTransition togetherWith popExitTransition },
+        predictivePopTransitionSpec = { popEnterTransition togetherWith popExitTransition },
+        entryProvider = entryProvider {
+            // ─── Auth / loading ────────────────────────────────────────────
+            entry<LoadingNavRoute> { LoadingRoute(appNavigator) }
+            entry<LoginNavRoute> { LoginRoute(appNavigator) }
+            entry<SignupNavRoute> { SignupRoute(appNavigator) }
 
-private fun AnimatedContentTransitionScope<NavBackStackEntry>.routeExitTransition(
-    direction: AnimatedContentTransitionScope.SlideDirection,
-) = slideOutOfContainer(
-    direction,
-    animationSpec = tween(
-        durationMillis = RouteTransitionDurationMillis,
-        easing = FastOutSlowInEasing,
-    ),
-) + fadeOut(
-    animationSpec = routeTransitionSpec(),
-    targetAlpha = RouteTransitionFadeInitialAlpha,
-)
+            // ─── Top-level ─────────────────────────────────────────────────
+            entry<HomeNavRoute> { HomeRoute(appNavigator) }
+            entry<ProfileNavRoute> { ProfileRoute(appNavigator) }
+            entry<FamilyNavRoute> { FamilyRoute(appNavigator) }
+            entry<SettingsNavRoute> { SettingsRoute(appNavigator) }
+
+            // ─── Admin ─────────────────────────────────────────────────────
+            entry<AdminGroceryCategoriesNavRoute> { AdminGroceryCategoriesRoute(appNavigator) }
+            entry<AdminGrocerySuggestionsNavRoute> { AdminGrocerySuggestionsRoute(appNavigator) }
+
+            // ─── Grocery ───────────────────────────────────────────────────
+            entry<GroceryListNavRoute> { GroceryListRoute(appNavigator) }
+
+            // ─── Recipes ───────────────────────────────────────────────────
+            entry<RecipesNavRoute> { RecipesRoute(appNavigator) }
+            entry<RecipeDetailsNavRoute> { key ->
+                RecipeDetailsRoute(appNavigator = appNavigator, recipeId = key.recipeId)
+            }
+
+            // ─── Guides ────────────────────────────────────────────────────
+            entry<GuidesNavRoute> { GuidesRoute(appNavigator) }
+            entry<GuideCreateNavRoute> { GuideCreateRoute(appNavigator) }
+            entry<GuideDetailsNavRoute> { key ->
+                GuideDetailsRoute(appNavigator = appNavigator, guideId = key.guideId)
+            }
+            entry<GuideStepPlayerNavRoute> { key ->
+                GuideStepPlayerRoute(appNavigator = appNavigator, guideId = key.guideId)
+            }
+
+            // ─── Gallery ───────────────────────────────────────────────────
+            entry<GalleryNavRoute> { GalleryScreenRoute(appNavigator) }
+            entry<AlbumMediaNavRoute> { key ->
+                AlbumDetailsRoute(appNavigator = appNavigator, albumId = key.albumId)
+            }
+            entry<GalleryMediaNavRoute> { key ->
+                MediaDetailsRoute(
+                    appNavigator = appNavigator,
+                    albumId = key.albumId,
+                    initialIndex = key.initialIndex,
+                )
+            }
+
+            // ─── Meal planner ──────────────────────────────────────────────
+            entry<MealPlannerNavRoute> { MealPlannerRoute(appNavigator) }
+            entry<MealPlanDetailsNavRoute> { key ->
+                MealPlanDetailsRoute(appNavigator = appNavigator, routeKey = key)
+            }
+
+            // ─── Lists ─────────────────────────────────────────────────────
+            entry<ListsNavRoute> { ListsRoute(appNavigator) }
+            entry<ListDetailNavRoute> { key ->
+                ListDetailsRoute(appNavigator = appNavigator, listId = key.listId)
+            }
+            entry<ListEntryDetailsNavRoute> { key ->
+                ListEntryDetailsRoute(
+                    appNavigator = appNavigator,
+                    listId = key.listId,
+                    entryId = key.entryId,
+                )
+            }
+
+            // ─── Tip tracker (shared-scoped via TipTrackerGraph marker) ────
+            entry<TipTrackerGraph> { /* invisible scope anchor — no UI */ }
+            entry<TipTrackerNavRoute> { _ ->
+                val graphOwner = tipTrackerGraphOwner(backStack, graphStores)
+                TipTrackerRoute(viewModelStoreOwner = graphOwner, appNavigator = appNavigator)
+            }
+            entry<TipStatisticsNavRoute> { _ ->
+                val graphOwner = tipTrackerGraphOwner(backStack, graphStores)
+                TipStatisticsRoute(viewModelStoreOwner = graphOwner, appNavigator = appNavigator)
+            }
+        },
+    )
+}
+
+@Composable
+private fun tipTrackerGraphOwner(
+    backStack: androidx.navigation3.runtime.NavBackStack<NavKey>,
+    graphStores: HashMap<NavKey, ViewModelStore>,
+): ViewModelStoreOwner {
+    val graphKey = backStack.firstOrNull { it is TipTrackerGraph } ?: TipTrackerGraph
+    val store = remember(graphKey) { graphStores.getOrPut(graphKey) { ViewModelStore() } }
+    return remember(store) { object : ViewModelStoreOwner { override val viewModelStore: ViewModelStore = store } }
+}

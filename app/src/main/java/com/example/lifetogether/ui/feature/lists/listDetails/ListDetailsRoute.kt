@@ -11,10 +11,11 @@ import com.example.lifetogether.ui.navigation.ListEntryDetailsNavRoute
 @Composable
 fun ListDetailsRoute(
     appNavigator: AppNavigator,
+    listId: String,
 ) {
-    val viewModel: ListDetailsViewModel = hiltViewModel()
+    val viewModel: ListDetailsViewModel =
+        hiltViewModel<ListDetailsViewModel, ListDetailsViewModel.Factory> { it.create(listId) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val listId = viewModel.listId
 
     CollectUiCommands(viewModel.uiCommands)
 

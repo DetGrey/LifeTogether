@@ -45,8 +45,10 @@ fun GalleryScreenRoute(
 @Composable
 fun AlbumDetailsRoute(
     appNavigator: AppNavigator,
+    albumId: String,
 ) {
-    val viewModel: AlbumDetailsViewModel = hiltViewModel()
+    val viewModel: AlbumDetailsViewModel =
+        hiltViewModel<AlbumDetailsViewModel, AlbumDetailsViewModel.Factory> { it.create(albumId) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     CollectUiCommands(viewModel.uiCommands)
 
@@ -77,8 +79,13 @@ fun AlbumDetailsRoute(
 @Composable
 fun MediaDetailsRoute(
     appNavigator: AppNavigator,
+    albumId: String,
+    initialIndex: Int,
 ) {
-    val viewModel: MediaDetailsViewModel = hiltViewModel()
+    val viewModel: MediaDetailsViewModel =
+        hiltViewModel<MediaDetailsViewModel, MediaDetailsViewModel.Factory> {
+            it.create(albumId, initialIndex)
+        }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     CollectUiCommands(viewModel.uiCommands)
 

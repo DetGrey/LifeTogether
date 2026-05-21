@@ -1,7 +1,6 @@
 package com.example.lifetogether.ui.feature.guides.stepplayer
 
 import android.util.Log
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.logic.GuideLeafPointer
@@ -14,7 +13,9 @@ import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.ui.common.event.UiCommand
-import com.example.lifetogether.ui.navigation.GuideStepPlayerNavRoute
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -26,15 +27,18 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import java.util.Date
-import javax.inject.Inject
-import androidx.navigation.toRoute
 
-@HiltViewModel
-class GuideStepPlayerViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+@HiltViewModel(assistedFactory = GuideStepPlayerViewModel.Factory::class)
+class GuideStepPlayerViewModel @AssistedInject constructor(
+    @Assisted val guideId: String,
     private val sessionRepository: SessionRepository,
     private val guideRepository: GuideRepository,
 ) : ViewModel() {
+    @AssistedFactory
+    interface Factory {
+        fun create(guideId: String): GuideStepPlayerViewModel
+    }
+
     private companion object {
         const val TAG = "GuideStepPlayerVM"
         const val GUIDE_PERSIST_DEBOUNCE_MS = 250L
@@ -44,8 +48,6 @@ class GuideStepPlayerViewModel @Inject constructor(
         TOGGLE,
         COMPLETE_IF_NEEDED,
     }
-
-    private val guideId: String = savedStateHandle.toRoute<GuideStepPlayerNavRoute>().guideId
 
     private var familyId: String? = null
     private var uid: String? = null

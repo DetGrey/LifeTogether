@@ -2,14 +2,15 @@ package com.example.lifetogether.ui.feature.lists.entryDetails
 
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.ui.common.event.UiCommand
-import com.example.lifetogether.ui.navigation.ListEntryDetailsNavRoute
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -22,24 +23,27 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Date
-import javax.inject.Inject
-import androidx.navigation.toRoute
 
-@HiltViewModel
-class ListEntryDetailsViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+@HiltViewModel(assistedFactory = ListEntryDetailsViewModel.Factory::class)
+class ListEntryDetailsViewModel @AssistedInject constructor(
+    @Assisted("listId") val listId: String,
+    @Assisted("entryId") val entryId: String?,
     private val contentLoader: ListEntryDetailsLoader,
     private val formReducer: ListEntryDetailsFormReducer,
     private val entryDetailsSaver: ListEntryDetailsSaver,
     @param:ApplicationContext private val context: Context,
 ) : ViewModel() {
+    @AssistedFactory
+    interface Factory {
+        fun create(
+            @Assisted("listId") listId: String,
+            @Assisted("entryId") entryId: String?,
+        ): ListEntryDetailsViewModel
+    }
+
     companion object {
         val WEEKDAYS: List<String> = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
     }
-
-    private val route = savedStateHandle.toRoute<ListEntryDetailsNavRoute>()
-    private val listId: String = route.listId
-    val entryId: String? = route.entryId
 
     private val _familyId = MutableStateFlow<String?>(null)
     val familyId = _familyId.asStateFlow()

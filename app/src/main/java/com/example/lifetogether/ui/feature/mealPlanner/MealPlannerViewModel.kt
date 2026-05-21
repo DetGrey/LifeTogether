@@ -1,8 +1,6 @@
 package com.example.lifetogether.ui.feature.mealPlanner
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.model.session.authenticatedUserOrNull
 import com.example.lifetogether.domain.repository.MealPlannerRepository
@@ -15,6 +13,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -30,7 +29,6 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MealPlannerViewModel @Inject constructor(
-    private val savedStateHandle: SavedStateHandle,
     sessionRepository: SessionRepository,
     private val mealPlannerRepository: MealPlannerRepository,
     private val recipeRepository: RecipeRepository,
@@ -38,6 +36,8 @@ class MealPlannerViewModel @Inject constructor(
 
     private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
     val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
+
+    private val _focusDate = MutableStateFlow<String?>(null)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val contentState: StateFlow<MealPlannerUiState.Content?> = sessionRepository.sessionState
@@ -58,25 +58,9 @@ class MealPlannerViewModel @Inject constructor(
             initialValue = null,
         )
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private val mealPlannerFocusDate: StateFlow<String?> = contentState
-        .flatMapLatest { content ->
-            if (content != null) {
-                savedStateHandle.getLiveData<String?>(MEAL_PLANNER_FOCUS_DATE_RESULT_KEY).asFlow()
-            } else {
-                flowOf(null)
-            }
-        }
-        .distinctUntilChanged()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = null,
-        )
-
     val uiState: StateFlow<MealPlannerUiState> = combine(
         contentState,
-        mealPlannerFocusDate,
+        _focusDate,
     ) { content, focusDate ->
         content?.copy(focusDate = focusDate) ?: MealPlannerUiState.Loading
     }.stateIn(
@@ -130,7 +114,11 @@ class MealPlannerViewModel @Inject constructor(
         }
     }
 
+    fun setFocusDate(date: String) {
+        _focusDate.value = date
+    }
+
     private fun clearFocusDate() {
-        savedStateHandle[MEAL_PLANNER_FOCUS_DATE_RESULT_KEY] = null
+        _focusDate.value = null
     }
 }

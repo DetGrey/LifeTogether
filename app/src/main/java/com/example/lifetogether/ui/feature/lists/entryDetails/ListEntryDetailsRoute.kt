@@ -16,11 +16,15 @@ import kotlinx.coroutines.launch
 @Composable
 fun ListEntryDetailsRoute(
     appNavigator: AppNavigator,
+    listId: String,
+    entryId: String?,
 ) {
-    val viewModel: ListEntryDetailsViewModel = hiltViewModel()
+    val viewModel: ListEntryDetailsViewModel =
+        hiltViewModel<ListEntryDetailsViewModel, ListEntryDetailsViewModel.Factory> {
+            it.create(listId, entryId)
+        }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val familyId by viewModel.familyId.collectAsStateWithLifecycle()
-    val entryId = viewModel.entryId
     val content = uiState as? EntryDetailsUiState.Content
     val imageType = when (content?.details) {
         is EntryDetailsContent.Routine ->

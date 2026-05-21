@@ -29,8 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import com.example.lifetogether.ui.common.event.LocalProgressSnackbarController
 import com.example.lifetogether.ui.common.event.LocalRootSnackbarHostState
 import com.example.lifetogether.ui.common.event.ProgressSnackbarController
@@ -50,8 +48,6 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
-    private lateinit var navController: NavHostController
 
     @Inject
     lateinit var notificationService: NotificationService
@@ -89,8 +85,6 @@ class MainActivity : ComponentActivity() {
                     // are all owned internally by the root coordinator.
                     hiltViewModel<RootCoordinatorViewModel>()
 
-                    val navControllerState = rememberNavController()
-                    navController = navControllerState
                     val rootSnackbarHostState = remember { SnackbarHostState() }
                     var progressSnackbarVisuals by remember { mutableStateOf<AppSnackbarVisuals?>(null) }
                     val progressSnackbarController = remember {
@@ -102,12 +96,6 @@ class MainActivity : ComponentActivity() {
                             override fun hide() {
                                 progressSnackbarVisuals = null
                             }
-                        }
-                    }
-
-                    LaunchedEffect(destination, navControllerState) {
-                        if (destination != null) {
-                            navControllerState.navigate(notificationService.routeFromDestinationString(destination))
                         }
                     }
 
@@ -143,7 +131,9 @@ class MainActivity : ComponentActivity() {
                             ) {
                                 Box(modifier = Modifier.fillMaxSize()) {
                                     NavHost(
-                                        navController = navControllerState,
+                                        deepLinkRoute = destination?.let {
+                                            notificationService.routeFromDestinationString(it)
+                                        },
                                     )
 
                                     progressSnackbarVisuals?.let { visuals ->

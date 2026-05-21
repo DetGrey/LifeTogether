@@ -1,6 +1,5 @@
 package com.example.lifetogether.ui.feature.guides.details
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.logic.GuideLeafPointer
@@ -14,7 +13,9 @@ import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.ui.common.event.UiCommand
-import com.example.lifetogether.ui.navigation.GuideDetailsNavRoute
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -26,16 +27,17 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Date
-import javax.inject.Inject
-import androidx.navigation.toRoute
 
-@HiltViewModel
-class GuideDetailsViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+@HiltViewModel(assistedFactory = GuideDetailsViewModel.Factory::class)
+class GuideDetailsViewModel @AssistedInject constructor(
+    @Assisted val guideId: String,
     private val sessionRepository: SessionRepository,
     private val guideRepository: GuideRepository,
 ) : ViewModel() {
-    private val guideId: String = savedStateHandle.toRoute<GuideDetailsNavRoute>().guideId
+    @AssistedFactory
+    interface Factory {
+        fun create(guideId: String): GuideDetailsViewModel
+    }
     private var familyId: String? = null
     private var uid: String? = null
     private var guideJob: Job? = null
