@@ -59,7 +59,7 @@ fun GuideEditScreen(
 
     var visibilityExpanded by remember { mutableStateOf(false) }
     var newSectionTitle by remember { mutableStateOf("") }
-    var newSectionAmount by remember { mutableStateOf("1") }
+    var newSectionPieces by remember { mutableStateOf("1") }
 
     BackHandler { onUiEvent(GuideEditUiEvent.DiscardClicked) }
 
@@ -169,31 +169,31 @@ fun GuideEditScreen(
                         ) {
                             CustomTextField(
                                 modifier = Modifier.weight(0.6f),
-                                value = newSectionAmount,
+                                value = newSectionPieces,
                                 onValueChange = {
-                                    newSectionAmount = it.filter { ch -> ch.isDigit() }
+                                    newSectionPieces = it.filter { ch -> ch.isDigit() }
                                 },
-                                label = "Repetitions",
+                                label = "Pieces",
                                 imeAction = ImeAction.Done,
                                 keyboardType = KeyboardType.Number,
                             )
                             PrimaryButton(
                                 text = "Add",
                                 onClick = {
-                                    val amount = newSectionAmount.toIntOrNull() ?: 1
+                                    val pieces = newSectionPieces.toIntOrNull() ?: 1
                                     onUiEvent(
                                         GuideEditUiEvent.AddSectionRequested(
                                             newSectionTitle,
-                                            amount
+                                            pieces
                                         )
                                     )
                                     newSectionTitle = ""
-                                    newSectionAmount = "1"
+                                    newSectionPieces = "1"
                                 },
                             )
                         }
                         Text(
-                            text = "Repetitions: how many times to run through this section",
+                            text = "How many identical pieces to make (e.g. 2 legs, 2 ears)",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                         )
@@ -331,7 +331,7 @@ private fun SectionCard(
                 TextHeadingMedium(
                     text = buildString {
                         append(section.title)
-                        if (section.amount > 1) append(" (×${section.amount})")
+                        if (section.pieces > 1) append(" (×${section.pieces})")
                     },
                     modifier = Modifier.weight(1f),
                 )
@@ -489,7 +489,7 @@ private fun GuideEditScreenPreview() {
                         id = "section-1",
                         orderNumber = 1,
                         title = "Intro",
-                        amount = 1,
+                        pieces = 1,
                         steps = emptyList(),
                     ),
                 ),

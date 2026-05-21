@@ -82,13 +82,13 @@ class GuideDetailsViewModel @AssistedInject constructor(
             GuideDetailsUiEvent.ToggleVisibilityClicked -> toggleVisibility()
             GuideDetailsUiEvent.DeleteGuideClicked -> deleteGuide()
             is GuideDetailsUiEvent.ToggleSectionExpanded -> toggleSectionExpanded(event.sectionKey)
-            is GuideDetailsUiEvent.SelectSectionAmount -> selectSectionAmount(
+            is GuideDetailsUiEvent.SelectSectionPiece -> selectSectionPiece(
                 sectionKey = event.sectionKey,
-                amountIndex = event.amountIndex,
+                pieceIndex = event.pieceIndex,
             )
             is GuideDetailsUiEvent.ToggleStepCompletion -> toggleStepCompletion(
                 stepId = event.stepId,
-                amountIndex = event.amountIndex,
+                pieceIndex = event.pieceIndex,
             )
         }
     }
@@ -181,7 +181,7 @@ class GuideDetailsViewModel @AssistedInject constructor(
         }
     }
 
-    fun toggleStepCompletion(stepId: String, amountIndex: Int) {
+    fun toggleStepCompletion(stepId: String, pieceIndex: Int) {
         if (stepId.isBlank()) return
 
         val currentGuide = currentGuide() ?: return
@@ -190,7 +190,7 @@ class GuideDetailsViewModel @AssistedInject constructor(
         val pointer = pointerForStepId(
             guide = currentGuide,
             stepId = stepId,
-            amountIndex = amountIndex,
+            pieceIndex = pieceIndex,
         ) ?: return
         if (!GuideProgress.canTogglePointer(currentGuide.sections, pointer)) return
 
@@ -265,19 +265,19 @@ class GuideDetailsViewModel @AssistedInject constructor(
         }
     }
 
-    fun selectSectionAmount(sectionKey: String, amountIndex: Int) {
-        if (sectionKey.isBlank() || amountIndex < 0) return
+    fun selectSectionPiece(sectionKey: String, pieceIndex: Int) {
+        if (sectionKey.isBlank() || pieceIndex < 0) return
         val guide = currentGuide() ?: return
         val section = guide.sections
             .withIndex()
             .firstOrNull { (index, section) -> guideSectionKey(section, index) == sectionKey }
             ?.value
             ?: return
-        val maxIndex = section.amount.coerceAtLeast(1) - 1
-        val normalizedAmountIndex = amountIndex.coerceIn(0, maxIndex)
+        val maxIndex = section.pieces.coerceAtLeast(1) - 1
+        val normalizedPieceIndex = pieceIndex.coerceIn(0, maxIndex)
         updateContentState { state ->
             state.copy(
-                selectedSectionAmountState = state.selectedSectionAmountState + (sectionKey to normalizedAmountIndex),
+                selectedSectionPieceState = state.selectedSectionPieceState + (sectionKey to normalizedPieceIndex),
             )
         }
     }
@@ -351,10 +351,10 @@ class GuideDetailsViewModel @AssistedInject constructor(
     private fun pointerForStepId(
         guide: Guide,
         stepId: String,
-        amountIndex: Int,
+        pieceIndex: Int,
     ): GuideLeafPointer? {
-        val normalizedAmountIndex = amountIndex.coerceAtLeast(0)
-        return stepPointerIndex(guide)[pointerIndexKey(stepId, normalizedAmountIndex)]
+        val normalizedPieceIndex = pieceIndex.coerceAtLeast(0)
+        return stepPointerIndex(guide)[pointerIndexKey(stepId, normalizedPieceIndex)]
     }
 
     private fun stepPointerIndex(guide: Guide): Map<String, GuideLeafPointer> {
@@ -364,7 +364,7 @@ class GuideDetailsViewModel @AssistedInject constructor(
         GuideProgress.buildLeafPointers(guide.sections).forEach { pointer ->
             val stepId = GuideProgress.getStepAtPointer(guide.sections, pointer)?.id
             if (!stepId.isNullOrBlank()) {
-                val key = pointerIndexKey(stepId, pointer.sectionAmountIndex)
+                val key = pointerIndexKey(stepId, pointer.sectionPieceIndex)
                 if (rebuiltIndex[key] == null) rebuiltIndex[key] = pointer
             }
         }
@@ -389,17 +389,17 @@ class GuideDetailsViewModel @AssistedInject constructor(
             sections = guide.sections,
             existingState = currentContentState()?.sectionExpandedState.orEmpty(),
         )
-        val selectedSectionAmountState = reconcileSelectedSectionAmountState(
+        val selectedSectionPieceState = reconcileSelectedSectionPieceState(
             sections = guide.sections,
-            existingState = currentContentState()?.selectedSectionAmountState.orEmpty(),
+            existingState = currentContentState()?.selectedSectionPieceState.orEmpty(),
         )
-        val canToggleAmountState = buildCanToggleAmountState(guide.sections)
+        val canTogglePieceState = buildCanTogglePieceState(guide.sections)
         val currentState = currentContentState()
         _uiState.value = GuideDetailsUiState.Content(
             guide = guide,
             sectionExpandedState = sectionExpandedState,
-            selectedSectionAmountState = selectedSectionAmountState,
-            canToggleAmountState = canToggleAmountState,
+            selectedSectionPieceState = selectedSectionPieceState,
+            canTogglePieceState = canTogglePieceState,
             isUpdatingVisibility = currentState?.isUpdatingVisibility ?: false,
             isStartingGuide = currentState?.isStartingGuide ?: false,
             isDeletingGuide = currentState?.isDeletingGuide ?: false,
@@ -407,21 +407,21 @@ class GuideDetailsViewModel @AssistedInject constructor(
         )
     }
 
-    private fun buildCanToggleAmountState(sections: List<GuideSection>): Map<String, Set<Int>> {
+    private fun buildCanTogglePieceState(sections: List<GuideSection>): Map<String, Set<Int>> {
         return buildMap {
             sections.forEachIndexed { sectionIndex, section ->
                 val sectionKey = guideSectionKey(section, sectionIndex)
-                val amount = section.amount.coerceAtLeast(1)
-                val activeAmountIndex = if (section.completedAmount >= amount) amount - 1 else section.completedAmount
-                put(sectionKey, setOf(activeAmountIndex.coerceIn(0, amount - 1)))
+                val pieces = section.pieces.coerceAtLeast(1)
+                val activePieceIndex = if (section.completedPieces >= pieces) pieces - 1 else section.completedPieces
+                put(sectionKey, setOf(activePieceIndex.coerceIn(0, pieces - 1)))
             }
         }
     }
 
     private fun pointerIndexKey(
         stepId: String,
-        amountIndex: Int,
-    ): String = "${amountIndex.coerceAtLeast(0)}:$stepId"
+        pieceIndex: Int,
+    ): String = "${pieceIndex.coerceAtLeast(0)}:$stepId"
 
     private fun invalidatePointerCache() {
         pointerCacheGuide = null

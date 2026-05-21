@@ -108,16 +108,16 @@ object GuideJsonParser {
             regenerateIds = regenerateIds,
             preserveProgressHints = preserveProgressHints,
         )
-        val amount = (readInt(rawSection, "amount") ?: 1).coerceAtLeast(1)
+        val pieces = (readInt(rawSection, "pieces") ?: 1).coerceAtLeast(1)
         val sectionMarkedCompleted = preserveProgressHints && readBoolean(rawSection, "completed", "isCompleted")
         val allLeafStepsCompleted = areAllLeafStepsCompleted(steps)
-        val inferredCompletedAmount = when {
-            sectionMarkedCompleted -> amount
-            allLeafStepsCompleted -> 1.coerceAtMost(amount)
+        val inferredCompletedPieces = when {
+            sectionMarkedCompleted -> pieces
+            allLeafStepsCompleted -> 1.coerceAtMost(pieces)
             else -> 0
         }
-        val completedAmount = if (preserveProgressHints) {
-            (readInt(rawSection, "completedAmount") ?: inferredCompletedAmount).coerceIn(0, amount)
+        val completedPieces = if (preserveProgressHints) {
+            (readInt(rawSection, "completedPieces") ?: inferredCompletedPieces).coerceIn(0, pieces)
         } else {
             0
         }
@@ -137,9 +137,9 @@ object GuideJsonParser {
                 orderNumber = readInt(rawSection, "orderNumber") ?: (sectionIndex + 1),
                 title = readString(rawSection, "title"),
                 subtitle = readNullableString(rawSection["subtitle"]),
-                amount = amount,
-                completedAmount = completedAmount,
-                completed = completedAmount >= amount,
+                pieces = pieces,
+                completedPieces = completedPieces,
+                completed = completedPieces >= pieces,
                 comment = readNullableString(rawSection["comment"]),
                 steps = steps,
                 stepsProgressByAmount = parsedProgressByAmount,
@@ -262,7 +262,7 @@ object GuideJsonParser {
         val map = asMap(rawValue) ?: return null
         return GuideResume(
             sectionIndex = readInt(map, "sectionIndex") ?: 0,
-            sectionAmountIndex = readInt(map, "sectionAmountIndex") ?: 0,
+            sectionPieceIndex = readInt(map, "sectionPieceIndex") ?: 0,
             stepIndex = readInt(map, "stepIndex") ?: 0,
             subStepIndex = readInt(map, "subStepIndex"),
         )

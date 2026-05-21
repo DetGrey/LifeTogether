@@ -129,19 +129,19 @@ fun GuideDetailsScreen(
                         guide.sections.forEachIndexed { sectionIndex, section ->
                             val sectionKey = guideSectionKey(section, sectionIndex)
                             val isExpanded = content.sectionExpandedState[sectionKey] ?: true
-                            val selectedAmountIndex =
-                                content.selectedSectionAmountState[sectionKey]
-                                    ?: defaultSectionAmountIndex(section)
+                            val selectedPieceIndex =
+                                content.selectedSectionPieceState[sectionKey]
+                                    ?: defaultSectionPieceIndex(section)
 
                             item(key = sectionKey) {
                                 GuideSectionCard(
                                     section = section,
-                                    selectedAmountIndex = selectedAmountIndex,
-                                    onSelectAmountIndex = { amountIndex ->
+                                    selectedPieceIndex = selectedPieceIndex,
+                                    onSelectPieceIndex = { pieceIndex ->
                                         onUiEvent(
-                                            GuideDetailsUiEvent.SelectSectionAmount(
+                                            GuideDetailsUiEvent.SelectSectionPiece(
                                                 sectionKey = sectionKey,
-                                                amountIndex = amountIndex,
+                                                pieceIndex = pieceIndex,
                                             ),
                                         )
                                     },
@@ -153,15 +153,15 @@ fun GuideDetailsScreen(
                                             )
                                         )
                                     },
-                                    canToggleStep = { amountIndex ->
-                                        content.canToggleAmountState[sectionKey]
-                                            ?.contains(amountIndex) == true
+                                    canToggleStep = { pieceIndex ->
+                                        content.canTogglePieceState[sectionKey]
+                                            ?.contains(pieceIndex) == true
                                     },
-                                    onToggleStep = { amountIndex, stepId ->
+                                    onToggleStep = { pieceIndex, stepId ->
                                         onUiEvent(
                                             GuideDetailsUiEvent.ToggleStepCompletion(
                                                 stepId = stepId,
-                                                amountIndex = amountIndex,
+                                                pieceIndex = pieceIndex,
                                             ),
                                         )
                                     },
@@ -280,14 +280,14 @@ private fun GuideDetailsScreenPreview() {
                             id = "section-1",
                             orderNumber = 1,
                             title = "Morning routine",
-                            amount = 2,
+                            pieces = 2,
                             steps = emptyList(),
                         ),
                     ),
                 ),
                 sectionExpandedState = mapOf("section-1" to true),
-                selectedSectionAmountState = mapOf("section-1" to 0),
-                canToggleAmountState = mapOf("section-1" to setOf(0)),
+                selectedSectionPieceState = mapOf("section-1" to 0),
+                canTogglePieceState = mapOf("section-1" to setOf(0)),
             ),
             onUiEvent = {},
             onNavigationEvent = {},

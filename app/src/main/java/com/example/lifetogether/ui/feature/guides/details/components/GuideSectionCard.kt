@@ -37,28 +37,28 @@ import com.example.lifetogether.ui.theme.LifeTogetherTheme
 @Composable
 fun GuideSectionCard(
     section: GuideSection,
-    selectedAmountIndex: Int,
-    onSelectAmountIndex: (Int) -> Unit,
+    selectedPieceIndex: Int,
+    onSelectPieceIndex: (Int) -> Unit,
     expanded: Boolean,
     onToggleExpanded: () -> Unit,
     canToggleStep: (Int) -> Boolean,
     onToggleStep: (Int, String) -> Unit,
 ) {
-    val normalizedAmount = section.amount.coerceAtLeast(1)
-    val normalizedSelectedAmountIndex = selectedAmountIndex.coerceIn(0, normalizedAmount - 1)
+    val normalizedPieces = section.pieces.coerceAtLeast(1)
+    val normalizedSelectedPieceIndex = selectedPieceIndex.coerceIn(0, normalizedPieces - 1)
     val progress = GuideProgress.sectionProgress(section)
     val progressPercent = GuideProgress.progressPercent(section)
-    val selectedAmountProgress = GuideProgress.sectionAmountProgress(
+    val selectedPieceProgress = GuideProgress.sectionPieceProgress(
         section = section,
-        amountIndex = normalizedSelectedAmountIndex,
+        pieceIndex = normalizedSelectedPieceIndex,
     )
-    val selectedAmountSteps = GuideProgress.sectionStepsForAmount(
+    val selectedPieceSteps = GuideProgress.sectionStepsForPiece(
         section = section,
-        amountIndex = normalizedSelectedAmountIndex,
+        pieceIndex = normalizedSelectedPieceIndex,
     )
-    val amountOptions = (0 until normalizedAmount).map { amountIndex ->
-        val amountProgress = GuideProgress.sectionAmountProgress(section, amountIndex)
-        "Part ${amountIndex + 1} (${amountProgress.first}/${amountProgress.second})"
+    val pieceOptions = (0 until normalizedPieces).map { pieceIndex ->
+        val pieceProgress = GuideProgress.sectionPieceProgress(section, pieceIndex)
+        "Piece ${pieceIndex + 1} (${pieceProgress.first}/${pieceProgress.second})"
     }
 
     Card(
@@ -81,8 +81,8 @@ fun GuideSectionCard(
                     TextSubHeadingMedium(
                         text = buildString {
                             append(section.title)
-                            if (section.amount > 1) {
-                                append(" (x${section.amount})")
+                            if (section.pieces > 1) {
+                                append(" (×${section.pieces})")
                             }
                         },
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -90,8 +90,8 @@ fun GuideSectionCard(
                     TextDefault(
                         text = buildString {
                             append("${progress.first}/${progress.second} steps completed")
-                            if (normalizedAmount > 1) {
-                                append(" • ${selectedAmountProgress.first}/${selectedAmountProgress.second} in selected part")
+                            if (normalizedPieces > 1) {
+                                append(" • ${selectedPieceProgress.first}/${selectedPieceProgress.second} in selected piece")
                             }
                         },
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -123,14 +123,14 @@ fun GuideSectionCard(
                 )
             }
 
-            if (normalizedAmount > 1) {
+            if (normalizedPieces > 1) {
                 TagOptionRow(
-                    options = amountOptions,
-                    selectedOption = amountOptions[normalizedSelectedAmountIndex],
+                    options = pieceOptions,
+                    selectedOption = pieceOptions[normalizedSelectedPieceIndex],
                     onSelectedOptionChange = { selectedOption ->
-                        val selectedIndex = amountOptions.indexOf(selectedOption)
+                        val selectedIndex = pieceOptions.indexOf(selectedOption)
                         if (selectedIndex != -1) {
-                            onSelectAmountIndex(selectedIndex)
+                            onSelectPieceIndex(selectedIndex)
                         }
                     },
                     showDividers = false
@@ -142,14 +142,14 @@ fun GuideSectionCard(
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut(),
             ) {
-                val canToggleSelectedAmount = canToggleStep(normalizedSelectedAmountIndex)
+                val canToggleSelectedPiece = canToggleStep(normalizedSelectedPieceIndex)
                 GuideStepRows(
-                    steps = selectedAmountSteps,
+                    steps = selectedPieceSteps,
                     textColor = MaterialTheme.colorScheme.onPrimaryContainer,
                     indentLevel = 0,
-                    canToggleStep = canToggleSelectedAmount,
+                    canToggleStep = canToggleSelectedPiece,
                     onToggleStep = { stepId ->
-                        onToggleStep(normalizedSelectedAmountIndex, stepId)
+                        onToggleStep(normalizedSelectedPieceIndex, stepId)
                     },
                 )
             }
@@ -165,8 +165,8 @@ private fun Preview() {
             section = GuideSection(
                 title = "Title",
                 subtitle = "subtitle",
-                amount = 10,
-                completedAmount = 4,
+                pieces = 10,
+                completedPieces = 4,
                 comment = "comment......",
                 steps = listOf(
                     GuideStep(
@@ -179,8 +179,8 @@ private fun Preview() {
                     ),
                 )
             ),
-            selectedAmountIndex = 1,
-            onSelectAmountIndex = {},
+            selectedPieceIndex = 1,
+            onSelectPieceIndex = {},
             expanded = true,
             onToggleStep = { _, _ -> },
             canToggleStep = { true },

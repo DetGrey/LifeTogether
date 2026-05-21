@@ -380,7 +380,7 @@ class GuideStepPlayerViewModel @AssistedInject constructor(
 
         val currentSection = guide.sections.getOrNull(pointer.sectionIndex)
         val currentPartProgress = currentSection?.let {
-            GuideProgress.sectionAmountProgress(section = it, amountIndex = pointer.sectionAmountIndex)
+            GuideProgress.sectionPieceProgress(section = it, pieceIndex = pointer.sectionPieceIndex)
         } ?: (0 to 0)
         val currentPartLabel = buildCurrentPartLabel(section = currentSection, pointer = pointer)
         return GuideStepPlayerUiState.Content(
@@ -397,9 +397,9 @@ class GuideStepPlayerViewModel @AssistedInject constructor(
             sectionSubtitle = currentSection?.subtitle.orEmpty(),
             currentPartLabel = currentPartLabel,
             currentPartProgressPercent = currentSection?.let {
-                GuideProgress.sectionAmountProgressPercent(
+                GuideProgress.sectionPieceProgressPercent(
                     section = it,
-                    amountIndex = pointer.sectionAmountIndex,
+                    pieceIndex = pointer.sectionPieceIndex,
                 )
             } ?: 0,
             currentPartProgressText = "${currentPartProgress.first} / ${currentPartProgress.second}",
@@ -409,8 +409,8 @@ class GuideStepPlayerViewModel @AssistedInject constructor(
     }
 
     private fun buildCurrentPartLabel(section: GuideSection?, pointer: GuideLeafPointer): String {
-        if (section == null || section.amount <= 1) return ""
-        return "Part ${pointer.sectionAmountIndex + 1}/${section.amount}"
+        if (section == null || section.pieces <= 1) return ""
+        return "Piece ${pointer.sectionPieceIndex + 1}/${section.pieces}"
     }
 
     private fun contentState(): GuideStepPlayerUiState.Content? {

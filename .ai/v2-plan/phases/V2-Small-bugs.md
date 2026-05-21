@@ -85,11 +85,12 @@ Here are some questions:
 
 ### Gallery media
 - [x] The uploaded images should keep the original quality
+- [x] When adding gallery videos, handle the video thumbnail fallback better if thumbnail generation fails.
+- [x] For videos, query `MediaStore.Video.Media.DATE_TAKEN` and `MediaStore.Video.Media.DATE_MODIFIED`. 
+  - This is a recommended change if you want accurate MediaStore dates for videos.
 - [ ] _Add tags_.
 - [ ] Add a note or description.
 - [ ] Share media.
-- [ ] When adding gallery videos, handle the video thumbnail fallback better if thumbnail generation fails.
-- [ ] For videos, query `MediaStore.Video.Media.DATE_TAKEN` and `MediaStore.Video.Media.DATE_MODIFIED`.
 - [ ] Decide what should happen when `updateGalleryMedia()` download fails.
 - [ ] Figure out why downloaded videos show the created-at date in gallery while images show the download date.
 
@@ -177,7 +178,6 @@ Looking at the unchecked items, here's my read:
 These are bugs or broken functionality — not features:
 
 **Gallery**
-- Video thumbnail fallback handling, DATE_TAKEN query, date inconsistency between videos and images — these are correctness bugs visible to users.
 - "Decide what should happen when `updateGalleryMedia()` download fails" — missing error handling is a release risk.
 
 **Settings**

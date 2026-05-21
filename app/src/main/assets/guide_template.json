@@ -12,7 +12,7 @@
       "title": "Head",
       "subtitle": null,
       "comment": "String",
-      "amount": 1,
+      "pieces": 1,
       "steps": [
         {
           "id": "uuid",
@@ -39,7 +39,7 @@
       "title": "Ears",
       "subtitle": "Make 2",
       "comment": null,
-      "amount": 2,
+      "pieces": 2,
       "steps": [
         {
           "id": "uuid",
@@ -65,7 +65,7 @@
       "title": "Assembly",
       "subtitle": null,
       "comment": "String",
-      "amount": 1,
+      "pieces": 1,
       "steps": [
         {
           "id": "uuid",
@@ -84,7 +84,7 @@
       "title": "Facial features",
       "subtitle": null,
       "comment": "String",
-      "amount": 1,
+      "pieces": 1,
       "steps": [
         {
           "id": "uuid",

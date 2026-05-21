@@ -24,7 +24,7 @@ sealed interface GuideEditUiEvent {
     data class TitleChanged(val value: String) : GuideEditUiEvent
     data class DescriptionChanged(val value: String) : GuideEditUiEvent
     data class VisibilityChanged(val value: Visibility) : GuideEditUiEvent
-    data class AddSectionRequested(val title: String, val amount: Int) : GuideEditUiEvent
+    data class AddSectionRequested(val title: String, val pieces: Int) : GuideEditUiEvent
     data class DeleteSectionRequested(val sectionId: String) : GuideEditUiEvent
     data class SectionMoved(val fromIndex: Int, val toIndex: Int) : GuideEditUiEvent
     data class AddStepRequested(

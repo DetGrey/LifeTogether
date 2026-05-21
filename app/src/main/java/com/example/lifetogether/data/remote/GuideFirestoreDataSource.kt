@@ -219,14 +219,14 @@ private data class GuideSectionDto(
     val orderNumber: Int? = null,
     val title: String? = null,
     val subtitle: String? = null,
-    val amount: Int? = null,
-    val completedAmount: Int? = null,
+    val pieces: Int? = null,
+    val completedPieces: Int? = null,
     val completed: Boolean? = null,
     val comment: String? = null,
     val steps: List<GuideStepDto>? = null,
 ) {
     fun toDomain(sectionIndex: Int): GuideSection {
-        val amountValue = (amount ?: 1).coerceAtLeast(1)
+        val piecesValue = (pieces ?: 1).coerceAtLeast(1)
         val stepsValue = steps.orEmpty().flatMap { it.toDomain() }
 
         return GuideProgress.updateSectionCompletion(
@@ -236,8 +236,8 @@ private data class GuideSectionDto(
                     orderNumber = orderNumber ?: (sectionIndex + 1),
                     title = title.orEmpty(),
                     subtitle = subtitle?.trim()?.takeIf { it.isNotEmpty() },
-                    amount = amountValue,
-                    completedAmount = 0,
+                    pieces = piecesValue,
+                    completedPieces = 0,
                     completed = false,
                     comment = comment?.trim()?.takeIf { it.isNotEmpty() },
                     steps = stepsValue,
@@ -251,7 +251,7 @@ private data class GuideSectionDto(
         "orderNumber" to orderNumber,
         "title" to title,
         "subtitle" to subtitle,
-        "amount" to amount?.coerceAtLeast(1),
+        "pieces" to pieces?.coerceAtLeast(1),
         "comment" to comment,
         "steps" to steps?.map { it.toFirestoreMap() },
     ).filterValues { it != null }
@@ -353,20 +353,20 @@ private data class GuideProgressDto(
 
 private data class GuideResumeDto(
     val sectionIndex: Int? = null,
-    val sectionAmountIndex: Int? = null,
+    val sectionPieceIndex: Int? = null,
     val stepIndex: Int? = null,
     val subStepIndex: Int? = null,
 ) {
     fun toDomain(): GuideResume = GuideResume(
         sectionIndex = sectionIndex ?: 0,
-        sectionAmountIndex = sectionAmountIndex ?: 0,
+        sectionPieceIndex = sectionPieceIndex ?: 0,
         stepIndex = stepIndex ?: 0,
         subStepIndex = subStepIndex,
     )
 
     fun toFirestoreMap(): Map<String, Any?> = mapOf(
         "sectionIndex" to sectionIndex,
-        "sectionAmountIndex" to sectionAmountIndex,
+        "sectionPieceIndex" to sectionPieceIndex,
         "stepIndex" to stepIndex,
         "subStepIndex" to subStepIndex,
     ).filterValues { it != null }
@@ -388,7 +388,7 @@ private fun GuideSection.toDto(): GuideSectionDto = GuideSectionDto(
     orderNumber = orderNumber,
     title = title,
     subtitle = subtitle,
-    amount = amount,
+    pieces = pieces,
     comment = comment,
     steps = contentStepsForSection(this).map { it.toDto() },
 )
@@ -417,7 +417,7 @@ private fun GuideProgressState.toDto(): GuideProgressDto = GuideProgressDto(
 
 private fun GuideResume.toDto(): GuideResumeDto = GuideResumeDto(
     sectionIndex = sectionIndex,
-    sectionAmountIndex = sectionAmountIndex,
+    sectionPieceIndex = sectionPieceIndex,
     stepIndex = stepIndex,
     subStepIndex = subStepIndex,
 )

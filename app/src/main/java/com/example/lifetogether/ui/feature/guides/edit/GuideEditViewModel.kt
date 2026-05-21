@@ -114,7 +114,7 @@ class GuideEditViewModel @AssistedInject constructor(
             is GuideEditUiEvent.TitleChanged -> updateContent { it.copy(title = event.value) }
             is GuideEditUiEvent.DescriptionChanged -> updateContent { it.copy(description = event.value) }
             is GuideEditUiEvent.VisibilityChanged -> updateContent { it.copy(visibility = event.value) }
-            is GuideEditUiEvent.AddSectionRequested -> addSection(event.title, event.amount)
+            is GuideEditUiEvent.AddSectionRequested -> addSection(event.title, event.pieces)
             is GuideEditUiEvent.DeleteSectionRequested -> deleteSection(event.sectionId)
             is GuideEditUiEvent.SectionMoved -> moveSection(event.fromIndex, event.toIndex)
             is GuideEditUiEvent.AddStepRequested -> addStep(event.sectionId, event.content, event.type)
@@ -141,19 +141,19 @@ class GuideEditViewModel @AssistedInject constructor(
         }
     }
 
-    private fun addSection(sectionTitle: String, amount: Int = 1) {
+    private fun addSection(sectionTitle: String, pieces: Int = 1) {
         val currentSections = currentContent()?.sections ?: return
         val normalizedTitle = sectionTitle.trim().ifBlank {
             "Section ${currentSections.size + 1}"
         }
-        val normalizedAmount = amount.coerceAtLeast(1)
+        val normalizedPieces = pieces.coerceAtLeast(1)
         updateContent {
             it.copy(
                 sections = currentSections + GuideSection(
                     id = UUID.randomUUID().toString(),
                     orderNumber = currentSections.size + 1,
                     title = normalizedTitle,
-                    amount = normalizedAmount,
+                    pieces = normalizedPieces,
                     steps = emptyList(),
                 ),
             )

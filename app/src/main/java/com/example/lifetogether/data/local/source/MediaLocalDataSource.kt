@@ -9,6 +9,7 @@ import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
+import androidx.exifinterface.media.ExifInterface
 import androidx.core.net.toUri
 import com.example.lifetogether.data.local.dao.GalleryMediaDao
 import com.example.lifetogether.data.logic.generateImageThumbnailFromFile
@@ -22,6 +23,9 @@ import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext
@@ -252,6 +256,10 @@ class MediaLocalDataSource @Inject constructor(
                 }
             } ?: return Result.Failure(AppErrors.storage("Failed to open output stream"))
 
+            if (mediaItem is GalleryImage) {
+                writeImageDateMetadata(mediaStoreUri, mediaItem.dateCreated)
+            }
+
             contentValues.clear()
             contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
             resolver.update(mediaStoreUri, contentValues, null, null)
@@ -264,6 +272,25 @@ class MediaLocalDataSource @Inject constructor(
                 }
             }
             Result.Failure(AppErrors.fromThrowable(e))
+        }
+    }
+
+    private fun writeImageDateMetadata(
+        mediaStoreUri: Uri,
+        dateCreated: Date,
+    ) {
+        try {
+            context.contentResolver.openFileDescriptor(mediaStoreUri, "rw")?.use { fileDescriptor ->
+                val exif = ExifInterface(fileDescriptor.fileDescriptor)
+                val formattedDate = SimpleDateFormat("yyyy:MM:dd HH:mm:ss", Locale.US).format(dateCreated)
+
+                exif.setAttribute(ExifInterface.TAG_DATETIME_ORIGINAL, formattedDate)
+                exif.setAttribute(ExifInterface.TAG_DATETIME, formattedDate)
+                exif.setAttribute(ExifInterface.TAG_DATETIME_DIGITIZED, formattedDate)
+                exif.saveAttributes()
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to write EXIF date metadata for gallery image: ${e.message}")
         }
     }
 

@@ -485,6 +485,7 @@ class AlbumDetailsViewModel @AssistedInject constructor(
 
                     }
                 }
+                dateCreated = dateCreated ?: getVideoDateFromMediaStore(context, uri)
                 dateCreated = dateCreated ?: getFileLastModifiedDate(context, uri)
             } finally {
                 try {
@@ -627,6 +628,28 @@ class AlbumDetailsViewModel @AssistedInject constructor(
                 if (dateModifiedIndex != -1) {
                     val dateModified = cursor.getLong(dateModifiedIndex)
                     if (dateModified > 0) return dateModified * 1000
+                }
+            }
+        }
+        return null
+    }
+
+    private fun getVideoDateFromMediaStore(context: Context, uri: Uri): Date? {
+        if (uri.scheme != ContentResolver.SCHEME_CONTENT) return null
+
+        val projection = arrayOf(MediaStore.Video.Media.DATE_TAKEN, MediaStore.Video.Media.DATE_MODIFIED)
+        context.contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val dateTakenIndex = cursor.getColumnIndex(MediaStore.Video.Media.DATE_TAKEN)
+                if (dateTakenIndex != -1) {
+                    val dateTaken = cursor.getLong(dateTakenIndex)
+                    if (dateTaken > 0) return Date(dateTaken)
+                }
+
+                val dateModifiedIndex = cursor.getColumnIndex(MediaStore.Video.Media.DATE_MODIFIED)
+                if (dateModifiedIndex != -1) {
+                    val dateModified = cursor.getLong(dateModifiedIndex)
+                    if (dateModified > 0) return Date(dateModified * 1000)
                 }
             }
         }

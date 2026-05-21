@@ -9,8 +9,8 @@ sealed interface GuideDetailsUiState {
     data class Content(
         val guide: Guide?,
         val sectionExpandedState: Map<String, Boolean>,
-        val selectedSectionAmountState: Map<String, Int>,
-        val canToggleAmountState: Map<String, Set<Int>>,
+        val selectedSectionPieceState: Map<String, Int>,
+        val canTogglePieceState: Map<String, Set<Int>>,
         val isUpdatingVisibility: Boolean = false,
         val isStartingGuide: Boolean = false,
         val isDeletingGuide: Boolean = false,
@@ -24,8 +24,8 @@ sealed interface GuideDetailsUiEvent {
     data object ToggleVisibilityClicked : GuideDetailsUiEvent
     data object DeleteGuideClicked : GuideDetailsUiEvent
     data class ToggleSectionExpanded(val sectionKey: String) : GuideDetailsUiEvent
-    data class SelectSectionAmount(val sectionKey: String, val amountIndex: Int) : GuideDetailsUiEvent
-    data class ToggleStepCompletion(val stepId: String, val amountIndex: Int) : GuideDetailsUiEvent
+    data class SelectSectionPiece(val sectionKey: String, val pieceIndex: Int) : GuideDetailsUiEvent
+    data class ToggleStepCompletion(val stepId: String, val pieceIndex: Int) : GuideDetailsUiEvent
 }
 
 sealed interface GuideDetailsNavigationEvent {
@@ -55,23 +55,23 @@ internal fun reconcileSectionExpandedState(
     }
 }
 
-internal fun defaultSectionAmountIndex(section: GuideSection): Int {
-    val amount = section.amount.coerceAtLeast(1)
-    val completedAmount = section.completedAmount.coerceIn(0, amount)
-    return if (completedAmount >= amount) amount - 1 else completedAmount
+internal fun defaultSectionPieceIndex(section: GuideSection): Int {
+    val pieces = section.pieces.coerceAtLeast(1)
+    val completedPieces = section.completedPieces.coerceIn(0, pieces)
+    return if (completedPieces >= pieces) pieces - 1 else completedPieces
 }
 
-internal fun reconcileSelectedSectionAmountState(
+internal fun reconcileSelectedSectionPieceState(
     sections: List<GuideSection>,
     existingState: Map<String, Int>,
 ): Map<String, Int> {
     return buildMap {
         sections.forEachIndexed { sectionIndex, section ->
             val sectionKey = guideSectionKey(section, sectionIndex)
-            val amount = section.amount.coerceAtLeast(1)
-            val fallbackIndex = defaultSectionAmountIndex(section)
+            val pieces = section.pieces.coerceAtLeast(1)
+            val fallbackIndex = defaultSectionPieceIndex(section)
             val selectedIndex = existingState[sectionKey]
-                ?.coerceIn(0, amount - 1)
+                ?.coerceIn(0, pieces - 1)
                 ?: fallbackIndex
             put(sectionKey, selectedIndex)
         }
