@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.model.family.FamilyMember
 import com.example.lifetogether.domain.model.session.SessionState
@@ -25,6 +26,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.Date
 import javax.inject.Inject
 
 @HiltViewModel
@@ -75,6 +77,13 @@ class FamilyViewModel @Inject constructor(
                             } else {
                                 null
                             },
+                            togetherSinceDraft = if (familyId == previousFamilyId) {
+                                it.togetherSinceDraft
+                            } else {
+                                null
+                            },
+                            isTogetherSinceEditing = false,
+                            showTogetherSinceDatePicker = false,
                             showConfirmationDialog = false,
                             confirmationDialogType = null,
                             memberToRemove = null,
@@ -103,6 +112,11 @@ class FamilyViewModel @Inject constructor(
             FamilyUiEvent.DismissConfirmationDialog -> closeConfirmationDialog()
             FamilyUiEvent.ConfirmConfirmationDialog -> confirmConfirmationDialog()
             is FamilyUiEvent.ImageSelected -> uploadFamilyImage(event.uri)
+            FamilyUiEvent.TogetherSinceEditClicked -> editTogetherSince()
+            FamilyUiEvent.TogetherSinceSaveClicked -> saveTogetherSince()
+            FamilyUiEvent.TogetherSinceClearClicked -> clearTogetherSinceDraft()
+            is FamilyUiEvent.TogetherSinceDateSelected -> selectTogetherSince(event.date)
+            FamilyUiEvent.TogetherSinceDatePickerDismissed -> hideTogetherSinceDatePicker()
         }
     }
 
@@ -131,7 +145,14 @@ class FamilyViewModel @Inject constructor(
     private fun observeFamilyInformation(familyId: String?) {
         familyInformationJob?.cancel()
         if (familyId == null) {
-            updateContent { it.copy(familyInformation = null) }
+            updateContent {
+                it.copy(
+                    familyInformation = null,
+                    togetherSinceDraft = null,
+                    isTogetherSinceEditing = false,
+                    showTogetherSinceDatePicker = false,
+                )
+            }
             return
         }
 
@@ -139,7 +160,14 @@ class FamilyViewModel @Inject constructor(
             familyRepository.observeFamilyInformation(familyId).collect { result ->
                 when (result) {
                     is Result.Success -> updateContent {
-                        it.copy(familyInformation = result.data)
+                        it.copy(
+                            familyInformation = result.data,
+                            togetherSinceDraft = if (it.isTogetherSinceEditing) {
+                                it.togetherSinceDraft
+                            } else {
+                                result.data.togetherSince
+                            },
+                        )
                     }
 
                     is Result.Failure -> {
@@ -149,6 +177,74 @@ class FamilyViewModel @Inject constructor(
                         showError(result.error.toUserMessage())
                     }
                 }
+            }
+        }
+    }
+
+    private fun editTogetherSince() {
+        updateContent { state ->
+            val currentTogetherSince = state.familyInformation?.togetherSince
+            state.copy(
+                isTogetherSinceEditing = true,
+                togetherSinceDraft = state.togetherSinceDraft ?: currentTogetherSince,
+                showTogetherSinceDatePicker = true,
+            )
+        }
+    }
+
+    private fun selectTogetherSince(date: Date) {
+        updateContent {
+            it.copy(
+                togetherSinceDraft = date,
+                showTogetherSinceDatePicker = false,
+            )
+        }
+    }
+
+    private fun hideTogetherSinceDatePicker() {
+        updateContent {
+            it.copy(showTogetherSinceDatePicker = false)
+        }
+    }
+
+    private fun clearTogetherSinceDraft() {
+        updateContent {
+            it.copy(togetherSinceDraft = null)
+        }
+    }
+
+    private fun saveTogetherSince() {
+        val state = _uiState.value as? FamilyUiState.Content ?: return
+        val familyId = state.familyId ?: return
+        val currentTogetherSince = state.familyInformation?.togetherSince
+        val draft = state.togetherSinceDraft
+
+        if (draft == currentTogetherSince) {
+            updateContent {
+                it.copy(
+                    isTogetherSinceEditing = false,
+                    showTogetherSinceDatePicker = false,
+                )
+            }
+            return
+        }
+
+        viewModelScope.launch {
+            when (val result = familyRepository.updateFamilyTogetherSince(familyId, draft)) {
+                is Result.Success -> updateContent {
+                    it.copy(
+                        familyInformation = it.familyInformation?.copy(togetherSince = draft)
+                            ?: FamilyInformation(
+                                familyId = familyId,
+                                togetherSince = draft,
+                            ),
+                        togetherSinceDraft = draft,
+                        isTogetherSinceEditing = false,
+                        showTogetherSinceDatePicker = false,
+                    )
+                }
+
+                is Result.Failure -> showError(result.error.toUserMessage())
             }
         }
     }

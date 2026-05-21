@@ -12,10 +12,12 @@ import com.example.lifetogether.domain.model.family.FamilyMember
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.util.Constants
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import java.util.Date
 import javax.inject.Inject
 
 class FamilyFirestoreDataSource @Inject constructor(
@@ -53,6 +55,7 @@ class FamilyFirestoreDataSource @Inject constructor(
                             familyId = familyId,
                             members = members,
                             imageUrl = snapshot.getString("imageUrl"),
+                            togetherSince = snapshot.getDate("togetherSince"),
                         ),
                     ),
                 ).isSuccess
@@ -121,6 +124,17 @@ class FamilyFirestoreDataSource @Inject constructor(
         return appResultOfSuspend {
             db.collection(Constants.FAMILIES_TABLE).document(familyId)
                 .update(mapOf("imageUrl" to url)).await()
+        }
+    }
+
+    suspend fun saveFamilyTogetherSince(
+        familyId: String,
+        togetherSince: Date?,
+    ): Result<Unit, AppError> {
+        return appResultOfSuspend {
+            db.collection(Constants.FAMILIES_TABLE).document(familyId)
+                .set(mapOf("togetherSince" to togetherSince), SetOptions.merge())
+                .await()
         }
     }
 

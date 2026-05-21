@@ -3,6 +3,7 @@ package com.example.lifetogether.ui.feature.family
 import android.net.Uri
 import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.model.family.FamilyMember
+import java.util.Date
 
 sealed interface FamilyUiState {
     data object Loading : FamilyUiState
@@ -11,6 +12,9 @@ sealed interface FamilyUiState {
         val familyId: String?,
         val uid: String?,
         val familyInformation: FamilyInformation?,
+        val togetherSinceDraft: Date? = null,
+        val isTogetherSinceEditing: Boolean = false,
+        val showTogetherSinceDatePicker: Boolean = false,
         val showConfirmationDialog: Boolean = false,
         val confirmationDialogType: FamilyConfirmationType? = null,
         val memberToRemove: FamilyMember? = null,
@@ -26,6 +30,11 @@ enum class FamilyConfirmationType {
 
 sealed interface FamilyUiEvent {
     data class ImageSelected(val uri: Uri) : FamilyUiEvent
+    data object TogetherSinceEditClicked : FamilyUiEvent
+    data object TogetherSinceSaveClicked : FamilyUiEvent
+    data object TogetherSinceClearClicked : FamilyUiEvent
+    data class TogetherSinceDateSelected(val date: Date) : FamilyUiEvent
+    data object TogetherSinceDatePickerDismissed : FamilyUiEvent
     data object AddMemberClicked : FamilyUiEvent
     data object LeaveFamilyClicked : FamilyUiEvent
     data object DeleteFamilyClicked : FamilyUiEvent

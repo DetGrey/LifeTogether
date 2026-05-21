@@ -134,7 +134,6 @@ class GuideLocalDataSource @Inject constructor(
 
         guidesDao.updateItems(itemsToUpdate)
         if (deletedGuideIds.isNotEmpty()) {
-            guideProgressDao.deleteByGuideIds(items.first().familyId, deletedGuideIds)
             guidesDao.deleteItems(deletedGuideIds)
         }
     }
@@ -144,7 +143,6 @@ class GuideLocalDataSource @Inject constructor(
         if (currentFamilyItems.isNotEmpty()) {
             Log.d(TAG, "deleteFamilyGuides familyId=$familyId count=${currentFamilyItems.size}")
             val deletedGuideIds = currentFamilyItems.map { it.id }
-            guideProgressDao.deleteByGuideIds(familyId, deletedGuideIds)
             guidesDao.deleteItems(deletedGuideIds)
         }
     }

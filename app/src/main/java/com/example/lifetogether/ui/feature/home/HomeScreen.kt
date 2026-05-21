@@ -115,13 +115,15 @@ fun HomeScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
             ) {
-                item {
-                    TextLabel(
-                        text = "x days together",
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onBackground,
-                    )
+                if (content.daysTogetherText != null) {
+                    item {
+                        TextLabel(
+                            text = content.daysTogetherText,
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                    }
                 }
 
                 item {

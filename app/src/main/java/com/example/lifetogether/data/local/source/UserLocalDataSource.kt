@@ -8,6 +8,7 @@ import com.example.lifetogether.data.model.UserEntity
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.family.FamilyInformation
 import kotlinx.coroutines.flow.Flow
+import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -80,6 +81,13 @@ class UserLocalDataSource @Inject constructor(
         familyInformationDao.updateImageUrl(familyId, imageUrl)
     }
 
+    suspend fun updateFamilyTogetherSince(
+        familyId: String,
+        togetherSince: Date?,
+    ) {
+        familyInformationDao.updateTogetherSince(familyId, togetherSince)
+    }
+
     suspend fun updateFamilyInformation(
         familyInformation: FamilyInformation,
         byteArray: ByteArray? = null,
@@ -96,6 +104,7 @@ class UserLocalDataSource @Inject constructor(
             familyId = familyInformation.familyId,
             imageData = imageData,
             imageUrl = familyInformation.imageUrl,
+            togetherSince = familyInformation.togetherSince,
         )
         familyInformationDao.updateFamily(familyEntity)
 

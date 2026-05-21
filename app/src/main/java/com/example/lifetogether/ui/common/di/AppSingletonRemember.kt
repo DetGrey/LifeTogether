@@ -3,6 +3,7 @@ package com.example.lifetogether.ui.common.di
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import com.example.lifetogether.domain.repository.FamilyRepository
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.sync.SyncCoordinator
 import com.example.lifetogether.domain.usecase.image.ObserveImageStateUseCase
@@ -24,6 +25,11 @@ private fun rememberAppSingletonEntryPoint(): AppSingletonEntryPoint {
 @Composable
 fun rememberSessionRepository(): SessionRepository {
     return rememberAppSingletonEntryPoint().sessionRepository()
+}
+
+@Composable
+fun rememberFamilyRepository(): FamilyRepository {
+    return rememberAppSingletonEntryPoint().familyRepository()
 }
 
 @Composable

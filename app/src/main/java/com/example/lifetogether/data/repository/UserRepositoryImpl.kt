@@ -21,6 +21,7 @@ import com.example.lifetogether.domain.repository.UserRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import java.util.Date
 import javax.inject.Inject
 
 class UserRepositoryImpl @Inject constructor(
@@ -45,6 +46,7 @@ class UserRepositoryImpl @Inject constructor(
                 FamilyInformation(
                     familyId = user.familyId,
                     imageUrl = user.imageUrl,
+                    togetherSince = user.togetherSince,
                 )
             }
         }
@@ -191,6 +193,20 @@ class UserRepositoryImpl @Inject constructor(
                 }
 
                 is Result.Failure -> Result.Failure(result.error)
+            }
+        }
+    }
+
+    suspend fun updateFamilyTogetherSince(
+        familyId: String,
+        togetherSince: Date?,
+    ): Result<Unit, AppError> {
+        return appResultOfSuspend {
+            when (val result = familyFirestoreDataSource.saveFamilyTogetherSince(familyId, togetherSince)) {
+                is Result.Success -> {
+                    userLocalDataSource.updateFamilyTogetherSince(familyId, togetherSince)
+                }
+                is Result.Failure -> throw AppErrorThrowable(result.error)
             }
         }
     }

@@ -8,6 +8,7 @@ import com.example.lifetogether.data.model.FamilyEntity
 import com.example.lifetogether.data.model.FamilyMemberEntity
 import com.example.lifetogether.util.Constants
 import kotlinx.coroutines.flow.Flow
+import java.util.Date
 
 @Dao
 interface FamilyInformationDao {
@@ -45,6 +46,12 @@ interface FamilyInformationDao {
     suspend fun updateImageUrl(
         familyId: String,
         imageUrl: String?,
+    )
+
+    @Query("UPDATE ${Constants.FAMILIES_TABLE} SET together_since = :togetherSince WHERE family_id = :familyId")
+    suspend fun updateTogetherSince(
+        familyId: String,
+        togetherSince: Date?,
     )
 
 }

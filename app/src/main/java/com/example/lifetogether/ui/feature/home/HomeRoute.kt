@@ -2,12 +2,18 @@ package com.example.lifetogether.ui.feature.home
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.BuildConfig
+import com.example.lifetogether.domain.logic.daysTogetherText
+import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.model.session.authenticatedUserOrNull
 import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.domain.result.AppError
+import com.example.lifetogether.domain.result.Result
+import com.example.lifetogether.ui.common.di.rememberFamilyRepository
 import com.example.lifetogether.ui.common.di.rememberSessionRepository
 import com.example.lifetogether.ui.common.event.LocalRootSnackbarHostState
 import com.example.lifetogether.ui.common.image.rememberObservedImageBitmap
@@ -31,6 +37,7 @@ fun HomeRoute(
     appNavigator: AppNavigator,
 ) {
     val sessionRepository = rememberSessionRepository()
+    val familyRepository = rememberFamilyRepository()
     val sessionState by sessionRepository.sessionState.collectAsStateWithLifecycle()
 
     val snackbarHostState = LocalRootSnackbarHostState.current
@@ -39,10 +46,22 @@ fun HomeRoute(
     val userInformation = sessionState.authenticatedUserOrNull
     val familyImageType = userInformation?.familyId?.let { ImageType.FamilyImage(it) }
     val bitmap = rememberObservedImageBitmap(familyImageType)
+    val familyInformationResult by produceState<Result<FamilyInformation, AppError>?>(initialValue = null, key1 = userInformation?.familyId) {
+        val familyId = userInformation?.familyId
+        if (familyId == null) {
+            value = null
+            return@produceState
+        }
+        familyRepository.observeFamilyInformation(familyId).collect { result ->
+            value = result
+        }
+    }
     val isAdmin = userInformation?.uid in BuildConfig.ADMIN_LIST.split(",")
     val displayBitmap = if (userInformation?.familyId != null) bitmap else null
     val sections = buildHomeSections(isAdmin = isAdmin)
     val currentSessionState = sessionState
+    val daysTogetherText = (familyInformationResult as? Result.Success)?.data?.togetherSince
+        ?.daysTogetherText()
 
     val content = HomeContent(
         statusCard = when (currentSessionState) {
@@ -57,6 +76,7 @@ fun HomeRoute(
             }
         },
         bitmap = displayBitmap,
+        daysTogetherText = daysTogetherText,
         sections = sections,
     )
 

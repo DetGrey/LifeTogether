@@ -3,6 +3,12 @@ package com.example.lifetogether.data.local
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+val MIGRATION_35_36 = object : Migration(35, 36) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `families` ADD COLUMN `together_since` INTEGER")
+    }
+}
+
 val MIGRATION_34_35 = object : Migration(34, 35) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("DROP TABLE IF EXISTS `recipe_ingredients`")

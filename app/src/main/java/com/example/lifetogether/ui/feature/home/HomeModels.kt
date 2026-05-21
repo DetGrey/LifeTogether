@@ -21,6 +21,7 @@ sealed interface HomeUiState {
 data class HomeContent(
     val statusCard: HomeStatusCard = HomeStatusCard.None,
     val bitmap: Bitmap? = null,
+    val daysTogetherText: String? = null,
     val sections: List<HomeSection> = emptyList(),
 )
 

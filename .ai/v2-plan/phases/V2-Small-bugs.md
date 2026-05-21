@@ -17,14 +17,10 @@ Here are some bugs that need to be fixed:
 
 Here are some questions:
 
-- The AppTopBar is much taller than it used to be. Can it be changed in any way? Might be because of TextDisplayLarge
 - ListItem seems too high compared to legacy - is that true?
   - Go back to use custom instead of native M3ListItem
-- I have to check if this is still a problem
-  - EditableTextField textfield is not tall enough to handle textStyle = MaterialTheme.typography.displayMedium (should be dynamic)
-  - I want it on all screens I think since the skeleton is almost not shown at all
+
 - New note entry should be redesigned and make the textfield be custom with multi-line and other things (box should fill most of the screen)
-- Sometimes when creating a new list (note or checklist) it keeps loading for too long when trying to create it and when going back it doesn't show on the listoverview before leaving to homescreen and coming back
 - Mealplanner should be redesigned
   - itemName should either be the recipe name or the custom mealname
 
@@ -86,8 +82,7 @@ Here are some questions:
 - [ ] Add guide manually does not work that well.
 - [ ] The step player should show whether a step is completed and show the datetime of completion/last edited.
   - (TODO WOULD LIKE TO IMPLEMENT)
-- [ ] When changing guide visibility, do not reset progress since progress is private anyway.
-  - (TODO SOON)
+- [x] When changing guide visibility, do not reset progress since progress is private anyway.
 
 ### Gallery media
 - [x] The uploaded images should keep the original quality
@@ -160,6 +155,7 @@ Here are some questions:
   - (TODO SOON)
 - [ ] Use R8 (kotlin something)
 - [ ] Update Claude file and other to use Android CLI
+- [ ] Think about if we really wanna catch all exceptions or if it's better to let it crash so we notice and can fix all the bugs
 
 ## Icons
 - [ ] Make Grocery icon with a plus for the RecipeDetails
@@ -174,6 +170,50 @@ Here are some questions:
 - Try `@PreviewScreenSizes`.
 - The Profiler can see all classes in memory and other things.
 - Check android bench for best AI for kotlin coding
+
+# Implementation suggestions from list above
+Looking at the unchecked items, here's my read:
+
+## Should be in v2 before release
+
+These are bugs or broken functionality — not features:
+
+**Guides**
+- "Add guide manually does not work that well" — if it's broken, it's broken. Needs investigation before release.
+
+**Gallery**
+- Video thumbnail fallback handling, DATE_TAKEN query, date inconsistency between videos and images — these are correctness bugs visible to users.
+- "Decide what should happen when `updateGalleryMedia()` download fails" — missing error handling is a release risk.
+
+**Family**
+- "Change x days together so it is only shown if a date is added" — marked TODO SOON. Currently shows garbage if no date is set.
+
+**Settings**
+- "How does settings work if not logged in?" — this is actually a question but it implies you haven't verified it. Worth checking before release in case it crashes.
+
+**Architecture**
+- "Change how dialogs are shown with enabled parameter" — marked TODO SOON. If you're going to do it, do it before release so you're not refactoring around shipped code.
+
+**ICONS**
+- Needed to match the actual features
+
+## Skip for v2
+
+- All _italic_ items — explicitly optional
+- R8 — needs a QA pass of release builds; risky to add right before release
+- DropDown `.menuAnchor` deprecation — deprecated doesn't mean broken; survives another release
+- Gallery: add note/description, share media, add tags — feature additions, not bugs
+- Guide step player completion timestamps — marked TODO WOULD LIKE TO IMPLEMENT
+
+## Missing from the list entirely
+
+These aren't tracked but seem release-relevant based on the "questions" section:
+
+- **"Sometimes when creating a new list it keeps loading too long"** — that's a real bug, not a question. It's in the questions section but should be a tracked item.
+- **"Mealplanner should be redesigned / itemName should be recipe or custom name"** — the itemName thing is a data correctness issue if the displayed name is wrong or blank.
+- **AppTopBar height and ListItem height** — you said you'd check if they're still problems. If they are, they affect every screen.
+
+My overall take: the questions section at the top has real bugs mixed in with design questions, and those need triage before you can call v2 done.
 
 # About using R8 app optimization
 

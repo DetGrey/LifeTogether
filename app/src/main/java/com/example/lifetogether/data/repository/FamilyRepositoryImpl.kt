@@ -6,6 +6,7 @@ import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.repository.FamilyRepository
 import kotlinx.coroutines.flow.Flow
+import java.util.Date
 import javax.inject.Inject
 
 class FamilyRepositoryImpl @Inject constructor(
@@ -18,6 +19,13 @@ class FamilyRepositoryImpl @Inject constructor(
 
     override fun syncFamilyInformationFromRemote(familyId: String): Flow<Result<Unit, AppError>> {
         return userRepositoryImpl.syncFamilyInformationFromRemote(familyId)
+    }
+
+    override suspend fun updateFamilyTogetherSince(
+        familyId: String,
+        togetherSince: Date?,
+    ): Result<Unit, AppError> {
+        return userRepositoryImpl.updateFamilyTogetherSince(familyId, togetherSince)
     }
 
     override suspend fun joinFamily(familyId: String, uid: String, name: String): Result<Unit, AppError> {
