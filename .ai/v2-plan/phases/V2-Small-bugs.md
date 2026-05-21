@@ -60,7 +60,6 @@ Here are some questions:
     - if searching for a specific ingredient it should also list those
     - And so on
   - _Probably need a new type of recipe card for searching which includes the tag/ingredient etc that got matched in the search so the user knows why it's showing_
-- [ ] _Export or share recipes as PDF_.
 - [x] Ingredients and instructions need stable IDs.
 - [x] When adding ingredients, do not start capitalized
 - [x] Recipe servings should be 1 to 100 instead of few predefined
@@ -78,26 +77,20 @@ Here are some questions:
   - Test with husbie changing red sauce to our version
 - [x] Make it possible to change order of instructions and ingredients
 - [x] Make add instructions field taller to fit two lines
-- [ ] Should support ingredient being 0 when saving like it used to
-  - (TODO SOON)
-
+- [x] Should support ingredient being 0 when saving like it used to
+- [ ] _Export or share recipes as PDF_.
+- 
 ### Guides
-- [ ] Add guide manually does not work that well.
-- [ ] _Make the UI nicer_.
 - [x] OptionRow should not have dividers inside guides.
+- [ ] _Make the UI nicer_.
+- [ ] Add guide manually does not work that well.
 - [ ] The step player should show whether a step is completed and show the datetime of completion/last edited.
   - (TODO WOULD LIKE TO IMPLEMENT)
 - [ ] When changing guide visibility, do not reset progress since progress is private anyway.
   - (TODO SOON)
 
-### Search and discovery
-- [ ] _Add filtering for all, notes, guides, and lists_.
-- [ ] _Add a Home screen box for essentials_.
-  - Inside essentials, find notes, lists, and guides with a filter at the top.
-  - Add search to find features.
-  - Search guides to find the guides page, or search more specifically for items like a WiFi note.
-
 ### Gallery media
+- [x] The uploaded images should keep the original quality
 - [ ] _Add tags_.
 - [ ] Add a note or description.
 - [ ] Share media.
@@ -105,21 +98,19 @@ Here are some questions:
 - [ ] For videos, query `MediaStore.Video.Media.DATE_TAKEN` and `MediaStore.Video.Media.DATE_MODIFIED`.
 - [ ] Decide what should happen when `updateGalleryMedia()` download fails.
 - [ ] Figure out why downloaded videos show the created-at date in gallery while images show the download date.
-- [ ] The uploaded images should keep the original quality
-  - (TODO IMMEDIATELY)
 
 ### Gallery albums
 - [ ] _Send a notification when everything is downloaded, and maybe link to the gallery LifeTogether folder if possible._
 
 ### Family and relationship features
+- [x] Clickable area is wrong in personal details
+- [ ] _Add special day under family settings or the countdown page._
 - [ ] _Add a love button that sends a loving notification to all other family members except yourself._
   - Disable the love button for 30 seconds after click to avoid spamming.
   - Use predefined messages in code instead of Firestore to reduce fetching.
 - [ ] Change x days together so it is only shown if a date is added to family info.
   - This means that a new variable should be added to the data class
   - (TODO SOON)
-- [ ] _Add special day under family settings or the countdown page._
-- [x] Clickable area is wrong in personal details
 
 ### Setting
 - [x] Show app version at the bottom of settings along with user id if logged in
@@ -152,27 +143,23 @@ Here are some questions:
 - [x] Cannot have multiple profile or settings in back stack. Maybe same for other ones
 
 ### Shared architecture and tooling
-- [ ] Replace `DropDown.kt` `.menuAnchor` usage because it is deprecated if possible without very complex code.
-  - Maybe just rewrite the way to use dropdowns to a more new and native way?
-  - (TODO WOULD LIKE TO IMPLEMENT)
-- [ ] Try `@PreviewScreenSizes`.
-- [ ] The Profiler can see all classes in memory and other things.
-- [ ] _Repositories should probably be singletons and stateless._
+- [x] Animate when image is loaded and about to be shown e.g. for recipes, routine and such so it doesn't just pop up
+- [x] Pressing back on phone should be interupted in selection mode on all screens that have it so it just leaves selection mode instead of navigating back
+- [x] Update libs versions
+- [x] Update sdk to version 37
+- [x] Fix settings.gradle.kts warnings
+- [x] Repositories should probably be singletons and stateless.
 - [ ] _Use SQLCipher for Room encryption._
 - [ ] _Make the image download success and version update dialogs nicer._
 - [ ] _Show a dialog when there is a new version available._
-- [x] Animate when image is loaded and about to be shown e.g. for recipes, routine and such so it doesn't just pop up
-- [x] Pressing back on phone should be interupted in selection mode on all screens that have it so it just leaves selection mode instead of navigating back
+- [ ] Replace `DropDown.kt` `.menuAnchor` usage because it is deprecated if possible without very complex code.
+  - Maybe just rewrite the way to use dropdowns to a more new and native way?
+  - (TODO WOULD LIKE TO IMPLEMENT)
 - [ ] Change how dialogs are shown with enabled parameter instead of "contentState?.showRenameListDialog == true"
   - Maybe even handle some of the events inside instead of many events inside viewmodel per dialog (RequestRenameList, DismissRenameListDialog,RenameListNameChanged,ConfirmRenameList)
   - (TODO SOON)
-- [x] Update libs versions
-- [x] Update sdk to version 37
-- [ ] Fix settings.gradle.kts warnings
-  - (TODO SOON)
 - [ ] Use R8 (kotlin something)
-- [ ] Update claude file and other to use Android CLI
-- [ ] Check android bench for best AI for kotlin coding
+- [ ] Update Claude file and other to use Android CLI
 
 ## Icons
 - [ ] Make Grocery icon with a plus for the RecipeDetails
@@ -182,6 +169,11 @@ Here are some questions:
 - [ ] Make drag handle icon
 - [ ] Make new rounded icons (V2)
 - [ ] Make thinner email icon (profile screen email icon should be updated so need to make a new one)
+
+## Tooling to try out
+- Try `@PreviewScreenSizes`.
+- The Profiler can see all classes in memory and other things.
+- Check android bench for best AI for kotlin coding
 
 # About using R8 app optimization
 

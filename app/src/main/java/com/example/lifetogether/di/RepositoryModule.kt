@@ -24,56 +24,67 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
 
+    @Singleton
     @Binds
     abstract fun bindUserRepository(
         userRepositoryImpl: UserRepositoryImpl,
     ): UserRepository
 
+    @Singleton
     @Binds
     abstract fun bindGroceryRepository(
         groceryRepositoryImpl: GroceryRepositoryImpl
     ): GroceryRepository
 
+    @Singleton
     @Binds
     abstract fun bindUserListRepository(
         userListRepositoryImpl: UserListRepositoryImpl
     ): UserListRepository
 
+    @Singleton
     @Binds
     abstract fun bindRecipeRepository(
         recipeRepositoryImpl: RecipeRepositoryImpl
     ): RecipeRepository
 
+    @Singleton
     @Binds
     abstract fun bindGuideRepository(
         guideRepositoryImpl: GuideRepositoryImpl
     ): GuideRepository
 
+    @Singleton
     @Binds
     abstract fun bindTipTrackerRepository(
         tipTrackerRepositoryImpl: TipTrackerRepositoryImpl
     ): TipTrackerRepository
 
+    @Singleton
     @Binds
     abstract fun bindGalleryRepository(
         galleryRepositoryImpl: GalleryRepositoryImpl
     ): GalleryRepository
 
+    @Singleton
     @Binds
     abstract fun bindFamilyRepository(
         familyRepositoryImpl: FamilyRepositoryImpl
     ): FamilyRepository
 
+    @Singleton
     @Binds
     abstract fun bindImageRepository(
         imageRepositoryImpl: ImageRepositoryImpl
     ): ImageRepository
 
+    @Singleton
     @Binds
     abstract fun bindMealPlannerRepository(
         mealPlannerRepositoryImpl: MealPlannerRepositoryImpl
