@@ -123,22 +123,18 @@ class ImageRepositoryImpl @Inject constructor(
         url: String,
         imageType: ImageType,
     ): Result<Unit, AppError> {
-        val remoteResult = when (imageType) {
+        // Persist to Room before writing to Firestore so the local URL matches
+        // when the Firestore real-time listener fires and triggers a sync.
+        // Without this ordering the sync sees a URL mismatch and may wipe imageData.
+        val localResult = persistImageUrl(imageType, url)
+        if (localResult is Result.Failure) return localResult
+
+        return when (imageType) {
             is ImageType.ProfileImage -> userFirestoreDataSource.saveUserImageUrl(imageType.uid, url)
             is ImageType.FamilyImage -> familyFirestoreDataSource.saveFamilyImageUrl(imageType.familyId, url)
             is ImageType.RecipeImage -> recipeFirestoreDataSource.saveRecipeImageUrl(imageType.recipeId, url)
             is ImageType.RoutineListEntryImage -> userListFirestoreDataSource.saveRoutineListEntryImageUrl(imageType.entryId, url)
             is ImageType.GalleryMedia -> Result.Failure(AppErrors.validation("Image type is not connected to one specific document"))
-        }
-        return when (remoteResult) {
-            is Result.Success -> {
-                when (val localResult = persistImageUrl(imageType, url)) {
-                    is Result.Success -> Result.Success(Unit)
-                    is Result.Failure -> localResult
-                }
-            }
-
-            is Result.Failure -> remoteResult
         }
     }
 
