@@ -91,9 +91,12 @@ class CloudflareR2StorageDataSource @Inject constructor(
                 bucket = BUCKET_NAME
                 key = objectKey
                 body = processedImage.data.asByteStream()
-                contentType = when {
+                contentType = processedImage.mimeType ?: when {
                     processedImage.extension.contains("jpeg") || processedImage.extension.contains("jpg") -> "image/jpeg"
                     processedImage.extension.contains("png") -> "image/png"
+                    processedImage.extension.contains("webp") -> "image/webp"
+                    processedImage.extension.contains("heic") -> "image/heic"
+                    processedImage.extension.contains("heif") -> "image/heif"
                     processedImage.extension.contains("mp4") -> "video/mp4"
                     else -> "application/octet-stream"
                 }

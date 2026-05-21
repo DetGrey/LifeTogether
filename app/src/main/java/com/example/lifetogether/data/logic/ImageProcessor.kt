@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.drawable.BitmapDrawable
+import androidx.exifinterface.media.ExifInterface
 import android.net.Uri
 import android.util.Log
 import coil.ImageLoader
@@ -48,44 +49,81 @@ class ImageProcessor @Inject constructor(
                 // Get path and processing parameters based on image type
                 val config = getImageConfig(imageType) ?: return@withContext null
 
-                // Perform EXIF rotation correction
-                val correctedByteArray = uri.rotateBasedOnExif(context)
-                if (correctedByteArray == null) {
-                    Log.e(TAG, "Failed to rotate image for type: $imageType")
-                    return@withContext null
-                }
-
-                // Resize image only if needed
-                val finalByteArray = if (config.needsResize) {
-                    val resizedBitmap = resizeImageWithCoil(
-                        context,
-                        correctedByteArray,
-                        config.maxWidth,
-                        config.maxHeight
-                    )
-
-                    if (resizedBitmap == null) {
-                        Log.e(TAG, "Image resize failed")
-                        return@withContext null
-                    }
-
-                    ByteArrayOutputStream().apply {
-                        resizedBitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, this)
-                    }.toByteArray()
-                } else {
-                    correctedByteArray
-                }
+                val finalImage = when (imageType) {
+                    is ImageType.GalleryMedia -> processGalleryImage(uri, config, context)
+                    else -> processStandardImage(uri, config, context)
+                } ?: return@withContext null
 
                 ProcessedImage(
-                    data = finalByteArray,
+                    data = finalImage.data,
                     path = config.path,
-                    extension = config.extension
+                    extension = config.extension,
+                    mimeType = finalImage.mimeType,
                 )
             } catch (e: Exception) {
                 Log.e(TAG, "Error processing image: ${e.message}", e)
                 null
             }
         }
+    }
+
+    private fun processGalleryImage(
+        uri: Uri,
+        config: ImageConfig,
+        context: Context,
+    ): ProcessedImageData? {
+        val originalBytes = ExifImageUtils.readOriginalBytes(context, uri) ?: return null
+        val mimeType = context.contentResolver.getType(uri) ?: mimeTypeFromExtension(config.extension)
+        val orientation = ExifImageUtils.readExifOrientation(originalBytes)
+
+        if (orientation != null &&
+            orientation != ExifInterface.ORIENTATION_NORMAL &&
+            orientation != ExifInterface.ORIENTATION_UNDEFINED
+        ) {
+            Log.d(TAG, "Gallery image uses EXIF orientation $orientation; preserving original bytes to avoid quality loss")
+        }
+
+        return ProcessedImageData(
+            data = originalBytes,
+            mimeType = mimeType,
+        )
+    }
+
+    private suspend fun processStandardImage(
+        uri: Uri,
+        config: ImageConfig,
+        context: Context,
+    ): ProcessedImageData? {
+        val correctedByteArray = ExifImageUtils.rotateAndEncodeJpeg(context, uri)
+            ?: run {
+                Log.e(TAG, "Failed to rotate image for standard upload type")
+                return null
+            }
+
+        val finalByteArray = if (config.needsResize) {
+            val resizedBitmap = resizeImageWithCoil(
+                context,
+                correctedByteArray,
+                config.maxWidth,
+                config.maxHeight
+            )
+
+            if (resizedBitmap == null) {
+                Log.e(TAG, "Image resize failed")
+                return null
+            }
+
+            ByteArrayOutputStream().apply {
+                resizedBitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, this)
+            }.toByteArray()
+        } else {
+            correctedByteArray
+        }
+
+        return ProcessedImageData(
+            data = finalByteArray,
+            mimeType = "image/jpeg",
+        )
     }
 
     /**
@@ -184,8 +222,6 @@ class ImageProcessor @Inject constructor(
                 imageType.galleryMediaUploadData?.let { uploadData ->
                     ImageConfig(
                         path = Constants.GALLERY_MEDIA_TABLE,
-                        maxWidth = DEFAULT_MAX_WIDTH,
-                        maxHeight = DEFAULT_MAX_HEIGHT,
                         needsResize = false,
                         extension = uploadData.extension
                     )
@@ -207,11 +243,45 @@ class ImageProcessor @Inject constructor(
      */
     private data class ImageConfig(
         val path: String,
-        val maxWidth: Int,
-        val maxHeight: Int,
+        val maxWidth: Int = DEFAULT_MAX_WIDTH,
+        val maxHeight: Int = DEFAULT_MAX_HEIGHT,
         val needsResize: Boolean,
         val extension: String,
     )
+
+    private data class ProcessedImageData(
+        val data: ByteArray,
+        val mimeType: String?,
+    ) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as ProcessedImageData
+
+            if (!data.contentEquals(other.data)) return false
+            if (mimeType != other.mimeType) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = data.contentHashCode()
+            result = 31 * result + (mimeType?.hashCode() ?: 0)
+            return result
+        }
+    }
+
+    private fun mimeTypeFromExtension(extension: String): String? {
+        return when (extension.removePrefix(".").lowercase()) {
+            "jpg", "jpeg" -> "image/jpeg"
+            "png" -> "image/png"
+            "webp" -> "image/webp"
+            "heic" -> "image/heic"
+            "heif" -> "image/heif"
+            else -> null
+        }
+    }
 }
 
 /**
@@ -221,6 +291,7 @@ data class ProcessedImage(
     val data: ByteArray,
     val path: String,
     val extension: String,
+    val mimeType: String?,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -231,6 +302,7 @@ data class ProcessedImage(
         if (!data.contentEquals(other.data)) return false
         if (path != other.path) return false
         if (extension != other.extension) return false
+        if (mimeType != other.mimeType) return false
 
         return true
     }
@@ -239,6 +311,7 @@ data class ProcessedImage(
         var result = data.contentHashCode()
         result = 31 * result + path.hashCode()
         result = 31 * result + extension.hashCode()
+        result = 31 * result + (mimeType?.hashCode() ?: 0)
         return result
     }
 }

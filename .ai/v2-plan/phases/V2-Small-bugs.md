@@ -78,6 +78,8 @@ Here are some questions:
   - Test with husbie changing red sauce to our version
 - [x] Make it possible to change order of instructions and ingredients
 - [x] Make add instructions field taller to fit two lines
+- [ ] Should support ingredient being 0 when saving like it used to
+  - (TODO SOON)
 
 ### Guides
 - [ ] Add guide manually does not work that well.
