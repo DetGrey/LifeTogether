@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.feature.groceryList
+package com.example.lifetogether.ui.feature.groceryList.components
 
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 

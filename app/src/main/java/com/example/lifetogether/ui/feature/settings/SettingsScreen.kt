@@ -14,7 +14,6 @@ import com.example.lifetogether.R
 import com.example.lifetogether.BuildConfig
 import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.UserInformation
-import com.example.lifetogether.domain.model.enums.SettingsConfirmationTypes
 import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
@@ -119,41 +118,31 @@ fun SettingsScreen(
                 }
             }
 
-            if (content.showConfirmationDialog) {
-                when (content.confirmationDialogType) {
-                    SettingsConfirmationTypes.JOIN_FAMILY -> ConfirmationDialogWithTextField(
-                        onDismiss = {
-                            onUiEvent(SettingsUiEvent.DismissConfirmationDialog)
-                        },
-                        onConfirm = {
-                            onUiEvent(SettingsUiEvent.ConfirmJoinFamily)
-                        },
-                        dialogTitle = "Join a family",
-                        dialogMessage = "Please add the family id to join",
-                        dismissButtonMessage = "Cancel",
-                        confirmButtonMessage = "Join",
-                        textValue = content.addedFamilyId,
-                        onTextValueChange = { value ->
-                            onUiEvent(SettingsUiEvent.AddedFamilyIdChanged(value))
-                        },
-                        label = "Family id",
-                    )
+            when (val dialog = content.dialog) {
+                is SettingsDialogState.JoinFamily -> ConfirmationDialogWithTextField(
+                    onDismiss = { onUiEvent(SettingsUiEvent.DismissDialog) },
+                    onConfirm = { onUiEvent(SettingsUiEvent.ConfirmJoinFamily) },
+                    dialogTitle = "Join a family",
+                    dialogMessage = "Please add the family id to join",
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Join",
+                    textValue = dialog.familyId,
+                    onTextValueChange = { value ->
+                        onUiEvent(SettingsUiEvent.FamilyIdChanged(value))
+                    },
+                    label = "Family id",
+                )
 
-                    SettingsConfirmationTypes.NEW_FAMILY -> ConfirmationDialog(
-                        onDismiss = {
-                            onUiEvent(SettingsUiEvent.DismissConfirmationDialog)
-                        },
-                        onConfirm = {
-                            onUiEvent(SettingsUiEvent.ConfirmCreateNewFamily)
-                        },
-                        dialogTitle = "Create new family",
-                        dialogMessage = "Are you sure you want to create a new family?",
-                        dismissButtonMessage = "Cancel",
-                        confirmButtonMessage = "Create",
-                    )
+                is SettingsDialogState.CreateFamily -> ConfirmationDialog(
+                    onDismiss = { onUiEvent(SettingsUiEvent.DismissDialog) },
+                    onConfirm = { onUiEvent(SettingsUiEvent.ConfirmCreateNewFamily) },
+                    dialogTitle = "Create new family",
+                    dialogMessage = "Are you sure you want to create a new family?",
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Create",
+                )
 
-                    null -> Unit
-                }
+                null -> Unit
             }
         }
     }
@@ -170,8 +159,6 @@ private fun SettingsScreenPreview() {
                     email = "alex@example.com",
                     name = "Alex",
                 ),
-                confirmationDialogType = null,
-                showConfirmationDialog = false,
             ),
             onUiEvent = {},
             onNavigationEvent = {},

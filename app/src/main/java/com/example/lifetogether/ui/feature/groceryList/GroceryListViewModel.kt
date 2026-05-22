@@ -13,6 +13,7 @@ import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.domain.usecase.notification.SendNotificationUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
+import com.example.lifetogether.ui.feature.groceryList.components.searchGrocerySuggestions
 import com.example.lifetogether.ui.navigation.NotificationDestination
 import com.example.lifetogether.util.Constants
 import com.example.lifetogether.util.UNCATEGORIZED_CATEGORY
@@ -99,8 +100,6 @@ class GroceryListViewModel @Inject constructor(
             GroceryListUiEvent.CompletedSectionExpandedClicked -> toggleCompletedSectionExpanded()
             is GroceryListUiEvent.ItemCompletedToggled -> toggleItemCompleted(event.item)
             is GroceryListUiEvent.NotificationClicked -> sendGroceryNotification(event.item)
-            GroceryListUiEvent.DeleteCompletedClicked -> showDeleteCompletedConfirmation()
-            GroceryListUiEvent.DismissDeleteCompletedConfirmation -> dismissDeleteCompletedConfirmation()
             GroceryListUiEvent.ConfirmDeleteCompletedConfirmation -> deleteCompletedItems()
             is GroceryListUiEvent.NewItemTextChanged -> onNewItemTextChange(event.value)
             is GroceryListUiEvent.NewItemPriceChanged -> onNewItemPriceChange(event.value)
@@ -195,18 +194,6 @@ class GroceryListViewModel @Inject constructor(
     private fun toggleCompletedSectionExpanded() {
         updateContentState { state ->
             state.copy(completedSectionExpanded = !state.completedSectionExpanded)
-        }
-    }
-
-    private fun showDeleteCompletedConfirmation() {
-        updateContentState { state ->
-            state.copy(showConfirmationDialog = true)
-        }
-    }
-
-    private fun dismissDeleteCompletedConfirmation() {
-        updateContentState { state ->
-            state.copy(showConfirmationDialog = false)
         }
     }
 
@@ -315,19 +302,13 @@ class GroceryListViewModel @Inject constructor(
 
     private fun deleteCompletedItems() {
         val completedItems = currentContentState().completedItems
-        if (completedItems.isEmpty()) {
-            dismissDeleteCompletedConfirmation()
-            return
-        }
+        if (completedItems.isEmpty()) return
         val idsToDelete = completedItems.map { it.id }
 
         viewModelScope.launch {
             when (val result = groceryRepository.deleteGroceryItems(itemIds = idsToDelete)) {
-                is Result.Success -> dismissDeleteCompletedConfirmation()
-                is Result.Failure -> {
-                    dismissDeleteCompletedConfirmation()
-                    showError(result.error.toUserMessage())
-                }
+                is Result.Success -> Unit
+                is Result.Failure -> showError(result.error.toUserMessage())
             }
         }
     }

@@ -79,9 +79,7 @@ class MealPlanDetailsViewModel @AssistedInject constructor(
             MealPlanDetailsUiEvent.RequestCancelEdit -> requestCancelEdit()
             MealPlanDetailsUiEvent.ConfirmDiscard -> confirmDiscard()
             MealPlanDetailsUiEvent.DismissDiscardDialog -> updateContent { it.copy(showDiscardDialog = false) }
-            MealPlanDetailsUiEvent.RequestDeleteMealPlan -> updateContent { it.copy(showDeleteDialog = true) }
             MealPlanDetailsUiEvent.ConfirmDeleteMealPlan -> deleteMealPlan()
-            MealPlanDetailsUiEvent.DismissDeleteDialog -> updateContent { it.copy(showDeleteDialog = false) }
             MealPlanDetailsUiEvent.SaveClicked -> saveMealPlan()
             is MealPlanDetailsUiEvent.Meal.RecipeQueryChanged -> updateMealRecipeQuery(event.value)
             is MealPlanDetailsUiEvent.Meal.RecipeSearchFocusedChanged -> updateMealContent { details, state ->
@@ -108,7 +106,6 @@ class MealPlanDetailsViewModel @AssistedInject constructor(
                 mealRecipeSearchState = buildMealRecipeSearchState(form = original, currentState = it.mealRecipeSearchState),
                 isEditing = false,
                 showDiscardDialog = false,
-                showDeleteDialog = false,
                 isSaving = false,
             )
         }
@@ -186,7 +183,6 @@ class MealPlanDetailsViewModel @AssistedInject constructor(
                         mealRecipeSearchState = buildMealRecipeSearchState(effectiveForm, null),
                         isEditing = isNewEntry,
                         showDiscardDialog = false,
-                        showDeleteDialog = false,
                         isSaving = false,
                     )
                 }
@@ -199,10 +195,7 @@ class MealPlanDetailsViewModel @AssistedInject constructor(
         viewModelScope.launch {
             when (val result = saver.deleteMealPlan(mealPlanIdValue)) {
                 is Result.Success -> _commands.send(MealPlanDetailsCommand.NavigateBack)
-                is Result.Failure -> {
-                    updateContent { it.copy(showDeleteDialog = false) }
-                    showError(result.error.toUserMessage())
-                }
+                is Result.Failure -> showError(result.error.toUserMessage())
             }
         }
     }
@@ -343,9 +336,7 @@ class MealPlanDetailsViewModel @AssistedInject constructor(
             MealPlanDetailsUiEvent.RequestCancelEdit,
             MealPlanDetailsUiEvent.ConfirmDiscard,
             MealPlanDetailsUiEvent.DismissDiscardDialog,
-            MealPlanDetailsUiEvent.RequestDeleteMealPlan,
             MealPlanDetailsUiEvent.ConfirmDeleteMealPlan,
-            MealPlanDetailsUiEvent.DismissDeleteDialog,
             MealPlanDetailsUiEvent.SaveClicked -> form
         }
     }

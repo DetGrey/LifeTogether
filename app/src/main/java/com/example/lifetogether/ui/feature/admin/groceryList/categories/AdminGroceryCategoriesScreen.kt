@@ -19,6 +19,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,6 +49,8 @@ fun AdminGroceryCategoriesScreen(
     onUiEvent: (AdminGroceryCategoriesUiEvent) -> Unit,
     onNavigationEvent: (AdminGroceryCategoriesNavigationEvent) -> Unit,
 ) {
+    var showDeleteCategoryDialog by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             AppTopBar(
@@ -100,6 +106,7 @@ fun AdminGroceryCategoriesScreen(
                                         Category(categoryList[0], categoryList[1]),
                                     ),
                                 )
+                                showDeleteCategoryDialog = true
                             },
                         )
                     }
@@ -160,10 +167,13 @@ fun AdminGroceryCategoriesScreen(
                 }
             }
 
-            if (content.showDeleteCategoryConfirmationDialog && content.selectedCategory != null) {
+            if (showDeleteCategoryDialog && content.selectedCategory != null) {
                 ConfirmationDialog(
-                    onDismiss = { onUiEvent(AdminGroceryCategoriesUiEvent.DismissDeleteCategoryConfirmation) },
-                    onConfirm = { onUiEvent(AdminGroceryCategoriesUiEvent.ConfirmDeleteCategory) },
+                    onDismiss = { showDeleteCategoryDialog = false },
+                    onConfirm = {
+                        showDeleteCategoryDialog = false
+                        onUiEvent(AdminGroceryCategoriesUiEvent.ConfirmDeleteCategory)
+                    },
                     dialogTitle = "Delete category?",
                     dialogMessage = "Are you sure you want to delete the category: ${content.selectedCategory.emoji} ${content.selectedCategory.name}?",
                     dismissButtonMessage = "Cancel",

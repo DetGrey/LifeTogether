@@ -11,9 +11,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
+import androidx.lifecycle.HasDefaultViewModelProviderFactory
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -198,10 +201,17 @@ fun NavHost(deepLinkRoute: AppRoute? = null) {
 
 @Composable
 private fun tipTrackerGraphOwner(
-    backStack: androidx.navigation3.runtime.NavBackStack<NavKey>,
+    backStack: NavBackStack<NavKey>,
     graphStores: HashMap<NavKey, ViewModelStore>,
 ): ViewModelStoreOwner {
     val graphKey = backStack.firstOrNull { it is TipTrackerGraph } ?: TipTrackerGraph
     val store = remember(graphKey) { graphStores.getOrPut(graphKey) { ViewModelStore() } }
-    return remember(store) { object : ViewModelStoreOwner { override val viewModelStore: ViewModelStore = store } }
+    val parentOwner = checkNotNull(LocalViewModelStoreOwner.current) as HasDefaultViewModelProviderFactory
+    return remember(store, parentOwner) {
+        object : ViewModelStoreOwner, HasDefaultViewModelProviderFactory {
+            override val viewModelStore: ViewModelStore = store
+            override val defaultViewModelProviderFactory = parentOwner.defaultViewModelProviderFactory
+            override val defaultViewModelCreationExtras = parentOwner.defaultViewModelCreationExtras
+        }
+    }
 }

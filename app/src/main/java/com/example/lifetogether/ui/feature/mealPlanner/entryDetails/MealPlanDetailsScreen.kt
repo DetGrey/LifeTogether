@@ -14,6 +14,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Scaffold
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -39,6 +43,7 @@ fun MealPlanDetailsScreen(
     val content = uiState as? MealPlanDetailsUiState.Content
     val isLoading = uiState is MealPlanDetailsUiState.Loading
     val isExistingMealPlan = mealPlanId != null
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     BackHandler(enabled = content?.isEditing == true) {
         onUiEvent(MealPlanDetailsUiEvent.RequestCancelEdit)
@@ -62,7 +67,7 @@ fun MealPlanDetailsScreen(
                     else -> AppIcon(resId = R.drawable.ic_edit, description = "edit meal plan entry")
                 },
                 onRightClick = when {
-                    isExistingMealPlan && content?.isEditing == true -> { { onUiEvent(MealPlanDetailsUiEvent.RequestDeleteMealPlan) } }
+                    isExistingMealPlan && content?.isEditing == true -> { { showDeleteDialog = true } }
                     isExistingMealPlan -> { { onUiEvent(MealPlanDetailsUiEvent.EnterEditMode) } }
                     else -> null
                 },
@@ -130,10 +135,13 @@ fun MealPlanDetailsScreen(
         )
     }
 
-    if (content?.showDeleteDialog == true) {
+    if (showDeleteDialog) {
         ConfirmationDialog(
-            onDismiss = { onUiEvent(MealPlanDetailsUiEvent.DismissDeleteDialog) },
-            onConfirm = { onUiEvent(MealPlanDetailsUiEvent.ConfirmDeleteMealPlan) },
+            onDismiss = { showDeleteDialog = false },
+            onConfirm = {
+                showDeleteDialog = false
+                onUiEvent(MealPlanDetailsUiEvent.ConfirmDeleteMealPlan)
+            },
             dialogTitle = "Delete meal plan entry?",
             dialogMessage = "This will permanently delete the meal plan entry.",
             dismissButtonMessage = "Cancel",

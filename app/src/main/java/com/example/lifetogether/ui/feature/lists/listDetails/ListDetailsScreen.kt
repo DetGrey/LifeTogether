@@ -15,6 +15,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -54,6 +58,7 @@ fun ListDetailsScreen(
     val isLoading = uiState is ListDetailsUiState.Loading
     val contentState = uiState as? ListDetailsUiState.Content
     val listName = contentState?.listContent?.listName ?: "List"
+    var showDeleteSelectedDialog by remember { mutableStateOf(false) }
 
     BackHandler(enabled = contentState?.isSelectionMode == true) {
         onUiEvent(ListDetailsUiEvent.ExitSelectionMode)
@@ -211,7 +216,10 @@ fun ListDetailsScreen(
                 listOf(
                     ActionSheetItem(
                         label = "Delete selected",
-                        onClick = { onUiEvent(ListDetailsUiEvent.RequestDeleteSelected) },
+                        onClick = {
+                            onUiEvent(ListDetailsUiEvent.ToggleActionSheet)
+                            showDeleteSelectedDialog = true
+                        },
                         isDestructive = true,
                         isEnabled = contentState.selectedEntryIds.isNotEmpty(),
                     ),
@@ -239,25 +247,30 @@ fun ListDetailsScreen(
         )
     }
 
-    if (contentState?.showRenameListDialog == true) {
-        ConfirmationDialogWithTextField(
-            onDismiss = { onUiEvent(ListDetailsUiEvent.DismissRenameListDialog) },
+    when (val dialog = contentState?.dialog) {
+        is ListDetailsDialogState.RenameList -> ConfirmationDialogWithTextField(
+            onDismiss = { onUiEvent(ListDetailsUiEvent.DismissDialog) },
             onConfirm = { onUiEvent(ListDetailsUiEvent.ConfirmRenameList) },
             dialogTitle = "Rename list",
             dialogMessage = "Enter a new name for the list",
             dismissButtonMessage = "Cancel",
             confirmButtonMessage = "Rename list",
-            textValue = contentState.renameListText,
+            textValue = dialog.name,
             onTextValueChange = { onUiEvent(ListDetailsUiEvent.RenameListNameChanged(it)) },
             label = "New list name",
             capitalization = true,
         )
+
+        null -> Unit
     }
 
-    if (contentState?.showDeleteSelectedDialog == true) {
+    if (showDeleteSelectedDialog) {
         ConfirmationDialog(
-            onDismiss = { onUiEvent(ListDetailsUiEvent.DismissDeleteSelectedDialog) },
-            onConfirm = { onUiEvent(ListDetailsUiEvent.ConfirmDeleteSelected) },
+            onDismiss = { showDeleteSelectedDialog = false },
+            onConfirm = {
+                showDeleteSelectedDialog = false
+                onUiEvent(ListDetailsUiEvent.ConfirmDeleteSelected)
+            },
             dialogTitle = "Delete selected entries",
             dialogMessage = "Are you sure you want to delete the selected entries?",
             dismissButtonMessage = "Cancel",
@@ -427,5 +440,4 @@ private fun previewState(
     isSelectionMode = false,
     isAllEntriesSelected = false,
     showActionSheet = false,
-    showDeleteSelectedDialog = false,
 )

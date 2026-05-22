@@ -83,10 +83,7 @@ class FamilyViewModel @Inject constructor(
                                 null
                             },
                             isTogetherSinceEditing = false,
-                            showTogetherSinceDatePicker = false,
-                            showConfirmationDialog = false,
-                            confirmationDialogType = null,
-                            memberToRemove = null,
+                            dialog = null,
                         )
                     }
                 }
@@ -105,18 +102,17 @@ class FamilyViewModel @Inject constructor(
 
     fun onEvent(event: FamilyUiEvent) {
         when (event) {
-            FamilyUiEvent.AddMemberClicked -> showConfirmationDialog(FamilyConfirmationType.ADD_MEMBER)
-            FamilyUiEvent.LeaveFamilyClicked -> showConfirmationDialog(FamilyConfirmationType.LEAVE_FAMILY)
-            FamilyUiEvent.DeleteFamilyClicked -> showConfirmationDialog(FamilyConfirmationType.DELETE_FAMILY)
-            is FamilyUiEvent.RemoveMemberClicked -> showRemoveMemberConfirmation(event.member)
-            FamilyUiEvent.DismissConfirmationDialog -> closeConfirmationDialog()
-            FamilyUiEvent.ConfirmConfirmationDialog -> confirmConfirmationDialog()
+            FamilyUiEvent.AddMemberClicked -> showDialog(FamilyDialogState.AddMember)
+            FamilyUiEvent.LeaveFamilyClicked -> showDialog(FamilyDialogState.LeaveFamily)
+            FamilyUiEvent.DeleteFamilyClicked -> showDialog(FamilyDialogState.DeleteFamily)
+            is FamilyUiEvent.RemoveMemberClicked -> showDialog(FamilyDialogState.RemoveMember(event.member))
+            FamilyUiEvent.DismissDialog -> closeDialog()
+            FamilyUiEvent.ConfirmDialog -> confirmDialog()
             is FamilyUiEvent.ImageSelected -> uploadFamilyImage(event.uri)
             FamilyUiEvent.TogetherSinceEditClicked -> editTogetherSince()
             FamilyUiEvent.TogetherSinceSaveClicked -> saveTogetherSince()
             FamilyUiEvent.TogetherSinceClearClicked -> clearTogetherSinceDraft()
             is FamilyUiEvent.TogetherSinceDateSelected -> selectTogetherSince(event.date)
-            FamilyUiEvent.TogetherSinceDatePickerDismissed -> hideTogetherSinceDatePicker()
         }
     }
 
@@ -150,7 +146,7 @@ class FamilyViewModel @Inject constructor(
                     familyInformation = null,
                     togetherSinceDraft = null,
                     isTogetherSinceEditing = false,
-                    showTogetherSinceDatePicker = false,
+                    dialog = null,
                 )
             }
             return
@@ -187,7 +183,7 @@ class FamilyViewModel @Inject constructor(
             state.copy(
                 isTogetherSinceEditing = true,
                 togetherSinceDraft = state.togetherSinceDraft ?: currentTogetherSince,
-                showTogetherSinceDatePicker = true,
+                dialog = FamilyDialogState.DatePicker,
             )
         }
     }
@@ -196,14 +192,8 @@ class FamilyViewModel @Inject constructor(
         updateContent {
             it.copy(
                 togetherSinceDraft = date,
-                showTogetherSinceDatePicker = false,
+                dialog = null,
             )
-        }
-    }
-
-    private fun hideTogetherSinceDatePicker() {
-        updateContent {
-            it.copy(showTogetherSinceDatePicker = false)
         }
     }
 
@@ -223,7 +213,7 @@ class FamilyViewModel @Inject constructor(
             updateContent {
                 it.copy(
                     isTogetherSinceEditing = false,
-                    showTogetherSinceDatePicker = false,
+                    dialog = null,
                 )
             }
             return
@@ -240,7 +230,7 @@ class FamilyViewModel @Inject constructor(
                             ),
                         togetherSinceDraft = draft,
                         isTogetherSinceEditing = false,
-                        showTogetherSinceDatePicker = false,
+                        dialog = null,
                     )
                 }
 
@@ -249,49 +239,27 @@ class FamilyViewModel @Inject constructor(
         }
     }
 
-    private fun showConfirmationDialog(type: FamilyConfirmationType) {
-        updateContent {
-            it.copy(
-                showConfirmationDialog = true,
-                confirmationDialogType = type,
-                memberToRemove = null,
-            )
-        }
+    private fun showDialog(dialog: FamilyDialogState) {
+        updateContent { it.copy(dialog = dialog) }
     }
 
-    private fun showRemoveMemberConfirmation(member: FamilyMember) {
-        updateContent {
-            it.copy(
-                showConfirmationDialog = true,
-                confirmationDialogType = FamilyConfirmationType.REMOVE_MEMBER,
-                memberToRemove = member,
-            )
-        }
+    private fun closeDialog() {
+        updateContent { it.copy(dialog = null) }
     }
 
-    private fun closeConfirmationDialog() {
-        updateContent {
-            it.copy(
-                showConfirmationDialog = false,
-                confirmationDialogType = null,
-                memberToRemove = null,
-            )
-        }
-    }
-
-    private fun confirmConfirmationDialog() {
-        when ((uiState.value as? FamilyUiState.Content)?.confirmationDialogType) {
-            FamilyConfirmationType.ADD_MEMBER -> copyFamilyId()
-            FamilyConfirmationType.LEAVE_FAMILY -> leaveFamily()
-            FamilyConfirmationType.REMOVE_MEMBER -> removeFamilyMember()
-            FamilyConfirmationType.DELETE_FAMILY -> deleteFamily()
-            null -> Unit
+    private fun confirmDialog() {
+        when (val dialog = (uiState.value as? FamilyUiState.Content)?.dialog) {
+            is FamilyDialogState.AddMember -> copyFamilyId()
+            is FamilyDialogState.LeaveFamily -> leaveFamily()
+            is FamilyDialogState.RemoveMember -> removeFamilyMember(dialog.member)
+            is FamilyDialogState.DeleteFamily -> deleteFamily()
+            is FamilyDialogState.DatePicker, null -> Unit
         }
     }
 
     private fun copyFamilyId() {
         val familyId = (uiState.value as? FamilyUiState.Content)?.familyId ?: return
-        closeConfirmationDialog()
+        closeDialog()
         viewModelScope.launch {
             _commands.send(FamilyCommand.CopyFamilyId(familyId))
         }
@@ -305,28 +273,27 @@ class FamilyViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = familyRepository.leaveFamily(familyId, uid)) {
                 is Result.Success -> {
-                    closeConfirmationDialog()
+                    closeDialog()
                     _commands.send(FamilyCommand.NavigateBack)
                 }
 
                 is Result.Failure -> {
-                    closeConfirmationDialog()
+                    closeDialog()
                     showError(result.error.toUserMessage())
                 }
             }
         }
     }
 
-    private fun removeFamilyMember() {
+    private fun removeFamilyMember(member: FamilyMember) {
         val state = _uiState.value as? FamilyUiState.Content ?: return
         val familyId = state.familyId ?: return
-        val memberUid = state.memberToRemove?.uid ?: return
 
         viewModelScope.launch {
-            when (val result = familyRepository.leaveFamily(familyId, memberUid)) {
-                is Result.Success -> closeConfirmationDialog()
+            when (val result = familyRepository.leaveFamily(familyId, member.uid)) {
+                is Result.Success -> closeDialog()
                 is Result.Failure -> {
-                    closeConfirmationDialog()
+                    closeDialog()
                     showError(result.error.toUserMessage())
                 }
             }
@@ -339,12 +306,12 @@ class FamilyViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = familyRepository.deleteFamily(familyId)) {
                 is Result.Success -> {
-                    closeConfirmationDialog()
+                    closeDialog()
                     _commands.send(FamilyCommand.NavigateBack)
                 }
 
                 is Result.Failure -> {
-                    closeConfirmationDialog()
+                    closeDialog()
                     showError(result.error.toUserMessage())
                 }
             }

@@ -20,13 +20,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
@@ -38,12 +39,13 @@ import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.add.AddNewListItem
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
-import com.example.lifetogether.ui.common.GroceryListItem
-import com.example.lifetogether.ui.common.list.ItemCategoryList
-import com.example.lifetogether.ui.common.list.ItemCategoryListHeader
+import com.example.lifetogether.ui.feature.groceryList.components.GroceryListItem
+import com.example.lifetogether.ui.feature.groceryList.components.GroceryCategoryList
+import com.example.lifetogether.ui.feature.groceryList.components.GroceryCategoryListHeader
 import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
+import com.example.lifetogether.ui.feature.groceryList.components.GrocerySuggestionPopup
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.util.UNCATEGORIZED_CATEGORY
@@ -61,6 +63,7 @@ fun GroceryListScreen(
     onNavigationEvent: (GroceryListNavigationEvent) -> Unit,
 ) {
     val contentState = uiState as? GroceryListUiState.Content
+    var showDeleteCompletedDialog by remember { mutableStateOf(false) }
     var visibleCompletedItemsCount by remember { mutableIntStateOf(COMPLETED_ITEMS_PAGE_SIZE) }
 
     LaunchedEffect(contentState?.completedSectionExpanded, contentState?.completedItems?.size) {
@@ -134,7 +137,7 @@ fun GroceryListScreen(
                         if (groceryItems.isNotEmpty()) {
                             content.categoryExpandedStates[category.name]?.let { expanded ->
                                 item {
-                                    ItemCategoryList(
+                                    GroceryCategoryList(
                                         category = category,
                                         itemList = groceryItems,
                                         expanded = expanded,
@@ -142,9 +145,7 @@ fun GroceryListScreen(
                                             onUiEvent(GroceryListUiEvent.CategoryExpandedClicked(category.name))
                                         },
                                         onCompleteToggle = { item ->
-                                            if (item is GroceryItem) {
-                                                onUiEvent(GroceryListUiEvent.ItemCompletedToggled(item))
-                                            }
+                                            onUiEvent(GroceryListUiEvent.ItemCompletedToggled(item))
                                         },
                                         onBellClick = { item ->
                                             onUiEvent(GroceryListUiEvent.NotificationClicked(item))
@@ -157,7 +158,7 @@ fun GroceryListScreen(
 
                     if (content.completedItems.isNotEmpty()) {
                         item {
-                            ItemCategoryListHeader(
+                            GroceryCategoryListHeader(
                                 category = Category(
                                     emoji = "✔️",
                                     name = "Bought",
@@ -166,9 +167,7 @@ fun GroceryListScreen(
                                 onClick = {
                                     onUiEvent(GroceryListUiEvent.CompletedSectionExpandedClicked)
                                 },
-                                onDelete = {
-                                    onUiEvent(GroceryListUiEvent.DeleteCompletedClicked)
-                                },
+                                onDelete = { showDeleteCompletedDialog = true },
                             )
 
                             if (content.completedSectionExpanded) {
@@ -246,10 +245,13 @@ fun GroceryListScreen(
             )
         }
 
-        if (contentState?.showConfirmationDialog == true) {
+        if (showDeleteCompletedDialog) {
             ConfirmationDialog(
-                onDismiss = { onUiEvent(GroceryListUiEvent.DismissDeleteCompletedConfirmation) },
-                onConfirm = { onUiEvent(GroceryListUiEvent.ConfirmDeleteCompletedConfirmation) },
+                onDismiss = { showDeleteCompletedDialog = false },
+                onConfirm = {
+                    showDeleteCompletedDialog = false
+                    onUiEvent(GroceryListUiEvent.ConfirmDeleteCompletedConfirmation)
+                },
                 dialogTitle = "Delete completed items",
                 dialogMessage = "Are you sure you want to delete all completed grocery items?",
                 dismissButtonMessage = "Cancel",

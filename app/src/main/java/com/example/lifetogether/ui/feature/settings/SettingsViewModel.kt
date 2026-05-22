@@ -2,7 +2,6 @@ package com.example.lifetogether.ui.feature.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.model.enums.SettingsConfirmationTypes
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.FamilyRepository
 import com.example.lifetogether.domain.repository.SessionRepository
@@ -59,9 +58,9 @@ class SettingsViewModel @Inject constructor(
         when (event) {
             SettingsUiEvent.JoinFamilyClicked -> showJoinFamilyDialog()
             SettingsUiEvent.CreateNewFamilyClicked -> showCreateFamilyDialog()
-            SettingsUiEvent.DismissConfirmationDialog -> closeConfirmationDialog()
-            is SettingsUiEvent.AddedFamilyIdChanged -> updateContent {
-                it.copy(addedFamilyId = event.value)
+            SettingsUiEvent.DismissDialog -> closeDialog()
+            is SettingsUiEvent.FamilyIdChanged -> updateContent {
+                it.copy(dialog = SettingsDialogState.JoinFamily(familyId = event.value))
             }
             SettingsUiEvent.ConfirmJoinFamily -> joinFamily()
             SettingsUiEvent.ConfirmCreateNewFamily -> createNewFamily()
@@ -70,44 +69,32 @@ class SettingsViewModel @Inject constructor(
 
     private fun showJoinFamilyDialog() {
         updateContent {
-            it.copy(
-                showConfirmationDialog = true,
-                confirmationDialogType = SettingsConfirmationTypes.JOIN_FAMILY,
-                addedFamilyId = "",
-            )
+            it.copy(dialog = SettingsDialogState.JoinFamily())
         }
     }
 
     private fun showCreateFamilyDialog() {
         updateContent {
-            it.copy(
-                showConfirmationDialog = true,
-                confirmationDialogType = SettingsConfirmationTypes.NEW_FAMILY,
-                addedFamilyId = "",
-            )
+            it.copy(dialog = SettingsDialogState.CreateFamily)
         }
     }
 
-    private fun closeConfirmationDialog() {
+    private fun closeDialog() {
         updateContent {
-            it.copy(
-                showConfirmationDialog = false,
-                confirmationDialogType = null,
-                addedFamilyId = "",
-            )
+            it.copy(dialog = null)
         }
     }
 
     private fun joinFamily() {
         val state = _uiState.value as? SettingsUiState.Content ?: return
-        val addedFamilyId = state.addedFamilyId
-        if (addedFamilyId.isEmpty()) return
+        val familyId = (state.dialog as? SettingsDialogState.JoinFamily)?.familyId ?: return
+        if (familyId.isEmpty()) return
         val uid = state.userInformation.uid
         val name = state.userInformation.name
 
         viewModelScope.launch {
-            when (val result = familyRepository.joinFamily(addedFamilyId, uid, name)) {
-                is Result.Success -> closeConfirmationDialog()
+            when (val result = familyRepository.joinFamily(familyId, uid, name)) {
+                is Result.Success -> closeDialog()
                 is Result.Failure -> showError(result.error)
             }
         }
@@ -120,7 +107,7 @@ class SettingsViewModel @Inject constructor(
 
         viewModelScope.launch {
             when (val result = familyRepository.createNewFamily(uid, name)) {
-                is Result.Success -> closeConfirmationDialog()
+                is Result.Success -> closeDialog()
                 is Result.Failure -> showError(result.error)
             }
         }

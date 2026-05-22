@@ -56,12 +56,14 @@ fun GuideEditScreen(
     onUiEvent: (GuideEditUiEvent) -> Unit,
 ) {
     val content = uiState as? GuideEditUiState.Content
-
+    var showDiscardDialog by remember { mutableStateOf(false) }
     var visibilityExpanded by remember { mutableStateOf(false) }
     var newSectionTitle by remember { mutableStateOf("") }
     var newSectionPieces by remember { mutableStateOf("1") }
 
-    BackHandler { onUiEvent(GuideEditUiEvent.DiscardClicked) }
+    BackHandler {
+        if (content != null) showDiscardDialog = true else onUiEvent(GuideEditUiEvent.DiscardClicked)
+    }
 
     Scaffold(
         topBar = {
@@ -70,7 +72,9 @@ fun GuideEditScreen(
                     resId = R.drawable.ic_back_arrow,
                     description = "back arrow icon",
                 ),
-                onLeftClick = { onUiEvent(GuideEditUiEvent.DiscardClicked) },
+                onLeftClick = {
+                    if (content != null) showDiscardDialog = true else onUiEvent(GuideEditUiEvent.DiscardClicked)
+                },
                 text = if (content?.isEditMode == true) "Edit guide" else "Create guide",
             )
         },
@@ -281,10 +285,13 @@ fun GuideEditScreen(
         }
     }
 
-    if (content?.showDiscardDialog == true) {
+    if (showDiscardDialog) {
         ConfirmationDialog(
-            onDismiss = { onUiEvent(GuideEditUiEvent.DismissDiscardDialog) },
-            onConfirm = { onUiEvent(GuideEditUiEvent.ConfirmDiscard) },
+            onDismiss = { showDiscardDialog = false },
+            onConfirm = {
+                showDiscardDialog = false
+                onUiEvent(GuideEditUiEvent.ConfirmDiscard)
+            },
             dialogTitle = "Discard changes?",
             dialogMessage = "Your unsaved changes will be lost.",
             dismissButtonMessage = "Keep editing",

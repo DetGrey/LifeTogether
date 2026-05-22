@@ -9,7 +9,6 @@ sealed interface GroceryListUiState {
     data object Loading : GroceryListUiState
 
     data class Content(
-        val showConfirmationDialog: Boolean = false,
         val groceryList: List<GroceryItem>,
         val completedItems: List<GroceryItem>,
         val categorizedItems: Map<Category, List<GroceryItem>>,
@@ -34,8 +33,6 @@ sealed interface GroceryListUiEvent {
     data object CompletedSectionExpandedClicked : GroceryListUiEvent
     data class ItemCompletedToggled(val item: GroceryItem) : GroceryListUiEvent
     data class NotificationClicked(val item: GroceryItem) : GroceryListUiEvent
-    data object DeleteCompletedClicked : GroceryListUiEvent
-    data object DismissDeleteCompletedConfirmation : GroceryListUiEvent
     data object ConfirmDeleteCompletedConfirmation : GroceryListUiEvent
     data class NewItemTextChanged(val value: String) : GroceryListUiEvent
     data class NewItemPriceChanged(val value: String) : GroceryListUiEvent

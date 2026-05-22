@@ -74,17 +74,7 @@ class TipTrackerViewModel @Inject constructor(
             }
 
             is TipTrackerUiEvent.DeleteTipClicked -> updateContent {
-                it.copy(
-                    selectedTip = event.tip,
-                    showConfirmationDialog = true,
-                )
-            }
-
-            TipTrackerUiEvent.DismissDeleteConfirmation -> updateContent {
-                it.copy(
-                    selectedTip = null,
-                    showConfirmationDialog = false,
-                )
+                it.copy(selectedTip = event.tip)
             }
 
             TipTrackerUiEvent.ConfirmDeleteConfirmation -> deleteItem()
@@ -190,7 +180,6 @@ class TipTrackerViewModel @Inject constructor(
             Period.WEEK -> today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
             Period.MONTH -> today.with(TemporalAdjusters.firstDayOfMonth())
             Period.YEAR -> today.with(TemporalAdjusters.firstDayOfYear())
-            else -> LocalDate.MIN
         }
 
         return tips.filter { tip ->
@@ -326,20 +315,9 @@ class TipTrackerViewModel @Inject constructor(
 
         viewModelScope.launch {
             when (val result = tipTrackerRepository.deleteTip(tipId)) {
-                is Result.Success -> updateContent {
-                    it.copy(
-                        selectedTip = null,
-                        showConfirmationDialog = false,
-                    )
-                }
-
+                is Result.Success -> updateContent { it.copy(selectedTip = null) }
                 is Result.Failure -> {
-                    updateContent {
-                        it.copy(
-                            selectedTip = null,
-                            showConfirmationDialog = false,
-                        )
-                    }
+                    updateContent { it.copy(selectedTip = null) }
                     showError(result.error.toUserMessage())
                 }
             }

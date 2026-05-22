@@ -16,7 +16,6 @@ sealed interface GuideEditUiState {
         val stepTypeDrafts: Map<String, GuideStepType> = emptyMap(),
         val isSaving: Boolean = false,
         val isEditMode: Boolean = false,
-        val showDiscardDialog: Boolean = false,
     ) : GuideEditUiState
 }
 
@@ -38,7 +37,6 @@ sealed interface GuideEditUiEvent {
     data class StepTypeDraftChanged(val sectionId: String, val type: GuideStepType) : GuideEditUiEvent
     data object SaveClicked : GuideEditUiEvent
     data object DiscardClicked : GuideEditUiEvent
-    data object DismissDiscardDialog : GuideEditUiEvent
     data object ConfirmDiscard : GuideEditUiEvent
 }
 

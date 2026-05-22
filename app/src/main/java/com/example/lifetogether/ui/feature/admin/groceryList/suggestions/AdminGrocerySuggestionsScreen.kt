@@ -10,6 +10,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -36,6 +40,8 @@ fun AdminGrocerySuggestionsScreen(
     onUiEvent: (AdminGrocerySuggestionsUiEvent) -> Unit,
     onNavigationEvent: (AdminGrocerySuggestionsNavigationEvent) -> Unit,
 ) {
+    var showDeleteSuggestionDialog by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             AppTopBar(
@@ -89,6 +95,7 @@ fun AdminGrocerySuggestionsScreen(
                         },
                         onDeleteItem = { suggestion ->
                             onUiEvent(AdminGrocerySuggestionsUiEvent.ClickDeleteSuggestion(suggestion))
+                            showDeleteSuggestionDialog = true
                         },
                     )
                 }
@@ -147,16 +154,15 @@ fun AdminGrocerySuggestionsScreen(
             }
 
             val selectedSuggestion = content.selectedSuggestion
-            if (content.showDeleteCategoryConfirmationDialog && selectedSuggestion != null) {
+            if (showDeleteSuggestionDialog && selectedSuggestion != null) {
                 ConfirmationDialog(
-                    onDismiss = {
-                        onUiEvent(AdminGrocerySuggestionsUiEvent.DismissDeleteSuggestionDialog)
-                    },
+                    onDismiss = { showDeleteSuggestionDialog = false },
                     onConfirm = {
+                        showDeleteSuggestionDialog = false
                         onUiEvent(AdminGrocerySuggestionsUiEvent.ConfirmDeleteSuggestion)
                     },
-                    dialogTitle = "Delete category?",
-                    dialogMessage = "Are you sure you want to delete the category: \"${selectedSuggestion.category.emoji} ${selectedSuggestion.category.name} - ${selectedSuggestion.suggestionName}\"?",
+                    dialogTitle = "Delete suggestion?",
+                    dialogMessage = "Are you sure you want to delete: \"${selectedSuggestion.category.emoji} ${selectedSuggestion.category.name} - ${selectedSuggestion.suggestionName}\"?",
                     dismissButtonMessage = "Cancel",
                     confirmButtonMessage = "Delete",
                 )

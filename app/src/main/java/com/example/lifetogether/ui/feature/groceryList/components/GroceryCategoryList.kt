@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.common.list
+package com.example.lifetogether.ui.feature.groceryList.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -27,9 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.toAbbreviatedDateString
 import com.example.lifetogether.domain.model.Category
-import com.example.lifetogether.domain.model.CompletableItem
 import com.example.lifetogether.domain.model.grocery.GroceryItem
-import com.example.lifetogether.ui.common.GroceryListItem
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.ui.theme.bodyFontFamily
@@ -37,7 +35,7 @@ import com.example.lifetogether.util.priceToString
 import java.util.Date
 
 @Composable
-fun ItemCategoryListHeader(
+fun GroceryCategoryListHeader(
     category: Category,
     expanded: Boolean,
     onClick: () -> Unit,
@@ -90,17 +88,17 @@ fun ItemCategoryListHeader(
 }
 
 @Composable
-fun ItemCategoryList(
+fun GroceryCategoryList(
     category: Category,
-    itemList: List<CompletableItem>,
+    itemList: List<GroceryItem>,
     expanded: Boolean,
     onClick: () -> Unit,
-    onCompleteToggle: (CompletableItem) -> Unit,
+    onCompleteToggle: (GroceryItem) -> Unit,
     onBellClick: ((GroceryItem) -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
 ) {
     Column {
-        ItemCategoryListHeader(
+        GroceryCategoryListHeader(
             category = category,
             expanded = expanded,
             onClick = onClick,
@@ -118,10 +116,10 @@ fun ItemCategoryList(
                         onCompleteToggle = { onCompleteToggle(item) },
                         trailingText = if (item.completed) {
                             item.lastUpdated.toAbbreviatedDateString()
-                        } else if (item is GroceryItem && item.approxPrice != null) {
+                        } else if (item.approxPrice != null) {
                             (item.approxPrice as Float).priceToString()
                         } else null,
-                        onBellClick = if (item is GroceryItem && !item.completed) {
+                        onBellClick = if (!item.completed) {
                             {
                                 onBellClick?.invoke(item)
                             }
@@ -137,9 +135,9 @@ fun ItemCategoryList(
 
 @Preview(showBackground = true)
 @Composable
-private fun ItemCategoryListPreview() {
+private fun GroceryCategoryListPreview() {
     LifeTogetherTheme {
-        ItemCategoryList(
+        GroceryCategoryList(
             category = Category(
                 "🍎",
                 "Fruits and vegetables",

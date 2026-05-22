@@ -11,7 +11,6 @@ sealed interface MealPlanDetailsUiState {
         val mealRecipeSearchState: MealRecipeSearchState = MealRecipeSearchState(),
         val isEditing: Boolean = false,
         val showDiscardDialog: Boolean = false,
-        val showDeleteDialog: Boolean = false,
         val isSaving: Boolean = false,
     ) : MealPlanDetailsUiState
 }
@@ -60,9 +59,7 @@ sealed interface MealPlanDetailsUiEvent {
     data object RequestCancelEdit : MealPlanDetailsUiEvent
     data object ConfirmDiscard : MealPlanDetailsUiEvent
     data object DismissDiscardDialog : MealPlanDetailsUiEvent
-    data object RequestDeleteMealPlan : MealPlanDetailsUiEvent
     data object ConfirmDeleteMealPlan : MealPlanDetailsUiEvent
-    data object DismissDeleteDialog : MealPlanDetailsUiEvent
     data object SaveClicked : MealPlanDetailsUiEvent
 
     sealed interface Meal : MealPlanDetailsUiEvent {

@@ -49,9 +49,6 @@ class ProfileViewModel @Inject constructor(
                         when (it) {
                             is ProfileUiState.Loading -> ProfileUiState.Content(
                                 userInformation = state.user,
-                                showConfirmationDialog = false,
-                                confirmationDialogType = null,
-                                newName = "",
                             )
 
                             is ProfileUiState.Content -> it.copy(
@@ -74,10 +71,11 @@ class ProfileViewModel @Inject constructor(
             is ProfileUiEvent.ImageSelected -> uploadProfileImage(event.uri)
             ProfileUiEvent.NameClicked -> showNameDialog()
             ProfileUiEvent.LogoutClicked -> showLogoutDialog()
-            ProfileUiEvent.DismissConfirmationDialog -> closeConfirmationDialog()
-            ProfileUiEvent.ConfirmConfirmationDialog -> confirmConfirmationDialog()
-            is ProfileUiEvent.NewNameChanged -> updateContent {
-                it.copy(newName = event.value)
+            ProfileUiEvent.DismissDialog -> closeDialog()
+            ProfileUiEvent.ConfirmLogout -> logout()
+            ProfileUiEvent.ConfirmChangeName -> changeName()
+            is ProfileUiEvent.NameChanged -> updateContent {
+                it.copy(dialog = ProfileDialogState.ChangeName(name = event.value))
             }
         }
     }
@@ -106,39 +104,19 @@ class ProfileViewModel @Inject constructor(
 
     private fun showNameDialog() {
         updateContent {
-            it.copy(
-                showConfirmationDialog = true,
-                confirmationDialogType = ProfileConfirmationType.NAME,
-                newName = it.userInformation.name,
-            )
+            it.copy(dialog = ProfileDialogState.ChangeName(name = it.userInformation.name))
         }
     }
 
     private fun showLogoutDialog() {
         updateContent {
-            it.copy(
-                showConfirmationDialog = true,
-                confirmationDialogType = ProfileConfirmationType.LOGOUT,
-                newName = "",
-            )
+            it.copy(dialog = ProfileDialogState.Logout)
         }
     }
 
-    private fun closeConfirmationDialog() {
+    private fun closeDialog() {
         updateContent {
-            it.copy(
-                showConfirmationDialog = false,
-                confirmationDialogType = null,
-                newName = "",
-            )
-        }
-    }
-
-    private fun confirmConfirmationDialog() {
-        when ((uiState.value as? ProfileUiState.Content)?.confirmationDialogType) {
-            ProfileConfirmationType.LOGOUT -> logout()
-            ProfileConfirmationType.NAME -> changeName()
-            null -> Unit
+            it.copy(dialog = null)
         }
     }
 
@@ -146,12 +124,12 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = sessionRepository.signOut()) {
                 is Result.Success -> {
-                    closeConfirmationDialog()
+                    closeDialog()
                     _commands.send(ProfileCommand.NavigateToLogin)
                 }
 
                 is Result.Failure -> {
-                    closeConfirmationDialog()
+                    closeDialog()
                     showError(result.error.toUserMessage())
                 }
             }
@@ -160,7 +138,7 @@ class ProfileViewModel @Inject constructor(
 
     private fun changeName() {
         val state = uiState.value as? ProfileUiState.Content ?: return
-        val name = state.newName.trim()
+        val name = (state.dialog as? ProfileDialogState.ChangeName)?.name?.trim() ?: return
         if (name.isEmpty()) return
 
         val userInformation = state.userInformation
@@ -169,9 +147,9 @@ class ProfileViewModel @Inject constructor(
 
         viewModelScope.launch {
             when (val result = userRepository.changeName(uid, familyId, name)) {
-                is Result.Success -> closeConfirmationDialog()
+                is Result.Success -> closeDialog()
                 is Result.Failure -> {
-                    closeConfirmationDialog()
+                    closeDialog()
                     showError(result.error.toUserMessage())
                 }
             }

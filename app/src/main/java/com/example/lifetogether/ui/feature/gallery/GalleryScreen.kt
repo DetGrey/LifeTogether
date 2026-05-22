@@ -92,19 +92,21 @@ fun GalleryScreen(
                 }
             }
 
-            if (content.showNewAlbumDialog) {
-                ConfirmationDialogWithTextField(
-                    onDismiss = { onUiEvent(GalleryUiEvent.DismissNewAlbumDialog) },
+            when (val dialog = content.dialog) {
+                is GalleryDialogState.NewAlbum -> ConfirmationDialogWithTextField(
+                    onDismiss = { onUiEvent(GalleryUiEvent.DismissDialog) },
                     onConfirm = { onUiEvent(GalleryUiEvent.CreateNewAlbum) },
                     dialogTitle = "Create new album",
                     dialogMessage = "Please enter a name for your new album",
                     dismissButtonMessage = "Cancel",
                     confirmButtonMessage = "Create",
-                    textValue = content.newAlbumName,
+                    textValue = dialog.name,
                     onTextValueChange = { onUiEvent(GalleryUiEvent.NewAlbumNameChanged(it)) },
                     label = "Album name",
                     capitalization = true,
                 )
+
+                null -> Unit
             }
         }
     }

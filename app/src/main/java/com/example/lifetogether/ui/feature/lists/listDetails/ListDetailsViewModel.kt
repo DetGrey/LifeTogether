@@ -109,11 +109,9 @@ class ListDetailsViewModel @AssistedInject constructor(
             ListDetailsUiEvent.ExitSelectionMode -> exitSelectionMode()
             is ListDetailsUiEvent.ToggleEntrySelection -> toggleEntrySelection(event.entryId)
             ListDetailsUiEvent.ToggleAllEntrySelection -> toggleAllEntrySelection()
-            ListDetailsUiEvent.RequestDeleteSelected -> requestDeleteSelected()
-            ListDetailsUiEvent.DismissDeleteSelectedDialog -> dismissDeleteSelectedDialog()
             ListDetailsUiEvent.ConfirmDeleteSelected -> confirmDeleteSelected()
             ListDetailsUiEvent.RequestRenameList -> requestRenameList()
-            ListDetailsUiEvent.DismissRenameListDialog -> dismissRenameListDialog()
+            ListDetailsUiEvent.DismissDialog -> dismissDialog()
             is ListDetailsUiEvent.RenameListNameChanged -> updateRenameListText(event.value)
             ListDetailsUiEvent.ConfirmRenameList -> confirmRenameList()
             is ListDetailsUiEvent.ToggleEntryCompleted -> toggleEntryCompleted(event.entryId)
@@ -246,48 +244,31 @@ class ListDetailsViewModel @AssistedInject constructor(
         }
     }
 
-    private fun requestDeleteSelected() {
-        updateSelectionStateIfContent { state, _ ->
-            if (state.selectedEntryIds.isEmpty()) {
-                state.copy(showActionSheet = false)
-            } else {
-                state.copy(
-                    showActionSheet = false,
-                    showDeleteSelectedDialog = true,
-                )
-            }
-        }
-    }
-
     private fun requestRenameList() {
         val list = currentList ?: return
         updateSelectionStateIfContent { state, _ ->
             state.copy(
                 showActionSheet = false,
-                showRenameListDialog = true,
-                renameListText = list.itemName,
+                dialog = ListDetailsDialogState.RenameList(name = list.itemName),
             )
         }
     }
 
-    private fun dismissRenameListDialog() {
+    private fun dismissDialog() {
         updateSelectionStateIfContent { state, _ ->
-            state.copy(
-                showRenameListDialog = false,
-                renameListText = "",
-            )
+            state.copy(dialog = null)
         }
     }
 
     private fun updateRenameListText(value: String) {
         updateSelectionStateIfContent { state, _ ->
-            state.copy(renameListText = value)
+            state.copy(dialog = (state.dialog as? ListDetailsDialogState.RenameList)?.copy(name = value))
         }
     }
 
     private fun confirmRenameList() {
         val current = currentList ?: return
-        val newName = selectionState.value.renameListText.trim()
+        val newName = (selectionState.value.dialog as? ListDetailsDialogState.RenameList)?.name?.trim() ?: return
         if (newName.isBlank()) {
             showError("List name cannot be empty")
             return
@@ -304,15 +285,9 @@ class ListDetailsViewModel @AssistedInject constructor(
 
         viewModelScope.launch {
             when (val result = userListRepository.updateUserList(updatedList)) {
-                is Result.Success -> dismissRenameListDialog()
+                is Result.Success -> dismissDialog()
                 is Result.Failure -> showError(result.error.toUserMessage())
             }
-        }
-    }
-
-    private fun dismissDeleteSelectedDialog() {
-        updateSelectionStateIfContent { state, _ ->
-            state.copy(showDeleteSelectedDialog = false)
         }
     }
 
@@ -320,10 +295,7 @@ class ListDetailsViewModel @AssistedInject constructor(
         val currentState = contentState.value ?: return
         val selectedEntryIds = selectionState.value.selectedEntryIds
         val selectedEntries = currentState.listContent.entries.filter { it.id in selectedEntryIds }
-        if (selectedEntries.isEmpty()) {
-            dismissDeleteSelectedDialog()
-            return
-        }
+        if (selectedEntries.isEmpty()) return
 
         viewModelScope.launch {
             val result = when (currentState.listContent.listType) {
@@ -342,7 +314,6 @@ class ListDetailsViewModel @AssistedInject constructor(
                     selectionState.update { state ->
                         state.copy(
                             showActionSheet = false,
-                            showDeleteSelectedDialog = false,
                         )
                     }
                     showError(result.error.toUserMessage())
@@ -526,9 +497,7 @@ class ListDetailsViewModel @AssistedInject constructor(
             checklistEditorState = resolvedChecklistEditorState,
             isAllEntriesSelected = validEntryIds.isNotEmpty() && selectedEntryIds.size == validEntryIds.size,
             showActionSheet = selectionState.showActionSheet,
-            showRenameListDialog = selectionState.showRenameListDialog,
-            renameListText = selectionState.renameListText,
-            showDeleteSelectedDialog = selectionState.showDeleteSelectedDialog && selectedEntryIds.isNotEmpty(),
+            dialog = selectionState.dialog,
         )
     }
 
@@ -546,9 +515,7 @@ class ListDetailsViewModel @AssistedInject constructor(
         val isSelectionModeActive: Boolean = false,
         val selectedEntryIds: Set<String> = emptySet(),
         val showActionSheet: Boolean = false,
-        val showRenameListDialog: Boolean = false,
-        val renameListText: String = "",
-        val showDeleteSelectedDialog: Boolean = false,
+        val dialog: ListDetailsDialogState? = null,
     )
 
     private fun clearChecklistEditorState() {

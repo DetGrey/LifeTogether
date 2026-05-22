@@ -9,6 +9,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
@@ -32,6 +36,8 @@ fun SignupScreen(
     onUiEvent: (SignupUiEvent) -> Unit,
     onNavigationEvent: (SignupNavigationEvent) -> Unit,
 ) {
+    var showBirthdayPicker by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             AppTopBar(
@@ -80,9 +86,7 @@ fun SignupScreen(
                     DatePickerTextField(
                         label = "Birthday",
                         date = uiState.birthday,
-                        onClick = {
-                            onUiEvent(SignupUiEvent.BirthdayClicked)
-                        },
+                        onClick = { showBirthdayPicker = true },
                     )
                     CustomTextField(
                         value = uiState.password,
@@ -117,15 +121,14 @@ fun SignupScreen(
             }
         }
 
-        if (uiState.showBirthdayPicker) {
+        if (showBirthdayPicker) {
             DatePickerDialog(
                 selectedDate = uiState.birthday,
                 onDateSelected = { date ->
+                    showBirthdayPicker = false
                     onUiEvent(SignupUiEvent.BirthdaySelected(date))
                 },
-                onDismiss = {
-                    onUiEvent(SignupUiEvent.BirthdayDismissed)
-                },
+                onDismiss = { showBirthdayPicker = false },
             )
         }
     }

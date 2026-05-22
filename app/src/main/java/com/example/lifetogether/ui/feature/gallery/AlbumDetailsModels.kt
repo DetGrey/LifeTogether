@@ -3,7 +3,6 @@ package com.example.lifetogether.ui.feature.gallery
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.Album
 import com.example.lifetogether.ui.model.AlbumUiModel
-import com.example.lifetogether.ui.model.MenuAction
 
 sealed interface AlbumDetailsUiState {
     data object Loading : AlbumDetailsUiState
@@ -14,10 +13,8 @@ sealed interface AlbumDetailsUiState {
         val groupedMedia: List<Pair<String, List<GalleryMedia>>>,
         val thumbnails: Map<String, ByteArray>,
         val showOverflowMenu: Boolean = false,
-        val showOverflowMenuActionDialog: Boolean = false,
         val showImageUploadDialog: Boolean = false,
-        val overflowMenuAction: MenuAction?,
-        val actionDialogText: String,
+        val dialog: AlbumDetailsDialogState? = null,
         val isPartialLoad: Boolean = false,
         val isRefreshing: Boolean = false,
         val isSelectionModeActive: Boolean = false,
@@ -27,6 +24,11 @@ sealed interface AlbumDetailsUiState {
         val familyId: String?,
         val isSyncing: Boolean = false,
     ) : AlbumDetailsUiState
+}
+
+sealed interface AlbumDetailsDialogState {
+    data class RenameAlbum(val name: String = "") : AlbumDetailsDialogState
+    data class MoveSelectedMedia(val targetAlbumId: String = "") : AlbumDetailsDialogState
 }
 
 sealed interface AlbumDetailsUiEvent {
@@ -39,9 +41,10 @@ sealed interface AlbumDetailsUiEvent {
     data object RequestImageUpload : AlbumDetailsUiEvent
     data object DismissImageUploadDialog : AlbumDetailsUiEvent
     data object ConfirmImageUploadDialog : AlbumDetailsUiEvent
-    data class StartOverflowAction(val action: MenuAction) : AlbumDetailsUiEvent
-    data object DismissOverflowMenuActionDialog : AlbumDetailsUiEvent
-    data class SetActionDialogText(val text: String) : AlbumDetailsUiEvent
+    data object RequestRenameAlbum : AlbumDetailsUiEvent
+    data object RequestMoveSelectedMedia : AlbumDetailsUiEvent
+    data object DismissDialog : AlbumDetailsUiEvent
+    data class RenameAlbumNameChanged(val text: String) : AlbumDetailsUiEvent
     data object ConfirmRenameAlbum : AlbumDetailsUiEvent
     data object ConfirmDeleteAlbum : AlbumDetailsUiEvent
     data object DownloadSelectedMedia : AlbumDetailsUiEvent

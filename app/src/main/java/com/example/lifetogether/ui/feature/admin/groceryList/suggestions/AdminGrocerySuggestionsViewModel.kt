@@ -40,8 +40,9 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
         when (event) {
             is AdminGrocerySuggestionsUiEvent.ToggleCategory -> toggleCategory(event.categoryName)
             is AdminGrocerySuggestionsUiEvent.StartEditingSuggestion -> startEditingSuggestion(event.suggestion)
-            is AdminGrocerySuggestionsUiEvent.ClickDeleteSuggestion -> onDeleteSuggestionClick(event.suggestion)
-            AdminGrocerySuggestionsUiEvent.DismissDeleteSuggestionDialog -> dismissDeleteSuggestionDialog()
+            is AdminGrocerySuggestionsUiEvent.ClickDeleteSuggestion -> updateContent {
+                it.copy(selectedSuggestion = event.suggestion)
+            }
             AdminGrocerySuggestionsUiEvent.ConfirmDeleteSuggestion -> deleteCategory()
             is AdminGrocerySuggestionsUiEvent.NewSuggestionTextChanged -> onNewSuggestionTextChange(event.value)
             is AdminGrocerySuggestionsUiEvent.NewSuggestionPriceChanged -> onNewSuggestionPriceChange(event.value)
@@ -64,8 +65,6 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
                         _uiState.update { state ->
                             when (state) {
                                 is AdminGrocerySuggestionsUiState.Loading -> AdminGrocerySuggestionsUiState.Content(
-                                    showDeleteCategoryConfirmationDialog = false,
-                                    selectedSuggestion = null,
                                     groceryCategories = categories,
                                     categoryExpandedStates = emptySet(),
                                     grocerySuggestions = emptyList(),
@@ -168,15 +167,6 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
         }
     }
 
-    private fun onDeleteSuggestionClick(suggestion: GrocerySuggestion) {
-        updateContent { state ->
-            state.copy(
-                selectedSuggestion = suggestion,
-                showDeleteCategoryConfirmationDialog = true,
-            )
-        }
-    }
-
     private fun startEditingSuggestion(suggestion: GrocerySuggestion) {
         updateContent { state ->
             state.copy(
@@ -195,15 +185,6 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
                 newSuggestionCategory = UNCATEGORIZED_CATEGORY,
                 newSuggestionText = "",
                 newSuggestionPrice = "",
-            )
-        }
-    }
-
-    private fun dismissDeleteSuggestionDialog() {
-        updateContent { state ->
-            state.copy(
-                showDeleteCategoryConfirmationDialog = false,
-                selectedSuggestion = null,
             )
         }
     }
@@ -280,10 +261,7 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
             }
 
         updateContent { state ->
-            state.copy(
-                selectedSuggestion = null,
-                showDeleteCategoryConfirmationDialog = false,
-            )
+            state.copy(selectedSuggestion = null)
         }
     }
     }

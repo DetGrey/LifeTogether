@@ -25,6 +25,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,6 +69,7 @@ fun ListsScreen(
 ) {
     val contentState = uiState as? ListsUiState.Content
     val isLoading = uiState is ListsUiState.Loading
+    var showDeleteSelectedDialog by remember { mutableStateOf(false) }
 
     BackHandler(enabled = contentState?.isSelectionMode == true) {
         onUiEvent(ListsUiEvent.ExitSelectionMode)
@@ -169,7 +174,10 @@ fun ListsScreen(
                     listOf(
                         ActionSheetItem(
                             label = "Delete selected",
-                            onClick = { onUiEvent(ListsUiEvent.RequestDeleteSelected) },
+                            onClick = {
+                                onUiEvent(ListsUiEvent.ToggleActionSheet)
+                                showDeleteSelectedDialog = true
+                            },
                             isDestructive = true,
                             isEnabled = content.selectedListIds.isNotEmpty(),
                         ),
@@ -189,29 +197,34 @@ fun ListsScreen(
                 )
             }
 
-            if (content.showDeleteSelectedDialog) {
+            if (showDeleteSelectedDialog) {
                 ConfirmationDialog(
                     dialogTitle = "Delete lists?",
                     dialogMessage = "The selected lists and all their entries will be permanently deleted.",
                     confirmButtonMessage = "Delete",
                     dismissButtonMessage = "Cancel",
-                    onConfirm = { onUiEvent(ListsUiEvent.ConfirmDeleteSelected) },
-                    onDismiss = { onUiEvent(ListsUiEvent.DismissDeleteSelectedDialog) },
+                    onConfirm = {
+                        showDeleteSelectedDialog = false
+                        onUiEvent(ListsUiEvent.ConfirmDeleteSelected)
+                    },
+                    onDismiss = { showDeleteSelectedDialog = false },
                 )
             }
 
-            if (content.showCreateDialog) {
-                CreateListDialog(
-                    name = content.newListName,
+            when (val dialog = content.dialog) {
+                is ListsDialogState.CreateList -> CreateListDialog(
+                    name = dialog.name,
                     onNameChange = { onUiEvent(ListsUiEvent.CreateListNameChanged(it)) },
-                    type = content.newListType,
+                    type = dialog.type,
                     onTypeChange = { onUiEvent(ListsUiEvent.CreateListTypeChanged(it)) },
-                    visibility = content.newListVisibility,
+                    visibility = dialog.visibility,
                     onVisibilityChange = { onUiEvent(ListsUiEvent.CreateListVisibilityChanged(it)) },
                     isSaving = content.isSaving,
-                    onDismiss = { onUiEvent(ListsUiEvent.CreateDialogDismissed) },
+                    onDismiss = { onUiEvent(ListsUiEvent.DismissDialog) },
                     onCreate = { onUiEvent(ListsUiEvent.ConfirmCreateListClicked) },
                 )
+
+                null -> Unit
             }
         }
     }

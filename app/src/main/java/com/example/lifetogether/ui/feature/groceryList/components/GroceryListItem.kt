@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.common
+package com.example.lifetogether.ui.feature.groceryList.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row

@@ -44,8 +44,9 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
                 it.copy(newCategory = event.value)
             }
             AdminGroceryCategoriesUiEvent.AddCategoryClicked -> addCategory()
-            is AdminGroceryCategoriesUiEvent.DeleteCategoryClicked -> showDeleteConfirmation(event.category)
-            AdminGroceryCategoriesUiEvent.DismissDeleteCategoryConfirmation -> dismissDeleteConfirmation()
+            is AdminGroceryCategoriesUiEvent.DeleteCategoryClicked -> updateContent {
+                it.copy(selectedCategory = event.category)
+            }
             AdminGroceryCategoriesUiEvent.ConfirmDeleteCategory -> deleteCategory()
         }
     }
@@ -63,9 +64,6 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
                             when (state) {
                                 is AdminGroceryCategoriesUiState.Loading -> AdminGroceryCategoriesUiState.Content(
                                     groceryCategories = categories,
-                                    newCategory = "",
-                                    showDeleteCategoryConfirmationDialog = false,
-                                    selectedCategory = null,
                                 )
 
                                 is AdminGroceryCategoriesUiState.Content -> state.copy(groceryCategories = categories)
@@ -78,9 +76,6 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
                             when (state) {
                                 is AdminGroceryCategoriesUiState.Loading -> AdminGroceryCategoriesUiState.Content(
                                     groceryCategories = emptyList(),
-                                    newCategory = "",
-                                    showDeleteCategoryConfirmationDialog = false,
-                                    selectedCategory = null,
                                 )
 
                                 is AdminGroceryCategoriesUiState.Content -> state.copy(groceryCategories = emptyList())
@@ -90,24 +85,6 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
                     }
                 }
             }
-        }
-    }
-
-    private fun showDeleteConfirmation(category: Category) {
-        updateContent {
-            it.copy(
-                selectedCategory = category,
-                showDeleteCategoryConfirmationDialog = true,
-            )
-        }
-    }
-
-    private fun dismissDeleteConfirmation() {
-        updateContent {
-            it.copy(
-                showDeleteCategoryConfirmationDialog = false,
-                selectedCategory = null,
-            )
         }
     }
 
@@ -141,10 +118,10 @@ class AdminGroceryCategoriesViewModel @Inject constructor(
         val category = (uiState.value as? AdminGroceryCategoriesUiState.Content)?.selectedCategory ?: return
         viewModelScope.launch {
             when (val result = groceryRepository.deleteCategory(category)) {
-                is Result.Success -> dismissDeleteConfirmation()
+                is Result.Success -> updateContent { it.copy(selectedCategory = null) }
                 is Result.Failure -> {
+                    updateContent { it.copy(selectedCategory = null) }
                     showError(result.error.toUserMessage())
-                    dismissDeleteConfirmation()
                 }
             }
         }

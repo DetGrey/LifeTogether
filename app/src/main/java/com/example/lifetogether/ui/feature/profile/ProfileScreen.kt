@@ -212,34 +212,32 @@ fun ProfileScreen(
                 }
             }
 
-            if (content.showConfirmationDialog) {
-                when (content.confirmationDialogType) {
-                    ProfileConfirmationType.LOGOUT -> ConfirmationDialog(
-                        onDismiss = { onUiEvent(ProfileUiEvent.DismissConfirmationDialog) },
-                        onConfirm = { onUiEvent(ProfileUiEvent.ConfirmConfirmationDialog) },
-                        dialogTitle = "Logout",
-                        dialogMessage = "Are you sure you want to logout?",
-                        dismissButtonMessage = "Cancel",
-                        confirmButtonMessage = "Logout",
-                    )
+            when (val dialog = content.dialog) {
+                is ProfileDialogState.Logout -> ConfirmationDialog(
+                    onDismiss = { onUiEvent(ProfileUiEvent.DismissDialog) },
+                    onConfirm = { onUiEvent(ProfileUiEvent.ConfirmLogout) },
+                    dialogTitle = "Logout",
+                    dialogMessage = "Are you sure you want to logout?",
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Logout",
+                )
 
-                    ProfileConfirmationType.NAME -> ConfirmationDialogWithTextField(
-                        onDismiss = { onUiEvent(ProfileUiEvent.DismissConfirmationDialog) },
-                        onConfirm = { onUiEvent(ProfileUiEvent.ConfirmConfirmationDialog) },
-                        dialogTitle = "Change name",
-                        dialogMessage = "Please enter your new name",
-                        dismissButtonMessage = "Cancel",
-                        confirmButtonMessage = "Change name",
-                        textValue = content.newName,
-                        onTextValueChange = { value ->
-                            onUiEvent(ProfileUiEvent.NewNameChanged(value))
-                        },
-                        label = "Name",
-                        capitalization = true,
-                    )
+                is ProfileDialogState.ChangeName -> ConfirmationDialogWithTextField(
+                    onDismiss = { onUiEvent(ProfileUiEvent.DismissDialog) },
+                    onConfirm = { onUiEvent(ProfileUiEvent.ConfirmChangeName) },
+                    dialogTitle = "Change name",
+                    dialogMessage = "Please enter your new name",
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Change name",
+                    textValue = dialog.name,
+                    onTextValueChange = { value ->
+                        onUiEvent(ProfileUiEvent.NameChanged(value))
+                    },
+                    label = "Name",
+                    capitalization = true,
+                )
 
-                    null -> Unit
-                }
+                null -> Unit
             }
         }
     }

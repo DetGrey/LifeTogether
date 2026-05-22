@@ -10,7 +10,6 @@ sealed interface AdminGrocerySuggestionsUiState {
     data class Content(
         val groceryCategories: List<Category>,
         val grocerySuggestions: List<GrocerySuggestion>,
-        val showDeleteCategoryConfirmationDialog: Boolean = false,
         val selectedSuggestion: GrocerySuggestion? = null,
         val categoryExpandedStates: Set<String> = emptySet(),
         val newSuggestionText: String = "",
@@ -24,7 +23,6 @@ sealed interface AdminGrocerySuggestionsUiEvent {
     data class ToggleCategory(val categoryName: String) : AdminGrocerySuggestionsUiEvent
     data class StartEditingSuggestion(val suggestion: GrocerySuggestion) : AdminGrocerySuggestionsUiEvent
     data class ClickDeleteSuggestion(val suggestion: GrocerySuggestion) : AdminGrocerySuggestionsUiEvent
-    data object DismissDeleteSuggestionDialog : AdminGrocerySuggestionsUiEvent
     data object ConfirmDeleteSuggestion : AdminGrocerySuggestionsUiEvent
     data class NewSuggestionTextChanged(val value: String) : AdminGrocerySuggestionsUiEvent
     data class NewSuggestionPriceChanged(val value: String) : AdminGrocerySuggestionsUiEvent

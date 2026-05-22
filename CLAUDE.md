@@ -4,6 +4,8 @@ An Android app (Kotlin + Jetpack Compose) for couples and families to manage sha
 
 Follow the [Architecture.md](.ai/Architecture.md) file for the project rules, structure and architecture.
 
+DO NOT USE ANY SUB AGENTS.
+
 ## Active Work
 
 This project is in the **v2 modernisation arc** — a structured 11-phase refactor to improve architecture, testability, and visual consistency.

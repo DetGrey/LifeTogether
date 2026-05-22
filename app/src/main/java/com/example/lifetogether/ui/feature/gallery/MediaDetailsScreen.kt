@@ -19,6 +19,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -55,6 +58,9 @@ fun MediaDetailsScreen(
     onUiEvent: (MediaDetailsUiEvent) -> Unit,
     onNavigationEvent: (MediaDetailsNavigationEvent) -> Unit,
 ) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var deleteTargetIndex by remember { mutableStateOf<Int?>(null) }
+
     Scaffold(
         topBar = {
             val content = uiState as? MediaDetailsUiState.Content
@@ -184,34 +190,46 @@ fun MediaDetailsScreen(
         if (uiState.showOverflowMenu) {
             ActionSheet(
                 onDismiss = { onUiEvent(MediaDetailsUiEvent.ToggleOverflowMenu) },
-                actionsList = MenuAction.MediaDetailsActions.entries.map {
+                actionsList = MenuAction.MediaDetailsActions.entries.map { action ->
                     ActionSheetItem(
-                        label = it.label,
-                        onClick = { onUiEvent(MediaDetailsUiEvent.StartOverflowAction(it)) },
-                        isDestructive = it == MenuAction.MediaDetailsActions.DELETE,
+                        label = action.label,
+                        onClick = {
+                            when (action) {
+                                MenuAction.MediaDetailsActions.DOWNLOAD -> {
+                                    onUiEvent(MediaDetailsUiEvent.ToggleOverflowMenu)
+                                    onUiEvent(MediaDetailsUiEvent.DownloadMedia(uiState.currentIndex))
+                                }
+                                MenuAction.MediaDetailsActions.DELETE -> {
+                                    onUiEvent(MediaDetailsUiEvent.ToggleOverflowMenu)
+                                    deleteTargetIndex = uiState.currentIndex
+                                    showDeleteDialog = true
+                                }
+                            }
+                        },
+                        isDestructive = action == MenuAction.MediaDetailsActions.DELETE,
                     )
                 },
             )
         }
+    }
 
-        if (uiState.showOverflowMenuActionDialog && uiState.overflowMenuAction != null) {
-            when (uiState.overflowMenuAction) {
-                MenuAction.MediaDetailsActions.DOWNLOAD -> {
-                    onUiEvent(MediaDetailsUiEvent.DownloadMedia(uiState.currentIndex))
-                }
-
-                MenuAction.MediaDetailsActions.DELETE -> {
-                    ConfirmationDialog(
-                        onDismiss = { onUiEvent(MediaDetailsUiEvent.DismissOverflowMenuActionDialog) },
-                        onConfirm = { onUiEvent(MediaDetailsUiEvent.DeleteMedia(uiState.currentIndex)) },
-                        dialogTitle = "Delete",
-                        dialogMessage = "Are you sure you want to delete this?",
-                        dismissButtonMessage = "Cancel",
-                        confirmButtonMessage = "Delete",
-                    )
-                }
-            }
-        }
+    if (showDeleteDialog) {
+        ConfirmationDialog(
+            onDismiss = {
+                showDeleteDialog = false
+                deleteTargetIndex = null
+            },
+            onConfirm = {
+                val idx = deleteTargetIndex
+                showDeleteDialog = false
+                deleteTargetIndex = null
+                onUiEvent(MediaDetailsUiEvent.DeleteMedia(idx))
+            },
+            dialogTitle = "Delete",
+            dialogMessage = "Are you sure you want to delete this?",
+            dismissButtonMessage = "Cancel",
+            confirmButtonMessage = "Delete",
+        )
     }
 }
 

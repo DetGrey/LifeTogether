@@ -24,6 +24,10 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -99,6 +103,8 @@ private fun AlbumDetailsContent(
     onNavigationEvent: (AlbumDetailsNavigationEvent) -> Unit,
 ) {
     val pullToRefreshState = rememberPullToRefreshState()
+    var showDeleteAlbumDialog by remember { mutableStateOf(false) }
+    var showDeleteSelectedMediaDialog by remember { mutableStateOf(false) }
 
     BackHandler(enabled = uiState.isSelectionModeActive) {
         onUiEvent(AlbumDetailsUiEvent.ToggleSelectionMode)
@@ -229,24 +235,49 @@ private fun AlbumDetailsContent(
 
     if (uiState.showOverflowMenu) {
         val actions = when (uiState.isSelectionModeActive) {
-            true -> MenuAction.SelectionActions.entries
-            false -> MenuAction.AlbumActions.entries
+            true -> MenuAction.SelectionActions.entries.map { action ->
+                ActionSheetItem(
+                    label = action.label,
+                    onClick = {
+                        when (action) {
+                            MenuAction.SelectionActions.DOWNLOAD -> {
+                                onUiEvent(AlbumDetailsUiEvent.ToggleOverflowMenu)
+                                onUiEvent(AlbumDetailsUiEvent.DownloadSelectedMedia)
+                            }
+                            MenuAction.SelectionActions.DELETE -> {
+                                onUiEvent(AlbumDetailsUiEvent.ToggleOverflowMenu)
+                                showDeleteSelectedMediaDialog = true
+                            }
+                            MenuAction.SelectionActions.MOVE -> {
+                                onUiEvent(AlbumDetailsUiEvent.RequestMoveSelectedMedia)
+                            }
+                        }
+                    },
+                    isDestructive = action == MenuAction.SelectionActions.DELETE,
+                )
+            }
+            false -> MenuAction.AlbumActions.entries.map { action ->
+                ActionSheetItem(
+                    label = action.label,
+                    onClick = {
+                        when (action) {
+                            MenuAction.AlbumActions.RENAME -> {
+                                onUiEvent(AlbumDetailsUiEvent.RequestRenameAlbum)
+                            }
+                            MenuAction.AlbumActions.DELETE -> {
+                                onUiEvent(AlbumDetailsUiEvent.ToggleOverflowMenu)
+                                showDeleteAlbumDialog = true
+                            }
+                        }
+                    },
+                    isDestructive = action == MenuAction.AlbumActions.DELETE,
+                )
+            }
         }
 
         ActionSheet(
             onDismiss = { onUiEvent(AlbumDetailsUiEvent.ToggleOverflowMenu) },
-            actionsList = actions.map {
-                ActionSheetItem(
-                    label = it.label,
-                    onClick = { onUiEvent(AlbumDetailsUiEvent.StartOverflowAction(it)) },
-                    isDestructive = when (it) {
-                        MenuAction.AlbumActions.DELETE,
-                        MenuAction.SelectionActions.DELETE -> true
-
-                        else -> false
-                    },
-                )
-            },
+            actionsList = actions,
         )
     }
 
@@ -264,94 +295,83 @@ private fun AlbumDetailsContent(
         }
     }
 
-    if (uiState.showOverflowMenuActionDialog && uiState.overflowMenuAction != null) {
-        when (val action = uiState.overflowMenuAction) {
-            is MenuAction.AlbumActions -> {
-                when (action) {
-                    MenuAction.AlbumActions.RENAME -> {
-                        ConfirmationDialogWithTextField(
-                            onDismiss = { onUiEvent(AlbumDetailsUiEvent.DismissOverflowMenuActionDialog) },
-                            onConfirm = { onUiEvent(AlbumDetailsUiEvent.ConfirmRenameAlbum) },
-                            dialogTitle = "Rename album",
-                            dialogMessage = "Enter a new name for the album",
-                            dismissButtonMessage = "Cancel",
-                            confirmButtonMessage = "Rename album",
-                            textValue = uiState.actionDialogText,
-                            onTextValueChange = { onUiEvent(AlbumDetailsUiEvent.SetActionDialogText(it)) },
-                            label = "New album name",
-                            capitalization = true,
-                        )
-                    }
+    when (val dialog = uiState.dialog) {
+        is AlbumDetailsDialogState.RenameAlbum -> ConfirmationDialogWithTextField(
+            onDismiss = { onUiEvent(AlbumDetailsUiEvent.DismissDialog) },
+            onConfirm = { onUiEvent(AlbumDetailsUiEvent.ConfirmRenameAlbum) },
+            dialogTitle = "Rename album",
+            dialogMessage = "Enter a new name for the album",
+            dismissButtonMessage = "Cancel",
+            confirmButtonMessage = "Rename album",
+            textValue = dialog.name,
+            onTextValueChange = { onUiEvent(AlbumDetailsUiEvent.RenameAlbumNameChanged(it)) },
+            label = "New album name",
+            capitalization = true,
+        )
 
-                    MenuAction.AlbumActions.DELETE -> {
-                        ConfirmationDialog(
-                            onDismiss = { onUiEvent(AlbumDetailsUiEvent.DismissOverflowMenuActionDialog) },
-                            onConfirm = { onUiEvent(AlbumDetailsUiEvent.ConfirmDeleteAlbum) },
-                            dialogTitle = "Delete album",
-                            dialogMessage = "Are you sure you want to delete this album?",
-                            dismissButtonMessage = "Cancel",
-                            confirmButtonMessage = "Delete album",
-                        )
-                    }
-                }
-            }
-
-            is MenuAction.SelectionActions -> {
-                when (action) {
-                    MenuAction.SelectionActions.DOWNLOAD -> {
-                        onUiEvent(AlbumDetailsUiEvent.DownloadSelectedMedia)
-                    }
-
-                    MenuAction.SelectionActions.DELETE -> {
-                        ConfirmationDialog(
-                            onDismiss = { onUiEvent(AlbumDetailsUiEvent.DismissOverflowMenuActionDialog) },
-                            onConfirm = { onUiEvent(AlbumDetailsUiEvent.ConfirmDeleteSelectedMedia) },
-                            dialogTitle = "Delete selected media",
-                            dialogMessage = "Are you sure you want to delete the selected media?",
-                            dismissButtonMessage = "Cancel",
-                            confirmButtonMessage = "Delete selected",
-                        )
-                    }
-
-                    MenuAction.SelectionActions.MOVE -> {
-                        ConfirmationDialog(
-                            onDismiss = { onUiEvent(AlbumDetailsUiEvent.DismissOverflowMenuActionDialog) },
-                            onConfirm = { onUiEvent(AlbumDetailsUiEvent.ConfirmMoveSelectedMedia) },
-                            dialogTitle = "Move to another album",
-                            dialogMessage = "Are you sure you want to move the selected media to another album?",
-                            dismissButtonMessage = "Cancel",
-                            confirmButtonMessage = "Move",
-                            content = {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .heightIn(max = 320.dp)
-                                        .verticalScroll(rememberScrollState()),
-                                ) {
-                                    FlowRow(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        maxItemsInEachRow = 2,
-                                    ) {
-                                        uiState.albums.forEach { album ->
-                                            AlbumCard(
-                                                album.name,
-                                                album.mediaCount,
-                                                album.thumbnail?.toBitmap(),
-                                                onClick = {
-                                                    onUiEvent(AlbumDetailsUiEvent.MoveSelectedMediaToAlbum(album.id))
-                                                },
-                                            )
-                                        }
-                                    }
-                                }
-                            },
-                        )
+        is AlbumDetailsDialogState.MoveSelectedMedia -> ConfirmationDialog(
+            onDismiss = { onUiEvent(AlbumDetailsUiEvent.DismissDialog) },
+            onConfirm = { onUiEvent(AlbumDetailsUiEvent.ConfirmMoveSelectedMedia) },
+            dialogTitle = "Move to another album",
+            dialogMessage = "Choose a target album, then tap Move.",
+            dismissButtonMessage = "Cancel",
+            confirmButtonMessage = "Move",
+            content = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 320.dp)
+                        .verticalScroll(rememberScrollState()),
+                ) {
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        maxItemsInEachRow = 2,
+                    ) {
+                        uiState.albums.forEach { album ->
+                            AlbumCard(
+                                album.name,
+                                album.mediaCount,
+                                album.thumbnail?.toBitmap(),
+                                isSelected = dialog.targetAlbumId == album.id,
+                                onClick = {
+                                    onUiEvent(AlbumDetailsUiEvent.MoveSelectedMediaToAlbum(album.id))
+                                },
+                            )
+                        }
                     }
                 }
-            }
+            },
+        )
 
-            else -> Unit
-        }
+        null -> Unit
+    }
+
+    if (showDeleteAlbumDialog) {
+        ConfirmationDialog(
+            onDismiss = { showDeleteAlbumDialog = false },
+            onConfirm = {
+                showDeleteAlbumDialog = false
+                onUiEvent(AlbumDetailsUiEvent.ConfirmDeleteAlbum)
+            },
+            dialogTitle = "Delete album",
+            dialogMessage = "Are you sure you want to delete this album?",
+            dismissButtonMessage = "Cancel",
+            confirmButtonMessage = "Delete album",
+        )
+    }
+
+    if (showDeleteSelectedMediaDialog) {
+        ConfirmationDialog(
+            onDismiss = { showDeleteSelectedMediaDialog = false },
+            onConfirm = {
+                showDeleteSelectedMediaDialog = false
+                onUiEvent(AlbumDetailsUiEvent.ConfirmDeleteSelectedMedia)
+            },
+            dialogTitle = "Delete selected media",
+            dialogMessage = "Are you sure you want to delete the selected media?",
+            dismissButtonMessage = "Cancel",
+            confirmButtonMessage = "Delete selected",
+        )
     }
 }
 
@@ -393,8 +413,6 @@ private fun AlbumDetailsScreenPreview() {
                 media = listOf(sampleMedia),
                 groupedMedia = listOf("Today" to listOf(sampleMedia)),
                 thumbnails = emptyMap(),
-                overflowMenuAction = null,
-                actionDialogText = "",
                 selectedMedia = emptySet(),
                 albums = emptyList(),
                 familyId = "family-1",

@@ -7,14 +7,17 @@ sealed interface GalleryUiState {
 
     data class Content(
         val albums: List<AlbumUiModel>,
-        val showNewAlbumDialog: Boolean = false,
-        val newAlbumName: String = "",
+        val dialog: GalleryDialogState? = null,
     ) : GalleryUiState
+}
+
+sealed interface GalleryDialogState {
+    data class NewAlbum(val name: String = "") : GalleryDialogState
 }
 
 sealed interface GalleryUiEvent {
     data object OpenNewAlbumDialog : GalleryUiEvent
-    data object DismissNewAlbumDialog : GalleryUiEvent
+    data object DismissDialog : GalleryUiEvent
     data class NewAlbumNameChanged(val name: String) : GalleryUiEvent
     data object CreateNewAlbum : GalleryUiEvent
 }

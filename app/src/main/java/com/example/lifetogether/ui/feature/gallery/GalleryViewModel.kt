@@ -64,28 +64,18 @@ class GalleryViewModel @Inject constructor(
 
     fun onEvent(event: GalleryUiEvent) {
         when (event) {
-            GalleryUiEvent.OpenNewAlbumDialog -> openNewAlbumDialog()
-            GalleryUiEvent.DismissNewAlbumDialog -> closeNewAlbumDialog()
-            is GalleryUiEvent.NewAlbumNameChanged -> setNewAlbumName(event.name)
+            GalleryUiEvent.OpenNewAlbumDialog -> updateContent { it.copy(dialog = GalleryDialogState.NewAlbum()) }
+            GalleryUiEvent.DismissDialog -> updateContent { it.copy(dialog = null) }
+            is GalleryUiEvent.NewAlbumNameChanged -> updateContent { state ->
+                state.copy(dialog = (state.dialog as? GalleryDialogState.NewAlbum)?.copy(name = event.name))
+            }
             GalleryUiEvent.CreateNewAlbum -> createNewAlbum()
         }
     }
 
-    private fun openNewAlbumDialog() {
-        updateContent { it.copy(showNewAlbumDialog = true) }
-    }
-
-    private fun closeNewAlbumDialog() {
-        updateContent { it.copy(showNewAlbumDialog = false, newAlbumName = "") }
-    }
-
-    private fun setNewAlbumName(name: String) {
-        updateContent { it.copy(newAlbumName = name) }
-    }
-
     private fun createNewAlbum() {
         val familyIdValue = familyId
-        val albumName = (uiState.value as? GalleryUiState.Content)?.newAlbumName.orEmpty().trim()
+        val albumName = ((uiState.value as? GalleryUiState.Content)?.dialog as? GalleryDialogState.NewAlbum)?.name.orEmpty().trim()
 
         if (albumName.isEmpty()) {
             showError("Please enter an album name first")
@@ -107,7 +97,7 @@ class GalleryViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = galleryRepository.saveAlbum(album)) {
                 is Result.Success -> {
-                    closeNewAlbumDialog()
+                    updateContent { it.copy(dialog = null) }
                     _commands.send(GalleryCommand.NavigateToAlbumMedia(result.data))
                 }
                 is Result.Failure -> showError(result.error.toUserMessage())

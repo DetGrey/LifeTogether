@@ -60,24 +60,12 @@ class GuidesViewModel @Inject constructor(
 
     fun onEvent(event: GuidesUiEvent) {
         when (event) {
-            GuidesUiEvent.OpenAddOptionsDialog -> updateContentState {
-                it.copy(showAddOptionsDialog = true)
-            }
-
-            GuidesUiEvent.CloseAddOptionsDialog -> updateContentState {
-                it.copy(showAddOptionsDialog = false)
-            }
-
             GuidesUiEvent.OpenImportDialog -> updateContentState {
-                it.copy(
-                    showAddOptionsDialog = false,
-                    showImportDialog = true,
-                    importSummary = "",
-                )
+                it.copy(dialog = GuidesDialogState.ImportGuide())
             }
 
-            GuidesUiEvent.CloseImportDialog -> updateContentState {
-                it.copy(showImportDialog = false)
+            GuidesUiEvent.DismissDialog -> updateContentState {
+                it.copy(dialog = null)
             }
 
             is GuidesUiEvent.ImportGuidesFromJson -> importGuidesFromJson(event.json)
@@ -116,23 +104,22 @@ class GuidesViewModel @Inject constructor(
 
         viewModelScope.launch {
             updateContentState {
-                it.copy(
-                    isImporting = true,
-                    importSummary = "",
-                )
+                it.copy(dialog = GuidesDialogState.ImportGuide(isImporting = true, importSummary = ""))
             }
 
             when (val result = importGuidesUseCase(json, activeFamilyId, activeUid)) {
                 is Result.Success -> {
                     updateContentState {
                         it.copy(
-                            isImporting = false,
-                            importSummary = "Imported ${result.data.successCount} guide(s). Failed: ${result.data.failureCount}",
+                            dialog = GuidesDialogState.ImportGuide(
+                                isImporting = false,
+                                importSummary = "Imported ${result.data.successCount} guide(s). Failed: ${result.data.failureCount}",
+                            ),
                         )
                     }
                 }
                 is Result.Failure -> {
-                    updateContentState { it.copy(isImporting = false) }
+                    updateContentState { it.copy(dialog = GuidesDialogState.ImportGuide(isImporting = false)) }
                     showError(result.error.toUserMessage())
                 }
             }

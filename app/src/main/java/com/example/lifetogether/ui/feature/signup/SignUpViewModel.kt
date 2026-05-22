@@ -37,14 +37,7 @@ class SignUpViewModel @Inject constructor(
         when (event) {
             is SignupUiEvent.NameChanged -> updateUiState { it.copy(name = event.value) }
             is SignupUiEvent.EmailChanged -> updateUiState { it.copy(email = event.value) }
-            SignupUiEvent.BirthdayClicked -> updateUiState { it.copy(showBirthdayPicker = true) }
-            SignupUiEvent.BirthdayDismissed -> updateUiState { it.copy(showBirthdayPicker = false) }
-            is SignupUiEvent.BirthdaySelected -> updateUiState {
-                it.copy(
-                    birthday = event.value,
-                    showBirthdayPicker = false,
-                )
-            }
+            is SignupUiEvent.BirthdaySelected -> updateUiState { it.copy(birthday = event.value) }
             is SignupUiEvent.PasswordChanged -> updateUiState { it.copy(password = event.value) }
             is SignupUiEvent.ConfirmPasswordChanged -> updateUiState { it.copy(confirmPassword = event.value) }
             SignupUiEvent.SignUpClicked -> signUp()

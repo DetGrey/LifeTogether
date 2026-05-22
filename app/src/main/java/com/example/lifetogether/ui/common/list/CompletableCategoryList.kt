@@ -17,18 +17,22 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.Completable
 import com.example.lifetogether.domain.model.recipe.Ingredient
-import com.example.lifetogether.ui.common.CompletableListItem
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.ui.theme.bodyFontFamily
 import sh.calvin.reorderable.ReorderableColumn
@@ -166,4 +170,40 @@ fun CompletableCategoryList(
             }
         }
     }
+}
+
+@Composable
+private fun CompletableListItem(
+    text: String,
+    isCompleted: Boolean,
+    onCompleteToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+    leadingContent: (@Composable () -> Unit)? = null,
+    trailingContent: (@Composable () -> Unit)? = null,
+) {
+    ListItem(
+        modifier = modifier.fillMaxWidth(),
+        leadingContent = {
+            if (leadingContent != null) {
+                leadingContent()
+            } else {
+                CompletableBox(
+                    isCompleted = isCompleted,
+                    onCompleteToggle = onCompleteToggle,
+                )
+            }
+        },
+        headlineContent = {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyLarge,
+                textDecoration = if (isCompleted) TextDecoration.LineThrough else TextDecoration.None,
+                overflow = TextOverflow.Ellipsis,
+            )
+        },
+        trailingContent = trailingContent,
+        colors = ListItemDefaults.colors(
+            containerColor = Color.Transparent,
+        ),
+    )
 }

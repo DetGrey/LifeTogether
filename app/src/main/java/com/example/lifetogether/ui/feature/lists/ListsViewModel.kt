@@ -2,8 +2,6 @@ package com.example.lifetogether.ui.feature.lists
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.model.enums.Visibility
-import com.example.lifetogether.domain.model.lists.ListType
 import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.SessionRepository
@@ -67,10 +65,16 @@ class ListsViewModel @Inject constructor(
     fun onEvent(event: ListsUiEvent) {
         when (event) {
             ListsUiEvent.CreateListClicked -> openCreateDialog()
-            ListsUiEvent.CreateDialogDismissed -> dismissCreateDialog()
-            is ListsUiEvent.CreateListNameChanged -> updateContentState { it.copy(newListName = event.value) }
-            is ListsUiEvent.CreateListTypeChanged -> updateContentState { it.copy(newListType = event.value) }
-            is ListsUiEvent.CreateListVisibilityChanged -> updateContentState { it.copy(newListVisibility = event.value) }
+            ListsUiEvent.DismissDialog -> updateContentState { it.copy(dialog = null) }
+            is ListsUiEvent.CreateListNameChanged -> updateContentState { state ->
+                state.copy(dialog = (state.dialog as? ListsDialogState.CreateList)?.copy(name = event.value))
+            }
+            is ListsUiEvent.CreateListTypeChanged -> updateContentState { state ->
+                state.copy(dialog = (state.dialog as? ListsDialogState.CreateList)?.copy(type = event.value))
+            }
+            is ListsUiEvent.CreateListVisibilityChanged -> updateContentState { state ->
+                state.copy(dialog = (state.dialog as? ListsDialogState.CreateList)?.copy(visibility = event.value))
+            }
             ListsUiEvent.ConfirmCreateListClicked -> createList()
             ListsUiEvent.ToggleActionSheet -> updateContentState { it.copy(showActionSheet = !it.showActionSheet) }
             ListsUiEvent.StartSelectionMode -> updateContentState { it.copy(isSelectionMode = true, showActionSheet = false) }
@@ -95,10 +99,6 @@ class ListsViewModel @Inject constructor(
                     state.copy(selectedListIds = state.userLists.map { it.id }.toSet(), isAllSelected = true)
                 }
             }
-            ListsUiEvent.RequestDeleteSelected -> updateContentState {
-                it.copy(showActionSheet = false, showDeleteSelectedDialog = true)
-            }
-            ListsUiEvent.DismissDeleteSelectedDialog -> updateContentState { it.copy(showDeleteSelectedDialog = false) }
             ListsUiEvent.ConfirmDeleteSelected -> deleteSelectedLists()
         }
     }
@@ -132,17 +132,10 @@ class ListsViewModel @Inject constructor(
     private fun openCreateDialog() {
         updateContentState {
             it.copy(
-                showCreateDialog = true,
-                newListName = "",
-                newListType = ListType.ROUTINE,
-                newListVisibility = Visibility.PRIVATE,
+                dialog = ListsDialogState.CreateList(),
                 isSaving = false,
             )
         }
-    }
-
-    private fun dismissCreateDialog() {
-        updateContentState { it.copy(showCreateDialog = false) }
     }
 
     private fun createList() {
@@ -151,7 +144,8 @@ class ListsViewModel @Inject constructor(
         if (activeFamilyId.isNullOrBlank() || activeUid.isNullOrBlank()) return
 
         val currentState = currentContentState() ?: return
-        if (currentState.newListName.isBlank()) {
+        val createDialog = currentState.dialog as? ListsDialogState.CreateList ?: return
+        if (createDialog.name.isBlank()) {
             showError("Name cannot be empty")
             return
         }
@@ -161,16 +155,16 @@ class ListsViewModel @Inject constructor(
             val list = UserList(
                 id = UUID.randomUUID().toString(),
                 familyId = activeFamilyId,
-                itemName = currentState.newListName.trim(),
+                itemName = createDialog.name.trim(),
                 lastUpdated = Date(),
                 dateCreated = Date(),
-                type = currentState.newListType,
-                visibility = currentState.newListVisibility,
+                type = createDialog.type,
+                visibility = createDialog.visibility,
                 ownerUid = activeUid,
             )
             when (val result = userListRepository.saveUserList(list)) {
                 is Result.Success -> {
-                    updateContentState { it.copy(showCreateDialog = false, isSaving = false) }
+                    updateContentState { it.copy(dialog = null, isSaving = false) }
                     _commands.send(ListsCommand.NavigateToListDetails(result.data))
                 }
 
@@ -184,7 +178,12 @@ class ListsViewModel @Inject constructor(
 
     private fun deleteSelectedLists() {
         val ids = currentContentState()?.selectedListIds ?: return
-        updateContentState { it.copy(showDeleteSelectedDialog = false, isSelectionMode = false, selectedListIds = emptySet(), isAllSelected = false) }
+        updateContentState { it.copy(
+            showActionSheet = false,
+            isSelectionMode = false,
+            selectedListIds = emptySet(),
+            isAllSelected = false
+        ) }
         viewModelScope.launch {
             ids.forEach { listId ->
                 val result = userListRepository.deleteUserList(listId)

@@ -127,14 +127,7 @@ class GuideEditViewModel @AssistedInject constructor(
                 it.copy(stepTypeDrafts = it.stepTypeDrafts + (event.sectionId to event.type))
             }
             GuideEditUiEvent.SaveClicked -> saveGuide()
-            GuideEditUiEvent.DiscardClicked -> {
-                if (_uiState.value is GuideEditUiState.Loading) {
-                    viewModelScope.launch { _commands.send(GuideEditCommand.NavigateBack) }
-                } else {
-                    updateContent { it.copy(showDiscardDialog = true) }
-                }
-            }
-            GuideEditUiEvent.DismissDiscardDialog -> updateContent { it.copy(showDiscardDialog = false) }
+            GuideEditUiEvent.DiscardClicked -> viewModelScope.launch { _commands.send(GuideEditCommand.NavigateBack) }
             GuideEditUiEvent.ConfirmDiscard -> viewModelScope.launch {
                 _commands.send(GuideEditCommand.NavigateBack)
             }

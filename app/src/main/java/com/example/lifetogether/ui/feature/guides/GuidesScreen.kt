@@ -64,6 +64,7 @@ fun GuidesScreen(
     val context = LocalContext.current
     val contentState = uiState as? GuidesUiState.Content
     val isLoading = uiState is GuidesUiState.Loading
+    var showAddOptionsSheet by remember { mutableStateOf(false) }
     var guideTemplate by remember { mutableStateOf("") }
     var guideProgressTemplate by remember { mutableStateOf("") }
 
@@ -93,8 +94,7 @@ fun GuidesScreen(
     ) { uri ->
         val content = uri?.let { readTextFromUri(context, it) }
         if (content.isNullOrBlank()) {
-            onUiEvent(GuidesUiEvent.CloseImportDialog)
-            onUiEvent(GuidesUiEvent.ImportGuidesFromJson(""))
+            onUiEvent(GuidesUiEvent.DismissDialog)
             return@rememberLauncherForActivityResult
         }
         onUiEvent(GuidesUiEvent.ImportGuidesFromJson(content))
@@ -116,7 +116,7 @@ fun GuidesScreen(
         floatingActionButton = {
             if (!isLoading) {
                 AddButton(
-                    onClick = { onUiEvent(GuidesUiEvent.OpenAddOptionsDialog) },
+                    onClick = { showAddOptionsSheet = true },
                 )
             }
         },
@@ -156,41 +156,44 @@ fun GuidesScreen(
         }
     }
 
-    if (contentState?.showAddOptionsDialog == true) {
+    if (showAddOptionsSheet) {
         AlertDialog(
-            onDismissRequest = { onUiEvent(GuidesUiEvent.CloseAddOptionsDialog) },
+            onDismissRequest = { showAddOptionsSheet = false },
             title = { Text("Add guide") },
             text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
-                        PrimaryButton(
-                            modifier = Modifier.fillMaxWidth(),
-                            text = "Create guide manually",
-                            onClick = {
-                                onUiEvent(GuidesUiEvent.CloseAddOptionsDialog)
-                                onNavigationEvent(GuidesNavigationEvent.NavigateToGuideEdit)
-                            },
-                        )
+                Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
+                    PrimaryButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = "Create guide manually",
+                        onClick = {
+                            showAddOptionsSheet = false
+                            onNavigationEvent(GuidesNavigationEvent.NavigateToGuideEdit)
+                        },
+                    )
 
-                        SecondaryButton(
-                            modifier = Modifier.fillMaxWidth(),
-                            text = "Upload JSON file",
-                            onClick = { onUiEvent(GuidesUiEvent.OpenImportDialog) },
-                        )
-                    }
+                    SecondaryButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = "Upload JSON file",
+                        onClick = {
+                            showAddOptionsSheet = false
+                            onUiEvent(GuidesUiEvent.OpenImportDialog)
+                        },
+                    )
+                }
             },
             confirmButton = {},
             dismissButton = {
                 SecondaryButton(
                     text = "Close",
-                    onClick = { onUiEvent(GuidesUiEvent.CloseAddOptionsDialog) },
+                    onClick = { showAddOptionsSheet = false },
                 )
             },
         )
     }
 
-    if (contentState?.showImportDialog == true) {
-        AlertDialog(
-            onDismissRequest = { onUiEvent(GuidesUiEvent.CloseImportDialog) },
+    when (val importDialog = contentState?.dialog) {
+        is GuidesDialogState.ImportGuide -> AlertDialog(
+            onDismissRequest = { onUiEvent(GuidesUiEvent.DismissDialog) },
             title = { Text("Import guides from JSON") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
@@ -208,9 +211,9 @@ fun GuidesScreen(
                             )
                             .padding(LifeTogetherTokens.spacing.small),
                     ) {
-                    Text(
-                        text = guideTemplate.take(500),
-                        maxLines = 12,
+                        Text(
+                            text = guideTemplate.take(500),
+                            maxLines = 12,
                             overflow = TextOverflow.Ellipsis,
                             style = MaterialTheme.typography.bodySmall,
                         )
@@ -245,7 +248,7 @@ fun GuidesScreen(
                     )
 
                     AnimatedVisibility(
-                        visible = contentState.isImporting,
+                        visible = importDialog.isImporting,
                         enter = fadeIn(),
                         exit = fadeOut(),
                     ) {
@@ -255,12 +258,12 @@ fun GuidesScreen(
                     }
 
                     AnimatedVisibility(
-                        visible = contentState.importSummary.isNotEmpty(),
+                        visible = importDialog.importSummary.isNotEmpty(),
                         enter = fadeIn(),
                         exit = fadeOut(),
                     ) {
                         Text(
-                            text = contentState.importSummary,
+                            text = importDialog.importSummary,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold,
                         )
@@ -270,18 +273,19 @@ fun GuidesScreen(
             confirmButton = {
                 PrimaryButton(
                     text = "Done",
-                    onClick = { onUiEvent(GuidesUiEvent.CloseImportDialog) },
-                    enabled = !contentState.isImporting,
-                    loading = contentState.isImporting,
+                    onClick = { onUiEvent(GuidesUiEvent.DismissDialog) },
+                    enabled = !importDialog.isImporting,
+                    loading = importDialog.isImporting,
                 )
             },
             dismissButton = {
                 SecondaryButton(
                     text = "Cancel",
-                    onClick = { onUiEvent(GuidesUiEvent.CloseImportDialog) },
+                    onClick = { onUiEvent(GuidesUiEvent.DismissDialog) },
                 )
             },
         )
+        null -> Unit
     }
 }
 

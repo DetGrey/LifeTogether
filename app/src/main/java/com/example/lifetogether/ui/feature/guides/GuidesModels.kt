@@ -7,20 +7,22 @@ sealed interface GuidesUiState {
 
     data class Content(
         val guides: List<Guide>,
-        val showAddOptionsDialog: Boolean = false,
-        val showImportDialog: Boolean = false,
-        val isImporting: Boolean = false,
-        val importSummary: String = "",
+        val dialog: GuidesDialogState? = null,
     ) : GuidesUiState {
         val isEmpty: Boolean get() = guides.isEmpty()
     }
 }
 
+sealed interface GuidesDialogState {
+    data class ImportGuide(
+        val isImporting: Boolean = false,
+        val importSummary: String = "",
+    ) : GuidesDialogState
+}
+
 sealed interface GuidesUiEvent {
-    data object OpenAddOptionsDialog : GuidesUiEvent
-    data object CloseAddOptionsDialog : GuidesUiEvent
     data object OpenImportDialog : GuidesUiEvent
-    data object CloseImportDialog : GuidesUiEvent
+    data object DismissDialog : GuidesUiEvent
     data class ImportGuidesFromJson(val json: String) : GuidesUiEvent
 }
 

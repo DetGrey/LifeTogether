@@ -11,7 +11,6 @@ import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.domain.usecase.gallery.DeleteMediaUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
 import com.example.lifetogether.ui.common.snackbar.SnackbarSeverity
-import com.example.lifetogether.ui.model.MenuAction
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -71,8 +70,6 @@ class MediaDetailsViewModel @AssistedInject constructor(
             is MediaDetailsUiEvent.VerticalDrag -> onVerticalDrag(event.dragAmount, event.totalHeight)
             is MediaDetailsUiEvent.DragEnd -> onDragEnd(event.totalHeight)
             MediaDetailsUiEvent.ToggleOverflowMenu -> toggleOverflowMenu()
-            is MediaDetailsUiEvent.StartOverflowAction -> startOverflowAction(event.action)
-            MediaDetailsUiEvent.DismissOverflowMenuActionDialog -> dismissOverflowMenuActionDialog()
             is MediaDetailsUiEvent.DownloadMedia -> downloadMedia(event.index)
             is MediaDetailsUiEvent.DeleteMedia -> deleteMedia(event.index)
         }
@@ -130,7 +127,6 @@ class MediaDetailsViewModel @AssistedInject constructor(
 
                     is SaveProgress.Finished -> {
                         if (progress.failureCount == 0) {
-                            dismissOverflowMenuActionDialog()
                             showProgress(
                                 title = "Download complete",
                                 message = "Downloaded 1 item",
@@ -160,10 +156,7 @@ class MediaDetailsViewModel @AssistedInject constructor(
 
         viewModelScope.launch {
             when (val result = deleteMediaUseCase.invoke(currentMedia.albumId, listOf(currentMedia))) {
-                is Result.Success -> {
-                    dismissOverflowMenuActionDialog()
-                }
-
+                is Result.Success -> Unit
                 is Result.Failure -> showError(result.error.toUserMessage())
             }
         }
@@ -171,26 +164,6 @@ class MediaDetailsViewModel @AssistedInject constructor(
 
     private fun toggleOverflowMenu(show: Boolean? = null) {
         updateContent { it.copy(showOverflowMenu = show ?: !it.showOverflowMenu) }
-    }
-
-    private fun startOverflowAction(action: MenuAction.MediaDetailsActions) {
-        updateContent {
-            it.copy(
-                overflowMenuAction = action,
-                showOverflowMenuActionDialog = true,
-                showOverflowMenu = false,
-            )
-        }
-    }
-
-    private fun dismissOverflowMenuActionDialog() {
-        updateContent {
-            it.copy(
-                showOverflowMenuActionDialog = false,
-                overflowMenuAction = null,
-                actionDialogText = "",
-            )
-        }
     }
 
     // ---------------------------------------------------------------- DRAG

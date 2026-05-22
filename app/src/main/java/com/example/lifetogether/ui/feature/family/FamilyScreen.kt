@@ -141,12 +141,12 @@ fun FamilyScreen(
                         FamilyTogetherSinceRow(
                             togetherSince = togetherSince,
                             isEditing = content.isTogetherSinceEditing,
-                            showDatePicker = content.showTogetherSinceDatePicker,
+                            showDatePicker = content.dialog is FamilyDialogState.DatePicker,
                             onEditClick = { onUiEvent(FamilyUiEvent.TogetherSinceEditClicked) },
                             onSaveClick = { onUiEvent(FamilyUiEvent.TogetherSinceSaveClicked) },
                             onClearClick = { onUiEvent(FamilyUiEvent.TogetherSinceClearClicked) },
                             onDateSelected = { onUiEvent(FamilyUiEvent.TogetherSinceDateSelected(it)) },
-                            onDatePickerDismissed = { onUiEvent(FamilyUiEvent.TogetherSinceDatePickerDismissed) },
+                            onDatePickerDismissed = { onUiEvent(FamilyUiEvent.DismissDialog) },
                         )
 
                         TextHeadingMedium(text = "Family members")
@@ -205,46 +205,44 @@ fun FamilyScreen(
                 }
             }
 
-            if (content.showConfirmationDialog) {
-                when (content.confirmationDialogType) {
-                    FamilyConfirmationType.LEAVE_FAMILY -> ConfirmationDialog(
-                        onDismiss = { onUiEvent(FamilyUiEvent.DismissConfirmationDialog) },
-                        onConfirm = { onUiEvent(FamilyUiEvent.ConfirmConfirmationDialog) },
-                        dialogTitle = "Leave family",
-                        dialogMessage = "Are you sure you want to leave the family?",
-                        dismissButtonMessage = "Cancel",
-                        confirmButtonMessage = "Leave",
-                    )
+            when (val dialog = content.dialog) {
+                is FamilyDialogState.LeaveFamily -> ConfirmationDialog(
+                    onDismiss = { onUiEvent(FamilyUiEvent.DismissDialog) },
+                    onConfirm = { onUiEvent(FamilyUiEvent.ConfirmDialog) },
+                    dialogTitle = "Leave family",
+                    dialogMessage = "Are you sure you want to leave the family?",
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Leave",
+                )
 
-                    FamilyConfirmationType.ADD_MEMBER -> ConfirmationDialog(
-                        onDismiss = { onUiEvent(FamilyUiEvent.DismissConfirmationDialog) },
-                        onConfirm = { onUiEvent(FamilyUiEvent.ConfirmConfirmationDialog) },
-                        dialogTitle = "Share family ID",
-                        dialogMessage = "Family ID: $familyId",
-                        dismissButtonMessage = "Cancel",
-                        confirmButtonMessage = "Copy",
-                    )
+                is FamilyDialogState.AddMember -> ConfirmationDialog(
+                    onDismiss = { onUiEvent(FamilyUiEvent.DismissDialog) },
+                    onConfirm = { onUiEvent(FamilyUiEvent.ConfirmDialog) },
+                    dialogTitle = "Share family ID",
+                    dialogMessage = "Family ID: $familyId",
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Copy",
+                )
 
-                    FamilyConfirmationType.REMOVE_MEMBER -> ConfirmationDialog(
-                        onDismiss = { onUiEvent(FamilyUiEvent.DismissConfirmationDialog) },
-                        onConfirm = { onUiEvent(FamilyUiEvent.ConfirmConfirmationDialog) },
-                        dialogTitle = "Remove member",
-                        dialogMessage = "Are you sure you want to remove ${content.memberToRemove?.name} from the family?",
-                        dismissButtonMessage = "Cancel",
-                        confirmButtonMessage = "Remove",
-                    )
+                is FamilyDialogState.RemoveMember -> ConfirmationDialog(
+                    onDismiss = { onUiEvent(FamilyUiEvent.DismissDialog) },
+                    onConfirm = { onUiEvent(FamilyUiEvent.ConfirmDialog) },
+                    dialogTitle = "Remove member",
+                    dialogMessage = "Are you sure you want to remove ${dialog.member.name} from the family?",
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Remove",
+                )
 
-                    FamilyConfirmationType.DELETE_FAMILY -> ConfirmationDialog(
-                        onDismiss = { onUiEvent(FamilyUiEvent.DismissConfirmationDialog) },
-                        onConfirm = { onUiEvent(FamilyUiEvent.ConfirmConfirmationDialog) },
-                        dialogTitle = "Delete family",
-                        dialogMessage = "Are you sure you want to delete the family?",
-                        dismissButtonMessage = "Cancel",
-                        confirmButtonMessage = "Delete",
-                    )
+                is FamilyDialogState.DeleteFamily -> ConfirmationDialog(
+                    onDismiss = { onUiEvent(FamilyUiEvent.DismissDialog) },
+                    onConfirm = { onUiEvent(FamilyUiEvent.ConfirmDialog) },
+                    dialogTitle = "Delete family",
+                    dialogMessage = "Are you sure you want to delete the family?",
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Delete",
+                )
 
-                    null -> Unit
-                }
+                is FamilyDialogState.DatePicker, null -> Unit
             }
 
         }

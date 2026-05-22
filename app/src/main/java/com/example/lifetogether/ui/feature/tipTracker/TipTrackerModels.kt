@@ -49,7 +49,6 @@ sealed interface TipTrackerUiState {
         val timePeriod: String = "Week",
         val newItemAmount: String = "",
         val newItemDate: Date = Date(),
-        val showConfirmationDialog: Boolean = false,
     ) : TipTrackerUiState
 }
 
@@ -57,7 +56,6 @@ sealed interface TipTrackerUiEvent {
     data class OverviewOptionSelected(val value: String) : TipTrackerUiEvent
     data class TimePeriodSelected(val value: String) : TipTrackerUiEvent
     data class DeleteTipClicked(val tip: TipItem) : TipTrackerUiEvent
-    data object DismissDeleteConfirmation : TipTrackerUiEvent
     data object ConfirmDeleteConfirmation : TipTrackerUiEvent
     data class NewItemAmountChanged(val value: String) : TipTrackerUiEvent
     data class NewItemDateChanged(val value: Date) : TipTrackerUiEvent

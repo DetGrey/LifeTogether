@@ -14,18 +14,16 @@ sealed interface FamilyUiState {
         val familyInformation: FamilyInformation?,
         val togetherSinceDraft: Date? = null,
         val isTogetherSinceEditing: Boolean = false,
-        val showTogetherSinceDatePicker: Boolean = false,
-        val showConfirmationDialog: Boolean = false,
-        val confirmationDialogType: FamilyConfirmationType? = null,
-        val memberToRemove: FamilyMember? = null,
+        val dialog: FamilyDialogState? = null,
     ) : FamilyUiState
 }
 
-enum class FamilyConfirmationType {
-    LEAVE_FAMILY,
-    ADD_MEMBER,
-    REMOVE_MEMBER,
-    DELETE_FAMILY,
+sealed interface FamilyDialogState {
+    data object DatePicker : FamilyDialogState
+    data object LeaveFamily : FamilyDialogState
+    data object AddMember : FamilyDialogState
+    data class RemoveMember(val member: FamilyMember) : FamilyDialogState
+    data object DeleteFamily : FamilyDialogState
 }
 
 sealed interface FamilyUiEvent {
@@ -34,13 +32,12 @@ sealed interface FamilyUiEvent {
     data object TogetherSinceSaveClicked : FamilyUiEvent
     data object TogetherSinceClearClicked : FamilyUiEvent
     data class TogetherSinceDateSelected(val date: Date) : FamilyUiEvent
-    data object TogetherSinceDatePickerDismissed : FamilyUiEvent
     data object AddMemberClicked : FamilyUiEvent
     data object LeaveFamilyClicked : FamilyUiEvent
     data object DeleteFamilyClicked : FamilyUiEvent
     data class RemoveMemberClicked(val member: FamilyMember) : FamilyUiEvent
-    data object DismissConfirmationDialog : FamilyUiEvent
-    data object ConfirmConfirmationDialog : FamilyUiEvent
+    data object DismissDialog : FamilyUiEvent
+    data object ConfirmDialog : FamilyUiEvent
 }
 
 sealed interface FamilyNavigationEvent {

@@ -20,9 +20,6 @@ Here are some questions:
 - ListItem seems too high compared to legacy - is that true?
   - Go back to use custom instead of native M3ListItem
 
-- New note entry should be redesigned and make the textfield be custom with multi-line and other things (box should fill most of the screen)
-- Mealplanner should be redesigned
-  - itemName should either be the recipe name or the custom mealname
 
 ## Checklist from LifeTogether_TODO.PDF
 
@@ -35,6 +32,11 @@ Here are some questions:
 - [x] Fix recipe search in new meal plan entry details. It used to work.
 - [x] Meal plan recipe Vs custom
   - One should always be null so when changing between custom and recipe, so both aren't saved
+- [ ] Meal plan notify button
+  - When clicked, show bottom sheet with date and time (default plan date, default time should be 6pm for dinner, 9am for breakfast, noon for lunch and 2pm for snack)
+  - On confirm, use firebase to send message or what are my options to make sure it happens on time?
+  - Should open the meal plan on click
+  - (TODO SOON)
 
 ### Grocery
 - [x] Fix long text layout in Add grocery item.
@@ -85,14 +87,14 @@ Here are some questions:
 
 ### Gallery media
 - [x] The uploaded images should keep the original quality
-- [x] When adding gallery videos, handle the video thumbnail fallback better if thumbnail generation fails.
 - [x] For videos, query `MediaStore.Video.Media.DATE_TAKEN` and `MediaStore.Video.Media.DATE_MODIFIED`. 
   - This is a recommended change if you want accurate MediaStore dates for videos.
+- [x] Figure out why downloaded videos show the created-at date in gallery while images show the download date.
 - [ ] _Add tags_.
 - [ ] Add a note or description.
+- [ ] When adding gallery videos, handle the video thumbnail fallback better if thumbnail generation fails.
 - [ ] Share media.
 - [ ] Decide what should happen when `updateGalleryMedia()` download fails.
-- [ ] Figure out why downloaded videos show the created-at date in gallery while images show the download date.
 
 ### Gallery albums
 - [ ] _Send a notification when everything is downloaded, and maybe link to the gallery LifeTogether folder if possible._
@@ -143,15 +145,14 @@ Here are some questions:
 - [x] Update sdk to version 37
 - [x] Fix settings.gradle.kts warnings
 - [x] Repositories should probably be singletons and stateless.
+- [x] Change how dialogs are shown with enabled parameter instead of "contentState?.showRenameListDialog == true"
+  - Maybe even handle some of the events inside instead of many events inside viewmodel per dialog (RequestRenameList, DismissRenameListDialog,RenameListNameChanged,ConfirmRenameList)
 - [ ] _Use SQLCipher for Room encryption._
 - [ ] _Make the image download success and version update dialogs nicer._
 - [ ] _Show a dialog when there is a new version available._
 - [ ] Replace `DropDown.kt` `.menuAnchor` usage because it is deprecated if possible without very complex code.
   - Maybe just rewrite the way to use dropdowns to a more new and native way?
   - (TODO WOULD LIKE TO IMPLEMENT)
-- [ ] Change how dialogs are shown with enabled parameter instead of "contentState?.showRenameListDialog == true"
-  - Maybe even handle some of the events inside instead of many events inside viewmodel per dialog (RequestRenameList, DismissRenameListDialog,RenameListNameChanged,ConfirmRenameList)
-  - (TODO SOON)
 - [ ] Use R8 (kotlin something)
 - [ ] Update Claude file and other to use Android CLI
 - [ ] Think about if we really wanna catch all exceptions or if it's better to let it crash so we notice and can fix all the bugs
@@ -183,9 +184,6 @@ These are bugs or broken functionality — not features:
 **Settings**
 - "How does settings work if not logged in?" — this is actually a question but it implies you haven't verified it. Worth checking before release in case it crashes.
 
-**Architecture**
-- "Change how dialogs are shown with enabled parameter" — marked TODO SOON. If you're going to do it, do it before release so you're not refactoring around shipped code.
-
 **ICONS**
 - Needed to match the actual features
 
@@ -201,11 +199,7 @@ These are bugs or broken functionality — not features:
 
 These aren't tracked but seem release-relevant based on the "questions" section:
 
-- **"Sometimes when creating a new list it keeps loading too long"** — that's a real bug, not a question. It's in the questions section but should be a tracked item.
-- **"Mealplanner should be redesigned / itemName should be recipe or custom name"** — the itemName thing is a data correctness issue if the displayed name is wrong or blank.
 - **AppTopBar height and ListItem height** — you said you'd check if they're still problems. If they are, they affect every screen.
-
-My overall take: the questions section at the top has real bugs mixed in with design questions, and those need triage before you can call v2 done.
 
 # About using R8 app optimization
 

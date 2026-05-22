@@ -8,24 +8,23 @@ sealed interface ProfileUiState {
 
     data class Content(
         val userInformation: UserInformation,
-        val showConfirmationDialog: Boolean = false,
-        val confirmationDialogType: ProfileConfirmationType? = null,
-        val newName: String = "",
+        val dialog: ProfileDialogState? = null,
     ) : ProfileUiState
 }
 
-enum class ProfileConfirmationType {
-    LOGOUT,
-    NAME,
+sealed interface ProfileDialogState {
+    data class ChangeName(val name: String = "") : ProfileDialogState
+    data object Logout : ProfileDialogState
 }
 
 sealed interface ProfileUiEvent {
     data class ImageSelected(val uri: Uri) : ProfileUiEvent
     data object NameClicked : ProfileUiEvent
     data object LogoutClicked : ProfileUiEvent
-    data object DismissConfirmationDialog : ProfileUiEvent
-    data object ConfirmConfirmationDialog : ProfileUiEvent
-    data class NewNameChanged(val value: String) : ProfileUiEvent
+    data object DismissDialog : ProfileUiEvent
+    data object ConfirmLogout : ProfileUiEvent
+    data object ConfirmChangeName : ProfileUiEvent
+    data class NameChanged(val value: String) : ProfileUiEvent
 }
 
 sealed interface ProfileNavigationEvent {

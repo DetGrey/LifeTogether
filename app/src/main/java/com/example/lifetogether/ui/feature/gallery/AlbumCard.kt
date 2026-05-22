@@ -2,6 +2,7 @@ package com.example.lifetogether.ui.feature.gallery
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -13,10 +14,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
@@ -31,8 +34,10 @@ fun AlbumCard(
     albumName: String,
     count: Int = 0,
     bitmap: Bitmap? = null,
+    isSelected: Boolean = false,
     onClick: () -> Unit = {},
 ) {
+    val shape = MaterialTheme.shapes.large
     Column(
         modifier = Modifier
             .fillMaxWidth(0.5f)
@@ -42,8 +47,11 @@ fun AlbumCard(
         Card(
             modifier = Modifier
                 .aspectRatio(1f),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-            shape = MaterialTheme.shapes.large,
+            colors = CardDefaults.cardColors(
+                containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer
+                    else MaterialTheme.colorScheme.surfaceVariant,
+            ),
+            shape = shape,
         ) {
             if (bitmap == null) {
                 Icon(
@@ -53,7 +61,15 @@ fun AlbumCard(
             }
             AnimatedBitmapImage(
                 bitmap = bitmap,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(shape)
+                    .border(
+                        width = if (isSelected) 2.dp else 0.dp,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.surfaceVariant,
+                        shape = shape,
+                    ),
                 contentDescription = "image",
             )
         }
