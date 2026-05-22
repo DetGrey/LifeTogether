@@ -56,10 +56,9 @@ class ProfileViewModel @Inject constructor(
                             )
                         }
                     }
-
                     SessionState.Loading -> Unit
                     SessionState.Unauthenticated -> {
-                        _uiState.value = ProfileUiState.Loading
+                        _commands.send(ProfileCommand.NavigateToLogin)
                     }
                 }
             }

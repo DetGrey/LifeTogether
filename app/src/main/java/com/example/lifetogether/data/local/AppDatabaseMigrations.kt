@@ -3,6 +3,15 @@ package com.example.lifetogether.data.local
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+val MIGRATION_36_37 = object : Migration(36, 37) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `gallery_media` ADD COLUMN `remote_media_url` TEXT")
+        db.execSQL("ALTER TABLE `gallery_media` ADD COLUMN `download_state` TEXT NOT NULL DEFAULT 'PENDING'")
+        db.execSQL("ALTER TABLE `gallery_media` ADD COLUMN `last_download_attempt` INTEGER")
+        db.execSQL("ALTER TABLE `gallery_media` ADD COLUMN `last_download_error` TEXT")
+    }
+}
+
 val MIGRATION_35_36 = object : Migration(35, 36) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE `families` ADD COLUMN `together_since` INTEGER")

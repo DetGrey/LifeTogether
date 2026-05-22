@@ -11,8 +11,8 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +39,7 @@ fun ThumbnailContainer(
     isSelectionMode: Boolean = false,
     isSelected: Boolean = false,
     onSelectionToggle: () -> Unit = {},
+    statusLabel: String? = null,
 ) {
     Box(
         modifier = Modifier
@@ -74,6 +75,15 @@ fun ThumbnailContainer(
                 painter = painterResource(id = R.drawable.ic_gallery),
                 contentDescription = null,
             )
+            if (statusLabel != null) {
+                TextDefault(
+                    text = statusLabel,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(LifeTogetherTokens.spacing.small),
+                )
+            }
         }
         if (isVideo) {
             Box(

@@ -39,7 +39,6 @@ class GalleryViewModel @Inject constructor(
     private val _commands = Channel<GalleryCommand>(Channel.BUFFERED)
     val commands: Flow<GalleryCommand> = _commands.receiveAsFlow()
 
-    private val requestedThumbnails = mutableSetOf<String>()
     private var observeAlbumsJob: Job? = null
     private var familyId: String? = null
 
@@ -49,11 +48,9 @@ class GalleryViewModel @Inject constructor(
                 val newFamilyId = (state as? SessionState.Authenticated)?.user?.familyId
                 if (newFamilyId != null && newFamilyId != familyId) {
                     familyId = newFamilyId
-                    requestedThumbnails.clear()
                     observeAlbums()
                 } else if (state is SessionState.Unauthenticated) {
                     familyId = null
-                    requestedThumbnails.clear()
                     observeAlbumsJob?.cancel()
                     observeAlbumsJob = null
                     _uiState.value = GalleryUiState.Loading
@@ -124,9 +121,10 @@ class GalleryViewModel @Inject constructor(
                         }
 
                         result.data.forEach { album ->
-                            if (album.thumbnail == null && !requestedThumbnails.contains(album.id)) {
-                                requestedThumbnails.add(album.id)
-                                galleryRepository.fetchAlbumThumbnail(album.id)
+                            if (album.thumbnail == null) {
+                                viewModelScope.launch {
+                                    galleryRepository.fetchAlbumThumbnail(album.id)
+                                }
                             }
                         }
                     }

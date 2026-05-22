@@ -14,10 +14,12 @@ import kotlinx.coroutines.flow.StateFlow
 interface GalleryRepository {
     val thumbnailCache: StateFlow<Map<String, ByteArray>>
     fun observeAlbums(familyId: String): Flow<Result<List<Album>, AppError>>
+    fun observeAlbumThumbnails(familyId: String): Flow<Map<String, ByteArray>>
     fun syncAlbumsFromRemote(familyId: String): Flow<Result<Unit, AppError>>
     fun observeAlbumById(familyId: String, albumId: String): Flow<Result<Album, AppError>>
     fun observeAlbumMedia(familyId: String, albumId: String): Flow<Result<List<GalleryMedia>, AppError>>
     fun syncGalleryMediaFromRemote(familyId: String, context: Context): Flow<Result<Unit, AppError>>
+    suspend fun retryGalleryMediaDownloads(mediaIds: List<String>, familyId: String): Result<Unit, AppError>
     fun downloadMediaToGallery(mediaIds: List<String>, familyId: String): Flow<SaveProgress>
     suspend fun saveAlbum(album: Album): Result<String, AppError>
     suspend fun updateAlbum(album: Album): Result<Unit, AppError>

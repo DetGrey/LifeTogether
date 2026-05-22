@@ -1,6 +1,7 @@
 package com.example.lifetogether.data.local
 
 import androidx.room.TypeConverter
+import com.example.lifetogether.domain.model.gallery.MediaDownloadState
 import com.example.lifetogether.domain.model.guides.GuideResume
 import com.example.lifetogether.domain.model.guides.GuideSection
 import java.util.Date
@@ -65,5 +66,16 @@ class Converters {
     @TypeConverter
     fun fromListInt(list: List<Int>): String {
         return json.encodeToString(list)
+    }
+
+    @TypeConverter
+    fun fromMediaDownloadState(value: String?): MediaDownloadState {
+        return value?.let { runCatching { MediaDownloadState.valueOf(it) }.getOrNull() }
+            ?: MediaDownloadState.PENDING
+    }
+
+    @TypeConverter
+    fun mediaDownloadStateToString(state: MediaDownloadState?): String {
+        return (state ?: MediaDownloadState.PENDING).name
     }
 }

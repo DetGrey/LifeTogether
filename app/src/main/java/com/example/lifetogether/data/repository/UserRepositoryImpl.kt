@@ -39,6 +39,7 @@ class UserRepositoryImpl @Inject constructor(
     fun observeFamilyInformation(familyId: String): Flow<Result<FamilyInformation, AppError>> {
         // Get family information (without members)
         val familyInformationFlow: Flow<Result<FamilyInformation, AppError>> = userLocalDataSource.observeFamilyInformation(familyId).map { user ->
+            if (user == null) return@map Result.Failure(AppError.NotFound("Family not found in local cache"))
             appResultOf {
                 Log.d(TAG, "Mapping family information from local user record")
 

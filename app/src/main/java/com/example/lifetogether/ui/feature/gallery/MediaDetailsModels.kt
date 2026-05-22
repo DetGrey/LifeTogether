@@ -19,6 +19,7 @@ sealed interface MediaDetailsUiEvent {
     data object ToggleOverflowMenu : MediaDetailsUiEvent
     data class DownloadMedia(val index: Int? = null) : MediaDetailsUiEvent
     data class DeleteMedia(val index: Int? = null) : MediaDetailsUiEvent
+    data class RetryMedia(val index: Int? = null) : MediaDetailsUiEvent
 }
 
 sealed interface MediaDetailsNavigationEvent {

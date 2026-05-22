@@ -101,7 +101,13 @@ fun HomeRoute(
                     }
                 }
 
-                HomeNavigationEvent.SettingsClicked -> appNavigator.navigateTopLevel(SettingsNavRoute)
+                HomeNavigationEvent.SettingsClicked -> {
+                    if (userInformation != null) {
+                        appNavigator.navigateTopLevel(SettingsNavRoute)
+                    } else {
+                        appNavigator.clearAndNavigate(LoginNavRoute)
+                    }
+                }
 
                 HomeNavigationEvent.StatusCardClicked -> {
                     when (sessionState) {

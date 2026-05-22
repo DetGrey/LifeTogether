@@ -20,7 +20,7 @@ import com.example.lifetogether.ui.theme.LifeTogetherTheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppTopBar(
-    leftAppIcon: AppIcon,
+    leftAppIcon: AppIcon? = null,
     onLeftClick: (() -> Unit)? = null,
     text: String,
     titleContent: (@Composable () -> Unit)? = null,
@@ -44,14 +44,16 @@ fun AppTopBar(
             }
         },
         navigationIcon = {
-            IconButton(
-                onClick = { onLeftClick?.invoke() },
-            ) {
-                Icon(
-                    painter = painterResource(id = leftAppIcon.resId),
-                    contentDescription = leftAppIcon.description,
-                    tint = MaterialTheme.colorScheme.onBackground,
-                )
+            if (leftAppIcon != null) {
+                IconButton(
+                    onClick = { onLeftClick?.invoke() },
+                ) {
+                    Icon(
+                        painter = painterResource(id = leftAppIcon.resId),
+                        contentDescription = leftAppIcon.description,
+                        tint = MaterialTheme.colorScheme.onBackground,
+                    )
+                }
             }
         },
         actions = {

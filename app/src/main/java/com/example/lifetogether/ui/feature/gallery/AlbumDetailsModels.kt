@@ -23,6 +23,7 @@ sealed interface AlbumDetailsUiState {
         val albums: List<AlbumUiModel>,
         val familyId: String?,
         val isSyncing: Boolean = false,
+        val retryingMediaIds: Set<String> = emptySet(),
     ) : AlbumDetailsUiState
 }
 
@@ -51,6 +52,7 @@ sealed interface AlbumDetailsUiEvent {
     data object ConfirmDeleteSelectedMedia : AlbumDetailsUiEvent
     data class MoveSelectedMediaToAlbum(val albumId: String) : AlbumDetailsUiEvent
     data object ConfirmMoveSelectedMedia : AlbumDetailsUiEvent
+    data class RetryMediaDownload(val mediaId: String) : AlbumDetailsUiEvent
 }
 
 sealed interface AlbumDetailsNavigationEvent {

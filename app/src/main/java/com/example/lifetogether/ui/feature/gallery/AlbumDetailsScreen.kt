@@ -6,10 +6,8 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -37,6 +35,7 @@ import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.gallery.Album
 import com.example.lifetogether.domain.model.gallery.GalleryImage
+import com.example.lifetogether.domain.model.gallery.MediaDownloadState
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
@@ -80,7 +79,9 @@ fun AlbumDetailsScreen(
                     )
                 },
             ) { padding ->
-                Skeletons.GalleryGrid(modifier = Modifier.fillMaxSize().padding(padding))
+                Skeletons.GalleryGrid(modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding))
             }
         },
     ) {
@@ -165,8 +166,6 @@ private fun AlbumDetailsContent(
                         onToggleAll = { onUiEvent(AlbumDetailsUiEvent.ToggleAllMediaSelection) },
                         onCancel = { onUiEvent(AlbumDetailsUiEvent.ToggleSelectionMode) },
                     )
-                } else {
-                    Spacer(modifier = Modifier.height(20.dp))
                 }
 
                 if (uiState.media.isEmpty()) {
@@ -176,9 +175,17 @@ private fun AlbumDetailsContent(
                         TextDefault(text = "No images in this album. Press + to create one.")
                     }
                 } else {
+                    val failedCount = uiState.media.count { it.downloadState == MediaDownloadState.FAILED }
+                    val syncingCount = uiState.media.count {
+                        it.downloadState == MediaDownloadState.PENDING || it.downloadState == MediaDownloadState.STALE
+                    }
                     if (uiState.isPartialLoad) {
                         TextDefault(
-                            text = "⚠ Only ${uiState.media.size} of ${uiState.album?.count} items loaded. Pull to refresh to retry.",
+                            text = when {
+                                failedCount > 0 -> "$failedCount media item(s) failed to download. Tap a failed tile or pull to retry."
+                                syncingCount > 0 -> "$syncingCount media item(s) are still syncing."
+                                else -> "⚠ Only ${uiState.media.size} of ${uiState.album?.count} items loaded. Pull to refresh to retry."
+                            },
                             modifier = Modifier.padding(vertical = LifeTogetherTokens.spacing.small),
                         )
                     }
@@ -200,6 +207,18 @@ private fun AlbumDetailsContent(
                                 val isVideo = media is GalleryVideo
                                 val duration = (media as? GalleryVideo)?.duration
                                 val globalIndex = uiState.media.indexOf(media)
+                                val shouldRetryOnClick = media.mediaUri == null
+                                        && media.downloadState != MediaDownloadState.READY
+                                val statusLabel = when (media.downloadState) {
+                                    MediaDownloadState.FAILED -> {
+                                        if (uiState.retryingMediaIds.contains(media.id)) "Retrying…"
+                                        else "Tap to retry"
+                                    }
+                                    MediaDownloadState.PENDING -> "Syncing…"
+                                    MediaDownloadState.STALE ->
+                                        if (thumbnail == null) "Refreshing…" else null
+                                    MediaDownloadState.READY -> null
+                                }
 
                                 ThumbnailContainer(
                                     thumbnail = thumbnail,
@@ -208,6 +227,8 @@ private fun AlbumDetailsContent(
                                     onClick = {
                                         if (uiState.isSelectionModeActive) {
                                             onUiEvent(AlbumDetailsUiEvent.ToggleMediaSelection(media.id))
+                                        } else if (shouldRetryOnClick) {
+                                            onUiEvent(AlbumDetailsUiEvent.RetryMediaDownload(media.id))
                                         } else {
                                             onNavigationEvent(
                                                 AlbumDetailsNavigationEvent.NavigateToMediaDetails(globalIndex),
@@ -224,6 +245,7 @@ private fun AlbumDetailsContent(
                                     onSelectionToggle = {
                                         onUiEvent(AlbumDetailsUiEvent.ToggleMediaSelection(media.id))
                                     },
+                                    statusLabel = statusLabel,
                                 )
                             }
                         }

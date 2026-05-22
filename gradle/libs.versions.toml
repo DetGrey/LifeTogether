@@ -1,13 +1,12 @@
 [versions]
 accompanistPermissions = "0.37.3"
 agp = "9.2.1"
-awsConfig = "1.6.77"
+awsConfig = "1.6.79"
 coil = "2.7.0"
 coilCompose = "2.7.0"
 firebaseBom = "34.13.0"
 firebaseMessaging = "25.0.2"
 firebaseAuth = "24.1.0"
-googleApiClient = "2.9.0"
 googleAuthLibraryOauth2Http = "1.47.0"
 hilt = "2.59.2"
 hiltNavigationCompose = "1.3.0"
@@ -31,9 +30,10 @@ roomRuntime = "2.8.4"
 composeMaterial = "1.6.2"
 exifinterface = "1.4.2"
 foundation = "1.11.2"
-s3 = "1.6.77"
+s3 = "1.6.79"
 zoomableImageCoil = "0.19.0"
 reorderable = "3.1.0"
+workRuntime = "2.11.2"
 
 [libraries]
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
@@ -58,7 +58,6 @@ firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "fir
 firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
 firebase-messaging = { module = "com.google.firebase:firebase-messaging", version.ref = "firebaseMessaging" }
 firebase-storage = { module = "com.google.firebase:firebase-storage" }
-google-api-client = { module = "com.google.api-client:google-api-client", version.ref = "googleApiClient" }
 google-auth-library-oauth2-http = { module = "com.google.auth:google-auth-library-oauth2-http", version.ref = "googleAuthLibraryOauth2Http" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-android-gradle-plugin = { module = "com.google.dagger:hilt-android-gradle-plugin", version.ref = "hilt" }
@@ -85,6 +84,7 @@ androidx-compose-foundation = { group = "androidx.compose.foundation", name = "f
 s3 = { module = "aws.sdk.kotlin:s3", version.ref = "s3" }
 zoomable-image-coil = { module = "me.saket.telephoto:zoomable-image-coil", version.ref = "zoomableImageCoil" }
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
+androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntime" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

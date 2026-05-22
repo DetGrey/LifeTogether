@@ -14,6 +14,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel
 class RootCoordinatorViewModel @Inject constructor(
@@ -44,7 +45,7 @@ class RootCoordinatorViewModel @Inject constructor(
     }
 
     private fun handleAuthenticated(state: SessionState.Authenticated) {
-        val uid = state.user.uid ?: return
+        val uid = state.user.uid
         val familyId = state.user.familyId
 
         handleObserverSync(uid, familyId)
@@ -87,7 +88,7 @@ class RootCoordinatorViewModel @Inject constructor(
         guideProgressSyncJob = viewModelScope.launch {
             guideRepository.syncPendingGuideProgress(familyId = familyId, uid = uid, force = true, guideId = null)
             while (isActive) {
-                delay(30_000)
+                delay(30_000.milliseconds)
                 guideRepository.syncPendingGuideProgress(familyId = familyId, uid = uid, force = false, guideId = null)
             }
         }

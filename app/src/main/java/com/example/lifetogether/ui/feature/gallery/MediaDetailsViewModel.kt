@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel(assistedFactory = MediaDetailsViewModel.Factory::class)
 class MediaDetailsViewModel @AssistedInject constructor(
@@ -72,6 +73,7 @@ class MediaDetailsViewModel @AssistedInject constructor(
             MediaDetailsUiEvent.ToggleOverflowMenu -> toggleOverflowMenu()
             is MediaDetailsUiEvent.DownloadMedia -> downloadMedia(event.index)
             is MediaDetailsUiEvent.DeleteMedia -> deleteMedia(event.index)
+            is MediaDetailsUiEvent.RetryMedia -> retryMedia(event.index)
         }
     }
 
@@ -132,7 +134,7 @@ class MediaDetailsViewModel @AssistedInject constructor(
                                 message = "Downloaded 1 item",
                                 showProgress = false,
                             )
-                            delay(2000)
+                            delay(2000.milliseconds)
                             hideProgress()
                         } else {
                             hideProgress()
@@ -158,6 +160,33 @@ class MediaDetailsViewModel @AssistedInject constructor(
             when (val result = deleteMediaUseCase.invoke(currentMedia.albumId, listOf(currentMedia))) {
                 is Result.Success -> Unit
                 is Result.Failure -> showError(result.error.toUserMessage())
+            }
+        }
+    }
+
+    private fun retryMedia(index: Int? = null) {
+        val content = _uiState.value as? MediaDetailsUiState.Content ?: return
+        val mediaIndex = index ?: content.currentIndex
+        val currentMediaId = content.mediaList.getOrNull(mediaIndex)?.id
+        val familyIdValue = familyId
+
+        if (currentMediaId == null || familyIdValue == null) {
+            showError("Media data not available")
+            return
+        }
+
+        viewModelScope.launch {
+            showProgress(
+                title = "Retrying media",
+                message = "Fetching the latest file",
+                showProgress = true,
+            )
+            when (val result = galleryRepository.retryGalleryMediaDownloads(listOf(currentMediaId), familyIdValue)) {
+                is Result.Success -> hideProgress()
+                is Result.Failure -> {
+                    hideProgress()
+                    showError(result.error.toUserMessage())
+                }
             }
         }
     }

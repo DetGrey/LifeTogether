@@ -32,7 +32,6 @@ fun LoginRoute(
         onUiEvent = viewModel::onEvent,
         onNavigationEvent = { navigationEvent ->
             when (navigationEvent) {
-                LoginNavigationEvent.NavigateBack -> appNavigator.navigateBack()
                 LoginNavigationEvent.SignUpClicked -> appNavigator.navigate(SignupNavRoute)
             }
         },

@@ -13,7 +13,6 @@ sealed interface LoginUiEvent {
 }
 
 sealed interface LoginNavigationEvent {
-    data object NavigateBack : LoginNavigationEvent
     data object SignUpClicked : LoginNavigationEvent
 }
 

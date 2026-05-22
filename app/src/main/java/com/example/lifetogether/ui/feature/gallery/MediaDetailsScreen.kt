@@ -38,10 +38,12 @@ import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
+import com.example.lifetogether.domain.model.gallery.MediaDownloadState
 import com.example.lifetogether.ui.common.ActionSheet
 import com.example.lifetogether.ui.common.ActionSheetItem
 import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
+import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.image.DisplayImageFromUri
 import com.example.lifetogether.ui.common.image.DisplayVideoFromUri
@@ -140,19 +142,29 @@ fun MediaDetailsScreen(
                         ) {
                             when (media) {
                                 is GalleryImage -> {
-                                    media.mediaUri?.let {
-                                        DisplayImageFromUri(it, media.itemName)
+                                    if (media.mediaUri != null) {
+                                        DisplayImageFromUri(media.mediaUri, media.itemName)
+                                    } else {
+                                        MissingMediaState(
+                                            state = media.downloadState,
+                                            onRetry = { onUiEvent(MediaDetailsUiEvent.RetryMedia(page)) },
+                                        )
                                     }
                                 }
 
                                 is GalleryVideo -> {
-                                    media.mediaUri?.let { uri ->
+                                    if (media.mediaUri != null) {
                                         DisplayVideoFromUri(
-                                            videoUri = uri,
+                                            videoUri = media.mediaUri,
                                             autoPlay = false,
                                             useController = true,
                                             modifier = Modifier.fillMaxSize(),
                                             keepScreenOn = true,
+                                        )
+                                    } else {
+                                        MissingMediaState(
+                                            state = media.downloadState,
+                                            onRetry = { onUiEvent(MediaDetailsUiEvent.RetryMedia(page)) },
                                         )
                                     }
                                 }
@@ -230,6 +242,35 @@ fun MediaDetailsScreen(
             dismissButtonMessage = "Cancel",
             confirmButtonMessage = "Delete",
         )
+    }
+}
+
+@Composable
+private fun MissingMediaState(
+    state: MediaDownloadState,
+    onRetry: () -> Unit,
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            TextDefault(
+                text = when (state) {
+                    MediaDownloadState.PENDING -> "This media is still syncing."
+                    MediaDownloadState.STALE -> "Refreshing the local file."
+                    MediaDownloadState.FAILED -> "The local download failed."
+                    MediaDownloadState.READY -> "Media not available."
+                },
+            )
+            if (state != MediaDownloadState.PENDING) {
+                PrimaryButton(
+                    text = "Retry download",
+                    onClick = onRetry,
+                    modifier = Modifier.padding(top = LifeTogetherTokens.spacing.small),
+                )
+            }
+        }
     }
 }
 

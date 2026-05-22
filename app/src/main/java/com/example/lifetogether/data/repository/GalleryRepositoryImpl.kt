@@ -7,6 +7,12 @@ import com.example.lifetogether.domain.result.AppError
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import androidx.work.BackoffPolicy
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import androidx.core.net.toUri
 import com.example.lifetogether.data.local.source.AlbumLocalDataSource
 import com.example.lifetogether.data.local.source.MediaLocalDataSource
@@ -23,7 +29,9 @@ import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.domain.repository.GalleryRepository
+import com.example.lifetogether.domain.worker.GalleryMediaRetryWorker
 import com.example.lifetogether.domain.datasource.StorageDataSource
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -38,9 +46,11 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Semaphore
+import java.util.Date
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.milliseconds
 
 @Singleton
 class GalleryRepositoryImpl @Inject constructor(
@@ -48,6 +58,7 @@ class GalleryRepositoryImpl @Inject constructor(
     private val mediaLocalDataSource: MediaLocalDataSource,
     private val galleryFirestoreDataSource: GalleryFirestoreDataSource,
     private val storageDataSource: StorageDataSource,
+    @param:ApplicationContext private val appContext: Context,
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : GalleryRepository {
 
@@ -64,11 +75,20 @@ class GalleryRepositoryImpl @Inject constructor(
     private val _thumbnailCache = MutableStateFlow<Map<String, ByteArray>>(emptyMap())
     override val thumbnailCache: StateFlow<Map<String, ByteArray>> = _thumbnailCache.asStateFlow()
 
+    private data class GalleryDownloadAttempt(
+        val media: GalleryMedia,
+        val file: File? = null,
+        val error: AppError? = null,
+    )
+
     override fun observeAlbums(familyId: String): Flow<Result<List<Album>, AppError>> {
         return albumLocalDataSource.observeAlbums(familyId).map { entities ->
             appResultOf { entities.map { it.toModel() }.sortedBy { it.itemName } }
         }
     }
+
+    override fun observeAlbumThumbnails(familyId: String): Flow<Map<String, ByteArray>> =
+        mediaLocalDataSource.observeAlbumThumbnails(familyId)
 
     override fun syncAlbumsFromRemote(familyId: String): Flow<Result<Unit, AppError>> {
         return galleryFirestoreDataSource.albumsSnapshotListener(familyId).map { result ->
@@ -194,120 +214,35 @@ class GalleryRepositoryImpl @Inject constructor(
                         return@collect
                     }
 
-                    val existingMediaMap = mediaLocalDataSource.getExistingGalleryMediaInfo(familyId)
-                    val itemsToDownload = result.data.items.filter { galleryMedia ->
-                        val mediaId = galleryMedia.id
-                        val existingMediaUri = existingMediaMap[mediaId]?.first
-                        existingMediaUri == null
-                    }
-
-                    if (itemsToDownload.isEmpty()) {
-                        mediaLocalDataSource.updateGalleryMedia(
-                            familyId = familyId,
-                            items = emptyList(),
-                            completeSourceList = result.data.items,
-                        )
-                        emit(Result.Success(Unit))
-                        return@collect
-                    }
-
-                    val failedItems = mutableSetOf<String>()
-                    val allDownloadedItems: MutableList<Pair<GalleryMedia, File>> = mutableListOf()
-                    var remainingItems = itemsToDownload
-                    var round = 1
-
-                    while (remainingItems.isNotEmpty() && round <= MAX_DOWNLOAD_ROUNDS) {
-                        val roundFailedItems = mutableSetOf<String>()
-                        remainingItems.chunked(BATCH_SIZE).forEach { batch ->
-                            val batchResults: MutableList<Pair<GalleryMedia, File>> = mutableListOf()
-                            coroutineScope {
-                                val semaphore = Semaphore(MAX_CONCURRENT_DOWNLOADS)
-                                val downloadTasks: List<Deferred<Pair<GalleryMedia, File>?>> = batch.map { galleryMedia ->
-                                    async(ioDispatcher) {
-                                        semaphore.acquire()
-                                        try {
-                                            galleryMedia.mediaUrl?.let { url ->
-                                                val fallbackExtension = if (galleryMedia is GalleryImage) "jpeg" else "mp4"
-                                                val extension = "." + galleryMedia.itemName.substringAfterLast('.', fallbackExtension)
-                                                var downloadResult: Result<File, AppError>? = null
-                                                var lastException: Exception? = null
-
-                                                repeat(MAX_RETRY_ATTEMPTS) { attempt ->
-                                                    if (downloadResult is Result.Success) return@repeat
-                                                    try {
-                                                        downloadResult = storageDataSource.downloadContentToTempFile(
-                                                            context,
-                                                            url,
-                                                            extension,
-                                                        )
-                                                        if (downloadResult is Result.Failure && attempt < MAX_RETRY_ATTEMPTS - 1) {
-                                                            delay(BASE_RETRY_DELAY * (attempt + 1))
-                                                        }
-                                                    } catch (e: Exception) {
-                                                        lastException = e
-                                                        if (attempt < MAX_RETRY_ATTEMPTS - 1) {
-                                                            delay(BASE_RETRY_DELAY * (attempt + 1))
-                                                        }
-                                                    }
-                                                }
-
-                                                if (downloadResult is Result.Success) {
-                                                    Pair(galleryMedia, downloadResult.data)
-                                                } else {
-                                                    roundFailedItems.add(galleryMedia.id)
-                                                    if (downloadResult is Result.Failure) {
-                                                        Log.d(TAG, "Failed to download ${galleryMedia.itemName}: ${downloadResult.error}")
-                                                    } else if (lastException != null) {
-                                                        Log.d(TAG, "Failed to download ${galleryMedia.itemName}: ${lastException.message}")
-                                                    }
-                                                    null
-                                                }
-                                            }
-                                        } finally {
-                                            semaphore.release()
-                                        }
-                                    }
-                                }
-                                batchResults.addAll(downloadTasks.awaitAll().filterNotNull())
-                            }
-
-                            if (batchResults.isNotEmpty()) {
-                                mediaLocalDataSource.updateGalleryMedia(familyId, batchResults, completeSourceList = null)
-                                allDownloadedItems.addAll(batchResults)
-                            }
-                        }
-
-                        if (roundFailedItems.isNotEmpty()) {
-                            if (round >= MAX_DOWNLOAD_ROUNDS) failedItems.addAll(roundFailedItems)
-                            remainingItems = remainingItems.filter { media -> roundFailedItems.contains(media.id) }
-                        } else {
-                            remainingItems = emptyList()
-                        }
-
-                        if (remainingItems.isNotEmpty() && round < MAX_DOWNLOAD_ROUNDS) {
-                            delay(ROUND_RETRY_DELAY)
-                        }
-                        round += 1
-                    }
-
-                    mediaLocalDataSource.updateGalleryMedia(
-                        familyId = familyId,
-                        items = emptyList(),
-                        completeSourceList = result.data.items,
-                    )
-
-                    if (remainingItems.isNotEmpty()) {
-                        failedItems.addAll(remainingItems.map { it.id })
-                    }
-                    if (failedItems.isNotEmpty()) {
-                        Log.w(TAG, "${failedItems.size} gallery media items failed to sync: $failedItems")
-                    }
-                    emit(Result.Success(Unit))
+                    val itemsToDownload = mediaLocalDataSource
+                        .syncRemoteGalleryMetadata(familyId, result.data.items)
+                    val syncResult = downloadGalleryMediaItems(itemsToDownload, context, familyId)
+                    emit(syncResult)
                 }
 
                 is Result.Failure -> emit(Result.Failure(result.error))
             }
         }
+    }
+
+    override suspend fun retryGalleryMediaDownloads(
+        mediaIds: List<String>,
+        familyId: String,
+    ): Result<Unit, AppError> {
+        if (mediaIds.isEmpty()) {
+            return Result.Success(Unit)
+        }
+
+        val existingMedia = mediaLocalDataSource.getExistingGalleryMediaInfo(familyId)
+        val itemsToRetry = mediaIds.mapNotNull { mediaId ->
+            existingMedia[mediaId]?.toModel()
+        }
+        if (itemsToRetry.isEmpty()) {
+            return Result.Failure(AppErrors.notFound("No retryable media found"))
+        }
+
+        mediaLocalDataSource.markMediaDownloadsPending(itemsToRetry.map { it.id })
+        return downloadGalleryMediaItems(itemsToRetry, appContext, familyId)
     }
 
     override fun downloadMediaToGallery(
@@ -383,8 +318,11 @@ class GalleryRepositoryImpl @Inject constructor(
                 albumId = albumId,
                 dateCreated = dateCreated,
                 mediaType = MediaType.IMAGE,
-                mediaUrl = null,
+                mediaUrl = remoteMediaUrl,
                 mediaUri = mediaUri?.toUri(),
+                downloadState = downloadState,
+                lastDownloadAttempt = lastDownloadAttempt,
+                lastDownloadError = lastDownloadError,
             )
 
             MediaType.VIDEO -> GalleryVideo(
@@ -395,9 +333,164 @@ class GalleryRepositoryImpl @Inject constructor(
                 albumId = albumId,
                 dateCreated = dateCreated,
                 mediaType = MediaType.VIDEO,
-                mediaUrl = null,
+                mediaUrl = remoteMediaUrl,
                 mediaUri = mediaUri?.toUri(),
+                downloadState = downloadState,
+                lastDownloadAttempt = lastDownloadAttempt,
+                lastDownloadError = lastDownloadError,
                 duration = videoDuration,
             )
         }
+
+    private suspend fun downloadGalleryMediaItems(
+        itemsToDownload: List<GalleryMedia>,
+        context: Context,
+        familyId: String,
+    ): Result<Unit, AppError> {
+        if (itemsToDownload.isEmpty()) {
+            return Result.Success(Unit)
+        }
+
+        mediaLocalDataSource.markMediaDownloadsPending(itemsToDownload.map { it.id })
+        val failedItems = mutableMapOf<String, AppError>()
+        var remainingItems = itemsToDownload
+        var round = 1
+
+        while (remainingItems.isNotEmpty() && round <= MAX_DOWNLOAD_ROUNDS) {
+            val roundFailures = mutableMapOf<String, AppError>()
+
+            remainingItems.chunked(BATCH_SIZE).forEach { batch ->
+                val attempts = downloadBatch(batch, context)
+                attempts.forEach { attempt ->
+                    if (attempt.file != null) {
+                        val persisted = mediaLocalDataSource.persistDownloadedMedia(attempt.media, attempt.file)
+                        if (persisted.error != null) {
+                            roundFailures[attempt.media.id] = persisted.error
+                        }
+                    } else if (attempt.error != null) {
+                        roundFailures[attempt.media.id] = attempt.error
+                    }
+                }
+            }
+
+            if (roundFailures.isEmpty()) {
+                remainingItems = emptyList()
+            } else {
+                failedItems.putAll(roundFailures)
+                remainingItems = remainingItems.filter { it.id in roundFailures.keys }
+                if (remainingItems.isNotEmpty() && round < MAX_DOWNLOAD_ROUNDS) {
+                    mediaLocalDataSource.markMediaDownloadsPending(remainingItems.map { it.id })
+                    delay(ROUND_RETRY_DELAY.milliseconds)
+                }
+            }
+            round += 1
+        }
+
+        if (remainingItems.isNotEmpty()) {
+            remainingItems.forEach { media ->
+                val error = failedItems[media.id] ?: AppErrors.storage("Failed to download ${media.itemName}")
+                mediaLocalDataSource.markMediaDownloadFailure(media.id, error, Date())
+            }
+            val failedIds = remainingItems.map { it.id }
+            enqueueRetryWork(familyId, failedIds)
+            Log.w(TAG, "${failedIds.size} gallery media items failed to sync: $failedIds")
+            return Result.Failure(
+                AppErrors.storage(
+                    "Gallery sync incomplete. ${failedIds.size} media item(s) failed to download.",
+                ),
+            )
+        }
+
+        return Result.Success(Unit)
+    }
+
+    private suspend fun downloadBatch(
+        batch: List<GalleryMedia>,
+        context: Context,
+    ): List<GalleryDownloadAttempt> = coroutineScope {
+        val semaphore = Semaphore(MAX_CONCURRENT_DOWNLOADS)
+        val downloadTasks: List<Deferred<GalleryDownloadAttempt>> = batch.map { galleryMedia ->
+            async(ioDispatcher) {
+                semaphore.acquire()
+                try {
+                    downloadSingleMedia(galleryMedia, context)
+                } finally {
+                    semaphore.release()
+                }
+            }
+        }
+        downloadTasks.awaitAll()
+    }
+
+    private suspend fun downloadSingleMedia(
+        galleryMedia: GalleryMedia,
+        context: Context,
+    ): GalleryDownloadAttempt {
+        val url = galleryMedia.mediaUrl
+            ?: return GalleryDownloadAttempt(
+                media = galleryMedia,
+                error = AppErrors.notFound("Missing remote media URL"),
+            )
+
+        val fallbackExtension = if (galleryMedia is GalleryImage) "jpeg" else "mp4"
+        val extension = "." + galleryMedia.itemName.substringAfterLast('.', fallbackExtension)
+        var downloadResult: Result<File, AppError>? = null
+        var lastException: Exception? = null
+
+        repeat(MAX_RETRY_ATTEMPTS) { attempt ->
+            if (downloadResult is Result.Success) return@repeat
+            try {
+                downloadResult = storageDataSource.downloadContentToTempFile(
+                    context,
+                    url,
+                    extension,
+                )
+                if (downloadResult is Result.Failure && attempt < MAX_RETRY_ATTEMPTS - 1) {
+                    delay((BASE_RETRY_DELAY * (attempt + 1)).milliseconds)
+                }
+            } catch (e: Exception) {
+                lastException = e
+                if (attempt < MAX_RETRY_ATTEMPTS - 1) {
+                    delay((BASE_RETRY_DELAY * (attempt + 1)).milliseconds)
+                }
+            }
+        }
+
+        return when (downloadResult) {
+            is Result.Success -> GalleryDownloadAttempt(media = galleryMedia, file = downloadResult.data)
+            is Result.Failure -> {
+                Log.d(TAG, "Failed to download ${galleryMedia.itemName}: ${downloadResult.error}")
+                GalleryDownloadAttempt(media = galleryMedia, error = downloadResult.error)
+            }
+            else -> {
+                val error = AppErrors.fromThrowable(lastException ?: IllegalStateException("Unknown media download error"))
+                Log.d(TAG, "Failed to download ${galleryMedia.itemName}: ${error.message}")
+                GalleryDownloadAttempt(media = galleryMedia, error = error)
+            }
+        }
+    }
+
+    private fun enqueueRetryWork(
+        familyId: String,
+        mediaIds: List<String>,
+    ) {
+        if (mediaIds.isEmpty()) return
+
+        val request = OneTimeWorkRequestBuilder<GalleryMediaRetryWorker>()
+            .setInputData(GalleryMediaRetryWorker.createInputData(familyId, mediaIds))
+            .setConstraints(
+                Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build(),
+            )
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, java.util.concurrent.TimeUnit.SECONDS)
+            .addTag("${GalleryMediaRetryWorker.WORK_NAME_PREFIX}-$familyId")
+            .build()
+
+        WorkManager.getInstance(appContext).enqueueUniqueWork(
+            "${GalleryMediaRetryWorker.WORK_NAME_PREFIX}-$familyId",
+            ExistingWorkPolicy.REPLACE,
+            request,
+        )
+    }
 }

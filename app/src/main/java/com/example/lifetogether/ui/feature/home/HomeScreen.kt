@@ -19,7 +19,6 @@ import androidx.compose.material3.FabPosition
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,6 +35,7 @@ import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.image.AnimatedBitmapImage
 import com.example.lifetogether.ui.common.text.TextDisplayLarge
 import com.example.lifetogether.ui.common.skeleton.Skeletons
+import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextLabel
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
@@ -158,7 +158,10 @@ fun HomeScreen(
                                     .padding(horizontal = LifeTogetherTokens.spacing.medium),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Text(text = statusCard.text)
+                                TextDefault(
+                                    text = statusCard.text,
+                                    color = MaterialTheme.colorScheme.onTertiary
+                                )
                             }
                         }
 

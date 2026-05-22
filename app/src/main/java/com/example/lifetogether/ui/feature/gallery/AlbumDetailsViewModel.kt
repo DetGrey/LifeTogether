@@ -12,6 +12,7 @@ import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.domain.model.gallery.MediaUploadData
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
+import com.example.lifetogether.domain.model.gallery.MediaDownloadState
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.GalleryRepository
 import com.example.lifetogether.domain.repository.SessionRepository
@@ -48,6 +49,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import java.util.regex.Pattern
+import kotlin.time.Duration.Companion.seconds
 
 @HiltViewModel(assistedFactory = AlbumDetailsViewModel.Factory::class)
 class AlbumDetailsViewModel @AssistedInject constructor(
@@ -81,9 +83,6 @@ class AlbumDetailsViewModel @AssistedInject constructor(
     private var observeMoveTargetAlbumsJob: Job? = null
     private var familyId: String? = null
 
-    private var syncRetryAttempts = 0
-    private val maxSyncRetryAttempts = 3
-
     init {
         viewModelScope.launch {
             sessionRepository.sessionState.collect { state ->
@@ -91,7 +90,6 @@ class AlbumDetailsViewModel @AssistedInject constructor(
                 if (newFamilyId != null && newFamilyId != familyId) {
                     familyId = newFamilyId
                     _uiState.value = AlbumDetailsUiState.Loading
-                    syncRetryAttempts = 0
                     requestedThumbnailIds.clear()
                     observeMoveTargetAlbumsJob?.cancel()
                     observeMoveTargetAlbumsJob = null
@@ -182,6 +180,7 @@ class AlbumDetailsViewModel @AssistedInject constructor(
             AlbumDetailsUiEvent.ConfirmDeleteSelectedMedia -> deleteSelectedMedia()
             is AlbumDetailsUiEvent.MoveSelectedMediaToAlbum -> selectMoveTargetAlbum(event.albumId)
             AlbumDetailsUiEvent.ConfirmMoveSelectedMedia -> confirmMoveSelectedMedia()
+            is AlbumDetailsUiEvent.RetryMediaDownload -> retryMediaDownload(event.mediaId)
         }
     }
 
@@ -229,51 +228,26 @@ class AlbumDetailsViewModel @AssistedInject constructor(
     }
 
     private fun handleMediaSuccess(items: List<GalleryMedia>) {
-        if (items.isNotEmpty()) {
-            updateContentState {
-                it.copy(
-                    media = items,
-                    isSyncing = false,
-                )
-            }
-            groupMedia()
-            items.forEach { media ->
-                val mediaId = media.id
-                if (!requestedThumbnailIds.contains(mediaId)) {
-                    requestedThumbnailIds.add(mediaId)
-                    fetchThumbnail(mediaId)
-                }
-            }
+        val expectedCount = currentContentState()?.album?.count ?: 0
+        val incompleteCount = items.count { it.downloadState != MediaDownloadState.READY }
+        val isPartialLoad = expectedCount > items.size || incompleteCount > 0
 
-            val expectedCount = currentContentState()?.album?.count ?: 0
-            if (expectedCount > items.size && syncRetryAttempts < maxSyncRetryAttempts) {
-                updateContentState { it.copy(isSyncing = true, isPartialLoad = true) }
-                syncRetryAttempts += 1
-                viewModelScope.launch {
-                    delay(3000)
-                    observeAlbumMedia()
-                }
-                return
-            } else if (expectedCount > items.size) {
-                updateContentState { it.copy(isPartialLoad = true, isSyncing = false, isRefreshing = false) }
-                return
-            }
-
-            syncRetryAttempts = 0
-            updateContentState { it.copy(isPartialLoad = false, isRefreshing = false) }
-            return
+        updateContentState {
+            it.copy(
+                media = items,
+                isSyncing = incompleteCount > 0,
+                isPartialLoad = isPartialLoad,
+                isRefreshing = false,
+            )
         }
 
-        val expectedCount = currentContentState()?.album?.count ?: 0
-        if (expectedCount > 0 && syncRetryAttempts < maxSyncRetryAttempts) {
-            updateContentState { it.copy(isSyncing = true) }
-            syncRetryAttempts += 1
-            viewModelScope.launch {
-                delay(2000)
-                observeAlbumMedia()
+        groupMedia()
+        items.forEach { media ->
+            val mediaId = media.id
+            if (!requestedThumbnailIds.contains(mediaId)) {
+                requestedThumbnailIds.add(mediaId)
+                fetchThumbnail(mediaId)
             }
-        } else {
-            updateContentState { it.copy(isSyncing = false) }
         }
     }
 
@@ -292,9 +266,31 @@ class AlbumDetailsViewModel @AssistedInject constructor(
     }
 
     private fun retryFetchAlbumMedia() {
+        val familyIdValue = familyId ?: return
+        val retryableIds = currentContentState()
+            ?.media
+            .orEmpty()
+            .filter { it.downloadState != MediaDownloadState.READY }
+            .map { it.id }
+
         updateContentState { it.copy(isRefreshing = true) }
-        syncRetryAttempts = 0
-        observeAlbumMedia()
+
+        if (retryableIds.isEmpty()) {
+            updateContentState { it.copy(isRefreshing = false) }
+            return
+        }
+
+        viewModelScope.launch {
+            updateContentState { it.copy(retryingMediaIds = it.retryingMediaIds + retryableIds.toSet()) }
+            when (val result = galleryRepository.retryGalleryMediaDownloads(retryableIds, familyIdValue)) {
+                is Result.Success -> Unit
+                is Result.Failure -> showError(result.error.toUserMessage())
+            }
+            updateContentState { it.copy(
+                isRefreshing = false,
+                retryingMediaIds = it.retryingMediaIds - retryableIds.toSet()
+            ) }
+        }
     }
 
     private fun fetchThumbnail(mediaId: String) {
@@ -306,7 +302,7 @@ class AlbumDetailsViewModel @AssistedInject constructor(
                     }
                 }
 
-                is Result.Failure -> Unit
+                is Result.Failure -> requestedThumbnailIds.remove(mediaId)
             }
         }
     }
@@ -409,7 +405,7 @@ class AlbumDetailsViewModel @AssistedInject constructor(
                                 message = "Downloaded ${progress.successCount} $itemLabel",
                                 showProgress = false,
                             )
-                            delay(2000)
+                            delay(2.seconds)
                             hideProgress()
                         } else {
                             hideProgress()
@@ -739,6 +735,18 @@ class AlbumDetailsViewModel @AssistedInject constructor(
 
                 is Result.Failure -> showError(result.error.toUserMessage())
             }
+        }
+    }
+
+    private fun retryMediaDownload(mediaId: String) {
+        val familyIdValue = familyId ?: return
+        viewModelScope.launch {
+            updateContentState { it.copy(retryingMediaIds = it.retryingMediaIds + mediaId, isSyncing = true) }
+            when (val result = galleryRepository.retryGalleryMediaDownloads(listOf(mediaId), familyIdValue)) {
+                is Result.Success -> Unit
+                is Result.Failure -> showError(result.error.toUserMessage())
+            }
+            updateContentState { it.copy(retryingMediaIds = it.retryingMediaIds - mediaId, isSyncing = false) }
         }
     }
 

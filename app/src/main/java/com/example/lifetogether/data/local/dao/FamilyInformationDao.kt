@@ -23,7 +23,7 @@ interface FamilyInformationDao {
 
     // Query to get family details by familyId (FamilyEntity)
     @Query("SELECT * FROM ${Constants.FAMILIES_TABLE} WHERE family_id = :familyId LIMIT 1")
-    fun getFamilyInfo(familyId: String): Flow<FamilyEntity>
+    fun getFamilyInfo(familyId: String): Flow<FamilyEntity?>
 
     @Query("SELECT * FROM ${Constants.FAMILIES_TABLE} WHERE family_id = :familyId LIMIT 1")
     suspend fun getFamilyOnce(familyId: String): FamilyEntity?

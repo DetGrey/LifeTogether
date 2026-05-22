@@ -95,6 +95,7 @@ Here are some questions:
 - [ ] When adding gallery videos, handle the video thumbnail fallback better if thumbnail generation fails.
 - [ ] Share media.
 - [ ] Decide what should happen when `updateGalleryMedia()` download fails.
+  - IN PROGRESS
 
 ### Gallery albums
 - [ ] _Send a notification when everything is downloaded, and maybe link to the gallery LifeTogether folder if possible._
@@ -110,7 +111,6 @@ Here are some questions:
 
 ### Setting
 - [x] Show app version at the bottom of settings along with user id if logged in
-- [ ] How does settings work if not logged in?
 
 ### TipTracker
 - [x] Rebuild list of tips (maybe as a card)
@@ -181,11 +181,15 @@ These are bugs or broken functionality — not features:
 **Gallery**
 - "Decide what should happen when `updateGalleryMedia()` download fails" — missing error handling is a release risk.
 
-**Settings**
-- "How does settings work if not logged in?" — this is actually a question but it implies you haven't verified it. Worth checking before release in case it crashes.
-
 **ICONS**
 - Needed to match the actual features
+
+**Extra**
+- RootCoordinatorViewModel ignores all results from `userRepository.storeFcmToken(uid, familyId)`
+- firebaseAuth warning in libs: "Provide valid, English-language login credentials in Play Console to ensure Google Play can fully review all app features and content."
+- Make sure this is done everywhere: `If the backend changes file contents without updating lastUpdated, this client will not detect it.`
+- Suppress not found errors when deleting things that will change screen like here after deleting an album you see the error message shortly
+  - errorType=NotFound source=unspecified message=Album not found causeType=none causeMessage=none
 
 ## Skip for v2
 

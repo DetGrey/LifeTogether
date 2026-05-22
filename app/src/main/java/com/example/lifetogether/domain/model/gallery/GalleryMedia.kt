@@ -15,6 +15,9 @@ sealed interface GalleryMedia : Item {
     val mediaType: MediaType
     val mediaUrl: String?
     val mediaUri: Uri?
+    val downloadState: MediaDownloadState
+    val lastDownloadAttempt: Date?
+    val lastDownloadError: String?
 }
 
 data class GalleryImage(
@@ -27,6 +30,9 @@ data class GalleryImage(
     override val mediaType: MediaType = MediaType.IMAGE,
     override val mediaUrl: String? = null,
     override val mediaUri: Uri? = null,
+    override val downloadState: MediaDownloadState = MediaDownloadState.PENDING,
+    override val lastDownloadAttempt: Date? = null,
+    override val lastDownloadError: String? = null,
 ) : GalleryMedia
 
 data class GalleryVideo(
@@ -39,5 +45,8 @@ data class GalleryVideo(
     override val mediaType: MediaType = MediaType.VIDEO,
     override val mediaUrl: String? = null,
     override val mediaUri: Uri? = null,
+    override val downloadState: MediaDownloadState = MediaDownloadState.PENDING,
+    override val lastDownloadAttempt: Date? = null,
+    override val lastDownloadError: String? = null,
     val duration: Long? = null,
 ) : GalleryMedia

@@ -41,7 +41,7 @@ class UserLocalDataSource @Inject constructor(
         userInformationDao.updateItems(userEntity)
     }
 
-    fun observeFamilyInformation(familyId: String): Flow<FamilyEntity> = familyInformationDao.getFamilyInfo(familyId)
+    fun observeFamilyInformation(familyId: String): Flow<FamilyEntity?> = familyInformationDao.getFamilyInfo(familyId)
 
     suspend fun getProfileOnce(uid: String): UserEntity? = userInformationDao.getItemOnce(uid)
 
