@@ -8,6 +8,7 @@ import com.example.lifetogether.data.local.source.GuideLocalDataSource
 import com.example.lifetogether.data.local.source.GuideProgressLocalDataSource
 import com.example.lifetogether.data.model.GuideEntity
 import com.example.lifetogether.data.remote.GuideFirestoreDataSource
+import com.example.lifetogether.data.repository.internal.stampNow
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.guides.GuideProgressState
@@ -144,24 +145,26 @@ class GuideRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveGuide(guide: Guide): Result<String, AppError> {
-        guideLocalDataSource.upsertGuide(guide.toEntity())
-        return when (val result = guideFirestoreDataSource.saveGuide(guide)) {
-            is Result.Success -> Result.Success(guide.id)
+        val stampedGuide = guide.stampNow()
+        guideLocalDataSource.upsertGuide(stampedGuide.toEntity())
+        return when (val result = guideFirestoreDataSource.saveGuide(stampedGuide)) {
+            is Result.Success -> Result.Success(stampedGuide.id)
             is Result.Failure -> {
-                guideLocalDataSource.deleteGuide(guide.id)
+                guideLocalDataSource.deleteGuide(stampedGuide.id)
                 Result.Failure(result.error)
             }
         }
     }
 
     override suspend fun updateGuide(guide: Guide): Result<Unit, AppError> {
+        val stampedGuide = guide.stampNow()
         val oldEntity = guideLocalDataSource.getGuideOnce(guide.id)
-        guideLocalDataSource.upsertGuide(guide.toEntity())
-        return when (val result = guideFirestoreDataSource.updateGuide(guide)) {
+        guideLocalDataSource.upsertGuide(stampedGuide.toEntity())
+        return when (val result = guideFirestoreDataSource.updateGuide(stampedGuide)) {
             is Result.Success -> Result.Success(Unit)
             is Result.Failure -> {
                 if (oldEntity != null) guideLocalDataSource.upsertGuide(oldEntity)
-                else guideLocalDataSource.deleteGuide(guide.id)
+                else guideLocalDataSource.deleteGuide(stampedGuide.id)
                 Result.Failure(result.error)
             }
         }

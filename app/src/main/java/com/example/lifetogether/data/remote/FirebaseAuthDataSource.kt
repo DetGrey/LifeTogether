@@ -15,6 +15,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import java.util.Date
 import javax.inject.Inject
 
 class FirebaseAuthDataSource@Inject constructor(
@@ -75,12 +76,13 @@ class FirebaseAuthDataSource@Inject constructor(
     suspend fun logout(
         uid: String,
         familyId: String?,
+        lastUpdated: Date,
     ): Result<Unit, AppError> {
         return appResultOfSuspend {
             FirebaseAuth.getInstance().signOut()
             Log.d(TAG, "logout signOut completed")
             if (familyId != null) {
-                familyFirestoreDataSource.removeDeviceToken(uid, familyId)
+                familyFirestoreDataSource.removeDeviceToken(uid, familyId, lastUpdated)
             }
         }
     }

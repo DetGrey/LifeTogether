@@ -36,22 +36,31 @@ interface FamilyInformationDao {
     @Query("SELECT image_data FROM ${Constants.FAMILIES_TABLE} WHERE family_id = :familyId LIMIT 1")
     fun observeImageByteArray(familyId: String): Flow<ByteArray?>
 
-    @Query("UPDATE ${Constants.FAMILIES_TABLE} SET image_data = :imageData WHERE family_id = :familyId")
+    @Query("UPDATE ${Constants.FAMILIES_TABLE} SET image_data = :imageData, last_updated = :lastUpdated WHERE family_id = :familyId")
     suspend fun updateImageByteArray(
         familyId: String,
         imageData: ByteArray?,
+        lastUpdated: Date,
     )
 
-    @Query("UPDATE ${Constants.FAMILIES_TABLE} SET image_url = :imageUrl WHERE family_id = :familyId")
+    @Query("UPDATE ${Constants.FAMILIES_TABLE} SET image_url = :imageUrl, last_updated = :lastUpdated WHERE family_id = :familyId")
     suspend fun updateImageUrl(
         familyId: String,
         imageUrl: String?,
+        lastUpdated: Date,
     )
 
-    @Query("UPDATE ${Constants.FAMILIES_TABLE} SET together_since = :togetherSince WHERE family_id = :familyId")
+    @Query("UPDATE ${Constants.FAMILIES_TABLE} SET together_since = :togetherSince, last_updated = :lastUpdated WHERE family_id = :familyId")
     suspend fun updateTogetherSince(
         familyId: String,
         togetherSince: Date?,
+        lastUpdated: Date,
     )
+
+    @Query("UPDATE ${Constants.FAMILY_MEMBERS_TABLE} SET name = :name WHERE uid = :uid")
+    suspend fun updateMemberName(uid: String, name: String)
+
+    @Query("UPDATE ${Constants.FAMILIES_TABLE} SET last_updated = :lastUpdated WHERE family_id = :familyId")
+    suspend fun updateLastUpdated(familyId: String, lastUpdated: Date)
 
 }

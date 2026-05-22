@@ -10,6 +10,7 @@ import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.GuideRepository
 import com.example.lifetogether.domain.repository.SessionRepository
+import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.ui.common.event.UiCommand
@@ -112,7 +113,13 @@ class GuideDetailsViewModel @AssistedInject constructor(
                         )
                         applyGuideUpdate(uiGuide = normalizedGuide)
                     }
-                    is Result.Failure -> showError(result.error.toUserMessage())
+                    is Result.Failure -> {
+                        if (result.error is AppError.NotFound) {
+                            viewModelScope.launch { _commands.send(GuideDetailsCommand.NavigateBack) }
+                        } else {
+                            showError(result.error.toUserMessage())
+                        }
+                    }
                 }
             }
         }
@@ -173,6 +180,7 @@ class GuideDetailsViewModel @AssistedInject constructor(
             updateLoadingState(isDeletingGuide = true)
             when (val result = guideRepository.deleteGuide(currentGuideId)) {
                 is Result.Success -> {
+                    guideJob?.cancel()
                     _commands.send(GuideDetailsCommand.NavigateBack)
                 }
                 is Result.Failure -> showError(result.error.toUserMessage())

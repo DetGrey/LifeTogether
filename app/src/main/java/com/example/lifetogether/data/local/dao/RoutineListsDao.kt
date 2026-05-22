@@ -7,6 +7,7 @@ import androidx.room.Query
 import com.example.lifetogether.data.model.RoutineListEntryEntity
 import com.example.lifetogether.util.Constants.ROUTINE_LIST_ENTRIES_TABLE
 import kotlinx.coroutines.flow.Flow
+import java.util.Date
 
 @Dao
 interface RoutineListsDao {
@@ -17,7 +18,7 @@ interface RoutineListsDao {
     fun getItemsByListId(familyId: String, listId: String): Flow<List<RoutineListEntryEntity>>
 
     @Query("SELECT * FROM $ROUTINE_LIST_ENTRIES_TABLE WHERE id = :id")
-    fun getItemById(id: String,): Flow<RoutineListEntryEntity>
+    fun getItemById(id: String): Flow<RoutineListEntryEntity?>
 
     @Query("SELECT * FROM $ROUTINE_LIST_ENTRIES_TABLE WHERE id = :id LIMIT 1")
     suspend fun getItemOnce(id: String): RoutineListEntryEntity?
@@ -34,18 +35,20 @@ interface RoutineListsDao {
     @Query("SELECT image_data FROM $ROUTINE_LIST_ENTRIES_TABLE WHERE id = :entryId LIMIT 1")
     fun observeImageByteArray(entryId: String): Flow<ByteArray?>
 
-    @Query("UPDATE $ROUTINE_LIST_ENTRIES_TABLE SET image_data = :imageData WHERE family_id = :familyId AND id = :entryId")
+    @Query("UPDATE $ROUTINE_LIST_ENTRIES_TABLE SET image_data = :imageData, last_updated = :lastUpdated WHERE family_id = :familyId AND id = :entryId")
     suspend fun updateImageByteArray(
         familyId: String,
         entryId: String,
         imageData: ByteArray?,
+        lastUpdated: Date,
     )
 
-    @Query("UPDATE $ROUTINE_LIST_ENTRIES_TABLE SET image_url = :imageUrl WHERE family_id = :familyId AND id = :entryId")
+    @Query("UPDATE $ROUTINE_LIST_ENTRIES_TABLE SET image_url = :imageUrl, last_updated = :lastUpdated WHERE family_id = :familyId AND id = :entryId")
     suspend fun updateImageUrl(
         familyId: String,
         entryId: String,
         imageUrl: String?,
+        lastUpdated: Date,
     )
 
     @Query("DELETE FROM $ROUTINE_LIST_ENTRIES_TABLE WHERE family_id = :familyId")

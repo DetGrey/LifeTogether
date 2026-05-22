@@ -1,5 +1,6 @@
 package com.example.lifetogether.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.model.session.SessionState
@@ -23,8 +24,14 @@ class RootCoordinatorViewModel @Inject constructor(
     private val guideRepository: GuideRepository,
     private val userRepository: UserRepository,
 ) : ViewModel() {
+    private companion object {
+        const val TAG = "RootCoordinatorVM"
+        const val MAX_FCM_RETRY_ATTEMPTS = 3
+        val FCM_RETRY_DELAYS_MS = listOf(1_000L, 5_000L, 15_000L)
+    }
 
     private var guideProgressSyncJob: Job? = null
+    private var fcmSyncJob: Job? = null
     private var lastObserverUid: String? = null
     private var lastObserverFamilyId: String? = null
     private var lastGuideSyncUid: String? = null
@@ -95,22 +102,45 @@ class RootCoordinatorViewModel @Inject constructor(
     }
 
     private fun handleFcmSync(uid: String, familyId: String?) {
-        if (familyId.isNullOrBlank()) return
+        if (familyId.isNullOrBlank()) {
+            fcmSyncJob?.cancel()
+            fcmSyncJob = null
+            return
+        }
         if (lastFcmUid == uid && lastFcmFamilyId == familyId) return
+        if (fcmSyncJob?.isActive == true) return
 
-        lastFcmUid = uid
-        lastFcmFamilyId = familyId
-        viewModelScope.launch {
-            when (val result = userRepository.storeFcmToken(uid, familyId)) {
-                is Result.Success -> Unit
-                is Result.Failure -> Unit
+        fcmSyncJob = viewModelScope.launch {
+            repeat(MAX_FCM_RETRY_ATTEMPTS) { attempt ->
+                when (val result = userRepository.storeFcmToken(uid, familyId)) {
+                    is Result.Success -> {
+                        lastFcmUid = uid
+                        lastFcmFamilyId = familyId
+                        Log.d(TAG, "FCM token stored successfully for uid=$uid familyId=$familyId")
+                        return@launch
+                    }
+
+                    is Result.Failure -> {
+                        Log.w(
+                            TAG,
+                            "FCM token store failed for uid=$uid familyId=$familyId attempt=${attempt + 1}/$MAX_FCM_RETRY_ATTEMPTS error=${result.error}",
+                        )
+                        if (attempt < MAX_FCM_RETRY_ATTEMPTS - 1) {
+                            delay(FCM_RETRY_DELAYS_MS[attempt].milliseconds)
+                        }
+                    }
+                }
             }
+
+            Log.e(TAG, "FCM token store exhausted retries for uid=$uid familyId=$familyId")
         }
     }
 
     private fun handleUnauthenticated() {
         guideProgressSyncJob?.cancel()
         guideProgressSyncJob = null
+        fcmSyncJob?.cancel()
+        fcmSyncJob = null
         lastObserverUid = null
         lastObserverFamilyId = null
         lastGuideSyncUid = null

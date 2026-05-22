@@ -8,6 +8,6 @@ data class NoteEntry(
     override val listId: String,
     override var itemName: String,
     val body: String,
-    override var lastUpdated: Date,
+    override val lastUpdated: Date = Date(),
     override val dateCreated: Date,
 ) : ListEntry

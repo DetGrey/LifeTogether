@@ -6,5 +6,5 @@ interface Item {
     val id: String
     val familyId: String
     val itemName: String
-    var lastUpdated: Date
+    val lastUpdated: Date
 }

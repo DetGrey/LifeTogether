@@ -17,7 +17,7 @@ interface WishListsDao {
     fun getItemsByListId(familyId: String, listId: String): Flow<List<WishListEntryEntity>>
 
     @Query("SELECT * FROM $WISH_LIST_ENTRIES_TABLE WHERE id = :id")
-    fun getItemById(id: String): Flow<WishListEntryEntity>
+    fun getItemById(id: String): Flow<WishListEntryEntity?>
 
     @Query("SELECT * FROM $WISH_LIST_ENTRIES_TABLE WHERE id = :id LIMIT 1")
     suspend fun getItemOnce(id: String): WishListEntryEntity?

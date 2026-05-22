@@ -20,6 +20,7 @@ import com.example.lifetogether.data.logic.appResultOfSuspend
 import com.example.lifetogether.data.model.AlbumEntity
 import com.example.lifetogether.data.model.GalleryMediaEntity
 import com.example.lifetogether.data.remote.GalleryFirestoreDataSource
+import com.example.lifetogether.data.repository.internal.stampNow
 import com.example.lifetogether.di.IoDispatcher
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.SaveProgress
@@ -28,6 +29,7 @@ import com.example.lifetogether.domain.model.gallery.Album
 import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
+import com.example.lifetogether.domain.model.gallery.MediaDownloadState
 import com.example.lifetogether.domain.repository.GalleryRepository
 import com.example.lifetogether.domain.worker.GalleryMediaRetryWorker
 import com.example.lifetogether.domain.datasource.StorageDataSource
@@ -107,11 +109,12 @@ class GalleryRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveAlbum(album: Album): Result<String, AppError> {
-        albumLocalDataSource.upsertAlbum(album.toEntity())
-        return when (val result = galleryFirestoreDataSource.saveAlbum(album)) {
-            is Result.Success -> Result.Success(album.id)
+        val stampedAlbum = album.stampNow()
+        albumLocalDataSource.upsertAlbum(stampedAlbum.toEntity())
+        return when (val result = galleryFirestoreDataSource.saveAlbum(stampedAlbum)) {
+            is Result.Success -> Result.Success(stampedAlbum.id)
             is Result.Failure -> {
-                albumLocalDataSource.deleteAlbum(album.id)
+                albumLocalDataSource.deleteAlbum(stampedAlbum.id)
                 Result.Failure(result.error)
             }
         }
@@ -141,9 +144,15 @@ class GalleryRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveGalleryMediaMetaData(galleryMedia: List<GalleryMedia>): Result<Unit, AppError> {
-        return when (val result = galleryFirestoreDataSource.saveGalleryMediaMetaData(galleryMedia)) {
+        val stampedMedia = galleryMedia.stampNow()
+        val entities = stampedMedia.map { it.toPendingEntity() }
+        mediaLocalDataSource.restoreMediaItems(entities)
+        return when (val result = galleryFirestoreDataSource.saveGalleryMediaMetaData(stampedMedia)) {
             is Result.Success -> Result.Success(Unit)
-            is Result.Failure -> Result.Failure(result.error)
+            is Result.Failure -> {
+                mediaLocalDataSource.deleteMediaItems(stampedMedia.map { it.id })
+                Result.Failure(result.error)
+            }
         }
     }
 
@@ -176,7 +185,18 @@ class GalleryRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateAlbumCount(albumId: String, count: Int): Result<Unit, AppError> {
-        return galleryFirestoreDataSource.updateAlbumCount(albumId, count)
+        val now = Date()
+        val oldEntity = albumLocalDataSource.getAlbumOnce(albumId)
+        if (oldEntity != null) {
+            albumLocalDataSource.upsertAlbum(oldEntity.copy(count = oldEntity.count + count, lastUpdated = now))
+        }
+        return when (val result = galleryFirestoreDataSource.updateAlbumCount(albumId, count, now)) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> {
+                if (oldEntity != null) albumLocalDataSource.upsertAlbum(oldEntity)
+                Result.Failure(result.error)
+            }
+        }
     }
 
     override suspend fun moveMediaToAlbum(
@@ -184,7 +204,28 @@ class GalleryRepositoryImpl @Inject constructor(
         newAlbumId: String,
         oldAlbumId: String,
     ): Result<Unit, AppError> {
-        return galleryFirestoreDataSource.moveMediaToAlbum(mediaIdList, newAlbumId, oldAlbumId)
+        val now = Date()
+        val oldMediaEntities = mediaLocalDataSource.getMediaItemsByIds(mediaIdList.toList())
+        val oldNewAlbum = albumLocalDataSource.getAlbumOnce(newAlbumId)
+        val oldOldAlbum = albumLocalDataSource.getAlbumOnce(oldAlbumId)
+
+        mediaLocalDataSource.restoreMediaItems(oldMediaEntities.map { it.copy(albumId = newAlbumId, lastUpdated = now) })
+        if (oldNewAlbum != null) {
+            albumLocalDataSource.upsertAlbum(oldNewAlbum.copy(count = oldNewAlbum.count + mediaIdList.size, lastUpdated = now))
+        }
+        if (oldOldAlbum != null) {
+            albumLocalDataSource.upsertAlbum(oldOldAlbum.copy(count = maxOf(0, oldOldAlbum.count - mediaIdList.size), lastUpdated = now))
+        }
+
+        return when (val result = galleryFirestoreDataSource.moveMediaToAlbum(mediaIdList, newAlbumId, oldAlbumId, now)) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> {
+                mediaLocalDataSource.restoreMediaItems(oldMediaEntities)
+                if (oldNewAlbum != null) albumLocalDataSource.upsertAlbum(oldNewAlbum)
+                if (oldOldAlbum != null) albumLocalDataSource.upsertAlbum(oldOldAlbum)
+                Result.Failure(result.error)
+            }
+        }
     }
 
     override fun observeAlbumById(familyId: String, albumId: String): Flow<Result<Album, AppError>> {
@@ -280,17 +321,31 @@ class GalleryRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateAlbum(album: Album): Result<Unit, AppError> {
+        val stampedAlbum = album.stampNow()
         val oldEntity = albumLocalDataSource.getAlbumOnce(album.id)
-        albumLocalDataSource.upsertAlbum(album.toEntity())
-        return when (val result = galleryFirestoreDataSource.updateAlbum(album)) {
+        albumLocalDataSource.upsertAlbum(stampedAlbum.toEntity())
+        return when (val result = galleryFirestoreDataSource.updateAlbum(stampedAlbum)) {
             is Result.Success -> Result.Success(Unit)
             is Result.Failure -> {
                 if (oldEntity != null) albumLocalDataSource.upsertAlbum(oldEntity)
-                else albumLocalDataSource.deleteAlbum(album.id)
+                else albumLocalDataSource.deleteAlbum(stampedAlbum.id)
                 Result.Failure(result.error)
             }
         }
     }
+
+    private fun GalleryMedia.toPendingEntity() = GalleryMediaEntity(
+        id = id,
+        mediaType = mediaType,
+        familyId = familyId,
+        itemName = itemName,
+        lastUpdated = lastUpdated,
+        albumId = albumId,
+        dateCreated = dateCreated,
+        remoteMediaUrl = mediaUrl,
+        downloadState = MediaDownloadState.PENDING,
+        videoDuration = (this as? GalleryVideo)?.duration,
+    )
 
     private fun Album.toEntity() = AlbumEntity(
         id = id,

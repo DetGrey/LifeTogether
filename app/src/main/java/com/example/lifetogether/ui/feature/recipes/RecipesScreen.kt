@@ -28,7 +28,6 @@ import com.example.lifetogether.ui.feature.recipes.components.RecipeCardV2
 import com.example.lifetogether.ui.feature.recipes.components.RecipeSearchField
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import java.util.Date
 
 @Composable
 fun RecipesScreen(
@@ -164,7 +163,6 @@ private fun RecipesScreenPreview() {
                         id = "1",
                         familyId = "family-1",
                         itemName = "Tomato Soup",
-                        lastUpdated = Date(),
                         description = "A simple soup.",
                         ingredients = emptyList(),
                         instructions = emptyList(),
@@ -205,7 +203,6 @@ private fun RecipesScreenSearchingPreview() {
                         id = "1",
                         familyId = "family-1",
                         itemName = "Tomato Soup",
-                        lastUpdated = Date(),
                         description = "A simple soup.",
                         ingredients = emptyList(),
                         instructions = emptyList(),

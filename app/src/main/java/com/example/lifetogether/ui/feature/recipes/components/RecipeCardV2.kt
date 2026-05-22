@@ -33,7 +33,6 @@ import com.example.lifetogether.ui.common.image.AnimatedBitmapImage
 import com.example.lifetogether.ui.common.image.rememberObservedImageBitmap
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
-import java.util.Date
 
 @Composable
 fun RecipeCardV2(
@@ -118,7 +117,6 @@ private fun RecipeCardV2Preview() {
                 id = "recipe-soup",
                 familyId = "family-1",
                 itemName = "Tomato Soup",
-                lastUpdated = Date(),
                 description = "A simple soup.",
                 ingredients = emptyList(),
                 instructions = emptyList(),

@@ -6,7 +6,7 @@ data class TipItem(
     override val id: String,
     override val familyId: String,
     override val itemName: String,
-    override var lastUpdated: Date,
+    override val lastUpdated: Date = Date(),
     val amount: Float,
     val date: Date,
     val currency: String = "DKK",

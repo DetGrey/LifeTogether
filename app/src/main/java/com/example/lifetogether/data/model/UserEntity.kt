@@ -12,6 +12,8 @@ data class UserEntity(
     val uid: String,
     val email: String,
     val name: String,
+    @ColumnInfo(name = "last_updated")
+    val lastUpdated: Date,
     val birthday: Date? = null,
     @ColumnInfo(name = "family_id")
     val familyId: String? = null,
@@ -29,6 +31,7 @@ data class UserEntity(
         if (uid != other.uid) return false
         if (email != other.email) return false
         if (name != other.name) return false
+        if (lastUpdated != other.lastUpdated) return false
         if (birthday != other.birthday) return false
         if (familyId != other.familyId) return false
         if (!imageData.contentEquals(other.imageData)) return false
@@ -41,6 +44,7 @@ data class UserEntity(
         var result = uid.hashCode()
         result = 31 * result + email.hashCode()
         result = 31 * result + name.hashCode()
+        result = 31 * result + lastUpdated.hashCode()
         result = 31 * result + (birthday?.hashCode() ?: 0)
         result = 31 * result + (familyId?.hashCode() ?: 0)
         result = 31 * result + (imageData?.contentHashCode() ?: 0)

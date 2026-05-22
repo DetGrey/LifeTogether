@@ -27,7 +27,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.Date
 import java.util.UUID
 
 @HiltViewModel(assistedFactory = GuideEditViewModel.Factory::class)
@@ -307,7 +306,6 @@ class GuideEditViewModel @AssistedInject constructor(
             familyId = familyId,
             itemName = state.title.trim(),
             description = state.description.trim(),
-            lastUpdated = Date(),
             visibility = state.visibility,
             ownerUid = uid,
             contentVersion = 1L,
@@ -324,7 +322,6 @@ class GuideEditViewModel @AssistedInject constructor(
         return base.copy(
             itemName = state.title.trim(),
             description = state.description.trim(),
-            lastUpdated = Date(),
             visibility = state.visibility,
             contentVersion = base.contentVersion + 1,
             sections = normalizedSections,

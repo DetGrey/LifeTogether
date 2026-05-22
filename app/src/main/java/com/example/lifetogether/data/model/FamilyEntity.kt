@@ -11,7 +11,8 @@ data class FamilyEntity(
     @PrimaryKey
     @ColumnInfo(name = "family_id")
     val familyId: String,
-
+    @ColumnInfo(name = "last_updated")
+    val lastUpdated: Date,
     @ColumnInfo(name = "image_data")
     val imageData: ByteArray? = null,
     @ColumnInfo(name = "image_url")
@@ -26,6 +27,7 @@ data class FamilyEntity(
         other as FamilyEntity
 
         if (familyId != other.familyId) return false
+        if (lastUpdated != other.lastUpdated) return false
         if (imageData != null) {
             if (other.imageData == null) return false
             if (!imageData.contentEquals(other.imageData)) return false
@@ -38,6 +40,7 @@ data class FamilyEntity(
 
     override fun hashCode(): Int {
         var result = familyId.hashCode()
+        result = 31 * result + lastUpdated.hashCode()
         result = 31 * result + (imageData?.contentHashCode() ?: 0)
         result = 31 * result + (imageUrl?.hashCode() ?: 0)
         result = 31 * result + (togetherSince?.hashCode() ?: 0)

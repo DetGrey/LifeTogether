@@ -64,7 +64,7 @@ import com.example.lifetogether.data.model.WishListEntryEntity
         ChecklistEntryEntity::class,
         MealPlanEntity::class,
     ],
-    version = 37,
+    version = 38,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)

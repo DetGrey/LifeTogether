@@ -63,7 +63,7 @@ class GroceryFirestoreDataSource @Inject constructor(
             db.collection(Constants.GROCERY_TABLE).document(id).update(
                 mapOf(
                     "completed" to item.completed,
-                    "lastUpdated" to Date(System.currentTimeMillis()),
+                    "lastUpdated" to item.lastUpdated,
                 ),
             ).await()
         }
@@ -164,6 +164,7 @@ class GroceryFirestoreDataSource @Inject constructor(
 private data class CategoryDto(
     val emoji: String? = null,
     val name: String? = null,
+    val lastUpdated: Date? = null,
 ) {
     fun toDomain(): Category? {
         val emojiValue = emoji?.takeIf { it.isNotBlank() } ?: return null
@@ -171,12 +172,14 @@ private data class CategoryDto(
         return Category(
             emoji = emojiValue,
             name = nameValue,
+            lastUpdated = lastUpdated ?: Date(0),
         )
     }
 
     fun toFirestoreMap(): Map<String, Any?> = mapOf(
         "emoji" to emoji,
         "name" to name,
+        "lastUpdated" to lastUpdated,
     )
 }
 
@@ -222,6 +225,7 @@ private data class GrocerySuggestionDto(
     val suggestionName: String? = null,
     val category: CategoryDto? = null,
     val approxPrice: Float? = null,
+    val lastUpdated: Date? = null,
 ) {
     fun toDomain(documentId: String): GrocerySuggestion? {
         val suggestionNameValue = suggestionName?.takeIf { it.isNotBlank() } ?: return null
@@ -231,6 +235,7 @@ private data class GrocerySuggestionDto(
             suggestionName = suggestionNameValue,
             category = categoryValue,
             approxPrice = approxPrice,
+            lastUpdated = lastUpdated ?: Date(0),
         )
     }
 
@@ -238,12 +243,14 @@ private data class GrocerySuggestionDto(
         "suggestionName" to suggestionName,
         "category" to category?.toFirestoreMap(),
         "approxPrice" to approxPrice,
+        "lastUpdated" to lastUpdated,
     )
 }
 
 private fun Category.toDto(): CategoryDto = CategoryDto(
     emoji = emoji,
     name = name,
+    lastUpdated = lastUpdated,
 )
 
 private fun GroceryItem.toDto(): GroceryItemDto = GroceryItemDto(
@@ -261,4 +268,5 @@ private fun GrocerySuggestion.toDto(): GrocerySuggestionDto = GrocerySuggestionD
     suggestionName = suggestionName,
     category = category.toDto(),
     approxPrice = approxPrice,
+    lastUpdated = lastUpdated,
 )

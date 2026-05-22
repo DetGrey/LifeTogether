@@ -43,7 +43,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.Date
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 
 @HiltViewModel(assistedFactory = RecipeDetailsViewModel.Factory::class)
@@ -190,7 +189,13 @@ class RecipeDetailsViewModel @AssistedInject constructor(
                         )
                     }
 
-                    is Result.Failure -> showError(result.error.toUserMessage())
+                    is Result.Failure -> {
+                        if (result.error is AppError.NotFound) {
+                            _commands.send(RecipeDetailsCommand.NavigateBack)
+                        } else {
+                            showError(result.error.toUserMessage())
+                        }
+                    }
                 }
             }
         }
@@ -534,7 +539,6 @@ class RecipeDetailsViewModel @AssistedInject constructor(
             id = state.recipeId.takeIf { !it.isNullOrBlank() } ?: UUID.randomUUID().toString(),
             familyId = familyId,
             itemName = trimmedName,
-            lastUpdated = Date(),
             description = trimmedDescription,
             ingredients = sanitizedIngredients,
             instructions = sanitizedInstructions,
@@ -723,7 +727,10 @@ class RecipeDetailsViewModel @AssistedInject constructor(
 
         viewModelScope.launch {
             when (val result = recipeRepository.deleteRecipe(recipeId)) {
-                is Result.Success -> _commands.send(RecipeDetailsCommand.NavigateBack)
+                is Result.Success -> {
+                    observeRecipeJob?.cancel()
+                    _commands.send(RecipeDetailsCommand.NavigateBack)
+                }
                 is Result.Failure -> showError(result.error.toUserMessage())
             }
             updateContent {
@@ -805,7 +812,6 @@ class RecipeDetailsViewModel @AssistedInject constructor(
             id = recipeId,
             familyId = familyId,
             itemName = "",
-            lastUpdated = Date(),
             description = "",
             ingredients = emptyList(),
             instructions = emptyList(),
@@ -1006,7 +1012,6 @@ class RecipeDetailsViewModel @AssistedInject constructor(
                 id = UUID.randomUUID().toString(),
                 familyId = familyId,
                 itemName = matchingSuggestion.suggestionName,
-                lastUpdated = Date(),
                 category = matchingSuggestion.category,
                 approxPrice = matchingSuggestion.approxPrice,
             )

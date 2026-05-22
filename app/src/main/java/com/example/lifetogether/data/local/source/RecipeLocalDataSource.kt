@@ -11,6 +11,7 @@ import com.example.lifetogether.domain.model.recipe.Recipe
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -104,11 +105,13 @@ class RecipeLocalDataSource @Inject constructor(
         familyId: String,
         recipeId: String,
         imageData: ByteArray?,
+        lastUpdated: Date = Date(),
     ) {
         recipesDao.updateImageByteArray(
             familyId = familyId,
             recipeId = recipeId,
             imageData = imageData,
+            lastUpdated = lastUpdated,
         )
     }
 
@@ -116,11 +119,13 @@ class RecipeLocalDataSource @Inject constructor(
         familyId: String,
         recipeId: String,
         imageUrl: String?,
+        lastUpdated: Date = Date(),
     ) {
         recipesDao.updateImageUrl(
             familyId = familyId,
             recipeId = recipeId,
             imageUrl = imageUrl,
+            lastUpdated = lastUpdated,
         )
     }
 

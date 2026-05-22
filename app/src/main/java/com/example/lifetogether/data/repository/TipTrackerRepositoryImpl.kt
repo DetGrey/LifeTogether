@@ -7,6 +7,7 @@ import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.data.local.source.TipTrackerLocalDataSource
 import com.example.lifetogether.data.model.TipEntity
 import com.example.lifetogether.data.remote.TipTrackerFirestoreDataSource
+import com.example.lifetogether.data.repository.internal.stampNow
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.domain.repository.TipTrackerRepository
@@ -42,11 +43,12 @@ class TipTrackerRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveTip(tip: TipItem): Result<String, AppError> {
-        tipTrackerLocalDataSource.upsertTip(tip.toEntity())
-        return when (val result = tipTrackerFirestoreDataSource.saveTip(tip)) {
-            is Result.Success -> Result.Success(tip.id)
+        val stampedTip = tip.stampNow()
+        tipTrackerLocalDataSource.upsertTip(stampedTip.toEntity())
+        return when (val result = tipTrackerFirestoreDataSource.saveTip(stampedTip)) {
+            is Result.Success -> Result.Success(stampedTip.id)
             is Result.Failure -> {
-                tipTrackerLocalDataSource.deleteTip(tip.id)
+                tipTrackerLocalDataSource.deleteTip(stampedTip.id)
                 Result.Failure(result.error)
             }
         }

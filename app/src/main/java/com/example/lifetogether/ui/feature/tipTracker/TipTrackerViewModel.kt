@@ -289,7 +289,6 @@ class TipTrackerViewModel @Inject constructor(
             id = UUID.randomUUID().toString(),
             familyId = familyIdValue,
             itemName = "Tip",
-            lastUpdated = Date(System.currentTimeMillis()),
             amount = parsedAmount,
             date = currentState.newItemDate,
         )

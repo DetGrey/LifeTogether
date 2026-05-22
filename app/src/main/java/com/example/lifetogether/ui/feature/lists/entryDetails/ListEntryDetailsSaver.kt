@@ -52,7 +52,6 @@ class ListEntryDetailsSaver @Inject constructor(
             familyId = familyId,
             listId = listId,
             itemName = form.name.trim(),
-            lastUpdated = now,
             dateCreated = form.dateCreated ?: now,
             nextDate = now,
             lastCompletedAt = form.lastCompletedAt,
@@ -114,7 +113,6 @@ class ListEntryDetailsSaver @Inject constructor(
             familyId = familyId,
             listId = listId,
             itemName = form.name.trim(),
-            lastUpdated = now,
             dateCreated = now,
             isPurchased = form.isPurchased,
             url = form.url.ifBlank { null },
@@ -144,7 +142,6 @@ class ListEntryDetailsSaver @Inject constructor(
             listId = listId,
             itemName = form.name.trim(),
             body = form.body,
-            lastUpdated = now,
             dateCreated = now,
         )
         return if (entryId == null) {

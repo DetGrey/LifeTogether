@@ -7,6 +7,6 @@ data class Album(
     override var id: String,
     override val familyId: String,
     override var itemName: String,
-    override var lastUpdated: Date,
+    override val lastUpdated: Date = Date(),
     var count: Int = 0,
 ) : Item

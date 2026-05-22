@@ -32,7 +32,6 @@ import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.ui.theme.bodyFontFamily
 import com.example.lifetogether.util.priceToString
-import java.util.Date
 
 @Composable
 fun GroceryCategoryListHeader(
@@ -159,7 +158,6 @@ val groceryList = listOf(
             "Fruits and vegetables",
         ),
         itemName = "Bananas",
-        lastUpdated = Date(System.currentTimeMillis()),
         completed = false,
     ),
     GroceryItem(
@@ -170,7 +168,6 @@ val groceryList = listOf(
             "Fruits and vegetables",
         ),
         itemName = "Potatoes",
-        lastUpdated = Date(System.currentTimeMillis()),
         completed = true,
     ),
 )

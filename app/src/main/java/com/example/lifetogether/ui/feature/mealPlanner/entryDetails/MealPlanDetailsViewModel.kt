@@ -41,6 +41,7 @@ class MealPlanDetailsViewModel @AssistedInject constructor(
     private val _familyId = MutableStateFlow<String?>(null)
     val familyId = _familyId.asStateFlow()
 
+    private var loaderJob: Job? = null
     private var observeRecipesJob: Job? = null
     private var observedRecipesFamilyId: String? = null
     private var allRecipeSearchItems: List<RecipeSearchItem> = emptyList()
@@ -56,11 +57,12 @@ class MealPlanDetailsViewModel @AssistedInject constructor(
     val commands: Flow<MealPlanDetailsCommand> = _commands.receiveAsFlow()
 
     init {
-        viewModelScope.launch {
+        loaderJob = viewModelScope.launch {
             loader.observe(mealPlanId).collect { snapshot ->
                 _familyId.value = snapshot.familyId
                 when (val state = snapshot.state) {
                     MealPlanDetailsLoadState.Loading -> resetLoadingState()
+                    MealPlanDetailsLoadState.Deleted -> _commands.send(MealPlanDetailsCommand.NavigateBack)
                     is MealPlanDetailsLoadState.Content -> showContent(state.form, state.isNewEntry)
                     is MealPlanDetailsLoadState.Error -> showError(state.message)
                 }
@@ -194,7 +196,10 @@ class MealPlanDetailsViewModel @AssistedInject constructor(
         val mealPlanIdValue = mealPlanId ?: return
         viewModelScope.launch {
             when (val result = saver.deleteMealPlan(mealPlanIdValue)) {
-                is Result.Success -> _commands.send(MealPlanDetailsCommand.NavigateBack)
+                is Result.Success -> {
+                    loaderJob?.cancel()
+                    _commands.send(MealPlanDetailsCommand.NavigateBack)
+                }
                 is Result.Failure -> showError(result.error.toUserMessage())
             }
         }

@@ -187,14 +187,12 @@ class ListDetailsViewModel @AssistedInject constructor(
 
         val draft = existingEntry?.copy(
             itemName = draftName,
-            lastUpdated = now,
         ) ?: ChecklistEntry(
             id = UUID.randomUUID().toString(),
             familyId = currentState.familyId,
             listId = listId,
             itemName = draftName,
             isChecked = false,
-            lastUpdated = now,
             dateCreated = now,
         )
 
@@ -280,7 +278,6 @@ class ListDetailsViewModel @AssistedInject constructor(
 
         val updatedList = current.copy(
             itemName = newName,
-            lastUpdated = Date(),
         )
 
         viewModelScope.launch {
@@ -334,14 +331,12 @@ class ListDetailsViewModel @AssistedInject constructor(
                 is ChecklistEntry -> userListRepository.updateChecklistEntry(
                     entry.copy(
                         isChecked = !entry.isChecked,
-                        lastUpdated = Date(),
                     ),
                 )
 
                 is WishListEntry -> userListRepository.updateWishListEntry(
                     entry.copy(
                         isPurchased = !entry.isPurchased,
-                        lastUpdated = Date(),
                     ),
                 )
 

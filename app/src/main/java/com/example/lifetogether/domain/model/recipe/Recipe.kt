@@ -7,7 +7,7 @@ data class Recipe(
     override var id: String,
     override val familyId: String,
     override var itemName: String,
-    override var lastUpdated: Date,
+    override val lastUpdated: Date = Date(),
     val description: String,
     val ingredients: List<Ingredient>,
     val instructions: List<Instruction>,

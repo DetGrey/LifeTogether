@@ -12,6 +12,7 @@ import com.example.lifetogether.data.model.RoutineListEntryEntity
 import com.example.lifetogether.data.model.UserListEntity
 import com.example.lifetogether.data.model.WishListEntryEntity
 import com.example.lifetogether.data.remote.UserListFirestoreDataSource
+import com.example.lifetogether.data.repository.internal.stampNow
 import com.example.lifetogether.domain.datasource.StorageDataSource
 import com.example.lifetogether.domain.model.lists.ChecklistEntry
 import com.example.lifetogether.domain.model.lists.ListEntry
@@ -77,21 +78,23 @@ class UserListRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveUserList(userList: UserList): Result<String, AppError> {
-        userListLocalDataSource.upsertUserList(userList.toEntity())
-        return when (val result = userListFirestoreDataSource.saveUserList(userList)) {
-            is Result.Success -> Result.Success(userList.id)
+        val stampedList = userList.stampNow()
+        userListLocalDataSource.upsertUserList(stampedList.toEntity())
+        return when (val result = userListFirestoreDataSource.saveUserList(stampedList)) {
+            is Result.Success -> Result.Success(stampedList.id)
             is Result.Failure -> {
-                userListLocalDataSource.deleteUserList(userList.id)
+                userListLocalDataSource.deleteUserList(stampedList.id)
                 Result.Failure(result.error)
             }
         }
     }
 
     override suspend fun updateUserList(userList: UserList): Result<Unit, AppError> {
+        val stampedList = userList.stampNow()
         val oldEntity = userListLocalDataSource.getUserListOnce(userList.id)
             ?: return Result.Failure(AppErrors.notFound("List not found"))
-        userListLocalDataSource.upsertUserList(userList.toEntity())
-        return when (val result = userListFirestoreDataSource.saveUserList(userList)) {
+        userListLocalDataSource.upsertUserList(stampedList.toEntity())
+        return when (val result = userListFirestoreDataSource.saveUserList(stampedList)) {
             is Result.Success -> Result.Success(Unit)
             is Result.Failure -> {
                 userListLocalDataSource.upsertUserList(oldEntity)
@@ -144,8 +147,11 @@ class UserListRepositoryImpl @Inject constructor(
                 for (entry in visibleEntries) {
                     val imageUrl = entry.imageUrl
                     val currentEntry = currentEntriesById[entry.id]
+                    val remoteIsNewer = currentEntry?.lastUpdated?.before(entry.lastUpdated) == true
                     val shouldDownloadImage = imageUrl != null && (
-                        currentEntry?.imageUrl != imageUrl || currentEntry.imageData == null
+                        currentEntry?.imageUrl != imageUrl ||
+                            currentEntry.imageData == null ||
+                            remoteIsNewer
                     )
                     val byteArrayResult = if (shouldDownloadImage) {
                         storageDataSource.fetchImageByteArray(imageUrl)
@@ -166,7 +172,10 @@ class UserListRepositoryImpl @Inject constructor(
 
     override fun observeRoutineListEntry(id: String): Flow<Result<RoutineListEntry, AppError>> {
         return userListLocalDataSource.observeRoutineListEntry(id)
-            .map { entity -> appResultOf { entity.toModel() } }
+            .map { entity ->
+                if (entity == null) return@map Result.Failure(AppErrors.notFound("Routine entry not found"))
+                appResultOf { entity.toModel() }
+            }
     }
 
     override fun observeRoutineImageByteArray(entryId: String): Flow<Result<ByteArray, AppError>> {
@@ -179,24 +188,26 @@ class UserListRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveRoutineListEntry(entry: RoutineListEntry): Result<String, AppError> {
-        userListLocalDataSource.upsertRoutineEntry(entry.toEntity())
-        return when (val result = userListFirestoreDataSource.saveRoutineListEntry(entry)) {
-            is Result.Success -> Result.Success(entry.id)
+        val stampedEntry = entry.stampNow()
+        userListLocalDataSource.upsertRoutineEntry(stampedEntry.toEntity())
+        return when (val result = userListFirestoreDataSource.saveRoutineListEntry(stampedEntry)) {
+            is Result.Success -> Result.Success(stampedEntry.id)
             is Result.Failure -> {
-                userListLocalDataSource.deleteRoutineListEntries(listOf(entry.id))
+                userListLocalDataSource.deleteRoutineListEntries(listOf(stampedEntry.id))
                 Result.Failure(result.error)
             }
         }
     }
 
     override suspend fun updateRoutineListEntry(entry: RoutineListEntry): Result<Unit, AppError> {
+        val stampedEntry = entry.stampNow()
         val oldEntity = userListLocalDataSource.getRoutineEntryOnce(entry.id)
-        userListLocalDataSource.upsertRoutineEntry(entry.toEntity(oldEntity?.imageData, oldEntity?.imageUrl))
-        return when (val result = userListFirestoreDataSource.updateRoutineListEntry(entry)) {
+        userListLocalDataSource.upsertRoutineEntry(stampedEntry.toEntity(oldEntity?.imageData, oldEntity?.imageUrl))
+        return when (val result = userListFirestoreDataSource.updateRoutineListEntry(stampedEntry)) {
             is Result.Success -> Result.Success(Unit)
             is Result.Failure -> {
                 if (oldEntity != null) userListLocalDataSource.upsertRoutineEntry(oldEntity)
-                else userListLocalDataSource.deleteRoutineListEntries(listOf(entry.id))
+                else userListLocalDataSource.deleteRoutineListEntries(listOf(stampedEntry.id))
                 Result.Failure(result.error)
             }
         }
@@ -251,28 +262,33 @@ class UserListRepositoryImpl @Inject constructor(
 
     override fun observeWishListEntry(id: String): Flow<Result<WishListEntry, AppError>> {
         return userListLocalDataSource.observeWishListEntry(id)
-            .map { entity -> appResultOf { entity.toModel() } }
+            .map { entity ->
+                if (entity == null) return@map Result.Failure(AppErrors.notFound("Wish list entry not found"))
+                appResultOf { entity.toModel() }
+            }
     }
 
     override suspend fun saveWishListEntry(entry: WishListEntry): Result<String, AppError> {
-        userListLocalDataSource.upsertWishEntry(entry.toEntity())
-        return when (val result = userListFirestoreDataSource.saveWishListEntry(entry)) {
-            is Result.Success -> Result.Success(entry.id)
+        val stampedEntry = entry.stampNow()
+        userListLocalDataSource.upsertWishEntry(stampedEntry.toEntity())
+        return when (val result = userListFirestoreDataSource.saveWishListEntry(stampedEntry)) {
+            is Result.Success -> Result.Success(stampedEntry.id)
             is Result.Failure -> {
-                userListLocalDataSource.deleteWishListEntries(listOf(entry.id))
+                userListLocalDataSource.deleteWishListEntries(listOf(stampedEntry.id))
                 Result.Failure(result.error)
             }
         }
     }
 
     override suspend fun updateWishListEntry(entry: WishListEntry): Result<Unit, AppError> {
+        val stampedEntry = entry.stampNow()
         val oldEntity = userListLocalDataSource.getWishEntryOnce(entry.id)
-        userListLocalDataSource.upsertWishEntry(entry.toEntity())
-        return when (val result = userListFirestoreDataSource.updateWishListEntry(entry)) {
+        userListLocalDataSource.upsertWishEntry(stampedEntry.toEntity())
+        return when (val result = userListFirestoreDataSource.updateWishListEntry(stampedEntry)) {
             is Result.Success -> Result.Success(Unit)
             is Result.Failure -> {
                 if (oldEntity != null) userListLocalDataSource.upsertWishEntry(oldEntity)
-                else userListLocalDataSource.deleteWishListEntries(listOf(entry.id))
+                else userListLocalDataSource.deleteWishListEntries(listOf(stampedEntry.id))
                 Result.Failure(result.error)
             }
         }
@@ -323,28 +339,33 @@ class UserListRepositoryImpl @Inject constructor(
 
     override fun observeNoteEntry(id: String): Flow<Result<NoteEntry, AppError>> {
         return userListLocalDataSource.observeNoteEntry(id)
-            .map { entity -> appResultOf { entity.toModel() } }
+            .map { entity ->
+                if (entity == null) return@map Result.Failure(AppErrors.notFound("Note entry not found"))
+                appResultOf { entity.toModel() }
+            }
     }
 
     override suspend fun saveNoteEntry(entry: NoteEntry): Result<String, AppError> {
-        userListLocalDataSource.upsertNoteEntry(entry.toEntity())
-        return when (val result = userListFirestoreDataSource.saveNoteEntry(entry)) {
-            is Result.Success -> Result.Success(entry.id)
+        val stampedEntry = entry.stampNow()
+        userListLocalDataSource.upsertNoteEntry(stampedEntry.toEntity())
+        return when (val result = userListFirestoreDataSource.saveNoteEntry(stampedEntry)) {
+            is Result.Success -> Result.Success(stampedEntry.id)
             is Result.Failure -> {
-                userListLocalDataSource.deleteNoteEntries(listOf(entry.id))
+                userListLocalDataSource.deleteNoteEntries(listOf(stampedEntry.id))
                 Result.Failure(result.error)
             }
         }
     }
 
     override suspend fun updateNoteEntry(entry: NoteEntry): Result<Unit, AppError> {
+        val stampedEntry = entry.stampNow()
         val oldEntity = userListLocalDataSource.getNoteEntryOnce(entry.id)
-        userListLocalDataSource.upsertNoteEntry(entry.toEntity())
-        return when (val result = userListFirestoreDataSource.updateNoteEntry(entry)) {
+        userListLocalDataSource.upsertNoteEntry(stampedEntry.toEntity())
+        return when (val result = userListFirestoreDataSource.updateNoteEntry(stampedEntry)) {
             is Result.Success -> Result.Success(Unit)
             is Result.Failure -> {
                 if (oldEntity != null) userListLocalDataSource.upsertNoteEntry(oldEntity)
-                else userListLocalDataSource.deleteNoteEntries(listOf(entry.id))
+                else userListLocalDataSource.deleteNoteEntries(listOf(stampedEntry.id))
                 Result.Failure(result.error)
             }
         }
@@ -398,28 +419,33 @@ class UserListRepositoryImpl @Inject constructor(
 
     override fun observeChecklistEntry(id: String): Flow<Result<ChecklistEntry, AppError>> {
         return userListLocalDataSource.observeChecklistEntry(id)
-            .map { entity -> appResultOf { entity.toModel() } }
+            .map { entity ->
+                if (entity == null) return@map Result.Failure(AppErrors.notFound("Checklist entry not found"))
+                appResultOf { entity.toModel() }
+            }
     }
 
     override suspend fun saveChecklistEntry(entry: ChecklistEntry): Result<String, AppError> {
-        userListLocalDataSource.upsertChecklistEntry(entry.toEntity())
-        return when (val result = userListFirestoreDataSource.saveChecklistEntry(entry)) {
-            is Result.Success -> Result.Success(entry.id)
+        val stampedEntry = entry.stampNow()
+        userListLocalDataSource.upsertChecklistEntry(stampedEntry.toEntity())
+        return when (val result = userListFirestoreDataSource.saveChecklistEntry(stampedEntry)) {
+            is Result.Success -> Result.Success(stampedEntry.id)
             is Result.Failure -> {
-                userListLocalDataSource.deleteChecklistEntries(listOf(entry.id))
+                userListLocalDataSource.deleteChecklistEntries(listOf(stampedEntry.id))
                 Result.Failure(result.error)
             }
         }
     }
 
     override suspend fun updateChecklistEntry(entry: ChecklistEntry): Result<Unit, AppError> {
+        val stampedEntry = entry.stampNow()
         val oldEntity = userListLocalDataSource.getChecklistEntryOnce(entry.id)
-        userListLocalDataSource.upsertChecklistEntry(entry.toEntity())
-        return when (val result = userListFirestoreDataSource.updateChecklistEntry(entry)) {
+        userListLocalDataSource.upsertChecklistEntry(stampedEntry.toEntity())
+        return when (val result = userListFirestoreDataSource.updateChecklistEntry(stampedEntry)) {
             is Result.Success -> Result.Success(Unit)
             is Result.Failure -> {
                 if (oldEntity != null) userListLocalDataSource.upsertChecklistEntry(oldEntity)
-                else userListLocalDataSource.deleteChecklistEntries(listOf(entry.id))
+                else userListLocalDataSource.deleteChecklistEntries(listOf(stampedEntry.id))
                 Result.Failure(result.error)
             }
         }

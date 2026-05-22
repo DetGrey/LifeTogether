@@ -53,7 +53,6 @@ import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.common.text.TextLabel
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
-import java.util.Date
 
 @Composable
 fun GuidesScreen(
@@ -300,7 +299,6 @@ private fun GuidesScreenPreview() {
                         id = "guide-1",
                         familyId = "family-1",
                         itemName = "Family reset",
-                        lastUpdated = Date(),
                         description = "Set up a weekly reset plan.",
                         visibility = Visibility.FAMILY,
                         ownerUid = "uid-1",

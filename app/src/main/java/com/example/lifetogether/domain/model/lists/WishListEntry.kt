@@ -7,7 +7,7 @@ data class WishListEntry(
     override val familyId: String,
     override val listId: String,
     override var itemName: String,
-    override var lastUpdated: Date,
+    override val lastUpdated: Date = Date(),
     override val dateCreated: Date,
     val isPurchased: Boolean = false,
     val url: String? = null,

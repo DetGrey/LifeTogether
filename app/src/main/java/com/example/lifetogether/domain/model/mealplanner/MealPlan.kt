@@ -13,6 +13,6 @@ data class MealPlan(
     val customMealName: String? = null,
     val mealType: MealType = MealType.DINNER,
     val notes: String = "",
-    override var lastUpdated: Date,
+    override val lastUpdated: Date = Date(),
     val dateCreated: Date,
 ) : Item

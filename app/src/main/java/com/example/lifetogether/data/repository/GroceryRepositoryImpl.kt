@@ -9,6 +9,7 @@ import com.example.lifetogether.data.model.CategoryEntity
 import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.model.GrocerySuggestionEntity
 import com.example.lifetogether.data.remote.GroceryFirestoreDataSource
+import com.example.lifetogether.data.repository.internal.stampNow
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
@@ -98,6 +99,7 @@ class GroceryRepositoryImpl @Inject constructor(
                             suggestionName = suggestion.suggestionName,
                             category = suggestion.category,
                             approxPrice = suggestion.approxPrice,
+                            lastUpdated = suggestion.lastUpdated,
                         )
                     }
                     groceryLocalDataSource.updateGrocerySuggestions(entities)
@@ -108,24 +110,26 @@ class GroceryRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveGroceryItem(item: GroceryItem): Result<String, AppError> {
-        groceryLocalDataSource.upsertGroceryItem(item.toEntity())
-        return when (val result = groceryFirestoreDataSource.saveGroceryItem(item)) {
-            is Result.Success -> Result.Success(item.id)
+        val stampedItem = item.stampNow()
+        groceryLocalDataSource.upsertGroceryItem(stampedItem.toEntity())
+        return when (val result = groceryFirestoreDataSource.saveGroceryItem(stampedItem)) {
+            is Result.Success -> Result.Success(stampedItem.id)
             is Result.Failure -> {
-                groceryLocalDataSource.deleteGroceryItem(item.id)
+                groceryLocalDataSource.deleteGroceryItem(stampedItem.id)
                 Result.Failure(result.error)
             }
         }
     }
 
     override suspend fun toggleGroceryItemBought(item: GroceryItem): Result<Unit, AppError> {
+        val stampedItem = item.stampNow()
         val oldEntity = groceryLocalDataSource.getGroceryItemOnce(item.id)
-        groceryLocalDataSource.upsertGroceryItem(item.toEntity())
-        return when (val result = groceryFirestoreDataSource.toggleGroceryItemCompletion(item)) {
+        groceryLocalDataSource.upsertGroceryItem(stampedItem.toEntity())
+        return when (val result = groceryFirestoreDataSource.toggleGroceryItemCompletion(stampedItem)) {
             is Result.Success -> Result.Success(Unit)
             is Result.Failure -> {
                 if (oldEntity != null) groceryLocalDataSource.upsertGroceryItem(oldEntity)
-                else groceryLocalDataSource.deleteGroceryItem(item.id)
+                else groceryLocalDataSource.deleteGroceryItem(stampedItem.id)
                 Result.Failure(result.error)
             }
         }
@@ -144,23 +148,65 @@ class GroceryRepositoryImpl @Inject constructor(
     }
 
     override suspend fun addCategory(category: Category): Result<Unit, AppError> {
-        return groceryFirestoreDataSource.addCategory(category)
+        val stamped = category.stampNow()
+        groceryLocalDataSource.upsertCategory(stamped)
+        return when (val result = groceryFirestoreDataSource.addCategory(stamped)) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> {
+                groceryLocalDataSource.deleteCategory(stamped.toEntity())
+                Result.Failure(result.error)
+            }
+        }
     }
 
     override suspend fun deleteCategory(category: Category): Result<Unit, AppError> {
-        return groceryFirestoreDataSource.deleteCategory(category)
+        val entity = category.toEntity()
+        groceryLocalDataSource.deleteCategory(entity)
+        return when (val result = groceryFirestoreDataSource.deleteCategory(category)) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> {
+                groceryLocalDataSource.upsertCategory(category)
+                Result.Failure(result.error)
+            }
+        }
     }
 
     override suspend fun saveGrocerySuggestion(grocerySuggestion: GrocerySuggestion): Result<Unit, AppError> {
-        return groceryFirestoreDataSource.saveGrocerySuggestion(grocerySuggestion)
+        val stamped = grocerySuggestion.stampNow()
+        groceryLocalDataSource.upsertSuggestion(stamped.toEntity())
+        return when (val result = groceryFirestoreDataSource.saveGrocerySuggestion(stamped)) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> {
+                groceryLocalDataSource.deleteSuggestion(stamped.toEntity())
+                Result.Failure(result.error)
+            }
+        }
     }
 
     override suspend fun updateGrocerySuggestion(grocerySuggestion: GrocerySuggestion): Result<Unit, AppError> {
-        return groceryFirestoreDataSource.updateGrocerySuggestion(grocerySuggestion)
+        val stamped = grocerySuggestion.stampNow()
+        val oldEntity = groceryLocalDataSource.getSuggestionOnce(stamped.id)
+        groceryLocalDataSource.upsertSuggestion(stamped.toEntity())
+        return when (val result = groceryFirestoreDataSource.updateGrocerySuggestion(stamped)) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> {
+                if (oldEntity != null) groceryLocalDataSource.upsertSuggestion(oldEntity)
+                else groceryLocalDataSource.deleteSuggestion(stamped.toEntity())
+                Result.Failure(result.error)
+            }
+        }
     }
 
     override suspend fun deleteGrocerySuggestion(grocerySuggestion: GrocerySuggestion): Result<Unit, AppError> {
-        return groceryFirestoreDataSource.deleteGrocerySuggestion(grocerySuggestion)
+        val entity = grocerySuggestion.toEntity()
+        groceryLocalDataSource.deleteSuggestion(entity)
+        return when (val result = groceryFirestoreDataSource.deleteGrocerySuggestion(grocerySuggestion)) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> {
+                groceryLocalDataSource.upsertSuggestion(entity)
+                Result.Failure(result.error)
+            }
+        }
     }
     
     private fun GroceryItem.toEntity() = GroceryListEntity(
@@ -186,6 +232,13 @@ class GroceryRepositoryImpl @Inject constructor(
     private fun CategoryEntity.toModel() = Category(
         emoji = emoji,
         name = name,
+        lastUpdated = lastUpdated,
+    )
+
+    private fun Category.toEntity() = CategoryEntity(
+        emoji = emoji,
+        name = name,
+        lastUpdated = lastUpdated,
     )
 
     private fun GrocerySuggestionEntity.toModel() = GrocerySuggestion(
@@ -193,5 +246,14 @@ class GroceryRepositoryImpl @Inject constructor(
         suggestionName = suggestionName,
         category = category,
         approxPrice = approxPrice,
+        lastUpdated = lastUpdated,
+    )
+
+    private fun GrocerySuggestion.toEntity() = GrocerySuggestionEntity(
+        id = id,
+        suggestionName = suggestionName,
+        category = category,
+        approxPrice = approxPrice,
+        lastUpdated = lastUpdated,
     )
 }

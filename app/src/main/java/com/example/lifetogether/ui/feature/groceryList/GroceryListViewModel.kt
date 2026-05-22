@@ -35,7 +35,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.Date
 import java.util.UUID
 import javax.inject.Inject
 
@@ -242,7 +241,6 @@ class GroceryListViewModel @Inject constructor(
                 familyId = it,
                 category = state.newItemCategory,
                 itemName = state.newItemText,
-                lastUpdated = Date(System.currentTimeMillis()),
                 completed = false,
                 approxPrice = price,
             )
@@ -275,7 +273,6 @@ class GroceryListViewModel @Inject constructor(
     private fun toggleItemCompleted(oldItem: GroceryItem) {
         val newItem = oldItem.copy(
             completed = !oldItem.completed,
-            lastUpdated = Date(System.currentTimeMillis()),
         )
 
         viewModelScope.launch {

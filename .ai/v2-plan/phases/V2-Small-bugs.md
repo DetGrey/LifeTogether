@@ -90,12 +90,11 @@ Here are some questions:
 - [x] For videos, query `MediaStore.Video.Media.DATE_TAKEN` and `MediaStore.Video.Media.DATE_MODIFIED`. 
   - This is a recommended change if you want accurate MediaStore dates for videos.
 - [x] Figure out why downloaded videos show the created-at date in gallery while images show the download date.
+- [x] Decide what should happen when `updateGalleryMedia()` download fails.
 - [ ] _Add tags_.
 - [ ] Add a note or description.
 - [ ] When adding gallery videos, handle the video thumbnail fallback better if thumbnail generation fails.
 - [ ] Share media.
-- [ ] Decide what should happen when `updateGalleryMedia()` download fails.
-  - IN PROGRESS
 
 ### Gallery albums
 - [ ] _Send a notification when everything is downloaded, and maybe link to the gallery LifeTogether folder if possible._
@@ -185,11 +184,8 @@ These are bugs or broken functionality — not features:
 - Needed to match the actual features
 
 **Extra**
-- RootCoordinatorViewModel ignores all results from `userRepository.storeFcmToken(uid, familyId)`
-- firebaseAuth warning in libs: "Provide valid, English-language login credentials in Play Console to ensure Google Play can fully review all app features and content."
-- Make sure this is done everywhere: `If the backend changes file contents without updating lastUpdated, this client will not detect it.`
-- Suppress not found errors when deleting things that will change screen like here after deleting an album you see the error message shortly
-  - errorType=NotFound source=unspecified message=Album not found causeType=none causeMessage=none
+- Make sure this is done everywhere: `If the backend changes fileFi contents without updating lastUpdated, this client will not detect it.`
+  - If firestore doesn't have any date where it's needed then just change it to datecreated if exists and else current time so we can still handle existing data from before this change
 
 ## Skip for v2
 

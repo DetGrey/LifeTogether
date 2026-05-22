@@ -22,6 +22,7 @@ data class MealPlanDetailsLoadSnapshot(
 
 sealed interface MealPlanDetailsLoadState {
     data object Loading : MealPlanDetailsLoadState
+    data object Deleted : MealPlanDetailsLoadState
 
     data class Content(
         val form: MealPlanFormState,
@@ -84,7 +85,11 @@ class MealPlanDetailsLoader @Inject constructor(
 
             is Result.Failure -> MealPlanDetailsLoadSnapshot(
                 familyId = familyId,
-                state = MealPlanDetailsLoadState.Error(error.toUserMessage()),
+                state = if (error is AppError.NotFound) {
+                    MealPlanDetailsLoadState.Deleted
+                } else {
+                    MealPlanDetailsLoadState.Error(error.toUserMessage())
+                },
             )
         }
     }

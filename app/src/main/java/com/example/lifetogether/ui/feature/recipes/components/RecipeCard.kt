@@ -22,7 +22,6 @@ import com.example.lifetogether.domain.logic.minToHourMinString
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
-import java.util.Date
 
 @Composable
 fun RecipeCard(
@@ -90,7 +89,6 @@ private fun RecipeCardPreview() {
                 id = "recipe-1",
                 familyId = "family-1",
                 itemName = "Rød grød med fløde og sovs",
-                lastUpdated = Date(),
                 description = "A classic dessert.",
                 ingredients = emptyList(),
                 instructions = emptyList(),

@@ -22,6 +22,7 @@ data class ListEntryDetailsLoadSnapshot(
 
 sealed interface ListEntryDetailsLoadState {
     data object Loading : ListEntryDetailsLoadState
+    data object Deleted : ListEntryDetailsLoadState
 
     data class Content(
         val details: EntryDetailsContent,
@@ -146,7 +147,11 @@ class ListEntryDetailsLoader @Inject constructor(
 
             is Result.Failure -> ListEntryDetailsLoadSnapshot(
                 familyId = familyId,
-                state = ListEntryDetailsLoadState.Error(error.toUserMessage()),
+                state = if (error is AppError.NotFound) {
+                    ListEntryDetailsLoadState.Deleted
+                } else {
+                    ListEntryDetailsLoadState.Error(error.toUserMessage())
+                },
             )
         }
     }

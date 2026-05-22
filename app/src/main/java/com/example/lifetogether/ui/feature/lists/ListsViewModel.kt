@@ -156,7 +156,6 @@ class ListsViewModel @Inject constructor(
                 id = UUID.randomUUID().toString(),
                 familyId = activeFamilyId,
                 itemName = createDialog.name.trim(),
-                lastUpdated = Date(),
                 dateCreated = Date(),
                 type = createDialog.type,
                 visibility = createDialog.visibility,

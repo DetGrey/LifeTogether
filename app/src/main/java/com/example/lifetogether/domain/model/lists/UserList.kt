@@ -8,7 +8,7 @@ data class UserList(
     override val id: String,
     override val familyId: String,
     override var itemName: String,
-    override var lastUpdated: Date,
+    override val lastUpdated: Date = Date(),
     val dateCreated: Date,
     val type: ListType,
     val visibility: Visibility,

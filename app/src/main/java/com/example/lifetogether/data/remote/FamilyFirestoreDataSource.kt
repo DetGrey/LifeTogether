@@ -54,6 +54,7 @@ class FamilyFirestoreDataSource @Inject constructor(
                         FamilyInformation(
                             familyId = familyId,
                             members = members,
+                            lastUpdated = snapshot.getDate("lastUpdated") ?: Date(0),
                             imageUrl = snapshot.getString("imageUrl"),
                             togetherSince = snapshot.getDate("togetherSince"),
                         ),
@@ -64,45 +65,62 @@ class FamilyFirestoreDataSource @Inject constructor(
         awaitClose { registration.remove() }
     }
 
-    suspend fun joinFamily(familyId: String, uid: String, name: String): Result<Unit, AppError> {
+    suspend fun joinFamily(familyId: String, uid: String, name: String, lastUpdated: Date): Result<Unit, AppError> {
         return appResultOfSuspend {
             val doc = db.collection(Constants.FAMILIES_TABLE).document(familyId).get().await()
             @Suppress("UNCHECKED_CAST")
             val members = doc.data?.get("members") as? List<Map<String, String>>
             val updatedMembers = members?.toMutableList() ?: mutableListOf()
             updatedMembers.add(mapOf("uid" to uid, "name" to name))
-            db.collection(Constants.FAMILIES_TABLE).document(familyId).update("members", updatedMembers).await()
+            db.collection(Constants.FAMILIES_TABLE).document(familyId)
+                .update(
+                    mapOf(
+                        "members" to updatedMembers,
+                        "lastUpdated" to lastUpdated,
+                    ),
+                )
+                .await()
             Result.Success(Unit)
         }
     }
 
-    suspend fun createNewFamily(uid: String, name: String): Result<String, AppError> {
+    suspend fun createNewFamily(uid: String, name: String, lastUpdated: Date): Result<String, AppError> {
         return appResultOfSuspend {
-            val map = mapOf("members" to listOf(mapOf("uid" to uid, "name" to name)))
+            val map = mapOf(
+                "members" to listOf(mapOf("uid" to uid, "name" to name)),
+                "lastUpdated" to lastUpdated,
+            )
             val documentReference = db.collection(Constants.FAMILIES_TABLE).add(map).await()
             documentReference.id
         }
     }
 
-    suspend fun leaveFamily(familyId: String, uid: String): Result<Unit, AppError> {
+    suspend fun leaveFamily(familyId: String, uid: String, lastUpdated: Date): Result<Unit, AppError> {
         return appResultOfSuspend {
             val doc = db.collection(Constants.FAMILIES_TABLE).document(familyId).get().await()
             @Suppress("UNCHECKED_CAST")
             val members = doc.data?.get("members") as? List<Map<String, String>>
             val updatedMembers = members?.filterNot { it["uid"] == uid }?.toMutableList() ?: mutableListOf()
-            db.collection(Constants.FAMILIES_TABLE).document(familyId).update("members", updatedMembers).await()
+            db.collection(Constants.FAMILIES_TABLE).document(familyId)
+                .update(
+                    mapOf(
+                        "members" to updatedMembers,
+                        "lastUpdated" to lastUpdated,
+                    ),
+                )
+                .await()
             Result.Success(Unit)
         }
     }
 
-    suspend fun deleteFamily(familyId: String): Result<Unit, AppError> {
+    suspend fun deleteFamily(familyId: String, lastUpdated: Date): Result<Unit, AppError> {
         return appResultOfSuspend {
             db.collection(Constants.FAMILIES_TABLE).document(familyId).delete().await()
             val usersRef = db.collection(Constants.USER_TABLE).whereEqualTo("familyId", familyId).get().await()
             val failures = mutableListOf<AppError>()
             for (userDocument in usersRef.documents) {
                 val uid = userDocument.id
-                val result = userFirestoreDataSource.updateFamilyId(uid, null)
+                val result = userFirestoreDataSource.updateFamilyId(uid, null, lastUpdated)
                 if (result is Result.Failure) failures.add(result.error)
             }
             if (failures.isNotEmpty()) {
@@ -120,25 +138,37 @@ class FamilyFirestoreDataSource @Inject constructor(
         url ?: throw AppErrorThrowable(AppErrors.notFound("Family image not found"))
     }
 
-    suspend fun saveFamilyImageUrl(familyId: String, url: String): Result<Unit, AppError> {
+    suspend fun saveFamilyImageUrl(familyId: String, url: String, lastUpdated: Date = Date()): Result<Unit, AppError> {
         return appResultOfSuspend {
             db.collection(Constants.FAMILIES_TABLE).document(familyId)
-                .update(mapOf("imageUrl" to url)).await()
+                .update(
+                    mapOf(
+                        "imageUrl" to url,
+                        "lastUpdated" to lastUpdated,
+                    ),
+                ).await()
         }
     }
 
     suspend fun saveFamilyTogetherSince(
         familyId: String,
         togetherSince: Date?,
+        lastUpdated: Date = Date(),
     ): Result<Unit, AppError> {
         return appResultOfSuspend {
             db.collection(Constants.FAMILIES_TABLE).document(familyId)
-                .set(mapOf("togetherSince" to togetherSince), SetOptions.merge())
+                .set(
+                    mapOf(
+                        "togetherSince" to togetherSince,
+                        "lastUpdated" to lastUpdated,
+                    ),
+                    SetOptions.merge(),
+                )
                 .await()
         }
     }
 
-    suspend fun storeFcmToken(uid: String, familyId: String) {
+    suspend fun storeFcmToken(uid: String, familyId: String, lastUpdated: Date) {
         val fcmToken = try {
             FirebaseMessaging.getInstance().token.await()
         } catch (e: Exception) {
@@ -163,14 +193,19 @@ class FamilyFirestoreDataSource @Inject constructor(
                 }
             }
             if (updatedMembers != members) {
-                familyDocRef.update("members", updatedMembers).await()
+                familyDocRef.update(
+                    mapOf(
+                        "members" to updatedMembers,
+                        "lastUpdated" to lastUpdated,
+                    ),
+                ).await()
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error updating FCM token", e)
         }
     }
 
-    suspend fun removeDeviceToken(uid: String, familyId: String): Result<Unit, AppError> {
+    suspend fun removeDeviceToken(uid: String, familyId: String, lastUpdated: Date): Result<Unit, AppError> {
         return appResultOfSuspend {
             val familyDocRef = db.collection(Constants.FAMILIES_TABLE).document(familyId)
             val document = familyDocRef.get().await()
@@ -181,7 +216,12 @@ class FamilyFirestoreDataSource @Inject constructor(
             val updatedMembers = members.map { member ->
                 if (member["uid"] == uid) member.toMutableMap().apply { remove("fcmToken") } else member
             }
-            familyDocRef.update("members", updatedMembers).await()
+            familyDocRef.update(
+                mapOf(
+                    "members" to updatedMembers,
+                    "lastUpdated" to lastUpdated,
+                ),
+            ).await()
         }
     }
 

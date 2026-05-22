@@ -35,7 +35,6 @@ import com.example.lifetogether.ui.feature.guides.details.components.GuideHeroCa
 import com.example.lifetogether.ui.feature.guides.details.components.GuideSectionCard
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import java.util.Date
 
 @Composable
 fun GuideDetailsScreen(
@@ -269,7 +268,6 @@ private fun GuideDetailsScreenPreview() {
                     id = "guide-1",
                     familyId = "family-1",
                     itemName = "Family reset",
-                    lastUpdated = Date(),
                     description = "A simple weekly reset guide",
                     visibility = Visibility.FAMILY,
                     ownerUid = "uid-1",

@@ -20,6 +20,7 @@ import com.example.lifetogether.domain.model.lists.ListType
 import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -84,7 +85,7 @@ class UserListLocalDataSource @Inject constructor(
         }
     }
 
-    fun observeRoutineListEntry(id: String): Flow<RoutineListEntryEntity> {
+    fun observeRoutineListEntry(id: String): Flow<RoutineListEntryEntity?> {
         return routineListsDao.getItemById(id)
     }
 
@@ -138,11 +139,13 @@ class UserListLocalDataSource @Inject constructor(
         familyId: String,
         entryId: String,
         imageData: ByteArray?,
+        lastUpdated: Date = Date(),
     ) {
         routineListsDao.updateImageByteArray(
             familyId = familyId,
             entryId = entryId,
             imageData = imageData,
+            lastUpdated = lastUpdated,
         )
     }
 
@@ -150,11 +153,13 @@ class UserListLocalDataSource @Inject constructor(
         familyId: String,
         entryId: String,
         imageUrl: String?,
+        lastUpdated: Date = Date(),
     ) {
         routineListsDao.updateImageUrl(
             familyId = familyId,
             entryId = entryId,
             imageUrl = imageUrl,
+            lastUpdated = lastUpdated,
         )
     }
 
@@ -176,7 +181,7 @@ class UserListLocalDataSource @Inject constructor(
         return wishListsDao.getItemsByListId(familyId, listId)
     }
 
-    fun observeWishListEntry(id: String): Flow<WishListEntryEntity> {
+    fun observeWishListEntry(id: String): Flow<WishListEntryEntity?> {
         return wishListsDao.getItemById(id)
     }
 
@@ -215,7 +220,7 @@ class UserListLocalDataSource @Inject constructor(
         return noteEntriesDao.getItemsByListId(familyId, listId)
     }
 
-    fun observeNoteEntry(id: String): Flow<NoteEntryEntity> {
+    fun observeNoteEntry(id: String): Flow<NoteEntryEntity?> {
         return noteEntriesDao.getItemById(id)
     }
 
@@ -254,7 +259,7 @@ class UserListLocalDataSource @Inject constructor(
         return checklistEntriesDao.getItemsByListId(familyId, listId)
     }
 
-    fun observeChecklistEntry(id: String): Flow<ChecklistEntryEntity> {
+    fun observeChecklistEntry(id: String): Flow<ChecklistEntryEntity?> {
         return checklistEntriesDao.getItemById(id)
     }
 

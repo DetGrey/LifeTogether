@@ -6,6 +6,7 @@ import com.example.lifetogether.data.logic.AppErrors
 import com.example.lifetogether.data.logic.appResultOf
 import com.example.lifetogether.data.logic.appResultOfSuspend
 import com.example.lifetogether.data.remote.RecipeFirestoreDataSource
+import com.example.lifetogether.data.repository.internal.stampNow
 import com.example.lifetogether.domain.datasource.StorageDataSource
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.domain.repository.RecipeRepository
@@ -38,8 +39,11 @@ class RecipeRepositoryImpl @Inject constructor(
                         for (recipe in result.data.items) {
                             val imageUrl = recipe.imageUrl
                             val currentRecipe = currentRecipesById[recipe.id]
+                            val remoteIsNewer = currentRecipe?.recipe?.lastUpdated?.before(recipe.lastUpdated) == true
                             val shouldDownloadImage = imageUrl != null && (
-                                currentRecipe?.recipe?.imageUrl != imageUrl || currentRecipe.recipe.imageData == null
+                                currentRecipe?.recipe?.imageUrl != imageUrl ||
+                                    currentRecipe.recipe.imageData == null ||
+                                    remoteIsNewer
                             )
                             val byteArrayResult = if (shouldDownloadImage) {
                                 storageDataSource.fetchImageByteArray(imageUrl)
@@ -69,24 +73,26 @@ class RecipeRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveRecipe(recipe: Recipe): Result<String, AppError> {
-        recipeLocalDataSource.upsertRecipe(recipe)
-        return when (val result = recipeFirestoreDataSource.saveRecipe(recipe)) {
-            is Result.Success -> Result.Success(recipe.id)
+        val stampedRecipe = recipe.stampNow()
+        recipeLocalDataSource.upsertRecipe(stampedRecipe)
+        return when (val result = recipeFirestoreDataSource.saveRecipe(stampedRecipe)) {
+            is Result.Success -> Result.Success(stampedRecipe.id)
             is Result.Failure -> {
-                recipeLocalDataSource.deleteRecipe(recipe.id)
+                recipeLocalDataSource.deleteRecipe(stampedRecipe.id)
                 Result.Failure(result.error)
             }
         }
     }
 
     override suspend fun updateRecipe(recipe: Recipe): Result<Unit, AppError> {
+        val stampedRecipe = recipe.stampNow()
         val oldEntity = recipeLocalDataSource.getRecipeOnce(recipe.id)
         recipeLocalDataSource.upsertRecipe(
-            recipe = recipe,
+            recipe = stampedRecipe,
             imageData = oldEntity?.recipe?.imageData,
             imageUrl = oldEntity?.recipe?.imageUrl,
         )
-        return when (val result = recipeFirestoreDataSource.updateRecipe(recipe)) {
+        return when (val result = recipeFirestoreDataSource.updateRecipe(stampedRecipe)) {
             is Result.Success -> Result.Success(Unit)
             is Result.Failure -> {
                 if (oldEntity != null) {

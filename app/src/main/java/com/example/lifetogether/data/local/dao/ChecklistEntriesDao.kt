@@ -17,7 +17,7 @@ interface ChecklistEntriesDao {
     fun getItemsByListId(familyId: String, listId: String): Flow<List<ChecklistEntryEntity>>
 
     @Query("SELECT * FROM $CHECKLIST_ENTRIES_TABLE WHERE id = :id")
-    fun getItemById(id: String): Flow<ChecklistEntryEntity>
+    fun getItemById(id: String): Flow<ChecklistEntryEntity?>
 
     @Query("SELECT * FROM $CHECKLIST_ENTRIES_TABLE WHERE id = :id LIMIT 1")
     suspend fun getItemOnce(id: String): ChecklistEntryEntity?

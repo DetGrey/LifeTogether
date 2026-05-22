@@ -8,7 +8,7 @@ data class Guide(
     override val id: String,
     override val familyId: String,
     override var itemName: String,
-    override var lastUpdated: Date,
+    override val lastUpdated: Date = Date(),
     val description: String,
     val visibility: Visibility,
     val ownerUid: String,

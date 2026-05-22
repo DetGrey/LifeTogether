@@ -26,7 +26,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
-import java.util.Date
+import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel(assistedFactory = GuideStepPlayerViewModel.Factory::class)
 class GuideStepPlayerViewModel @AssistedInject constructor(
@@ -218,7 +218,6 @@ class GuideStepPlayerViewModel @AssistedInject constructor(
             started = true,
             sections = sections,
             resume = resolvedResumePointer?.let(GuideProgress::resumeFromPointer),
-            lastUpdated = Date(),
         )
     }
 
@@ -248,7 +247,7 @@ class GuideStepPlayerViewModel @AssistedInject constructor(
         guidePersistJob?.cancel()
         Log.d(TAG, "scheduleGuidePersistence cached guideId=${normalizedGuide.id} debounceMs=$GUIDE_PERSIST_DEBOUNCE_MS")
         guidePersistJob = viewModelScope.launch {
-            delay(GUIDE_PERSIST_DEBOUNCE_MS)
+            delay(GUIDE_PERSIST_DEBOUNCE_MS.milliseconds)
             flushPendingGuidePersistence()
         }
     }

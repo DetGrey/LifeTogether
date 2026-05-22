@@ -65,6 +65,7 @@ class ListEntryDetailsViewModel @AssistedInject constructor(
                 _familyId.value = snapshot.familyId
                 when (val state = snapshot.state) {
                     ListEntryDetailsLoadState.Loading -> resetLoadingState()
+                    ListEntryDetailsLoadState.Deleted -> _commands.send(ListEntryDetailsCommand.NavigateBack)
                     is ListEntryDetailsLoadState.Content -> showContent(state.details, state.isNewEntry)
                     is ListEntryDetailsLoadState.Error -> showError(state.message)
                 }

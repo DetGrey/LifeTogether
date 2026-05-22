@@ -356,10 +356,15 @@ class UserListFirestoreDataSource @Inject constructor(
         url ?: throw AppErrorThrowable(AppErrors.notFound("List entry image not found"))
     }
 
-    suspend fun saveRoutineListEntryImageUrl(entryId: String, url: String): Result<Unit, AppError> {
+    suspend fun saveRoutineListEntryImageUrl(entryId: String, url: String, lastUpdated: Date = Date()): Result<Unit, AppError> {
         return appResultOfSuspend {
             db.collection(Constants.ROUTINE_LIST_ENTRIES_TABLE).document(entryId)
-                .update(mapOf("imageUrl" to url))
+                .update(
+                    mapOf(
+                        "imageUrl" to url,
+                        "lastUpdated" to lastUpdated,
+                    ),
+                )
                 .await()
         }
     }

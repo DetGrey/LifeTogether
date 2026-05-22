@@ -7,7 +7,7 @@ data class RoutineListEntry(
     override val familyId: String,
     override val listId: String,
     override var itemName: String,
-    override var lastUpdated: Date,
+    override val lastUpdated: Date = Date(),
     override val dateCreated: Date,
     val nextDate: Date,
     val recurrenceUnit: RecurrenceUnit,

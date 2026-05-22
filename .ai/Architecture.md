@@ -187,10 +187,27 @@ Historical phase decisions remain in `.ai/v2-plan/` and are not duplicated here.
 - One-shot writes and commands return `Result` and are responsible for their own optimistic local persistence, remote write, and rollback behavior.
 - Repositories own the mapping/orchestration logic between remote data, local data sources, and domain models.
 - Create, update, and delete operations should be local-first and optimistic so the UI can reflect the change immediately.
+- Every persisted app-managed model must carry and maintain `lastUpdated`.
+- Every local-first write must stamp `lastUpdated` before writing to Room, and the corresponding remote write must persist the same logical change with an updated `lastUpdated` as well.
+- Narrow field updates such as image URL changes, family membership changes, counters, and embedded-member updates are not exempt; they must update `lastUpdated` in the same write path instead of relying on callers to remember.
 - If a remote write fails, the repository is responsible for rolling back the local optimistic change where that rollback is meaningful.
 - Phase 13 is the current write intent: repositories write to Room first, the UI observes that local change immediately, then the remote Firestore write follows.
 - Firestore snapshot listeners are reconciliation-only; they correct divergence from other devices or server-side changes and are not the source of immediate UI truth.
 - Do not reintroduce a write-then-wait flow where the screen stays stale until the snapshot listener echoes the change back from the server.
+
+## Timestamp Stamping Rules
+
+- `lastUpdated` on all domain models is an immutable `val` with a `= Date()` default so construction sites do not need to supply it.
+- `Date()` must only be instantiated in the **repository layer**. Data sources (Firestore and Room) must never call `Date()` internally; they receive the timestamp as an explicit parameter.
+- The same `Date` instance must flow into both the local Room write and the Firestore write for any given operation, so both stores carry an identical timestamp.
+- `stampNow()` extension functions in `data/repository/internal/LastUpdatedPolicy.kt` are the canonical way to stamp a complete domain object before saving it (e.g. `val stamped = item.stampNow()`). Each domain type has its own overload so `.copy(lastUpdated = now)` compiles correctly for sealed types.
+- `val now = Date()` directly in the repository is correct when the same timestamp must be applied across multiple partial `.copy()` calls or multiple entity types at once (e.g. updating `albumId` + `lastUpdated` on media entities and `count` + `lastUpdated` on album entities in the same operation). This is a deliberate choice, not a gap — `stampNow()` only sets `lastUpdated` and requires a domain object.
+
+## Room Migration Rules
+
+- Every new field added to a domain model must have a corresponding `ALTER TABLE ADD COLUMN` statement in `AppDatabaseMigrations.kt`.
+- When a domain model with new fields is used as an `@Embedded` type inside a Room entity, **every** table that embeds it (with any `@Embedded(prefix = ...)`) needs its own `ALTER TABLE` statement — one per embedding table, not just one for the type's own table.
+- Always verify the exact column name Room expects by checking the generated `AppDatabase_Impl.kt` before writing the migration SQL.
 
 ## Current-State Notes
 

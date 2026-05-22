@@ -73,9 +73,16 @@ class UserFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun updateFamilyId(uid: String, familyId: String?): Result<Unit, AppError> {
+    suspend fun updateFamilyId(uid: String, familyId: String?, lastUpdated: Date): Result<Unit, AppError> {
         return appResultOfSuspend {
-            db.collection(Constants.USER_TABLE).document(uid).update("familyId", familyId).await()
+            db.collection(Constants.USER_TABLE).document(uid)
+                .update(
+                    mapOf(
+                        "familyId" to familyId,
+                        "lastUpdated" to lastUpdated,
+                    ),
+                )
+                .await()
         }
     }
 
@@ -83,9 +90,17 @@ class UserFirestoreDataSource @Inject constructor(
         uid: String,
         familyId: String?,
         newName: String,
+        lastUpdated: Date,
     ): Result<Unit, AppError> {
         return appResultOfSuspend {
-            db.collection(Constants.USER_TABLE).document(uid).update("name", newName).await()
+            db.collection(Constants.USER_TABLE).document(uid)
+                .update(
+                    mapOf(
+                        "name" to newName,
+                        "lastUpdated" to lastUpdated,
+                    ),
+                )
+                .await()
             if (familyId != null) {
                 val familyDocRef = db.collection(Constants.FAMILIES_TABLE).document(familyId)
                 val familySnapshot = familyDocRef.get().await()
@@ -95,7 +110,12 @@ class UserFirestoreDataSource @Inject constructor(
                     val updatedMembers = members.map { member ->
                         if (member["uid"] == uid) member.toMutableMap().apply { this["name"] = newName } else member
                     }
-                    familyDocRef.update("members", updatedMembers).await()
+                    familyDocRef.update(
+                        mapOf(
+                            "members" to updatedMembers,
+                            "lastUpdated" to lastUpdated,
+                        ),
+                    ).await()
                 }
             }
         }
@@ -107,9 +127,16 @@ class UserFirestoreDataSource @Inject constructor(
         url ?: throw AppErrorThrowable(AppErrors.notFound("User image not found"))
     }
 
-    suspend fun saveUserImageUrl(uid: String, url: String): Result<Unit, AppError> {
+    suspend fun saveUserImageUrl(uid: String, url: String, lastUpdated: Date = Date()): Result<Unit, AppError> {
         return appResultOfSuspend {
-            db.collection(Constants.USER_TABLE).document(uid).update(mapOf("imageUrl" to url)).await()
+            db.collection(Constants.USER_TABLE).document(uid)
+                .update(
+                    mapOf(
+                        "imageUrl" to url,
+                        "lastUpdated" to lastUpdated,
+                    ),
+                )
+                .await()
         }
     }
 }
@@ -119,6 +146,7 @@ private data class UserInformationDto(
     val uid: String? = null,
     val email: String? = null,
     val name: String? = null,
+    val lastUpdated: Date? = null,
     val birthday: Date? = null,
     val familyId: String? = null,
     val imageUrl: String? = null,
@@ -131,6 +159,7 @@ private data class UserInformationDto(
             uid = uidValue,
             email = emailValue,
             name = nameValue,
+            lastUpdated = lastUpdated ?: Date(0),
             birthday = birthday,
             familyId = familyId,
             imageUrl = imageUrl,
@@ -140,6 +169,7 @@ private data class UserInformationDto(
     fun toFirestoreMap(): Map<String, Any?> = mapOf(
         "email" to email,
         "name" to name,
+        "lastUpdated" to lastUpdated,
         "birthday" to birthday,
         "familyId" to familyId,
         "imageUrl" to imageUrl,
@@ -150,6 +180,7 @@ private fun UserInformation.toDto(): UserInformationDto = UserInformationDto(
     uid = uid,
     email = email,
     name = name,
+    lastUpdated = lastUpdated,
     birthday = birthday,
     familyId = familyId,
     imageUrl = imageUrl,

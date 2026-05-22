@@ -26,7 +26,6 @@ import com.example.lifetogether.domain.model.grocery.GroceryItem
 import com.example.lifetogether.ui.common.list.CompletableBox
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
-import java.util.Date
 
 @Composable
 fun GroceryListItem(
@@ -100,7 +99,6 @@ private fun GroceryListItemPreview() {
                         "Fruits and vegetables",
                     ),
                     itemName = "Potatoes",
-                    lastUpdated = Date(System.currentTimeMillis()),
                     completed = true,
                 ),
                 trailingText = "9 kr.",
@@ -116,7 +114,6 @@ private fun GroceryListItemPreview() {
                         "Fruits and vegetables",
                     ),
                     itemName = "Tomato",
-                    lastUpdated = Date(System.currentTimeMillis()),
                     completed = false,
                 ),
                 trailingText = "9 kr.",

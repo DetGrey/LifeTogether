@@ -106,21 +106,45 @@ class GalleryFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun updateAlbumCount(albumId: String, increment: Int): Result<Unit, AppError> {
+    suspend fun updateAlbumCount(albumId: String, increment: Int, lastUpdated: Date): Result<Unit, AppError> {
         return appResultOfSuspend {
             db.collection(Constants.ALBUMS_TABLE).document(albumId)
-                .update("count", FieldValue.increment(increment.toDouble())).await()
+                .update(
+                    mapOf(
+                        "count" to FieldValue.increment(increment.toDouble()),
+                        "lastUpdated" to lastUpdated,
+                    ),
+                )
+                .await()
         }
     }
 
-    suspend fun moveMediaToAlbum(mediaIdList: Set<String>, newAlbumId: String, oldAlbumId: String): Result<Unit, AppError> {
+    suspend fun moveMediaToAlbum(mediaIdList: Set<String>, newAlbumId: String, oldAlbumId: String, lastUpdated: Date): Result<Unit, AppError> {
         return appResultOfSuspend {
             val batch = db.batch()
             mediaIdList.forEach { id ->
-                batch.update(db.collection(Constants.GALLERY_MEDIA_TABLE).document(id), "albumId", newAlbumId)
+                batch.update(
+                    db.collection(Constants.GALLERY_MEDIA_TABLE).document(id),
+                    mapOf(
+                        "albumId" to newAlbumId,
+                        "lastUpdated" to lastUpdated,
+                    ),
+                )
             }
-            batch.update(db.collection(Constants.ALBUMS_TABLE).document(newAlbumId), "count", FieldValue.increment(mediaIdList.size.toDouble()))
-            batch.update(db.collection(Constants.ALBUMS_TABLE).document(oldAlbumId), "count", FieldValue.increment(-mediaIdList.size.toDouble()))
+            batch.update(
+                db.collection(Constants.ALBUMS_TABLE).document(newAlbumId),
+                mapOf(
+                    "count" to FieldValue.increment(mediaIdList.size.toDouble()),
+                    "lastUpdated" to lastUpdated,
+                ),
+            )
+            batch.update(
+                db.collection(Constants.ALBUMS_TABLE).document(oldAlbumId),
+                mapOf(
+                    "count" to FieldValue.increment(-mediaIdList.size.toDouble()),
+                    "lastUpdated" to lastUpdated,
+                ),
+            )
             batch.commit().await()
         }
     }
@@ -130,7 +154,7 @@ class GalleryFirestoreDataSource @Inject constructor(
             val batch = db.batch()
             val collectionRef = db.collection(Constants.GALLERY_MEDIA_TABLE)
             galleryMedia.forEach { media ->
-                val docRef = collectionRef.document()
+                val docRef = collectionRef.document(media.id)
                 batch.set(docRef, media.toDto().toFirestoreMap())
             }
             batch.commit().await()

@@ -202,7 +202,13 @@ class AlbumDetailsViewModel @AssistedInject constructor(
                         }
                     }
 
-                    is Result.Failure -> showError(result.error.toUserMessage())
+                    is Result.Failure -> {
+                        if (result.error is AppError.NotFound) {
+                            sendCommand(AlbumDetailsCommand.NavigateBack)
+                        } else {
+                            showError(result.error.toUserMessage())
+                        }
+                    }
                 }
             }
         }
@@ -368,6 +374,7 @@ class AlbumDetailsViewModel @AssistedInject constructor(
         viewModelScope.launch {
             when (val result = deleteAlbumUseCase.invoke(albumIdValue, contentState.media)) {
                 is Result.Success -> {
+                    observeAlbumJob?.cancel()
                     sendCommand(AlbumDetailsCommand.NavigateBack)
                 }
 

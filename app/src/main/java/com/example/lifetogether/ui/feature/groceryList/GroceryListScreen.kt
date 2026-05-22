@@ -51,7 +51,6 @@ import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.util.UNCATEGORIZED_CATEGORY
 import com.example.lifetogether.util.UNCATEGORIZED_CATEGORY_NAME
 import com.example.lifetogether.util.priceToString
-import java.util.Date
 import kotlin.math.min
 
 private const val COMPLETED_ITEMS_PAGE_SIZE = 10
@@ -273,7 +272,6 @@ private fun GroceryListScreenContentPreview() {
                         familyId = "family-1",
                         category = UNCATEGORIZED_CATEGORY,
                         itemName = "Apple",
-                        lastUpdated = Date(),
                         approxPrice = 12.0F
                     ),
                     GroceryItem(
@@ -281,7 +279,6 @@ private fun GroceryListScreenContentPreview() {
                         familyId = "family-1",
                         category = UNCATEGORIZED_CATEGORY,
                         itemName = "Apple",
-                        lastUpdated = Date(),
                     ),
                 ),
                 categorizedItems = mapOf(
@@ -291,7 +288,6 @@ private fun GroceryListScreenContentPreview() {
                             familyId = "family-1",
                             category = UNCATEGORIZED_CATEGORY,
                             itemName = "Apple",
-                            lastUpdated = Date(),
                             approxPrice = 12.0F
                         ),
                         GroceryItem(
@@ -299,7 +295,6 @@ private fun GroceryListScreenContentPreview() {
                             familyId = "family-1",
                             category = UNCATEGORIZED_CATEGORY,
                             itemName = "Banana",
-                            lastUpdated = Date(),
                         ),
                     )
                 ),
@@ -309,7 +304,6 @@ private fun GroceryListScreenContentPreview() {
                         familyId = "family-1",
                         category = UNCATEGORIZED_CATEGORY,
                         itemName = "Banana",
-                        lastUpdated = Date(),
                     )
                 ),
                 groceryCategories = listOf(UNCATEGORIZED_CATEGORY),

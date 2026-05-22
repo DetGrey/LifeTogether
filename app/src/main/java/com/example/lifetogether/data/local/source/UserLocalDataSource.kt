@@ -33,6 +33,7 @@ class UserLocalDataSource @Inject constructor(
             uid = userInformation.uid,
             email = userInformation.email,
             name = userInformation.name,
+            lastUpdated = userInformation.lastUpdated,
             birthday = userInformation.birthday,
             familyId = userInformation.familyId,
             imageData = imageData,
@@ -52,15 +53,17 @@ class UserLocalDataSource @Inject constructor(
     suspend fun updateProfileImageByteArray(
         uid: String,
         imageData: ByteArray?,
+        lastUpdated: Date = Date(),
     ) {
-        userInformationDao.updateImageByteArray(uid, imageData)
+        userInformationDao.updateImageByteArray(uid, imageData, lastUpdated)
     }
 
     suspend fun updateProfileImageUrl(
         uid: String,
         imageUrl: String?,
+        lastUpdated: Date = Date(),
     ) {
-        userInformationDao.updateImageUrl(uid, imageUrl)
+        userInformationDao.updateImageUrl(uid, imageUrl, lastUpdated)
     }
 
     fun observeFamilyImageByteArray(familyId: String): Flow<ByteArray?> = familyInformationDao.observeImageByteArray(familyId)
@@ -70,22 +73,34 @@ class UserLocalDataSource @Inject constructor(
     suspend fun updateFamilyImageByteArray(
         familyId: String,
         imageData: ByteArray?,
+        lastUpdated: Date = Date(),
     ) {
-        familyInformationDao.updateImageByteArray(familyId, imageData)
+        familyInformationDao.updateImageByteArray(familyId, imageData, lastUpdated)
     }
 
     suspend fun updateFamilyImageUrl(
         familyId: String,
         imageUrl: String?,
+        lastUpdated: Date = Date(),
     ) {
-        familyInformationDao.updateImageUrl(familyId, imageUrl)
+        familyInformationDao.updateImageUrl(familyId, imageUrl, lastUpdated)
+    }
+
+    suspend fun updateUserName(uid: String, name: String, lastUpdated: Date) {
+        userInformationDao.updateName(uid, name, lastUpdated)
+    }
+
+    suspend fun updateFamilyMemberName(uid: String, name: String, familyId: String?, lastUpdated: Date) {
+        familyInformationDao.updateMemberName(uid, name)
+        if (familyId != null) familyInformationDao.updateLastUpdated(familyId, lastUpdated)
     }
 
     suspend fun updateFamilyTogetherSince(
         familyId: String,
         togetherSince: Date?,
+        lastUpdated: Date = Date(),
     ) {
-        familyInformationDao.updateTogetherSince(familyId, togetherSince)
+        familyInformationDao.updateTogetherSince(familyId, togetherSince, lastUpdated)
     }
 
     suspend fun updateFamilyInformation(
@@ -102,6 +117,7 @@ class UserLocalDataSource @Inject constructor(
         }
         val familyEntity = FamilyEntity(
             familyId = familyInformation.familyId,
+            lastUpdated = familyInformation.lastUpdated,
             imageData = imageData,
             imageUrl = familyInformation.imageUrl,
             togetherSince = familyInformation.togetherSince,

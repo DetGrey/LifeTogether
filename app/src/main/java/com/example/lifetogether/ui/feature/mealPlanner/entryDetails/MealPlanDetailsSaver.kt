@@ -53,7 +53,6 @@ class MealPlanDetailsSaver @Inject constructor(
             customMealName = customMealName?.takeIf { it.isNotBlank() },
             mealType = form.mealType,
             notes = form.notes,
-            lastUpdated = now,
             dateCreated = now,
         )
         return if (mealPlanId == null) {

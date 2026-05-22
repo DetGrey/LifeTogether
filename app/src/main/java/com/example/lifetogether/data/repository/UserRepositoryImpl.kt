@@ -10,6 +10,7 @@ import com.example.lifetogether.data.local.source.UserLocalDataSource
 import com.example.lifetogether.data.remote.FamilyFirestoreDataSource
 import com.example.lifetogether.data.remote.FirebaseAuthDataSource
 import com.example.lifetogether.data.remote.UserFirestoreDataSource
+import com.example.lifetogether.data.repository.internal.stampNow
 import com.example.lifetogether.domain.datasource.StorageDataSource
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.User
@@ -46,6 +47,7 @@ class UserRepositoryImpl @Inject constructor(
                 // Initial FamilyInformation without members
                 FamilyInformation(
                     familyId = user.familyId,
+                    lastUpdated = user.lastUpdated,
                     imageUrl = user.imageUrl,
                     togetherSince = user.togetherSince,
                 )
@@ -95,7 +97,8 @@ class UserRepositoryImpl @Inject constructor(
     ): Result<UserInformation, AppError> {
         Log.d(TAG, "signUp start")
         return appResultOfSuspend {
-            val signupResult = firebaseAuthDataSource.signUp(user, userInformation)
+            val stampedUserInformation = userInformation.stampNow()
+            val signupResult = firebaseAuthDataSource.signUp(user, stampedUserInformation)
             Log.d(TAG, "signUp auth response received")
             val signedUpUser = when (signupResult) {
                 is Result.Success -> signupResult.data
@@ -118,7 +121,7 @@ class UserRepositoryImpl @Inject constructor(
         uid: String,
         familyId: String?,
     ): Result<Unit, AppError> {
-        return firebaseAuthDataSource.logout(uid, familyId)
+        return firebaseAuthDataSource.logout(uid, familyId, Date())
     }
 
     override suspend fun fetchUserInformation(uid: String): Result<UserInformation, AppError> {
@@ -134,7 +137,10 @@ class UserRepositoryImpl @Inject constructor(
         familyId: String?,
         newName: String,
     ): Result<Unit, AppError> {
-        return when (val result = userFirestoreDataSource.changeName(uid, familyId, newName)) {
+        val now = Date()
+        userLocalDataSource.updateUserName(uid, newName, now)
+        userLocalDataSource.updateFamilyMemberName(uid, newName, familyId, now)
+        return when (val result = userFirestoreDataSource.changeName(uid, familyId, newName, now)) {
             is Result.Success -> Result.Success(Unit)
             is Result.Failure -> Result.Failure(result.error)
         }
@@ -147,8 +153,11 @@ class UserRepositoryImpl @Inject constructor(
                     val currentLocalUser = userLocalDataSource.getProfileOnce(result.data.uid)
                     val currentImageUrl = result.data.imageUrl
                     val localImageUrl = currentLocalUser?.imageUrl
+                    val remoteIsNewer = currentLocalUser?.lastUpdated?.before(result.data.lastUpdated) == true
                     val shouldDownloadImage = currentImageUrl != null && (
-                        localImageUrl != currentImageUrl || currentLocalUser.imageData == null
+                        localImageUrl != currentImageUrl ||
+                            currentLocalUser.imageData == null ||
+                            remoteIsNewer
                     )
                     val imageBytes = when {
                         currentImageUrl == null -> null
@@ -176,8 +185,11 @@ class UserRepositoryImpl @Inject constructor(
                     val currentLocalFamily = userLocalDataSource.getFamilyOnce(result.data.familyId)
                     val currentImageUrl = result.data.imageUrl
                     val localImageUrl = currentLocalFamily?.imageUrl
+                    val remoteIsNewer = currentLocalFamily?.lastUpdated?.before(result.data.lastUpdated) == true
                     val shouldDownloadImage = currentImageUrl != null && (
-                        localImageUrl != currentImageUrl || currentLocalFamily.imageData == null
+                        localImageUrl != currentImageUrl ||
+                            currentLocalFamily.imageData == null ||
+                            remoteIsNewer
                     )
                     val imageBytes = when {
                         currentImageUrl == null -> null
@@ -203,9 +215,10 @@ class UserRepositoryImpl @Inject constructor(
         togetherSince: Date?,
     ): Result<Unit, AppError> {
         return appResultOfSuspend {
-            when (val result = familyFirestoreDataSource.saveFamilyTogetherSince(familyId, togetherSince)) {
+            val now = Date()
+            when (val result = familyFirestoreDataSource.saveFamilyTogetherSince(familyId, togetherSince, now)) {
                 is Result.Success -> {
-                    userLocalDataSource.updateFamilyTogetherSince(familyId, togetherSince)
+                    userLocalDataSource.updateFamilyTogetherSince(familyId, togetherSince, now)
                 }
                 is Result.Failure -> throw AppErrorThrowable(result.error)
             }
@@ -218,9 +231,10 @@ class UserRepositoryImpl @Inject constructor(
         name: String,
     ): Result<Unit, AppError> {
         Log.d(TAG, "joinFamily start")
-        when (val result = familyFirestoreDataSource.joinFamily(familyId, uid, name)) {
+        val now = Date()
+        when (val result = familyFirestoreDataSource.joinFamily(familyId, uid, name, now)) {
             is Result.Success -> {
-                val updateResult = userFirestoreDataSource.updateFamilyId(uid, familyId)
+                val updateResult = userFirestoreDataSource.updateFamilyId(uid, familyId, now)
                 return updateResult
             }
             is Result.Failure -> {
@@ -234,9 +248,10 @@ class UserRepositoryImpl @Inject constructor(
         name: String,
     ): Result<Unit, AppError> {
         Log.d(TAG, "createNewFamily start")
-        when (val result = familyFirestoreDataSource.createNewFamily(uid, name)) {
+        val now = Date()
+        when (val result = familyFirestoreDataSource.createNewFamily(uid, name, now)) {
             is Result.Success -> {
-                val updateResult = userFirestoreDataSource.updateFamilyId(uid, result.data)
+                val updateResult = userFirestoreDataSource.updateFamilyId(uid, result.data, now)
                 return updateResult
             }
             is Result.Failure -> {
@@ -250,9 +265,10 @@ class UserRepositoryImpl @Inject constructor(
         uid: String,
     ): Result<Unit, AppError> {
         Log.d(TAG, "leaveFamily start")
-        when (val result = familyFirestoreDataSource.leaveFamily(familyId, uid)) {
+        val now = Date()
+        when (val result = familyFirestoreDataSource.leaveFamily(familyId, uid, now)) {
             is Result.Success -> {
-                val updateResult = userFirestoreDataSource.updateFamilyId(uid, null)
+                val updateResult = userFirestoreDataSource.updateFamilyId(uid, null, now)
                 return updateResult
             }
             is Result.Failure -> {
@@ -265,7 +281,7 @@ class UserRepositoryImpl @Inject constructor(
         familyId: String,
     ): Result<Unit, AppError> {
         Log.d(TAG, "deleteFamily start")
-        return familyFirestoreDataSource.deleteFamily(familyId)
+        return familyFirestoreDataSource.deleteFamily(familyId, Date())
     }
 
     override suspend fun storeFcmToken(
@@ -273,7 +289,7 @@ class UserRepositoryImpl @Inject constructor(
         familyId: String,
     ): Result<Unit, AppError> {
         return appResultOfSuspend {
-            familyFirestoreDataSource.storeFcmToken(uid, familyId)
+            familyFirestoreDataSource.storeFcmToken(uid, familyId, Date())
         }
     }
 

@@ -104,9 +104,16 @@ class RecipeFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun saveRecipeImageUrl(recipeId: String, url: String): Result<Unit, AppError> {
+    suspend fun saveRecipeImageUrl(recipeId: String, url: String, lastUpdated: Date = Date()): Result<Unit, AppError> {
         return appResultOfSuspend {
-            db.collection(Constants.RECIPES_TABLE).document(recipeId).update(mapOf("imageUrl" to url)).await()
+            db.collection(Constants.RECIPES_TABLE).document(recipeId)
+                .update(
+                    mapOf(
+                        "imageUrl" to url,
+                        "lastUpdated" to lastUpdated,
+                    ),
+                )
+                .await()
         }
     }
 }

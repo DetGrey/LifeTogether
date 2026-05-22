@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.CoroutineScope
+import java.util.Date
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -123,17 +124,18 @@ class ImageRepositoryImpl @Inject constructor(
         url: String,
         imageType: ImageType,
     ): Result<Unit, AppError> {
+        val now = Date()
         // Persist to Room before writing to Firestore so the local URL matches
         // when the Firestore real-time listener fires and triggers a sync.
         // Without this ordering the sync sees a URL mismatch and may wipe imageData.
-        val localResult = persistImageUrl(imageType, url)
+        val localResult = persistImageUrl(imageType, url, now)
         if (localResult is Result.Failure) return localResult
 
         return when (imageType) {
-            is ImageType.ProfileImage -> userFirestoreDataSource.saveUserImageUrl(imageType.uid, url)
-            is ImageType.FamilyImage -> familyFirestoreDataSource.saveFamilyImageUrl(imageType.familyId, url)
-            is ImageType.RecipeImage -> recipeFirestoreDataSource.saveRecipeImageUrl(imageType.recipeId, url)
-            is ImageType.RoutineListEntryImage -> userListFirestoreDataSource.saveRoutineListEntryImageUrl(imageType.entryId, url)
+            is ImageType.ProfileImage -> userFirestoreDataSource.saveUserImageUrl(imageType.uid, url, now)
+            is ImageType.FamilyImage -> familyFirestoreDataSource.saveFamilyImageUrl(imageType.familyId, url, now)
+            is ImageType.RecipeImage -> recipeFirestoreDataSource.saveRecipeImageUrl(imageType.recipeId, url, now)
+            is ImageType.RoutineListEntryImage -> userListFirestoreDataSource.saveRoutineListEntryImageUrl(imageType.entryId, url, now)
             is ImageType.GalleryMedia -> Result.Failure(AppErrors.validation("Image type is not connected to one specific document"))
         }
     }
@@ -142,19 +144,22 @@ class ImageRepositoryImpl @Inject constructor(
         imageType: ImageType,
         byteArray: ByteArray,
     ): Result<Unit, AppError> {
+        val now = Date()
         return try {
             when (imageType) {
-                is ImageType.ProfileImage -> userLocalDataSource.updateProfileImageByteArray(imageType.uid, byteArray)
-                is ImageType.FamilyImage -> userLocalDataSource.updateFamilyImageByteArray(imageType.familyId, byteArray)
+                is ImageType.ProfileImage -> userLocalDataSource.updateProfileImageByteArray(imageType.uid, byteArray, now)
+                is ImageType.FamilyImage -> userLocalDataSource.updateFamilyImageByteArray(imageType.familyId, byteArray, now)
                 is ImageType.RecipeImage -> recipeLocalDataSource.updateRecipeImageByteArray(
                     familyId = imageType.familyId,
                     recipeId = imageType.recipeId,
                     imageData = byteArray,
+                    lastUpdated = now,
                 )
                 is ImageType.RoutineListEntryImage -> userListLocalDataSource.updateRoutineImageByteArray(
                     familyId = imageType.familyId,
                     entryId = imageType.entryId,
                     imageData = byteArray,
+                    lastUpdated = now,
                 )
                 is ImageType.GalleryMedia -> Unit
             }
@@ -167,20 +172,23 @@ class ImageRepositoryImpl @Inject constructor(
     private suspend fun persistImageUrl(
         imageType: ImageType,
         url: String,
+        lastUpdated: Date,
     ): Result<Unit, AppError> {
         return try {
             when (imageType) {
-                is ImageType.ProfileImage -> userLocalDataSource.updateProfileImageUrl(imageType.uid, url)
-                is ImageType.FamilyImage -> userLocalDataSource.updateFamilyImageUrl(imageType.familyId, url)
+                is ImageType.ProfileImage -> userLocalDataSource.updateProfileImageUrl(imageType.uid, url, lastUpdated)
+                is ImageType.FamilyImage -> userLocalDataSource.updateFamilyImageUrl(imageType.familyId, url, lastUpdated)
                 is ImageType.RecipeImage -> recipeLocalDataSource.updateRecipeImageUrl(
                     familyId = imageType.familyId,
                     recipeId = imageType.recipeId,
                     imageUrl = url,
+                    lastUpdated = lastUpdated,
                 )
                 is ImageType.RoutineListEntryImage -> userListLocalDataSource.updateRoutineImageUrl(
                     familyId = imageType.familyId,
                     entryId = imageType.entryId,
                     imageUrl = url,
+                    lastUpdated = lastUpdated,
                 )
                 is ImageType.GalleryMedia -> Unit
             }

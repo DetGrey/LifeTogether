@@ -20,7 +20,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.Date
 import java.util.UUID
 import javax.inject.Inject
 
@@ -88,7 +87,6 @@ class GalleryViewModel @Inject constructor(
             id = UUID.randomUUID().toString(),
             familyId = familyIdValue,
             itemName = albumName,
-            lastUpdated = Date(),
         )
 
         viewModelScope.launch {

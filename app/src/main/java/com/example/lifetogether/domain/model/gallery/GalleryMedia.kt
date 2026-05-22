@@ -9,7 +9,7 @@ sealed interface GalleryMedia : Item {
     override var id: String
     override val familyId: String
     override var itemName: String
-    override var lastUpdated: Date
+    override val lastUpdated: Date
     val albumId: String
     val dateCreated: Date
     val mediaType: MediaType
@@ -24,7 +24,7 @@ data class GalleryImage(
     override var id: String,
     override val familyId: String,
     override var itemName: String,
-    override var lastUpdated: Date,
+    override val lastUpdated: Date = Date(),
     override val albumId: String,
     override val dateCreated: Date,
     override val mediaType: MediaType = MediaType.IMAGE,
@@ -39,7 +39,7 @@ data class GalleryVideo(
     override var id: String,
     override val familyId: String,
     override var itemName: String,
-    override var lastUpdated: Date,
+    override val lastUpdated: Date = Date(),
     override val albumId: String,
     override val dateCreated: Date,
     override val mediaType: MediaType = MediaType.VIDEO,

@@ -6,6 +6,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.util.Constants
+import java.util.Date
 
 @Entity(tableName = Constants.GROCERY_SUGGESTIONS_TABLE)
 data class GrocerySuggestionEntity(
@@ -17,4 +18,6 @@ data class GrocerySuggestionEntity(
     var category: Category,
     @ColumnInfo(name = "approx_price")
     val approxPrice: Float? = null,
+    @ColumnInfo(name = "last_updated")
+    val lastUpdated: Date,
 )

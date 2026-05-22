@@ -35,6 +35,7 @@ class GroceryLocalDataSource @Inject constructor(
             CategoryEntity(
                 emoji = category.emoji,
                 name = category.name,
+                lastUpdated = category.lastUpdated,
             )
         }
         val currentItems = categoriesDao.getItems().first()
@@ -93,6 +94,18 @@ class GroceryLocalDataSource @Inject constructor(
     suspend fun upsertGroceryItem(entity: GroceryListEntity) = groceryListDao.updateItems(listOf(entity))
 
     suspend fun deleteGroceryItem(id: String) = groceryListDao.deleteItems(listOf(id))
+
+    suspend fun upsertCategory(category: Category) = categoriesDao.updateItems(
+        listOf(CategoryEntity(emoji = category.emoji, name = category.name, lastUpdated = category.lastUpdated))
+    )
+
+    suspend fun deleteCategory(entity: CategoryEntity) = categoriesDao.deleteItems(listOf(entity))
+
+    suspend fun getSuggestionOnce(id: String): GrocerySuggestionEntity? = grocerySuggestionsDao.getItemOnce(id)
+
+    suspend fun upsertSuggestion(entity: GrocerySuggestionEntity) = grocerySuggestionsDao.updateItems(listOf(entity))
+
+    suspend fun deleteSuggestion(entity: GrocerySuggestionEntity) = grocerySuggestionsDao.deleteItems(listOf(entity))
 
     suspend fun deleteFamilyGroceryItems(familyId: String) {
         groceryListDao.getItems(familyId).firstOrNull()?.let { currentFamilyItems ->
