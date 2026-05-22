@@ -179,10 +179,7 @@ class GuideDetailsViewModel @AssistedInject constructor(
         viewModelScope.launch {
             updateLoadingState(isDeletingGuide = true)
             when (val result = guideRepository.deleteGuide(currentGuideId)) {
-                is Result.Success -> {
-                    guideJob?.cancel()
-                    _commands.send(GuideDetailsCommand.NavigateBack)
-                }
+                is Result.Success -> Unit
                 is Result.Failure -> showError(result.error.toUserMessage())
             }
             updateLoadingState(isDeletingGuide = false)

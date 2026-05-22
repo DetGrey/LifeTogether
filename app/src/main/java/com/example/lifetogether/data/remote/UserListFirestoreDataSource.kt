@@ -297,26 +297,6 @@ class UserListFirestoreDataSource @Inject constructor(
             batch.commit().await()
         }
     }
-    suspend fun deleteLegacyMealPlannerUserLists(familyId: String): Result<Unit, AppError> {
-        return appResultOfSuspend {
-            val userListDocs = db.collection(Constants.USER_LISTS_TABLE)
-                .whereEqualTo("familyId", familyId)
-                .whereIn("type", listOf("meal_planner", "meal_plan"))
-                .get()
-                .await()
-
-            val entryDocs = db.collection("list_entries_meal_plan")
-                .whereEqualTo("familyId", familyId)
-                .get()
-                .await()
-
-            val batch = db.batch()
-            userListDocs.documents.forEach { batch.delete(it.reference) }
-            entryDocs.documents.forEach { batch.delete(it.reference) }
-            batch.commit().await()
-        }
-    }
-
     suspend fun deleteRoutineListEntries(itemIds: List<String>): Result<Unit, AppError> {
         return appResultOfSuspend {
             val batch = db.batch()

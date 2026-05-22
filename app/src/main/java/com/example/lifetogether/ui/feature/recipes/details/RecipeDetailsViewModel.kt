@@ -727,10 +727,7 @@ class RecipeDetailsViewModel @AssistedInject constructor(
 
         viewModelScope.launch {
             when (val result = recipeRepository.deleteRecipe(recipeId)) {
-                is Result.Success -> {
-                    observeRecipeJob?.cancel()
-                    _commands.send(RecipeDetailsCommand.NavigateBack)
-                }
+                is Result.Success -> Unit
                 is Result.Failure -> showError(result.error.toUserMessage())
             }
             updateContent {

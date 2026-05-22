@@ -373,10 +373,7 @@ class AlbumDetailsViewModel @AssistedInject constructor(
 
         viewModelScope.launch {
             when (val result = deleteAlbumUseCase.invoke(albumIdValue, contentState.media)) {
-                is Result.Success -> {
-                    observeAlbumJob?.cancel()
-                    sendCommand(AlbumDetailsCommand.NavigateBack)
-                }
+                is Result.Success -> Unit
 
                 is Result.Failure -> showError(result.error.toUserMessage())
             }

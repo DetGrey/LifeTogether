@@ -10,7 +10,6 @@ import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.Flow
 
 interface UserListRepository {
-    suspend fun deleteLegacyMealPlannerUserLists(familyId: String): Result<Unit, AppError>
     fun observeUserLists(familyId: String): Flow<Result<List<UserList>, AppError>>
     fun syncUserListsFromRemote(uid: String, familyId: String): Flow<Result<Unit, AppError>>
     suspend fun saveUserList(userList: UserList): Result<String, AppError>

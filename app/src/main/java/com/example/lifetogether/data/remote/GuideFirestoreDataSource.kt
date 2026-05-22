@@ -183,6 +183,7 @@ private data class GuideDto(
             ?: return null
         val visibilityValue = Visibility.fromValue(visibility) ?: return null
         val ownerUidValue = ownerUid?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+        val lastUpdatedValue = lastUpdated ?: return null
         val sectionsValue = sections.orEmpty().mapIndexed { index, section ->
             section.toDomain(index)
         }
@@ -191,7 +192,7 @@ private data class GuideDto(
             id = documentId,
             familyId = familyIdValue,
             itemName = itemNameValue,
-            lastUpdated = lastUpdated ?: Date(),
+            lastUpdated = lastUpdatedValue,
             description = description?.trim().orEmpty(),
             visibility = visibilityValue,
             ownerUid = ownerUidValue,
@@ -317,6 +318,8 @@ private data class GuideProgressDto(
         val familyIdValue = familyId?.trim()?.takeIf { it.isNotEmpty() } ?: return null
         val uidValue = uid?.trim()?.takeIf { it.isNotEmpty() } ?: return null
         val guideIdValue = guideId?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+        val lastUpdatedValue = lastUpdated ?: return null
+        val localUpdatedAtValue = localUpdatedAt ?: return null
 
         return GuideProgressState(
             id = documentId,
@@ -330,9 +333,9 @@ private data class GuideProgressDto(
                 .mapNotNull { value -> value.trim().takeIf { it.isNotEmpty() } }
                 .sorted(),
             resume = resume?.toDomain(),
-            lastUpdated = lastUpdated ?: Date(),
+            lastUpdated = lastUpdatedValue,
             pendingSync = false,
-            localUpdatedAt = localUpdatedAt ?: Date(),
+            localUpdatedAt = localUpdatedAtValue,
             lastUploadedAt = lastUploadedAt,
         )
     }

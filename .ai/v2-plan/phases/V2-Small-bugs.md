@@ -177,15 +177,8 @@ Looking at the unchecked items, here's my read:
 
 These are bugs or broken functionality — not features:
 
-**Gallery**
-- "Decide what should happen when `updateGalleryMedia()` download fails" — missing error handling is a release risk.
-
 **ICONS**
 - Needed to match the actual features
-
-**Extra**
-- Make sure this is done everywhere: `If the backend changes fileFi contents without updating lastUpdated, this client will not detect it.`
-  - If firestore doesn't have any date where it's needed then just change it to datecreated if exists and else current time so we can still handle existing data from before this change
 
 ## Skip for v2
 

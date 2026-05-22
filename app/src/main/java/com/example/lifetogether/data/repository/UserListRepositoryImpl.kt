@@ -34,10 +34,6 @@ class UserListRepositoryImpl @Inject constructor(
     private val userListLocalDataSource: UserListLocalDataSource,
     private val storageDataSource: StorageDataSource,
 ): UserListRepository {
-    override suspend fun deleteLegacyMealPlannerUserLists(familyId: String): Result<Unit, AppError> {
-        return userListFirestoreDataSource.deleteLegacyMealPlannerUserLists(familyId)
-    }
-
     // USER LIST
     override fun observeUserLists(familyId: String): Flow<Result<List<UserList>, AppError>> {
         return userListLocalDataSource.observeUserLists(familyId)
