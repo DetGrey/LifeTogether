@@ -78,7 +78,7 @@ fun CompletableCategoryList(
                 Row {
                     if (onDelete != null) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_trashcan),
+                            painter = painterResource(id = R.drawable.ic_delete),
                             contentDescription = "trashcan icon",
                             tint = MaterialTheme.colorScheme.onBackground,
                             modifier = Modifier.clickable { onDelete() },

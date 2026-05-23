@@ -79,7 +79,7 @@ fun RecipeDetailsScreen(
         topBar = {
             AppTopBar(
                 leftAppIcon = AppIcon(
-                    resId = R.drawable.ic_back_arrow,
+                    resId = R.drawable.ic_back,
                     description = "back arrow icon",
                 ),
                 onLeftClick = {
@@ -92,7 +92,7 @@ fun RecipeDetailsScreen(
                 text = "",
                 rightAppIcon = if (showDeleteAction) {
                     AppIcon(
-                        resId = R.drawable.ic_trashcan,
+                        resId = R.drawable.ic_delete,
                         description = "trashcan icon",
                     )
                 } else if (showEditAction) {
@@ -324,7 +324,7 @@ private fun RecipeDetailsContent(
                         if (hasMatch) {
                             {
                                 Icon(
-                                    painter = painterResource(id = R.drawable.ic_grocery),
+                                    painter = painterResource(id = R.drawable.ic_add_grocery),
                                     contentDescription = "Add to grocery list",
                                     tint = MaterialTheme.colorScheme.secondary,
                                     modifier = Modifier
@@ -546,7 +546,7 @@ private fun RecipeItemEditActions(
                 .clickable { onEditClick() },
         )
         Icon(
-            painter = painterResource(id = R.drawable.ic_trashcan),
+            painter = painterResource(id = R.drawable.ic_delete),
             contentDescription = "Delete item",
             tint = MaterialTheme.colorScheme.error,
             modifier = Modifier

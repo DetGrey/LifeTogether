@@ -64,7 +64,7 @@ fun ListEntryDetailsScreen(
     Scaffold(
         topBar = {
             AppTopBar(
-                leftAppIcon = AppIcon(resId = R.drawable.ic_back_arrow, description = "back arrow"),
+                leftAppIcon = AppIcon(resId = R.drawable.ic_back, description = "back arrow"),
                 onLeftClick = {
                     if (content?.isEditing == true) {
                         onUiEvent(ListEntryDetailsUiEvent.RequestCancelEdit)

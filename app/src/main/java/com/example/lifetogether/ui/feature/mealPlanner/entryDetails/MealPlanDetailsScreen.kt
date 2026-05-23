@@ -52,7 +52,7 @@ fun MealPlanDetailsScreen(
     Scaffold(
         topBar = {
             AppTopBar(
-                leftAppIcon = AppIcon(resId = R.drawable.ic_back_arrow, description = "back arrow"),
+                leftAppIcon = AppIcon(resId = R.drawable.ic_back, description = "back arrow"),
                 onLeftClick = {
                     if (content?.isEditing == true) {
                         onUiEvent(MealPlanDetailsUiEvent.RequestCancelEdit)
@@ -63,7 +63,7 @@ fun MealPlanDetailsScreen(
                 text = "Meal Plan",
                 rightAppIcon = when {
                     !isExistingMealPlan -> null
-                    content?.isEditing == true -> AppIcon(resId = R.drawable.ic_trashcan, description = "delete meal plan entry")
+                    content?.isEditing == true -> AppIcon(resId = R.drawable.ic_delete, description = "delete meal plan entry")
                     else -> AppIcon(resId = R.drawable.ic_edit, description = "edit meal plan entry")
                 },
                 onRightClick = when {

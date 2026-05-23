@@ -59,7 +59,7 @@ fun RecipesScreen(
         topBar = {
             AppTopBar(
                 leftAppIcon = AppIcon(
-                    resId = R.drawable.ic_back_arrow,
+                    resId = R.drawable.ic_back,
                     description = "back arrow icon",
                 ),
                 onLeftClick = {

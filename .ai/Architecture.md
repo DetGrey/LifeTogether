@@ -33,7 +33,7 @@ Historical phase decisions remain in `.ai/v2-plan/` and are not duplicated here.
 - `OverflowMenu` remains as the legacy action surface for existing callers only.
 - Shared text wrappers in `ui/common/text/` stay available as the canonical text API.
 - Feature-local helper cards and layout shells should stay feature-local unless they are clearly repeated across screens.
-- Trashcan icons should be tinted with `MaterialTheme.colorScheme.error` wherever they appear.
+- Delete icons should be tinted with `MaterialTheme.colorScheme.error` wherever they appear.
 
 ## Motion And Loading
 

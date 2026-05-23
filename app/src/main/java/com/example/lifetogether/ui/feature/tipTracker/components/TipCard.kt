@@ -58,7 +58,7 @@ fun TipCard(
             )
             Spacer(modifier = Modifier.width(LifeTogetherTokens.spacing.small))
             Icon(
-                painter = painterResource(id = R.drawable.ic_trashcan),
+                painter = painterResource(id = R.drawable.ic_delete),
                 contentDescription = "trashcan icon",
                 tint = MaterialTheme.colorScheme.error,
                 modifier = Modifier

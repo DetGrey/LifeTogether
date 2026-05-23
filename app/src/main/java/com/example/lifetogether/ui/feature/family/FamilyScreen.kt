@@ -67,7 +67,7 @@ fun FamilyScreen(
         topBar = {
             AppTopBar(
                 leftAppIcon = AppIcon(
-                    resId = R.drawable.ic_back_arrow,
+                    resId = R.drawable.ic_back,
                     description = "back arrow icon",
                 ),
                 onLeftClick = {
@@ -190,7 +190,7 @@ fun FamilyScreen(
                         )
 
                         SettingsItem(
-                            appIcon = AppIcon(R.drawable.ic_logout, "logout icon"),
+                            appIcon = AppIcon(R.drawable.ic_delete, "logout icon"),
                             title = "Delete family",
                             link = "Delete",
                             linkClickable = {

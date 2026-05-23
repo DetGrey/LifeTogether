@@ -43,7 +43,7 @@ fun ListEditorContainer(
             ) {
                 TextBodyLarge(item)
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_trashcan),
+                    painter = painterResource(id = R.drawable.ic_delete),
                     contentDescription = "trashcan icon",
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.clickable { onDelete(item) },

@@ -88,7 +88,8 @@ fun ThumbnailContainer(
         if (isVideo) {
             Box(
                 modifier = Modifier
-                    .fillMaxSize(0.45f),
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_play),

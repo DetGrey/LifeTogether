@@ -69,7 +69,7 @@ fun AppTopBar(
                 IconButton(
                     onClick = { onRightClick?.invoke() },
                 ) {
-                    val tint = if (rightAppIcon.resId == R.drawable.ic_trashcan) {
+                    val tint = if (rightAppIcon.resId == R.drawable.ic_delete) {
                         MaterialTheme.colorScheme.error
                     } else {
                         MaterialTheme.colorScheme.onBackground

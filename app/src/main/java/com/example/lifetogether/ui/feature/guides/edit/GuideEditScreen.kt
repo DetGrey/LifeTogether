@@ -69,7 +69,7 @@ fun GuideEditScreen(
         topBar = {
             AppTopBar(
                 leftAppIcon = AppIcon(
-                    resId = R.drawable.ic_back_arrow,
+                    resId = R.drawable.ic_back,
                     description = "back arrow icon",
                 ),
                 onLeftClick = {
@@ -343,7 +343,7 @@ private fun SectionCard(
                     modifier = Modifier.weight(1f),
                 )
                 Icon(
-                    painter = painterResource(R.drawable.ic_trashcan),
+                    painter = painterResource(R.drawable.ic_delete),
                     contentDescription = "Delete section",
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier
@@ -445,7 +445,7 @@ private fun StepRow(
             modifier = Modifier.weight(1f),
         )
         Icon(
-            painter = painterResource(R.drawable.ic_trashcan),
+            painter = painterResource(R.drawable.ic_delete),
             contentDescription = "Delete step",
             tint = MaterialTheme.colorScheme.error,
             modifier = Modifier

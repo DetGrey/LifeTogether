@@ -81,7 +81,7 @@ fun GroceryListScreen(
         topBar = {
             AppTopBar(
                 leftAppIcon = AppIcon(
-                    resId = R.drawable.ic_back_arrow,
+                    resId = R.drawable.ic_back,
                     description = "back arrow icon",
                 ),
                 onLeftClick = {
@@ -199,7 +199,11 @@ fun GroceryListScreen(
                                                     )
                                                 },
                                             ) {
-                                                Text(text = "Show more")
+                                                Text(
+                                                    text = "Show more",
+                                                    style = MaterialTheme.typography.labelLarge,
+                                                    color = MaterialTheme.colorScheme.secondary
+                                                )
                                             }
                                         }
                                     }

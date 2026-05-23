@@ -157,28 +157,29 @@ Here are some questions:
 - [ ] Think about if we really wanna catch all exceptions or if it's better to let it crash so we notice and can fix all the bugs
 
 ## Icons
-- [ ] Make Grocery icon with a plus for the RecipeDetails
-- [ ] Make search icon
-- [ ] Make close (X) button
-- [ ] Make meal plan icon
-- [ ] Make drag handle icon
-- [ ] Make new rounded icons (V2)
-- [ ] Make thinner email icon (profile screen email icon should be updated so need to make a new one)
+- [x] Make Grocery icon with a plus for the RecipeDetails
+- [x] Make search icon
+- [x] Make close (X) button
+- [x] Make meal plan icon 
+- [x] Make drag handle icon
+- [x] Make new rounded icons (V2)
+- [x] Make thinner email icon (profile screen email icon should be updated so need to make a new one)
 
 ## Tooling to try out
 - Try `@PreviewScreenSizes`.
 - The Profiler can see all classes in memory and other things.
 - Check android bench for best AI for kotlin coding
 
-# Implementation suggestions from list above
+# Implementation suggestions from list> above
 Looking at the unchecked items, here's my read:
 
 ## Should be in v2 before release
 
 These are bugs or broken functionality — not features:
 
-**ICONS**
-- Needed to match the actual features
+- **Meal plan notify button**
+- Bug with recipe images
+- Should color profiles be added to colors.xml instead?
 
 ## Skip for v2
 

@@ -59,7 +59,7 @@ fun ProfileScreen(
         topBar = {
             AppTopBar(
                 leftAppIcon = AppIcon(
-                    resId = R.drawable.ic_back_arrow,
+                    resId = R.drawable.ic_back,
                     description = "back arrow icon",
                 ),
                 onLeftClick = {
@@ -186,7 +186,7 @@ fun ProfileScreen(
                         // TODO: Implement password change flow and re-enable this row.
                         ProfileDetails(
                             appIcon = AppIcon(
-                                resId = R.drawable.ic_password_asterisk,
+                                resId = R.drawable.ic_asterisk,
                                 description = "password icon",
                             ),
                             title = "Password",
