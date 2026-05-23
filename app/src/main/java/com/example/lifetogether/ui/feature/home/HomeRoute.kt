@@ -145,9 +145,9 @@ private fun buildHomeSections(isAdmin: Boolean): List<HomeSection> {
             HomeSectionItem.Break,
             HomeSectionItem.Tile(HomeTile.Guides),
             HomeSectionItem.Tile(HomeTile.Gallery),
-            HomeSectionItem.Tile(HomeTile.TipTracker),
             HomeSectionItem.Tile(HomeTile.Lists),
             HomeSectionItem.Tile(HomeTile.MealPlanner),
+            HomeSectionItem.Tile(HomeTile.TipTracker),
         ),
     )
 
