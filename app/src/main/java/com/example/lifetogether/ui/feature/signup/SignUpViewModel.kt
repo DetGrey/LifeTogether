@@ -46,14 +46,18 @@ class SignUpViewModel @Inject constructor(
 
     private fun signUp() {
         val state = _uiState.value
+        if (state.name.isBlank()) return showError("Please enter your name")
+        if (state.email.isBlank()) return showError("Please enter your email")
+        if (state.birthday == null) return showError("Please select your birthday")
+        if (state.password != state.confirmPassword) return showError("Passwords do not match")
+
         val userInformation = UserInformation(
             uid = UUID.randomUUID().toString(),
             name = state.name,
             email = state.email,
             birthday = state.birthday,
-        ) //todo there should be a check to make sure they are not null either here or in usecase
+        )
 
-        // TODO validate password and confirmPassword locally before calling SignUpUseCase
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch {
             when (val result = signUpUseCase.invoke(User(state.email, state.password), userInformation)) {
@@ -68,6 +72,12 @@ class SignUpViewModel @Inject constructor(
                     )
                 }
             }
+        }
+    }
+
+    private fun showError(message: String) {
+        viewModelScope.launch {
+            _uiCommands.send(UiCommand.ShowSnackbar(message = message, withDismissAction = true))
         }
     }
 

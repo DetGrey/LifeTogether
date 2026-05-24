@@ -80,8 +80,6 @@ private fun StepPlayerOverviewCardPreview() {
                 guide = null,
                 currentStep = null,
                 nextStep = null,
-                currentRoundGroupLabel = "",
-                currentRoundGroupMeta = "",
                 sectionTitle = "Ears",
                 sectionSubtitle = "Make 2",
                 currentPartLabel = "Part 1/2",

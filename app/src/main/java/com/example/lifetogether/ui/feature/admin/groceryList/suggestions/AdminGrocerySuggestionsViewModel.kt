@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -32,8 +33,7 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
     val commands: Flow<UiCommand> = _commands.receiveAsFlow()
 
     init {
-        observeCategories()
-        observeGrocerySuggestions()
+        observeCategoriesAndSuggestions()
     }
 
     fun onEvent(event: AdminGrocerySuggestionsUiEvent) {
@@ -52,48 +52,42 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
         }
     }
 
-    // ---------------------------------------------------------------- CATEGORIES
-    private fun observeCategories() {
+    // ---------------------------------------------------------------- CATEGORIES + SUGGESTIONS
+    private fun observeCategoriesAndSuggestions() {
         viewModelScope.launch {
-            groceryRepository.observeCategories().collect { result ->
-                when (result) {
-                    is Result.Success -> {
-                        val categories = result.data
+            combine(
+                groceryRepository.observeCategories(),
+                groceryRepository.observeGrocerySuggestions(),
+            ) { categoriesResult, suggestionsResult -> categoriesResult to suggestionsResult }
+                .collect { (categoriesResult, suggestionsResult) ->
+                    val categories = when (categoriesResult) {
+                        is Result.Success -> categoriesResult.data
                             .filterNot { it.name == UNCATEGORIZED_CATEGORY_NAME }
                             .sortedBy { it.name }
                             .let { listOf(UNCATEGORIZED_CATEGORY) + it }
-                        _uiState.update { state ->
-                            when (state) {
-                                is AdminGrocerySuggestionsUiState.Loading -> AdminGrocerySuggestionsUiState.Content(
-                                    groceryCategories = categories,
-                                    categoryExpandedStates = emptySet(),
-                                    grocerySuggestions = emptyList(),
-                                    newSuggestionText = "",
-                                    newSuggestionPrice = "",
-                                    newSuggestionCategory = UNCATEGORIZED_CATEGORY,
-                                    editingSuggestionId = null,
-                                )
-
-                                is AdminGrocerySuggestionsUiState.Content -> state.copy(groceryCategories = categories)
-                            }
+                        is Result.Failure -> {
+                            showError(categoriesResult.error.toUserMessage())
+                            emptyList()
                         }
                     }
-
-                    is Result.Failure -> {
-                        _uiState.update { state ->
-                            when (state) {
-                                is AdminGrocerySuggestionsUiState.Loading -> AdminGrocerySuggestionsUiState.Content(
-                                    groceryCategories = emptyList(),
-                                    grocerySuggestions = emptyList(),
-                                )
-
-                                is AdminGrocerySuggestionsUiState.Content -> state.copy(groceryCategories = emptyList())
-                            }
+                    val suggestions = when (suggestionsResult) {
+                        is Result.Success -> suggestionsResult.data.sortedBy { it.category.name }
+                        is Result.Failure -> {
+                            showError(suggestionsResult.error.toUserMessage())
+                            emptyList()
                         }
-                        showError(result.error.toUserMessage())
+                    }
+                    _uiState.update { current ->
+                        if (current is AdminGrocerySuggestionsUiState.Content) {
+                            current.copy(groceryCategories = categories, grocerySuggestions = suggestions)
+                        } else {
+                            AdminGrocerySuggestionsUiState.Content(
+                                groceryCategories = categories,
+                                grocerySuggestions = suggestions,
+                            )
+                        }
                     }
                 }
-            }
         }
     }
 
@@ -107,44 +101,6 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
                 currentSet + categoryName
             }
             state.copy(categoryExpandedStates = newSet)
-        }
-    }
-
-    // ---------------------------------------------------------------- GROCERY SUGGESTIONS
-    private fun observeGrocerySuggestions() {
-        viewModelScope.launch {
-            groceryRepository.observeGrocerySuggestions().collect { result ->
-                when (result) {
-                    is Result.Success -> {
-                        _uiState.update { state ->
-                            when (state) {
-                                is AdminGrocerySuggestionsUiState.Loading -> AdminGrocerySuggestionsUiState.Content(
-                                    groceryCategories = emptyList(), //todo this should probably not be null
-                                    grocerySuggestions = result.data.sortedBy { it.category.name },
-                                )
-
-                                is AdminGrocerySuggestionsUiState.Content -> state.copy(
-                                    grocerySuggestions = result.data.sortedBy { it.category.name }
-                                )
-                            }
-                        }
-                    }
-
-                    is Result.Failure -> {
-                        _uiState.update { state ->
-                            when (state) {
-                                is AdminGrocerySuggestionsUiState.Loading -> AdminGrocerySuggestionsUiState.Content(
-                                    groceryCategories = emptyList(),
-                                    grocerySuggestions = emptyList(),
-                                )
-
-                                is AdminGrocerySuggestionsUiState.Content -> state.copy(grocerySuggestions = emptyList())
-                            }
-                        }
-                        showError(result.error.toUserMessage())
-                    }
-                }
-            }
         }
     }
 

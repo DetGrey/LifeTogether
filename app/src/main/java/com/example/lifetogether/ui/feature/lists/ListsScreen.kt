@@ -298,17 +298,15 @@ private fun CreateListDialog(
                     capitalization = true,
                     imeAction = ImeAction.Next,
                     keyboardType = KeyboardType.Text
-//                    singleLine = true, //todo add these
-//                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences
                 )
 
                 Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
                     Text("Type", style = MaterialTheme.typography.labelLarge)
                     TagOptionRow(
-                        options = ListType.entries.map { it.name.lowercase() }, //todo add visual name
-                        selectedOption = type.name.lowercase(),
+                        options = ListType.entries.map { it.displayName.lowercase() },
+                        selectedOption = type.displayName.lowercase(),
                         onSelectedOptionChange = { new ->
-                            ListType.entries.find { it.name.lowercase() == new }?.let { onTypeChange(it) }
+                            ListType.entries.find { it.displayName.lowercase() == new }?.let { onTypeChange(it) }
                         }
                     )
                 }
@@ -316,10 +314,10 @@ private fun CreateListDialog(
                 Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
                     Text("Visibility", style = MaterialTheme.typography.labelLarge)
                     TagOptionRow(
-                        options = Visibility.entries.map { it.name.lowercase() }, //todo add visual name
-                        selectedOption = visibility.name.lowercase(),
+                        options = Visibility.entries.map { it.tag },
+                        selectedOption = visibility.tag,
                         onSelectedOptionChange = { new ->
-                            Visibility.entries.find { it.name.lowercase() == new }?.let { onVisibilityChange(it) }
+                            Visibility.entries.find { it.tag == new }?.let { onVisibilityChange(it) }
                         }
                     )
                 }

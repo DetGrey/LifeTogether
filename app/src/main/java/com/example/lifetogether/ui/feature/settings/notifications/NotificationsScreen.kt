@@ -103,8 +103,10 @@ fun NotificationsScreen(
                         color = MaterialTheme.colorScheme.secondary,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(LifeTogetherTokens.spacing.large)
-                            .clickable { openSystemNotificationSettings(context) },
+                            .padding(LifeTogetherTokens.spacing.small)
+                            .clip(MaterialTheme.shapes.large)
+                            .clickable { openSystemNotificationSettings(context) }
+                            .padding(LifeTogetherTokens.spacing.medium),
                         textAlign = TextAlign.Center,
                     )
                 }

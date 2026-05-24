@@ -113,7 +113,6 @@ class CloudflareR2StorageDataSource @Inject constructor(
     }
 
     override suspend fun fetchImageByteArray(url: String): Result<ByteArray, AppError> {
-        //todo does it seem smart to send empty byteArray if none?
         return appResultOfSuspend {
             val objectKey = extractObjectKeyFromUrl(url)
 
@@ -124,7 +123,7 @@ class CloudflareR2StorageDataSource @Inject constructor(
             val response = s3Client.getObject(getObjectRequest) { resp ->
                 resp.body?.toByteArray()
             }
-            response ?: byteArrayOf()
+            response ?: throw AppErrorThrowable(AppErrors.notFound("No data returned for $url"))
         }
     }
 

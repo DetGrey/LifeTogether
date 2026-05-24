@@ -19,23 +19,14 @@ fun GuideStepCardBody(
     step: GuideStep,
     stepNumber: Int?,
     textColor: Color,
-    roundGroupLabel: String,
-    roundGroupMeta: String, //todo whats this
 ) {
     when (step.type) {
         GuideStepType.ROUND -> {
             GuideStepRoundText(
-                title = roundGroupLabel.ifEmpty { guideStepRoundLabel(step) }, //todo this is awful
+                title =  guideStepRoundLabel(step),
                 content = step.content,
                 textColor
             )
-//            if (roundGroupMeta.isNotBlank()) {
-//                Text(
-//                    text = roundGroupMeta,
-//                    color = textColor,
-//                    style = MaterialTheme.typography.bodySmall,
-//                )
-//            }
         }
 
         GuideStepType.COMMENT, GuideStepType.UNKNOWN -> {
@@ -119,8 +110,6 @@ private fun GuideStepCardBodyPreview() {
                 ),
                 stepNumber = 2,
                 textColor = MaterialTheme.colorScheme.onSurface,
-                roundGroupLabel = "",
-                roundGroupMeta = "",
             )
             GuideStepCardBody(
                 step = GuideStep(
@@ -133,8 +122,6 @@ private fun GuideStepCardBodyPreview() {
                 ),
                 stepNumber = 2,
                 textColor = MaterialTheme.colorScheme.onSurface,
-                roundGroupLabel = "",
-                roundGroupMeta = "",
             )
             GuideStepCardBody(
                 step = GuideStep(
@@ -147,8 +134,6 @@ private fun GuideStepCardBodyPreview() {
                 ),
                 stepNumber = 2,
                 textColor = MaterialTheme.colorScheme.onSurface,
-                roundGroupLabel = "",
-                roundGroupMeta = "",
             )
         }
     }

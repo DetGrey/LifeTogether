@@ -24,8 +24,6 @@ fun GuideStepCard(
     header: String,
     step: GuideStep?,
     stepNumber: Int?,
-    roundGroupLabel: String = "",
-    roundGroupMeta: String = "",
     emphasized: Boolean,
 ) {
     val cardColor = if (emphasized) {
@@ -64,8 +62,6 @@ fun GuideStepCard(
                     step = step,
                     stepNumber = stepNumber,
                     textColor = textColor,
-                    roundGroupLabel = roundGroupLabel,
-                    roundGroupMeta = roundGroupMeta,
                 )
             }
         }

@@ -24,14 +24,16 @@ class AlarmReceiver : BroadcastReceiver() {
         val mealName = intent.getStringExtra("meal_name") ?: "Meal"
         val mealType = MealType.fromValue(intent.getStringExtra("meal_type")) ?: MealType.DINNER
         val prepTimeMin = intent.getIntExtra("prep_time_min", 0)
+        val notes = intent.getStringExtra("notes").orEmpty()
 
         val body = buildBody(mealType, prepTimeMin)
+        val bigText = if (notes.isNotBlank()) "$body\n📝 $notes" else body
 
         notificationService.createNotification(
             channelId = Constants.MEAL_PLAN_CHANNEL,
             title = buildTitle(mealType, mealName),
             message = body,
-            bigText = body,
+            bigText = bigText,
             category = NotificationCompat.CATEGORY_REMINDER,
             priority = NotificationCompat.PRIORITY_HIGH,
             notificationId = mealPlanId.hashCode(),

@@ -73,8 +73,6 @@ fun GuideStepPlayerScreen(
                         header = "Current step",
                         step = content.currentStep,
                         stepNumber = content.currentStepNumber,
-                        roundGroupLabel = content.currentRoundGroupLabel,
-                        roundGroupMeta = content.currentRoundGroupMeta,
                         emphasized = true,
                     )
                 }
@@ -148,8 +146,6 @@ private fun GuideStepPlayerScreenPreview() {
                 guide = null,
                 currentStep = null,
                 nextStep = null,
-                currentRoundGroupLabel = "",
-                currentRoundGroupMeta = "",
                 currentStepNumber = 0,
                 totalSteps = 0,
                 sectionTitle = "",

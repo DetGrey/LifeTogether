@@ -27,11 +27,10 @@ Here are some bugs that need to be fixed:
 - [x] Fix recipe search in new meal plan entry details. It used to work.
 - [x] Meal plan recipe Vs custom
   - One should always be null so when changing between custom and recipe, so both aren't saved
-- [ ] Meal plan notify button
+- [x] Meal plan notify button
   - When clicked, show bottom sheet with date and time (default plan date, default time should be 6pm for dinner, 9am for breakfast, noon for lunch and 2pm for snack)
   - On confirm, use firebase to send message or what are my options to make sure it happens on time?
   - Should open the meal plan on click
-  - (TODO SOON)
 
 ### Grocery
 - [x] Fix long text layout in Add grocery item.
@@ -165,28 +164,6 @@ Here are some bugs that need to be fixed:
 - The Profiler can see all classes in memory and other things.
 - Check android bench for best AI for kotlin coding
 
-
-# Extra
-Here's a full list:
-remove default notification channel
-
-| File                                                                           | Line | Note                                                    |
-|--------------------------------------------------------------------------------|------|---------------------------------------------------------|
-| `data/remote/CloudflareR2StorageDataSource.kt`                                 | 116  | Whether to send empty ByteArray if none                 |
-| `data/remote/MyFirebaseMessagingService.kt`                                    | 22   | FCM message handling (boilerplate stub)                 |
-| `ui/common/textfield/CustomTextField.kt`                                       | 88   | Field validation — `isError` hardcoded to `false`       |
-| `ui/feature/admin/groceryList/suggestions/AdminGrocerySuggestionsViewModel.kt` | 122  | `groceryCategories = emptyList()` — may need real data  |
-| `ui/feature/gallery/MediaDetailsViewModel.kt`                                  | 199  | Magic ratio `0.4f` set for appearance, possibly wrong   |
-| `ui/feature/guides/stepplayer/components/GuideStepCardBody.kt`                 | 23   | `roundGroupMeta` param — unclear purpose                |
-| `ui/feature/guides/stepplayer/components/GuideStepCardBody.kt`                 | 28   | Title fallback logic described as "awful"               |
-| `ui/feature/lists/ListsScreen.kt`                                              | 301  | `singleLine` commented out                              |
-| `ui/feature/lists/ListsScreen.kt`                                              | 308  | `ListType` options show raw enum name, no display name  |
-| `ui/feature/lists/ListsScreen.kt`                                              | 319  | `Visibility` options same issue                         |
-| `ui/feature/signup/SignUpViewModel.kt`                                         | 54   | Null check missing before sign-up call                  |
-| `ui/feature/signup/SignUpViewModel.kt`                                         | 56   | Password/confirm-password local validation missing      |
-| `util/Constants.kt`                                                            | 31   | `DEFAULT_CHANNEL` unused — should be removed            |
-
-17 TODOs total.
 
 # About using R8 app optimization
 

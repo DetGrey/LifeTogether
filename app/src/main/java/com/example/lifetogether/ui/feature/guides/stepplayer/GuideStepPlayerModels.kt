@@ -10,8 +10,6 @@ sealed interface GuideStepPlayerUiState {
         val guide: Guide?,
         val currentStep: GuideStep?,
         val nextStep: GuideStep?,
-        val currentRoundGroupLabel: String,
-        val currentRoundGroupMeta: String,
         val currentStepNumber: Int,
         val totalSteps: Int,
         val sectionTitle: String,

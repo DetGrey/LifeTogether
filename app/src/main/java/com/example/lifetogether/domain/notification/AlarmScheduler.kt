@@ -28,6 +28,7 @@ class AlarmScheduler @Inject constructor(
         const val EXTRA_MEAL_NAME = "meal_name"
         const val EXTRA_MEAL_TYPE = "meal_type"
         const val EXTRA_PREP_TIME_MIN = "prep_time_min"
+        const val EXTRA_NOTES = "notes"
     }
 
     private val alarmManager = context.getSystemService(AlarmManager::class.java)
@@ -105,7 +106,8 @@ class AlarmScheduler @Inject constructor(
             putExtra(EXTRA_MEAL_PLAN_ID, meal.id)
             putExtra(EXTRA_MEAL_NAME, meal.itemName)
             putExtra(EXTRA_MEAL_TYPE, meal.mealType.name)
-            putExtra(EXTRA_PREP_TIME_MIN, prepTimeMin ?: 0)
+            putExtra(EXTRA_PREP_TIME_MIN, prepTimeMin)
+            putExtra(EXTRA_NOTES, meal.notes)
         }
 
         val pi = PendingIntent.getBroadcast(
