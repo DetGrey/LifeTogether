@@ -15,11 +15,6 @@ Here are some bugs that need to be fixed:
 - [x] Weird spacing between the featurecards on homescreen
 - [x] Some recipes do not show anymore. Make a log for all items that are now filtered away from firestore to see if any had bad format
 
-Here are some questions:
-
-- ListItem seems too high compared to legacy - is that true?
-  - Go back to use custom instead of native M3ListItem
-
 
 ## Checklist from LifeTogether_TODO.PDF
 
@@ -178,7 +173,6 @@ Looking at the unchecked items, here's my read:
 These are bugs or broken functionality — not features:
 
 - **Meal plan notify button**
-- Bug with recipe images
 - Should color profiles be added to colors.xml instead?
 - Why are featureCards smaller when there are three in a row than two?
 

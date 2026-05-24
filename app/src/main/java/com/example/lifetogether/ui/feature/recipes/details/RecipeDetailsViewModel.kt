@@ -546,6 +546,7 @@ class RecipeDetailsViewModel @AssistedInject constructor(
             favourite = state.favourite,
             servings = state.servings.toIntOrNull() ?: original.servings,
             tags = sanitizedTags.ifEmpty { original.tags },
+            imageUrl = original.imageUrl,
         )
 
         updateContent { it.copy(isSaving = true) }
