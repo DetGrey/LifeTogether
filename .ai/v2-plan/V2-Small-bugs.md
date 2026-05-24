@@ -173,7 +173,6 @@ Looking at the unchecked items, here's my read:
 These are bugs or broken functionality — not features:
 
 - **Meal plan notify button**
-- Should color profiles be added to colors.xml instead?
 - Why are featureCards smaller when there are three in a row than two?
 
 ## Skip for v2
