@@ -2,18 +2,18 @@ package com.example.lifetogether.ui.common.dropdown
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.lifetogether.ui.common.textfield.filledTextFieldColors
+import com.example.lifetogether.ui.common.textfield.inputFieldModifier
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -25,10 +25,12 @@ fun Dropdown(
     options: List<String>,
     label: String?,
     onValueChangedEvent: (String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { onExpandedChange(it) },
+        modifier = modifier,
     ) {
         TextField(
             readOnly = true,
@@ -42,13 +44,10 @@ fun Dropdown(
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             },
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
-            ),
+            colors = filledTextFieldColors(),
             modifier = Modifier
-                .menuAnchor()
-                .fillMaxWidth(),
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                .inputFieldModifier(),
         )
 
         ExposedDropdownMenu(
@@ -62,7 +61,6 @@ fun Dropdown(
                     text = { Text(text = option) },
                     onClick = {
                         onExpandedChange(false)
-                        println("new value: $option")
                         onValueChangedEvent(option)
                     },
                 )
@@ -73,7 +71,7 @@ fun Dropdown(
 
 @Preview
 @Composable
-fun DropdownPreview() {
+private fun DropdownPreview() {
     LifeTogetherTheme {
         Box(Modifier.fillMaxSize()) {
             Dropdown(

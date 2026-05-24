@@ -19,12 +19,12 @@ interface AlbumsDao {
     @Query("SELECT * FROM $ALBUMS_TABLE WHERE family_id = :familyId AND id = :id LIMIT 1")
     fun getItemByIdFlow(familyId: String, id: String): Flow<AlbumEntity?>
 
+    @Query("SELECT * FROM $ALBUMS_TABLE WHERE id = :id LIMIT 1")
+    suspend fun getItemOnce(id: String): AlbumEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateItems(items: List<AlbumEntity>)
 
-    @Query("DELETE FROM $ALBUMS_TABLE")
-    fun deleteTable()
-
     @Query("DELETE FROM $ALBUMS_TABLE WHERE id IN (:itemIds)")
-    fun deleteItems(itemIds: List<String>)
+    suspend fun deleteItems(itemIds: List<String>)
 }

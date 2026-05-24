@@ -20,4 +20,7 @@ interface GrocerySuggestionsDao {
 
     @Query("SELECT * FROM $GROCERY_SUGGESTIONS_TABLE")
     fun getItems(): Flow<List<GrocerySuggestionEntity>>
+
+    @Query("SELECT * FROM $GROCERY_SUGGESTIONS_TABLE WHERE id = :id LIMIT 1")
+    suspend fun getItemOnce(id: String): GrocerySuggestionEntity?
 }

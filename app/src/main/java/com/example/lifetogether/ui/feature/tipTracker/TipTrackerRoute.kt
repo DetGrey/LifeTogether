@@ -1,42 +1,32 @@
 package com.example.lifetogether.ui.feature.tipTracker
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.navigation.NavBackStackEntry
-import androidx.navigation.NavHostController
-import com.example.lifetogether.domain.observer.ObserverKey
-import com.example.lifetogether.ui.common.observer.FeatureObserverLifecycleBinding
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.navigation.AppRoutes
+import com.example.lifetogether.ui.navigation.TipStatisticsNavRoute
 
 @Composable
 fun TipTrackerRoute(
-    navController: NavHostController,
-    backStackEntry: NavBackStackEntry,
+    viewModelStoreOwner: ViewModelStoreOwner,
     appNavigator: AppNavigator,
 ) {
-    val sharedEntry = remember(backStackEntry) {
-        navController.getBackStackEntry(AppRoutes.TIP_TRACKER_GRAPH)
-    }
-    val viewModel: TipTrackerViewModel = hiltViewModel(sharedEntry)
+    val viewModel: TipTrackerViewModel = hiltViewModel(viewModelStoreOwner)
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    FeatureObserverLifecycleBinding(
-        keys = setOf(ObserverKey.TIP_TRACKER),
+    CollectUiCommands(viewModel.uiCommands)
+
+    TipTrackerScreen(
+        uiState = uiState,
+        onUiEvent = viewModel::onEvent,
+        onNavigationEvent = { navigationEvent ->
+            when (navigationEvent) {
+                TipTrackerNavigationEvent.NavigateBack -> appNavigator.navigateBack()
+                TipTrackerNavigationEvent.NavigateToStatistics -> appNavigator.navigate(TipStatisticsNavRoute)
+            }
+        },
     )
-    TipTrackerScreen(appNavigator, viewModel)
-}
-
-@Composable
-fun TipStatisticsRoute(
-    navController: NavHostController,
-    backStackEntry: NavBackStackEntry,
-    appNavigator: AppNavigator,
-) {
-    val sharedEntry = remember(backStackEntry) {
-        navController.getBackStackEntry(AppRoutes.TIP_TRACKER_GRAPH)
-    }
-    val viewModel: TipTrackerViewModel = hiltViewModel(sharedEntry)
-
-    TipStatisticsScreen(appNavigator, viewModel)
 }

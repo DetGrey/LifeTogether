@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 class GetAlbumDisplayModelsUseCase @Inject constructor(
     private val galleryRepository: GalleryRepository,
@@ -19,31 +20,27 @@ class GetAlbumDisplayModelsUseCase @Inject constructor(
 
         return combine(
             galleryRepository.observeAlbums(familyId),
-            galleryRepository.thumbnailCache
-        ) { albumsResult, thumbnailCache ->
+            galleryRepository.thumbnailCache,
+            galleryRepository.observeAlbumThumbnails(familyId),
+        ) { albumsResult, thumbnailCache, dbThumbnails ->
 
             when (albumsResult) {
                 is Result.Success -> {
-                    val cachedCount = albumsResult.data.count { thumbnailCache.containsKey(it.id) }
-                    Log.d(
-                        "GetAlbumDisplayModelsUseCase",
-                        "Merging lists. Albums: ${albumsResult.data.size}, Cached Thumbs: $cachedCount"
-                    )
-
+                    val mergedThumbnails = thumbnailCache + dbThumbnails
                     val albums = albumsResult.data.map { album ->
                         AlbumUiModel(
-                            id = album.id ?: "",
+                            id = album.id,
                             familyId = album.familyId,
                             name = album.itemName,
                             lastUpdated = album.lastUpdated,
                             mediaCount = album.count,
-                            thumbnail = thumbnailCache[album.id]
+                            thumbnail = mergedThumbnails[album.id],
                         )
                     }
                     Result.Success(albums)
                 }
                 is Result.Failure -> albumsResult
             }
-        }.debounce(100L) // Waits 100ms for updates to settle.
+        }.debounce(100L.milliseconds)
     }
 }

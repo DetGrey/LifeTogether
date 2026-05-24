@@ -2,8 +2,20 @@ package com.example.lifetogether.di
 
 import android.content.Context
 import androidx.room.Room
+import com.example.lifetogether.data.local.MIGRATION_37_38
+import com.example.lifetogether.data.local.MIGRATION_36_37
+import com.example.lifetogether.data.local.MIGRATION_35_36
+import com.example.lifetogether.data.local.MIGRATION_34_35
+import com.example.lifetogether.data.local.MIGRATION_23_24
+import com.example.lifetogether.data.local.MIGRATION_24_25
+import com.example.lifetogether.data.local.MIGRATION_25_26
+import com.example.lifetogether.data.local.MIGRATION_27_28
+import com.example.lifetogether.data.local.MIGRATION_31_32
+import com.example.lifetogether.data.local.MIGRATION_32_33
+import com.example.lifetogether.data.local.MIGRATION_33_34
 import com.example.lifetogether.data.local.AppDatabase
 import com.example.lifetogether.data.local.dao.AlbumsDao
+import com.example.lifetogether.data.local.dao.ChecklistEntriesDao
 import com.example.lifetogether.data.local.dao.CategoriesDao
 import com.example.lifetogether.data.local.dao.FamilyInformationDao
 import com.example.lifetogether.data.local.dao.GalleryMediaDao
@@ -11,8 +23,11 @@ import com.example.lifetogether.data.local.dao.GuideProgressDao
 import com.example.lifetogether.data.local.dao.GuidesDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
+import com.example.lifetogether.data.local.dao.MealPlanDao
+import com.example.lifetogether.data.local.dao.NoteEntriesDao
 import com.example.lifetogether.data.local.dao.RoutineListsDao
 import com.example.lifetogether.data.local.dao.UserListsDao
+import com.example.lifetogether.data.local.dao.WishListsDao
 import com.example.lifetogether.data.local.dao.RecipesDao
 import com.example.lifetogether.data.local.dao.TipTrackerDao
 import com.example.lifetogether.data.local.dao.UserInformationDao
@@ -37,7 +52,19 @@ object DatabaseModule {
         )
             .allowMainThreadQueries()
             .fallbackToDestructiveMigration(false)
-            .addMigrations(AppDatabase.MIGRATION_23_24, AppDatabase.MIGRATION_24_25, AppDatabase.MIGRATION_25_26)
+            .addMigrations(
+                MIGRATION_23_24,
+                MIGRATION_24_25,
+                MIGRATION_25_26,
+                MIGRATION_27_28,
+                MIGRATION_31_32,
+                MIGRATION_32_33,
+                MIGRATION_33_34,
+                MIGRATION_34_35,
+                MIGRATION_35_36,
+                MIGRATION_36_37,
+                MIGRATION_37_38,
+            )
             .build()
     }
 
@@ -117,5 +144,29 @@ object DatabaseModule {
     @Singleton
     fun provideRoutineListsDao(db: AppDatabase): RoutineListsDao {
         return db.routineListsDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideWishListsDao(db: AppDatabase): WishListsDao {
+        return db.wishListsDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideNoteEntriesDao(db: AppDatabase): NoteEntriesDao {
+        return db.noteEntriesDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideChecklistEntriesDao(db: AppDatabase): ChecklistEntriesDao {
+        return db.checklistEntriesDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideMealPlanDao(db: AppDatabase): MealPlanDao {
+        return db.mealPlanDao()
     }
 }

@@ -1,60 +1,57 @@
 package com.example.lifetogether.ui.feature.guides.stepplayer.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.model.guides.GuideStep
 import com.example.lifetogether.domain.model.guides.GuideStepType
 import com.example.lifetogether.ui.common.text.TextDefault
+import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun GuideStepCard(
     header: String,
     step: GuideStep?,
     stepNumber: Int?,
-    roundGroupLabel: String = "",
-    roundGroupMeta: String = "",
     emphasized: Boolean,
 ) {
     val cardColor = if (emphasized) {
-        MaterialTheme.colorScheme.onBackground
+        MaterialTheme.colorScheme.primaryContainer
     } else {
         MaterialTheme.colorScheme.surfaceVariant
     }
     val textColor = if (emphasized) {
-        MaterialTheme.colorScheme.background
+        MaterialTheme.colorScheme.onPrimaryContainer
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     val modifier = if (emphasized) Modifier.height(275.dp) else Modifier
 
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(cardColor, RoundedCornerShape(18.dp))
-            .padding(14.dp),
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = cardColor),
+        shape = MaterialTheme.shapes.large,
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
+        Column(
+            modifier = Modifier.padding(LifeTogetherTokens.spacing.medium),
+        ) {
+            TextSubHeadingMedium(
                 text = header,
-                style = MaterialTheme.typography.labelLarge,
                 color = textColor,
-                fontWeight = FontWeight.Bold,
             )
+            Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
             if (step == null) {
                 TextDefault(
                     text = "No step available",
@@ -65,8 +62,6 @@ fun GuideStepCard(
                     step = step,
                     stepNumber = stepNumber,
                     textColor = textColor,
-                    roundGroupLabel = roundGroupLabel,
-                    roundGroupMeta = roundGroupMeta,
                 )
             }
         }
@@ -81,8 +76,11 @@ private fun GuideStepCardPreview() {
             header = "Current step",
             step = GuideStep(
                 id = "step-1",
+                name = "Step 3",
                 type = GuideStepType.NUMBERED,
+                title = "",
                 content = "Share one thing that felt good this week.",
+                subSteps = emptyList(),
             ),
             stepNumber = 3,
             emphasized = true,
@@ -91,9 +89,11 @@ private fun GuideStepCardPreview() {
             header = "Current step",
             step = GuideStep(
                 id = "step-1",
+                name = "R1",
                 type = GuideStepType.ROUND,
                 title = "R1",
                 content = "Share one thing that felt good this week.",
+                subSteps = emptyList(),
             ),
             stepNumber = 3,
             emphasized = true,

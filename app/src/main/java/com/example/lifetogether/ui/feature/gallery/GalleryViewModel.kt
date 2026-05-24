@@ -7,24 +7,21 @@ import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.GalleryRepository
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.result.Result
+import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.domain.usecase.gallery.GetAlbumDisplayModelsUseCase
-import com.example.lifetogether.ui.model.AlbumUiModel
+import com.example.lifetogether.ui.common.event.UiCommand
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.UUID
 import javax.inject.Inject
-
-data class GalleryUiState(
-    val albums: List<AlbumUiModel> = emptyList(),
-    val showNewAlbumDialog: Boolean = false,
-    val newAlbumName: String = "",
-    val showAlertDialog: Boolean = false,
-    val error: String = "",
-)
 
 @HiltViewModel
 class GalleryViewModel @Inject constructor(
@@ -32,10 +29,16 @@ class GalleryViewModel @Inject constructor(
     private val getAlbumDisplayModelsUseCase: GetAlbumDisplayModelsUseCase,
     private val galleryRepository: GalleryRepository,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(GalleryUiState())
+    private val _uiState = MutableStateFlow<GalleryUiState>(GalleryUiState.Loading)
     val uiState: StateFlow<GalleryUiState> = _uiState.asStateFlow()
 
-    private val requestedThumbnails = mutableSetOf<String>()
+    private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
+    val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
+
+    private val _commands = Channel<GalleryCommand>(Channel.BUFFERED)
+    val commands: Flow<GalleryCommand> = _commands.receiveAsFlow()
+
+    private var observeAlbumsJob: Job? = null
     private var familyId: String? = null
 
     init {
@@ -44,29 +47,31 @@ class GalleryViewModel @Inject constructor(
                 val newFamilyId = (state as? SessionState.Authenticated)?.user?.familyId
                 if (newFamilyId != null && newFamilyId != familyId) {
                     familyId = newFamilyId
-                    fetchAlbums()
+                    observeAlbums()
                 } else if (state is SessionState.Unauthenticated) {
                     familyId = null
+                    observeAlbumsJob?.cancel()
+                    observeAlbumsJob = null
+                    _uiState.value = GalleryUiState.Loading
                 }
             }
         }
     }
 
-    fun openNewAlbumDialog() {
-        _uiState.update { it.copy(showNewAlbumDialog = true) }
+    fun onEvent(event: GalleryUiEvent) {
+        when (event) {
+            GalleryUiEvent.OpenNewAlbumDialog -> updateContent { it.copy(dialog = GalleryDialogState.NewAlbum()) }
+            GalleryUiEvent.DismissDialog -> updateContent { it.copy(dialog = null) }
+            is GalleryUiEvent.NewAlbumNameChanged -> updateContent { state ->
+                state.copy(dialog = (state.dialog as? GalleryDialogState.NewAlbum)?.copy(name = event.name))
+            }
+            GalleryUiEvent.CreateNewAlbum -> createNewAlbum()
+        }
     }
 
-    fun closeNewAlbumDialog() {
-        _uiState.update { it.copy(showNewAlbumDialog = false, newAlbumName = "") }
-    }
-
-    fun setNewAlbumName(name: String) {
-        _uiState.update { it.copy(newAlbumName = name) }
-    }
-
-    fun createNewAlbum() {
+    private fun createNewAlbum() {
         val familyIdValue = familyId
-        val albumName = _uiState.value.newAlbumName.trim()
+        val albumName = ((uiState.value as? GalleryUiState.Content)?.dialog as? GalleryDialogState.NewAlbum)?.name.orEmpty().trim()
 
         if (albumName.isEmpty()) {
             showError("Please enter an album name first")
@@ -79,48 +84,71 @@ class GalleryViewModel @Inject constructor(
         }
 
         val album = Album(
-            itemName = albumName,
+            id = UUID.randomUUID().toString(),
             familyId = familyIdValue,
+            itemName = albumName,
         )
 
         viewModelScope.launch {
             when (val result = galleryRepository.saveAlbum(album)) {
-                is Result.Success -> closeNewAlbumDialog()
-                is Result.Failure -> showError(result.error)
+                is Result.Success -> {
+                    updateContent { it.copy(dialog = null) }
+                    _commands.send(GalleryCommand.NavigateToAlbumMedia(result.data))
+                }
+                is Result.Failure -> showError(result.error.toUserMessage())
             }
         }
     }
 
-    private fun fetchAlbums() {
+    private fun observeAlbums() {
         val familyIdValue = familyId ?: return
 
-        viewModelScope.launch {
+        observeAlbumsJob?.cancel()
+        observeAlbumsJob = viewModelScope.launch {
             getAlbumDisplayModelsUseCase.invoke(familyIdValue).collect { result ->
                 when (result) {
                     is Result.Success -> {
-                        _uiState.update { it.copy(albums = result.data) }
+                        _uiState.update { state ->
+                            when (state) {
+                                is GalleryUiState.Loading -> GalleryUiState.Content(
+                                    albums = result.data,
+                                )
+
+                                is GalleryUiState.Content -> state.copy(albums = result.data)
+                            }
+                        }
 
                         result.data.forEach { album ->
-                            if (album.thumbnail == null && !requestedThumbnails.contains(album.id)) {
-                                requestedThumbnails.add(album.id)
-                                galleryRepository.fetchAlbumThumbnail(album.id)
+                            if (album.thumbnail == null) {
+                                viewModelScope.launch {
+                                    galleryRepository.fetchAlbumThumbnail(album.id)
+                                }
                             }
                         }
                     }
-                    is Result.Failure -> showError(result.error)
+                    is Result.Failure -> showError(result.error.toUserMessage())
                 }
             }
         }
     }
 
-    fun dismissAlert() {
+    private fun showError(message: String) {
         viewModelScope.launch {
-            delay(3000)
-            _uiState.update { it.copy(showAlertDialog = false, error = "") }
+            _uiCommands.send(
+                UiCommand.ShowSnackbar(
+                    message = message,
+                    withDismissAction = true,
+                ),
+            )
         }
     }
 
-    private fun showError(message: String) {
-        _uiState.update { it.copy(showAlertDialog = true, error = message) }
+    private fun updateContent(transform: (GalleryUiState.Content) -> GalleryUiState.Content) {
+        _uiState.update { state ->
+            when (state) {
+                is GalleryUiState.Loading -> state
+                is GalleryUiState.Content -> transform(state)
+            }
+        }
     }
 }

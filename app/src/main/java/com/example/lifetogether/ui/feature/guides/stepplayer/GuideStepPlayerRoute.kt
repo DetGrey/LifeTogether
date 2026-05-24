@@ -1,25 +1,44 @@
 package com.example.lifetogether.ui.feature.guides.stepplayer
 
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.navigation.AppNavigator
+import kotlinx.coroutines.flow.collect
 
 @Composable
 fun GuideStepPlayerRoute(
-    appNavigator: AppNavigator? = null,
+    appNavigator: AppNavigator,
     guideId: String,
-    viewModelStoreOwner: ViewModelStoreOwner? = null,
 ) {
-    val guideStepPlayerViewModel: GuideStepPlayerViewModel = if (viewModelStoreOwner != null) {
-        hiltViewModel(viewModelStoreOwner)
-    } else {
-        hiltViewModel()
+    val guideStepPlayerViewModel =
+        hiltViewModel<GuideStepPlayerViewModel, GuideStepPlayerViewModel.Factory> {
+            it.create(guideId)
+        }
+    val uiState by guideStepPlayerViewModel.uiState.collectAsStateWithLifecycle()
+
+    CollectUiCommands(guideStepPlayerViewModel.uiCommands)
+
+    val navigateBack = {
+        guideStepPlayerViewModel.flushPendingChanges()
+        appNavigator.navigateBack()
+    }
+
+    PredictiveBackHandler { progress ->
+        progress.collect()
+        navigateBack()
     }
 
     GuideStepPlayerScreen(
-        appNavigator = appNavigator,
-        guideId = guideId,
-        guideStepPlayerViewModel = guideStepPlayerViewModel,
+        uiState = uiState,
+        onUiEvent = guideStepPlayerViewModel::onEvent,
+        onNavigationEvent = { navigationEvent ->
+            when (navigationEvent) {
+                GuideStepPlayerNavigationEvent.NavigateBack -> navigateBack()
+            }
+        },
     )
 }

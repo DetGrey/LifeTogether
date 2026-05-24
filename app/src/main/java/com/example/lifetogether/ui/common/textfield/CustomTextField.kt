@@ -1,23 +1,26 @@
 package com.example.lifetogether.ui.common.textfield
 
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @Composable
@@ -31,56 +34,64 @@ fun CustomTextField(
     capitalization: Boolean = false,
     smaller: Boolean = false,
     enabled: Boolean = true,
+    maxLines: Int = 1,
+    onFocusChanged: ((Boolean) -> Unit)? = null,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
 ) {
     var visualTransformation: VisualTransformation = VisualTransformation.None
     if (keyboardType == KeyboardType.Password) {
         visualTransformation = PasswordVisualTransformation()
     }
+    val textStyle = if (smaller) MaterialTheme.typography.bodySmall
+        else MaterialTheme.typography.bodyMedium
+    var textFieldValue by remember {
+        mutableStateOf(
+            TextFieldValue(
+                text = value,
+                selection = TextRange(value.length),
+            ),
+        )
+    }
+
+    LaunchedEffect(value) {
+        if (textFieldValue.text != value) {
+            textFieldValue = TextFieldValue(
+                text = value,
+                selection = TextRange(value.length),
+            )
+        }
+    }
 
     TextField(
         modifier = modifier
-            .fillMaxWidth()
-            .height(60.dp)
-            .clip(shape = RoundedCornerShape(20)),
-        value = value,
+            .onFocusChanged { onFocusChanged?.invoke(it.isFocused) }
+            .inputFieldModifier(multiline = maxLines > 1),
+        value = textFieldValue,
         onValueChange = {
-            onValueChange(it)
+            textFieldValue = it
+            onValueChange(it.text)
         },
         enabled = enabled,
         label = if (label != null) {
-            {
-                Text(
-                    label,
-                    style = if (smaller) MaterialTheme.typography.bodySmall
-                            else MaterialTheme.typography.bodyMedium
-                )
-            }
-        } else {
-            null
-        },
+            { Text(text = label, style = textStyle) }
+        } else null,
         visualTransformation = visualTransformation,
         keyboardOptions = KeyboardOptions(
             capitalization = if (capitalization) KeyboardCapitalization.Sentences else KeyboardCapitalization.None,
             keyboardType = keyboardType,
             imeAction = imeAction,
         ),
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = MaterialTheme.colorScheme.onBackground,
-            unfocusedContainerColor = MaterialTheme.colorScheme.onBackground,
-            focusedTextColor = MaterialTheme.colorScheme.background,
-            unfocusedTextColor = MaterialTheme.colorScheme.background,
-            focusedLabelColor = MaterialTheme.colorScheme.background,
-            unfocusedLabelColor = MaterialTheme.colorScheme.background,
-            focusedIndicatorColor = MaterialTheme.colorScheme.secondary,
-            cursorColor = MaterialTheme.colorScheme.secondary,
-        ),
+        keyboardActions = keyboardActions,
+        minLines = 1,
+        maxLines = maxLines,
+        colors = filledTextFieldColors(),
         isError = false, // TODO https://medium.com/@rzmeneghelo/how-to-validate-fields-using-jetpack-compose-in-android-43be70597e82
     )
 }
 
 @Preview
 @Composable
-fun CustomTextFieldPreview() {
+private fun CustomTextFieldPreview() {
     LifeTogetherTheme {
         CustomTextField(
             value = "email@email.com",

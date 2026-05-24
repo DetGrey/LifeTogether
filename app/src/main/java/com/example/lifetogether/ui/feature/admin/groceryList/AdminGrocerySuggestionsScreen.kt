@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.feature.admin.groceryList
+package com.example.lifetogether.ui.feature.admin.groceryList.suggestions
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -7,159 +7,192 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
-import com.example.lifetogether.domain.model.Icon
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.domain.model.Category
+import com.example.lifetogether.domain.model.AppIcon
+import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
+import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.add.AddNewListItem
 import com.example.lifetogether.ui.common.add.EditListItem
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
-import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
-import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
+import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
-import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import com.example.lifetogether.domain.observer.ObserverKey
+import com.example.lifetogether.util.UNCATEGORIZED_CATEGORY
 
 @Composable
 fun AdminGrocerySuggestionsScreen(
-    appNavigator: AppNavigator? = null,
+    uiState: AdminGrocerySuggestionsUiState,
+    onUiEvent: (AdminGrocerySuggestionsUiEvent) -> Unit,
+    onNavigationEvent: (AdminGrocerySuggestionsNavigationEvent) -> Unit,
 ) {
-    val grocerySuggestionsViewModel: AdminGrocerySuggestionsViewModel = hiltViewModel()
-    val uiState by grocerySuggestionsViewModel.uiState.collectAsState()
+    var showDeleteSuggestionDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(key1 = true) {
-        grocerySuggestionsViewModel.setUpGrocerySuggestions()
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize(),
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(10.dp)
-                .padding(bottom = 60.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            TopBar(
-                leftIcon = Icon(
-                    resId = R.drawable.ic_back_arrow,
+    Scaffold(
+        topBar = {
+            AppTopBar(
+                leftAppIcon = AppIcon(
+                    resId = R.drawable.ic_back,
                     description = "back arrow icon",
                 ),
                 onLeftClick = {
-                    appNavigator?.navigateBack()
+                    onNavigationEvent(AdminGrocerySuggestionsNavigationEvent.NavigateBack)
                 },
                 text = "Edit grocery list",
             )
+        },
+    ) { padding ->
+        AnimatedLoadingContent(
+            isLoading = uiState is AdminGrocerySuggestionsUiState.Loading,
+            label = "admin_grocery_suggestions_loading",
+            loadingContent = {
+                Skeletons.FormEdit(modifier = Modifier.fillMaxSize())
+            },
+        ) {
+            val content = uiState as? AdminGrocerySuggestionsUiState.Content ?: return@AnimatedLoadingContent
 
-            ObserverUpdatingText(
-                keys = setOf(ObserverKey.GROCERY_CATEGORIES, ObserverKey.GROCERY_SUGGESTIONS),
-            )
+            Column(
+                modifier = Modifier
+                    .padding(padding)
+                    .padding(LifeTogetherTokens.spacing.small)
+                    .padding(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    modifier = Modifier.padding(horizontal = LifeTogetherTokens.spacing.xSmall),
+                    text = "Add a new suggestion by choosing the category (emoji) and writing the suggestion name.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center,
+                )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
-            Text(
-                modifier = Modifier.padding(horizontal = 5.dp),
-                text = "Add a new suggestion by choosing the category (emoji) and writing the suggestion name.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Black,
-                textAlign = TextAlign.Center,
-            )
+                TextHeadingMedium("Grocery suggestions")
+                if (content.grocerySuggestions.isNotEmpty()) {
+                    GrocerySuggestionsEditor(
+                        content.grocerySuggestions,
+                        expandedCategories = content.categoryExpandedStates,
+                        onToggleExpand = { categoryName ->
+                            onUiEvent(AdminGrocerySuggestionsUiEvent.ToggleCategory(categoryName))
+                        },
+                        onEditItem = { suggestion ->
+                            onUiEvent(AdminGrocerySuggestionsUiEvent.StartEditingSuggestion(suggestion))
+                        },
+                        onDeleteItem = { suggestion ->
+                            onUiEvent(AdminGrocerySuggestionsUiEvent.ClickDeleteSuggestion(suggestion))
+                            showDeleteSuggestionDialog = true
+                        },
+                    )
+                }
+            }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(LifeTogetherTokens.spacing.small),
+                contentAlignment = Alignment.BottomCenter,
+            ) {
+                androidx.compose.animation.AnimatedContent(
+                    targetState = content.editingSuggestionId != null,
+                    label = "suggestion_input_bar",
+                ) { isEditing ->
+                    if (isEditing) {
+                        EditListItem(
+                            textValue = content.newSuggestionText,
+                            onTextChange = { value ->
+                                onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionTextChanged(value))
+                            },
+                            priceValue = content.newSuggestionPrice,
+                            onPriceChange = { value ->
+                                onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionPriceChanged(value))
+                            },
+                            onSaveClick = {
+                                onUiEvent(AdminGrocerySuggestionsUiEvent.ClickSaveSuggestion)
+                            },
+                            categoryList = content.groceryCategories,
+                            selectedCategory = content.newSuggestionCategory,
+                            onCategoryChange = { category ->
+                                onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionCategoryChanged(category))
+                            },
+                        )
+                    } else {
+                        AddNewListItem(
+                            textValue = content.newSuggestionText,
+                            onTextChange = { value ->
+                                onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionTextChanged(value))
+                            },
+                            priceValue = content.newSuggestionPrice,
+                            onPriceChange = { value ->
+                                onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionPriceChanged(value))
+                            },
+                            onAddClick = {
+                                onUiEvent(AdminGrocerySuggestionsUiEvent.ClickAddSuggestion)
+                            },
+                            categoryList = content.groceryCategories,
+                            selectedCategory = content.newSuggestionCategory,
+                            onCategoryChange = { category ->
+                                onUiEvent(AdminGrocerySuggestionsUiEvent.NewSuggestionCategoryChanged(category))
+                            },
+                        )
+                    }
+                }
+            }
 
-            TextHeadingMedium("Grocery suggestions")
-            if (uiState.grocerySuggestions.isNotEmpty()) {
-                GrocerySuggestionsEditor(
-                    uiState.grocerySuggestions,
-                    expandedCategories = uiState.categoryExpandedStates,
-                    onToggleExpand = { grocerySuggestionsViewModel.toggleCategory(it) },
-                    onEditItem = { grocerySuggestionsViewModel.startEditingSuggestion(it) },
-                    onDeleteItem = {
-                        grocerySuggestionsViewModel.onDeleteSuggestionClick(it)
+            val selectedSuggestion = content.selectedSuggestion
+            if (showDeleteSuggestionDialog && selectedSuggestion != null) {
+                ConfirmationDialog(
+                    onDismiss = { showDeleteSuggestionDialog = false },
+                    onConfirm = {
+                        showDeleteSuggestionDialog = false
+                        onUiEvent(AdminGrocerySuggestionsUiEvent.ConfirmDeleteSuggestion)
                     },
+                    dialogTitle = "Delete suggestion?",
+                    dialogMessage = "Are you sure you want to delete: \"${selectedSuggestion.category.emoji} ${selectedSuggestion.category.name} - ${selectedSuggestion.suggestionName}\"?",
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Delete",
                 )
             }
         }
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(10.dp),
-        contentAlignment = Alignment.BottomCenter,
-    ) {
-        if (uiState.isEditMode) {
-            EditListItem(
-                textValue = uiState.newSuggestionText,
-                onTextChange = { grocerySuggestionsViewModel.onNewSuggestionTextChange(it) },
-                priceValue = uiState.newSuggestionPrice,
-                onPriceChange = { grocerySuggestionsViewModel.onNewSuggestionPriceChange(it) },
-                onSaveClick = {
-                    grocerySuggestionsViewModel.saveEditedGrocerySuggestion()
-                },
-                categoryList = uiState.groceryCategories,
-                selectedCategory = uiState.newSuggestionCategory,
-                onCategoryChange = { newCategory ->
-                    grocerySuggestionsViewModel.updateNewSuggestionCategory(newCategory)
-                },
-            )
-        } else {
-            AddNewListItem(
-                textValue = uiState.newSuggestionText,
-                onTextChange = { grocerySuggestionsViewModel.onNewSuggestionTextChange(it) },
-                priceValue = uiState.newSuggestionPrice,
-                onPriceChange = { grocerySuggestionsViewModel.onNewSuggestionPriceChange(it) },
-                onAddClick = {
-                    grocerySuggestionsViewModel.addNewGrocerySuggestion()
-                },
-                categoryList = uiState.groceryCategories,
-                selectedCategory = uiState.newSuggestionCategory,
-                onCategoryChange = { newCategory ->
-                    grocerySuggestionsViewModel.updateNewSuggestionCategory(newCategory)
-                },
-            )
-        }
-    }
-
-    val selectedSuggestion = uiState.selectedSuggestion
-    if (uiState.showDeleteCategoryConfirmationDialog && selectedSuggestion != null) {
-        ConfirmationDialog(
-            onDismiss = { grocerySuggestionsViewModel.dismissDeleteSuggestionDialog() },
-            onConfirm = {
-                grocerySuggestionsViewModel.deleteCategory()
-            },
-            dialogTitle = "Delete category?",
-            dialogMessage = "Are you sure you want to delete the category: \"${selectedSuggestion.category?.emoji} ${selectedSuggestion.category?.name} - ${selectedSuggestion.suggestionName}\"?",
-            dismissButtonMessage = "Cancel",
-            confirmButtonMessage = "Delete",
-        )
-    }
-
-    if (uiState.showAlertDialog) {
-        LaunchedEffect(uiState.error) {
-            grocerySuggestionsViewModel.toggleAlertDialog()
-        }
-        ErrorAlertDialog(uiState.error)
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun AdminGrocerySuggestionsScreenPreview() {
+private fun AdminGrocerySuggestionsScreenPreview() {
+    val category = Category(emoji = "🥦", name = "Vegetables")
     LifeTogetherTheme {
-        AdminGrocerySuggestionsScreen()
+        AdminGrocerySuggestionsScreen(
+            uiState = AdminGrocerySuggestionsUiState.Content(
+                groceryCategories = listOf(
+                    UNCATEGORIZED_CATEGORY,
+                    category,
+                ),
+                grocerySuggestions = listOf(
+                    GrocerySuggestion(
+                        id = "1",
+                        category = category,
+                        suggestionName = "Broccoli",
+                        approxPrice = 17.5f,
+                    ),
+                ),
+            ),
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
     }
 }

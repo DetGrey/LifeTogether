@@ -1,4 +1,4 @@
-package com.example.lifetogether.ui.feature.tipTracker
+package com.example.lifetogether.ui.feature.tipTracker.components
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -14,78 +14,83 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.ui.common.text.TextDefault
-import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
+import com.example.lifetogether.ui.feature.tipTracker.TipTrackerCalendarDay
+import com.example.lifetogether.ui.feature.tipTracker.TipTrackerCalendarState
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun TipsCalendar(
-    groupedTips: Map<String, List<TipItem>>,
+    calendar: TipTrackerCalendarState,
+    onPreviousMonthClick: () -> Unit,
+    onCurrentMonthClick: () -> Unit,
+    onNextMonthClick: () -> Unit,
 ) {
-    val viewModel: TipsCalendarViewModel = hiltViewModel()
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(25.dp),
+            .padding(vertical = LifeTogetherTokens.spacing.medium),
+        horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.large),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         TextDefault(
             text = "< Previous",
-            modifier = Modifier.clickable { viewModel.selectPreviousMonth() }.weight(1f),
-            color = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier
+                .weight(1f)
+                .clickable { onPreviousMonthClick() },
+            color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.End,
         )
         TextDefault(
             text = "Current month",
-            modifier = Modifier.clickable { viewModel.selectCurrentMonth() }.weight(1f),
-            color = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier
+                .weight(1f)
+                .clickable { onCurrentMonthClick() },
+            color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
         )
         TextDefault(
             text = "Next >",
-            modifier = Modifier.clickable { viewModel.selectNextMonth() }.weight(1f),
-            color = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier
+                .weight(1f)
+                .clickable { onNextMonthClick() },
+            color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Start,
         )
     }
 
-    TextSubHeadingMedium(
-        viewModel.getCurrentMonthYearDisplay(),
-        Modifier.fillMaxWidth(),
-        MaterialTheme.colorScheme.primary,
-        alignCenter = true
+    Text(
+        modifier = Modifier.fillMaxWidth(),
+        text = calendar.monthLabel,
+        style = MaterialTheme.typography.titleLarge,
+        color = MaterialTheme.colorScheme.primary,
+        textAlign = TextAlign.Center,
     )
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 5.dp),
+            .padding(vertical = LifeTogetherTokens.spacing.xSmall),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
+        horizontalArrangement = Arrangement.Center,
     ) {
-        val monthlyStats = viewModel.getMonthlySummary(groupedTips)
         TextDefault(
-            text = "Total: ${monthlyStats.total}",
+            text = "Total: ${calendar.summary.totalText}",
             color = MaterialTheme.colorScheme.secondary,
             textAlign = TextAlign.Center,
         )
         Spacer(modifier = Modifier.width(15.dp))
         TextDefault(
-            text = "Average: ${monthlyStats.average}",
+            text = "Average: ${calendar.summary.averageText}",
             color = MaterialTheme.colorScheme.secondary,
             textAlign = TextAlign.Center,
         )
@@ -95,44 +100,45 @@ fun TipsCalendar(
         columns = GridCells.Fixed(5),
         modifier = Modifier
             .fillMaxWidth()
-            .height(viewModel.getGridHeight())
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+            .height(calendar.gridHeight)
+            .padding(LifeTogetherTokens.spacing.medium),
+        horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
     ) {
-        items(items = viewModel.days, key = { it }) { day ->
-            val date = viewModel.getDate(day)
-            val dayOfWeek = viewModel.getDayOfWeekLabel(date)
-            val tipTotal = viewModel.getTipTotal(viewModel.getDateKey(date), groupedTips)
+        items(items = calendar.days, key = { it.label }) { day ->
+            DayCell(day = day)
+        }
+    }
+}
 
-            Box(
+@Composable
+private fun DayCell(day: TipTrackerCalendarDay) {
+    Surface(
+        modifier = Modifier
+            .aspectRatio(1f)
+            .border(2.dp, MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.small),
+        color = MaterialTheme.colorScheme.background,
+        shape = MaterialTheme.shapes.small,
+    ) {
+        Box(modifier = Modifier.aspectRatio(1f)) {
+            Text(
+                text = day.label,
                 modifier = Modifier
-                    .aspectRatio(1f)
-                    .clip(RoundedCornerShape(10.dp))
-                    .border(2.dp, Color(0xFF007A7A), RoundedCornerShape(10.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Box(modifier = Modifier.aspectRatio(1f)) {
-                    Text(
-                        text = "$day $dayOfWeek",
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(top = 2.dp, start = 4.dp),
-                        fontSize = 9.sp,
-                    )
+                    .align(Alignment.TopStart)
+                    .padding(top = LifeTogetherTokens.spacing.xSmall, start = LifeTogetherTokens.spacing.xSmall),
+                fontSize = 9.sp,
+                color = MaterialTheme.colorScheme.outline
+            )
 
-                    if (tipTotal > 0f) {
-                        Text(
-                            text = viewModel.formatTipTotal(tipTotal),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontSize = 18.sp,
-                            modifier = Modifier
-                                .padding(top = 4.dp)
-                                .align(Alignment.Center),
-                        )
-                    }
-                }
+            day.totalText?.let { totalText ->
+                Text(
+                    text = totalText,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier
+                        .padding(top = LifeTogetherTokens.spacing.xSmall)
+                        .align(Alignment.Center),
+                )
             }
         }
     }

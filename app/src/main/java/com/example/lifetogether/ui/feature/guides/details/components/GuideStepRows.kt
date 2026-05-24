@@ -4,10 +4,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.model.guides.GuideStep
 import com.example.lifetogether.domain.model.guides.GuideStepType
 import com.example.lifetogether.ui.feature.guides.stepplayer.components.GuideStepRowText
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun GuideStepRows(
@@ -19,7 +19,7 @@ fun GuideStepRows(
 ) {
     var numberedIndex = 1
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
         steps.forEach { step ->
             val currentNumberedIndex = numberedIndex
 

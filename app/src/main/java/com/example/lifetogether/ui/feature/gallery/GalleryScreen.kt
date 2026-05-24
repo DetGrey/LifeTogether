@@ -1,87 +1,89 @@
 package com.example.lifetogether.ui.feature.gallery
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.toBitmap
-import com.example.lifetogether.domain.model.Icon
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.domain.model.AppIcon
+import com.example.lifetogether.ui.common.AppTopBar
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
-import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
-import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
-import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.domain.observer.ObserverKey
+import com.example.lifetogether.ui.common.skeleton.Skeletons
+import com.example.lifetogether.ui.model.AlbumUiModel
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
+import java.util.Date
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun GalleryScreen(
-    appNavigator: AppNavigator? = null,
+    uiState: GalleryUiState,
+    onUiEvent: (GalleryUiEvent) -> Unit,
+    onNavigationEvent: (GalleryNavigationEvent) -> Unit,
 ) {
-    val galleryViewModel: GalleryViewModel = hiltViewModel()
-
-    val uiState by galleryViewModel.uiState.collectAsState()
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize(),
-    ) {
-        LazyColumn(
-            modifier = Modifier
-                .padding(10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(30.dp),
-        ) {
-            item {
-                TopBar(
-                    leftIcon = Icon(
-                        resId = R.drawable.ic_back_arrow,
-                        description = "back arrow icon",
-                    ),
-                    onLeftClick = {
-                        appNavigator?.navigateBack()
-                    },
-                    text = "Albums",
-                )
+    Scaffold(
+        topBar = {
+            AppTopBar(
+                leftAppIcon = AppIcon(
+                    resId = R.drawable.ic_back,
+                    description = "back arrow icon",
+                ),
+                onLeftClick = { onNavigationEvent(GalleryNavigationEvent.NavigateBack) },
+                text = "Albums",
+            )
+        },
+        floatingActionButton = {
+            if (uiState is GalleryUiState.Content) {
+                AddButton(onClick = {
+                    onUiEvent(GalleryUiEvent.OpenNewAlbumDialog)
+                })
             }
+        },
+    ) { padding ->
+        AnimatedLoadingContent(
+            isLoading = uiState is GalleryUiState.Loading,
+            label = "gallery_loading",
+            loadingContent = {
+                Skeletons.GridCollection(modifier = Modifier.fillMaxSize())
+            },
+        ) {
+            val content = uiState as? GalleryUiState.Content ?: return@AnimatedLoadingContent
 
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ObserverUpdatingText(
-                        keys = setOf(ObserverKey.GALLERY_ALBUMS, ObserverKey.GALLERY_MEDIA),
-                    )
-
-                    if (uiState.albums.isEmpty()) {
+            androidx.compose.foundation.lazy.LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(LifeTogetherTokens.spacing.small),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
+            ) {
+                item {
+                    if (content.albums.isEmpty()) {
                         Text(text = "No albums created. Press + to create one.")
                     } else {
                         FlowRow(
                             modifier = Modifier.fillMaxWidth(),
                             maxItemsInEachRow = 2,
-                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                         ) {
-                            for (album in uiState.albums) {
-                                AlbumContainer(
+                            for (album in content.albums) {
+                                AlbumCard(
                                     album.name,
                                     album.mediaCount,
                                     album.thumbnail?.toBitmap(),
                                     onClick = {
-                                        appNavigator?.navigateToAlbumMedia(album.id)
+                                        onNavigationEvent(GalleryNavigationEvent.NavigateToAlbumMedia(album.id))
                                     },
                                 )
                             }
@@ -89,40 +91,52 @@ fun GalleryScreen(
                     }
                 }
             }
+
+            when (val dialog = content.dialog) {
+                is GalleryDialogState.NewAlbum -> ConfirmationDialogWithTextField(
+                    onDismiss = { onUiEvent(GalleryUiEvent.DismissDialog) },
+                    onConfirm = { onUiEvent(GalleryUiEvent.CreateNewAlbum) },
+                    dialogTitle = "Create new album",
+                    dialogMessage = "Please enter a name for your new album",
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Create",
+                    textValue = dialog.name,
+                    onTextValueChange = { onUiEvent(GalleryUiEvent.NewAlbumNameChanged(it)) },
+                    label = "Album name",
+                    capitalization = true,
+                )
+
+                null -> Unit
+            }
         }
     }
+}
 
-    // ---------------------------------------------------------------- ADD NEW IMAGE
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(bottom = 30.dp, end = 30.dp),
-        contentAlignment = Alignment.BottomEnd,
-    ) {
-        AddButton(onClick = {
-            galleryViewModel.openNewAlbumDialog()
-        })
-    }
-
-    if (uiState.showNewAlbumDialog) {
-        ConfirmationDialogWithTextField(
-            onDismiss = { galleryViewModel.closeNewAlbumDialog() },
-            onConfirm = { galleryViewModel.createNewAlbum() },
-            dialogTitle = "Create new album",
-            dialogMessage = "Please enter a name for your new album",
-            dismissButtonMessage = "Cancel",
-            confirmButtonMessage = "Create",
-            textValue = uiState.newAlbumName,
-            onTextValueChange = { galleryViewModel.setNewAlbumName(it) },
-            capitalization = true,
+@Preview(showBackground = true)
+@Composable
+private fun GalleryScreenPreview() {
+    LifeTogetherTheme {
+        GalleryScreen(
+            uiState = GalleryUiState.Content(
+                albums = listOf(
+                    AlbumUiModel(
+                        id = "album-1",
+                        familyId = "family-1",
+                        name = "Weekend trip",
+                        lastUpdated = Date(1_717_200_000_000),
+                        mediaCount = 12,
+                    ),
+                    AlbumUiModel(
+                        id = "album-2",
+                        familyId = "family-1",
+                        name = "Kitchen ideas",
+                        lastUpdated = Date(1_717_200_000_000),
+                        mediaCount = 4,
+                    ),
+                ),
+            ),
+            onUiEvent = {},
+            onNavigationEvent = {},
         )
-    }
-
-    // ---------------------------------------------------------------- SHOW ERROR ALERT
-    if (uiState.showAlertDialog) {
-        LaunchedEffect(uiState.error) {
-            galleryViewModel.dismissAlert()
-        }
-        ErrorAlertDialog(uiState.error)
     }
 }

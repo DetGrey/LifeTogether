@@ -1,11 +1,11 @@
 package com.example.lifetogether.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.model.session.SessionState
-import com.example.lifetogether.domain.observer.ObserverCoordinator
-import com.example.lifetogether.domain.observer.ObserverKey
-import com.example.lifetogether.domain.observer.ObserverSyncState
+import com.example.lifetogether.domain.notification.MealPlanAlarmOrchestrator
+import com.example.lifetogether.domain.sync.SyncCoordinator
 import com.example.lifetogether.domain.repository.GuideRepository
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.repository.UserRepository
@@ -13,29 +13,27 @@ import com.example.lifetogether.domain.result.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel
 class RootCoordinatorViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
-    private val observerCoordinator: ObserverCoordinator,
+    private val syncCoordinator: SyncCoordinator,
     private val guideRepository: GuideRepository,
     private val userRepository: UserRepository,
+    private val alarmOrchestrator: MealPlanAlarmOrchestrator,
 ) : ViewModel() {
-
-    val sessionState: StateFlow<SessionState> = sessionRepository.sessionState
-
-    val observerSyncStates: StateFlow<Map<ObserverKey, ObserverSyncState>> =
-        observerCoordinator.observerSyncStates
-    val activeObserverKeys: StateFlow<Set<ObserverKey>> =
-        observerCoordinator.activeObserverKeys
-    val observerHasSyncedOnce: StateFlow<Map<ObserverKey, Boolean>> =
-        observerCoordinator.observerHasSyncedOnce
+    private companion object {
+        const val TAG = "RootCoordinatorVM"
+        const val MAX_FCM_RETRY_ATTEMPTS = 3
+        val FCM_RETRY_DELAYS_MS = listOf(1_000L, 5_000L, 15_000L)
+    }
 
     private var guideProgressSyncJob: Job? = null
+    private var fcmSyncJob: Job? = null
     private var lastObserverUid: String? = null
     private var lastObserverFamilyId: String? = null
     private var lastGuideSyncUid: String? = null
@@ -44,6 +42,7 @@ class RootCoordinatorViewModel @Inject constructor(
     private var lastFcmFamilyId: String? = null
 
     init {
+        alarmOrchestrator.start()
         viewModelScope.launch {
             sessionRepository.sessionState.collect { state ->
                 when (state) {
@@ -55,16 +54,8 @@ class RootCoordinatorViewModel @Inject constructor(
         }
     }
 
-    fun acquireObserver(key: ObserverKey) {
-        observerCoordinator.acquireObserver(scope = viewModelScope, key = key)
-    }
-
-    fun releaseObserver(key: ObserverKey) {
-        observerCoordinator.releaseObserver(key)
-    }
-
     private fun handleAuthenticated(state: SessionState.Authenticated) {
-        val uid = state.user.uid ?: return
+        val uid = state.user.uid
         val familyId = state.user.familyId
 
         handleObserverSync(uid, familyId)
@@ -79,7 +70,7 @@ class RootCoordinatorViewModel @Inject constructor(
 
         lastObserverUid = uid
         lastObserverFamilyId = familyId
-        observerCoordinator.syncGlobalObserverContext(
+        syncCoordinator.syncGlobalSynchronizerContext(
             scope = viewModelScope,
             uid = uid,
             familyId = familyId,
@@ -107,35 +98,59 @@ class RootCoordinatorViewModel @Inject constructor(
         guideProgressSyncJob = viewModelScope.launch {
             guideRepository.syncPendingGuideProgress(familyId = familyId, uid = uid, force = true, guideId = null)
             while (isActive) {
-                delay(30_000)
+                delay(30_000.milliseconds)
                 guideRepository.syncPendingGuideProgress(familyId = familyId, uid = uid, force = false, guideId = null)
             }
         }
     }
 
     private fun handleFcmSync(uid: String, familyId: String?) {
-        if (familyId.isNullOrBlank()) return
+        if (familyId.isNullOrBlank()) {
+            fcmSyncJob?.cancel()
+            fcmSyncJob = null
+            return
+        }
         if (lastFcmUid == uid && lastFcmFamilyId == familyId) return
+        if (fcmSyncJob?.isActive == true) return
 
-        lastFcmUid = uid
-        lastFcmFamilyId = familyId
-        viewModelScope.launch {
-            when (val result = userRepository.storeFcmToken(uid, familyId)) {
-                is Result.Success -> Unit
-                is Result.Failure -> Unit
+        fcmSyncJob = viewModelScope.launch {
+            repeat(MAX_FCM_RETRY_ATTEMPTS) { attempt ->
+                when (val result = userRepository.storeFcmToken(uid, familyId)) {
+                    is Result.Success -> {
+                        lastFcmUid = uid
+                        lastFcmFamilyId = familyId
+                        Log.d(TAG, "FCM token stored successfully for uid=$uid familyId=$familyId")
+                        return@launch
+                    }
+
+                    is Result.Failure -> {
+                        Log.w(
+                            TAG,
+                            "FCM token store failed for uid=$uid familyId=$familyId attempt=${attempt + 1}/$MAX_FCM_RETRY_ATTEMPTS error=${result.error}",
+                        )
+                        if (attempt < MAX_FCM_RETRY_ATTEMPTS - 1) {
+                            delay(FCM_RETRY_DELAYS_MS[attempt].milliseconds)
+                        }
+                    }
+                }
             }
+
+            Log.e(TAG, "FCM token store exhausted retries for uid=$uid familyId=$familyId")
         }
     }
 
     private fun handleUnauthenticated() {
         guideProgressSyncJob?.cancel()
         guideProgressSyncJob = null
+        fcmSyncJob?.cancel()
+        fcmSyncJob = null
         lastObserverUid = null
         lastObserverFamilyId = null
         lastGuideSyncUid = null
         lastGuideSyncFamilyId = null
         lastFcmUid = null
         lastFcmFamilyId = null
-        observerCoordinator.cancelAllNonAuthObservers()
+        syncCoordinator.cancelAllNonAuthSynchronizers()
+        alarmOrchestrator.stop()
     }
 }

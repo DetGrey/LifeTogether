@@ -10,29 +10,31 @@ import java.util.Date
 @Entity(tableName = Constants.ROUTINE_LIST_ENTRIES_TABLE)
 data class RoutineListEntryEntity(
     @PrimaryKey
-    val id: String = "",
+    val id: String,
     @ColumnInfo(name = "family_id")
-    val familyId: String = "",
+    val familyId: String,
     @ColumnInfo(name = "list_id")
-    val listId: String = "",
+    val listId: String,
     @ColumnInfo(name = "item_name")
-    val itemName: String = "",
+    val itemName: String,
     @ColumnInfo(name = "last_updated")
-    val lastUpdated: Date = Date(),
+    val lastUpdated: Date,
     @ColumnInfo(name = "date_created")
-    val dateCreated: Date = Date(),
+    val dateCreated: Date,
     @ColumnInfo(name = "next_date")
-    val nextDate: Date? = null,
+    val nextDate: Date,
     @ColumnInfo(name = "last_completed_at")
     val lastCompletedAt: Date? = null,
     @ColumnInfo(name = "completion_count")
     val completionCount: Int = 0,
     @ColumnInfo(name = "recurrence_unit")
-    val recurrenceUnit: RecurrenceUnit = RecurrenceUnit.DAYS,
+    val recurrenceUnit: RecurrenceUnit,
     val interval: Int = 1,
     val weekdays: List<Int> = emptyList(),
     @ColumnInfo(name = "image_data")
     val imageData: ByteArray? = null,
+    @ColumnInfo(name = "image_url")
+    val imageUrl: String? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -54,6 +56,7 @@ data class RoutineListEntryEntity(
             if (other.imageData == null) return false
             if (!imageData.contentEquals(other.imageData)) return false
         } else if (other.imageData != null) return false
+        if (imageUrl != other.imageUrl) return false
 
         return true
     }
@@ -65,13 +68,14 @@ data class RoutineListEntryEntity(
         result = 31 * result + itemName.hashCode()
         result = 31 * result + lastUpdated.hashCode()
         result = 31 * result + dateCreated.hashCode()
-        result = 31 * result + (nextDate?.hashCode() ?: 0)
+        result = 31 * result + (nextDate.hashCode())
         result = 31 * result + (lastCompletedAt?.hashCode() ?: 0)
         result = 31 * result + completionCount
         result = 31 * result + recurrenceUnit.hashCode()
         result = 31 * result + interval
         result = 31 * result + weekdays.hashCode()
         result = 31 * result + (imageData?.contentHashCode() ?: 0)
+        result = 31 * result + (imageUrl?.hashCode() ?: 0)
         return result
     }
 }

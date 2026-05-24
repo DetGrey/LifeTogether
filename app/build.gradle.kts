@@ -13,7 +13,7 @@ plugins {
 
 android {
     namespace = "com.example.lifetogether"
-    compileSdk = 36
+    compileSdk = 37
 
     // --- Load Signing Properties ---
     val localProps = gradleLocalProperties(rootDir, providers)
@@ -46,10 +46,10 @@ android {
 
     defaultConfig {
         applicationId = "com.example.lifetogether"
-        minSdk = 31
-        targetSdk = 36
+        minSdk = 35
+        targetSdk = 37
         versionCode = 1
-        versionName = "1.5.0"
+        versionName = "2.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -131,19 +131,20 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
-    implementation(libs.androidx.navigation.runtime.ktx)
-    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.kotlinx.serialization.json)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.messaging)
-    implementation(libs.google.api.client)
     implementation(libs.google.auth.library.oauth2.http)
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.work.runtime.ktx)
     implementation(kotlin("reflect"))
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
@@ -151,7 +152,9 @@ dependencies {
     implementation(libs.coil)
     implementation(libs.coil.compose)
     implementation(libs.zoomable.image.coil)
+    implementation(libs.reorderable)
     implementation(libs.accompanist.permissions)
+    implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.media3.session)

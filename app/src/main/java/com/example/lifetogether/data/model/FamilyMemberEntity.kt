@@ -22,11 +22,11 @@ import com.example.lifetogether.util.Constants
 data class FamilyMemberEntity(
     @PrimaryKey
     @ColumnInfo(name = "uid")
-    val uid: String = "",
+    val uid: String,
 
     @ColumnInfo(name = "family_id")
-    val familyId: String? = null,
+    val familyId: String,
 
     @ColumnInfo(name = "name")
-    val name: String? = null,
+    val name: String,
 )

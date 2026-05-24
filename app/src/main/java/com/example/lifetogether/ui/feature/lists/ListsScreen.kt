@@ -1,173 +1,277 @@
 package com.example.lifetogether.ui.feature.lists
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
-import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.lists.ListType
 import com.example.lifetogether.domain.model.lists.UserList
-import com.example.lifetogether.domain.observer.ObserverKey
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.ActionSheet
+import com.example.lifetogether.ui.common.ActionSheetItem
+import com.example.lifetogether.ui.common.AppTopBar
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
+import com.example.lifetogether.ui.common.button.PrimaryButton
+import com.example.lifetogether.ui.common.button.SecondaryButton
 import com.example.lifetogether.ui.common.button.AddButton
-import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
-import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
+import com.example.lifetogether.ui.common.list.SelectionModeBar
+import com.example.lifetogether.ui.common.skeleton.Skeletons
+import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
+import com.example.lifetogether.ui.common.text.TextDefault
+import com.example.lifetogether.ui.common.text.TextHeadingMedium
+import com.example.lifetogether.ui.common.text.TextLabel
+import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
+import java.util.Date
 
 @Composable
 fun ListsScreen(
-    appNavigator: AppNavigator? = null,
+    uiState: ListsUiState,
+    onUiEvent: (ListsUiEvent) -> Unit,
+    onNavigationEvent: (ListsNavigationEvent) -> Unit,
 ) {
-    val viewModel: ListsViewModel = hiltViewModel()
-    val userLists by viewModel.userLists.collectAsState()
+    val contentState = uiState as? ListsUiState.Content
+    val isLoading = uiState is ListsUiState.Loading
+    var showDeleteSelectedDialog by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(10.dp)
-                .padding(bottom = 80.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            item {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    TopBar(
-                        leftIcon = Icon(
-                            resId = R.drawable.ic_back_arrow,
-                            description = "back arrow icon",
-                        ),
-                        onLeftClick = { appNavigator?.navigateBack() },
-                        text = "Lists",
-                    )
-
-                    ObserverUpdatingText(
-                        keys = setOf(ObserverKey.USER_LISTS, ObserverKey.ROUTINE_LIST_ENTRIES),
-                    )
-                }
-            }
-
-            if (userLists.isEmpty()) {
-                item {
-                    Text(text = "No lists yet. Tap + to create one.")
-                }
-            } else {
-                items(userLists) { list ->
-                    UserListCard(
-                        list = list,
-                        onClick = { list.id?.let { appNavigator?.navigateToListDetail(it) } },
-                    )
-                }
-            }
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = 30.dp, end = 30.dp),
-            contentAlignment = Alignment.BottomEnd,
-        ) {
-            AddButton(onClick = { viewModel.openCreateDialog() })
-        }
+    BackHandler(enabled = contentState?.isSelectionMode == true) {
+        onUiEvent(ListsUiEvent.ExitSelectionMode)
     }
 
-    if (viewModel.showAlertDialog) {
-        LaunchedEffect(viewModel.error) {
-            viewModel.dismissAlert()
-        }
-        ErrorAlertDialog(viewModel.error)
-    }
-
-    if (viewModel.showCreateDialog) {
-        CreateListDialog(
-            name = viewModel.newListName,
-            onNameChange = { viewModel.newListName = it },
-            type = viewModel.newListType,
-            onTypeChange = { viewModel.newListType = it },
-            visibility = viewModel.newListVisibility,
-            onVisibilityChange = { viewModel.newListVisibility = it },
-            isSaving = viewModel.isSaving,
-            onDismiss = { viewModel.showCreateDialog = false },
-            onCreate = {
-                viewModel.createList { newId ->
-                    appNavigator?.navigateToListDetail(newId)
-                }
+    Scaffold(
+        topBar = {
+            AppTopBar(
+                leftAppIcon = AppIcon(
+                    resId = R.drawable.ic_back,
+                    description = "back arrow icon",
+                ),
+                onLeftClick = {
+                    if (contentState?.isSelectionMode == true) {
+                        onUiEvent(ListsUiEvent.ExitSelectionMode)
+                    } else {
+                        onNavigationEvent(ListsNavigationEvent.NavigateBack)
+                    }
+                },
+                text = "Lists",
+                rightAppIcon = if (contentState != null) AppIcon(
+                    resId = R.drawable.ic_overflow_menu,
+                    description = "overflow menu",
+                ) else null,
+                onRightClick = { onUiEvent(ListsUiEvent.ToggleActionSheet) },
+            )
+        },
+        floatingActionButton = {
+            if (!isLoading && contentState?.isSelectionMode != true) {
+                AddButton(
+                    onClick = { onUiEvent(ListsUiEvent.CreateListClicked) },
+                )
+            }
+        },
+    ) { padding ->
+        AnimatedLoadingContent(
+            isLoading = isLoading,
+            label = "lists_loading_content",
+            loadingContent = {
+                Skeletons.ListDetail(modifier = Modifier.fillMaxSize())
             },
-        )
+        ) {
+            val content = contentState ?: return@AnimatedLoadingContent
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = LifeTogetherTokens.spacing.small),
+            ) {
+                AnimatedContent(
+                    targetState = content.isSelectionMode,
+                    transitionSpec = { fadeIn() togetherWith fadeOut() },
+                    label = "selection_mode_bar",
+                ) { selectionActive ->
+                    if (selectionActive) {
+                        SelectionModeBar(
+                            selectedCount = content.selectedListIds.size,
+                            isAllSelected = content.isAllSelected,
+                            onToggleAll = { onUiEvent(ListsUiEvent.ToggleAllListSelection) },
+                            onCancel = { onUiEvent(ListsUiEvent.ExitSelectionMode) },
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.medium))
+                    }
+                }
+
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
+                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+                ) {
+                    if (content.userLists.isEmpty()) {
+                        item {
+                            TextDefault(text = "No lists yet. Tap + to create one.")
+                        }
+                    } else {
+                        items(content.userLists, key = { it.id }) { list ->
+                            val isSelected = content.selectedListIds.contains(list.id)
+                            UserListCard(
+                                list = list,
+                                isSelected = isSelected,
+                                onClick = {
+                                    if (content.isSelectionMode) {
+                                        onUiEvent(ListsUiEvent.ToggleListSelection(list.id))
+                                    } else {
+                                        onNavigationEvent(ListsNavigationEvent.NavigateToListDetails(list.id))
+                                    }
+                                },
+                                onLongClick = {
+                                    if (!content.isSelectionMode) {
+                                        onUiEvent(ListsUiEvent.EnterSelectionMode(list.id))
+                                    }
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (content.showActionSheet) {
+                val actions = if (content.isSelectionMode) {
+                    listOf(
+                        ActionSheetItem(
+                            label = "Delete selected",
+                            onClick = {
+                                onUiEvent(ListsUiEvent.ToggleActionSheet)
+                                showDeleteSelectedDialog = true
+                            },
+                            isDestructive = true,
+                            isEnabled = content.selectedListIds.isNotEmpty(),
+                        ),
+                    )
+                } else {
+                    listOf(
+                        ActionSheetItem(
+                            label = "Select lists",
+                            onClick = { onUiEvent(ListsUiEvent.StartSelectionMode) },
+                            isEnabled = content.userLists.isNotEmpty(),
+                        ),
+                    )
+                }
+                ActionSheet(
+                    onDismiss = { onUiEvent(ListsUiEvent.ToggleActionSheet) },
+                    actionsList = actions,
+                )
+            }
+
+            if (showDeleteSelectedDialog) {
+                ConfirmationDialog(
+                    dialogTitle = "Delete lists?",
+                    dialogMessage = "The selected lists and all their entries will be permanently deleted.",
+                    confirmButtonMessage = "Delete",
+                    dismissButtonMessage = "Cancel",
+                    onConfirm = {
+                        showDeleteSelectedDialog = false
+                        onUiEvent(ListsUiEvent.ConfirmDeleteSelected)
+                    },
+                    onDismiss = { showDeleteSelectedDialog = false },
+                )
+            }
+
+            when (val dialog = content.dialog) {
+                is ListsDialogState.CreateList -> CreateListDialog(
+                    name = dialog.name,
+                    onNameChange = { onUiEvent(ListsUiEvent.CreateListNameChanged(it)) },
+                    type = dialog.type,
+                    onTypeChange = { onUiEvent(ListsUiEvent.CreateListTypeChanged(it)) },
+                    visibility = dialog.visibility,
+                    onVisibilityChange = { onUiEvent(ListsUiEvent.CreateListVisibilityChanged(it)) },
+                    isSaving = content.isSaving,
+                    onDismiss = { onUiEvent(ListsUiEvent.DismissDialog) },
+                    onCreate = { onUiEvent(ListsUiEvent.ConfirmCreateListClicked) },
+                )
+
+                null -> Unit
+            }
+        }
     }
 }
 
 @Composable
 private fun UserListCard(
     list: UserList,
+    isSelected: Boolean,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
 ) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.onBackground, RoundedCornerShape(20.dp))
-            .clickable { onClick() }
-            .padding(14.dp),
+            .clip(MaterialTheme.shapes.large)
+            .border(
+                width = if (isSelected) 2.dp else 0.dp,
+                color = if (isSelected) MaterialTheme.colorScheme.tertiary else Color.Transparent,
+                shape = MaterialTheme.shapes.large,
+            )
+            .background(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.large)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .padding(LifeTogetherTokens.spacing.medium),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = list.type.name.lowercase().replaceFirstChar { it.uppercase() },
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.background,
+                TextLabel(
+                    text = list.type.displayName,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
-                Text(
+                TextLabel(
                     text = if (list.visibility == Visibility.FAMILY) "Family" else "Private",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.background,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
-            Text(
+            TextHeadingMedium(
                 text = list.itemName,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.background,
-                fontWeight = FontWeight.Bold,
             )
         }
     }
 }
+
 
 @Composable
 private fun CreateListDialog(
@@ -184,92 +288,92 @@ private fun CreateListDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Create new list") },
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                TextField(
+            Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium)) {
+                CustomTextField(
                     value = name,
                     onValueChange = onNameChange,
-                    label = { Text("Name") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                    label = "Name",
+                    capitalization = true,
+                    imeAction = ImeAction.Next,
+                    keyboardType = KeyboardType.Text
                 )
 
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
                     Text("Type", style = MaterialTheme.typography.labelLarge)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        ListType.entries.forEach { listType ->
-                            val selected = type == listType
-                            if (selected) {
-                                Button(onClick = {}) {
-                                    Text(listType.name.lowercase().replaceFirstChar { it.uppercase() })
-                                }
-                            } else {
-                                OutlinedButton(onClick = { onTypeChange(listType) }) {
-                                    Text(listType.name.lowercase().replaceFirstChar { it.uppercase() })
-                                }
-                            }
+                    TagOptionRow(
+                        options = ListType.entries.map { it.displayName.lowercase() },
+                        selectedOption = type.displayName.lowercase(),
+                        onSelectedOptionChange = { new ->
+                            ListType.entries.find { it.displayName.lowercase() == new }?.let { onTypeChange(it) }
                         }
-                    }
+                    )
                 }
 
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
                     Text("Visibility", style = MaterialTheme.typography.labelLarge)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Visibility.entries.forEach { vis ->
-                            val selected = visibility == vis
-                            if (selected) {
-                                Button(onClick = {}) {
-                                    Text(vis.name.lowercase().replaceFirstChar { it.uppercase() })
-                                }
-                            } else {
-                                OutlinedButton(onClick = { onVisibilityChange(vis) }) {
-                                    Text(vis.name.lowercase().replaceFirstChar { it.uppercase() })
-                                }
-                            }
+                    TagOptionRow(
+                        options = Visibility.entries.map { it.tag },
+                        selectedOption = visibility.tag,
+                        onSelectedOptionChange = { new ->
+                            Visibility.entries.find { it.tag == new }?.let { onVisibilityChange(it) }
                         }
-                    }
+                    )
                 }
             }
         },
         confirmButton = {
-            if (isSaving) {
-                CircularProgressIndicator()
-            } else {
-                Button(onClick = onCreate) { Text("Create") }
-            }
+            PrimaryButton(
+                text = "Create",
+                onClick = onCreate,
+                loading = isSaving,
+            )
         },
         dismissButton = {
-            OutlinedButton(onClick = onDismiss) { Text("Cancel") }
+            SecondaryButton(
+                text = "Cancel",
+                onClick = onDismiss,
+            )
         },
     )
 }
 
 @Preview(showBackground = true)
 @Composable
-fun UserListCardPreview() {
+private fun UserListCardPreview() {
     LifeTogetherTheme {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(LifeTogetherTokens.spacing.medium),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
         ) {
             UserListCard(
                 list = UserList(
                     id = "1",
-                    itemName = "Morning Routines",
+                    familyId = "family-1",
+                    itemName = "Weekly meals",
+                    dateCreated = Date(),
                     type = ListType.ROUTINE,
                     visibility = Visibility.FAMILY,
+                    ownerUid = "user-1",
                 ),
+                isSelected = false,
                 onClick = {},
+                onLongClick = {},
             )
             UserListCard(
                 list = UserList(
                     id = "2",
+                    familyId = "family-1",
                     itemName = "My Private Habits",
+                    dateCreated = Date(),
                     type = ListType.ROUTINE,
                     visibility = Visibility.PRIVATE,
+                    ownerUid = "user-1",
                 ),
+                isSelected = true,
                 onClick = {},
+                onLongClick = {},
             )
         }
     }
@@ -277,7 +381,7 @@ fun UserListCardPreview() {
 
 @Preview(showBackground = true)
 @Composable
-fun CreateListDialogPreview() {
+private fun CreateListDialogPreview() {
     LifeTogetherTheme {
         CreateListDialog(
             name = "Morning Routines",

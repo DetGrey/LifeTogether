@@ -3,236 +3,326 @@ package com.example.lifetogether.ui.feature.gallery
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import kotlin.math.roundToInt
 import com.example.lifetogether.R
+import com.example.lifetogether.domain.logic.durationToString
 import com.example.lifetogether.domain.logic.toAbbreviatedDateString
-import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.logic.toDateTimeString
+import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.gallery.GalleryImage
+import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
-import com.example.lifetogether.ui.common.OverflowMenu
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.domain.model.gallery.MediaDownloadState
+import com.example.lifetogether.ui.common.ActionSheet
+import com.example.lifetogether.ui.common.ActionSheetItem
+import com.example.lifetogether.ui.common.AppTopBar
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
+import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
-import com.example.lifetogether.ui.common.dialog.CustomAlertDialog
-import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
 import com.example.lifetogether.ui.common.image.DisplayImageFromUri
 import com.example.lifetogether.ui.common.image.DisplayVideoFromUri
-import com.example.lifetogether.ui.common.image.MediaInfoPanel
-import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
+import com.example.lifetogether.ui.common.skeleton.Skeletons
+import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.model.MenuAction
-import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.domain.observer.ObserverKey
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
+import java.util.Date
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun MediaDetailsScreen(
-    appNavigator: AppNavigator? = null,
-    albumId: String,
-    initialIndex: Int,
+    uiState: MediaDetailsUiState,
+    onUiEvent: (MediaDetailsUiEvent) -> Unit,
+    onNavigationEvent: (MediaDetailsNavigationEvent) -> Unit,
 ) {
-    val mediaDetailsViewModel: MediaDetailsViewModel = hiltViewModel()
-    val uiState by mediaDetailsViewModel.uiState.collectAsState()
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var deleteTargetIndex by remember { mutableStateOf<Int?>(null) }
 
-    LaunchedEffect(albumId) {
-        mediaDetailsViewModel.setUp(albumId, initialIndex)
-    }
-
-    val mediaList = uiState.mediaList
-    val pagerState = rememberPagerState(
-        initialPage = initialIndex,
-        pageCount = { mediaList.size }
-    )
-
-    // TODO is this needed since it is empty?
-    // Pause videos when swiping away from them
-    LaunchedEffect(pagerState.currentPage) {
-        // This will be called whenever the page changes
-        // Video players in non-visible pages will pause via lifecycle
-    }
-
-    val containerSize = LocalWindowInfo.current.containerSize
-
-    // Animate the "snap" when the user lets go
-    val animatedOffset by animateFloatAsState(
-        targetValue = uiState.offsetY,
-        label = "offsetAnimation",
-        animationSpec = spring(stiffness = Spring.StiffnessLow) // Makes it feel premium
-    )
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .pointerInput(containerSize) { // Re-bind if size changes
-                detectVerticalDragGestures(
-                    onVerticalDrag = { change, dragAmount ->
-                        change.consume()
-                        mediaDetailsViewModel.onVerticalDrag(dragAmount, containerSize.height)
-                    },
-                    onDragEnd = {
-                        mediaDetailsViewModel.onDragEnd(containerSize.height)
-                    }
-                )
-            }
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            TopBar(
-                leftIcon = Icon(
-                    resId = R.drawable.ic_back_arrow,
+    Scaffold(
+        topBar = {
+            val content = uiState as? MediaDetailsUiState.Content
+            AppTopBar(
+                leftAppIcon = AppIcon(
+                    resId = R.drawable.ic_back,
                     description = "back arrow icon",
                 ),
                 onLeftClick = {
-                    appNavigator?.navigateBack()
+                    onNavigationEvent(MediaDetailsNavigationEvent.NavigateBack)
                 },
-                text = mediaList.getOrNull(pagerState.currentPage)
+                text = content?.mediaList?.getOrNull(content.currentIndex)
                     ?.dateCreated
                     ?.toAbbreviatedDateString()
                     ?: "Media",
-                rightIcon = Icon(
+                rightAppIcon = AppIcon(
                     resId = R.drawable.ic_overflow_menu,
                     description = "overflow menu",
                 ),
-                onRightClick = { mediaDetailsViewModel.toggleOverflowMenu() },
+                onRightClick = { onUiEvent(MediaDetailsUiEvent.ToggleOverflowMenu) },
+            )
+        },
+    ) { padding ->
+        AnimatedLoadingContent(
+            isLoading = uiState is MediaDetailsUiState.Loading,
+            label = "media_details_loading",
+            loadingContent = {
+                Skeletons.SectionDetail(modifier = Modifier.fillMaxSize())
+            },
+        ) {
+            val content = uiState as? MediaDetailsUiState.Content ?: return@AnimatedLoadingContent
+            val mediaList = content.mediaList
+            val pagerState = rememberPagerState(
+                initialPage = content.currentIndex,
+                pageCount = { mediaList.size },
             )
 
-            ObserverUpdatingText(
-                keys = setOf(ObserverKey.GALLERY_ALBUMS, ObserverKey.GALLERY_MEDIA),
+            val containerSize = LocalWindowInfo.current.containerSize
+
+            val animatedOffset by animateFloatAsState(
+                targetValue = content.offsetY,
+                label = "offsetAnimation",
+                animationSpec = spring(stiffness = Spring.StiffnessLow),
             )
 
-            HorizontalPager(
-                state = pagerState,
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .weight(1f),
-                pageSpacing = 16.dp,
-                beyondViewportPageCount = 1
-            ) { page ->
-                val media = mediaList[page]
-
-                Box(
+                    .padding(padding)
+                    .pointerInput(containerSize) {
+                        detectVerticalDragGestures(
+                            onVerticalDrag = { _, dragAmount ->
+                                onUiEvent(MediaDetailsUiEvent.VerticalDrag(dragAmount, containerSize.height))
+                            },
+                            onDragEnd = {
+                                onUiEvent(MediaDetailsUiEvent.DragEnd(containerSize.height))
+                            }
+                        )
+                    },
+            ) {
+                Column(
                     modifier = Modifier
                         .fillMaxSize()
+                        .padding(LifeTogetherTokens.spacing.small),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    when (media) {
-                        is GalleryImage -> {
-                            media.mediaUri?.let {
-                                DisplayImageFromUri(it, media.itemName)
-                            }
-                        }
-                        is GalleryVideo -> {
-                            media.mediaUri?.let { uri ->
-                                DisplayVideoFromUri(
-                                    videoUri = uri,
-                                    autoPlay = false, // User taps to play
-                                    useController = true,
-                                    modifier = Modifier.fillMaxSize(),
-                                    keepScreenOn = true
-                                )
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.fillMaxSize(),
+                        pageSpacing = 16.dp,
+                        beyondViewportPageCount = 1,
+                    ) { page ->
+                        val media = mediaList[page]
+
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                        ) {
+                            when (media) {
+                                is GalleryImage -> {
+                                    if (media.mediaUri != null) {
+                                        DisplayImageFromUri(media.mediaUri, media.itemName)
+                                    } else {
+                                        MissingMediaState(
+                                            state = media.downloadState,
+                                            onRetry = { onUiEvent(MediaDetailsUiEvent.RetryMedia(page)) },
+                                        )
+                                    }
+                                }
+
+                                is GalleryVideo -> {
+                                    if (media.mediaUri != null) {
+                                        DisplayVideoFromUri(
+                                            videoUri = media.mediaUri,
+                                            autoPlay = false,
+                                            useController = true,
+                                            modifier = Modifier.fillMaxSize(),
+                                            keepScreenOn = true,
+                                        )
+                                    } else {
+                                        MissingMediaState(
+                                            state = media.downloadState,
+                                            onRetry = { onUiEvent(MediaDetailsUiEvent.RetryMedia(page)) },
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
                 }
+
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.4f)
+                        .align(Alignment.BottomCenter)
+                        .offset {
+                            IntOffset(
+                                x = 0,
+                                y = (animatedOffset + (containerSize.height * 0.4f)).roundToInt(),
+                            )
+                        },
+                    shape = MaterialTheme.shapes.extraLarge.copy(
+                        bottomStart = CornerSize(0.dp),
+                        bottomEnd = CornerSize(0.dp),
+                    ),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                ) {
+                    mediaList.getOrNull(pagerState.currentPage)?.let {
+                        MediaDetailsPanelContent(it)
+                    }
+                }
             }
         }
+    }
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.4f) // This is our panel height
-                .align(Alignment.BottomCenter)
-                .graphicsLayer {
-                    translationY = animatedOffset + (size.height) // Offset it by its own height to hide it
-                }
-                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                .background(MaterialTheme.colorScheme.surface)
-        ) {
-            mediaList.getOrNull(pagerState.currentPage)?.let {
-                MediaInfoPanel(it)
-            }
+    if (uiState is MediaDetailsUiState.Content) {
+        if (uiState.showOverflowMenu) {
+            ActionSheet(
+                onDismiss = { onUiEvent(MediaDetailsUiEvent.ToggleOverflowMenu) },
+                actionsList = MenuAction.MediaDetailsActions.entries.map { action ->
+                    ActionSheetItem(
+                        label = action.label,
+                        onClick = {
+                            when (action) {
+                                MenuAction.MediaDetailsActions.DOWNLOAD -> {
+                                    onUiEvent(MediaDetailsUiEvent.ToggleOverflowMenu)
+                                    onUiEvent(MediaDetailsUiEvent.DownloadMedia(uiState.currentIndex))
+                                }
+                                MenuAction.MediaDetailsActions.DELETE -> {
+                                    onUiEvent(MediaDetailsUiEvent.ToggleOverflowMenu)
+                                    deleteTargetIndex = uiState.currentIndex
+                                    showDeleteDialog = true
+                                }
+                            }
+                        },
+                        isDestructive = action == MenuAction.MediaDetailsActions.DELETE,
+                    )
+                },
+            )
         }
     }
 
-    // ---------------------------------------------------------------- DOWNLOAD
-    uiState.downloadMessage?.let { message ->
-        CustomAlertDialog(
-            title = if (uiState.isDownloading) "Downloading..." else "Finished downloading",
-            details = message,
-            extraContent = {
-                if (uiState.isDownloading) {
-                    CircularProgressIndicator()
-                }
-            }
+    if (showDeleteDialog) {
+        ConfirmationDialog(
+            onDismiss = {
+                showDeleteDialog = false
+                deleteTargetIndex = null
+            },
+            onConfirm = {
+                val idx = deleteTargetIndex
+                showDeleteDialog = false
+                deleteTargetIndex = null
+                onUiEvent(MediaDetailsUiEvent.DeleteMedia(idx))
+            },
+            dialogTitle = "Delete",
+            dialogMessage = "Are you sure you want to delete this?",
+            dismissButtonMessage = "Cancel",
+            confirmButtonMessage = "Delete",
         )
     }
+}
 
-    // ---------------------------------------------------------------- OVERFLOW MENU
-    if (uiState.showOverflowMenu) {
-        OverflowMenu(
-            onDismiss = { mediaDetailsViewModel.toggleOverflowMenu() },
-            actionsList = MenuAction.MediaDetailsActions.entries.map {
-                mapOf(it.label to { mediaDetailsViewModel.startOverflowAction(it) })
-            }
-        )
-    }
-
-    // ---------------------------------------------------------------- OVERFLOW MENU ACTIONS DIALOG
-    if (uiState.showOverflowMenuActionDialog && uiState.overflowMenuAction != null) {
-        when (uiState.overflowMenuAction) {
-            MenuAction.MediaDetailsActions.DOWNLOAD -> {
-                if (!uiState.isDownloading && mediaList.isNotEmpty()) {
-                    mediaDetailsViewModel.downloadMedia(pagerState.currentPage)
-
-                }
-            }
-            MenuAction.MediaDetailsActions.DELETE -> {
-                ConfirmationDialog(
-                    onDismiss = { mediaDetailsViewModel.dismissOverflowMenuActionDialog() },
-                    onConfirm = {
-                        mediaDetailsViewModel.deleteMedia(pagerState.currentPage)
-                    },
-                    dialogTitle = "Delete",
-                    dialogMessage = "Are you sure you want to delete this?",
-                    dismissButtonMessage = "Cancel",
-                    confirmButtonMessage = "Delete",
+@Composable
+private fun MissingMediaState(
+    state: MediaDownloadState,
+    onRetry: () -> Unit,
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            TextDefault(
+                text = when (state) {
+                    MediaDownloadState.PENDING -> "This media is still syncing."
+                    MediaDownloadState.STALE -> "Refreshing the local file."
+                    MediaDownloadState.FAILED -> "The local download failed."
+                    MediaDownloadState.READY -> "Media not available."
+                },
+            )
+            if (state != MediaDownloadState.PENDING) {
+                PrimaryButton(
+                    text = "Retry download",
+                    onClick = onRetry,
+                    modifier = Modifier.padding(top = LifeTogetherTokens.spacing.small),
                 )
             }
-            else -> {}
         }
     }
-    // ---------------------------------------------------------------- SHOW ERROR ALERT
-    if (uiState.showAlertDialog) {
-        LaunchedEffect(uiState.error) {
-            mediaDetailsViewModel.dismissAlert()
+}
+
+@Composable
+private fun MediaDetailsPanelContent(media: GalleryMedia) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(LifeTogetherTokens.spacing.large),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        TextDefault(
+            text = media.dateCreated.toDateTimeString()
+        )
+
+        if (media is GalleryVideo) {
+            TextDefault(
+                text = media.duration?.durationToString() ?: "Unknown duration",
+            )
         }
-        ErrorAlertDialog(uiState.error)
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun MediaDetailsScreenPreview() {
+    LifeTogetherTheme {
+        MediaDetailsScreen(
+            uiState = MediaDetailsUiState.Content(
+                mediaList = listOf(
+                    GalleryImage(
+                        id = "media-1",
+                        familyId = "family-1",
+                        itemName = "Kitchen shelf",
+                        lastUpdated = Date(1_717_200_000_000),
+                        albumId = "album-1",
+                        dateCreated = Date(1_717_200_000_000),
+                    ),
+                    GalleryVideo(
+                        id = "media-2",
+                        familyId = "family-1",
+                        itemName = "Living room",
+                        lastUpdated = Date(1_717_200_000_000),
+                        albumId = "album-1",
+                        dateCreated = Date(1_717_200_000_000),
+                        duration = 42_000L,
+                    ),
+                ),
+                currentIndex = 0,
+            ),
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
     }
 }

@@ -1,9 +1,17 @@
 package com.example.lifetogether.data.repository
 
+import com.example.lifetogether.data.logic.AppErrorThrowable
+import com.example.lifetogether.data.logic.appResultOf
+import com.example.lifetogether.data.logic.appResultOfSuspend
+import com.example.lifetogether.domain.result.AppError
+import android.util.Log
 import com.example.lifetogether.data.local.source.SessionCleanupLocalDataSource
 import com.example.lifetogether.data.local.source.UserLocalDataSource
+import com.example.lifetogether.data.remote.FamilyFirestoreDataSource
 import com.example.lifetogether.data.remote.FirebaseAuthDataSource
-import com.example.lifetogether.data.remote.FirestoreDataSource
+import com.example.lifetogether.data.remote.UserFirestoreDataSource
+import com.example.lifetogether.data.repository.internal.stampNow
+import com.example.lifetogether.domain.datasource.StorageDataSource
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
@@ -14,46 +22,46 @@ import com.example.lifetogether.domain.repository.UserRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import java.util.Date
 import javax.inject.Inject
 
 class UserRepositoryImpl @Inject constructor(
     private val userLocalDataSource: UserLocalDataSource,
     private val sessionCleanupLocalDataSource: SessionCleanupLocalDataSource,
     private val firebaseAuthDataSource: FirebaseAuthDataSource,
-    private val firestoreDataSource: FirestoreDataSource,
+    private val userFirestoreDataSource: UserFirestoreDataSource,
+    private val familyFirestoreDataSource: FamilyFirestoreDataSource,
+    private val storageDataSource: StorageDataSource,
 ) : UserRepository, SessionUserRepository {
+    private companion object {
+        const val TAG = "UserRepositoryImpl"
+    }
 
-    fun getFamilyInformation(familyId: String): Flow<Result<FamilyInformation, String>> {
+    fun observeFamilyInformation(familyId: String): Flow<Result<FamilyInformation, AppError>> {
         // Get family information (without members)
-        val familyInformationFlow: Flow<Result<FamilyInformation, String>> = userLocalDataSource.getFamilyInformation(familyId).map { user ->
-            try {
-                println("LocalUserRepositoryImpl getFamilyInformation user: $user")
+        val familyInformationFlow: Flow<Result<FamilyInformation, AppError>> = userLocalDataSource.observeFamilyInformation(familyId).map { user ->
+            if (user == null) return@map Result.Failure(AppError.NotFound("Family not found in local cache"))
+            appResultOf {
+                Log.d(TAG, "Mapping family information from local user record")
 
                 // Initial FamilyInformation without members
-                Result.Success(
-                    FamilyInformation(
-                        familyId = user.familyId,
-                    ),
+                FamilyInformation(
+                    familyId = user.familyId,
+                    lastUpdated = user.lastUpdated,
+                    imageUrl = user.imageUrl,
+                    togetherSince = user.togetherSince,
                 )
-            } catch (e: Exception) {
-                Result.Failure(e.message ?: "Unknown error")
             }
         }
 
         // Get family members
-        val familyMembersFlow = userLocalDataSource.getFamilyMembers(familyId).map { list ->
+        val familyMembersFlow = userLocalDataSource.observeFamilyMembers(familyId).map { list ->
             list.map { familyMember ->
-                try {
-                    println("LocalUserRepositoryImpl getFamilyInformation familyMember: $familyMember")
-
-                    FamilyMember(
-                        uid = familyMember.uid,
-                        name = familyMember.name,
-                    )
-                } catch (e: Exception) {
-                    println("Error fetching family members: ${e.message}")
-                    emptyList<FamilyMember>()
-                }
+                Log.d(TAG, "Mapping local family member")
+                FamilyMember(
+                    uid = familyMember.uid,
+                    name = familyMember.name,
+                )
             }
         }
 
@@ -62,8 +70,7 @@ class UserRepositoryImpl @Inject constructor(
             when (familyInfo) {
                 is Result.Success -> {
                     // Add the family members to the family information
-                    val validMembers = familyMembers.filterIsInstance<FamilyMember>()
-                    val updatedFamilyInfo = familyInfo.data.copy(members = validMembers)
+                    val updatedFamilyInfo = familyInfo.data.copy(members = familyMembers)
                     Result.Success(updatedFamilyInfo)
                 }
                 is Result.Failure -> {
@@ -73,67 +80,148 @@ class UserRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun removeSavedUserInformation(): Result<Unit, String> {
+    override suspend fun deleteSavedUserInformation(): Result<Unit, AppError> {
         return sessionCleanupLocalDataSource.clearSessionTables()
     }
     // ---------- REMOTE
-    suspend fun login(
+    override suspend fun login(
         user: User,
-    ): Result<UserInformation, String> {
-        println("RemoteUserRepositoryImpl login()")
+    ): Result<Unit, AppError> {
+        Log.d(TAG, "login start")
         return firebaseAuthDataSource.login(user)
     }
 
-    suspend fun signUp(
+    override suspend fun signUp(
         user: User,
         userInformation: UserInformation,
-    ): Result<UserInformation, String> {
-        println("RemoteUserRepositoryImpl signUp()")
-        try {
-            val signupResult = firebaseAuthDataSource.signUp(user, userInformation)
-            println("RemoteUserRepositoryImpl signupResult: $signupResult")
-            return if (signupResult is Result.Success) {
-                when (val uploadResult = firestoreDataSource.uploadUserInformation(signupResult.data)) {
-                    is Result.Success -> {
-                        println("RemoteUserRepositoryImpl: uploadResult $uploadResult")
-                        signupResult
-                    }
-                    is Result.Failure -> {
-                        println("RemoteUserRepositoryImpl: uploadResult $uploadResult")
-                        Result.Failure(uploadResult.error)
-                    }
-                }
-            } else {
-                signupResult
+    ): Result<UserInformation, AppError> {
+        Log.d(TAG, "signUp start")
+        return appResultOfSuspend {
+            val stampedUserInformation = userInformation.stampNow()
+            val signupResult = firebaseAuthDataSource.signUp(user, stampedUserInformation)
+            Log.d(TAG, "signUp auth response received")
+            val signedUpUser = when (signupResult) {
+                is Result.Success -> signupResult.data
+                is Result.Failure -> throw AppErrorThrowable(signupResult.error)
             }
-        } catch (e: Exception) {
-            return Result.Failure("Error: ${e.message}")
+            when (val uploadResult = userFirestoreDataSource.uploadUserInformation(signedUpUser)) {
+                is Result.Success -> {
+                    Log.d(TAG, "signUp user info upload succeeded")
+                    signedUpUser
+                }
+                is Result.Failure -> {
+                    Log.e(TAG, "signUp user info upload failed: ${uploadResult.error}")
+                    throw AppErrorThrowable(uploadResult.error)
+                }
+            }
         }
     }
 
     override suspend fun logout(
         uid: String,
         familyId: String?,
-    ): Result<Unit, String> {
-        return firebaseAuthDataSource.logout(uid, familyId)
+    ): Result<Unit, AppError> {
+        return firebaseAuthDataSource.logout(uid, familyId, Date())
     }
 
-    override suspend fun fetchUserInformation(uid: String): Result<UserInformation, String> {
-        return firestoreDataSource.fetchUserInformation(uid)
+    override suspend fun fetchUserInformation(uid: String): Result<UserInformation, AppError> {
+        return userFirestoreDataSource.fetchUserInformation(uid)
     }
 
-    override fun observeUserInformation(uid: String): Flow<Result<UserInformation, String>> {
-        return firestoreDataSource.userInformationSnapshotListener(uid)
+    override fun observeUserInformation(uid: String): Flow<Result<UserInformation, AppError>> {
+        return userFirestoreDataSource.userInformationSnapshotListener(uid)
     }
 
     override suspend fun changeName(
         uid: String,
         familyId: String?,
         newName: String,
-    ): Result<Unit, String> {
-        return when (val result = firestoreDataSource.changeName(uid, familyId, newName)) {
+    ): Result<Unit, AppError> {
+        val now = Date()
+        userLocalDataSource.updateUserName(uid, newName, now)
+        userLocalDataSource.updateFamilyMemberName(uid, newName, familyId, now)
+        return when (val result = userFirestoreDataSource.changeName(uid, familyId, newName, now)) {
             is Result.Success -> Result.Success(Unit)
             is Result.Failure -> Result.Failure(result.error)
+        }
+    }
+
+    override fun syncUserInformationFromRemote(uid: String): Flow<Result<Unit, AppError>> {
+        return userFirestoreDataSource.userInformationSnapshotListener(uid).map { result ->
+            when (result) {
+                is Result.Success -> appResultOfSuspend {
+                    val currentLocalUser = userLocalDataSource.getProfileOnce(result.data.uid)
+                    val currentImageUrl = result.data.imageUrl
+                    val localImageUrl = currentLocalUser?.imageUrl
+                    val remoteIsNewer = currentLocalUser?.lastUpdated?.before(result.data.lastUpdated) == true
+                    val shouldDownloadImage = currentImageUrl != null && (
+                        localImageUrl != currentImageUrl ||
+                            currentLocalUser.imageData == null ||
+                            remoteIsNewer
+                    )
+                    val imageBytes = when {
+                        currentImageUrl == null -> null
+                        shouldDownloadImage -> {
+                            when (val byteArrayResult = storageDataSource.fetchImageByteArray(currentImageUrl)) {
+                                is Result.Success -> byteArrayResult.data
+                                is Result.Failure -> null
+                            }
+                        }
+                        else -> currentLocalUser?.imageData
+                    }
+
+                    userLocalDataSource.updateUserInformation(result.data, imageBytes)
+                }
+
+                is Result.Failure -> Result.Failure(result.error)
+            }
+        }
+    }
+
+    fun syncFamilyInformationFromRemote(familyId: String): Flow<Result<Unit, AppError>> {
+        return familyFirestoreDataSource.familyInformationSnapshotListener(familyId).map { result ->
+            when (result) {
+                is Result.Success -> appResultOfSuspend {
+                    val currentLocalFamily = userLocalDataSource.getFamilyOnce(result.data.familyId)
+                    val currentImageUrl = result.data.imageUrl
+                    val localImageUrl = currentLocalFamily?.imageUrl
+                    val remoteIsNewer = currentLocalFamily?.lastUpdated?.before(result.data.lastUpdated) == true
+                    val shouldDownloadImage = currentImageUrl != null && (
+                        localImageUrl != currentImageUrl ||
+                            currentLocalFamily.imageData == null ||
+                            remoteIsNewer
+                    )
+                    val imageBytes = when {
+                        currentImageUrl == null -> null
+                        shouldDownloadImage -> {
+                            when (val byteArrayResult = storageDataSource.fetchImageByteArray(currentImageUrl)) {
+                                is Result.Success -> byteArrayResult.data
+                                is Result.Failure -> null
+                            }
+                        }
+                        else -> currentLocalFamily?.imageData
+                    }
+
+                    userLocalDataSource.updateFamilyInformation(result.data, imageBytes)
+                }
+
+                is Result.Failure -> Result.Failure(result.error)
+            }
+        }
+    }
+
+    suspend fun updateFamilyTogetherSince(
+        familyId: String,
+        togetherSince: Date?,
+    ): Result<Unit, AppError> {
+        return appResultOfSuspend {
+            val now = Date()
+            when (val result = familyFirestoreDataSource.saveFamilyTogetherSince(familyId, togetherSince, now)) {
+                is Result.Success -> {
+                    userLocalDataSource.updateFamilyTogetherSince(familyId, togetherSince, now)
+                }
+                is Result.Failure -> throw AppErrorThrowable(result.error)
+            }
         }
     }
 
@@ -141,11 +229,12 @@ class UserRepositoryImpl @Inject constructor(
         familyId: String,
         uid: String,
         name: String,
-    ): Result<Unit, String> {
-        println("RemoteUserRepositoryImpl joinFamily()")
-        when (val result = firestoreDataSource.joinFamily(familyId, uid, name)) {
+    ): Result<Unit, AppError> {
+        Log.d(TAG, "joinFamily start")
+        val now = Date()
+        when (val result = familyFirestoreDataSource.joinFamily(familyId, uid, name, now)) {
             is Result.Success -> {
-                val updateResult = firestoreDataSource.updateFamilyId(uid, familyId)
+                val updateResult = userFirestoreDataSource.updateFamilyId(uid, familyId, now)
                 return updateResult
             }
             is Result.Failure -> {
@@ -157,11 +246,12 @@ class UserRepositoryImpl @Inject constructor(
     suspend fun createNewFamily(
         uid: String,
         name: String,
-    ): Result<Unit, String> {
-        println("RemoteUserRepositoryImpl createNewFamily()")
-        when (val result = firestoreDataSource.createNewFamily(uid, name)) {
+    ): Result<Unit, AppError> {
+        Log.d(TAG, "createNewFamily start")
+        val now = Date()
+        when (val result = familyFirestoreDataSource.createNewFamily(uid, name, now)) {
             is Result.Success -> {
-                val updateResult = firestoreDataSource.updateFamilyId(uid, result.data)
+                val updateResult = userFirestoreDataSource.updateFamilyId(uid, result.data, now)
                 return updateResult
             }
             is Result.Failure -> {
@@ -173,11 +263,12 @@ class UserRepositoryImpl @Inject constructor(
     suspend fun leaveFamily(
         familyId: String,
         uid: String,
-    ): Result<Unit, String> {
-        println("RemoteUserRepositoryImpl leaveFamily()")
-        when (val result = firestoreDataSource.leaveFamily(familyId, uid)) {
+    ): Result<Unit, AppError> {
+        Log.d(TAG, "leaveFamily start")
+        val now = Date()
+        when (val result = familyFirestoreDataSource.leaveFamily(familyId, uid, now)) {
             is Result.Success -> {
-                val updateResult = firestoreDataSource.updateFamilyId(uid, null)
+                val updateResult = userFirestoreDataSource.updateFamilyId(uid, null, now)
                 return updateResult
             }
             is Result.Failure -> {
@@ -188,26 +279,23 @@ class UserRepositoryImpl @Inject constructor(
 
     suspend fun deleteFamily(
         familyId: String,
-    ): Result<Unit, String> {
-        println("RemoteUserRepositoryImpl deleteFamily()")
-        return firestoreDataSource.deleteFamily(familyId)
+    ): Result<Unit, AppError> {
+        Log.d(TAG, "deleteFamily start")
+        return familyFirestoreDataSource.deleteFamily(familyId, Date())
     }
 
     override suspend fun storeFcmToken(
         uid: String,
         familyId: String,
-    ): Result<Unit, String> {
-        return runCatching {
-            firestoreDataSource.storeFcmToken(uid, familyId)
-            Result.Success(Unit)
-        }.getOrElse { error ->
-            Result.Failure(error.message ?: "Failed to store FCM token")
+    ): Result<Unit, AppError> {
+        return appResultOfSuspend {
+            familyFirestoreDataSource.storeFcmToken(uid, familyId, Date())
         }
     }
 
     override suspend fun fetchFcmTokens(
         familyId: String,
     ): List<String>? {
-        return firestoreDataSource.getFcmTokensFromFamily(familyId)
+        return familyFirestoreDataSource.getFcmTokensFromFamily(familyId)
     }
 }

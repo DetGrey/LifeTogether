@@ -7,7 +7,7 @@ import com.example.lifetogether.domain.model.guides.GuideStep
 
 data class GuideLeafPointer(
     val sectionIndex: Int,
-    val sectionAmountIndex: Int = 0,
+    val sectionPieceIndex: Int = 0,
     val stepIndex: Int,
     val subStepIndex: Int? = null,
 )
@@ -16,15 +16,15 @@ object GuideProgress {
     fun resetSectionsProgress(sections: List<GuideSection>): List<GuideSection> {
         return sections.map { section ->
             val normalizedSection = normalizeSection(section)
-            val resetByAmount = normalizedSection.stepsProgressByAmount.map { amountSteps ->
-                setAllLeafCompletion(amountSteps, completed = false)
+            val resetByPiece = normalizedSection.stepsProgressByAmount.map { pieceSteps ->
+                setAllLeafCompletion(pieceSteps, completed = false)
             }
             updateSectionCompletion(
                 normalizedSection.copy(
-                    completedAmount = 0,
+                    completedPieces = 0,
                     completed = false,
-                    steps = resetByAmount.firstOrNull().orEmpty(),
-                    stepsProgressByAmount = resetByAmount,
+                    steps = resetByPiece.firstOrNull().orEmpty(),
+                    stepsProgressByAmount = resetByPiece,
                 ),
             )
         }
@@ -34,14 +34,14 @@ object GuideProgress {
         val pointers = mutableListOf<GuideLeafPointer>()
         sections.forEachIndexed { sectionIndex, section ->
             val normalizedSection = normalizeSection(section)
-            val amount = normalizedSection.amount
-            repeat(amount) { amountIndex ->
-                sectionStepsForAmount(normalizedSection, amountIndex).forEachIndexed { stepIndex, step ->
+            val pieces = normalizedSection.pieces
+            repeat(pieces) { pieceIndex ->
+                sectionStepsForPiece(normalizedSection, pieceIndex).forEachIndexed { stepIndex, step ->
                     if (step.subSteps.isNotEmpty()) {
                         step.subSteps.forEachIndexed { subStepIndex, _ ->
                             pointers += GuideLeafPointer(
                                 sectionIndex = sectionIndex,
-                                sectionAmountIndex = amountIndex,
+                                sectionPieceIndex = pieceIndex,
                                 stepIndex = stepIndex,
                                 subStepIndex = subStepIndex,
                             )
@@ -49,7 +49,7 @@ object GuideProgress {
                     } else {
                         pointers += GuideLeafPointer(
                             sectionIndex = sectionIndex,
-                            sectionAmountIndex = amountIndex,
+                            sectionPieceIndex = pieceIndex,
                             stepIndex = stepIndex,
                             subStepIndex = null,
                         )
@@ -63,7 +63,7 @@ object GuideProgress {
     fun resumeFromPointer(pointer: GuideLeafPointer): GuideResume {
         return GuideResume(
             sectionIndex = pointer.sectionIndex,
-            sectionAmountIndex = pointer.sectionAmountIndex,
+            sectionPieceIndex = pointer.sectionPieceIndex,
             stepIndex = pointer.stepIndex,
             subStepIndex = pointer.subStepIndex,
         )
@@ -75,10 +75,10 @@ object GuideProgress {
     ): GuideLeafPointer? {
         if (resume == null) return null
         val section = sections.getOrNull(resume.sectionIndex)?.let(::normalizeSection) ?: return null
-        val amount = section.amount
-        val normalizedAmountIndex = resume.sectionAmountIndex.coerceIn(0, amount - 1)
-        val amountSteps = sectionStepsForAmount(section, normalizedAmountIndex)
-        val step = amountSteps.getOrNull(resume.stepIndex) ?: return null
+        val pieces = section.pieces
+        val normalizedPieceIndex = resume.sectionPieceIndex.coerceIn(0, pieces - 1)
+        val pieceSteps = sectionStepsForPiece(section, normalizedPieceIndex)
+        val step = pieceSteps.getOrNull(resume.stepIndex) ?: return null
 
         val normalizedSubStepIndex = resume.subStepIndex?.takeIf { step.subSteps.isNotEmpty() }
         if (normalizedSubStepIndex != null && step.subSteps.getOrNull(normalizedSubStepIndex) == null) {
@@ -87,7 +87,7 @@ object GuideProgress {
 
         return GuideLeafPointer(
             sectionIndex = resume.sectionIndex,
-            sectionAmountIndex = normalizedAmountIndex,
+            sectionPieceIndex = normalizedPieceIndex,
             stepIndex = resume.stepIndex,
             subStepIndex = normalizedSubStepIndex,
         )
@@ -98,10 +98,10 @@ object GuideProgress {
         pointer: GuideLeafPointer,
     ): GuideStep? {
         val section = sections.getOrNull(pointer.sectionIndex)?.let(::normalizeSection) ?: return null
-        val amount = section.amount
-        val normalizedAmountIndex = pointer.sectionAmountIndex.coerceIn(0, amount - 1)
-        val amountSteps = sectionStepsForAmount(section, normalizedAmountIndex)
-        val step = amountSteps.getOrNull(pointer.stepIndex) ?: return null
+        val pieces = section.pieces
+        val normalizedPieceIndex = pointer.sectionPieceIndex.coerceIn(0, pieces - 1)
+        val pieceSteps = sectionStepsForPiece(section, normalizedPieceIndex)
+        val step = pieceSteps.getOrNull(pointer.stepIndex) ?: return null
 
         return if (pointer.subStepIndex != null) {
             step.subSteps.getOrNull(pointer.subStepIndex)
@@ -116,14 +116,14 @@ object GuideProgress {
         }
     }
 
-    fun sectionStepsForAmount(
+    fun sectionStepsForPiece(
         section: GuideSection,
-        amountIndex: Int,
+        pieceIndex: Int,
     ): List<GuideStep> {
         val normalizedSection = normalizeSection(section)
-        if (normalizedSection.amount <= 0) return emptyList()
-        val normalizedAmountIndex = amountIndex.coerceIn(0, normalizedSection.amount - 1)
-        return normalizedSection.stepsProgressByAmount.getOrElse(normalizedAmountIndex) { emptyList() }
+        if (normalizedSection.pieces <= 0) return emptyList()
+        val normalizedPieceIndex = pieceIndex.coerceIn(0, normalizedSection.pieces - 1)
+        return normalizedSection.stepsProgressByAmount.getOrElse(normalizedPieceIndex) { emptyList() }
     }
 
     fun sectionProgress(section: GuideSection): Pair<Int, Int> {
@@ -147,24 +147,24 @@ object GuideProgress {
         return ((completed.toFloat() / total.toFloat()) * 100f).toInt()
     }
 
-    fun sectionAmountProgress(
+    fun sectionPieceProgress(
         section: GuideSection,
-        amountIndex: Int,
+        pieceIndex: Int,
     ): Pair<Int, Int> {
-        val amountSteps = sectionStepsForAmount(section, amountIndex)
-        val totalLeafSteps = countLeafSteps(amountSteps)
+        val pieceSteps = sectionStepsForPiece(section, pieceIndex)
+        val totalLeafSteps = countLeafSteps(pieceSteps)
         if (totalLeafSteps == 0) return 0 to 0
 
-        val completedLeafSteps = countCompletedLeafSteps(amountSteps).coerceAtMost(totalLeafSteps)
+        val completedLeafSteps = countCompletedLeafSteps(pieceSteps).coerceAtMost(totalLeafSteps)
 
         return completedLeafSteps to totalLeafSteps
     }
 
-    fun sectionAmountProgressPercent(
+    fun sectionPieceProgressPercent(
         section: GuideSection,
-        amountIndex: Int,
+        pieceIndex: Int,
     ): Int {
-        val (completed, total) = sectionAmountProgress(section, amountIndex)
+        val (completed, total) = sectionPieceProgress(section, pieceIndex)
         if (total == 0) return 0
         return ((completed.toFloat() / total.toFloat()) * 100f).toInt()
     }
@@ -178,17 +178,13 @@ object GuideProgress {
             if (sectionIndex != pointer.sectionIndex) {
                 updateSectionCompletion(section)
             } else {
-                applyCompletionToSectionAmount(section, pointer, completed)
+                applyCompletionToSectionPiece(section, pointer, completed)
             }
         }
     }
 
     fun updateSectionCompletion(section: GuideSection): GuideSection {
         return normalizeSection(section)
-    }
-
-    fun updateGuideResume(guide: Guide): GuideResume? {
-        return firstIncompletePointer(guide.sections)?.let { resumeFromPointer(it) }
     }
 
     fun defaultPointerForGuide(guide: Guide): GuideLeafPointer? {
@@ -208,10 +204,10 @@ object GuideProgress {
         pointer: GuideLeafPointer,
     ): Boolean {
         val section = sections.getOrNull(pointer.sectionIndex)?.let(::normalizeSection) ?: return false
-        val amount = section.amount
-        val normalizedAmountIndex = pointer.sectionAmountIndex.coerceIn(0, amount - 1)
-        val amountSteps = sectionStepsForAmount(section, normalizedAmountIndex)
-        val step = amountSteps.getOrNull(pointer.stepIndex) ?: return false
+        val pieces = section.pieces
+        val normalizedPieceIndex = pointer.sectionPieceIndex.coerceIn(0, pieces - 1)
+        val pieceSteps = sectionStepsForPiece(section, normalizedPieceIndex)
+        val step = pieceSteps.getOrNull(pointer.stepIndex) ?: return false
         return if (pointer.subStepIndex != null) {
             step.subSteps.getOrNull(pointer.subStepIndex)?.completed == true
         } else {
@@ -224,45 +220,45 @@ object GuideProgress {
         pointer: GuideLeafPointer,
     ): Boolean {
         val section = sections.getOrNull(pointer.sectionIndex)?.let(::normalizeSection) ?: return false
-        val amount = section.amount
-        val completedAmount = section.completedAmount
-        val activeAmountIndex = activeAmountIndex(
-            completedAmount = completedAmount,
-            amount = amount,
+        val pieces = section.pieces
+        val completedPieces = section.completedPieces
+        val activePieceIndex = activePieceIndex(
+            completedPieces = completedPieces,
+            pieces = pieces,
         )
-        return pointer.sectionAmountIndex == activeAmountIndex
+        return pointer.sectionPieceIndex == activePieceIndex
     }
 
-    private fun applyCompletionToSectionAmount(
+    private fun applyCompletionToSectionPiece(
         section: GuideSection,
         pointer: GuideLeafPointer,
         completed: Boolean,
     ): GuideSection {
         val normalizedSection = normalizeSection(section)
-        val amount = normalizedSection.amount
-        val currentCompletedAmount = normalizedSection.completedAmount
-        val activeAmountIndex = activeAmountIndex(
-            completedAmount = currentCompletedAmount,
-            amount = amount,
+        val pieces = normalizedSection.pieces
+        val currentCompletedPieces = normalizedSection.completedPieces
+        val activePieceIndex = activePieceIndex(
+            completedPieces = currentCompletedPieces,
+            pieces = pieces,
         )
 
-        if (pointer.sectionAmountIndex != activeAmountIndex) {
+        if (pointer.sectionPieceIndex != activePieceIndex) {
             return normalizedSection
         }
 
-        val existingByAmount = normalizedSection.stepsProgressByAmount.toMutableList()
+        val existingByPiece = normalizedSection.stepsProgressByAmount.toMutableList()
         val updatedSteps = applyCompletionToSteps(
-            steps = existingByAmount[activeAmountIndex],
+            steps = existingByPiece[activePieceIndex],
             pointer = pointer,
             completed = completed,
         )
-        existingByAmount[activeAmountIndex] = updatedSteps
+        existingByPiece[activePieceIndex] = updatedSteps
 
         return updateSectionCompletion(
             normalizedSection.copy(
-                amount = amount,
+                pieces = pieces,
                 steps = updatedSteps,
-                stepsProgressByAmount = existingByAmount,
+                stepsProgressByAmount = existingByPiece,
             ),
         )
     }
@@ -343,87 +339,87 @@ object GuideProgress {
         }
     }
 
-    private fun normalizedAmount(section: GuideSection): Int {
-        return section.amount.coerceAtLeast(1)
+    private fun normalizedPieces(section: GuideSection): Int {
+        return section.pieces.coerceAtLeast(1)
     }
 
     private fun normalizeSection(section: GuideSection): GuideSection {
-        val amount = normalizedAmount(section)
-        val rawCompletedAmount = section.completedAmount.coerceIn(0, amount)
-        val rawProgressByAmount = section.stepsProgressByAmount
+        val pieces = normalizedPieces(section)
+        val rawCompletedPieces = section.completedPieces.coerceIn(0, pieces)
+        val rawProgressByPiece = section.stepsProgressByAmount
         val baseSteps = when {
             section.steps.isNotEmpty() -> section.steps
-            rawProgressByAmount.isNotEmpty() -> rawProgressByAmount.first()
+            rawProgressByPiece.isNotEmpty() -> rawProgressByPiece.first()
             else -> emptyList()
         }
 
-        val normalizedProgressByAmount = (0 until amount).map { amountIndex ->
-            rawProgressByAmount.getOrNull(amountIndex)
-                ?: legacyFallbackStepsForAmount(
+        val normalizedProgressByPiece = (0 until pieces).map { pieceIndex ->
+            rawProgressByPiece.getOrNull(pieceIndex)
+                ?: legacyFallbackStepsForPiece(
                     baseSteps = baseSteps,
-                    completedAmount = rawCompletedAmount,
-                    amount = amount,
-                    amountIndex = amountIndex,
+                    completedPieces = rawCompletedPieces,
+                    pieces = pieces,
+                    pieceIndex = pieceIndex,
                 )
         }
-        val completedAmount = inferCompletedAmount(
-            stepsByAmount = normalizedProgressByAmount,
-            fallbackCompletedAmount = rawCompletedAmount,
-        ).coerceIn(0, amount)
-        val activeAmountIndex = activeAmountIndex(
-            completedAmount = completedAmount,
-            amount = amount,
+        val completedPieces = inferCompletedPieces(
+            stepsByPiece = normalizedProgressByPiece,
+            fallbackCompletedPieces = rawCompletedPieces,
+        ).coerceIn(0, pieces)
+        val activePieceIndex = activePieceIndex(
+            completedPieces = completedPieces,
+            pieces = pieces,
         )
-        val activeSteps = normalizedProgressByAmount.getOrElse(activeAmountIndex) { emptyList() }
+        val activeSteps = normalizedProgressByPiece.getOrElse(activePieceIndex) { emptyList() }
 
         return section.copy(
-            amount = amount,
-            completedAmount = completedAmount,
-            completed = completedAmount >= amount,
+            pieces = pieces,
+            completedPieces = completedPieces,
+            completed = completedPieces >= pieces,
             steps = activeSteps,
-            stepsProgressByAmount = normalizedProgressByAmount,
+            stepsProgressByAmount = normalizedProgressByPiece,
         )
     }
 
-    private fun legacyFallbackStepsForAmount(
+    private fun legacyFallbackStepsForPiece(
         baseSteps: List<GuideStep>,
-        completedAmount: Int,
-        amount: Int,
-        amountIndex: Int,
+        completedPieces: Int,
+        pieces: Int,
+        pieceIndex: Int,
     ): List<GuideStep> {
         return when {
-            completedAmount > amountIndex -> setAllLeafCompletion(baseSteps, completed = true)
-            completedAmount == amountIndex && completedAmount < amount -> baseSteps
+            completedPieces > pieceIndex -> setAllLeafCompletion(baseSteps, completed = true)
+            completedPieces == pieceIndex && completedPieces < pieces -> baseSteps
             else -> setAllLeafCompletion(baseSteps, completed = false)
         }
     }
 
-    private fun inferCompletedAmount(
-        stepsByAmount: List<List<GuideStep>>,
-        fallbackCompletedAmount: Int,
+    private fun inferCompletedPieces(
+        stepsByPiece: List<List<GuideStep>>,
+        fallbackCompletedPieces: Int,
     ): Int {
-        var completedAmount = 0
-        while (completedAmount < stepsByAmount.size) {
-            val amountSteps = stepsByAmount[completedAmount]
-            val isCompleted = if (countLeafSteps(amountSteps) == 0) {
-                completedAmount < fallbackCompletedAmount
+        var completedPieces = 0
+        while (completedPieces < stepsByPiece.size) {
+            val pieceSteps = stepsByPiece[completedPieces]
+            val isCompleted = if (countLeafSteps(pieceSteps) == 0) {
+                completedPieces < fallbackCompletedPieces
             } else {
-                areAllLeafStepsCompleted(amountSteps)
+                areAllLeafStepsCompleted(pieceSteps)
             }
             if (!isCompleted) break
-            completedAmount += 1
+            completedPieces += 1
         }
-        return completedAmount
+        return completedPieces
     }
 
-    private fun activeAmountIndex(
-        completedAmount: Int,
-        amount: Int,
+    private fun activePieceIndex(
+        completedPieces: Int,
+        pieces: Int,
     ): Int {
-        return if (completedAmount >= amount) {
-            amount - 1
+        return if (completedPieces >= pieces) {
+            pieces - 1
         } else {
-            completedAmount
+            completedPieces
         }.coerceAtLeast(0)
     }
 }

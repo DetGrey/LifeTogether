@@ -1,9 +1,5 @@
 package com.example.lifetogether.ui.feature.recipes
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.model.recipe.Recipe
@@ -11,12 +7,17 @@ import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.RecipeRepository
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.result.Result
+import com.example.lifetogether.domain.result.toUserMessage
+import com.example.lifetogether.ui.common.event.UiCommand
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -25,89 +26,205 @@ class RecipesViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
     private val recipeRepository: RecipeRepository,
 ) : ViewModel() {
-    var showAlertDialog: Boolean by mutableStateOf(false)
-    var error: String by mutableStateOf("")
-    fun toggleAlertDialog() {
-        viewModelScope.launch {
-            delay(3000)
-            showAlertDialog = false
-            error = ""
-        }
+    companion object {
+        private val DEFAULT_TAG_ORDER = listOf("Simple", "Dinner", "Breakfast")
     }
 
-    private var familyId: String? = null
+    private val _uiState = MutableStateFlow<RecipesUiState>(RecipesUiState.Loading)
+    val uiState: StateFlow<RecipesUiState> = _uiState.asStateFlow()
 
-    // ---------------------------------------------------------------- SETUP/FETCH LIST
-    private val _recipes = MutableStateFlow<List<Recipe>>(emptyList())
-    val recipes: StateFlow<List<Recipe>> = _recipes.asStateFlow()
+    private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
+    val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
 
-    private val _filteredRecipes = MutableStateFlow<List<Recipe>>(emptyList())
-    val filteredRecipes: StateFlow<List<Recipe>> = _filteredRecipes
-
-    // ---------------------------------------------------------------- TAGS AND FILTERS
-    private val _tagsList: MutableList<String> = mutableListOf("All", "Simple", "Dinner", "Breakfast", "Dessert", "Pasta", "Rice")
-    var tagsList: List<String> by mutableStateOf(_tagsList)
-    var selectedTag: String by mutableStateOf("All")
+    private var observeRecipesJob: Job? = null
+    private var currentFamilyId: String? = null
+    private var allRecipes: List<Recipe> = emptyList()
 
     init {
         viewModelScope.launch {
             sessionRepository.sessionState.collect { state ->
                 val newFamilyId = (state as? SessionState.Authenticated)?.user?.familyId
-                if (newFamilyId != null && newFamilyId != familyId) {
-                    familyId = newFamilyId
-                    setUpRecipes()
-                } else if (state is SessionState.Unauthenticated) {
-                    familyId = null
+                if (newFamilyId != currentFamilyId) {
+                    currentFamilyId = newFamilyId
+                    observeRecipes(newFamilyId)
                 }
             }
         }
     }
 
-    private fun setUpRecipes() {
-        val familyId = familyId ?: return
-        viewModelScope.launch {
+    fun onEvent(event: RecipesUiEvent) {
+        when (event) {
+            is RecipesUiEvent.TagSelected -> selectTag(event.tag)
+            RecipesUiEvent.SearchIconClicked -> openSearch()
+            is RecipesUiEvent.SearchQueryChanged -> updateSearchQuery(event.value)
+            RecipesUiEvent.SearchClearClicked -> clearSearchQuery()
+            RecipesUiEvent.SearchCancelClicked -> closeSearch()
+        }
+    }
+
+    private fun observeRecipes(familyId: String?) {
+        observeRecipesJob?.cancel()
+
+        if (familyId.isNullOrBlank()) {
+            allRecipes = emptyList()
+            _uiState.value = RecipesUiState.Loading
+            return
+        }
+
+        observeRecipesJob = viewModelScope.launch {
             recipeRepository.observeRecipes(familyId).collect { result ->
                 when (result) {
                     is Result.Success -> {
-                        val foundRecipes = result.data
-                        if (foundRecipes.isNotEmpty()) {
-                            _recipes.value = foundRecipes
-                            updateTagsList(foundRecipes.map { it.tags })
+                        allRecipes = result.data
+                        val contentState = currentContentState()
+                        if (contentState == null) {
+                            _uiState.value = RecipesUiState.Content(
+                                recipes = applyFilters(
+                                    recipes = result.data,
+                                    selectedTag = "All",
+                                    searchQuery = "",
+                                ),
+                                tagsList = buildTagsList(result.data),
+                                selectedTag = "All",
+                                searchQuery = "",
+                                isSearchActive = false,
+                            )
+                        } else {
+                            updateRecipesContent()
                         }
                     }
+
                     is Result.Failure -> {
-                        error = result.error
-                        showAlertDialog = true
+                        allRecipes = emptyList()
+                        _uiState.value = RecipesUiState.Loading
+                        showError(result.error.toUserMessage())
                     }
                 }
-            }
-        }
-        viewModelScope.launch {
-            combine(_recipes, snapshotFlow { selectedTag }) { recipes, tag ->
-                if (tag == "All") {
-                    recipes
-                } else {
-                    recipes.filter { recipe ->
-                        recipe.tags.any { recipeTag ->
-                            recipeTag.equals(tag, ignoreCase = true)
-                        }
-                    }
-                }
-            }.collect { filteredList ->
-                _filteredRecipes.value = filteredList.sortedBy { it.itemName.lowercase() }
             }
         }
     }
 
-    private fun updateTagsList(list: List<List<String>>) {
-        for (tags in list) {
-            for (tag in tags) {
-                val normalizedTag = tag.replaceFirstChar { it.uppercase() }
-                if (_tagsList.none { it.equals(normalizedTag, ignoreCase = true) }) {
-                    _tagsList.add(normalizedTag)
+    private fun selectTag(tag: String) {
+        updateRecipesContent { state ->
+            state.copy(selectedTag = tag)
+        }
+        updateRecipesContent()
+    }
+
+    private fun openSearch() {
+        updateRecipesContent { state ->
+            state.copy(isSearchActive = true)
+        }
+    }
+
+    private fun updateSearchQuery(value: String) {
+        updateRecipesContent { state ->
+            state.copy(searchQuery = value.trimStart())
+        }
+    }
+
+    private fun clearSearchQuery() {
+        updateRecipesContent { state ->
+            state.copy(searchQuery = "")
+        }
+    }
+
+    private fun closeSearch() {
+        updateRecipesContent { state ->
+            state.copy(
+                searchQuery = "",
+                isSearchActive = false,
+            )
+        }
+    }
+
+    private fun updateRecipesContent(transform: ((RecipesUiState.Content) -> RecipesUiState.Content)? = null) {
+        _uiState.update { state ->
+            val contentState = state as? RecipesUiState.Content ?: return@update state
+            val updatedState = transform?.invoke(contentState) ?: contentState
+            val filteredRecipes = applyFilters(
+                recipes = allRecipes,
+                selectedTag = updatedState.selectedTag,
+                searchQuery = updatedState.searchQuery,
+            )
+            updatedState.copy(
+                recipes = filteredRecipes,
+                tagsList = buildTagsList(allRecipes),
+            )
+        }
+    }
+
+    private fun currentContentState(): RecipesUiState.Content? {
+        return _uiState.value as? RecipesUiState.Content
+    }
+
+    private fun applyFilters(
+        recipes: List<Recipe>,
+        selectedTag: String,
+        searchQuery: String,
+    ): List<Recipe> {
+        val tagFiltered = if (selectedTag == "All") {
+            recipes
+        } else {
+            recipes.filter { recipe ->
+                recipe.tags.any { recipeTag ->
+                    recipeTag.equals(selectedTag, ignoreCase = true)
                 }
             }
         }
-        tagsList = _tagsList.toList()
+        val search = searchQuery.trim().lowercase()
+        val searched = if (search.isBlank()) {
+            tagFiltered
+        } else {
+            tagFiltered.filter { recipe ->
+                recipe.itemName.contains(search, ignoreCase = true) ||
+                    recipe.tags.any { tag -> tag.contains(search, ignoreCase = true) } ||
+                    recipe.ingredients.any { ingredient ->
+                        ingredient.itemName.contains(search, ignoreCase = true)
+                    }
+            }
+        }
+        return searched.sortedBy { it.itemName.lowercase() }
     }
+
+    private fun buildTagsList(recipes: List<Recipe>): List<String> {
+        val tags = linkedSetOf<String>()
+        recipes.forEach { recipe ->
+            recipe.tags.forEach { tag ->
+                if (tag.isNotBlank()) {
+                    tags += tag.normalizedTag()
+                }
+            }
+        }
+
+        val prioritizedTags = mutableListOf("All")
+        tags.remove("All")
+        DEFAULT_TAG_ORDER.forEach { tag ->
+            if (tags.remove(tag)) {
+                prioritizedTags += tag
+            }
+        }
+
+        return prioritizedTags + tags.toList()
+    }
+
+    private fun String.normalizedTag(): String {
+        return trim()
+            .lowercase()
+            .replaceFirstChar { character ->
+                character.uppercase()
+            }
+    }
+
+    private fun showError(message: String) {
+        viewModelScope.launch {
+            _uiCommands.send(
+                UiCommand.ShowSnackbar(
+                    message = message,
+                    withDismissAction = true,
+                ),
+            )
+        }
+    }
+
 }

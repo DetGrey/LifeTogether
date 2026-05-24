@@ -4,16 +4,21 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.lifetogether.R
 import com.example.lifetogether.ui.feature.notification.NotificationService
+import com.example.lifetogether.ui.navigation.NotificationDestination
 import com.example.lifetogether.util.Constants
+import dagger.hilt.android.AndroidEntryPoint
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class MyFirebaseMessagingService : FirebaseMessagingService() {
+
+    @Inject
+    lateinit var notificationService: NotificationService
 
     // [START receive_message]
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
-        // TODO(developer): Handle FCM messages here.
-        // Not getting messages here? See why this may be: https://goo.gl/39bRNJ
         Log.d(TAG, "From: ${remoteMessage.from}")
 
         // Check if message contains a data payload.
@@ -28,10 +33,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             val priority = remoteMessage.data["priority"]?.toIntOrNull()
             val autoCancel = remoteMessage.data["autoCancel"]?.toBoolean()
             val destination = remoteMessage.data["destination"]
+            val typedDestination = destination?.let(NotificationDestination::fromKey)
 
-            // TODO here goes the logic after receiving data
-            // Create an instance of NotificationService and send the notification
-            val notificationService = NotificationService(applicationContext)
             notificationService.createNotification(
                 channelId = channelId ?: Constants.DEFAULT_CHANNEL,
                 title = title,
@@ -40,7 +43,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 notificationId = notificationId ?: System.currentTimeMillis().toInt(),
                 priority = priority ?: NotificationCompat.PRIORITY_DEFAULT,
                 autoCancel = autoCancel ?: true,
-                destination = destination,
+                destination = typedDestination,
             )
         }
     }

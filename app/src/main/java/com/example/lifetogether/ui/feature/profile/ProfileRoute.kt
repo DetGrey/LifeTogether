@@ -1,0 +1,59 @@
+package com.example.lifetogether.ui.feature.profile
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.lifetogether.BuildConfig
+import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.ui.common.event.CollectUiCommands
+import com.example.lifetogether.ui.common.event.LocalRootSnackbarHostState
+import com.example.lifetogether.ui.common.image.rememberObservedImageBitmap
+import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.LoginNavRoute
+import com.example.lifetogether.ui.navigation.SettingsNavRoute
+import kotlinx.coroutines.launch
+
+@Composable
+fun ProfileRoute(
+    appNavigator: AppNavigator,
+) {
+    val viewModel: ProfileViewModel = hiltViewModel()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    val content = uiState as? ProfileUiState.Content
+    val imageType = content?.userInformation?.uid?.let { ImageType.ProfileImage(it) }
+    val snackbarHostState = LocalRootSnackbarHostState.current
+    val coroutineScope = rememberCoroutineScope()
+    val bitmap = rememberObservedImageBitmap(imageType) { message ->
+        coroutineScope.launch {
+            snackbarHostState.showSnackbar(message)
+        }
+    }
+    val isAdmin = content?.userInformation?.uid in BuildConfig.ADMIN_LIST.split(",")
+
+    CollectUiCommands(viewModel.uiCommands)
+
+    LaunchedEffect(viewModel.commands) {
+        viewModel.commands.collect { command ->
+            when (command) {
+                ProfileCommand.NavigateToLogin -> appNavigator.clearAndNavigate(LoginNavRoute)
+            }
+        }
+    }
+
+    ProfileScreen(
+        uiState = uiState,
+        bitmap = bitmap,
+        isAdmin = isAdmin,
+        onUiEvent = viewModel::onEvent,
+        onNavigationEvent = { navigationEvent ->
+            when (navigationEvent) {
+                ProfileNavigationEvent.NavigateBack -> appNavigator.navigateBack()
+                ProfileNavigationEvent.NavigateToSettings -> appNavigator.navigateTopLevel(SettingsNavRoute)
+            }
+        },
+    )
+}

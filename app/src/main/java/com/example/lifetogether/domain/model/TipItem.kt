@@ -1,15 +1,13 @@
 package com.example.lifetogether.domain.model
 
-import com.google.firebase.firestore.DocumentId
 import java.util.Date
 
 data class TipItem(
-    @DocumentId @Transient
-    override val id: String? = null,
-    override val familyId: String = "",
-    override val itemName: String = "Tip",
-    override var lastUpdated: Date = Date(),
-    val amount: Float = 0F,
+    override val id: String,
+    override val familyId: String,
+    override val itemName: String,
+    override val lastUpdated: Date = Date(),
+    val amount: Float,
+    val date: Date,
     val currency: String = "DKK",
-    val date: Date = Date(),
 ) : Item

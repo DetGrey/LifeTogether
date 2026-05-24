@@ -10,12 +10,13 @@ import androidx.compose.ui.text.style.TextAlign
 @Composable
 fun TextHeadingLarge(
     text: String,
+    textAlign: TextAlign = TextAlign.Center,
 ) {
     Text(
         modifier = Modifier.fillMaxWidth(),
         text = text,
         style = MaterialTheme.typography.headlineLarge,
         color = MaterialTheme.colorScheme.primary,
-        textAlign = TextAlign.Center,
+        textAlign = textAlign,
     )
 }

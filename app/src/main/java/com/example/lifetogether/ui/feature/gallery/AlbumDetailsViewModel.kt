@@ -1,73 +1,87 @@
 package com.example.lifetogether.ui.feature.gallery
 
+import android.content.ContentResolver
+import android.content.Context
+import android.net.Uri
+import android.provider.MediaStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.logic.toFullDateString
 import com.example.lifetogether.domain.model.SaveProgress
-import com.example.lifetogether.domain.model.gallery.Album
+import com.example.lifetogether.domain.model.gallery.GalleryImage
+import com.example.lifetogether.domain.model.gallery.GalleryVideo
+import com.example.lifetogether.domain.model.gallery.MediaUploadData
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
+import com.example.lifetogether.domain.model.gallery.MediaDownloadState
+import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.GalleryRepository
+import com.example.lifetogether.domain.repository.SessionRepository
+import com.example.lifetogether.domain.result.AppError
+import com.example.lifetogether.domain.result.Result
+import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.domain.usecase.gallery.DeleteAlbumUseCase
 import com.example.lifetogether.domain.usecase.gallery.DeleteMediaUseCase
 import com.example.lifetogether.domain.usecase.gallery.GetAlbumDisplayModelsUseCase
-import com.example.lifetogether.domain.usecase.image.DownloadMediaUseCase
 import com.example.lifetogether.domain.usecase.item.MoveMediaToAlbumUseCase
-import com.example.lifetogether.ui.model.AlbumUiModel
-import com.example.lifetogether.ui.model.MenuAction
-import com.example.lifetogether.domain.model.session.SessionState
-import com.example.lifetogether.domain.repository.SessionRepository
+import com.example.lifetogether.domain.usecase.image.UploadGalleryMediaItemsUseCase
+import com.example.lifetogether.ui.common.event.UiCommand
+import com.example.lifetogether.ui.common.snackbar.SnackbarSeverity
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+import kotlinx.coroutines.withContext
+import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.UUID
+import java.util.regex.Pattern
+import kotlin.time.Duration.Companion.seconds
 
-data class AlbumDetailsUiState(
-    val album: Album? = null,
-    val media: List<GalleryMedia> = emptyList(),
-    val groupedMedia: List<Pair<String, List<GalleryMedia>>> = emptyList(),
-    val thumbnails: Map<String, ByteArray> = emptyMap(),
-    val isSyncing: Boolean = false,
-    val showOverflowMenu: Boolean = false,
-    val showOverflowMenuActionDialog: Boolean = false,
-    val overflowMenuAction: MenuAction? = null,
-    val actionDialogText: String = "",
-    val showAlertDialog: Boolean = false,
-    val error: String = "",
-    val isPartialLoad: Boolean = false, // True when some media failed to load
-    val isRefreshing: Boolean = false, // User-triggered refresh
-    val isSelectionModeActive: Boolean = false,
-    val selectedMedia: Set<String> = emptySet(),
-    val isAllMediaSelected: Boolean = false,
-    val albums: List<AlbumUiModel> = emptyList(),
-    val isDownloading: Boolean = false,
-    val downloadMessage: String? = null,
-    val familyId: String? = null,
-)
-
-@HiltViewModel
-class AlbumDetailsViewModel @Inject constructor(
+@HiltViewModel(assistedFactory = AlbumDetailsViewModel.Factory::class)
+class AlbumDetailsViewModel @AssistedInject constructor(
+    @Assisted val albumId: String,
     private val sessionRepository: SessionRepository,
     private val galleryRepository: GalleryRepository,
     private val moveMediaToAlbumUseCase: MoveMediaToAlbumUseCase,
     private val deleteAlbumUseCase: DeleteAlbumUseCase,
     private val getAlbumDisplayModelsUseCase: GetAlbumDisplayModelsUseCase,
     private val deleteMediaUseCase: DeleteMediaUseCase,
-    private val downloadMediaUseCase: DownloadMediaUseCase,
+    private val uploadGalleryMediaItemsUseCase: UploadGalleryMediaItemsUseCase,
+    @param:ApplicationContext private val context: Context,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(AlbumDetailsUiState())
+    @AssistedFactory
+    interface Factory {
+        fun create(albumId: String): AlbumDetailsViewModel
+    }
+
+    private val _uiState = MutableStateFlow<AlbumDetailsUiState>(AlbumDetailsUiState.Loading)
     val uiState: StateFlow<AlbumDetailsUiState> = _uiState.asStateFlow()
 
-    private var familyId: String? = null
-    private var albumId: String? = null
+    private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
+    val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
 
-    private var syncRetryAttempts = 0
-    private val maxSyncRetryAttempts = 3
+    private val _commands = Channel<AlbumDetailsCommand>(Channel.BUFFERED)
+    val commands: Flow<AlbumDetailsCommand> = _commands.receiveAsFlow()
+
+    private val requestedThumbnailIds = mutableSetOf<String>()
+    private var observeAlbumJob: Job? = null
+    private var observeAlbumMediaJob: Job? = null
+    private var observeMoveTargetAlbumsJob: Job? = null
+    private var familyId: String? = null
 
     init {
         viewModelScope.launch {
@@ -75,157 +89,260 @@ class AlbumDetailsViewModel @Inject constructor(
                 val newFamilyId = (state as? SessionState.Authenticated)?.user?.familyId
                 if (newFamilyId != null && newFamilyId != familyId) {
                     familyId = newFamilyId
-                    _uiState.update { it.copy(familyId = familyId) }
-                    albumId?.let { startFetch() }
+                    _uiState.value = AlbumDetailsUiState.Loading
+                    requestedThumbnailIds.clear()
+                    observeMoveTargetAlbumsJob?.cancel()
+                    observeMoveTargetAlbumsJob = null
+                    observeAlbum()
+                    observeAlbumMedia()
                 } else if (state is SessionState.Unauthenticated) {
                     familyId = null
+                    observeAlbumJob?.cancel()
+                    observeAlbumMediaJob?.cancel()
+                    observeMoveTargetAlbumsJob?.cancel()
+                    observeAlbumJob = null
+                    observeAlbumMediaJob = null
+                    observeMoveTargetAlbumsJob = null
+                    _uiState.value = AlbumDetailsUiState.Loading
                 }
             }
         }
     }
 
-    fun setUp(addedAlbumId: String) {
-        if (albumId == addedAlbumId && familyId != null) return
+    suspend fun uploadGalleryMediaItems(
+        uris: List<Uri>,
+        onProgress: (current: Int, total: Int) -> Unit,
+    ): Result<Unit, AppError> {
+        val familyIdValue = familyId ?: return Result.Failure(AppError.Validation("Missing family context"))
 
-        albumId = addedAlbumId
-        syncRetryAttempts = 0
+        val mediaUploadDataList = mutableListOf<MediaUploadData>()
 
-        if (familyId != null) {
-            _uiState.update { it.copy(isSyncing = false) }
-            startFetch()
+        for (uri in uris) {
+            val mimeType = context.contentResolver.getType(uri)
+            when {
+                mimeType?.startsWith("image/") == true -> {
+                    val extension = getMimeTypeExtension(mimeType) ?: ".jpeg"
+                    val metadata = extractImageMetadata(context, uri, familyIdValue, albumId, extension)
+                    mediaUploadDataList.add(
+                        MediaUploadData.ImageUpload(
+                            uri = uri,
+                            mediaType = metadata.first,
+                            extension = metadata.second,
+                        ),
+                    )
+                }
+
+                mimeType?.startsWith("video/") == true -> {
+                    val extension = getMimeTypeExtension(mimeType) ?: ".mp4"
+                    val metadata = extractVideoMetadata(context, uri, familyIdValue, albumId, extension)
+                    mediaUploadDataList.add(
+                        MediaUploadData.VideoUpload(
+                            uri = uri,
+                            mediaType = metadata.first,
+                            extension = metadata.second,
+                        ),
+                    )
+                }
+            }
+        }
+
+        if (mediaUploadDataList.isEmpty()) {
+            return Result.Failure(AppError.Validation("No supported files found to upload."))
+        }
+
+        return uploadGalleryMediaItemsUseCase.invoke(
+            mediaUploadList = mediaUploadDataList,
+            context = context,
+            onProgress = onProgress,
+        )
+    }
+
+    fun onUiEvent(event: AlbumDetailsUiEvent) {
+        when (event) {
+            AlbumDetailsUiEvent.RetryFetchAlbumMedia -> retryFetchAlbumMedia()
+            AlbumDetailsUiEvent.ToggleOverflowMenu -> toggleOverflowMenu()
+            AlbumDetailsUiEvent.ToggleSelectionMode -> toggleSelectionMode()
+            AlbumDetailsUiEvent.ToggleAllMediaSelection -> toggleAllMediaSelection()
+            is AlbumDetailsUiEvent.ToggleMediaSelection -> toggleMediaSelection(event.mediaId)
+            is AlbumDetailsUiEvent.EnterSelectionMode -> enterSelectionMode(event.mediaId)
+            AlbumDetailsUiEvent.RequestImageUpload -> updateContentState { it.copy(showImageUploadDialog = true) }
+            AlbumDetailsUiEvent.DismissImageUploadDialog,
+            AlbumDetailsUiEvent.ConfirmImageUploadDialog -> updateContentState { it.copy(showImageUploadDialog = false) }
+            AlbumDetailsUiEvent.RequestRenameAlbum -> requestRenameAlbum()
+            AlbumDetailsUiEvent.RequestMoveSelectedMedia -> requestMoveSelectedMedia()
+            AlbumDetailsUiEvent.DismissDialog -> dismissDialog()
+            is AlbumDetailsUiEvent.RenameAlbumNameChanged -> updateContentState { state ->
+                state.copy(dialog = (state.dialog as? AlbumDetailsDialogState.RenameAlbum)?.copy(name = event.text))
+            }
+            AlbumDetailsUiEvent.ConfirmRenameAlbum -> renameAlbum()
+            AlbumDetailsUiEvent.ConfirmDeleteAlbum -> deleteAlbum()
+            AlbumDetailsUiEvent.DownloadSelectedMedia -> downloadSelectedMedia()
+            AlbumDetailsUiEvent.ConfirmDeleteSelectedMedia -> deleteSelectedMedia()
+            is AlbumDetailsUiEvent.MoveSelectedMediaToAlbum -> selectMoveTargetAlbum(event.albumId)
+            AlbumDetailsUiEvent.ConfirmMoveSelectedMedia -> confirmMoveSelectedMedia()
+            is AlbumDetailsUiEvent.RetryMediaDownload -> retryMediaDownload(event.mediaId)
         }
     }
 
-    private fun startFetch() {
-        fetchAlbum()
-        fetchAlbumMedia()
-    }
-
-    private fun fetchAlbum() {
+    private fun observeAlbum() {
         val familyIdValue = familyId ?: return
-        val albumIdValue = albumId ?: return
 
-        viewModelScope.launch {
-            galleryRepository.observeAlbumById(familyIdValue, albumIdValue).collect { result ->
+        observeAlbumJob?.cancel()
+        observeAlbumJob = viewModelScope.launch {
+            galleryRepository.observeAlbumById(familyIdValue, albumId).collect { result ->
                 when (result) {
                     is Result.Success -> {
                         val album = result.data
-                        _uiState.update { state ->
+                        updateContentState { state ->
                             state.copy(
                                 album = album,
+                                familyId = familyIdValue,
                                 isSyncing = album.count > 0 && state.media.isEmpty(),
                             )
                         }
                     }
-                    is Result.Failure -> showError(result.error)
+
+                    is Result.Failure -> {
+                        if (result.error is AppError.NotFound) {
+                            sendCommand(AlbumDetailsCommand.NavigateBack)
+                        } else {
+                            showError(result.error.toUserMessage())
+                        }
+                    }
                 }
             }
         }
     }
-    private fun fetchAlbumMedia() {
-        val familyIdValue = familyId ?: return
-        val albumIdValue = albumId ?: return
 
-        viewModelScope.launch {
-            val expectedCount = _uiState.value.album?.count ?: 0
-            if (expectedCount > 0 && _uiState.value.media.isEmpty()) {
-                _uiState.update { it.copy(isSyncing = true) }
+    private fun observeAlbumMedia() {
+        val familyIdValue = familyId ?: return
+
+        observeAlbumMediaJob?.cancel()
+        observeAlbumMediaJob = viewModelScope.launch {
+            val expectedCount = currentContentState()?.album?.count ?: 0
+            if (expectedCount > 0 && currentContentState()?.media.orEmpty().isEmpty()) {
+                updateContentState { it.copy(isSyncing = true) }
             }
 
-            galleryRepository.observeAlbumMedia(familyIdValue, albumIdValue).collect { result ->
+            galleryRepository.observeAlbumMedia(familyIdValue, albumId).collect { result ->
                 when (result) {
                     is Result.Success -> handleMediaSuccess(result.data)
-                    is Result.Failure -> handleMediaFailure(result.error)
+                    is Result.Failure -> handleMediaFailure(result.error.toUserMessage())
                 }
             }
         }
     }
+
     private fun handleMediaSuccess(items: List<GalleryMedia>) {
-        if (items.isNotEmpty()) {
-            _uiState.update {
-                it.copy(
-                    media = items,
-                    isSyncing = false,
-                )
-            }
-            groupMedia()
+        val expectedCount = currentContentState()?.album?.count ?: 0
+        val incompleteCount = items.count { it.downloadState != MediaDownloadState.READY }
+        val isPartialLoad = expectedCount > items.size || incompleteCount > 0
 
-            // Detect partial downloads and trigger retry if needed
-            val expectedCount = _uiState.value.album?.count ?: 0
-            if (expectedCount > items.size && syncRetryAttempts < maxSyncRetryAttempts) {
-                println("Partial media load detected: got ${items.size} of $expectedCount items, will retry")
-                _uiState.update { it.copy(isSyncing = true, isPartialLoad = true) }
-                syncRetryAttempts += 1
-                viewModelScope.launch {
-                    delay(3000) // Wait 3 seconds before retry to allow failed downloads to complete
-                    fetchAlbumMedia()
-                }
-                return
-            } else if (expectedCount > items.size) {
-                // Max retries reached, mark as partial load permanently
-                println("Partial media load detected but max retries reached: got ${items.size} of $expectedCount items")
-                _uiState.update { it.copy(isPartialLoad = true, isSyncing = false, isRefreshing = false) }
-                return
-            }
+        updateContentState {
+            it.copy(
+                media = items,
+                isSyncing = incompleteCount > 0,
+                isPartialLoad = isPartialLoad,
+                isRefreshing = false,
+            )
+        }
 
-            syncRetryAttempts = 0
-            _uiState.update { it.copy(isPartialLoad = false, isRefreshing = false) }
+        groupMedia()
+        items.forEach { media ->
+            val mediaId = media.id
+            if (!requestedThumbnailIds.contains(mediaId)) {
+                requestedThumbnailIds.add(mediaId)
+                fetchThumbnail(mediaId)
+            }
+        }
+    }
+
+    private fun groupMedia() {
+        val grouped = currentContentState()?.media.orEmpty()
+            .sortedByDescending { it.dateCreated }
+            .groupBy { it.dateCreated.toFullDateString() }
+            .toList()
+
+        updateContentState { it.copy(groupedMedia = grouped) }
+    }
+
+    private fun handleMediaFailure(message: String) {
+        updateContentState { it.copy(isSyncing = false, isRefreshing = false) }
+        showError(message)
+    }
+
+    private fun retryFetchAlbumMedia() {
+        val familyIdValue = familyId ?: return
+        val retryableIds = currentContentState()
+            ?.media
+            .orEmpty()
+            .filter { it.downloadState != MediaDownloadState.READY }
+            .map { it.id }
+
+        updateContentState { it.copy(isRefreshing = true) }
+
+        if (retryableIds.isEmpty()) {
+            updateContentState { it.copy(isRefreshing = false) }
             return
         }
 
-        val expectedCount = _uiState.value.album?.count ?: 0
-        if (expectedCount > 0 && syncRetryAttempts < maxSyncRetryAttempts) {
-            _uiState.update { it.copy(isSyncing = true) }
-            syncRetryAttempts += 1
-            viewModelScope.launch {
-                delay(2000)
-                fetchAlbumMedia()
+        viewModelScope.launch {
+            updateContentState { it.copy(retryingMediaIds = it.retryingMediaIds + retryableIds.toSet()) }
+            when (val result = galleryRepository.retryGalleryMediaDownloads(retryableIds, familyIdValue)) {
+                is Result.Success -> Unit
+                is Result.Failure -> showError(result.error.toUserMessage())
             }
-        } else {
-            _uiState.update { it.copy(isSyncing = false) }
+            updateContentState { it.copy(
+                isRefreshing = false,
+                retryingMediaIds = it.retryingMediaIds - retryableIds.toSet()
+            ) }
         }
     }
-    private fun groupMedia() {
-        val grouped = uiState.value.media
-            // 1. Sort everything by newest first
-            .sortedByDescending { it.dateCreated }
-            // 2. Group by the day (ignoring time)
-            .groupBy { it.dateCreated?.toFullDateString() ?: "Unknown Date" }
-            // 3. Convert to a list of pairs so the UI can iterate easily
-            .toList()
 
-        _uiState.update { it.copy(groupedMedia = grouped) }
-    }
-    private fun handleMediaFailure(message: String) {
-        _uiState.update { it.copy(isSyncing = false, isRefreshing = false) }
-        showError(message)
-    }
-    fun retryFetchAlbumMedia() {
-        _uiState.update { it.copy(isRefreshing = true) }
-        syncRetryAttempts = 0
-        fetchAlbumMedia()
-    }
-    fun fetchThumbnail(mediaId: String) {
-        if (_uiState.value.thumbnails.containsKey(mediaId)) return
-
+    private fun fetchThumbnail(mediaId: String) {
         viewModelScope.launch(Dispatchers.IO) {
             when (val result = galleryRepository.getAlbumMediaThumbnail(mediaId)) {
                 is Result.Success -> {
-                    _uiState.update { state ->
+                    updateContentState { state ->
                         state.copy(thumbnails = state.thumbnails + (mediaId to result.data))
                     }
                 }
-                is Result.Failure -> {
-                    // Ignore missing thumbnail
-                }
+
+                is Result.Failure -> requestedThumbnailIds.remove(mediaId)
             }
         }
     }
-    // ---------------------------------------------------------------- OVERFLOW ACTION FUNCTIONS
-    // ---------------------------------- ALBUM OPTIONS
-    fun renameAlbum() {
-        val newName = _uiState.value.actionDialogText.trim()
-        val currentAlbum = _uiState.value.album
+
+    private fun requestRenameAlbum() {
+        val currentAlbum = currentContentState()?.album ?: return
+        updateContentState {
+            it.copy(
+                showOverflowMenu = false,
+                dialog = AlbumDetailsDialogState.RenameAlbum(name = currentAlbum.itemName),
+            )
+        }
+    }
+
+    private fun requestMoveSelectedMedia() {
+        updateContentState {
+            it.copy(
+                showOverflowMenu = false,
+                dialog = AlbumDetailsDialogState.MoveSelectedMedia(),
+            )
+        }
+        observeMoveTargetAlbums()
+    }
+
+    private fun dismissDialog() {
+        observeMoveTargetAlbumsJob?.cancel()
+        observeMoveTargetAlbumsJob = null
+        updateContentState { it.copy(dialog = null) }
+    }
+
+    private fun renameAlbum() {
+        val contentState = currentContentState() ?: return
+        val newName = (contentState.dialog as? AlbumDetailsDialogState.RenameAlbum)?.name?.trim() ?: return
+        val currentAlbum = contentState.album
 
         if (newName.isEmpty()) {
             showError("Album name cannot be empty")
@@ -241,195 +358,524 @@ class AlbumDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = galleryRepository.updateAlbum(updatedAlbum)) {
                 is Result.Success -> {
-                    _uiState.update { it.copy(album = updatedAlbum) }
-                    dismissOverflowMenuActionDialog()
+                    updateContentState { it.copy(album = updatedAlbum) }
+                    dismissDialog()
                 }
-                is Result.Failure -> showError(result.error)
+
+                is Result.Failure -> showError(result.error.toUserMessage())
             }
         }
     }
-    fun deleteAlbum(onDeleteSuccess: () -> Unit) {
-        val albumIdValue = uiState.value.album?.id ?: return
+
+    private fun deleteAlbum() {
+        val contentState = currentContentState() ?: return
+        val albumIdValue = contentState.album?.id ?: return
 
         viewModelScope.launch {
-            when (val result = deleteAlbumUseCase.invoke(albumIdValue, uiState.value.media)) {
-                is Result.Success -> {
-                    dismissOverflowMenuActionDialog()
-                    onDeleteSuccess()
-                }
-                is Result.Failure -> showError(result.error)
+            when (val result = deleteAlbumUseCase.invoke(albumIdValue, contentState.media)) {
+                is Result.Success -> Unit
+
+                is Result.Failure -> showError(result.error.toUserMessage())
             }
         }
     }
-    // ---------------------------------- SELECTED MEDIA OPTIONS
-    fun downloadSelectedMedia() {
+
+    private fun downloadSelectedMedia() {
         val familyIdValue = familyId
-        val selectedMedia = _uiState.value.selectedMedia.toList()
+        val selectedMedia = currentContentState()?.selectedMedia.orEmpty().toList()
         if (selectedMedia.isEmpty() || familyIdValue == null) {
             showError("Media data not available")
             return
         }
 
         viewModelScope.launch {
-            downloadMediaUseCase(
+            galleryRepository.downloadMediaToGallery(
                 mediaIds = selectedMedia,
                 familyId = familyIdValue,
             ).collect { progress ->
                 when (progress) {
                     is SaveProgress.Loading -> {
-                        _uiState.update { it.copy(isDownloading = true, downloadMessage = "Downloading ${progress.current} of ${progress.total}") }
+                        showProgress(
+                            title = "Downloading...",
+                            message = "Downloading ${progress.current} of ${progress.total}",
+                        )
                     }
+
                     is SaveProgress.Finished -> {
                         if (progress.failureCount == 0) {
-                            dismissOverflowMenuActionDialog()
-                            val message = if (progress.failureCount == 0) { "Downloaded ${progress.successCount} item" }
-                            else { "Downloaded ${progress.successCount} of ${progress.successCount + progress.failureCount} items" }
-
-                            _uiState.update { it.copy(downloadMessage = message) }
-                            delay(2000)
-                            _uiState.update { it.copy(downloadMessage = null, isDownloading = false) }
+                            val itemLabel = if (progress.successCount == 1) "item" else "items"
+                            showProgress(
+                                title = "Download complete",
+                                message = "Downloaded ${progress.successCount} $itemLabel",
+                                showProgress = false,
+                            )
+                            delay(2.seconds)
+                            hideProgress()
                         } else {
+                            hideProgress()
                             showError("Failed to download media")
                         }
                     }
 
                     is SaveProgress.Error -> {
-                        _uiState.update { it.copy(isDownloading = false, downloadMessage = null) }
+                        hideProgress()
                         showError(progress.message)
                     }
                 }
             }
         }
     }
-    private fun fetchAlbums() {
+
+    private fun observeMoveTargetAlbums() {
         val familyIdValue = familyId ?: return
 
-        viewModelScope.launch {
-            getAlbumDisplayModelsUseCase(familyIdValue).collect { result ->
+        observeMoveTargetAlbumsJob?.cancel()
+        observeMoveTargetAlbumsJob = viewModelScope.launch {
+            getAlbumDisplayModelsUseCase.invoke(familyIdValue).collect { result ->
                 when (result) {
                     is Result.Success -> {
                         val possibleAlbums = result.data.filterNot { it.id == albumId }
-                        _uiState.update { it.copy(albums = possibleAlbums, showOverflowMenuActionDialog = true) }
+                        updateContentState { state ->
+                            if (state.dialog is AlbumDetailsDialogState.MoveSelectedMedia) {
+                                state.copy(albums = possibleAlbums)
+                            } else {
+                                state
+                            }
+                        }
 
                         possibleAlbums.forEach { model ->
-                            if (model.thumbnail == null) {
+                            if (model.thumbnail == null && !requestedThumbnailIds.contains(model.id)) {
+                                requestedThumbnailIds.add(model.id)
                                 galleryRepository.fetchAlbumThumbnail(model.id)
                             }
                         }
                     }
-                    is Result.Failure -> showError(result.error)
+
+                    is Result.Failure -> showError(result.error.toUserMessage())
                 }
             }
         }
     }
-    fun moveSelectedMediaToAlbum(newAlbumId: String) {
-        val oldAlbumId = albumId ?: return
-        val selectedMedia = _uiState.value.selectedMedia
-        if (selectedMedia.isEmpty() || newAlbumId == _uiState.value.album?.id || newAlbumId.isEmpty()) return
+
+    private fun selectMoveTargetAlbum(newAlbumId: String) {
+        updateContentState { state ->
+            val dialog = state.dialog as? AlbumDetailsDialogState.MoveSelectedMedia ?: return@updateContentState state
+            if (dialog.targetAlbumId == newAlbumId) return@updateContentState state
+            state.copy(dialog = dialog.copy(targetAlbumId = newAlbumId))
+        }
+    }
+
+    private fun confirmMoveSelectedMedia() {
+        val contentState = currentContentState() ?: return
+        val targetAlbumId = (contentState.dialog as? AlbumDetailsDialogState.MoveSelectedMedia)?.targetAlbumId.orEmpty()
+        val selectedMedia = contentState.selectedMedia
+        if (selectedMedia.isEmpty()) {
+            showError("Please select media first")
+            return
+        }
+        if (targetAlbumId.isEmpty()) {
+            showError("Please choose an album first")
+            return
+        }
+        if (targetAlbumId == contentState.album?.id) {
+            showError("Please choose a different album")
+            return
+        }
+        val oldAlbumId = albumId
 
         viewModelScope.launch {
-            when (val result = moveMediaToAlbumUseCase.invoke(selectedMedia, newAlbumId, oldAlbumId)) {
+            when (val result = moveMediaToAlbumUseCase.invoke(selectedMedia, targetAlbumId, oldAlbumId)) {
                 is Result.Success -> {
-                    dismissOverflowMenuActionDialog()
+                    dismissDialog()
                     toggleSelectionMode()
                 }
-                is Result.Failure -> showError(result.error)
+
+                is Result.Failure -> showError(result.error.toUserMessage())
             }
         }
     }
-    fun deleteSelectedMedia() {
-        val albumIdValue = uiState.value.album?.id ?: return
-        val selectedMedia = uiState.value.media.filter { it.id in uiState.value.selectedMedia }
+
+    private suspend fun extractImageMetadata(
+        context: Context,
+        uri: Uri,
+        familyId: String,
+        albumId: String,
+        ext: String,
+    ): Pair<GalleryImage, String> = withContext(Dispatchers.IO) {
+        val dateCreated = getBestDate(context, uri) ?: Date()
+        val itemName = formatMediaName(dateCreated, ext)
+
+        val galleryImage = GalleryImage(
+            id = UUID.randomUUID().toString(),
+            familyId = familyId,
+            itemName = itemName,
+            lastUpdated = dateCreated,
+            albumId = albumId,
+            dateCreated = dateCreated,
+        )
+        Pair(galleryImage, ext)
+    }
+
+    private suspend fun extractVideoMetadata(
+        context: Context,
+        uri: Uri,
+        familyId: String,
+        albumId: String,
+        ext: String,
+    ): Pair<GalleryVideo, String> {
+        var duration: Long? = null
+        var dateCreated: Date? = null
+
+        withContext(Dispatchers.IO) {
+            val retriever = android.media.MediaMetadataRetriever()
+            try {
+                retriever.setDataSource(context, uri)
+                val durationStr = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
+                duration = durationStr?.toLongOrNull()
+
+                val dateStr = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DATE)
+                if (dateStr != null) {
+                    try {
+                        val sdf = SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'", Locale.UK)
+                        sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
+                        dateCreated = sdf.parse(dateStr)
+                    } catch (_: Exception) {
+
+                    }
+                }
+                dateCreated = dateCreated ?: getVideoDateFromMediaStore(context, uri)
+                dateCreated = dateCreated ?: getFileLastModifiedDate(context, uri)
+            } finally {
+                try {
+                    retriever.release()
+                } catch (_: IOException) {
+
+                }
+            }
+        }
+        dateCreated = dateCreated ?: Date()
+
+        val resolvedDateCreated = dateCreated
+        val itemName = formatMediaName(resolvedDateCreated, ext)
+        val galleryVideo = GalleryVideo(
+            id = UUID.randomUUID().toString(),
+            familyId = familyId,
+            itemName = itemName,
+            lastUpdated = resolvedDateCreated,
+            albumId = albumId,
+            dateCreated = resolvedDateCreated,
+            duration = duration,
+        )
+        return Pair(galleryVideo, ext)
+    }
+
+    private fun getFileLastModifiedDate(context: Context, uri: Uri): Date? {
+        return try {
+            when (uri.scheme) {
+                ContentResolver.SCHEME_CONTENT -> {
+                    context.contentResolver.query(uri, arrayOf(MediaStore.MediaColumns.DATE_MODIFIED), null, null, null)?.use {
+                        if (it.moveToFirst()) {
+                            Date(it.getLong(it.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_MODIFIED)) * 1000)
+                        } else {
+                            null
+                        }
+                    }
+                }
+
+                ContentResolver.SCHEME_FILE -> {
+                    val file = uri.path?.let { java.io.File(it) }
+                    if (file?.exists() == true) Date(file.lastModified()) else null
+                }
+
+                else -> null
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun getMimeTypeExtension(mimeType: String?): String? {
+        return mimeType?.let { android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(it) }?.let { ".$it" }
+    }
+
+    private fun getBestDate(context: Context, uri: Uri): Date? {
+        val exifDate = getExifDate(context, uri)
+        if (exifDate != null) return exifDate
+
+        val documentDate = getDocumentLastModified(context, uri)
+        if (documentDate != null) return documentDate
+
+        return parseWhatsAppFilename(context, uri)
+    }
+
+    private fun getExifDate(context: Context, uri: Uri): Date? {
+        return try {
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                val exif = androidx.exifinterface.media.ExifInterface(inputStream)
+                val dateCreatedString = exif.getAttribute(androidx.exifinterface.media.ExifInterface.TAG_DATETIME_ORIGINAL)
+                    ?: exif.getAttribute(androidx.exifinterface.media.ExifInterface.TAG_DATETIME)
+                    ?: exif.getAttribute(androidx.exifinterface.media.ExifInterface.TAG_DATETIME_DIGITIZED)
+
+                if (!dateCreatedString.isNullOrBlank()) {
+                    com.example.lifetogether.domain.logic.parseExifDate(dateCreatedString)
+                } else {
+                    getImageDateFromMediaStore(context, uri)?.let { com.example.lifetogether.domain.logic.parseExifDate(timestamp = it) }
+                }
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun getDocumentLastModified(context: Context, uri: Uri): Date? {
+        return try {
+            context.contentResolver.query(uri, null, null, null, null)?.use {
+                if (!it.moveToFirst()) return null
+
+                val index = it.getColumnIndex("last_modified")
+                if (index == -1) return null
+
+                val lastModified = it.getLong(index)
+                if (lastModified <= 0) return null
+
+                if (lastModified < 10000000000L) Date(lastModified * 1000) else Date(lastModified)
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun parseWhatsAppFilename(context: Context, uri: Uri): Date? {
+        return try {
+            var filename: String? = null
+            context.contentResolver.query(uri, arrayOf(MediaStore.MediaColumns.DISPLAY_NAME), null, null, null)?.use {
+                if (it.moveToFirst()) {
+                    filename = it.getString(it.getColumnIndexOrThrow(MediaStore.MediaColumns.DISPLAY_NAME))
+                }
+            }
+
+            if (filename != null && filename.startsWith("IMG-")) {
+                val matcher = Pattern.compile("IMG-(\\d{8})-WA.*").matcher(filename)
+                if (matcher.find()) {
+                    val dateString = matcher.group(1) ?: return null
+                    SimpleDateFormat("yyyyMMdd", Locale.US).parse(dateString)
+                } else {
+                    null
+                }
+            } else {
+                null
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun getImageDateFromMediaStore(context: Context, uri: Uri): Long? {
+        if (uri.scheme != ContentResolver.SCHEME_CONTENT) return null
+
+        val projection = arrayOf(MediaStore.Images.Media.DATE_TAKEN, MediaStore.Images.Media.DATE_MODIFIED)
+        context.contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val dateTakenIndex = cursor.getColumnIndex(MediaStore.Images.Media.DATE_TAKEN)
+                if (dateTakenIndex != -1) {
+                    val dateTaken = cursor.getLong(dateTakenIndex)
+                    if (dateTaken > 0) return dateTaken
+                }
+
+                val dateModifiedIndex = cursor.getColumnIndex(MediaStore.Images.Media.DATE_MODIFIED)
+                if (dateModifiedIndex != -1) {
+                    val dateModified = cursor.getLong(dateModifiedIndex)
+                    if (dateModified > 0) return dateModified * 1000
+                }
+            }
+        }
+        return null
+    }
+
+    private fun getVideoDateFromMediaStore(context: Context, uri: Uri): Date? {
+        if (uri.scheme != ContentResolver.SCHEME_CONTENT) return null
+
+        val projection = arrayOf(MediaStore.Video.Media.DATE_TAKEN, MediaStore.Video.Media.DATE_MODIFIED)
+        context.contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val dateTakenIndex = cursor.getColumnIndex(MediaStore.Video.Media.DATE_TAKEN)
+                if (dateTakenIndex != -1) {
+                    val dateTaken = cursor.getLong(dateTakenIndex)
+                    if (dateTaken > 0) return Date(dateTaken)
+                }
+
+                val dateModifiedIndex = cursor.getColumnIndex(MediaStore.Video.Media.DATE_MODIFIED)
+                if (dateModifiedIndex != -1) {
+                    val dateModified = cursor.getLong(dateModifiedIndex)
+                    if (dateModified > 0) return Date(dateModified * 1000)
+                }
+            }
+        }
+        return null
+    }
+
+    private fun formatMediaName(date: Date?, ext: String): String {
+        if (date == null) return ""
+        return try {
+            val outputFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
+            outputFormat.format(date) + ext
+        } catch (_: Exception) {
+            ""
+        }
+    }
+
+    private fun deleteSelectedMedia() {
+        val contentState = currentContentState() ?: return
+        val albumIdValue = contentState.album?.id ?: return
+        val selectedMedia = contentState.media.filter { it.id in contentState.selectedMedia }
 
         if (selectedMedia.isEmpty()) return
 
         viewModelScope.launch {
             when (val result = deleteMediaUseCase.invoke(albumIdValue, selectedMedia)) {
                 is Result.Success -> {
-                    dismissOverflowMenuActionDialog()
                     toggleSelectionMode()
                 }
-                is Result.Failure -> showError(result.error)
+
+                is Result.Failure -> showError(result.error.toUserMessage())
             }
         }
     }
-    // ----------------------------------- SELECT MODE
-    fun toggleSelectionMode() {
-        _uiState.update { it.copy(isSelectionModeActive = !it.isSelectionModeActive) }
-        if (!uiState.value.isSelectionModeActive) {
-            _uiState.update { it.copy(selectedMedia = emptySet()) }
+
+    private fun retryMediaDownload(mediaId: String) {
+        val familyIdValue = familyId ?: return
+        viewModelScope.launch {
+            updateContentState { it.copy(retryingMediaIds = it.retryingMediaIds + mediaId, isSyncing = true) }
+            when (val result = galleryRepository.retryGalleryMediaDownloads(listOf(mediaId), familyIdValue)) {
+                is Result.Success -> Unit
+                is Result.Failure -> showError(result.error.toUserMessage())
+            }
+            updateContentState { it.copy(retryingMediaIds = it.retryingMediaIds - mediaId, isSyncing = false) }
         }
     }
-    fun toggleAllMediaSelection() {
-        when (_uiState.value.isAllMediaSelected) {
+
+    private fun toggleSelectionMode() {
+        updateContentState { state ->
+            val newSelectionMode = !state.isSelectionModeActive
+            state.copy(
+                isSelectionModeActive = newSelectionMode,
+                selectedMedia = if (newSelectionMode) state.selectedMedia else emptySet(),
+                isAllMediaSelected = if (newSelectionMode) state.isAllMediaSelected else false,
+            )
+        }
+    }
+
+    private fun toggleOverflowMenu(show: Boolean? = null) {
+        updateContentState { it.copy(showOverflowMenu = show ?: !it.showOverflowMenu) }
+    }
+
+    private fun enterSelectionMode(mediaId: String?) {
+        if (mediaId == null) return
+        if (currentContentState()?.isSelectionModeActive != true) {
+            toggleSelectionMode()
+        }
+        toggleMediaSelection(mediaId)
+    }
+
+    private fun toggleAllMediaSelection() {
+        val contentState = currentContentState() ?: return
+        when (contentState.isAllMediaSelected) {
             true -> {
-                _uiState.update { it.copy(
-                    selectedMedia = emptySet(),
-                    isAllMediaSelected = false,
-                    isSelectionModeActive = false
-                )}
+                updateContentState {
+                    it.copy(
+                        selectedMedia = emptySet(),
+                        isAllMediaSelected = false,
+                    )
+                }
             }
+
             false -> {
-                _uiState.update { state ->
+                updateContentState { state ->
                     state.copy(
-                        selectedMedia = _uiState.value.media.mapNotNull { it.id }.toSet(),
-                        isAllMediaSelected = true
+                        selectedMedia = state.media.map { it.id }.toSet(),
+                        isAllMediaSelected = true,
                     )
                 }
             }
         }
     }
-    fun toggleMediaSelection(mediaId: String?) {
-        if (mediaId == null) return
 
-        if (_uiState.value.selectedMedia.contains(mediaId)) {
-            _uiState.update { state ->
-                state.copy(selectedMedia = state.selectedMedia - mediaId)
-            }
-        }
-        else {
-            _uiState.update { state ->
-                state.copy(selectedMedia = state.selectedMedia + mediaId)
-            }
-        }
-    }
-    // ---------------------------------------------------------------- OVERFLOW MENU + DIALOG
-    fun toggleOverflowMenu(show: Boolean? = null) {
-        _uiState.update { it.copy(showOverflowMenu = show ?: !it.showOverflowMenu) }
-    }
-    fun startOverflowAction(action: MenuAction) {
-        _uiState.update {
-            it.copy(
-                overflowMenuAction = action,
-                showOverflowMenu = false,
-            )
-        }
-        if (action == MenuAction.SelectionActions.MOVE) {
-            fetchAlbums()
+    private fun toggleMediaSelection(mediaId: String?) {
+        if (mediaId == null) return
+        val contentState = currentContentState() ?: return
+
+        val updated = if (contentState.selectedMedia.contains(mediaId)) {
+            contentState.selectedMedia - mediaId
         } else {
-            _uiState.update { it.copy(showOverflowMenuActionDialog = true) }
+            contentState.selectedMedia + mediaId
         }
-    }
-    fun setActionDialogText(text: String) {
-        _uiState.update { it.copy(actionDialogText = text) }
-    }
-    fun dismissOverflowMenuActionDialog() {
-        _uiState.update {
-            it.copy(
-                showOverflowMenuActionDialog = false,
-                overflowMenuAction = null,
-                actionDialogText = "",
+        updateContentState { state ->
+            state.copy(
+                selectedMedia = updated,
+                isAllMediaSelected = updated.size == state.media.size && state.media.isNotEmpty(),
             )
         }
     }
-    // ---------------------------------------------------------------- SHOW ERROR ALERT
-    fun dismissAlert() {
-        viewModelScope.launch {
-            delay(3000)
-            _uiState.update { it.copy(showAlertDialog = false, error = "") }
+
+    private fun updateContentState(transform: (AlbumDetailsUiState.Content) -> AlbumDetailsUiState.Content) {
+        _uiState.update { state ->
+            val contentState = when (state) {
+                is AlbumDetailsUiState.Loading -> AlbumDetailsUiState.Content(
+                    album = null,
+                    media = emptyList(),
+                    groupedMedia = emptyList(),
+                    thumbnails = emptyMap(),
+                    selectedMedia = emptySet(),
+                    albums = emptyList(),
+                    familyId = familyId,
+                )
+                is AlbumDetailsUiState.Content -> state
+            }
+            transform(contentState)
         }
     }
-    fun showError(message: String) {
-        _uiState.update { it.copy(showAlertDialog = true, error = message) }
+
+    private fun currentContentState(): AlbumDetailsUiState.Content? {
+        return _uiState.value as? AlbumDetailsUiState.Content
+    }
+
+    private fun showError(message: String) {
+        viewModelScope.launch {
+            _uiCommands.send(
+                UiCommand.ShowSnackbar(
+                    message = message,
+                    withDismissAction = true,
+                ),
+            )
+        }
+    }
+
+    private fun showProgress(
+        title: String,
+        message: String,
+        showProgress: Boolean = false,
+    ) {
+        viewModelScope.launch {
+            _uiCommands.send(
+                UiCommand.ShowProgressSnackbar(
+                    title = title,
+                    message = message,
+                    severity = SnackbarSeverity.Info,
+                    showProgress = showProgress,
+                ),
+            )
+        }
+    }
+
+    private fun hideProgress() {
+        viewModelScope.launch {
+            _uiCommands.send(UiCommand.HideProgressSnackbar)
+        }
+    }
+
+    private fun sendCommand(command: AlbumDetailsCommand) {
+        viewModelScope.launch {
+            _commands.send(command)
+        }
     }
 }

@@ -43,13 +43,15 @@ All v2 work lives on the `architecture-improvement` branch:
 ## Commit Message Convention
 
 ```
-[Phase N] Short description of what this commit does
+[Phase N] [N.X] Short description of what this commit does
 ```
 
 Examples:
-- `[Phase 1] Add SessionRepository interface and Hilt singleton`
-- `[Phase 3] Split AdminGrocerySuggestionsScreen into route and screen`
-- `[Phase 6] Rewrite Color.kt with private raw colors and semantic mapping`
+- `[Phase 1] [1.1] Add SessionRepository interface and Hilt singleton`
+- `[Phase 3] [3.2] Split AdminGrocerySuggestionsScreen into route and screen`
+- `[Phase 6] [6.4] Rewrite Color.kt with private raw colors and semantic mapping`
+
+When a commit spans a grouped issue or a small range of subphases, use the relevant subphase tag or range in the same format, for example `[Phase 8] [8.1] ...` or `[Phase 8] [8.1-8.2] ...`.
 
 ---
 
@@ -79,7 +81,7 @@ These steps are **mandatory for every issue** — all of them, every time, in or
    - If the issue depends on a previous branch that is not yet merged into `architecture-improvement`, use that branch as the base instead and note the dependency explicitly in the issue body.
    - If the branch already exists or linking cannot be created, add explicit branch and PR references in the issue body and keep them updated.
    - **Do not write a single line of implementation code until the issue branch exists and is checked out.**
-3. **Micro-commits:** Write code and commit using the convention `[Phase N] [N.X–N.Y] Short description`. Always build and verify before committing — never commit code that has not been compiled.
+3. **Micro-commits:** Write code and commit using the convention `[Phase N] [N.X–N.Y] Short description`. Always build and verify before committing — never commit code that has not been compiled. Also never commit before user has looked through the edits.
 
 ### After implementation is complete
 

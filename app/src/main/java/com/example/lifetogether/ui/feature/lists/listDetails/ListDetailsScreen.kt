@@ -1,173 +1,209 @@
 package com.example.lifetogether.ui.feature.lists.listDetails
 
-import android.graphics.Bitmap
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
-import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.AppIcon
+import com.example.lifetogether.domain.model.lists.ChecklistEntry
+import com.example.lifetogether.domain.model.lists.NoteEntry
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
-import com.example.lifetogether.domain.observer.ObserverKey
+import com.example.lifetogether.domain.model.lists.WishListPriority
+import com.example.lifetogether.domain.model.lists.WishListEntry
 import com.example.lifetogether.ui.common.ActionSheet
 import com.example.lifetogether.ui.common.ActionSheetItem
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.ui.common.AppTopBar
+import com.example.lifetogether.ui.common.add.AddNewString
 import com.example.lifetogether.ui.common.button.AddButton
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
-import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
-import com.example.lifetogether.ui.common.list.CompletableBox
-import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
-import com.example.lifetogether.ui.common.text.TextDefault
-import com.example.lifetogether.ui.common.text.TextHeadingMedium
-import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
+import com.example.lifetogether.ui.common.list.SelectionModeBar
+import com.example.lifetogether.ui.common.skeleton.Skeletons
+import com.example.lifetogether.ui.feature.lists.listDetails.content.CheckItemsSection
+import com.example.lifetogether.ui.feature.lists.listDetails.content.NotesSection
+import com.example.lifetogether.ui.feature.lists.listDetails.content.RoutinesSection
+import com.example.lifetogether.ui.feature.lists.listDetails.content.WishesSection
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
-import java.text.SimpleDateFormat
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import java.util.Date
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListDetailsScreen(
-    listId: String,
-    appNavigator: AppNavigator? = null,
+    uiState: ListDetailsUiState,
+    onUiEvent: (ListDetailsUiEvent) -> Unit,
+    onNavigationEvent: (ListDetailsNavigationEvent) -> Unit,
 ) {
-    val vm: ListDetailsViewModel = hiltViewModel()
-    val screenState by vm.screenState.collectAsState()
-    val uiState = screenState.uiState
-    val entries = screenState.entries
-    val imageBitmaps = screenState.imageBitmaps
+    val isLoading = uiState is ListDetailsUiState.Loading
     val contentState = uiState as? ListDetailsUiState.Content
+    val listName = contentState?.listContent?.listName ?: "List"
+    var showDeleteSelectedDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(listId) {
-        if (listId.isNotBlank()) {
-            vm.setUp(listId)
-        }
+    BackHandler(enabled = contentState?.isSelectionMode == true) {
+        onUiEvent(ListDetailsUiEvent.ExitSelectionMode)
     }
 
     Scaffold(
         topBar = {
-            TopBar(
-                leftIcon = Icon(
-                    resId = R.drawable.ic_back_arrow,
+            AppTopBar(
+                leftAppIcon = AppIcon(
+                    resId = R.drawable.ic_back,
                     description = "back arrow icon",
                 ),
-                onLeftClick = { appNavigator?.navigateBack() },
-                text = contentState?.listName?.ifBlank { "List" } ?: "List",
-                rightIcon = Icon(
+                onLeftClick = {
+                    if (contentState?.isSelectionMode == true) {
+                        onUiEvent(ListDetailsUiEvent.ExitSelectionMode)
+                    } else {
+                        onNavigationEvent(ListDetailsNavigationEvent.NavigateBack)
+                    }
+                },
+                text = listName,
+                rightAppIcon = AppIcon(
                     resId = R.drawable.ic_overflow_menu,
                     description = "overflow menu",
                 ),
-                onRightClick = { vm.toggleActionSheet(true) },
+                onRightClick = { onUiEvent(ListDetailsUiEvent.ToggleActionSheet) },
             )
         },
         floatingActionButton = {
-            if (contentState?.isSelectionModeActive != true) {
-                AddButton(onClick = { appNavigator?.navigateToListEntryDetails(listId) })
+            if (contentState?.isSelectionMode != true && contentState != null) {
+                if (contentState.listContent !is ListDetailsListContent.CheckItems) {
+                    AddButton {
+                        onNavigationEvent(ListDetailsNavigationEvent.NavigateToCreateEntry)
+                    }
+                }
+            }
+        },
+        bottomBar = {
+            if (contentState?.isSelectionMode != true && contentState?.listContent is ListDetailsListContent.CheckItems) {
+                AddNewString(
+                    modifier = Modifier.padding(LifeTogetherTokens.spacing.medium),
+                    label = "New checklist item",
+                    textValue = contentState.checklistEditorState.draftName,
+                    onTextChange = { value ->
+                        onUiEvent(ListDetailsUiEvent.Checklist.NameChanged(value))
+                    },
+                    actionLabel = if (contentState.checklistEditorState.editingEntryId == null) "Add" else "Save",
+                    onAddClick = {
+                        onUiEvent(ListDetailsUiEvent.Checklist.ActionClicked)
+                    },
+                )
             }
         },
     ) { padding ->
-        when (uiState) {
-            is ListDetailsUiState.Loading -> {
-                Box(
+        AnimatedLoadingContent(
+            isLoading = isLoading,
+            label = "list_details_loading_content",
+            loadingContent = {
+                Skeletons.ListDetail(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-
-            is ListDetailsUiState.Content -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .padding(horizontal = 10.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    ObserverUpdatingText(
-                        keys = setOf(ObserverKey.ROUTINE_LIST_ENTRIES),
-                    )
-
-                    if (uiState.isSelectionModeActive) {
+                )
+            },
+        ) {
+            val listContent = contentState?.listContent ?: return@AnimatedLoadingContent
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = LifeTogetherTokens.spacing.small),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                AnimatedContent(
+                    targetState = contentState.isSelectionMode,
+                    transitionSpec = { fadeIn() togetherWith fadeOut() },
+                    label = "selection_mode_bar",
+                ) { selectionActive ->
+                    if (selectionActive) {
                         SelectionModeBar(
-                            selectedCount = uiState.selectedEntryIds.size,
-                            isAllSelected = uiState.isAllEntriesSelected,
-                            onToggleAll = { vm.toggleAllEntrySelection() },
-                            onCancel = { vm.exitSelectionMode() },
+                            selectedCount = contentState.selectedEntryIds.size,
+                            isAllSelected = contentState.isAllEntriesSelected,
+                            onToggleAll = { onUiEvent(ListDetailsUiEvent.ToggleAllEntrySelection) },
+                            onCancel = { onUiEvent(ListDetailsUiEvent.ExitSelectionMode) },
                         )
                     } else {
-                        Spacer(modifier = Modifier.height(20.dp))
+                        Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.medium))
                     }
+                }
 
-                    if (entries.isEmpty()) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(text = "No entries yet. Tap + to add one.")
+                if (listContent.entries.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(text = "No entries yet. Tap + to add one.")
+                    }
+                } else {
+                    val onEntryClick: (String) -> Unit = { entryId ->
+                        if (contentState.isSelectionMode) {
+                            onUiEvent(ListDetailsUiEvent.ToggleEntrySelection(entryId))
+                        } else {
+                            onNavigationEvent(ListDetailsNavigationEvent.NavigateToEntryDetails(entryId))
                         }
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(bottom = 10.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                        ) {
-                            items(entries) { entry ->
-                                ListEntryCard(
-                                    entry = entry,
-                                    bitmap = entry.id?.let { imageBitmaps[it] },
-                                    isSelectionMode = uiState.isSelectionModeActive,
-                                    isSelected = uiState.selectedEntryIds.contains(entry.id),
-                                    onClick = {
-                                        if (uiState.isSelectionModeActive) {
-                                            entry.id?.let(vm::toggleEntrySelection)
-                                        } else {
-                                            entry.id?.let { appNavigator?.navigateToListEntryDetails(listId, it) }
-                                        }
-                                    },
-                                    onLongClick = {
-                                        if (!uiState.isSelectionModeActive) {
-                                            entry.id?.let(vm::enterSelectionMode)
-                                        }
-                                    },
-                                    onComplete = { vm.completeEntry(entry) },
-                                )
-                            }
+                    }
+                    val onEntryLongClick: (String) -> Unit = { entryId ->
+                        if (!contentState.isSelectionMode) {
+                            onUiEvent(ListDetailsUiEvent.EnterSelectionMode(entryId))
                         }
+                    }
+                    val onEntryToggleComplete: (String) -> Unit = { entryId ->
+                        onUiEvent(ListDetailsUiEvent.ToggleEntryCompleted(entryId))
+                    }
+                    when (listContent) {
+                        is ListDetailsListContent.Routines -> RoutinesSection(
+                            entries = listContent.entries,
+                            imageBitmaps = listContent.imageBitmaps,
+                            isSelectionMode = contentState.isSelectionMode,
+                            selectedIds = contentState.selectedEntryIds,
+                            onClick = onEntryClick,
+                            onLongClick = onEntryLongClick,
+                            onComplete = onEntryToggleComplete,
+                        )
+                        is ListDetailsListContent.Wishes -> WishesSection(
+                            entries = listContent.entries,
+                            isSelectionMode = contentState.isSelectionMode,
+                            selectedIds = contentState.selectedEntryIds,
+                            onClick = onEntryClick,
+                            onLongClick = onEntryLongClick,
+                            onComplete = onEntryToggleComplete,
+                        )
+                        is ListDetailsListContent.CheckItems -> CheckItemsSection(
+                            entries = listContent.entries,
+                            isSelectionMode = contentState.isSelectionMode,
+                            selectedIds = contentState.selectedEntryIds,
+                            onClick = { entryId -> onUiEvent(ListDetailsUiEvent.ToggleEntrySelection(entryId)) },
+                            onLongClick = onEntryLongClick,
+                            onComplete = onEntryToggleComplete,
+                            onEdit = { entryId -> onUiEvent(ListDetailsUiEvent.Checklist.EditRequested(entryId)) },
+                        )
+                        is ListDetailsListContent.Notes -> NotesSection(
+                            entries = listContent.entries,
+                            selectedIds = contentState.selectedEntryIds,
+                            onClick = onEntryClick,
+                            onLongClick = onEntryLongClick,
+                        )
                     }
                 }
             }
@@ -175,12 +211,15 @@ fun ListDetailsScreen(
     }
 
     if (contentState?.showActionSheet == true) {
-        val actions = when (contentState.isSelectionModeActive) {
+        val actions = when (contentState.isSelectionMode) {
             true -> {
                 listOf(
                     ActionSheetItem(
                         label = "Delete selected",
-                        onClick = { vm.requestDeleteSelected() },
+                        onClick = {
+                            onUiEvent(ListDetailsUiEvent.ToggleActionSheet)
+                            showDeleteSelectedDialog = true
+                        },
                         isDestructive = true,
                         isEnabled = contentState.selectedEntryIds.isNotEmpty(),
                     ),
@@ -190,202 +229,209 @@ fun ListDetailsScreen(
             false -> {
                 listOf(
                     ActionSheetItem(
+                        label = "Rename list",
+                        onClick = { onUiEvent(ListDetailsUiEvent.RequestRenameList) },
+                    ),
+                    ActionSheetItem(
                         label = "Select entries",
-                        onClick = { vm.startSelectionMode() },
-                        isEnabled = entries.any { it.id != null },
+                        onClick = { onUiEvent(ListDetailsUiEvent.StartSelectionMode) },
+                        isEnabled = contentState.listContent.entries.isNotEmpty(),
                     ),
                 )
             }
         }
 
         ActionSheet(
-            onDismiss = { vm.toggleActionSheet(false) },
+            onDismiss = { onUiEvent(ListDetailsUiEvent.ToggleActionSheet) },
             actionsList = actions,
         )
     }
 
-    if (contentState?.showDeleteSelectedDialog == true) {
+    when (val dialog = contentState?.dialog) {
+        is ListDetailsDialogState.RenameList -> ConfirmationDialogWithTextField(
+            onDismiss = { onUiEvent(ListDetailsUiEvent.DismissDialog) },
+            onConfirm = { onUiEvent(ListDetailsUiEvent.ConfirmRenameList) },
+            dialogTitle = "Rename list",
+            dialogMessage = "Enter a new name for the list",
+            dismissButtonMessage = "Cancel",
+            confirmButtonMessage = "Rename list",
+            textValue = dialog.name,
+            onTextValueChange = { onUiEvent(ListDetailsUiEvent.RenameListNameChanged(it)) },
+            label = "New list name",
+            capitalization = true,
+        )
+
+        null -> Unit
+    }
+
+    if (showDeleteSelectedDialog) {
         ConfirmationDialog(
-            onDismiss = { vm.dismissDeleteSelectedDialog() },
-            onConfirm = { vm.confirmDeleteSelected() },
+            onDismiss = { showDeleteSelectedDialog = false },
+            onConfirm = {
+                showDeleteSelectedDialog = false
+                onUiEvent(ListDetailsUiEvent.ConfirmDeleteSelected)
+            },
             dialogTitle = "Delete selected entries",
             dialogMessage = "Are you sure you want to delete the selected entries?",
             dismissButtonMessage = "Cancel",
             confirmButtonMessage = "Delete selected",
         )
     }
-
-    if (contentState?.showAlertDialog == true) {
-        LaunchedEffect(contentState.error) {
-            vm.dismissAlert()
-        }
-        ErrorAlertDialog(contentState.error)
-    }
 }
 
+@Preview(showBackground = true)
 @Composable
-private fun SelectionModeBar(
-    selectedCount: Int,
-    isAllSelected: Boolean,
-    onToggleAll: () -> Unit,
-    onCancel: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 10.dp, bottom = 20.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            CompletableBox(
-                isCompleted = isAllSelected,
-                onCompleteToggle = onToggleAll,
-            )
-            TextDefault(text = "All")
-        }
-
-        TextDefault(text = "$selectedCount selected")
-
-        TextDefault(
-            text = "Cancel",
-            modifier = Modifier.combinedClickable(
-                onClick = onCancel,
-                onLongClick = onCancel,
-            ),
+private fun LoadingPreview() {
+    LifeTogetherTheme {
+        ListDetailsScreen(
+            uiState = ListDetailsUiState.Loading,
+            onUiEvent = {},
+            onNavigationEvent = {},
         )
-    }
-}
-
-@Composable
-private fun ListEntryCard(
-    entry: RoutineListEntry,
-    bitmap: Bitmap?,
-    isSelectionMode: Boolean,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit,
-    onComplete: () -> Unit,
-) {
-    val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(
-                width = if (isSelected) 2.dp else 0.dp,
-                color = if (isSelected) MaterialTheme.colorScheme.tertiary else Color.Transparent,
-                shape = RoundedCornerShape(20.dp),
-            )
-            .background(
-                color = MaterialTheme.colorScheme.onBackground,
-                shape = RoundedCornerShape(20.dp),
-            )
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick,
-            )
-            .padding(14.dp),
-    ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                CompletableBox(
-                    isCompleted = false,
-                    onCompleteToggle = onComplete,
-                    isEnabled = !isSelectionMode,
-                )
-                TextHeadingMedium(
-                    text = entry.itemName,
-                    maxLines = 1,
-                )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Column(modifier = Modifier.padding(top = 6.dp)) {
-                    TextDefault(
-                        text = "Every ${entry.interval} ${entry.recurrenceUnit.value}",
-                        color = Color.White,
-                    )
-
-                    entry.nextDate?.let { nextDate ->
-                        TextDefault(
-                            text = "Next: ${dateFormat.format(nextDate)}",
-                            color = Color.White,
-                        )
-                    }
-                }
-
-                Box(
-                    modifier = Modifier
-                        .size(60.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.tertiary,
-                            shape = RoundedCornerShape(16.dp),
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (bitmap != null) {
-                        Image(
-                            bitmap = bitmap.asImageBitmap(),
-                            contentDescription = "entry image",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop,
-                        )
-                    }
-                }
-            }
-        }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun ListEntryCardDailyPreview() {
+private fun RoutinePreview() {
     LifeTogetherTheme {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            ListEntryCard(
-                entry = RoutineListEntry(
-                    itemName = "Water the plants",
-                    recurrenceUnit = RecurrenceUnit.DAYS,
-                    interval = 3,
-                    nextDate = Date(),
-                    completionCount = 7,
+        ListDetailsScreen(
+            uiState = previewState(
+                ListDetailsListContent.Routines(
+                    listName = "House",
+                    entries = listOf(
+                        RoutineListEntry(
+                            id = "routine-1",
+                            familyId = "family-1",
+                            listId = "list-1",
+                            itemName = "Water avocado plants",
+                            dateCreated = Date(),
+                            recurrenceUnit = RecurrenceUnit.DAYS,
+                            interval = 1,
+                            weekdays = emptyList(),
+                            nextDate = Date(),
+                        ),
+                    ),
+                    imageBitmaps = emptyMap(),
                 ),
-                bitmap = null,
-                isSelectionMode = false,
-                isSelected = false,
-                onClick = {},
-                onLongClick = {},
-                onComplete = {},
-            )
-            ListEntryCard(
-                entry = RoutineListEntry(
-                    itemName = "Change bedsheets very long",
-                    recurrenceUnit = RecurrenceUnit.WEEKS,
-                    interval = 2,
-                    weekdays = listOf(1, 4),
-                    nextDate = null,
-                    completionCount = 0,
-                ),
-                bitmap = null,
-                isSelectionMode = true,
-                isSelected = true,
-                onClick = {},
-                onLongClick = {},
-                onComplete = {},
-            )
-        }
+            ),
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
     }
 }
+
+@Preview(showBackground = true)
+@Composable
+private fun WishListPreview() {
+    LifeTogetherTheme {
+        ListDetailsScreen(
+            uiState = previewState(
+                ListDetailsListContent.Wishes(
+                    listName = "Wishlist",
+                    entries = listOf(
+                        WishListEntry(
+                            id = "wish-1",
+                            familyId = "family-1",
+                            listId = "list-1",
+                            itemName = "Standing lamp",
+                            dateCreated = Date(),
+                            isPurchased = false,
+                            url = "example.com/lamp",
+                            price = 499.0,
+                            currencyCode = "DKK",
+                            priority = WishListPriority.URGENT,
+                            notes = "Prefer warm light and a matte finish.",
+                        ),
+                        WishListEntry(
+                            id = "wish-2",
+                            familyId = "family-1",
+                            listId = "list-1",
+                            itemName = "Coffee grinder",
+                            dateCreated = Date(),
+                            isPurchased = true,
+                            url = null,
+                            price = 899.0,
+                            currencyCode = "DKK",
+                            priority = WishListPriority.PLANNED,
+                            notes = "Already bought.",
+                        ),
+                    ),
+                ),
+            ),
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun NotesPreview() {
+    LifeTogetherTheme {
+        ListDetailsScreen(
+            uiState = previewState(
+                ListDetailsListContent.Notes(
+                    listName = "Notes",
+                    entries = listOf(
+                        NoteEntry(
+                            id = "note-1",
+                            familyId = "family-1",
+                            listId = "list-1",
+                            itemName = "Weekend plan",
+                            body = "Pick up groceries, clean the kitchen, and call mom after lunch. Do so much more this is a very long list",
+                            dateCreated = Date(),
+                        ),
+                    ),
+                ),
+            ),
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ChecklistPreview() {
+    LifeTogetherTheme {
+        ListDetailsScreen(
+            uiState = previewState(
+                ListDetailsListContent.CheckItems(
+                    listName = "Packing list",
+                    entries = listOf(
+                        ChecklistEntry(
+                            id = "check-1",
+                            familyId = "family-1",
+                            listId = "list-1",
+                            itemName = "Passport",
+                            isChecked = false,
+                            dateCreated = Date(),
+                        ),
+                        ChecklistEntry(
+                            id = "check-2",
+                            familyId = "family-1",
+                            listId = "list-1",
+                            itemName = "Chargers",
+                            isChecked = true,
+                            dateCreated = Date(),
+                        ),
+                    ),
+                ),
+            ),
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
+    }
+}
+
+private fun previewState(
+    listContent: ListDetailsListContent,
+) = ListDetailsUiState.Content(
+    familyId = "family-1",
+    listContent = listContent,
+    selectedEntryIds = emptySet(),
+    isSelectionMode = false,
+    isAllEntriesSelected = false,
+    showActionSheet = false,
+)

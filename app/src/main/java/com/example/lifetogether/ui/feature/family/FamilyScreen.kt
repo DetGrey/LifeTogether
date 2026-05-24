@@ -1,285 +1,380 @@
 package com.example.lifetogether.ui.feature.family
 
-import androidx.compose.foundation.Image
+import android.graphics.Bitmap
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
-import com.example.lifetogether.domain.logic.copyToClipboard
-import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.logic.toFullDateString
+import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.model.family.FamilyMember
-import com.example.lifetogether.domain.model.sealed.ImageType
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.domain.model.AppIcon as AppIcon
+import com.example.lifetogether.ui.common.AppTopBar
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
-import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
-import com.example.lifetogether.ui.common.image.ImageUploadDialog
+import com.example.lifetogether.ui.common.dialog.DatePickerDialog
+import com.example.lifetogether.ui.common.image.AnimatedBitmapImage
+import com.example.lifetogether.ui.common.skeleton.Skeletons
+import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
+import com.example.lifetogether.ui.common.text.TextLabel
 import com.example.lifetogether.ui.feature.profile.ProfileDetails
 import com.example.lifetogether.ui.feature.settings.SettingsItem
-import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.ImageViewModel
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
+import java.util.Date
 
 @Composable
 fun FamilyScreen(
-    appNavigator: AppNavigator? = null,
+    uiState: FamilyUiState,
+    bitmap: Bitmap?,
+    onUiEvent: (FamilyUiEvent) -> Unit,
+    onNavigationEvent: (FamilyNavigationEvent) -> Unit,
 ) {
-    val context = LocalContext.current
-    val familyViewModel: FamilyViewModel = hiltViewModel()
-    val imageViewModel: ImageViewModel = hiltViewModel()
-
-    val familyId by familyViewModel.familyId.collectAsState()
-    val uid by familyViewModel.uid.collectAsState()
-    val familyInformationState by familyViewModel.familyInformation.collectAsState()
-    val bitmap by imageViewModel.bitmap.collectAsState()
-
-    LaunchedEffect(familyId) {
-        familyId?.let { fid ->
-            imageViewModel.collectImageFlow(
-                imageType = ImageType.FamilyImage(fid),
-                onError = {
-                    familyViewModel.error = it
-                    familyViewModel.showAlertDialog = true
-                },
-            )
-        }
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+    ) { uri ->
+        uri?.let { onUiEvent(FamilyUiEvent.ImageSelected(it)) }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize(),
-    ) {
-        LazyColumn(
-            modifier = Modifier
-                .padding(10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(30.dp),
+    Scaffold(
+        topBar = {
+            AppTopBar(
+                leftAppIcon = AppIcon(
+                    resId = R.drawable.ic_back,
+                    description = "back arrow icon",
+                ),
+                onLeftClick = {
+                    onNavigationEvent(FamilyNavigationEvent.NavigateBack)
+                },
+                text = "Family",
+            )
+        },
+    ) { padding ->
+        AnimatedLoadingContent(
+            isLoading = uiState is FamilyUiState.Loading,
+            label = "family_loading",
+            loadingContent = {
+                Skeletons.SectionDetail(modifier = Modifier.fillMaxSize())
+            },
         ) {
-            item {
-                TopBar(
-                    leftIcon = Icon(
-                        resId = R.drawable.ic_back_arrow,
-                        description = "back arrow icon",
-                    ),
-                    onLeftClick = {
-                        appNavigator?.navigateBack()
-                    },
-                    text = "Family",
-                )
+            val content = uiState as? FamilyUiState.Content ?: return@AnimatedLoadingContent
+            val familyInformation = content.familyInformation
+            val familyId = content.familyId
+            val uid = content.uid
+            val members = familyInformation?.members.orEmpty()
+            val togetherSince = if (content.isTogetherSinceEditing) {
+                content.togetherSinceDraft
+            } else {
+                familyInformation?.togetherSince
             }
 
-            item {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(15.dp),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        contentAlignment = Alignment.Center,
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(LifeTogetherTokens.spacing.small),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
+            ) {
+                item {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
                     ) {
                         Box(
-                            modifier = Modifier,
-                            contentAlignment = Alignment.TopEnd,
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center,
                         ) {
                             Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 15.dp)
-                                    .height(200.dp)
-                                    .clip(shape = RoundedCornerShape(20))
-                                    .background(color = MaterialTheme.colorScheme.onBackground),
+                                contentAlignment = Alignment.TopEnd,
                             ) {
-                                if (bitmap != null) {
-                                    Image(
-                                        modifier = Modifier
-                                            .fillMaxSize(),
-                                        bitmap = bitmap!!.asImageBitmap(),
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = LifeTogetherTokens.spacing.medium)
+                                        .height(200.dp)
+                                        .clip(shape = MaterialTheme.shapes.large)
+                                        .background(color = MaterialTheme.colorScheme.surfaceVariant),
+                                ) {
+                                    AnimatedBitmapImage(
+                                        bitmap = bitmap,
+                                        modifier = Modifier.fillMaxSize(),
                                         contentDescription = "family image",
-                                        contentScale = ContentScale.Crop,
                                     )
                                 }
-                            }
 
-                            Box(
-                                modifier = Modifier
-                                    .size(50.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                AddButton(onClick = { imageViewModel.showImageUploadDialog = true })
-                            }
-                        }
-                    }
-
-                    TextHeadingMedium(text = "Family members")
-
-                    when (familyInformationState?.members) {
-                        is List<FamilyMember> -> {
-                            for (member in familyInformationState?.members!!) {
-                                ProfileDetails(
-                                    icon = Icon(
-                                        resId = R.drawable.ic_profile,
-                                        description = "person icon",
-                                    ),
-                                    title = member.name ?: "Unknown Member",
-                                    value = if (member.uid == uid) "(Myself)" else "Remove",
-                                    onClick = if (member.uid == uid) {
-                                        null
-                                    } else {
-                                        {
-                                            familyViewModel.confirmationDialogType = FamilyViewModel.FamilyConfirmationTypes.REMOVE_MEMBER
-                                            familyViewModel.memberToRemove = member
-                                            familyViewModel.showConfirmationDialog = true
-                                        }
-                                    },
-                                )
+                                Box(
+                                    modifier = Modifier.size(LifeTogetherTokens.sizing.touchTargetMinimum),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    AddButton(onClick = { imagePickerLauncher.launch("image/*") })
+                                }
                             }
                         }
+
+                        FamilyTogetherSinceRow(
+                            togetherSince = togetherSince,
+                            isEditing = content.isTogetherSinceEditing,
+                            showDatePicker = content.dialog is FamilyDialogState.DatePicker,
+                            onEditClick = { onUiEvent(FamilyUiEvent.TogetherSinceEditClicked) },
+                            onSaveClick = { onUiEvent(FamilyUiEvent.TogetherSinceSaveClicked) },
+                            onClearClick = { onUiEvent(FamilyUiEvent.TogetherSinceClearClicked) },
+                            onDateSelected = { onUiEvent(FamilyUiEvent.TogetherSinceDateSelected(it)) },
+                            onDatePickerDismissed = { onUiEvent(FamilyUiEvent.DismissDialog) },
+                        )
+
+                        TextHeadingMedium(text = "Family members")
+
+                        members.forEach { member ->
+                            ProfileDetails(
+                                appIcon = AppIcon(
+                                    resId = R.drawable.ic_profile,
+                                    description = "person icon",
+                                ),
+                                title = member.name,
+                                value = if (member.uid == uid) "(Myself)" else "Remove",
+                                onClick = if (member.uid == uid) {
+                                    null
+                                } else {
+                                    { onUiEvent(FamilyUiEvent.RemoveMemberClicked(member)) }
+                                },
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.medium))
+
+                        TextHeadingMedium(text = "Settings")
+
+                        SettingsItem(
+                            appIcon = AppIcon(R.drawable.ic_profile, "profile icon"),
+                            title = "Add family member",
+                            link = "Share family ID",
+                            linkClickable = {
+                                onUiEvent(FamilyUiEvent.AddMemberClicked)
+                            },
+                        )
+
+                        SettingsItem(
+                            appIcon = AppIcon(R.drawable.ic_logout, "logout icon"),
+                            title = "Leave family",
+                            link = "Leave",
+                            linkClickable = {
+                                onUiEvent(FamilyUiEvent.LeaveFamilyClicked)
+                            },
+                        )
+
+                        SettingsItem(
+                            appIcon = AppIcon(R.drawable.ic_delete, "logout icon"),
+                            title = "Delete family",
+                            link = "Delete",
+                            linkClickable = {
+                                onUiEvent(FamilyUiEvent.DeleteFamilyClicked)
+                            },
+                        )
                     }
+                }
 
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    TextHeadingMedium(text = "Settings")
-
-                    SettingsItem(
-                        icon = Icon(R.drawable.ic_profile, "profile icon"),
-                        title = "Add family member",
-                        link = "Share family ID",
-                        linkClickable = {
-                            familyViewModel.confirmationDialogType = FamilyViewModel.FamilyConfirmationTypes.ADD_MEMBER
-                            familyViewModel.showConfirmationDialog = true
-                        },
-                    )
-
-                    SettingsItem(
-                        icon = Icon(R.drawable.ic_logout, "logout icon"),
-                        title = "Leave family",
-                        link = "Leave",
-                        linkClickable = {
-                            familyViewModel.confirmationDialogType = FamilyViewModel.FamilyConfirmationTypes.LEAVE_FAMILY
-                            familyViewModel.showConfirmationDialog = true
-                        },
-                    )
-
-                    SettingsItem(
-                        icon = Icon(R.drawable.ic_logout, "logout icon"),
-                        title = "Delete family",
-                        link = "Delete",
-                        linkClickable = {
-                            familyViewModel.confirmationDialogType = FamilyViewModel.FamilyConfirmationTypes.DELETE_FAMILY
-                            familyViewModel.showConfirmationDialog = true
-                        },
-                    )
+                item {
+                    Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.xLarge))
                 }
             }
 
-            item {
-                Spacer(modifier = Modifier.height(30.dp))
-            }
-        }
-
-        // ---------------------------------------------------------------- CONFIRMATION DIALOGS
-        if (familyViewModel.showConfirmationDialog) {
-            when (familyViewModel.confirmationDialogType) {
-                FamilyViewModel.FamilyConfirmationTypes.LEAVE_FAMILY -> ConfirmationDialog(
-                    onDismiss = { familyViewModel.closeConfirmationDialog() },
-                    onConfirm = {
-                        familyViewModel.leaveFamily(onComplete = {
-                            appNavigator?.navigateBack()
-                        })
-                    },
+            when (val dialog = content.dialog) {
+                is FamilyDialogState.LeaveFamily -> ConfirmationDialog(
+                    onDismiss = { onUiEvent(FamilyUiEvent.DismissDialog) },
+                    onConfirm = { onUiEvent(FamilyUiEvent.ConfirmDialog) },
                     dialogTitle = "Leave family",
                     dialogMessage = "Are you sure you want to leave the family?",
                     dismissButtonMessage = "Cancel",
                     confirmButtonMessage = "Leave",
                 )
 
-                FamilyViewModel.FamilyConfirmationTypes.ADD_MEMBER -> ConfirmationDialog(
-                    onDismiss = { familyViewModel.closeConfirmationDialog() },
-                    onConfirm = {
-                        familyId?.let { fid ->
-                            copyToClipboard(context, fid)
-                            familyViewModel.closeConfirmationDialog()
-                        }
-                    },
+                is FamilyDialogState.AddMember -> ConfirmationDialog(
+                    onDismiss = { onUiEvent(FamilyUiEvent.DismissDialog) },
+                    onConfirm = { onUiEvent(FamilyUiEvent.ConfirmDialog) },
                     dialogTitle = "Share family ID",
                     dialogMessage = "Family ID: $familyId",
                     dismissButtonMessage = "Cancel",
                     confirmButtonMessage = "Copy",
                 )
 
-                FamilyViewModel.FamilyConfirmationTypes.REMOVE_MEMBER -> ConfirmationDialog(
-                    onDismiss = { familyViewModel.closeConfirmationDialog() },
-                    onConfirm = {
-                        familyViewModel.memberToRemove?.uid.let { memberUid ->
-                            familyViewModel.leaveFamily(memberUid, {})
-                        }
-                    },
+                is FamilyDialogState.RemoveMember -> ConfirmationDialog(
+                    onDismiss = { onUiEvent(FamilyUiEvent.DismissDialog) },
+                    onConfirm = { onUiEvent(FamilyUiEvent.ConfirmDialog) },
                     dialogTitle = "Remove member",
-                    dialogMessage = "Are you sure you want to remove ${familyViewModel.memberToRemove?.name} from the family?",
+                    dialogMessage = "Are you sure you want to remove ${dialog.member.name} from the family?",
                     dismissButtonMessage = "Cancel",
                     confirmButtonMessage = "Remove",
                 )
 
-                FamilyViewModel.FamilyConfirmationTypes.DELETE_FAMILY -> ConfirmationDialog(
-                    onDismiss = { familyViewModel.closeConfirmationDialog() },
-                    onConfirm = {
-                        familyViewModel.deleteFamily(onComplete = {
-                            appNavigator?.navigateBack()
-                        })
-                    },
+                is FamilyDialogState.DeleteFamily -> ConfirmationDialog(
+                    onDismiss = { onUiEvent(FamilyUiEvent.DismissDialog) },
+                    onConfirm = { onUiEvent(FamilyUiEvent.ConfirmDialog) },
                     dialogTitle = "Delete family",
                     dialogMessage = "Are you sure you want to delete the family?",
                     dismissButtonMessage = "Cancel",
                     confirmButtonMessage = "Delete",
                 )
 
-                null -> {}
+                is FamilyDialogState.DatePicker, null -> Unit
+            }
+
+        }
+    }
+}
+
+@Composable
+private fun FamilyTogetherSinceRow(
+    togetherSince: Date?,
+    isEditing: Boolean,
+    showDatePicker: Boolean,
+    onEditClick: () -> Unit,
+    onSaveClick: () -> Unit,
+    onClearClick: () -> Unit,
+    onDateSelected: (Date) -> Unit,
+    onDatePickerDismissed: () -> Unit,
+) {
+    if (showDatePicker) {
+        DatePickerDialog(
+            selectedDate = togetherSince,
+            onDismiss = onDatePickerDismissed,
+            onDateSelected = onDateSelected,
+        )
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.large)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .then(
+                if (isEditing) {
+                    Modifier.clickable { onEditClick() }
+                } else {
+                    Modifier
+                },
+            ),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = LifeTogetherTokens.spacing.small)
+                .padding(start = LifeTogetherTokens.spacing.medium),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TextLabel(
+                text = "Together since:",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Spacer(modifier = Modifier.width(LifeTogetherTokens.spacing.small))
+
+            TextDefault(
+                text = togetherSince?.toFullDateString() ?: "Add date >",
+                color = if (togetherSince == null) {
+                    MaterialTheme.colorScheme.secondary
+                } else {
+                    MaterialTheme.colorScheme.onBackground
+                },
+                modifier = Modifier.weight(1f),
+            )
+
+            if (isEditing) {
+                if (togetherSince != null) {
+                    IconButton(onClick = onClearClick) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_close),
+                            contentDescription = "edit family milestone date",
+                            tint = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
+                TextButton(onClick = onSaveClick) {
+                    TextDefault(
+                        text = "Save",
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+            } else {
+                IconButton(onClick = onEditClick) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_edit),
+                        contentDescription = "edit family milestone date",
+                        tint = MaterialTheme.colorScheme.secondary,
+                    )
+                }
             }
         }
     }
+}
 
-    // ---------------------------------------------------------------- IMAGE UPLOAD DIALOG
-    if (imageViewModel.showImageUploadDialog) {
-        familyInformationState?.familyId?.let {
-            ImageUploadDialog(
-                onDismiss = { imageViewModel.showImageUploadDialog = false },
-                onConfirm = { imageViewModel.showImageUploadDialog = false },
-                dialogTitle = "Upload family image",
-                dialogMessage = "Select your new family image",
-                imageType = ImageType.FamilyImage(it),
-                dismissButtonMessage = "Cancel",
-                confirmButtonMessage = "Upload image",
-            )
-        }
+@Preview(showBackground = true)
+@Composable
+private fun FamilyScreenPreview() {
+    LifeTogetherTheme {
+        FamilyScreen(
+            uiState = FamilyUiState.Content(
+                familyId = "family-123",
+                uid = "uid-1",
+                familyInformation = FamilyInformation(
+                    familyId = "family-123",
+                    members = listOf(
+                        FamilyMember(uid = "uid-1", name = "Ane")
+                    ),
+                ),
+            ),
+            bitmap = null,
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
     }
-
-    // ---------------------------------------------------------------- SHOW ERROR ALERT
-    if (familyViewModel.showAlertDialog) {
-        LaunchedEffect(familyViewModel.error) {
-            familyViewModel.toggleAlertDialog()
-        }
-        ErrorAlertDialog(familyViewModel.error)
+}
+@Preview(showBackground = true)
+@Composable
+private fun FamilyScreenEditingPreview() {
+    LifeTogetherTheme {
+        FamilyScreen(
+            uiState = FamilyUiState.Content(
+                familyId = "family-123",
+                uid = "uid-1",
+                familyInformation = FamilyInformation(
+                    familyId = "family-123",
+                    members = listOf(
+                        FamilyMember(uid = "uid-1", name = "Ane")
+                    ),
+                ),
+                isTogetherSinceEditing = true,
+                togetherSinceDraft = Date(),
+            ),
+            bitmap = null,
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
     }
 }

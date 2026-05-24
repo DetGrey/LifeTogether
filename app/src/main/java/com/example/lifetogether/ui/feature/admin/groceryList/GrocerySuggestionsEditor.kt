@@ -1,7 +1,11 @@
 package com.example.lifetogether.ui.feature.admin.groceryList
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -13,17 +17,23 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.ui.common.text.TextDefault
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.util.UNCATEGORIZED_CATEGORY
 import com.example.lifetogether.util.priceToString
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -36,15 +46,15 @@ fun GrocerySuggestionsEditor(
     onDeleteItem: (GrocerySuggestion) -> Unit,
 ) {
     // 1. Group data logically
-    val grouped = suggestions.groupBy { it.category?.name ?: "Uncategorized" }
+    val grouped = suggestions.groupBy { it.category.name }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(LifeTogetherTokens.spacing.medium),
     ) {
         grouped.forEach { (categoryName, items) ->
             val isExpanded = expandedCategories.contains(categoryName)
-            val categoryEmoji = items.firstOrNull()?.category?.emoji ?: "🛒"
+            val categoryEmoji = items.firstOrNull()?.category?.emoji ?: UNCATEGORIZED_CATEGORY.emoji
 
             // --- CATEGORY HEADER ---
             item(key = categoryName) {
@@ -57,17 +67,23 @@ fun GrocerySuggestionsEditor(
             }
 
             // --- ITEMS (Visible only if expanded) ---
-            if (isExpanded) {
-                items(items, key = { it.id ?: it.suggestionName }) { suggestion ->
-                    GrocerySuggestionRow(
-                        suggestion = suggestion,
-                        onEdit = { onEditItem(suggestion) },
-                        onDelete = { onDeleteItem(suggestion) },
-                    )
+            item {
+                AnimatedVisibility(
+                    visible = isExpanded,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut(),
+                ) {
+                    Column {
+                        items.forEach { suggestion ->
+                            GrocerySuggestionRow(
+                                suggestion = suggestion,
+                                onEdit = { onEditItem(suggestion) },
+                                onDelete = { onDeleteItem(suggestion) },
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
+                    }
                 }
-
-                // Add spacing after an expanded section
-                item { Spacer(modifier = Modifier.height(8.dp)) }
             }
         }
     }
@@ -80,35 +96,40 @@ fun CategoryHeader(
     isExpanded: Boolean,
     onToggle: () -> Unit,
 ) {
-    Column(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
             .height(40.dp)
-            .clickable { onToggle() }
-            .padding(vertical = 8.dp),
+            .clickable { onToggle() },
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
+        Column(
+            modifier = Modifier.padding(vertical = LifeTogetherTokens.spacing.small),
         ) {
-            TextDefault(
-                text = "$emoji  $name",
-                modifier = Modifier.weight(1f),
-                maxLines = 1,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "$emoji  $name",
+                    modifier = Modifier.weight(1f),
+                    maxLines = 1,
+                    style = MaterialTheme.typography.bodyLarge
+                )
 
-            Image(
-                painter = painterResource(
-                    id = if (isExpanded) R.drawable.ic_expanded else R.drawable.ic_expand,
-                ),
-                contentDescription = if (isExpanded) "Collapse" else "Expand",
+                Icon(
+                    painter = painterResource(
+                        id = if (isExpanded) R.drawable.ic_expanded else R.drawable.ic_expand,
+                    ),
+                    contentDescription = if (isExpanded) "Collapse" else "Expand",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+            HorizontalDivider(
+                modifier = Modifier.padding(top = LifeTogetherTokens.spacing.small),
+                thickness = 2.dp,
+                color = MaterialTheme.colorScheme.primary,
             )
         }
-        HorizontalDivider(
-            modifier = Modifier.padding(top = 8.dp),
-            thickness = 2.dp,
-            color = MaterialTheme.colorScheme.primary,
-        )
     }
 }
 
@@ -122,7 +143,11 @@ fun GrocerySuggestionRow(
         modifier = Modifier
             .fillMaxWidth()
             .height(40.dp)
-            .padding(start = 16.dp, top = 2.dp, bottom = 2.dp),
+            .padding(
+                start = LifeTogetherTokens.spacing.medium,
+                top = LifeTogetherTokens.spacing.xSmall,
+                bottom = LifeTogetherTokens.spacing.xSmall,
+            ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         TextDefault(
@@ -135,19 +160,38 @@ fun GrocerySuggestionRow(
                 text = suggestion.approxPrice.priceToString(),
             )
         }
-        Image(
-            painter = painterResource(id = R.drawable.ic_edit_black),
+        Icon(
+            painter = painterResource(id = R.drawable.ic_edit),
             contentDescription = "edit icon",
+            tint = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier
                 .fillMaxHeight(0.9f)
                 .clickable { onEdit() },
         )
-        Image(
-            painter = painterResource(id = R.drawable.ic_trashcan_black),
+        Icon(
+            painter = painterResource(id = R.drawable.ic_delete),
             contentDescription = "trashcan icon",
+            tint = MaterialTheme.colorScheme.error,
             modifier = Modifier
                 .fillMaxHeight(0.9f)
                 .clickable { onDelete() },
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun Preview() {
+    LifeTogetherTheme {
+        GrocerySuggestionRow(
+            suggestion = GrocerySuggestion(
+                id = "1",
+                category = UNCATEGORIZED_CATEGORY,
+                suggestionName = "Broccoli",
+                approxPrice = 17.5f,
+            ),
+            onEdit = {},
+            onDelete = {}
         )
     }
 }

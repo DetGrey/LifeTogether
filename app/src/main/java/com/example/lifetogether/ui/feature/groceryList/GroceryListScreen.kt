@@ -1,204 +1,342 @@
 package com.example.lifetogether.ui.feature.groceryList
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.Category
-import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.grocery.GroceryItem
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.domain.logic.toAbbreviatedDateString
+import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
+import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.add.AddNewListItem
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
-import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
-import com.example.lifetogether.ui.common.list.ItemCategoryList
-import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
-import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.domain.observer.ObserverKey
+import com.example.lifetogether.ui.feature.groceryList.components.GroceryListItem
+import com.example.lifetogether.ui.feature.groceryList.components.GroceryCategoryList
+import com.example.lifetogether.ui.feature.groceryList.components.GroceryCategoryListHeader
+import com.example.lifetogether.ui.common.skeleton.Skeletons
+import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
+import com.example.lifetogether.ui.feature.groceryList.components.GrocerySuggestionPopup
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
+import com.example.lifetogether.util.UNCATEGORIZED_CATEGORY
+import com.example.lifetogether.util.UNCATEGORIZED_CATEGORY_NAME
 import com.example.lifetogether.util.priceToString
+import kotlin.math.min
+
+private const val COMPLETED_ITEMS_PAGE_SIZE = 10
 
 @Composable
 fun GroceryListScreen(
-    appNavigator: AppNavigator? = null,
+    uiState: GroceryListUiState,
+    onUiEvent: (GroceryListUiEvent) -> Unit,
+    onNavigationEvent: (GroceryListNavigationEvent) -> Unit,
 ) {
-    val groceryListViewModel: GroceryListViewModel = hiltViewModel()
+    val contentState = uiState as? GroceryListUiState.Content
+    var showDeleteCompletedDialog by remember { mutableStateOf(false) }
+    var visibleCompletedItemsCount by remember { mutableIntStateOf(COMPLETED_ITEMS_PAGE_SIZE) }
 
-    val uiState by groceryListViewModel.uiState.collectAsState()
+    LaunchedEffect(contentState?.completedSectionExpanded, contentState?.completedItems?.size) {
+        val content = contentState ?: return@LaunchedEffect
+        visibleCompletedItemsCount = if (!content.completedSectionExpanded) {
+            COMPLETED_ITEMS_PAGE_SIZE
+        } else {
+            min(
+                visibleCompletedItemsCount,
+                content.completedItems.size,
+            ).coerceAtLeast(COMPLETED_ITEMS_PAGE_SIZE)
+        }
+    }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize(),
-    ) {
-        LazyColumn(
-            modifier = Modifier
-                .padding(10.dp)
-                .padding(bottom = 60.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(30.dp),
+    Scaffold(
+        topBar = {
+            AppTopBar(
+                leftAppIcon = AppIcon(
+                    resId = R.drawable.ic_back,
+                    description = "back arrow icon",
+                ),
+                onLeftClick = {
+                    onNavigationEvent(GroceryListNavigationEvent.NavigateBack)
+                },
+                text = "Grocery list",
+            )
+        },
+    ) { padding ->
+        AnimatedLoadingContent(
+            isLoading = uiState is GroceryListUiState.Loading,
+            label = "grocery_list_loading_content",
+            loadingContent = {
+                Skeletons.ListDetail(modifier = Modifier.fillMaxSize())
+            },
         ) {
-            item {
-                TopBar(
-                    leftIcon = Icon(
-                        resId = R.drawable.ic_back_arrow,
-                        description = "back arrow icon",
-                    ),
-                    onLeftClick = {
-                        appNavigator?.navigateBack()
-                    },
-                    text = "Grocery list",
-                )
-            }
-
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ObserverUpdatingText(
-                        keys = setOf(
-                            ObserverKey.GROCERY_LIST,
-                            ObserverKey.GROCERY_CATEGORIES,
-                            ObserverKey.GROCERY_SUGGESTIONS,
-                        ),
-                    )
-
-                    if (uiState.groceryList.isEmpty()) {
-                        Text(text = "No items on the list yet")
-                    } else {
-
-                        uiState.expectedTotalPrice?.let {
+            val content = contentState ?: return@AnimatedLoadingContent
+            LazyColumn(
+                modifier = Modifier
+                    .padding(padding)
+                    .padding(LifeTogetherTokens.spacing.small),
+                contentPadding = PaddingValues(
+                    bottom = LifeTogetherTokens.spacing.bottomInsetLarge * 2
+                ),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+            ) {
+                if (content.groceryList.isEmpty()) {
+                    item {
+                        TextDefault(text = "No items on the list yet")
+                    }
+                } else {
+                    content.expectedTotalPrice?.let {
+                        item {
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally
+                                horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
                                 TextSubHeadingMedium(
                                     text = "Expected total price:",
+                                    color = MaterialTheme.colorScheme.secondary,
                                 )
                                 TextSubHeadingMedium(
                                     text = it.priceToString(true),
+                                    color = MaterialTheme.colorScheme.secondary,
                                 )
                             }
                         }
+                    }
 
-                        uiState.categorizedItems.forEach { (category, groceryItems) ->
-                            if (groceryItems.isNotEmpty()) {
-                                uiState.categoryExpandedStates[category.name]?.let { expanded ->
-                                    ItemCategoryList(
+                    content.categorizedItems.forEach { (category, groceryItems) ->
+                        if (groceryItems.isNotEmpty()) {
+                            content.categoryExpandedStates[category.name]?.let { expanded ->
+                                item {
+                                    GroceryCategoryList(
                                         category = category,
                                         itemList = groceryItems,
                                         expanded = expanded,
                                         onClick = {
-                                            println("before: $expanded")
-                                            groceryListViewModel.toggleCategoryExpanded(category.name)
-                                            println("after: $expanded")
+                                            onUiEvent(GroceryListUiEvent.CategoryExpandedClicked(category.name))
                                         },
                                         onCompleteToggle = { item ->
-                                            if (item is GroceryItem) {
-                                                groceryListViewModel.toggleItemCompleted(item)
-                                            }
+                                            onUiEvent(GroceryListUiEvent.ItemCompletedToggled(item))
+                                        },
+                                        onBellClick = { item ->
+                                            onUiEvent(GroceryListUiEvent.NotificationClicked(item))
                                         },
                                     )
                                 }
                             }
                         }
+                    }
 
-                        if (uiState.completedItems.isNotEmpty()) {
-                            ItemCategoryList(
+                    if (content.completedItems.isNotEmpty()) {
+                        item {
+                            GroceryCategoryListHeader(
                                 category = Category(
                                     emoji = "✔️",
-                                    name = "Completed",
+                                    name = "Bought",
                                 ),
-                                itemList = uiState.completedItems,
-                                expanded = uiState.completedSectionExpanded,
+                                expanded = content.completedSectionExpanded,
                                 onClick = {
-                                    groceryListViewModel.toggleCompletedSectionExpanded()
+                                    onUiEvent(GroceryListUiEvent.CompletedSectionExpandedClicked)
                                 },
-                                onCompleteToggle = { item ->
-                                    if (item is GroceryItem) {
-                                        groceryListViewModel.toggleItemCompleted(item)
-                                    }
-                                },
-                                onDelete = {
-                                    groceryListViewModel.showDeleteCompletedConfirmation()
-                                },
+                                onDelete = { showDeleteCompletedDialog = true },
                             )
+
+                            if (content.completedSectionExpanded) {
+                                Column(
+                                    modifier = Modifier.padding(top = LifeTogetherTokens.spacing.small),
+                                ) {
+                                    content.completedItems
+                                        .take(visibleCompletedItemsCount)
+                                        .forEach { item ->
+                                            GroceryListItem(
+                                                item = item,
+                                                onCompleteToggle = {
+                                                    onUiEvent(GroceryListUiEvent.ItemCompletedToggled(item))
+                                                },
+                                                trailingText = item.lastUpdated.toAbbreviatedDateString(),
+                                                onBellClick = null,
+                                            )
+                                        }
+
+                                    if (visibleCompletedItemsCount < content.completedItems.size) {
+                                        Box(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            TextButton(
+                                                onClick = {
+                                                    visibleCompletedItemsCount = min(
+                                                        visibleCompletedItemsCount + COMPLETED_ITEMS_PAGE_SIZE,
+                                                        content.completedItems.size,
+                                                    )
+                                                },
+                                            ) {
+                                                Text(
+                                                    text = "Show more",
+                                                    style = MaterialTheme.typography.labelLarge,
+                                                    color = MaterialTheme.colorScheme.secondary
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
         }
-    }
 
-    // ---------------------------------------------------------------- GROCERY SUGGESTIONS POPUP
-    if (uiState.currentGrocerySuggestions.isNotEmpty()) {
-        Box(
+        Column(
             modifier = Modifier
-                .padding(10.dp)
-                .padding(bottom = 30.dp)
+                .padding(LifeTogetherTokens.spacing.small)
                 .fillMaxSize(),
-            contentAlignment = Alignment.BottomCenter,
+            verticalArrangement = Arrangement.Bottom,
         ) {
-            GrocerySuggestionPopup(
-                suggestions = uiState.currentGrocerySuggestions,
-                onClick = {
-                    groceryListViewModel.applySuggestion(it)
-                    groceryListViewModel.addItemToList()
+            AnimatedVisibility(
+                visible = contentState?.currentGrocerySuggestions.orEmpty().isNotEmpty(),
+                enter = fadeIn() + slideInVertically { it / 2 },
+                exit = fadeOut() + slideOutVertically { it / 2 },
+            ) {
+                GrocerySuggestionPopup(
+                    suggestions = contentState?.currentGrocerySuggestions.orEmpty(),
+                    onClick = { suggestion ->
+                        onUiEvent(GroceryListUiEvent.SuggestionClicked(suggestion))
+                    },
+                    modifier = Modifier.offset(y = 16.dp)
+                )
+            }
+            AddNewListItem(
+                textValue = contentState?.newItemText.orEmpty(),
+                onTextChange = { onUiEvent(GroceryListUiEvent.NewItemTextChanged(it)) },
+                priceValue = contentState?.newItemPrice.orEmpty(),
+                onPriceChange = { onUiEvent(GroceryListUiEvent.NewItemPriceChanged(it)) },
+                onAddClick = { onUiEvent(GroceryListUiEvent.AddItemClicked) },
+                categoryList = contentState?.groceryCategories.orEmpty(),
+                selectedCategory = contentState?.newItemCategory ?: UNCATEGORIZED_CATEGORY,
+                onCategoryChange = { newCategory ->
+                    onUiEvent(GroceryListUiEvent.NewItemCategoryChanged(newCategory))
                 },
             )
         }
-    }
 
-    // ---------------------------------------------------------------- ADD NEW GROCERY ITEM
-    Box(
-        modifier = Modifier
-            .padding(10.dp)
-            .fillMaxSize(),
-        contentAlignment = Alignment.BottomCenter,
-    ) {
-        AddNewListItem(
-            textValue = uiState.newItemText,
-            onTextChange = { groceryListViewModel.onNewItemTextChange(it) },
-            priceValue = uiState.newItemPrice,
-            onPriceChange = { groceryListViewModel.onNewItemPriceChange(it) },
-            onAddClick = { groceryListViewModel.addItemToList() },
-            categoryList = uiState.groceryCategories,
-            selectedCategory = uiState.newItemCategory,
-            onCategoryChange = { newCategory ->
-                groceryListViewModel.updateNewItemCategory(newCategory)
-            },
-        )
-    }
-
-    // ---------------------------------------------------------------- CONFIRM DELETION OF COMPLETED ITEMS
-    if (uiState.showConfirmationDialog) {
-        ConfirmationDialog(
-            onDismiss = { groceryListViewModel.dismissDeleteCompletedConfirmation() },
-            onConfirm = {
-                groceryListViewModel.deleteCompletedItems()
-            },
-            dialogTitle = "Delete completed items",
-            dialogMessage = "Are you sure you want to delete all completed grocery items?",
-            dismissButtonMessage = "Cancel",
-            confirmButtonMessage = "Delete",
-        )
-    }
-
-    // ---------------------------------------------------------------- SHOW ERROR ALERT
-    if (uiState.showAlertDialog) {
-        LaunchedEffect(uiState.error) {
-            groceryListViewModel.toggleAlertDialog()
+        if (showDeleteCompletedDialog) {
+            ConfirmationDialog(
+                onDismiss = { showDeleteCompletedDialog = false },
+                onConfirm = {
+                    showDeleteCompletedDialog = false
+                    onUiEvent(GroceryListUiEvent.ConfirmDeleteCompletedConfirmation)
+                },
+                dialogTitle = "Delete completed items",
+                dialogMessage = "Are you sure you want to delete all completed grocery items?",
+                dismissButtonMessage = "Cancel",
+                confirmButtonMessage = "Delete",
+            )
         }
-        ErrorAlertDialog(uiState.error)
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun GroceryListScreenContentPreview() {
+    LifeTogetherTheme {
+        GroceryListScreen(
+            uiState = GroceryListUiState.Content(
+                groceryList = listOf(
+                    GroceryItem(
+                        id = "4",
+                        familyId = "family-1",
+                        category = UNCATEGORIZED_CATEGORY,
+                        itemName = "Apple",
+                        approxPrice = 12.0F
+                    ),
+                    GroceryItem(
+                        id = "5",
+                        familyId = "family-1",
+                        category = UNCATEGORIZED_CATEGORY,
+                        itemName = "Apple",
+                    ),
+                ),
+                categorizedItems = mapOf(
+                    UNCATEGORIZED_CATEGORY to listOf(
+                        GroceryItem(
+                            id = "1",
+                            familyId = "family-1",
+                            category = UNCATEGORIZED_CATEGORY,
+                            itemName = "Apple",
+                            approxPrice = 12.0F
+                        ),
+                        GroceryItem(
+                            id = "2",
+                            familyId = "family-1",
+                            category = UNCATEGORIZED_CATEGORY,
+                            itemName = "Banana",
+                        ),
+                    )
+                ),
+                completedItems = listOf(
+                    GroceryItem(
+                        id = "3",
+                        familyId = "family-1",
+                        category = UNCATEGORIZED_CATEGORY,
+                        itemName = "Banana",
+                    )
+                ),
+                groceryCategories = listOf(UNCATEGORIZED_CATEGORY),
+                categoryExpandedStates = mapOf(
+                    UNCATEGORIZED_CATEGORY_NAME to true,
+                ),
+                expectedTotalPrice = 40.0F,
+                allGrocerySuggestions = emptyList(),
+                currentGrocerySuggestions = listOf(GrocerySuggestion(
+                    id = "294814r",
+                    suggestionName = "Suggestion 1",
+                    category = UNCATEGORIZED_CATEGORY,
+                )),
+                completedSectionExpanded = true,
+            ),
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun GroceryListScreenLoadingPreview() {
+    LifeTogetherTheme {
+        GroceryListScreen(
+            uiState = GroceryListUiState.Loading,
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
     }
 }

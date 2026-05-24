@@ -1,13 +1,11 @@
 package com.example.lifetogether.domain.model.family
 
-import com.google.firebase.firestore.DocumentId
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
+import java.util.Date
 
-@Serializable
 data class FamilyInformation(
-    @DocumentId @Transient
-    val familyId: String? = null,
-    val members: List<FamilyMember>? = null,
+    val familyId: String,
+    val members: List<FamilyMember> = listOf(),
+    val lastUpdated: Date = Date(),
     val imageUrl: String? = null,
+    val togetherSince: Date? = null,
 )

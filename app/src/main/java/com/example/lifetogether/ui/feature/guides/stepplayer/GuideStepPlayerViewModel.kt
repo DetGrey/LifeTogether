@@ -11,25 +11,36 @@ import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.GuideRepository
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.result.Result
+import com.example.lifetogether.domain.result.toUserMessage
+import com.example.lifetogether.ui.common.event.UiCommand
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import java.util.Date
-import javax.inject.Inject
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
-@HiltViewModel
-class GuideStepPlayerViewModel @Inject constructor(
+@HiltViewModel(assistedFactory = GuideStepPlayerViewModel.Factory::class)
+class GuideStepPlayerViewModel @AssistedInject constructor(
+    @Assisted val guideId: String,
     private val sessionRepository: SessionRepository,
     private val guideRepository: GuideRepository,
 ) : ViewModel() {
+    @AssistedFactory
+    interface Factory {
+        fun create(guideId: String): GuideStepPlayerViewModel
+    }
+
     private companion object {
         const val TAG = "GuideStepPlayerVM"
-        const val ALERT_DISMISS_DELAY_MS = 3000L
         const val GUIDE_PERSIST_DEBOUNCE_MS = 250L
     }
 
@@ -40,16 +51,17 @@ class GuideStepPlayerViewModel @Inject constructor(
 
     private var familyId: String? = null
     private var uid: String? = null
-    private var guideId: String? = null
     private var guideJob: Job? = null
-    private var dismissAlertJob: Job? = null
     private var guidePersistJob: Job? = null
     private var pendingGuide: Guide? = null
 
     private var currentPointerIndex: Int = -1
 
-    private val _uiState = MutableStateFlow(GuideStepPlayerUiState())
+    private val _uiState = MutableStateFlow<GuideStepPlayerUiState>(GuideStepPlayerUiState.Loading)
     val uiState: StateFlow<GuideStepPlayerUiState> = _uiState.asStateFlow()
+
+    private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
+    val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
 
     init {
         viewModelScope.launch {
@@ -62,48 +74,32 @@ class GuideStepPlayerViewModel @Inject constructor(
                 ) {
                     familyId = newFamilyId
                     uid = newUid
-                    guideId?.let { startGuideJob(it) }
+                    observeGuide()
                 } else if (state is SessionState.Unauthenticated) {
                     familyId = null
                     uid = null
+                    _uiState.value = GuideStepPlayerUiState.Loading
                 }
             }
         }
     }
 
-    fun dismissAlert() {
-        dismissAlertJob?.cancel()
-        dismissAlertJob = viewModelScope.launch {
-            delay(ALERT_DISMISS_DELAY_MS)
-            clearError()
+    fun onEvent(event: GuideStepPlayerUiEvent) {
+        when (event) {
+            GuideStepPlayerUiEvent.PreviousClicked -> goToPreviousStep()
+            GuideStepPlayerUiEvent.CompleteCurrentAndGoNextClicked -> completeCurrentAndGoNext()
+            GuideStepPlayerUiEvent.ToggleCurrentStepCompletionClicked -> toggleCurrentStepCompletion()
         }
     }
 
-    fun setUp(guideId: String) {
-        val isNewGuide = this.guideId != guideId
-        if (isNewGuide) {
-            this.guideId = guideId
-            currentPointerIndex = -1
-            cancelPendingGuidePersistence()
-        }
-        if (familyId != null && uid != null) {
-            startGuideJob(guideId)
-        }
-    }
-
-    private fun startGuideJob(guideId: String) {
+    private fun observeGuide() {
         val familyIdValue = familyId ?: return
         val uidValue = uid ?: return
 
-        if (this.guideId == guideId && guideJob?.isActive == true) {
-            Log.d(TAG, "startGuideJob skipped: active job for same context")
-            return
-        }
-
-        Log.d(TAG, "startGuideJob familyId=$familyIdValue guideId=$guideId")
+        Log.d(TAG, "observeGuide familyId=$familyIdValue guideId=$guideId")
         guideJob?.cancel()
         guideJob = viewModelScope.launch {
-            Log.d(TAG, "startGuideJob subscribing to local guide flow for guideId=$guideId")
+            Log.d(TAG, "observeGuide subscribing to local guide flow for guideId=$guideId")
             guideRepository.observeGuideById(
                 familyId = familyIdValue,
                 id = guideId,
@@ -122,8 +118,8 @@ class GuideStepPlayerViewModel @Inject constructor(
                         )
                     }
                     is Result.Failure -> {
-                        Log.e(TAG, "Guide observation failed: ${result.error}")
-                        showError(result.error)
+                        Log.e(TAG, "Guide observation failed: ${result.error.toUserMessage()}")
+                        showError(result.error.toUserMessage())
                     }
                 }
             }
@@ -131,7 +127,7 @@ class GuideStepPlayerViewModel @Inject constructor(
     }
 
     fun goToPreviousStep() {
-        val currentGuide = _uiState.value.guide ?: return
+        val currentGuide = contentState()?.guide ?: return
         val leaves = GuideProgress.buildLeafPointers(currentGuide.sections)
         if (leaves.isEmpty()) return
 
@@ -152,7 +148,7 @@ class GuideStepPlayerViewModel @Inject constructor(
     }
 
     private fun updateCurrentStep(completionMode: CompletionMode, moveToNext: Boolean) {
-        val currentGuide = _uiState.value.guide ?: return
+        val currentGuide = contentState()?.guide ?: return
         val pointer = currentPointer(currentGuide) ?: return
 
         val canToggleCurrent = GuideProgress.canTogglePointer(currentGuide.sections, pointer)
@@ -222,7 +218,6 @@ class GuideStepPlayerViewModel @Inject constructor(
             started = true,
             sections = sections,
             resume = resolvedResumePointer?.let(GuideProgress::resumeFromPointer),
-            lastUpdated = Date(),
         )
     }
 
@@ -252,7 +247,7 @@ class GuideStepPlayerViewModel @Inject constructor(
         guidePersistJob?.cancel()
         Log.d(TAG, "scheduleGuidePersistence cached guideId=${normalizedGuide.id} debounceMs=$GUIDE_PERSIST_DEBOUNCE_MS")
         guidePersistJob = viewModelScope.launch {
-            delay(GUIDE_PERSIST_DEBOUNCE_MS)
+            delay(GUIDE_PERSIST_DEBOUNCE_MS.milliseconds)
             flushPendingGuidePersistence()
         }
     }
@@ -261,14 +256,13 @@ class GuideStepPlayerViewModel @Inject constructor(
         flushPendingGuidePersistence(immediate = true)
         val activeFamilyId = familyId
         val activeUid = uid
-        val activeGuideId = guideId
         if (!activeFamilyId.isNullOrBlank() && !activeUid.isNullOrBlank()) {
             viewModelScope.launch {
                 guideRepository.syncPendingGuideProgress(
                     familyId = activeFamilyId,
                     uid = activeUid,
                     force = true,
-                    guideId = activeGuideId,
+                    guideId = guideId,
                 )
             }
         }
@@ -283,12 +277,6 @@ class GuideStepPlayerViewModel @Inject constructor(
         pendingGuide = null
         Log.d(TAG, "flushPendingGuidePersistence persisting cached guideId=${latestGuide.id}")
         persistGuide(latestGuide, forceUpload = immediate)
-    }
-
-    private fun cancelPendingGuidePersistence() {
-        guidePersistJob?.cancel()
-        guidePersistJob = null
-        pendingGuide = null
     }
 
     private fun persistGuide(guide: Guide, forceUpload: Boolean = false) {
@@ -313,29 +301,23 @@ class GuideStepPlayerViewModel @Inject constructor(
     }
 
     private fun normalizeGuideForPersistence(guide: Guide): Guide? {
-        val resolvedGuideId = resolveGuideId(guide) ?: run {
-            Log.e(TAG, "persistGuide failed: missing guide id in guide=${guide.id} cachedGuideId=$guideId")
-            showError("Unable to save guide progress. Missing guide id.")
-            return null
-        }
+        val resolvedGuideId = resolveGuideId(guide)
         return if (guide.id == resolvedGuideId) guide else guide.copy(id = resolvedGuideId)
     }
 
-    private fun resolveGuideId(guide: Guide): String? {
-        return guide.id?.takeIf { it.isNotBlank() } ?: guideId?.takeIf { it.isNotBlank() }
+    private fun resolveGuideId(guide: Guide): String {
+        return guide.id.takeIf { it.isNotBlank() } ?: guideId
     }
 
     private fun showError(message: String) {
         Log.e(TAG, "showError: $message")
-        dismissAlertJob?.cancel()
-        _uiState.update { state ->
-            state.copy(showAlertDialog = true, error = message)
-        }
-    }
-
-    private fun clearError() {
-        _uiState.update { state ->
-            state.copy(showAlertDialog = false, error = "")
+        viewModelScope.launch {
+            _uiCommands.send(
+                UiCommand.ShowSnackbar(
+                    message = message,
+                    withDismissAction = true,
+                ),
+            )
         }
     }
 
@@ -343,7 +325,18 @@ class GuideStepPlayerViewModel @Inject constructor(
         val leaves = GuideProgress.buildLeafPointers(guide.sections)
         if (leaves.isEmpty()) {
             currentPointerIndex = -1
-            _uiState.value = mergeTransientUiState(GuideStepPlayerUiState(guide = guide))
+            _uiState.value = GuideStepPlayerUiState.Content(
+                guide = guide,
+                currentStep = null,
+                nextStep = null,
+                currentStepNumber = 0,
+                totalSteps = 0,
+                sectionTitle = "",
+                sectionSubtitle = "",
+                currentPartLabel = "",
+                currentPartProgressPercent = 0,
+                currentPartProgressText = "0 / 0",
+            )
             return
         }
 
@@ -354,12 +347,10 @@ class GuideStepPlayerViewModel @Inject constructor(
         )
 
         val pointer = leaves[currentPointerIndex]
-        _uiState.value = mergeTransientUiState(
-            buildUiState(
-                guide = guide,
-                leaves = leaves,
-                pointer = pointer,
-            ),
+        _uiState.value = buildUiState(
+            guide = guide,
+            leaves = leaves,
+            pointer = pointer,
         )
     }
 
@@ -379,33 +370,31 @@ class GuideStepPlayerViewModel @Inject constructor(
         guide: Guide,
         leaves: List<GuideLeafPointer>,
         pointer: GuideLeafPointer,
-    ): GuideStepPlayerUiState {
+    ): GuideStepPlayerUiState.Content {
         val currentStep = GuideProgress.getStepAtPointer(guide.sections, pointer)
         val nextStep = leaves.getOrNull(currentPointerIndex + 1)
             ?.let { GuideProgress.getStepAtPointer(guide.sections, it) }
 
         val currentSection = guide.sections.getOrNull(pointer.sectionIndex)
         val currentPartProgress = currentSection?.let {
-            GuideProgress.sectionAmountProgress(section = it, amountIndex = pointer.sectionAmountIndex)
+            GuideProgress.sectionPieceProgress(section = it, pieceIndex = pointer.sectionPieceIndex)
         } ?: (0 to 0)
         val currentPartLabel = buildCurrentPartLabel(section = currentSection, pointer = pointer)
-        return GuideStepPlayerUiState(
+        return GuideStepPlayerUiState.Content(
             guide = guide,
             currentStep = currentStep,
             nextStep = nextStep,
             currentStepCompleted = GuideProgress.isPointerCompleted(guide.sections, pointer),
             canToggleCurrentStep = GuideProgress.canTogglePointer(guide.sections, pointer),
-            currentRoundGroupLabel = "",
-            currentRoundGroupMeta = "",
             currentStepNumber = currentPointerIndex + 1,
             totalSteps = leaves.size,
             sectionTitle = currentSection?.title.orEmpty(),
             sectionSubtitle = currentSection?.subtitle.orEmpty(),
             currentPartLabel = currentPartLabel,
             currentPartProgressPercent = currentSection?.let {
-                GuideProgress.sectionAmountProgressPercent(
+                GuideProgress.sectionPieceProgressPercent(
                     section = it,
-                    amountIndex = pointer.sectionAmountIndex,
+                    pieceIndex = pointer.sectionPieceIndex,
                 )
             } ?: 0,
             currentPartProgressText = "${currentPartProgress.first} / ${currentPartProgress.second}",
@@ -415,12 +404,11 @@ class GuideStepPlayerViewModel @Inject constructor(
     }
 
     private fun buildCurrentPartLabel(section: GuideSection?, pointer: GuideLeafPointer): String {
-        if (section == null || section.amount <= 1) return ""
-        return "Part ${pointer.sectionAmountIndex + 1}/${section.amount}"
+        if (section == null || section.pieces <= 1) return ""
+        return "Piece ${pointer.sectionPieceIndex + 1}/${section.pieces}"
     }
 
-    private fun mergeTransientUiState(baseState: GuideStepPlayerUiState): GuideStepPlayerUiState {
-        val currentState = _uiState.value
-        return baseState.copy(showAlertDialog = currentState.showAlertDialog, error = currentState.error)
+    private fun contentState(): GuideStepPlayerUiState.Content? {
+        return _uiState.value as? GuideStepPlayerUiState.Content
     }
 }

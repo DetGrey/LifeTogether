@@ -1,20 +1,37 @@
 package com.example.lifetogether.ui.feature.lists.listDetails
 
 import androidx.compose.runtime.Composable
-import com.example.lifetogether.domain.observer.ObserverKey
-import com.example.lifetogether.ui.common.observer.FeatureObserverLifecycleBinding
+import androidx.compose.runtime.getValue
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.navigation.ListEntryDetailsNavRoute
 
 @Composable
 fun ListDetailsRoute(
-    listId: String,
     appNavigator: AppNavigator,
+    listId: String,
 ) {
-    FeatureObserverLifecycleBinding(
-        keys = setOf(ObserverKey.USER_LISTS, ObserverKey.ROUTINE_LIST_ENTRIES),
-    )
+    val viewModel: ListDetailsViewModel =
+        hiltViewModel<ListDetailsViewModel, ListDetailsViewModel.Factory> { it.create(listId) }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    CollectUiCommands(viewModel.uiCommands)
+
     ListDetailsScreen(
-        listId = listId,
-        appNavigator = appNavigator,
+        uiState = uiState,
+        onUiEvent = viewModel::onUiEvent,
+        onNavigationEvent = { navigationEvent ->
+            when (navigationEvent) {
+                ListDetailsNavigationEvent.NavigateBack -> appNavigator.navigateBack()
+                ListDetailsNavigationEvent.NavigateToCreateEntry -> {
+                    appNavigator.navigate(ListEntryDetailsNavRoute(listId))
+                }
+                is ListDetailsNavigationEvent.NavigateToEntryDetails -> {
+                    appNavigator.navigate(ListEntryDetailsNavRoute(listId, navigationEvent.entryId))
+                }
+            }
+        },
     )
 }

@@ -1,140 +1,114 @@
 package com.example.lifetogether.ui.navigation
 
-import android.net.Uri
-import androidx.navigation.NavController
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.NavBackStack
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
-class AppNavigator(private val navController: NavController) : Navigator {
+class AppNavigator(private val backStack: NavBackStack<NavKey>) : Navigator {
 
-    override fun navigateToAdminGroceryCategories() {
-        navController.navigate(AppRoutes.ADMIN_GROCERY_CATEGORIES_SCREEN)
+    private val _navigationResults = MutableSharedFlow<NavigationResult>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+    val navigationResults: SharedFlow<NavigationResult> = _navigationResults.asSharedFlow()
+
+    override fun navigate(route: AppRoute) {
+        if (backStack.lastOrNull() == route) return
+        backStack.add(route)
     }
 
-    override fun navigateToAdminGrocerySuggestions() {
-        navController.navigate(AppRoutes.ADMIN_GROCERY_SUGGESTIONS_SCREEN)
-    }
-    override fun navigateToHome() {
-        navController.navigate(AppRoutes.HOME_SCREEN)
-    }
-
-    override fun navigateToProfile() {
-        navController.navigate(AppRoutes.PROFILE_SCREEN)
+    fun clearAndNavigate(route: AppRoute, vararg then: AppRoute) {
+        backStack.clear()
+        backStack.add(route)
+        then.forEach { backStack.add(it) }
     }
 
-    override fun navigateToFamily() {
-        navController.navigate(AppRoutes.FAMILY_SCREEN)
+    fun navigateReplacing(route: AppRoute) {
+        if (backStack.size > 1) backStack.removeLast()
+        backStack.add(route)
     }
 
-    override fun navigateToSettings() {
-        navController.navigate(AppRoutes.SETTINGS_SCREEN)
-    }
-
-    override fun navigateToLogin() {
-        navController.navigate(AppRoutes.LOGIN_SCREEN)
-    }
-
-    override fun navigateToSignUp() {
-        navController.navigate(AppRoutes.SIGNUP_SCREEN)
+    fun navigateTopLevel(route: AppRoute) {
+        when (route) {
+            is HomeNavRoute -> popToHome()
+            is ProfileNavRoute -> navigateProfileOrSettings(route)
+            is SettingsNavRoute -> navigateProfileOrSettings(route)
+            is TipTrackerNavRoute -> {
+                popToHome()
+                backStack.add(TipTrackerGraph)
+                backStack.add(TipTrackerNavRoute)
+            }
+            else -> {
+                popToHome()
+                backStack.add(route)
+            }
+        }
     }
 
     override fun navigateBack() {
-        if (!navController.popBackStack()) {
-            navController.navigate(AppRoutes.HOME_SCREEN)
-        }
-    }
-
-    override fun navigateToGroceryList() {
-        navController.navigate(AppRoutes.GROCERY_LIST_SCREEN)
-    }
-
-    override fun navigateToRecipes() {
-        navController.navigate(AppRoutes.RECIPES_SCREEN)
-    }
-
-    override fun navigateToRecipeDetails(recipeId: String?) {
-        val route = recipeId?.let {
-            "${AppRoutes.RECIPE_DETAILS_SCREEN}/$it"
-        } ?: AppRoutes.CREATE_RECIPE_SCREEN
-        navController.navigate(route)
-    }
-
-    override fun navigateToGuides() {
-        navController.navigate(AppRoutes.GUIDES_SCREEN)
-    }
-
-    override fun navigateToGuideDetails(guideId: String) {
-        val route = "${AppRoutes.GUIDE_GRAPH}/${Uri.encode(guideId)}"
-        navController.navigate(route)
-    }
-
-    override fun navigateToGuideStepPlayer() {
-        navController.navigate(AppRoutes.GUIDE_STEP_PLAYER_SCREEN)
-    }
-
-    override fun navigateToGuideCreate() {
-        navController.navigate(AppRoutes.GUIDE_CREATE_SCREEN)
-    }
-
-    override fun navigateToGallery() {
-        navController.navigate(AppRoutes.GALLERY_GRAPH) {
-            launchSingleTop = true
-            // Clear any album or media screens when returning to gallery
-            popUpTo(AppRoutes.GALLERY_SCREEN) {
-                inclusive = false
+        if (backStack.size <= 1) {
+            if (backStack.lastOrNull() !is HomeNavRoute) {
+                if (backStack.isNotEmpty()) backStack.removeLast()
+                backStack.add(HomeNavRoute)
             }
+            return
+        }
+        backStack.removeLast()
+        // Auto-pop invisible graph markers left exposed at the top
+        if (backStack.size > 1 && backStack.lastOrNull() is TipTrackerGraph) {
+            backStack.removeLast()
         }
     }
 
-    override fun navigateToAlbumMedia(albumId: String) {
-        val route = "${AppRoutes.ALBUM_MEDIA_SCREEN}/$albumId"
-        navController.navigate(route) {
-            // Clear any existing album/media screens from back stack
-            popUpTo(AppRoutes.GALLERY_SCREEN) {
-                inclusive = false
+    fun navigateBack(result: NavigationResult) {
+        _navigationResults.tryEmit(result)
+        navigateBack()
+    }
+
+    private fun navigateProfileOrSettings(route: AppRoute) {
+        when (route) {
+            is ProfileNavRoute -> {
+                if (isCurrentRoute<SettingsNavRoute>() && isPreviousRoute<ProfileNavRoute>()) {
+                    backStack.removeLast()
+                } else if (!isCurrentRoute<ProfileNavRoute>()) {
+                    if (!isCurrentRoute<HomeNavRoute>() && !isCurrentRoute<SettingsNavRoute>()) {
+                        popToHome()
+                    }
+                    backStack.add(route)
+                }
             }
+            is SettingsNavRoute -> {
+                if (isCurrentRoute<ProfileNavRoute>() && isPreviousRoute<SettingsNavRoute>()) {
+                    backStack.removeLast()
+                } else if (!isCurrentRoute<SettingsNavRoute>()) {
+                    if (!isCurrentRoute<HomeNavRoute>() && !isCurrentRoute<ProfileNavRoute>()) {
+                        popToHome()
+                    }
+                    backStack.add(route)
+                }
+            }
+            else -> Unit
         }
     }
 
-    override fun navigateToGalleryMedia(albumId: String, initialIndex: Int) {
-        val route = "${AppRoutes.GALLERY_MEDIA_SCREEN}/$albumId/$initialIndex"
-        navController.navigate(route)
-    }
-
-    override fun navigateToTipTracker() {
-        navController.navigate(AppRoutes.TIP_TRACKER_SCREEN)
-    }
-
-    override fun navigateToTipStatistics() {
-        navController.navigate(AppRoutes.TIP_STATISTICS_SCREEN)
-    }
-
-    override fun navigateToLists() {
-        navController.navigate(AppRoutes.LISTS_SCREEN)
-    }
-
-    override fun navigateToListDetail(listId: String) {
-        navController.navigate("${AppRoutes.LIST_DETAIL_SCREEN}/$listId")
-    }
-
-    override fun navigateToListEntryDetails(listId: String, entryId: String?) {
-        val route = if (entryId != null) {
-            "${AppRoutes.LIST_ENTRY_DETAILS_SCREEN}/$listId/$entryId"
+    private fun popToHome() {
+        val homeIndex = backStack.indexOfFirst { it is HomeNavRoute }
+        if (homeIndex == -1) {
+            backStack.clear()
+            backStack.add(HomeNavRoute)
         } else {
-            "${AppRoutes.LIST_ENTRY_DETAILS_SCREEN}/$listId"
+            while (backStack.size > homeIndex + 1) backStack.removeLast()
         }
-        navController.navigate(route)
-    }
-}
-
-/*
-// ViewModel using the navigator
-class SomeViewModel(private val navigator: AppNavigator) : ViewModel() {
-    fun onLoginSelected() {
-        navigator.navigateToLogin()
     }
 
-    fun onSignUpSelected() {
-        navigator.navigateToSignUp()
+    private inline fun <reified T : AppRoute> isCurrentRoute(): Boolean =
+        backStack.lastOrNull() is T
+
+    private inline fun <reified T : AppRoute> isPreviousRoute(): Boolean {
+        val size = backStack.size
+        return size >= 2 && backStack[size - 2] is T
     }
-    // ... other ViewModel logic
 }
- */

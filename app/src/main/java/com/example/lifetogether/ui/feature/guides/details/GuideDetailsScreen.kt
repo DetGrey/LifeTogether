@@ -3,79 +3,62 @@ package com.example.lifetogether.ui.feature.guides.details
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
-import com.example.lifetogether.domain.model.Icon as AppIcon
+import com.example.lifetogether.domain.model.AppIcon as AppIcon
 import com.example.lifetogether.domain.model.enums.Visibility
-import com.example.lifetogether.ui.common.OverflowMenu
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.domain.model.guides.Guide
+import com.example.lifetogether.domain.model.guides.GuideSection
+import com.example.lifetogether.ui.common.ActionSheet
+import com.example.lifetogether.ui.common.ActionSheetItem
+import com.example.lifetogether.ui.common.AppTopBar
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
-import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
+import com.example.lifetogether.ui.common.button.PrimaryButton
+import com.example.lifetogether.ui.common.text.TextDefault
+import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.feature.guides.details.components.GuideHeroCard
 import com.example.lifetogether.ui.feature.guides.details.components.GuideSectionCard
-import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @Composable
 fun GuideDetailsScreen(
-    appNavigator: AppNavigator? = null,
-    guideId: String,
-    guideDetailsViewModel: GuideDetailsViewModel,
+    uiState: GuideDetailsUiState,
+    onUiEvent: (GuideDetailsUiEvent) -> Unit,
+    onNavigationEvent: (GuideDetailsNavigationEvent) -> Unit,
 ) {
-    val uiState by guideDetailsViewModel.uiState.collectAsState()
-    val guide = uiState.guide
-
+    val guide = (uiState as? GuideDetailsUiState.Content)?.guide
     var showOverflowMenu by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showResetProgressDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(guideId) {
-        guideDetailsViewModel.setUp(guideId) //todo don't think this is the best way
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            guideDetailsViewModel.flushPendingChanges()
-        }
-    }
-
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        item {
-            TopBar(
-                leftIcon = AppIcon(
-                    resId = R.drawable.ic_back_arrow,
+    Scaffold(
+        topBar = {
+            AppTopBar(
+                leftAppIcon = AppIcon(
+                    resId = R.drawable.ic_back,
                     description = "back arrow icon",
                 ),
                 onLeftClick = {
-                    guideDetailsViewModel.flushPendingChanges()
-                    appNavigator?.navigateBack()
+                    onNavigationEvent(GuideDetailsNavigationEvent.NavigateBack)
                 },
                 text = "Guide details",
-                rightIcon = AppIcon(
+                rightAppIcon = AppIcon(
                     resId = R.drawable.ic_overflow_menu,
                     description = "overflow menu",
                 ),
@@ -85,96 +68,105 @@ fun GuideDetailsScreen(
                     }
                 },
             )
-        }
-
-        if (guide == null) {
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 24.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-        } else {
-
-            item {
-                GuideHeroCard(guide)
-            }
-
-            item {
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !uiState.isStartingGuide,
-                    onClick = {
-                        guideDetailsViewModel.onStartOrContinue { _ ->
-                            appNavigator?.navigateToGuideStepPlayer()
-                        }
-                    },
-                ) {
-                    Text(
-                        text = when {
-                            uiState.isStartingGuide -> "Starting..."
-                            guide.started -> "Continue where you left off"
-                            else -> "Start guide"
-                        },
-                    )
-                }
-            }
-
-            if (guide.sections.isEmpty()) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                color = MaterialTheme.colorScheme.surfaceVariant,
-                                shape = RoundedCornerShape(16.dp),
-                            )
-                            .padding(14.dp),
-                    ) {
-                        Text(
-                            text = "No sections yet",
-                            style = MaterialTheme.typography.bodyMedium,
+        },
+    ) { padding ->
+        AnimatedLoadingContent(
+            isLoading = uiState is GuideDetailsUiState.Loading,
+            label = "guide_details_loading_content",
+            loadingContent = {
+                Skeletons.SectionDetail(modifier = Modifier.fillMaxSize())
+            },
+        ) {
+            val content = uiState as? GuideDetailsUiState.Content ?: return@AnimatedLoadingContent
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = LifeTogetherTokens.spacing.small),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                contentPadding = PaddingValues(bottom = LifeTogetherTokens.spacing.bottomInsetMedium)
+            ) {
+                val guide = content.guide
+                if (guide == null) {
+                    item {
+                        Skeletons.SectionDetail(
+                            modifier = Modifier.fillMaxSize(),
                         )
                     }
-                }
-            } else {
-                guide.sections.forEachIndexed { sectionIndex, section ->
-                    val sectionKey = guideSectionKey(section, sectionIndex)
-                    val isExpanded = uiState.sectionExpandedState[sectionKey] ?: true
-                    val selectedAmountIndex = uiState.selectedSectionAmountState[sectionKey]
-                        ?: defaultSectionAmountIndex(section)
+                } else {
+                    item {
+                        GuideHeroCard(guide)
+                    }
 
-                    item(key = sectionKey) {
-                        GuideSectionCard(
-                            section = section,
-                            selectedAmountIndex = selectedAmountIndex,
-                            onSelectAmountIndex = { amountIndex ->
-                                guideDetailsViewModel.selectSectionAmount(
-                                    sectionKey = sectionKey,
-                                    amountIndex = amountIndex,
-                                )
-                            },
-                            expanded = isExpanded,
-                            onToggleExpanded = {
-                                guideDetailsViewModel.toggleSectionExpanded(sectionKey)
-                            },
-                            canToggleStep = { amountIndex, stepId ->
-                                guideDetailsViewModel.canToggleStep(
-                                    stepId = stepId,
-                                    amountIndex = amountIndex,
-                                )
-                            },
-                            onToggleStep = { amountIndex, stepId ->
-                                guideDetailsViewModel.toggleStepCompletion(
-                                    stepId = stepId,
-                                    amountIndex = amountIndex,
-                                )
-                            },
+                    item {
+                        PrimaryButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = if (guide.started) "Continue where you left off" else "Start guide",
+                            loading = content.isStartingGuide,
+                            onClick = { onUiEvent(GuideDetailsUiEvent.StartOrContinueClicked) },
                         )
+                    }
+
+                    if (guide.sections.isEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        color = MaterialTheme.colorScheme.surfaceVariant,
+                                        shape = MaterialTheme.shapes.medium,
+                                    )
+                                    .padding(LifeTogetherTokens.spacing.medium),
+                            ) {
+                                TextDefault(
+                                    text = "No sections yet",
+                                )
+                            }
+                        }
+                    } else {
+                        guide.sections.forEachIndexed { sectionIndex, section ->
+                            val sectionKey = guideSectionKey(section, sectionIndex)
+                            val isExpanded = content.sectionExpandedState[sectionKey] ?: true
+                            val selectedPieceIndex =
+                                content.selectedSectionPieceState[sectionKey]
+                                    ?: defaultSectionPieceIndex(section)
+
+                            item(key = sectionKey) {
+                                GuideSectionCard(
+                                    section = section,
+                                    selectedPieceIndex = selectedPieceIndex,
+                                    onSelectPieceIndex = { pieceIndex ->
+                                        onUiEvent(
+                                            GuideDetailsUiEvent.SelectSectionPiece(
+                                                sectionKey = sectionKey,
+                                                pieceIndex = pieceIndex,
+                                            ),
+                                        )
+                                    },
+                                    expanded = isExpanded,
+                                    onToggleExpanded = {
+                                        onUiEvent(
+                                            GuideDetailsUiEvent.ToggleSectionExpanded(
+                                                sectionKey,
+                                            )
+                                        )
+                                    },
+                                    canToggleStep = { pieceIndex ->
+                                        content.canTogglePieceState[sectionKey]
+                                            ?.contains(pieceIndex) == true
+                                    },
+                                    onToggleStep = { pieceIndex, stepId ->
+                                        onUiEvent(
+                                            GuideDetailsUiEvent.ToggleStepCompletion(
+                                                stepId = stepId,
+                                                pieceIndex = pieceIndex,
+                                            ),
+                                        )
+                                    },
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -182,37 +174,58 @@ fun GuideDetailsScreen(
     }
 
     if (showOverflowMenu && guide != null) {
-        val canModifyGuide = guideDetailsViewModel.canToggleVisibility()
         val visibilityActionLabel = if (guide.visibility == Visibility.FAMILY) {
             "Make private"
         } else {
             "Share with family"
         }
 
-        OverflowMenu(
-            onDismiss = { showOverflowMenu = false },
-            actionsList = listOf(
-                mapOf("Reset all progress" to {
-                    showOverflowMenu = false
-                    showResetProgressDialog = true
-                }),
-                mapOf(visibilityActionLabel to {
-                    showOverflowMenu = false
-                    if (canModifyGuide) {
-                        guideDetailsViewModel.toggleVisibility()
-                    } else {
-                        guideDetailsViewModel.showVisibilityOwnershipError()
-                    }
-                }),
-                mapOf("Delete guide" to {
-                    showOverflowMenu = false
-                    if (canModifyGuide) {
+        val actions = buildList {
+            if (uiState.isOwner) {
+                add(
+                    ActionSheetItem(
+                        label = "Edit guide",
+                        onClick = {
+                            showOverflowMenu = false
+                            onNavigationEvent(GuideDetailsNavigationEvent.NavigateToEditGuide)
+                        },
+                    ),
+                )
+            }
+            add(
+                ActionSheetItem(
+                    label = visibilityActionLabel,
+                    onClick = {
+                        showOverflowMenu = false
+                        onUiEvent(GuideDetailsUiEvent.ToggleVisibilityClicked)
+                    },
+                ),
+            )
+            add(
+                ActionSheetItem(
+                    label = "Reset all progress",
+                    onClick = {
+                        showOverflowMenu = false
+                        showResetProgressDialog = true
+                    },
+                    isDestructive = true,
+                ),
+            )
+            add(
+                ActionSheetItem(
+                    label = "Delete guide",
+                    onClick = {
+                        showOverflowMenu = false
                         showDeleteDialog = true
-                    } else {
-                        guideDetailsViewModel.showDeleteOwnershipError()
-                    }
-                }),
-            ),
+                    },
+                    isDestructive = true,
+                ),
+            )
+        }
+
+        ActionSheet(
+            onDismiss = { showOverflowMenu = false },
+            actionsList = actions,
         )
     }
 
@@ -221,7 +234,7 @@ fun GuideDetailsScreen(
             onDismiss = { showResetProgressDialog = false },
             onConfirm = {
                 showResetProgressDialog = false
-                guideDetailsViewModel.resetAllProgress()
+                onUiEvent(GuideDetailsUiEvent.ResetAllProgressClicked)
             },
             dialogTitle = "Reset all progress",
             dialogMessage = "Are you sure you want to reset all progress for this guide?",
@@ -235,9 +248,7 @@ fun GuideDetailsScreen(
             onDismiss = { showDeleteDialog = false },
             onConfirm = {
                 showDeleteDialog = false
-                guideDetailsViewModel.deleteGuide {
-                    appNavigator?.navigateBack()
-                }
+                onUiEvent(GuideDetailsUiEvent.DeleteGuideClicked)
             },
             dialogTitle = "Delete guide",
             dialogMessage = "Are you sure you want to delete this guide?",
@@ -245,11 +256,51 @@ fun GuideDetailsScreen(
             confirmButtonMessage = "Delete guide",
         )
     }
+}
 
-    if (uiState.showAlertDialog) {
-        LaunchedEffect(uiState.error) {
-            guideDetailsViewModel.dismissAlert()
-        }
-        ErrorAlertDialog(uiState.error)
+@Preview(showBackground = true)
+@Composable
+private fun GuideDetailsScreenPreview() {
+    LifeTogetherTheme {
+        GuideDetailsScreen(
+            uiState = GuideDetailsUiState.Content(
+                guide = Guide(
+                    id = "guide-1",
+                    familyId = "family-1",
+                    itemName = "Family reset",
+                    description = "A simple weekly reset guide",
+                    visibility = Visibility.FAMILY,
+                    ownerUid = "uid-1",
+                    contentVersion = 1L,
+                    started = true,
+                    sections = listOf(
+                        GuideSection(
+                            id = "section-1",
+                            orderNumber = 1,
+                            title = "Morning routine",
+                            pieces = 2,
+                            steps = emptyList(),
+                        ),
+                    ),
+                ),
+                sectionExpandedState = mapOf("section-1" to true),
+                selectedSectionPieceState = mapOf("section-1" to 0),
+                canTogglePieceState = mapOf("section-1" to setOf(0)),
+            ),
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun GuideDetailsScreenLoadingPreview() {
+    LifeTogetherTheme {
+        GuideDetailsScreen(
+            uiState = GuideDetailsUiState.Loading,
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
     }
 }

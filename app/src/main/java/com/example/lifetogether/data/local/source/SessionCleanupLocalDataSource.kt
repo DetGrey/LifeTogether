@@ -1,50 +1,29 @@
 package com.example.lifetogether.data.local.source
 
-import android.content.Context
-import androidx.core.net.toUri
-import com.example.lifetogether.data.local.dao.AlbumsDao
-import com.example.lifetogether.data.local.dao.FamilyInformationDao
+import com.example.lifetogether.data.logic.appResultOfSuspend
+import com.example.lifetogether.domain.result.AppError
+import com.example.lifetogether.data.local.AppDatabase
 import com.example.lifetogether.data.local.dao.GalleryMediaDao
-import com.example.lifetogether.data.local.dao.GroceryListDao
-import com.example.lifetogether.data.local.dao.GuidesDao
-import com.example.lifetogether.data.local.dao.RecipesDao
-import com.example.lifetogether.data.local.dao.UserInformationDao
 import com.example.lifetogether.domain.result.Result
-import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class SessionCleanupLocalDataSource @Inject constructor(
-    @ApplicationContext private val context: Context,
-    private val groceryListDao: GroceryListDao,
-    private val recipesDao: RecipesDao,
-    private val userInformationDao: UserInformationDao,
-    private val familyInformationDao: FamilyInformationDao,
+    private val appDatabase: AppDatabase,
     private val galleryMediaDao: GalleryMediaDao,
-    private val albumsDao: AlbumsDao,
-    private val guidesDao: GuidesDao,
 ) {
-    fun clearSessionTables(): Result<Unit, String> {
-        return try {
-            groceryListDao.deleteTable()
-            recipesDao.deleteTable()
-            userInformationDao.deleteTable()
-            familyInformationDao.deleteFamiliesTable()
-            familyInformationDao.deleteFamilyMembersTable()
-
-            val resolver = context.contentResolver
-            val galleryImages = galleryMediaDao.getAll()
-            galleryImages.forEach { item ->
-                item.mediaUri?.let { resolver.delete(it.toUri(), null, null) }
+    suspend fun clearSessionTables(): Result<Unit, AppError> {
+        return appResultOfSuspend {
+            galleryMediaDao.getAll().forEach { item ->
+                item.mediaUri?.let { File(it).delete() }
             }
-
-            galleryMediaDao.deleteTable()
-            albumsDao.deleteTable()
-            guidesDao.deleteTable()
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure("Error: $e")
+            withContext(Dispatchers.IO) {
+                appDatabase.clearAllTables()
+            }
         }
     }
 }

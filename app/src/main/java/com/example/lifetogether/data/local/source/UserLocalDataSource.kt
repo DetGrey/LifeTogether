@@ -8,6 +8,7 @@ import com.example.lifetogether.data.model.UserEntity
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.family.FamilyInformation
 import kotlinx.coroutines.flow.Flow
+import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -20,50 +21,116 @@ class UserLocalDataSource @Inject constructor(
         userInformation: UserInformation,
         byteArray: ByteArray? = null,
     ) {
-        var userEntity = UserEntity(
-            uid = userInformation.uid ?: "",
+        val existingUser = userInformationDao.getItemOnce(userInformation.uid)
+        val existingImageUrl = existingUser?.imageUrl
+        val existingImageData = existingUser?.imageData
+        val imageData = byteArray ?: if (existingImageUrl == userInformation.imageUrl) {
+            existingImageData
+        } else {
+            null
+        }
+        val userEntity = UserEntity(
+            uid = userInformation.uid,
             email = userInformation.email,
             name = userInformation.name,
+            lastUpdated = userInformation.lastUpdated,
             birthday = userInformation.birthday,
             familyId = userInformation.familyId,
+            imageData = imageData,
+            imageUrl = userInformation.imageUrl,
         )
-        if (byteArray != null) {
-            userEntity = userEntity.copy(imageData = byteArray)
-        }
         userInformationDao.updateItems(userEntity)
     }
 
-    suspend fun userHasProfileImage(uid: String): Boolean = (userInformationDao.hasImageData(uid) ?: 0) == 1
+    fun observeFamilyInformation(familyId: String): Flow<FamilyEntity?> = familyInformationDao.getFamilyInfo(familyId)
 
-    fun getFamilyInformation(familyId: String): Flow<FamilyEntity> = familyInformationDao.getFamilyInfo(familyId)
+    suspend fun getProfileOnce(uid: String): UserEntity? = userInformationDao.getItemOnce(uid)
 
-    fun getFamilyMembers(familyId: String): Flow<List<FamilyMemberEntity>> = familyInformationDao.getFamilyMembers(familyId)
+    fun observeFamilyMembers(familyId: String): Flow<List<FamilyMemberEntity>> = familyInformationDao.observeFamilyMembers(familyId)
 
-    fun getProfileImageByteArray(uid: String): Flow<ByteArray?> = userInformationDao.getImageByteArray(uid)
+    fun observeProfileImageByteArray(uid: String): Flow<ByteArray?> = userInformationDao.observeImageByteArray(uid)
 
-    fun getFamilyImageByteArray(familyId: String): Flow<ByteArray?> = familyInformationDao.getImageByteArray(familyId)
+    suspend fun updateProfileImageByteArray(
+        uid: String,
+        imageData: ByteArray?,
+        lastUpdated: Date = Date(),
+    ) {
+        userInformationDao.updateImageByteArray(uid, imageData, lastUpdated)
+    }
+
+    suspend fun updateProfileImageUrl(
+        uid: String,
+        imageUrl: String?,
+        lastUpdated: Date = Date(),
+    ) {
+        userInformationDao.updateImageUrl(uid, imageUrl, lastUpdated)
+    }
+
+    fun observeFamilyImageByteArray(familyId: String): Flow<ByteArray?> = familyInformationDao.observeImageByteArray(familyId)
+
+    suspend fun getFamilyOnce(familyId: String): FamilyEntity? = familyInformationDao.getFamilyOnce(familyId)
+
+    suspend fun updateFamilyImageByteArray(
+        familyId: String,
+        imageData: ByteArray?,
+        lastUpdated: Date = Date(),
+    ) {
+        familyInformationDao.updateImageByteArray(familyId, imageData, lastUpdated)
+    }
+
+    suspend fun updateFamilyImageUrl(
+        familyId: String,
+        imageUrl: String?,
+        lastUpdated: Date = Date(),
+    ) {
+        familyInformationDao.updateImageUrl(familyId, imageUrl, lastUpdated)
+    }
+
+    suspend fun updateUserName(uid: String, name: String, lastUpdated: Date) {
+        userInformationDao.updateName(uid, name, lastUpdated)
+    }
+
+    suspend fun updateFamilyMemberName(uid: String, name: String, familyId: String?, lastUpdated: Date) {
+        familyInformationDao.updateMemberName(uid, name)
+        if (familyId != null) familyInformationDao.updateLastUpdated(familyId, lastUpdated)
+    }
+
+    suspend fun updateFamilyTogetherSince(
+        familyId: String,
+        togetherSince: Date?,
+        lastUpdated: Date = Date(),
+    ) {
+        familyInformationDao.updateTogetherSince(familyId, togetherSince, lastUpdated)
+    }
 
     suspend fun updateFamilyInformation(
         familyInformation: FamilyInformation,
         byteArray: ByteArray? = null,
     ) {
-        var familyEntity = FamilyEntity(
-            familyId = familyInformation.familyId ?: "",
-        )
-        if (byteArray != null) {
-            familyEntity = familyEntity.copy(imageData = byteArray)
+        val existingFamily = familyInformationDao.getFamilyOnce(familyInformation.familyId)
+        val existingImageUrl = existingFamily?.imageUrl
+        val existingImageData = existingFamily?.imageData
+        val imageData = byteArray ?: if (existingImageUrl == familyInformation.imageUrl) {
+            existingImageData
+        } else {
+            null
         }
+        val familyEntity = FamilyEntity(
+            familyId = familyInformation.familyId,
+            lastUpdated = familyInformation.lastUpdated,
+            imageData = imageData,
+            imageUrl = familyInformation.imageUrl,
+            togetherSince = familyInformation.togetherSince,
+        )
         familyInformationDao.updateFamily(familyEntity)
 
-        val familyMembers = familyInformation.members?.map {
+        val familyMembers = familyInformation.members.map {
             FamilyMemberEntity(
-                uid = it.uid ?: "",
+                uid = it.uid,
                 familyId = familyInformation.familyId,
                 name = it.name,
             )
-        } ?: emptyList()
+        }
         familyInformationDao.updateFamilyMembers(familyMembers)
     }
-
-    suspend fun familyHasImage(familyId: String): Boolean = (familyInformationDao.hasImageData(familyId) ?: 0) == 1
 }

@@ -12,17 +12,17 @@ import java.util.Date
 @Entity(tableName = Constants.GUIDES_TABLE)
 data class GuideEntity(
     @PrimaryKey
-    val id: String = "",
+    val id: String,
     @ColumnInfo(name = "family_id")
-    val familyId: String = "",
+    val familyId: String,
     @ColumnInfo(name = "item_name")
-    val itemName: String = "",
+    val itemName: String,
     @ColumnInfo(name = "last_updated")
-    val lastUpdated: Date = Date(),
-    val description: String = "",
-    val visibility: Visibility = Visibility.PRIVATE,
+    val lastUpdated: Date,
+    val description: String,
+    val visibility: Visibility,
     @ColumnInfo(name = "owner_uid")
-    val ownerUid: String = "",
+    val ownerUid: String,
     @ColumnInfo(name = "content_version")
     val contentVersion: Long = 1,
     val started: Boolean = false,

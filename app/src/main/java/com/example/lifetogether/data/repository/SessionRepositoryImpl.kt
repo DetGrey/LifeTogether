@@ -1,10 +1,13 @@
 package com.example.lifetogether.data.repository
 
+import com.example.lifetogether.data.logic.AppErrors
+
+import com.example.lifetogether.domain.result.AppError
+
 import android.util.Log
 import com.example.lifetogether.data.remote.FirebaseAuthDataSource
 import com.example.lifetogether.di.AppScope
 import com.example.lifetogether.domain.result.Result
-import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.model.session.authenticatedUserOrNull
 import com.example.lifetogether.domain.repository.SessionUserRepository
@@ -36,8 +39,8 @@ class SessionRepositoryImpl @Inject constructor(
             firebaseAuthDataSource.authStateListener().collectLatest { authState ->
                 when (authState) {
                     is Result.Success -> {
-                        val uid = authState.data.uid
-                        if (uid.isNullOrBlank()) {
+                        val uid = authState.data
+                        if (uid.isBlank()) {
                             _sessionState.value = SessionState.Unauthenticated
                             return@collectLatest
                         }
@@ -65,18 +68,15 @@ class SessionRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun signOut(): Result<Unit, String> {
-        val currentUser = resolveUserForSignOut()
-            ?: return Result.Failure("No authenticated user available for sign out")
+    override suspend fun signOut(): Result<Unit, AppError> {
+        val signOutTarget = resolveSignOutTarget()
+            ?: return Result.Failure(AppErrors.authentication("No authenticated user available for sign out"))
 
-        val uid = currentUser.uid
-            ?: return Result.Failure("No authenticated user available for sign out")
-
-        return when (val remoteResult = sessionUserRepository.logout(uid, currentUser.familyId)) {
+        return when (val remoteResult = sessionUserRepository.logout(signOutTarget.uid, signOutTarget.familyId)) {
             is Result.Failure -> remoteResult
             is Result.Success -> {
                 _sessionState.value = SessionState.Unauthenticated
-                when (val localResult = sessionUserRepository.removeSavedUserInformation()) {
+                when (val localResult = sessionUserRepository.deleteSavedUserInformation()) {
                     is Result.Failure -> {
                         Log.e(TAG, "Local session cleanup failed after remote logout: ${localResult.error}")
                         Result.Failure(localResult.error)
@@ -88,15 +88,22 @@ class SessionRepositoryImpl @Inject constructor(
         }
     }
 
-    private suspend fun resolveUserForSignOut(): UserInformation? {
-        sessionState.value.authenticatedUserOrNull?.let { return it }
+    private data class SignOutTarget(
+        val uid: String,
+        val familyId: String?,
+    )
+
+    private suspend fun resolveSignOutTarget(): SignOutTarget? {
+        sessionState.value.authenticatedUserOrNull?.let {
+            return SignOutTarget(it.uid, it.familyId)
+        }
 
         val currentUid = firebaseAuthDataSource.currentUserUid() ?: return null
         return when (val result = sessionUserRepository.fetchUserInformation(currentUid)) {
-            is Result.Success -> result.data
+            is Result.Success -> SignOutTarget(result.data.uid, result.data.familyId)
             is Result.Failure -> {
                 Log.w(TAG, "Fallback user fetch for sign out failed for uid=$currentUid: ${result.error}")
-                UserInformation(uid = currentUid)
+                SignOutTarget(currentUid, null)
             }
         }
     }

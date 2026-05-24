@@ -9,33 +9,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.model.guides.GuideStep
 import com.example.lifetogether.domain.model.guides.GuideStepType
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun GuideStepCardBody(
     step: GuideStep,
     stepNumber: Int?,
     textColor: Color,
-    roundGroupLabel: String,
-    roundGroupMeta: String, //todo whats this
 ) {
     when (step.type) {
         GuideStepType.ROUND -> {
             GuideStepRoundText(
-                title = roundGroupLabel.ifEmpty { guideStepRoundLabel(step) }, //todo this is awful
+                title =  guideStepRoundLabel(step),
                 content = step.content,
                 textColor
             )
-//            if (roundGroupMeta.isNotBlank()) {
-//                Text(
-//                    text = roundGroupMeta,
-//                    color = textColor,
-//                    style = MaterialTheme.typography.bodySmall,
-//                )
-//            }
         }
 
         GuideStepType.COMMENT, GuideStepType.UNKNOWN -> {
@@ -69,7 +60,7 @@ fun GuideStepCardBody(
             } else if (step.content.isNotBlank()) {
                 Text(
                     text = step.content,
-                    modifier = Modifier.padding(start = 14.dp),
+                    modifier = Modifier.padding(start = LifeTogetherTokens.spacing.medium),
                     color = textColor,
                     style = MaterialTheme.typography.bodySmall,
                 )
@@ -86,54 +77,63 @@ private fun GuideStepCardBodyPreview() {
             GuideStepCardBody(
                 step = GuideStep(
                     id = "subsection-1",
+                    name = "Subsection",
                     type = GuideStepType.SUBSECTION,
                     title = "Ears",
+                    content = "",
                     subSteps = listOf(
                         GuideStep(
                             id = "comment-1",
+                            name = "Comment",
                             type = GuideStepType.COMMENT,
+                            title = "",
                             content = "Take a breath before you start.",
+                            subSteps = emptyList(),
                         ),
                         GuideStep(
                             id = "numbered-1",
+                            name = "R1",
                             type = GuideStepType.ROUND,
                             title = "R1",
                             content = "Describe your mood in one sentence.",
+                            subSteps = emptyList(),
                         ),
                         GuideStep(
                             id = "numbered-1",
+                            name = "Step 1",
                             type = GuideStepType.NUMBERED,
+                            title = "",
                             content = "Describe your mood in one sentence.",
+                            subSteps = emptyList(),
                         ),
                     ),
                 ),
                 stepNumber = 2,
                 textColor = MaterialTheme.colorScheme.onSurface,
-                roundGroupLabel = "",
-                roundGroupMeta = "",
             )
             GuideStepCardBody(
                 step = GuideStep(
                     id = "numbered-1",
+                    name = "R1",
                     type = GuideStepType.ROUND,
                     title = "R1",
                     content = "Describe your mood in one sentence.",
+                    subSteps = emptyList(),
                 ),
                 stepNumber = 2,
                 textColor = MaterialTheme.colorScheme.onSurface,
-                roundGroupLabel = "",
-                roundGroupMeta = "",
             )
             GuideStepCardBody(
                 step = GuideStep(
                     id = "numbered-1",
+                    name = "Step 1",
                     type = GuideStepType.NUMBERED,
+                    title = "",
                     content = "Describe your mood in one sentence.",
+                    subSteps = emptyList(),
                 ),
                 stepNumber = 2,
                 textColor = MaterialTheme.colorScheme.onSurface,
-                roundGroupLabel = "",
-                roundGroupMeta = "",
             )
         }
     }

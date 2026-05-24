@@ -1,12 +1,14 @@
 package com.example.lifetogether.data.local.source
 
+import com.example.lifetogether.data.local.dao.CategoriesDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
 import com.example.lifetogether.data.local.source.internal.computeItemsToDelete
 import com.example.lifetogether.data.local.source.internal.computeItemsToUpdate
+import com.example.lifetogether.data.model.CategoryEntity
 import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.model.GrocerySuggestionEntity
-import com.example.lifetogether.domain.result.Result
+import com.example.lifetogether.domain.model.Category
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
@@ -15,6 +17,7 @@ import javax.inject.Singleton
 
 @Singleton
 class GroceryLocalDataSource @Inject constructor(
+    private val categoriesDao: CategoriesDao,
     private val groceryListDao: GroceryListDao,
     private val grocerySuggestionsDao: GrocerySuggestionsDao,
 ) {
@@ -23,7 +26,32 @@ class GroceryLocalDataSource @Inject constructor(
         return groceryListDao.getItems(familyId)
     }
 
-    fun getGrocerySuggestions(): Flow<List<GrocerySuggestionEntity>> = grocerySuggestionsDao.getItems()
+    fun observeCategories(): Flow<List<CategoryEntity>> = categoriesDao.getItems()
+
+    fun observeGrocerySuggestions(): Flow<List<GrocerySuggestionEntity>> = grocerySuggestionsDao.getItems()
+
+    suspend fun updateCategories(items: List<Category>) {
+        val entities = items.map { category ->
+            CategoryEntity(
+                emoji = category.emoji,
+                name = category.name,
+                lastUpdated = category.lastUpdated,
+            )
+        }
+        val currentItems = categoriesDao.getItems().first()
+        val itemsToUpdate = computeItemsToUpdate(
+            currentItems = currentItems,
+            incomingItems = entities,
+            key = { it.name },
+        )
+        val itemsToDelete = computeItemsToDelete(
+            currentItems = currentItems,
+            incomingItems = entities,
+            key = { it.name },
+        )
+        categoriesDao.updateItems(itemsToUpdate)
+        categoriesDao.deleteItems(itemsToDelete)
+    }
 
     suspend fun updateGrocerySuggestions(entities: List<GrocerySuggestionEntity>) {
         val currentItems = grocerySuggestionsDao.getItems().first()
@@ -61,17 +89,27 @@ class GroceryLocalDataSource @Inject constructor(
         groceryListDao.deleteItems(itemsToDelete.map { it.id })
     }
 
+    suspend fun getGroceryItemOnce(id: String): GroceryListEntity? = groceryListDao.getItemOnce(id)
+
+    suspend fun upsertGroceryItem(entity: GroceryListEntity) = groceryListDao.updateItems(listOf(entity))
+
+    suspend fun deleteGroceryItem(id: String) = groceryListDao.deleteItems(listOf(id))
+
+    suspend fun upsertCategory(category: Category) = categoriesDao.updateItems(
+        listOf(CategoryEntity(emoji = category.emoji, name = category.name, lastUpdated = category.lastUpdated))
+    )
+
+    suspend fun deleteCategory(entity: CategoryEntity) = categoriesDao.deleteItems(listOf(entity))
+
+    suspend fun getSuggestionOnce(id: String): GrocerySuggestionEntity? = grocerySuggestionsDao.getItemOnce(id)
+
+    suspend fun upsertSuggestion(entity: GrocerySuggestionEntity) = grocerySuggestionsDao.updateItems(listOf(entity))
+
+    suspend fun deleteSuggestion(entity: GrocerySuggestionEntity) = grocerySuggestionsDao.deleteItems(listOf(entity))
+
     suspend fun deleteFamilyGroceryItems(familyId: String) {
         groceryListDao.getItems(familyId).firstOrNull()?.let { currentFamilyItems ->
             groceryListDao.deleteItems(currentFamilyItems.map { it.id })
         }
     }
-
-    fun deleteItems(itemIds: List<String>): Result<Unit, String> =
-        try {
-            groceryListDao.deleteItems(itemIds)
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Failure("Error: ${e.message}")
-        }
 }

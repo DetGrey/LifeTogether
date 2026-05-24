@@ -1,13 +1,17 @@
 package com.example.lifetogether.data.local.source
 
 import com.example.lifetogether.data.local.dao.RecipesDao
-import com.example.lifetogether.data.local.source.internal.computeItemsToDelete
-import com.example.lifetogether.data.local.source.internal.computeItemsToUpdate
 import com.example.lifetogether.data.model.RecipeEntity
+import com.example.lifetogether.data.model.RecipeIngredientEntity
+import com.example.lifetogether.data.model.RecipeInstructionEntity
+import com.example.lifetogether.data.model.RecipeWithChildren
+import com.example.lifetogether.domain.model.recipe.Ingredient
+import com.example.lifetogether.domain.model.recipe.Instruction
 import com.example.lifetogether.domain.model.recipe.Recipe
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -15,61 +19,154 @@ import javax.inject.Singleton
 class RecipeLocalDataSource @Inject constructor(
     private val recipesDao: RecipesDao,
 ) {
-    fun observeRecipes(familyId: String): Flow<List<RecipeEntity>> = recipesDao.getItems(familyId)
+    fun observeRecipes(familyId: String): Flow<List<RecipeWithChildren>> = recipesDao.getItems(familyId)
 
-    fun observeRecipeById(familyId: String, id: String): Flow<RecipeEntity?> = recipesDao.getItemByIdFlow(familyId, id)
+    fun observeRecipeById(familyId: String, id: String): Flow<RecipeWithChildren?> = recipesDao.getItemByIdFlow(familyId, id)
 
     suspend fun updateRecipes(
         items: List<Recipe>,
         byteArrays: Map<String, ByteArray>,
     ) {
         val familyId = items.firstOrNull()?.familyId ?: return
-        var entities = items.map { item ->
-            RecipeEntity(
-                id = item.id ?: "",
-                familyId = item.familyId,
-                itemName = item.itemName,
-                lastUpdated = item.lastUpdated,
-                description = item.description,
-                ingredients = item.ingredients,
-                instructions = item.instructions,
-                preparationTimeMin = item.preparationTimeMin,
-                favourite = item.favourite,
-                servings = item.servings,
-                tags = item.tags,
-            )
+        val currentItems = recipesDao.getItemsOnce(familyId)
+        val currentItemsById = currentItems.associateBy { it.recipe.id }
+        val incomingIds = items.map { it.id }.toSet()
+
+        val recipeEntities = items.map { item ->
+            val existingItem = currentItemsById[item.id]
+            val newImage = byteArrays[item.id]
+            val imageData = when {
+                newImage != null -> newImage
+                existingItem?.recipe?.imageUrl == item.imageUrl -> existingItem?.recipe?.imageData
+                else -> null
+            }
+            item.toRecipeEntity(imageData = imageData, imageUrl = item.imageUrl)
         }
-        if (byteArrays.isNotEmpty()) {
-            entities = entities.map { item ->
-                item.copy(imageData = byteArrays[item.id])
+        val ingredientEntities = items.flatMap { item ->
+            item.ingredients.map { ingredient ->
+                ingredient.toEntity(recipeId = item.id, sortOrder = ingredient.sortOrder)
+            }
+        }
+        val instructionEntities = items.flatMap { item ->
+            item.instructions.map { instruction ->
+                instruction.toEntity(recipeId = item.id, sortOrder = instruction.sortOrder)
             }
         }
 
-        val currentItems = recipesDao.getItems(familyId).first()
-        val itemsToUpdate = computeItemsToUpdate(
-            currentItems = currentItems,
-            incomingItems = entities,
-            key = { it.id },
-        )
-        val itemsToDelete = computeItemsToDelete(
-            currentItems = currentItems,
-            incomingItems = entities,
-            key = { it.id },
-        )
-        recipesDao.updateItems(itemsToUpdate)
-        recipesDao.deleteItems(itemsToDelete.map { it.id })
-    }
+        recipesDao.updateItems(recipeEntities)
+        recipesDao.deleteIngredientsByRecipeIds(incomingIds.toList())
+        recipesDao.deleteInstructionsByRecipeIds(incomingIds.toList())
+        recipesDao.updateRecipeIngredients(ingredientEntities)
+        recipesDao.updateRecipeInstructions(instructionEntities)
 
-    suspend fun deleteFamilyRecipes(familyId: String) {
-        recipesDao.getItems(familyId).firstOrNull()?.let { currentFamilyItems ->
-            recipesDao.deleteItems(currentFamilyItems.map { it.id })
+        val itemsToDelete = currentItems.filterNot { it.recipe.id in incomingIds }
+        if (itemsToDelete.isNotEmpty()) {
+            recipesDao.deleteItems(itemsToDelete.map { it.recipe.id })
         }
     }
 
-    suspend fun getRecipeIdsWithImages(familyId: String): Set<String> = recipesDao.getRecipeIdsWithImages(familyId).toSet()
+    suspend fun getRecipeOnce(id: String): RecipeWithChildren? = recipesDao.getItemOnce(id)
 
-    fun getImageByteArray(
+    suspend fun getRecipesOnce(familyId: String): List<RecipeWithChildren> = recipesDao.getItems(familyId).first()
+
+    suspend fun upsertRecipe(
+        recipe: Recipe,
+        imageData: ByteArray? = null,
+        imageUrl: String? = null,
+    ) {
+        val currentItem = recipesDao.getItemOnce(recipe.id)
+        val resolvedImageData = imageData ?: currentItem?.recipe?.imageData
+        val resolvedImageUrl = imageUrl ?: currentItem?.recipe?.imageUrl ?: recipe.imageUrl
+        recipesDao.updateItems(listOf(recipe.toRecipeEntity(imageData = resolvedImageData, imageUrl = resolvedImageUrl)))
+        recipesDao.deleteIngredientsByRecipeIds(listOf(recipe.id))
+        recipesDao.deleteInstructionsByRecipeIds(listOf(recipe.id))
+        recipesDao.updateRecipeIngredients(recipe.ingredients.map { ingredient ->
+            ingredient.toEntity(recipeId = recipe.id, sortOrder = ingredient.sortOrder)
+        })
+        recipesDao.updateRecipeInstructions(recipe.instructions.map { instruction ->
+            instruction.toEntity(recipeId = recipe.id, sortOrder = instruction.sortOrder)
+        })
+    }
+
+    suspend fun deleteRecipe(id: String) = recipesDao.deleteItems(listOf(id))
+
+    suspend fun deleteFamilyRecipes(familyId: String) {
+        recipesDao.getItems(familyId).firstOrNull()?.let { currentFamilyItems ->
+            recipesDao.deleteItems(currentFamilyItems.map { it.recipe.id })
+        }
+    }
+
+    fun observeImageByteArray(
         familyId: String,
         recipeId: String,
-    ) = recipesDao.getImageByteArray(familyId, recipeId)
+    ) = recipesDao.observeImageByteArray(familyId, recipeId)
+
+    suspend fun updateRecipeImageByteArray(
+        familyId: String,
+        recipeId: String,
+        imageData: ByteArray?,
+        lastUpdated: Date = Date(),
+    ) {
+        recipesDao.updateImageByteArray(
+            familyId = familyId,
+            recipeId = recipeId,
+            imageData = imageData,
+            lastUpdated = lastUpdated,
+        )
+    }
+
+    suspend fun updateRecipeImageUrl(
+        familyId: String,
+        recipeId: String,
+        imageUrl: String?,
+        lastUpdated: Date = Date(),
+    ) {
+        recipesDao.updateImageUrl(
+            familyId = familyId,
+            recipeId = recipeId,
+            imageUrl = imageUrl,
+            lastUpdated = lastUpdated,
+        )
+    }
+
+    private fun Recipe.toRecipeEntity(
+        imageData: ByteArray? = null,
+        imageUrl: String? = null,
+    ) = RecipeEntity(
+        id = id,
+        familyId = familyId,
+        itemName = itemName,
+        lastUpdated = lastUpdated,
+        description = description,
+        preparationTimeMin = preparationTimeMin,
+        favourite = favourite,
+        servings = servings,
+        tags = tags,
+        imageData = imageData,
+        imageUrl = imageUrl ?: this.imageUrl,
+    )
+
+    private fun Ingredient.toEntity(
+        recipeId: String,
+        sortOrder: Int,
+    ) = RecipeIngredientEntity(
+        id = id,
+        recipeId = recipeId,
+        sortOrder = sortOrder,
+        amount = amount,
+        measureType = measureType.name,
+        itemName = itemName,
+        completed = completed,
+    )
+
+    private fun Instruction.toEntity(
+        recipeId: String,
+        sortOrder: Int,
+    ) = RecipeInstructionEntity(
+        id = id,
+        recipeId = recipeId,
+        sortOrder = sortOrder,
+        itemName = itemName,
+        completed = completed,
+    )
 }

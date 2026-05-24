@@ -5,385 +5,522 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.logic.RecurrenceCalculator
 import com.example.lifetogether.domain.logic.toBitmap
+import com.example.lifetogether.domain.model.lists.ChecklistEntry
+import com.example.lifetogether.domain.model.lists.ListEntry
+import com.example.lifetogether.domain.model.lists.ListType
+import com.example.lifetogether.domain.model.lists.NoteEntry
+import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
-import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.model.lists.WishListEntry
+import com.example.lifetogether.domain.model.session.authenticatedUserOrNull
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.repository.UserListRepository
+import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
+import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.domain.usecase.item.DeleteRoutineListEntriesUseCase
+import com.example.lifetogether.ui.common.event.UiCommand
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.update
 import java.util.Date
-import javax.inject.Inject
+import java.util.UUID
 
-@HiltViewModel
-class ListDetailsViewModel @Inject constructor(
-    private val sessionRepository: SessionRepository,
+@OptIn(ExperimentalCoroutinesApi::class)
+@HiltViewModel(assistedFactory = ListDetailsViewModel.Factory::class)
+class ListDetailsViewModel @AssistedInject constructor(
+    @Assisted val listId: String,
+    sessionRepository: SessionRepository,
     private val userListRepository: UserListRepository,
     private val deleteRoutineListEntriesUseCase: DeleteRoutineListEntriesUseCase,
 ) : ViewModel() {
-
-    data class ListDetailsScreenState(
-        val uiState: ListDetailsUiState = ListDetailsUiState.Loading,
-        val entries: List<RoutineListEntry> = emptyList(),
-        val imageBitmaps: Map<String, Bitmap> = emptyMap(),
-    )
-
-    private var familyId: String? = null
-    private var uid: String? = null
-    private var currentListId: String? = null
-    private var entriesJob: Job? = null
-    private var listsJob: Job? = null
-    private val imageJobs: MutableMap<String, Job> = mutableMapOf()
-
-    private val _uiState = MutableStateFlow<ListDetailsUiState>(ListDetailsUiState.Loading)
-    private val _entries = MutableStateFlow<List<RoutineListEntry>>(emptyList())
-    private val _imageBitmaps = MutableStateFlow<Map<String, Bitmap>>(emptyMap())
-
-    val screenState: StateFlow<ListDetailsScreenState> = combine(
-        _uiState,
-        _entries,
-        _imageBitmaps,
-    ) { uiState, entries, imageBitmaps ->
-        ListDetailsScreenState(
-            uiState = uiState,
-            entries = entries,
-            imageBitmaps = imageBitmaps,
-        )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = ListDetailsScreenState(),
-    )
-
-    init {
-        viewModelScope.launch {
-            sessionRepository.sessionState.collect { state ->
-                val authenticated = state as? SessionState.Authenticated
-                val newFamilyId = authenticated?.user?.familyId
-                val newUid = authenticated?.user?.uid
-                if (newFamilyId != null && newUid != null &&
-                    (newFamilyId != familyId || newUid != uid)
-                ) {
-                    familyId = newFamilyId
-                    uid = newUid
-                    currentListId?.let { startFetch(it) }
-                } else if (state is SessionState.Unauthenticated) {
-                    familyId = null
-                    uid = null
-                }
-            }
-        }
+    @AssistedFactory
+    interface Factory {
+        fun create(listId: String): ListDetailsViewModel
     }
 
-    fun dismissAlert() {
-        viewModelScope.launch {
-            delay(3000)
-            updateContentState {
-                it.copy(
-                    showAlertDialog = false,
-                    error = "",
+    private var currentList: UserList? = null
+    private val selectionState = MutableStateFlow(ListDetailsSelectionState())
+    private val checklistEditorState = MutableStateFlow(ChecklistEditorState())
+
+    private val contentState: StateFlow<ListDetailsContentSnapshot?> = sessionRepository.sessionState
+        .map { state ->
+            state.authenticatedUserOrNull?.let { user ->
+                val uid = user.uid
+                val familyId = user.familyId ?: return@let null
+                SessionContext(
+                    uid = uid,
+                    familyId = familyId,
                 )
             }
         }
-    }
-
-    fun setUp(listId: String) {
-        if (currentListId == listId && entriesJob != null) return
-        currentListId = listId
-        _uiState.value = ListDetailsUiState.Loading
-        startFetch(listId)
-    }
-
-    private fun startFetch(listId: String) {
-        val familyIdValue = familyId ?: return
-
-        listsJob?.cancel()
-        listsJob = viewModelScope.launch {
-            userListRepository.observeUserLists(familyId = familyIdValue).collect { result ->
-                when (result) {
-                    is Result.Success -> {
-                        val foundList = result.data.firstOrNull { it.id == listId }
-
-                        if (foundList != null) {
-                            when (val currentState = _uiState.value) {
-                                is ListDetailsUiState.Loading -> {
-                                    _uiState.value = ListDetailsUiState.Content(listName = foundList.itemName)
-                                }
-
-                                is ListDetailsUiState.Content -> {
-                                    _uiState.value = currentState.copy(listName = foundList.itemName)
-                                }
-                            }
-                        }
-                    }
-                    is Result.Failure -> showError(result.error)
-                }
+        .distinctUntilChanged()
+        .flatMapLatest { context ->
+            if (context == null) {
+                flowOf(null)
+            } else {
+                observeSelectedListContent(context)
             }
         }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = null,
+        )
 
-        entriesJob?.cancel()
-        entriesJob = viewModelScope.launch {
-            userListRepository.observeRoutineListEntries(familyIdValue).collect { result ->
-                when (result) {
-                    is Result.Success -> {
-                        val sortedEntries = result.data
-                            .sortedWith(compareBy(nullsLast()) { it.nextDate })
+    private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
+    val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
 
-                        _entries.value = sortedEntries
-                        updateImageJobs(sortedEntries)
+    val uiState: StateFlow<ListDetailsUiState> = combine(
+        contentState,
+        selectionState,
+        checklistEditorState,
+    ) { content, selection, checklistEditor ->
+        val state = content?.toUiState(selection, checklistEditor) ?: ListDetailsUiState.Loading
+        state
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = ListDetailsUiState.Loading,
+    )
 
-                        if (_uiState.value is ListDetailsUiState.Loading) {
-                            _uiState.value = ListDetailsUiState.Content()
-                        }
-
-                        syncSelectionState(sortedEntries)
-                    }
-
-                    is Result.Failure -> showError(result.error)
-                }
-            }
+    fun onUiEvent(event: ListDetailsUiEvent) {
+        when (event) {
+            ListDetailsUiEvent.ToggleActionSheet -> toggleActionSheet()
+            ListDetailsUiEvent.StartSelectionMode -> startSelectionMode()
+            is ListDetailsUiEvent.EnterSelectionMode -> enterSelectionMode(event.entryId)
+            ListDetailsUiEvent.ExitSelectionMode -> exitSelectionMode()
+            is ListDetailsUiEvent.ToggleEntrySelection -> toggleEntrySelection(event.entryId)
+            ListDetailsUiEvent.ToggleAllEntrySelection -> toggleAllEntrySelection()
+            ListDetailsUiEvent.ConfirmDeleteSelected -> confirmDeleteSelected()
+            ListDetailsUiEvent.RequestRenameList -> requestRenameList()
+            ListDetailsUiEvent.DismissDialog -> dismissDialog()
+            is ListDetailsUiEvent.RenameListNameChanged -> updateRenameListText(event.value)
+            ListDetailsUiEvent.ConfirmRenameList -> confirmRenameList()
+            is ListDetailsUiEvent.ToggleEntryCompleted -> toggleEntryCompleted(event.entryId)
+            is ListDetailsUiEvent.Checklist.EditRequested -> startEditingChecklistItem(event.entryId)
+            is ListDetailsUiEvent.Checklist.NameChanged -> updateChecklistDraftName(event.value)
+            ListDetailsUiEvent.Checklist.ActionClicked -> saveChecklistDraft()
         }
     }
 
-    fun toggleActionSheet(show: Boolean? = null) {
-        updateContentState { state ->
+    private fun toggleActionSheet(show: Boolean? = null) {
+        updateSelectionStateIfContent { state, _ ->
             state.copy(showActionSheet = show ?: !state.showActionSheet)
         }
     }
 
-    fun startSelectionMode() {
-        updateContentState { state ->
-            applySelectionState(
-                state = state.copy(showActionSheet = false),
-                selectedEntryIds = state.selectedEntryIds,
-                isSelectionModeActive = true,
-            )
-        }
-    }
-
-    fun enterSelectionMode(initialEntryId: String) {
-        updateContentState { state ->
-            applySelectionState(
-                state = state.copy(showActionSheet = false),
-                selectedEntryIds = state.selectedEntryIds + initialEntryId,
-                isSelectionModeActive = true,
-            )
-        }
-    }
-
-    fun exitSelectionMode() {
-        updateContentState { state ->
+    private fun startSelectionMode() {
+        clearChecklistEditorState()
+        updateSelectionStateIfContent { state, _ ->
             state.copy(
-                isSelectionModeActive = false,
-                selectedEntryIds = emptySet(),
-                isAllEntriesSelected = false,
+                isSelectionModeActive = true,
                 showActionSheet = false,
-                showDeleteSelectedDialog = false,
             )
         }
     }
 
-    fun toggleEntrySelection(entryId: String) {
-        updateContentState { state ->
-            val updatedSelection = if (state.selectedEntryIds.contains(entryId)) {
+    private fun enterSelectionMode(initialEntryId: String) {
+        clearChecklistEditorState()
+        updateSelectionStateIfContent { state, _ ->
+            state.copy(
+                isSelectionModeActive = true,
+                selectedEntryIds = state.selectedEntryIds + initialEntryId,
+                showActionSheet = false,
+            )
+        }
+    }
+
+    private fun exitSelectionMode() {
+        selectionState.value = ListDetailsSelectionState()
+    }
+
+    private fun startEditingChecklistItem(entryId: String) {
+        val entry = contentState.value?.listContent?.entries?.filterIsInstance<ChecklistEntry>()
+            ?.firstOrNull { it.id == entryId }
+            ?: return
+        selectionState.value = ListDetailsSelectionState()
+        checklistEditorState.value = ChecklistEditorState(
+            editingEntryId = entry.id,
+            draftName = entry.itemName,
+        )
+    }
+
+    private fun updateChecklistDraftName(value: String) {
+        checklistEditorState.update { state ->
+            state.copy(draftName = value)
+        }
+    }
+
+    private fun saveChecklistDraft() {
+        val currentState = contentState.value ?: return
+        if (currentState.listContent.listType != ListType.CHECKLIST) return
+
+        val editorState = checklistEditorState.value
+        val draftName = editorState.draftName.trim()
+        if (draftName.isBlank()) {
+            showError("Name cannot be empty")
+            return
+        }
+
+        val now = Date()
+        val existingEntry = currentState.listContent.entries
+            .filterIsInstance<ChecklistEntry>()
+            .firstOrNull { it.id == editorState.editingEntryId }
+
+        val draft = existingEntry?.copy(
+            itemName = draftName,
+        ) ?: ChecklistEntry(
+            id = UUID.randomUUID().toString(),
+            familyId = currentState.familyId,
+            listId = listId,
+            itemName = draftName,
+            isChecked = false,
+            dateCreated = now,
+        )
+
+        viewModelScope.launch {
+            val result = if (existingEntry == null) {
+                userListRepository.saveChecklistEntry(draft).mapUnitSuccess()
+            } else {
+                userListRepository.updateChecklistEntry(draft)
+            }
+
+            when (result) {
+                is Result.Success -> clearChecklistEditorState()
+                is Result.Failure -> showError(result.error.toUserMessage())
+            }
+        }
+    }
+
+    private fun toggleEntrySelection(entryId: String) {
+        updateSelectionStateIfContent { state, _ ->
+            val updatedSelection = if (entryId in state.selectedEntryIds) {
                 state.selectedEntryIds - entryId
             } else {
                 state.selectedEntryIds + entryId
             }
 
-            applySelectionState(
-                state,
+            state.copy(
+                isSelectionModeActive = true,
                 selectedEntryIds = updatedSelection,
-                isSelectionModeActive = state.isSelectionModeActive,
             )
         }
     }
 
-    fun toggleAllEntrySelection() {
-        updateContentState { state ->
-            val allEntryIds = _entries.value.mapNotNull { it.id }.toSet()
-            if (allEntryIds.isEmpty()) return@updateContentState state
-
-            if (state.isAllEntriesSelected) {
-                state.copy(
-                    isSelectionModeActive = false,
-                    selectedEntryIds = emptySet(),
-                    isAllEntriesSelected = false,
-                    showDeleteSelectedDialog = false,
-                )
+    private fun toggleAllEntrySelection() {
+        updateSelectionStateIfContent { state, content ->
+            val allEntryIds = content.listContent.entries.map { it.id }.toSet()
+            if (allEntryIds.isEmpty()) {
+                state
+            } else if (state.selectedEntryIds.containsAll(allEntryIds)) {
+                ListDetailsSelectionState()
             } else {
-                applySelectionState(
-                    state,
-                    selectedEntryIds = allEntryIds,
+                state.copy(
                     isSelectionModeActive = true,
-                )
-            }
-        }
-    }
-
-    fun requestDeleteSelected() {
-        updateContentState { state ->
-            if (state.selectedEntryIds.isEmpty()) {
-                state.copy(showActionSheet = false)
-            } else {
-                state.copy(
+                    selectedEntryIds = allEntryIds,
                     showActionSheet = false,
-                    showDeleteSelectedDialog = true,
                 )
             }
         }
     }
 
-    fun dismissDeleteSelectedDialog() {
-        updateContentState { state ->
-            state.copy(showDeleteSelectedDialog = false)
+    private fun requestRenameList() {
+        val list = currentList ?: return
+        updateSelectionStateIfContent { state, _ ->
+            state.copy(
+                showActionSheet = false,
+                dialog = ListDetailsDialogState.RenameList(name = list.itemName),
+            )
         }
     }
 
-    fun confirmDeleteSelected() {
-        val selectedEntries = _entries.value.filter { it.id in selectedEntryIds() }
-        if (selectedEntries.isEmpty()) {
-            dismissDeleteSelectedDialog()
+    private fun dismissDialog() {
+        updateSelectionStateIfContent { state, _ ->
+            state.copy(dialog = null)
+        }
+    }
+
+    private fun updateRenameListText(value: String) {
+        updateSelectionStateIfContent { state, _ ->
+            state.copy(dialog = (state.dialog as? ListDetailsDialogState.RenameList)?.copy(name = value))
+        }
+    }
+
+    private fun confirmRenameList() {
+        val current = currentList ?: return
+        val newName = (selectionState.value.dialog as? ListDetailsDialogState.RenameList)?.name?.trim() ?: return
+        if (newName.isBlank()) {
+            showError("List name cannot be empty")
+            return
+        }
+        if (newName == current.itemName) {
+            showError("List already called $newName")
             return
         }
 
+        val updatedList = current.copy(
+            itemName = newName,
+        )
+
         viewModelScope.launch {
-            when (val result = deleteRoutineListEntriesUseCase(selectedEntries)) {
+            when (val result = userListRepository.updateUserList(updatedList)) {
+                is Result.Success -> dismissDialog()
+                is Result.Failure -> showError(result.error.toUserMessage())
+            }
+        }
+    }
+
+    private fun confirmDeleteSelected() {
+        val currentState = contentState.value ?: return
+        val selectedEntryIds = selectionState.value.selectedEntryIds
+        val selectedEntries = currentState.listContent.entries.filter { it.id in selectedEntryIds }
+        if (selectedEntries.isEmpty()) return
+
+        viewModelScope.launch {
+            val result = when (currentState.listContent.listType) {
+                ListType.ROUTINE -> deleteRoutineListEntriesUseCase(selectedEntries.filterIsInstance<RoutineListEntry>())
+                ListType.WISH_LIST -> userListRepository.deleteWishListEntries(selectedEntries.map { it.id })
+                ListType.NOTES -> userListRepository.deleteNoteEntries(selectedEntries.map { it.id })
+                ListType.CHECKLIST -> userListRepository.deleteChecklistEntries(selectedEntries.map { it.id })
+            }
+
+            when (result) {
                 is Result.Success -> {
-                    updateContentState { state ->
-                        state.copy(
-                            isSelectionModeActive = false,
-                            selectedEntryIds = emptySet(),
-                            isAllEntriesSelected = false,
-                            showActionSheet = false,
-                            showDeleteSelectedDialog = false,
-                        )
-                    }
+                    exitSelectionMode()
                 }
 
                 is Result.Failure -> {
-                    updateContentState { state ->
+                    selectionState.update { state ->
                         state.copy(
                             showActionSheet = false,
-                            showDeleteSelectedDialog = false,
                         )
                     }
-                    showError(result.error)
+                    showError(result.error.toUserMessage())
                 }
             }
         }
     }
 
-    fun completeEntry(entry: RoutineListEntry) {
-        val updatedEntry = RecurrenceCalculator.applyCompletion(entry, completedAt = Date())
+    private fun toggleEntryCompleted(entryId: String) {
+        val entry = contentState.value?.listContent?.entries?.firstOrNull { it.id == entryId } ?: return
         viewModelScope.launch {
-            when (val result = userListRepository.updateRoutineListEntry(updatedEntry)) {
+            val result = when (entry) {
+                is RoutineListEntry -> {
+                    val updatedEntry = RecurrenceCalculator.applyCompletion(entry, completedAt = Date())
+                    userListRepository.updateRoutineListEntry(updatedEntry)
+                }
+
+                is ChecklistEntry -> userListRepository.updateChecklistEntry(
+                    entry.copy(
+                        isChecked = !entry.isChecked,
+                    ),
+                )
+
+                is WishListEntry -> userListRepository.updateWishListEntry(
+                    entry.copy(
+                        isPurchased = !entry.isPurchased,
+                    ),
+                )
+
+                else -> Result.Success(Unit)
+            }
+
+            when (result) {
                 is Result.Success -> Unit
-                is Result.Failure -> showError(result.error)
+                is Result.Failure -> showError(result.error.toUserMessage())
             }
         }
     }
 
-    private fun updateImageJobs(entries: List<RoutineListEntry>) {
-        val newIds = entries.mapNotNull { it.id }.toSet()
-        val currentIds = imageJobs.keys.toSet()
+    private fun observeSelectedListContent(context: SessionContext): Flow<ListDetailsContentSnapshot?> {
+        return userListRepository.observeUserLists(context.familyId)
+            .successData()
+            .map { lists -> lists.firstOrNull { it.id == listId } }
+            .flatMapLatest { list ->
+                currentList = list
+                if (list == null) {
+                    flowOf(null)
+                } else {
+                    observeListEntries(context.familyId, list).flatMapLatest { entries ->
+                        when (list.type) {
+                            ListType.ROUTINE -> observeRoutineImageBitmaps(entries.filterIsInstance<RoutineListEntry>())
+                                .map { imageBitmaps ->
+                                    list.toContentSnapshot(entries, imageBitmaps)
+                                }
 
-        (currentIds - newIds).forEach { entryId ->
-            imageJobs.remove(entryId)?.cancel()
-            _imageBitmaps.update { currentBitmaps ->
-                currentBitmaps - entryId
-            }
-        }
-
-        (newIds - currentIds).forEach { entryId ->
-            imageJobs[entryId] = viewModelScope.launch {
-                userListRepository.observeRoutineImageByteArray(entryId).collect { result ->
-                    when (result) {
-                        is Result.Success -> {
-                            _imageBitmaps.update { currentBitmaps ->
-                                currentBitmaps + (entryId to result.data.toBitmap())
-                            }
-                        }
-
-                        is Result.Failure -> {
-                            _imageBitmaps.update { currentBitmaps ->
-                                currentBitmaps - entryId
-                            }
+                            else -> flowOf(list.toContentSnapshot(entries, emptyMap()))
                         }
                     }
                 }
             }
+    }
+
+    private fun observeListEntries(
+        familyId: String,
+        list: UserList,
+    ): Flow<List<ListEntry>> {
+        return when (list.type) {
+            ListType.ROUTINE -> userListRepository.observeRoutineListEntriesByListId(familyId, listId)
+            ListType.WISH_LIST -> userListRepository.observeWishListEntriesByListId(familyId, listId)
+            ListType.NOTES -> userListRepository.observeNoteEntriesByListId(familyId, listId)
+            ListType.CHECKLIST -> userListRepository.observeChecklistEntriesByListId(familyId, listId)
+        }.successData()
+    }
+
+    private fun <T> Flow<Result<T, AppError>>.successData(): Flow<T> {
+        return transformLatest { result ->
+            when (result) {
+                is Result.Success -> emit(result.data)
+                is Result.Failure -> showError(result.error.toUserMessage())
+            }
         }
     }
 
-    private fun selectedEntryIds(): Set<String> {
-        return (_uiState.value as? ListDetailsUiState.Content)?.selectedEntryIds.orEmpty()
+    private fun observeRoutineImageBitmaps(entries: List<RoutineListEntry>): Flow<Map<String, Bitmap>> {
+        return if (entries.isEmpty()) {
+            flowOf(emptyMap())
+        } else {
+            combine(
+                entries.map { entry ->
+                    userListRepository.observeRoutineImageByteArray(entry.id)
+                        .map { result ->
+                            when (result) {
+                                is Result.Success -> entry.id to result.data.toBitmap()
+                                is Result.Failure -> entry.id to null
+                            }
+                        }
+                },
+            ) { bitmaps ->
+                bitmaps.mapNotNull { (entryId, bitmap) ->
+                    bitmap?.let { entryId to it }
+                }.toMap()
+            }
+        }
     }
 
-    private fun syncSelectionState(entries: List<RoutineListEntry>) {
-        updateContentState { state ->
-            applySelectionState(
-                state = state,
-                selectedEntryIds = state.selectedEntryIds,
-                isSelectionModeActive = state.isSelectionModeActive,
-                validEntryIds = entries.mapNotNull { it.id }.toSet(),
+    private fun showError(message: String) {
+        viewModelScope.launch {
+            _uiCommands.send(
+                UiCommand.ShowSnackbar(
+                    message = message,
+                    withDismissAction = true,
+                ),
             )
         }
     }
 
-    private fun updateContentState(
-        update: (ListDetailsUiState.Content) -> ListDetailsUiState.Content,
+    private inline fun updateSelectionStateIfContent(
+        crossinline block: (ListDetailsSelectionState, ListDetailsContentSnapshot) -> ListDetailsSelectionState,
     ) {
-        _uiState.update { state ->
-            when (state) {
-                is ListDetailsUiState.Loading -> state
-                is ListDetailsUiState.Content -> update(state)
-            }
+        val content = contentState.value ?: return
+        selectionState.update { state ->
+            block(state, content)
         }
     }
 
-    private fun applySelectionState(
-        state: ListDetailsUiState.Content,
-        selectedEntryIds: Set<String>,
-        isSelectionModeActive: Boolean,
-        validEntryIds: Set<String> = _entries.value.mapNotNull { it.id }.toSet(),
-    ): ListDetailsUiState.Content {
-        val validSelection = selectedEntryIds.intersect(validEntryIds)
+    private fun UserList.toContentSnapshot(
+        entries: List<ListEntry>,
+        imageBitmaps: Map<String, Bitmap>,
+    ): ListDetailsContentSnapshot {
+        val listContent = when (type) {
+            ListType.ROUTINE -> ListDetailsListContent.Routines(
+                listName = itemName,
+                entries = entries.filterIsInstance<RoutineListEntry>(),
+                imageBitmaps = imageBitmaps,
+            )
 
-        return state.copy(
-            isSelectionModeActive = isSelectionModeActive && validEntryIds.isNotEmpty(),
-            selectedEntryIds = validSelection,
-            isAllEntriesSelected = validEntryIds.isNotEmpty() && validSelection.size == validEntryIds.size,
-            showDeleteSelectedDialog = state.showDeleteSelectedDialog && validSelection.isNotEmpty(),
+            ListType.WISH_LIST -> ListDetailsListContent.Wishes(
+                listName = itemName,
+                entries = entries.filterIsInstance<WishListEntry>(),
+            )
+
+            ListType.NOTES -> ListDetailsListContent.Notes(
+                listName = itemName,
+                entries = entries.filterIsInstance<NoteEntry>(),
+            )
+
+            ListType.CHECKLIST -> ListDetailsListContent.CheckItems(
+                listName = itemName,
+                entries = entries.filterIsInstance<ChecklistEntry>(),
+            )
+        }
+        return ListDetailsContentSnapshot(
+            familyId = familyId,
+            listContent = listContent,
         )
     }
 
-    private fun showError(message: String) {
-        _uiState.update { state ->
-            when (state) {
-                is ListDetailsUiState.Loading -> {
-                    ListDetailsUiState.Content(
-                        showAlertDialog = true,
-                        error = message,
-                    )
-                }
+    private fun ListDetailsContentSnapshot.toUiState(
+        selectionState: ListDetailsSelectionState,
+        checklistEditorState: ChecklistEditorState,
+    ): ListDetailsUiState.Content {
+        val validEntryIds = listContent.entries.map { it.id }.toSet()
+        val selectedEntryIds = selectionState.selectedEntryIds.intersect(validEntryIds)
+        val resolvedChecklistEditorState = if (
+            listContent.listType == ListType.CHECKLIST &&
+            checklistEditorState.editingEntryId != null &&
+            checklistEditorState.editingEntryId !in validEntryIds
+        ) {
+            ChecklistEditorState()
+        } else {
+            checklistEditorState
+        }
 
-                is ListDetailsUiState.Content -> {
-                    state.copy(
-                        showAlertDialog = true,
-                        error = message,
-                    )
-                }
-            }
+        return ListDetailsUiState.Content(
+            familyId = familyId,
+            listContent = listContent,
+            isSelectionMode = selectionState.isSelectionModeActive && validEntryIds.isNotEmpty(),
+            selectedEntryIds = selectedEntryIds,
+            checklistEditorState = resolvedChecklistEditorState,
+            isAllEntriesSelected = validEntryIds.isNotEmpty() && selectedEntryIds.size == validEntryIds.size,
+            showActionSheet = selectionState.showActionSheet,
+            dialog = selectionState.dialog,
+        )
+    }
+
+    private data class SessionContext(
+        val uid: String,
+        val familyId: String,
+    )
+
+    private data class ListDetailsContentSnapshot(
+        val familyId: String,
+        val listContent: ListDetailsListContent,
+    )
+
+    private data class ListDetailsSelectionState(
+        val isSelectionModeActive: Boolean = false,
+        val selectedEntryIds: Set<String> = emptySet(),
+        val showActionSheet: Boolean = false,
+        val dialog: ListDetailsDialogState? = null,
+    )
+
+    private fun clearChecklistEditorState() {
+        checklistEditorState.value = ChecklistEditorState()
+    }
+
+    private fun <T> Result<T, AppError>.mapUnitSuccess(): Result<Unit, AppError> {
+        return when (this) {
+            is Result.Success -> Result.Success(Unit)
+            is Result.Failure -> Result.Failure(error)
         }
     }
 }

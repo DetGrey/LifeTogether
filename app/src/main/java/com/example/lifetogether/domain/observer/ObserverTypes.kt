@@ -1,6 +1,6 @@
-package com.example.lifetogether.domain.observer
+package com.example.lifetogether.domain.sync
 
-enum class ObserverKey {
+enum class SyncKey {
     USER,
     FAMILY,
     GROCERY_LIST,
@@ -11,18 +11,15 @@ enum class ObserverKey {
     TIP_TRACKER,
     GALLERY_ALBUMS,
     GALLERY_MEDIA,
+    MEAL_PLANNER,
     USER_LISTS,
     ROUTINE_LIST_ENTRIES,
+    WISH_LIST_ENTRIES,
+    NOTE_ENTRIES,
+    CHECKLIST_ENTRIES,
 }
 
-enum class ObserverSyncState {
-    IDLE,
-    UPDATING,
-    READY,
-    FAILED,
-}
-
-data class ObserverContext(
+data class SyncContext(
     val uid: String? = null,
     val familyId: String? = null,
 )

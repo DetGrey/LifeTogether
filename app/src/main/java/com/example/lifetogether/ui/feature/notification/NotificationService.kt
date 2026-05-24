@@ -5,13 +5,26 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.lifetogether.MainActivity
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.sendFCMNotification
+import com.example.lifetogether.ui.navigation.AppRoute
+import com.example.lifetogether.ui.navigation.NotificationDestination
 import com.example.lifetogether.util.Constants
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class NotificationService(private val context: Context) {
+@Singleton
+class NotificationService @Inject constructor(
+    @param:ApplicationContext private val context: Context,
+) {
+    private companion object {
+        const val TAG = "NotificationService"
+    }
+
     private val notificationManager = context.getSystemService(NotificationManager::class.java)
 
     // Method to create the notification channel with customizable parameters
@@ -22,10 +35,10 @@ class NotificationService(private val context: Context) {
         importance: Int = NotificationManager.IMPORTANCE_DEFAULT,
     ) {
         val existingChannel = notificationManager.getNotificationChannel(channelId)
-        println("Existing channel: $existingChannel")
+        Log.d(TAG, "Existing channel: $existingChannel")
         if (existingChannel == null) {
             // Create the channel if it doesn't exist
-            println("Creating notification channel: $channelName")
+            Log.d(TAG, "Creating notification channel: $channelName")
             val channel = NotificationChannel(channelId, channelName, importance).apply {
                 description = channelDescription
             }
@@ -40,11 +53,16 @@ class NotificationService(private val context: Context) {
             "This is the channel for all Grocery List notifications",
         )
         createNotificationChannel(
+            Constants.MEAL_PLAN_CHANNEL,
+            "Meal Plan Reminders",
+            "Reminders for your upcoming meal plans",
+            NotificationManager.IMPORTANCE_HIGH,
+        )
+        createNotificationChannel(
             Constants.DEFAULT_CHANNEL,
             "Default Notifications",
             "This is the channel for all random notifications",
         )
-        // ETC
     }
 
     // Method to show a customizable notification
@@ -59,12 +77,19 @@ class NotificationService(private val context: Context) {
         autoCancel: Boolean = true,
         destination: String? = null,
     ) {
-        println("Trying to create and send notification: $message")
+        Log.d(TAG, "Trying to create and send notification: $message")
 
         sendFCMNotification(
-            context,
-            tokens,
-            channelId, title, message, smallIconResId, notificationId, priority, autoCancel, destination,
+            context = context,
+            tokens = tokens,
+            channelId = channelId,
+            title = title,
+            message = message,
+            smallIconResId = smallIconResId,
+            notificationId = notificationId,
+            priority = priority,
+            autoCancel = autoCancel,
+            destination = destination,
         )
     }
 
@@ -76,7 +101,9 @@ class NotificationService(private val context: Context) {
         notificationId: Int = System.currentTimeMillis().toInt(),
         priority: Int = NotificationCompat.PRIORITY_DEFAULT,
         autoCancel: Boolean = true,
-        destination: String? = null,
+        bigText: String? = null,
+        category: String? = null,
+        destination: NotificationDestination? = null,
     ) {
         val notificationBuilder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(smallIconResId)
@@ -85,6 +112,12 @@ class NotificationService(private val context: Context) {
             .setPriority(priority)
             .setAutoCancel(autoCancel)
 
+        if (bigText != null) {
+            notificationBuilder.setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
+        }
+        if (category != null) {
+            notificationBuilder.setCategory(category)
+        }
         destination?.let {
             notificationBuilder.setContentIntent(createPendingIntent(it))
         }
@@ -93,10 +126,14 @@ class NotificationService(private val context: Context) {
         notificationManager.notify(notificationId, notification)
     }
 
-    private fun createPendingIntent(destination: String): PendingIntent {
+    fun routeChainFromDestinationString(destination: String): List<AppRoute> {
+        return NotificationDestination.fromKey(destination)?.toRouteChain() ?: emptyList()
+    }
+
+    private fun createPendingIntent(destination: NotificationDestination): PendingIntent {
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            putExtra("destination", destination)
+            putExtra("destination", destination.key)
         }
 
         return PendingIntent.getActivity(

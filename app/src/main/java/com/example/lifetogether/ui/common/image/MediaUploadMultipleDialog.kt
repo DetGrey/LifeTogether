@@ -1,158 +1,323 @@
 package com.example.lifetogether.ui.common.image
 
+import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.rememberAsyncImagePainter
+import com.example.lifetogether.domain.logic.getVideoThumbnail
 import com.example.lifetogether.domain.logic.isImageUri
 import com.example.lifetogether.domain.logic.isVideoUri
-import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.model.sealed.UploadState
+import com.example.lifetogether.domain.result.AppError
+import com.example.lifetogether.domain.result.Result
+import com.example.lifetogether.domain.result.toUserMessage
+import com.example.lifetogether.ui.common.button.PrimaryButton
+import com.example.lifetogether.ui.common.button.SecondaryButton
+import com.example.lifetogether.ui.common.text.TextDefault
+import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MediaUploadMultipleDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
+    onUpload: suspend (List<Uri>, (current: Int, total: Int) -> Unit) -> Result<Unit, AppError>,
     dialogTitle: String,
     dialogMessage: String,
-    imageType: ImageType.GalleryMedia,
     dismissButtonMessage: String,
     confirmButtonMessage: String,
 ) {
-    val viewModel: MediaUploadViewModel = hiltViewModel()
     val context = LocalContext.current
-    val selectedMediaUris by viewModel.selectedMediaUris.collectAsState()
-    val videoThumbnails by viewModel.videoThumbnails.collectAsState()
-    val uploadState by viewModel.uploadState.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    var selectedMediaUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
+    var videoThumbnails by remember { mutableStateOf<Map<Uri, Bitmap?>>(emptyMap()) }
+    var uploadState by remember { mutableStateOf<UploadState>(UploadState.Idle) }
+    var uploadProgressText by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf("") }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents(),
     ) { uris: List<Uri>? ->
         uris?.let { selectedUris ->
-            // Filter the URIs here
             val validMediaUris = selectedUris.filter { uri ->
                 val mimeType = context.contentResolver.getType(uri)
                 mimeType?.startsWith("image/") == true || mimeType?.startsWith("video/") == true
             }
             if (validMediaUris.isNotEmpty()) {
-                viewModel.setSelectedMediaUris(validMediaUris, context)
-            } else {
-                // Handle case where no valid images or videos were selected
+                selectedMediaUris = validMediaUris
+                uploadState = UploadState.Idle
+                uploadProgressText = ""
+                error = ""
+
+                val currentUrisSet = validMediaUris.toSet()
+                videoThumbnails = videoThumbnails.filterKeys { it in currentUrisSet }
+
+                validMediaUris.forEach { uri ->
+                    if (isVideoUri(context, uri) && !videoThumbnails.containsKey(uri)) {
+                        coroutineScope.launch(Dispatchers.IO) {
+                            val thumbnail = getVideoThumbnail(context, uri)
+                            withContext(Dispatchers.Main) {
+                                videoThumbnails = videoThumbnails + (uri to thumbnail)
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 
-    AlertDialog(
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        title = { Text(text = dialogTitle) },
-        text = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(text = dialogMessage)
-                Spacer(modifier = Modifier.height(10.dp))
-                Button(onClick = { launcher.launch("*/*") }) {
-                    Text(text = "Add Photos & Videos")
+        sheetState = sheetState,
+    ) {
+        MediaUploadSheetContent(
+            title = dialogTitle,
+            message = dialogMessage,
+            selectedMediaUris = selectedMediaUris,
+            videoThumbnails = videoThumbnails,
+            error = error,
+            isUploading = uploadState is UploadState.Uploading,
+            uploadProgressText = uploadProgressText,
+            dismissButtonMessage = dismissButtonMessage,
+            confirmButtonMessage = confirmButtonMessage,
+            onPickMedia = { launcher.launch("*/*") },
+            onDismiss = onDismiss,
+            onConfirm = {
+                if (selectedMediaUris.isEmpty()) {
+                    error = "No files selected."
+                    return@MediaUploadSheetContent
                 }
-                Spacer(modifier = Modifier.height(10.dp))
-                LazyRow {
-                    items(selectedMediaUris) { uri ->
-                        Box(
-                            modifier = Modifier
-                                .size(75.dp)
-                                .clip(RectangleShape)
-                                .background(Color.Gray),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            if (isImageUri(context, uri)) {
+
+                uploadState = UploadState.Uploading
+                uploadProgressText = ""
+                error = ""
+
+                coroutineScope.launch(Dispatchers.IO) {
+                    when (val result = onUpload(selectedMediaUris) { current, total ->
+                        coroutineScope.launch(Dispatchers.Main) {
+                            uploadProgressText = "$current of $total uploading"
+                        }
+                    }) {
+                        is Result.Success -> {
+                            withContext(Dispatchers.Main) {
+                                selectedMediaUris = emptyList()
+                                videoThumbnails = emptyMap()
+                                uploadProgressText = ""
+                                onConfirm()
+                            }
+                        }
+                        is Result.Failure -> {
+                            withContext(Dispatchers.Main) {
+                                uploadState = UploadState.Idle
+                                uploadProgressText = ""
+                                error = result.error.toUserMessage()
+                            }
+                        }
+                    }
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun MediaUploadSheetContent(
+    title: String,
+    message: String,
+    selectedMediaUris: List<Uri>,
+    videoThumbnails: Map<Uri, Bitmap?>,
+    error: String,
+    isUploading: Boolean,
+    uploadProgressText: String,
+    dismissButtonMessage: String,
+    confirmButtonMessage: String,
+    onPickMedia: () -> Unit,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    val context = LocalContext.current
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(LifeTogetherTokens.spacing.medium),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+    ) {
+        TextSubHeadingMedium(text = title)
+
+        TextDefault(text = message)
+
+        PrimaryButton(
+            modifier = Modifier.fillMaxWidth(),
+            text = "Add Photos & Videos",
+            onClick = onPickMedia,
+            enabled = !isUploading,
+        )
+
+        if (selectedMediaUris.isNotEmpty()) {
+            LazyRow {
+                items(selectedMediaUris) { uri ->
+                    Box(
+                        modifier = Modifier
+                            .size(75.dp)
+                            .clip(RectangleShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (isImageUri(context, uri)) {
+                            Image(
+                                painter = rememberAsyncImagePainter(uri),
+                                contentDescription = "Selected Image",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop,
+                            )
+                        } else if (isVideoUri(context, uri)) {
+                            val thumbnailBitmap = videoThumbnails[uri]
+                            if (thumbnailBitmap != null) {
                                 Image(
-                                    painter = rememberAsyncImagePainter(uri),
-                                    contentDescription = "Selected Image",
+                                    bitmap = thumbnailBitmap.asImageBitmap(),
+                                    contentDescription = "Video Thumbnail",
                                     modifier = Modifier.fillMaxSize(),
                                     contentScale = ContentScale.Crop,
                                 )
-                            } else if (isVideoUri(context, uri)) {
-                                val thumbnailBitmap = videoThumbnails[uri]
-                                if (thumbnailBitmap != null) {
-                                    Image(
-                                        bitmap = thumbnailBitmap.asImageBitmap(),
-                                        contentDescription = "Video Thumbnail",
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentScale = ContentScale.Crop,
-                                    )
-                                } else {
-                                    // Show a placeholder or loading for video thumbnail
-                                    Icon(
-                                        imageVector = Icons.Filled.PlayArrow,
-                                        contentDescription = "Video Icon",
-                                        tint = Color.White,
-                                    )
-                                    // Could also show a mini CircularProgressIndicator here while thumbnail generates
-                                }
                             } else {
-                                // Fallback for unknown types or if type detection fails
-                                Text("?", color = Color.White)
+                                Icon(
+                                    imageVector = Icons.Filled.PlayArrow,
+                                    contentDescription = "Video Icon",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
+                        } else {
+                            Text("?", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
                     }
+                    Box(modifier = Modifier.width(LifeTogetherTokens.spacing.small))
                 }
+            }
+        }
 
-                when (uploadState) {
-                    is UploadState.Uploading -> CircularProgressIndicator()
-                    is UploadState.Success -> {
-                        Text(text = "Upload Successful")
-                        viewModel.resetViewModel()
-                        onConfirm()
-                    }
-                    is UploadState.Failure -> {
-                        Text(text = "Upload Failed: ${(uploadState as UploadState.Failure).error}")
-                        onDismiss()
-                    }
-                    else -> {}
-                }
-            }
-        },
-        dismissButton = {
-            Button(onClick = onDismiss) {
-                Text(text = dismissButtonMessage)
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { viewModel.uploadMediaItems(imageType.familyId, imageType.albumId, context) },
-            ) {
-                Text(text = confirmButtonMessage)
-            }
-        },
-    )
+        AnimatedVisibility(
+            visible = error.isNotBlank() || uploadProgressText.isNotBlank(),
+            enter = fadeIn(),
+            exit = fadeOut(),
+        ) {
+            Text(
+                text = uploadProgressText.ifBlank { error },
+                color = if (uploadProgressText.isNotBlank()) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error,
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+        ) {
+            SecondaryButton(
+                modifier = Modifier.weight(1f),
+                text = dismissButtonMessage,
+                onClick = onDismiss,
+            )
+            PrimaryButton(
+                modifier = Modifier.weight(1f),
+                text = if (isUploading) "Uploading..." else confirmButtonMessage,
+                onClick = onConfirm,
+                enabled = selectedMediaUris.isNotEmpty(),
+                loading = isUploading,
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun MediaUploadSheetIdlePreview() {
+    LifeTogetherTheme {
+        Surface {
+            MediaUploadSheetContent(
+                title = "Upload media",
+                message = "Choose photos or videos to upload.",
+                selectedMediaUris = emptyList(),
+                videoThumbnails = emptyMap(),
+                error = "",
+                isUploading = false,
+                uploadProgressText = "",
+                dismissButtonMessage = "Cancel",
+                confirmButtonMessage = "Upload",
+                onPickMedia = {},
+                onDismiss = {},
+                onConfirm = {},
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun MediaUploadSheetErrorPreview() {
+    LifeTogetherTheme {
+        Surface {
+            MediaUploadSheetContent(
+                title = "Upload media",
+                message = "Choose photos or videos to upload.",
+                selectedMediaUris = emptyList(),
+                videoThumbnails = emptyMap(),
+                error = "No files selected.",
+                isUploading = false,
+                uploadProgressText = "",
+                dismissButtonMessage = "Cancel",
+                confirmButtonMessage = "Upload",
+                onPickMedia = {},
+                onDismiss = {},
+                onConfirm = {},
+            )
+        }
+    }
 }

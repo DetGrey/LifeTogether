@@ -31,7 +31,7 @@ data class GuideProgressState(
             localUpdatedAt: Date = Date(),
             lastUploadedAt: Date? = null,
         ): GuideProgressState? {
-            val resolvedGuideId = guide.id?.takeIf { it.isNotBlank() } ?: return null
+            val resolvedGuideId = guide.id.takeIf { it.isNotBlank() } ?: return null
             return GuideProgressState(
                 id = documentId(guide.familyId, uid, resolvedGuideId),
                 familyId = guide.familyId,

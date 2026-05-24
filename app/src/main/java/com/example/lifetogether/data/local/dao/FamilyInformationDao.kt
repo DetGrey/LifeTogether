@@ -8,6 +8,7 @@ import com.example.lifetogether.data.model.FamilyEntity
 import com.example.lifetogether.data.model.FamilyMemberEntity
 import com.example.lifetogether.util.Constants
 import kotlinx.coroutines.flow.Flow
+import java.util.Date
 
 @Dao
 interface FamilyInformationDao {
@@ -22,7 +23,10 @@ interface FamilyInformationDao {
 
     // Query to get family details by familyId (FamilyEntity)
     @Query("SELECT * FROM ${Constants.FAMILIES_TABLE} WHERE family_id = :familyId LIMIT 1")
-    fun getFamilyInfo(familyId: String): Flow<FamilyEntity>
+    fun getFamilyInfo(familyId: String): Flow<FamilyEntity?>
+
+    @Query("SELECT * FROM ${Constants.FAMILIES_TABLE} WHERE family_id = :familyId LIMIT 1")
+    suspend fun getFamilyOnce(familyId: String): FamilyEntity?
 
     // Query to get family members by familyId (FamilyMemberEntity)
     @Query("SELECT * FROM ${Constants.FAMILY_MEMBERS_TABLE} WHERE family_id = :familyId")
@@ -32,14 +36,31 @@ interface FamilyInformationDao {
     @Query("SELECT image_data FROM ${Constants.FAMILIES_TABLE} WHERE family_id = :familyId LIMIT 1")
     fun getImageByteArray(familyId: String): Flow<ByteArray?>
 
-    @Query("SELECT CASE WHEN image_data IS NOT NULL THEN 1 ELSE 0 END FROM ${Constants.FAMILIES_TABLE} WHERE family_id = :familyId LIMIT 1")
-    suspend fun hasImageData(familyId: String): Int?
+    @Query("UPDATE ${Constants.FAMILIES_TABLE} SET image_data = :imageData, last_updated = :lastUpdated WHERE family_id = :familyId")
+    suspend fun updateImageByteArray(
+        familyId: String,
+        imageData: ByteArray?,
+        lastUpdated: Date,
+    )
 
-    // Delete all entries in the family table
-    @Query("DELETE FROM ${Constants.FAMILIES_TABLE}")
-    fun deleteFamiliesTable()
+    @Query("UPDATE ${Constants.FAMILIES_TABLE} SET image_url = :imageUrl, last_updated = :lastUpdated WHERE family_id = :familyId")
+    suspend fun updateImageUrl(
+        familyId: String,
+        imageUrl: String?,
+        lastUpdated: Date,
+    )
 
-    // Delete all entries in the family members table
-    @Query("DELETE FROM ${Constants.FAMILY_MEMBERS_TABLE}")
-    fun deleteFamilyMembersTable()
+    @Query("UPDATE ${Constants.FAMILIES_TABLE} SET together_since = :togetherSince, last_updated = :lastUpdated WHERE family_id = :familyId")
+    suspend fun updateTogetherSince(
+        familyId: String,
+        togetherSince: Date?,
+        lastUpdated: Date,
+    )
+
+    @Query("UPDATE ${Constants.FAMILY_MEMBERS_TABLE} SET name = :name WHERE uid = :uid")
+    suspend fun updateMemberName(uid: String, name: String)
+
+    @Query("UPDATE ${Constants.FAMILIES_TABLE} SET last_updated = :lastUpdated WHERE family_id = :familyId")
+    suspend fun updateLastUpdated(familyId: String, lastUpdated: Date)
+
 }

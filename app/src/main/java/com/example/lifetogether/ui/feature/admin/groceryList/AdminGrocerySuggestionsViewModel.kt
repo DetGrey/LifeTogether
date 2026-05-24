@@ -1,101 +1,99 @@
-package com.example.lifetogether.ui.feature.admin.groceryList
+package com.example.lifetogether.ui.feature.admin.groceryList.suggestions
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
-import com.example.lifetogether.domain.repository.AdminRepository
-import com.example.lifetogether.domain.repository.CategoryRepository
 import com.example.lifetogether.domain.repository.GroceryRepository
 import com.example.lifetogether.domain.result.Result
+import com.example.lifetogether.domain.result.toUserMessage
+import com.example.lifetogether.ui.common.event.UiCommand
+import com.example.lifetogether.util.UNCATEGORIZED_CATEGORY
+import com.example.lifetogether.util.UNCATEGORIZED_CATEGORY_NAME
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.UUID
 import javax.inject.Inject
-
-private const val ALERT_DISMISS_DELAY_MS = 3000L
-private const val UNCATEGORIZED_NAME = "Uncategorized"
-private val UNCATEGORIZED_CATEGORY = Category(
-    emoji = "❓️",
-    name = UNCATEGORIZED_NAME,
-)
-
-data class AdminGrocerySuggestionsUiState(
-    val showDeleteCategoryConfirmationDialog: Boolean = false,
-    val selectedSuggestion: GrocerySuggestion? = null,
-    val showAlertDialog: Boolean = false,
-    val error: String = "",
-    val groceryCategories: List<Category> = emptyList(),
-    val categoryExpandedStates: Set<String> = emptySet(),
-    val grocerySuggestions: List<GrocerySuggestion> = emptyList(),
-    val newSuggestionText: String = "",
-    val newSuggestionPrice: String = "",
-    val newSuggestionCategory: Category = UNCATEGORIZED_CATEGORY,
-    val editingSuggestionId: String? = null,
-    val isEditMode: Boolean = false,
-)
 
 @HiltViewModel
 class AdminGrocerySuggestionsViewModel @Inject constructor(
-    private val categoryRepository: CategoryRepository,
     private val groceryRepository: GroceryRepository,
-    private val adminRepository: AdminRepository,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(AdminGrocerySuggestionsUiState())
+    private val _uiState = MutableStateFlow<AdminGrocerySuggestionsUiState>(AdminGrocerySuggestionsUiState.Loading)
     val uiState: StateFlow<AdminGrocerySuggestionsUiState> = _uiState.asStateFlow()
+    private val _commands = Channel<UiCommand>(Channel.BUFFERED)
+    val commands: Flow<UiCommand> = _commands.receiveAsFlow()
 
-    fun toggleAlertDialog() {
-        viewModelScope.launch {
-            delay(ALERT_DISMISS_DELAY_MS)
-            updateUiState { state ->
-                state.copy(
-                    showAlertDialog = false,
-                    error = "",
-                )
+    init {
+        observeCategoriesAndSuggestions()
+    }
+
+    fun onEvent(event: AdminGrocerySuggestionsUiEvent) {
+        when (event) {
+            is AdminGrocerySuggestionsUiEvent.ToggleCategory -> toggleCategory(event.categoryName)
+            is AdminGrocerySuggestionsUiEvent.StartEditingSuggestion -> startEditingSuggestion(event.suggestion)
+            is AdminGrocerySuggestionsUiEvent.ClickDeleteSuggestion -> updateContent {
+                it.copy(selectedSuggestion = event.suggestion)
             }
+            AdminGrocerySuggestionsUiEvent.ConfirmDeleteSuggestion -> deleteCategory()
+            is AdminGrocerySuggestionsUiEvent.NewSuggestionTextChanged -> onNewSuggestionTextChange(event.value)
+            is AdminGrocerySuggestionsUiEvent.NewSuggestionPriceChanged -> onNewSuggestionPriceChange(event.value)
+            is AdminGrocerySuggestionsUiEvent.NewSuggestionCategoryChanged -> updateNewSuggestionCategory(event.category)
+            AdminGrocerySuggestionsUiEvent.ClickAddSuggestion -> addNewGrocerySuggestion()
+            AdminGrocerySuggestionsUiEvent.ClickSaveSuggestion -> saveEditedGrocerySuggestion()
         }
     }
 
-    // ---------------------------------------------------------------- SETUP/FETCH LIST
-    fun setUpGrocerySuggestions() {
-        fetchCategories()
-        fetchGrocerySuggestions()
-    }
-
-    // ---------------------------------------------------------------- CATEGORIES
-    private fun fetchCategories() {
+    // ---------------------------------------------------------------- CATEGORIES + SUGGESTIONS
+    private fun observeCategoriesAndSuggestions() {
         viewModelScope.launch {
-            categoryRepository.getCategories().collect { result ->
-                when (result) {
-                    is Result.Success -> {
-                        updateUiState { state ->
-                            state.copy(
-                                groceryCategories = result.data
-                                    .filterNot { it.name == UNCATEGORIZED_NAME }
-                                    .sortedBy { it.name }
-                                    .let { listOf(UNCATEGORIZED_CATEGORY) + it },
+            combine(
+                groceryRepository.observeCategories(),
+                groceryRepository.observeGrocerySuggestions(),
+            ) { categoriesResult, suggestionsResult -> categoriesResult to suggestionsResult }
+                .collect { (categoriesResult, suggestionsResult) ->
+                    val categories = when (categoriesResult) {
+                        is Result.Success -> categoriesResult.data
+                            .filterNot { it.name == UNCATEGORIZED_CATEGORY_NAME }
+                            .sortedBy { it.name }
+                            .let { listOf(UNCATEGORIZED_CATEGORY) + it }
+                        is Result.Failure -> {
+                            showError(categoriesResult.error.toUserMessage())
+                            emptyList()
+                        }
+                    }
+                    val suggestions = when (suggestionsResult) {
+                        is Result.Success -> suggestionsResult.data.sortedBy { it.category.name }
+                        is Result.Failure -> {
+                            showError(suggestionsResult.error.toUserMessage())
+                            emptyList()
+                        }
+                    }
+                    _uiState.update { current ->
+                        if (current is AdminGrocerySuggestionsUiState.Content) {
+                            current.copy(groceryCategories = categories, grocerySuggestions = suggestions)
+                        } else {
+                            AdminGrocerySuggestionsUiState.Content(
+                                groceryCategories = categories,
+                                grocerySuggestions = suggestions,
                             )
                         }
                     }
-
-                    is Result.Failure -> {
-                        updateUiState { state ->
-                            state.copy(groceryCategories = emptyList())
-                        }
-                        showError(result.error)
-                    }
                 }
-            }
         }
     }
 
     // ---------------------------------------------------------------- EXPANDED STATES
-    fun toggleCategory(categoryName: String) {
-        updateUiState { state ->
+    private fun toggleCategory(categoryName: String) {
+        updateContent { state ->
             val currentSet = state.categoryExpandedStates
             val newSet = if (currentSet.contains(categoryName)) {
                 currentSet - categoryName
@@ -106,79 +104,40 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
         }
     }
 
-    // ---------------------------------------------------------------- GROCERY SUGGESTIONS
-    private fun fetchGrocerySuggestions() {
-        println("GroceryListViewModel before calling fetchGrocerySuggestionsUseCase")
-        viewModelScope.launch {
-            groceryRepository.getGrocerySuggestions().collect { result ->
-                println("GroceryListViewModel fetchGrocerySuggestionsUseCase result: $result")
-                when (result) {
-                    is Result.Success -> {
-                        println("GroceryListViewModel categories updated: ${result.data}")
-                        updateUiState { state ->
-                            state.copy(
-                                grocerySuggestions = result.data
-                                    .sortedBy { it.category?.name }
-                            )
-                        }
-                    }
-
-                    is Result.Failure -> {
-                        updateUiState { state ->
-                            state.copy(grocerySuggestions = emptyList())
-                        }
-                        showError(result.error)
-                    }
-                }
-            }
-        }
-    }
-
     // ---------------------------------------------------------------- NEW ITEM
-    fun onNewSuggestionTextChange(value: String) {
-        updateUiState { state ->
+    private fun onNewSuggestionTextChange(value: String) {
+        updateContent { state ->
             state.copy(newSuggestionText = value)
         }
     }
 
-    fun onNewSuggestionPriceChange(value: String) {
-        updateUiState { state ->
+    private fun onNewSuggestionPriceChange(value: String) {
+        updateContent { state ->
             state.copy(newSuggestionPrice = value)
         }
     }
 
-    fun updateNewSuggestionCategory(category: Category?) {
-        updateUiState { state ->
+    private fun updateNewSuggestionCategory(category: Category?) {
+        updateContent { state ->
             state.copy(newSuggestionCategory = category ?: UNCATEGORIZED_CATEGORY)
         }
     }
 
-    fun onDeleteSuggestionClick(suggestion: GrocerySuggestion) {
-        updateUiState { state ->
-            state.copy(
-                selectedSuggestion = suggestion,
-                showDeleteCategoryConfirmationDialog = true,
-            )
-        }
-    }
-
-    fun startEditingSuggestion(suggestion: GrocerySuggestion) {
-        updateUiState { state ->
+    private fun startEditingSuggestion(suggestion: GrocerySuggestion) {
+        updateContent { state ->
             state.copy(
                 editingSuggestionId = suggestion.id,
-                isEditMode = true,
                 newSuggestionText = suggestion.suggestionName,
                 newSuggestionPrice = suggestion.approxPrice?.toString().orEmpty(),
-                newSuggestionCategory = suggestion.category ?: UNCATEGORIZED_CATEGORY,
+                newSuggestionCategory = suggestion.category,
             )
         }
     }
 
     private fun clearSuggestionDraft() {
-        updateUiState { state ->
+        updateContent { state ->
             state.copy(
                 editingSuggestionId = null,
-                isEditMode = false,
                 newSuggestionCategory = UNCATEGORIZED_CATEGORY,
                 newSuggestionText = "",
                 newSuggestionPrice = "",
@@ -186,18 +145,9 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
         }
     }
 
-    fun dismissDeleteSuggestionDialog() {
-        updateUiState { state ->
-            state.copy(
-                showDeleteCategoryConfirmationDialog = false,
-                selectedSuggestion = null,
-            )
-        }
-    }
-
     // ---------------------------------------------------------------- ADD CATEGORY
-    fun addNewGrocerySuggestion() {
-        val state = _uiState.value
+    private fun addNewGrocerySuggestion() {
+        val state = _uiState.value as? AdminGrocerySuggestionsUiState.Content ?: return
 
         if (state.newSuggestionText.isEmpty()) {
             showError("Please enter a suggestion first")
@@ -207,36 +157,32 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
         val price = state.newSuggestionPrice.toFloatOrNull()
 
         val grocerySuggestion = GrocerySuggestion(
+            id = UUID.randomUUID().toString(),
             category = state.newSuggestionCategory,
             suggestionName = state.newSuggestionText,
             approxPrice = price,
         )
 
         viewModelScope.launch {
-            when (val result = adminRepository.saveGrocerySuggestion(grocerySuggestion)) {
+            when (val result = groceryRepository.saveGrocerySuggestion(grocerySuggestion)) {
                 is Result.Success -> clearSuggestionDraft()
                 is Result.Failure -> {
-                    println("Error: ${result.error}")
-                    showError(result.error)
+                    showError(result.error.toUserMessage())
                 }
             }
         }
     }
 
-    fun saveEditedGrocerySuggestion() {
-        val state = _uiState.value
-        if (!state.isEditMode) {
+    private fun saveEditedGrocerySuggestion() {
+        val state = _uiState.value as? AdminGrocerySuggestionsUiState.Content ?: return
+        val editingSuggestionId = state.editingSuggestionId
+
+        if (editingSuggestionId.isNullOrBlank()) {
             return
         }
 
         if (state.newSuggestionText.isEmpty()) {
             showError("Please enter a suggestion first")
-            return
-        }
-
-        val editingSuggestionId = state.editingSuggestionId
-        if (editingSuggestionId.isNullOrBlank()) {
-            showError("Missing suggestion id")
             return
         }
 
@@ -248,49 +194,55 @@ class AdminGrocerySuggestionsViewModel @Inject constructor(
         )
 
         viewModelScope.launch {
-            when (val result = adminRepository.updateGrocerySuggestion(updatedSuggestion)) {
+            when (val result = groceryRepository.updateGrocerySuggestion(updatedSuggestion)) {
                 is Result.Success -> clearSuggestionDraft()
                 is Result.Failure -> {
-                    println("Error: ${result.error}")
-                    showError(result.error)
+                    showError(result.error.toUserMessage())
                 }
             }
         }
     }
 
     // ---------------------------------------------------------------- DELETE CATEGORY
-    fun deleteCategory() {
-        val selectedSuggestion = _uiState.value.selectedSuggestion ?: run {
+    private fun deleteCategory() {
+        val selectedSuggestion = (_uiState.value as? AdminGrocerySuggestionsUiState.Content)?.selectedSuggestion ?: run {
             return
         }
 
         viewModelScope.launch {
-            val result = adminRepository.deleteGrocerySuggestion(selectedSuggestion)
+            val result = groceryRepository.deleteGrocerySuggestion(selectedSuggestion)
 
             if (result is Result.Failure) {
-                println("Error: ${result.error}")
-                showError(result.error)
+                showError(result.error.toUserMessage())
             }
 
-            updateUiState { state ->
-                state.copy(
-                    selectedSuggestion = null,
-                    showDeleteCategoryConfirmationDialog = false,
-                )
-            }
+        updateContent { state ->
+            state.copy(selectedSuggestion = null)
         }
+    }
     }
 
     private fun showError(message: String) {
-        updateUiState { state ->
-            state.copy(
-                error = message,
-                showAlertDialog = true,
+        viewModelScope.launch {
+            _commands.send(
+                UiCommand.ShowSnackbar(
+                    message = message,
+                    withDismissAction = true,
+                ),
             )
         }
     }
 
     private fun updateUiState(transform: (AdminGrocerySuggestionsUiState) -> AdminGrocerySuggestionsUiState) {
         _uiState.update(transform)
+    }
+
+    private fun updateContent(transform: (AdminGrocerySuggestionsUiState.Content) -> AdminGrocerySuggestionsUiState.Content) {
+        updateUiState { state ->
+            when (state) {
+                is AdminGrocerySuggestionsUiState.Loading -> state
+                is AdminGrocerySuggestionsUiState.Content -> transform(state)
+            }
+        }
     }
 }

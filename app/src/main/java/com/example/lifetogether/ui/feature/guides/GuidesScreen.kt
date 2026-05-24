@@ -4,11 +4,15 @@ import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,16 +20,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,28 +37,33 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.GuideProgress
-import com.example.lifetogether.domain.model.Icon
-import com.example.lifetogether.domain.model.guides.Guide
+import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.enums.Visibility
-import com.example.lifetogether.ui.common.TopBar
+import com.example.lifetogether.domain.model.guides.Guide
+import com.example.lifetogether.ui.common.AppTopBar
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
+import com.example.lifetogether.ui.common.button.PrimaryButton
+import com.example.lifetogether.ui.common.button.SecondaryButton
 import com.example.lifetogether.ui.common.button.AddButton
-import com.example.lifetogether.ui.common.dialog.ErrorAlertDialog
-import com.example.lifetogether.ui.common.observer.ObserverUpdatingText
-import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.domain.observer.ObserverKey
+import com.example.lifetogether.ui.common.skeleton.Skeletons
+import com.example.lifetogether.ui.common.text.TextHeadingMedium
+import com.example.lifetogether.ui.common.text.TextLabel
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun GuidesScreen(
-    appNavigator: AppNavigator? = null,
+    uiState: GuidesUiState,
+    onUiEvent: (GuidesUiEvent) -> Unit,
+    onNavigationEvent: (GuidesNavigationEvent) -> Unit,
 ) {
-    val guidesViewModel: GuidesViewModel = hiltViewModel()
-    val guides by guidesViewModel.guides.collectAsState()
-
     val context = LocalContext.current
+    val contentState = uiState as? GuidesUiState.Content
+    val isLoading = uiState is GuidesUiState.Loading
+    var showAddOptionsSheet by remember { mutableStateOf(false) }
     var guideTemplate by remember { mutableStateOf("") }
     var guideProgressTemplate by remember { mutableStateOf("") }
 
@@ -86,111 +93,109 @@ fun GuidesScreen(
     ) { uri ->
         val content = uri?.let { readTextFromUri(context, it) }
         if (content.isNullOrBlank()) {
-            guidesViewModel.error = "Could not read the selected JSON file"
-            guidesViewModel.showAlertDialog = true
+            onUiEvent(GuidesUiEvent.DismissDialog)
             return@rememberLauncherForActivityResult
         }
-        guidesViewModel.importGuidesFromJson(content)
+        onUiEvent(GuidesUiEvent.ImportGuidesFromJson(content))
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(10.dp)
-                .padding(bottom = 80.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            item {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    TopBar(
-                        leftIcon = Icon(
-                            resId = R.drawable.ic_back_arrow,
-                            description = "back arrow icon",
-                        ),
-                        onLeftClick = {
-                            appNavigator?.navigateBack()
-                        },
-                        text = "Guides",
-                    )
-
-                    ObserverUpdatingText(
-                        keys = setOf(ObserverKey.GUIDES),
-                    )
-                }
+    Scaffold(
+        topBar = {
+            AppTopBar(
+                leftAppIcon = AppIcon(
+                    resId = R.drawable.ic_back,
+                    description = "back arrow icon",
+                ),
+                onLeftClick = {
+                    onNavigationEvent(GuidesNavigationEvent.NavigateBack)
+                },
+                text = "Guides",
+            )
+        },
+        floatingActionButton = {
+            if (!isLoading) {
+                AddButton(
+                    onClick = { showAddOptionsSheet = true },
+                )
             }
-
-            if (guides.isEmpty()) {
-                item {
-                    Text(text = "No guides yet. Tap + to create or import one.")
-                }
-            } else {
-                items(guides) { guide ->
-                    GuideOverviewCard(
-                        guide = guide,
-                        onClick = {
-                            guide.id?.let { appNavigator?.navigateToGuideDetails(it) }
-                        },
-                    )
+        },
+    ) { padding ->
+        AnimatedLoadingContent(
+            isLoading = isLoading,
+            label = "guides_loading_content",
+            loadingContent = {
+                Skeletons.ListDetail(modifier = Modifier.fillMaxSize())
+            },
+        ) {
+            val content = contentState ?: return@AnimatedLoadingContent
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(LifeTogetherTokens.spacing.small),
+                contentPadding = PaddingValues(bottom = LifeTogetherTokens.spacing.bottomInsetLarge),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+            ) {
+                if (content.guides.isEmpty()) {
+                    item {
+                        Text(text = "No guides yet. Tap + to create or import one.")
+                    }
+                } else {
+                    items(content.guides) { guide ->
+                        GuideOverviewCard(
+                            guide = guide,
+                            onClick = {
+                                onNavigationEvent(GuidesNavigationEvent.NavigateToGuideDetails(guide.id))
+                            },
+                        )
+                    }
                 }
             }
         }
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = 30.dp, end = 30.dp),
-            contentAlignment = Alignment.BottomEnd,
-        ) {
-            AddButton(onClick = { guidesViewModel.openAddOptionsDialog() })
-        }
     }
 
-    if (guidesViewModel.showAddOptionsDialog) {
+    if (showAddOptionsSheet) {
         AlertDialog(
-            onDismissRequest = { guidesViewModel.closeAddOptionsDialog() },
+            onDismissRequest = { showAddOptionsSheet = false },
             title = { Text("Add guide") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Button(
+                Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
+                    PrimaryButton(
                         modifier = Modifier.fillMaxWidth(),
+                        text = "Create guide manually",
                         onClick = {
-                            guidesViewModel.closeAddOptionsDialog()
-                            appNavigator?.navigateToGuideCreate()
+                            showAddOptionsSheet = false
+                            onNavigationEvent(GuidesNavigationEvent.NavigateToGuideEdit)
                         },
-                    ) {
-                        Text("Create guide manually")
-                    }
+                    )
 
-                    Button(
+                    SecondaryButton(
                         modifier = Modifier.fillMaxWidth(),
+                        text = "Upload JSON file",
                         onClick = {
-                            guidesViewModel.openImportDialog()
+                            showAddOptionsSheet = false
+                            onUiEvent(GuidesUiEvent.OpenImportDialog)
                         },
-                    ) {
-                        Text("Upload JSON file")
-                    }
+                    )
                 }
             },
             confirmButton = {},
             dismissButton = {
-                Button(onClick = { guidesViewModel.closeAddOptionsDialog() }) {
-                    Text("Close")
-                }
+                SecondaryButton(
+                    text = "Close",
+                    onClick = { showAddOptionsSheet = false },
+                )
             },
         )
     }
 
-    if (guidesViewModel.showImportDialog) {
-        AlertDialog(
-            onDismissRequest = { guidesViewModel.closeImportDialog() },
+    when (val importDialog = contentState?.dialog) {
+        is GuidesDialogState.ImportGuide -> AlertDialog(
+            onDismissRequest = { onUiEvent(GuidesUiEvent.DismissDialog) },
             title = { Text("Import guides from JSON") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
                     Text(
                         text = "Upload a JSON object or array using the guide schema. " +
                             "Guide IDs are assigned by Firestore automatically, while section/step IDs are regenerated.",
@@ -199,8 +204,11 @@ fun GuidesScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(10.dp))
-                            .padding(10.dp),
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant,
+                                MaterialTheme.shapes.small
+                            )
+                            .padding(LifeTogetherTokens.spacing.small),
                     ) {
                         Text(
                             text = guideTemplate.take(500),
@@ -210,26 +218,23 @@ fun GuidesScreen(
                         )
                     }
 
-                    Button(
+                    SecondaryButton(
                         modifier = Modifier.fillMaxWidth(),
-                        onClick = {
-                            createGuideTemplateLauncher.launch("guide_template.json")
-                        },
-                    ) {
-                        Text("Download guide template")
-                    }
+                        text = "Download guide template",
+                        onClick = { createGuideTemplateLauncher.launch("guide_template.json") },
+                    )
 
-                    Button(
+                    SecondaryButton(
                         modifier = Modifier.fillMaxWidth(),
+                        text = "Download guide progress template",
                         onClick = {
                             createGuideProgressTemplateLauncher.launch("guide_progress_template.json")
                         },
-                    ) {
-                        Text("Download guide progress template")
-                    }
+                    )
 
-                    Button(
+                    PrimaryButton(
                         modifier = Modifier.fillMaxWidth(),
+                        text = "Choose JSON file",
                         onClick = {
                             openJsonLauncher.launch(
                                 arrayOf(
@@ -239,17 +244,25 @@ fun GuidesScreen(
                                 ),
                             )
                         },
+                    )
+
+                    AnimatedVisibility(
+                        visible = importDialog.isImporting,
+                        enter = fadeIn(),
+                        exit = fadeOut(),
                     ) {
-                        Text("Choose JSON file")
+                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(modifier = Modifier.size(LifeTogetherTokens.sizing.iconMedium))
+                        }
                     }
 
-                    if (guidesViewModel.isImporting) {
-                        RowWithCenteredLoader()
-                    }
-
-                    if (guidesViewModel.importSummary.isNotEmpty()) {
+                    AnimatedVisibility(
+                        visible = importDialog.importSummary.isNotEmpty(),
+                        enter = fadeIn(),
+                        exit = fadeOut(),
+                    ) {
                         Text(
-                            text = guidesViewModel.importSummary,
+                            text = importDialog.importSummary,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold,
                         )
@@ -257,23 +270,58 @@ fun GuidesScreen(
                 }
             },
             confirmButton = {
-                Button(onClick = { guidesViewModel.closeImportDialog() }) {
-                    Text("Done")
-                }
+                PrimaryButton(
+                    text = "Done",
+                    onClick = { onUiEvent(GuidesUiEvent.DismissDialog) },
+                    enabled = !importDialog.isImporting,
+                    loading = importDialog.isImporting,
+                )
             },
             dismissButton = {
-                Button(onClick = { guidesViewModel.closeImportDialog() }) {
-                    Text("Cancel")
-                }
+                SecondaryButton(
+                    text = "Cancel",
+                    onClick = { onUiEvent(GuidesUiEvent.DismissDialog) },
+                )
             },
         )
+        null -> Unit
     }
+}
 
-    if (guidesViewModel.showAlertDialog) {
-        LaunchedEffect(guidesViewModel.error) {
-            guidesViewModel.dismissAlert()
-        }
-        ErrorAlertDialog(guidesViewModel.error)
+@Preview(showBackground = true)
+@Composable
+private fun GuidesScreenPreview() {
+    LifeTogetherTheme {
+        GuidesScreen(
+            uiState = GuidesUiState.Content(
+                guides = listOf(
+                    Guide(
+                        id = "guide-1",
+                        familyId = "family-1",
+                        itemName = "Family reset",
+                        description = "Set up a weekly reset plan.",
+                        visibility = Visibility.FAMILY,
+                        ownerUid = "uid-1",
+                        contentVersion = 1L,
+                        started = true,
+                        sections = emptyList(),
+                    ),
+                ),
+            ),
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
+    }
+}
+@Preview(showBackground = true)
+@Composable
+private fun GuidesScreenLoadingPreview() {
+    LifeTogetherTheme {
+        GuidesScreen(
+            uiState = GuidesUiState.Loading,
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
     }
 }
 
@@ -290,62 +338,50 @@ private fun GuideOverviewCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.onBackground, RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.large)
             .clickable { onClick() }
-            .padding(14.dp),
+            .padding(LifeTogetherTokens.spacing.medium),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
+                TextLabel(
                     text = if (guide.visibility == Visibility.FAMILY) "Family shared" else "Private",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.background,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
-                Text(
+                TextLabel(
                     text = if (guide.started) "In progress" else "Not started",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.background,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                     fontWeight = FontWeight.SemiBold,
                 )
             }
 
-            Text(
+            TextHeadingMedium(
                 text = guide.itemName,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.background,
-                fontWeight = FontWeight.Bold,
             )
             if (guide.description.isNotBlank()) {
                 Text(
                     text = guide.description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.background,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
 
             LinearProgressIndicator(
                 modifier = Modifier.fillMaxWidth(),
                 progress = { progressPercent },
-                trackColor = MaterialTheme.colorScheme.background.copy(alpha = 0.3f),
+                trackColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f),
             )
 
             Text(
                 text = "Sections: $completedSections/${guide.sections.size}  •  Steps: $sectionProgress/$sectionTotal",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.background,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
         }
-    }
-}
-
-@Composable
-private fun RowWithCenteredLoader() {
-    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(modifier = Modifier.size(28.dp))
     }
 }
 

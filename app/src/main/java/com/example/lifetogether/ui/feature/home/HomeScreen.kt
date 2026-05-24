@@ -1,315 +1,282 @@
 package com.example.lifetogether.ui.feature.home
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.FabPosition
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.lifetogether.BuildConfig
 import com.example.lifetogether.R
-import com.example.lifetogether.domain.model.Icon
+import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.UserInformation
-import com.example.lifetogether.domain.model.sealed.ImageType
-import com.example.lifetogether.domain.model.session.authenticatedUserOrNull
-import com.example.lifetogether.ui.common.TopBar
-import com.example.lifetogether.ui.common.button.LoveButton
+import com.example.lifetogether.ui.common.AppTopBar
+import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
+import com.example.lifetogether.ui.common.image.AnimatedBitmapImage
 import com.example.lifetogether.ui.common.text.TextDisplayLarge
-import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.viewmodel.ImageViewModel
+import com.example.lifetogether.ui.common.skeleton.Skeletons
+import com.example.lifetogether.ui.common.text.TextDefault
+import com.example.lifetogether.ui.common.text.TextLabel
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HomeScreen(
-    appNavigator: AppNavigator? = null,
+    uiState: HomeUiState,
+    onNavigationEvent: (HomeNavigationEvent) -> Unit,
 ) {
-    val homeViewModel: HomeViewModel = hiltViewModel()
-    val imageViewModel: ImageViewModel = hiltViewModel()
-    val bitmap by imageViewModel.bitmap.collectAsStateWithLifecycle()
-
-    val sessionState by homeViewModel.sessionState.collectAsStateWithLifecycle()
-    val userInformationState = sessionState.authenticatedUserOrNull
-    LaunchedEffect(userInformationState?.familyId) {
-        userInformationState?.familyId?.let { familyId ->
-            imageViewModel.collectImageFlow(
-                imageType = ImageType.FamilyImage(familyId),
-                onError = {
-                },
-            )
-        }
+    val isLoading = uiState == HomeUiState.Loading
+    val content = when (uiState) {
+        is HomeUiState.Unauthenticated -> uiState.content
+        is HomeUiState.Authenticated -> uiState.content
+        HomeUiState.Loading -> null
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize(),
-    ) {
-        LazyColumn(
-            modifier = Modifier
-                .padding(10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(20.dp),
-        ) {
-            item {
-                TopBar(
-                    leftIcon = Icon(
-                        resId = R.drawable.ic_profile_picture_black,
-                        description = "profile picture icon",
-                    ),
-                    onLeftClick = {
-                        if (userInformationState != null) {
-                            appNavigator?.navigateToProfile()
-                        } else {
-                            appNavigator?.navigateToLogin()
-                        }
-                    },
-                    text = "Life Together",
-                    rightIcon = Icon(
-                        resId = R.drawable.ic_settings,
-                        description = "settings icon",
-                    ),
-                    onRightClick = {
-                        appNavigator?.navigateToSettings()
-                    },
-                    subText = "x days together", // TODO
+    Scaffold(
+        topBar = {
+            AppTopBar(
+                leftAppIcon = AppIcon(
+                    resId = R.drawable.ic_profile_picture,
+                    description = "profile picture icon",
+                ),
+                onLeftClick = {
+                    onNavigationEvent(HomeNavigationEvent.ProfileClicked)
+                },
+                text = "Life Together",
+                rightAppIcon = AppIcon(
+                    resId = R.drawable.ic_settings,
+                    description = "settings icon",
+                ),
+                onRightClick = {
+                    onNavigationEvent(HomeNavigationEvent.SettingsClicked)
+                },
+            )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {},
+                containerColor = if (isLoading) {
+                    MaterialTheme.colorScheme.surfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.tertiary
+                },
+                contentColor = if (isLoading) {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.onTertiary
+                },
+                modifier = Modifier.size(70.dp),
+                shape = CircleShape,
+            ) {
+                androidx.compose.material3.Icon(
+                    painter = painterResource(id = R.drawable.ic_heart),
+                    contentDescription = "heart icon",
                 )
             }
-
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .clip(shape = RoundedCornerShape(20))
-                        .background(color = MaterialTheme.colorScheme.onBackground),
-                ) {
-                    if (bitmap != null) {
-                        Image(
-                            modifier = Modifier
-                                .fillMaxSize(),
-                            bitmap = bitmap!!.asImageBitmap(),
-                            contentDescription = "family image",
-                            contentScale = ContentScale.Crop,
+        },
+        floatingActionButtonPosition = FabPosition.Center,
+    ) { padding ->
+        AnimatedLoadingContent(
+            isLoading = isLoading,
+            label = "home_loading_content",
+            loadingContent = {
+                Skeletons.GridCollection(modifier = Modifier.fillMaxSize())
+            },
+        ) {
+            val content = content ?: error("Loading is handled above")
+            LazyColumn(
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.background)
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = LifeTogetherTokens.spacing.small),
+                contentPadding = PaddingValues(bottom = LifeTogetherTokens.spacing.bottomInsetMedium),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+            ) {
+                if (content.daysTogetherText != null) {
+                    item {
+                        TextLabel(
+                            text = content.daysTogetherText,
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onBackground,
                         )
                     }
                 }
-            }
 
-            item {
-                when (userInformationState) {
-                    is UserInformation -> {
-                        if (userInformationState.familyId == null) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .clip(shape = MaterialTheme.shapes.large)
+                            .background(color = MaterialTheme.colorScheme.surfaceVariant),
+                    ) {
+                        val bitmap = content.bitmap
+                        AnimatedBitmapImage(
+                            bitmap = bitmap,
+                            modifier = Modifier.fillMaxSize(),
+                            contentDescription = "family image",
+                        )
+                    }
+                }
+
+                item {
+                    when (val statusCard = content.statusCard) {
+                        is HomeStatusCard.Message -> {
                             Box(
                                 modifier = Modifier
-                                    .padding(bottom = 15.dp)
                                     .fillMaxWidth()
                                     .height(75.dp)
-                                    .clip(shape = RoundedCornerShape(20))
+                                    .clip(shape = MaterialTheme.shapes.large)
                                     .background(MaterialTheme.colorScheme.tertiary)
-                                    .padding(horizontal = 20.dp)
                                     .clickable {
-                                        appNavigator?.navigateToSettings()
-                                    },
+                                        onNavigationEvent(HomeNavigationEvent.StatusCardClicked)
+                                    }
+                                    .padding(horizontal = LifeTogetherTokens.spacing.medium),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Text(
-                                    text =
-                                    "Please create or join a family to save your data",
-                                    textAlign = TextAlign.Center,
+                                TextDefault(
+                                    text = statusCard.text,
+                                    color = MaterialTheme.colorScheme.onTertiary
                                 )
                             }
                         }
 
-//                        Text(text = "Important dates:")
-//                        // TODO update events and make clickable
-//                        CountdownRow(event = "Wedding anniversary", daysLeft = "20")
-//                        CountdownRow(event = "Andrés' birthday", daysLeft = "35")
+                        HomeStatusCard.None -> Unit
                     }
-                    else -> {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(75.dp)
-                                .clip(shape = RoundedCornerShape(20))
-                                .background(MaterialTheme.colorScheme.tertiary)
-                                .clickable {
-                                    appNavigator?.navigateToLogin()
-                                },
-                            contentAlignment = Alignment.Center,
+                }
+
+                content.sections.forEach { section ->
+                    item {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
                         ) {
-                            Text(text = "Please login to use the app")
+                            if (section.title != null) {
+                                TextDisplayLarge(section.title)
+                            }
+
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                            ) {
+                                section.items
+                                    .toTileRows(section.maxItemsInEachRow)
+                                    .forEach { row ->
+                                        FlowRow(
+                                            maxItemsInEachRow = section.maxItemsInEachRow,
+                                            horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                                        ) {
+                                            row.forEach { item ->
+                                                FeatureCard(
+                                                    title = item.tile.title,
+                                                    onClick = {
+                                                        onNavigationEvent(HomeNavigationEvent.TileClicked(item.tile))
+                                                    },
+                                                    appIcon = item.tile.appIcon,
+                                                )
+                                            }
+                                        }
+                                    }
+                            }
                         }
                     }
                 }
             }
+        }
+    }
+}
 
-            item {
-                FlowRow(
-                    maxItemsInEachRow = 3,
-                    verticalArrangement = Arrangement.spacedBy(5.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    FeatureOverview(
-                        "Grocery list",
-                        onClick = {
-                            if (userInformationState?.familyId == null) {
-                                // TODO add popup asking to join a family
-                            } else {
-                                appNavigator?.navigateToGroceryList()
-                            }
-                        },
-                        icon = Icon(R.drawable.ic_groceries, "groceries basket icon"),
-                    )
-                    FeatureOverview(
-                        "Recipes",
-                        onClick = {
-                            if (userInformationState?.familyId == null) {
-                                // TODO add popup asking to join a family
-                            } else {
-                                appNavigator?.navigateToRecipes()
-                            }
-                        },
-                        icon = Icon(R.drawable.ic_recipes, "recipes chef hat icon"),
-                    )
-                    Spacer( // This makes it a two-item row
-                        Modifier
-                            .fillMaxWidth()
-                            .height(0.dp)
-                    )
-//                    FeatureOverview(
-//                        "Memory lane",
-//                        fullWidth = true,
-//                        onClick = {
-//                            if (userInformationState?.familyId == null) {
-//                                // TODO add popup asking to join a family
-//                            } else {
-//                                // TODO
-//                            }
-//                        },
-//                    )
-                    FeatureOverview(
-                        "Guides",
-                        onClick = {
-                            if (userInformationState?.familyId == null) {
-                                // TODO add popup asking to join a family
-                            } else {
-                                appNavigator?.navigateToGuides()
-                            }
-                        },
-                        icon = Icon(R.drawable.ic_guide, "guides icon"),
-                    )
-                    FeatureOverview(
-                        "Gallery",
-                        onClick = {
-                            if (userInformationState?.familyId == null) {
-                                // TODO add popup asking to join a family
-                            } else {
-                                println("Gallery clicked")
-                                appNavigator?.navigateToGallery()
-                            }
-                        },
-                        icon = Icon(R.drawable.ic_gallery, "image gallery icon"),
-                    )
-                    FeatureOverview(
-                        "Tip Tracker",
-                        onClick = {
-                            if (userInformationState?.familyId == null) {
-                                // TODO add popup asking to join a family
-                            } else {
-                                println("Tip tracker clicked")
-                                appNavigator?.navigateToTipTracker()
-                            }
-                        },
-                        icon = Icon(R.drawable.ic_tip, "money tip icon"),
-                    )
-                    FeatureOverview(
-                        "Lists",
-                        onClick = {
-                            if (userInformationState?.familyId == null) {
-                                // TODO add popup asking to join a family
-                            } else {
-                                appNavigator?.navigateToLists()
-                            }
-                        },
-                        icon = Icon(R.drawable.ic_guide, "lists icon"),
-                    )
-//                    FeatureOverview(
-//                        "Note Corner",
-//                        onClick = {
-//                            if (userInformationState?.familyId == null) {
-//                                // TODO add popup asking to join a family
-//                            } else {
-//                                // TODO
-//                            }
-//                        },
-//                    )
+private fun List<HomeSectionItem>.toTileRows(maxItemsInEachRow: Int): List<List<HomeSectionItem.Tile>> {
+    val rows = mutableListOf<MutableList<HomeSectionItem.Tile>>()
+    var currentRow = mutableListOf<HomeSectionItem.Tile>()
+
+    for (item in this) {
+        when (item) {
+            is HomeSectionItem.Tile -> {
+                if (currentRow.size == maxItemsInEachRow) {
+                    rows.add(currentRow)
+                    currentRow = mutableListOf()
                 }
+                currentRow.add(item)
             }
 
-            if (userInformationState?.uid in BuildConfig.ADMIN_LIST.split(",")) {
-                item {
-                    TextDisplayLarge("Admin features")
-
-                    FlowRow(
-                        maxItemsInEachRow = 2,
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        // TODO use a when statement with enum class to show main features
-                        // TODO E.g. when clicking grocery list, it shows the features grocery categories and suggestions
-
-                        FeatureOverview(
-                            "Grocery categories",
-                            onClick = {
-                                if (userInformationState?.familyId == null) {
-                                    // TODO add popup asking to join a family
-                                } else {
-                                    appNavigator?.navigateToAdminGroceryCategories()
-                                }
-                            },
-                            icon = Icon(R.drawable.ic_groceries, "groceries basket icon"),
-                        )
-                        FeatureOverview(
-                            "Grocery suggestions",
-                            onClick = {
-                                if (userInformationState?.familyId == null) {
-                                    // TODO add popup asking to join a family
-                                } else {
-                                    appNavigator?.navigateToAdminGrocerySuggestions()
-                                }
-                            },
-                            icon = Icon(R.drawable.ic_groceries, "groceries basket icon"),
-                        )
-                    }
+            HomeSectionItem.Break -> {
+                if (currentRow.isNotEmpty()) {
+                    rows.add(currentRow)
+                    currentRow = mutableListOf()
                 }
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(40.dp))
             }
         }
     }
 
-    LoveButton()
+    if (currentRow.isNotEmpty()) {
+        rows.add(currentRow)
+    }
+
+    return rows
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun HomeScreenPreview() {
+    LifeTogetherTheme {
+        HomeScreen(
+            uiState = HomeUiState.Authenticated(
+                userInformation = UserInformation(
+                    uid = "1",
+                    email = "alex@example.com",
+                    name = "Alex",
+                    familyId = "family-123",
+                ),
+                content = HomeContent(
+                    statusCard = HomeStatusCard.None,
+                    sections = listOf(
+                        HomeSection(
+                            maxItemsInEachRow = 3,
+                            items = listOf(
+                                HomeSectionItem.Tile(HomeTile.GroceryList),
+                                HomeSectionItem.Tile(HomeTile.Recipes),
+                                HomeSectionItem.Break,
+                                HomeSectionItem.Tile(HomeTile.Guides),
+                                HomeSectionItem.Tile(HomeTile.Gallery),
+                                HomeSectionItem.Tile(HomeTile.TipTracker),
+                                HomeSectionItem.Tile(HomeTile.Lists),
+                            ),
+                        ),
+                        HomeSection(
+                            title = "Admin features",
+                            maxItemsInEachRow = 2,
+                            items = listOf(
+                                HomeSectionItem.Tile(HomeTile.AdminGroceryCategories),
+                                HomeSectionItem.Tile(HomeTile.AdminGrocerySuggestions),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+            onNavigationEvent = {},
+        )
+    }
 }

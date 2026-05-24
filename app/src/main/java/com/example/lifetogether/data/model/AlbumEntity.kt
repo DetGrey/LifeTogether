@@ -9,12 +9,12 @@ import java.util.Date
 @Entity(tableName = Constants.ALBUMS_TABLE)
 data class AlbumEntity(
     @PrimaryKey
-    val id: String = "",
+    val id: String,
     @ColumnInfo(name = "family_id")
-    val familyId: String = "",
+    val familyId: String,
     @ColumnInfo(name = "item_name")
-    val itemName: String = "",
+    val itemName: String,
     @ColumnInfo(name = "last_updated")
-    val lastUpdated: Date = Date(),
+    val lastUpdated: Date,
     var count: Int = 0,
 )

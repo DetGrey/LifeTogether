@@ -13,12 +13,15 @@ interface UserListsDao {
     @Query("SELECT * FROM $USER_LISTS_TABLE WHERE family_id = :familyId")
     fun getItems(familyId: String): Flow<List<UserListEntity>>
 
+    @Query("SELECT * FROM $USER_LISTS_TABLE WHERE id = :id LIMIT 1")
+    suspend fun getItemOnce(id: String): UserListEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateItems(items: List<UserListEntity>)
 
     @Query("DELETE FROM $USER_LISTS_TABLE WHERE id IN (:itemIds)")
-    fun deleteItems(itemIds: List<String>)
+    suspend fun deleteItems(itemIds: List<String>)
 
     @Query("DELETE FROM $USER_LISTS_TABLE WHERE family_id = :familyId")
-    fun deleteFamilyItems(familyId: String)
+    suspend fun deleteFamilyItems(familyId: String)
 }

@@ -140,7 +140,7 @@ For each phase, the flow is:
 3. grill-me the final issue breakdown
 4. create the issues from the phase file and connect them to the milestone and project
 5. move the active issue to `In Progress`, create the issue branch, and start coding
-6. build and verify before every commit — never commit uncompiled code
+6. build and verify before every commit — never commit uncompiled code. Also, never commit before user has checked through the edits
 7. when implementation is done: tick all completed non-test checkboxes in the issue body, move the issue to `In Review` on the board, push the branch, and open a PR targeting `architecture-improvement`
 8. wait for explicit user approval before merging the PR or closing the issue
 

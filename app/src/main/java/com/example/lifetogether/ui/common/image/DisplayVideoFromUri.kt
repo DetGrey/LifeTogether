@@ -8,20 +8,36 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
+import com.example.lifetogether.ui.common.event.CollectUiCommands
+import com.example.lifetogether.ui.common.event.UiCommand
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.launch
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -33,23 +49,80 @@ fun DisplayVideoFromUri(
     resizeMode: Int = AspectRatioFrameLayout.RESIZE_MODE_FIT,
     keepScreenOn: Boolean = true, // Keep screen on during video playback
 ) {
-    val viewModel: VideoPlayerViewModel = hiltViewModel()
-
-    val playerState by viewModel.playerState.collectAsState()
+    val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    var isLoading by remember { mutableStateOf(true) }
 
-    // Pass the media URI to the ViewModel
-    LaunchedEffect(videoUri, autoPlay) {
-        viewModel.setMediaUri(videoUri, autoPlay)
+    val coroutineScope = rememberCoroutineScope()
+    val uiCommands = Channel<UiCommand>(Channel.BUFFERED)
+    CollectUiCommands(uiCommands.receiveAsFlow())
+
+    val exoPlayer = remember(context) {
+        ExoPlayer.Builder(context)
+            .setSeekBackIncrementMs(10000)
+            .setSeekForwardIncrementMs(10000)
+            .build()
+            .apply {
+                repeatMode = Player.REPEAT_MODE_OFF
+                volume = 1f
+            }
     }
 
-    // Register lifecycle observer for the ViewModel
-    DisposableEffect(lifecycleOwner, viewModel) {
-        viewModel.registerLifecycleObserver(lifecycleOwner.lifecycle)
+    LaunchedEffect(videoUri, autoPlay) {
+        exoPlayer.setMediaItem(MediaItem.fromUri(videoUri))
+        exoPlayer.prepare()
+        exoPlayer.playWhenReady = autoPlay
+        isLoading = true
+    }
+
+    DisposableEffect(exoPlayer, lifecycleOwner) {
+        val listener = object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                isLoading = when (playbackState) {
+                    Player.STATE_BUFFERING -> true
+                    Player.STATE_IDLE -> true
+                    else -> false
+                }
+
+                if (playbackState == Player.STATE_ENDED) {
+                    exoPlayer.seekTo(0)
+                    exoPlayer.pause()
+                }
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                error.message?.let {
+                    coroutineScope.launch {
+                        uiCommands.send(
+                            UiCommand.ShowSnackbar(
+                                message = it,
+                                withDismissAction = true,
+                            ),
+                        )
+                        isLoading = false
+                    }
+                }
+            }
+        }
+
+        val lifecycleObserver = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_PAUSE -> exoPlayer.pause()
+                Lifecycle.Event.ON_DESTROY -> {
+                    exoPlayer.stop()
+                    exoPlayer.clearMediaItems()
+                }
+                else -> Unit
+            }
+        }
+
+        exoPlayer.addListener(listener)
+        lifecycleOwner.lifecycle.addObserver(lifecycleObserver)
+
         onDispose {
-            // ViewModel's onCleared will handle the primary release.
-            // Optionally, remove observer if needed, but onCleared should suffice.
-            // lifecycleOwner.lifecycle.removeObserver(viewModel.lifecycleObserver) // ViewModel manages its observer internally
+            lifecycleOwner.lifecycle.removeObserver(lifecycleObserver)
+            exoPlayer.removeListener(listener)
+            exoPlayer.release()
         }
     }
 
@@ -60,7 +133,7 @@ fun DisplayVideoFromUri(
         AndroidView(
             factory = { context ->
                 PlayerView(context).apply {
-                    this.player = viewModel.exoPlayer
+                    this.player = exoPlayer
                     this.useController = useController
                     this.keepScreenOn = keepScreenOn
                     layoutParams = FrameLayout.LayoutParams(
@@ -77,23 +150,18 @@ fun DisplayVideoFromUri(
             },
             modifier = Modifier.fillMaxSize(),
             update = { playerView ->
-                // Update properties that might change
                 playerView.resizeMode = resizeMode
                 playerView.useController = useController
                 playerView.keepScreenOn = keepScreenOn
             }
         )
 
-        // Example: Show loading indicator or error message based on ViewModel state
-        if (playerState.isLoading) {
+        AnimatedVisibility(
+            visible = isLoading,
+            enter = fadeIn(),
+            exit = fadeOut(),
+        ) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-        }
-
-        playerState.error?.let {
-            Text(
-                text = "Error: ${it.message ?: "Unknown error"}",
-                modifier = Modifier.align(Alignment.Center),
-            )
         }
     }
 }

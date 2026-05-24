@@ -16,6 +16,10 @@ object Constants {
     const val TIP_TRACKER_TABLE = "tip_tracker"
     const val USER_LISTS_TABLE = "user_lists"
     const val ROUTINE_LIST_ENTRIES_TABLE = "list_entries_routine"
+    const val WISH_LIST_ENTRIES_TABLE = "list_entries_wish"
+    const val NOTE_LIST_ENTRIES_TABLE = "list_entries_notes"
+    const val CHECKLIST_ENTRIES_TABLE = "list_entries_checklist"
+    const val MEAL_PLAN_TABLE = "meal_plans"
 
     // Generic visibility constants — shared across guides, lists, and future features
     const val VISIBILITY_FAMILY = "family"
@@ -23,5 +27,6 @@ object Constants {
 
     // Notification constants
     const val GROCERY_LIST_CHANNEL = "grocery_list_notification_channel"
+    const val MEAL_PLAN_CHANNEL = "meal_plan_notification_channel"
     const val DEFAULT_CHANNEL = "default_channel"
 }

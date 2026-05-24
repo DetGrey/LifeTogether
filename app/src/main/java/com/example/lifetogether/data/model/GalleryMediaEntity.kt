@@ -4,27 +4,36 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.lifetogether.domain.model.enums.MediaType
+import com.example.lifetogether.domain.model.gallery.MediaDownloadState
 import com.example.lifetogether.util.Constants
 import java.util.Date
 
 @Entity(tableName = Constants.GALLERY_MEDIA_TABLE)
 data class GalleryMediaEntity(
     @PrimaryKey
-    val id: String = "",
+    val id: String,
     @ColumnInfo(name = "media_type")
-    val mediaType: MediaType, // Discriminator column
+    val mediaType: MediaType,
     @ColumnInfo(name = "family_id")
-    val familyId: String = "",
+    val familyId: String,
     @ColumnInfo(name = "item_name")
-    val itemName: String = "",
+    val itemName: String,
     @ColumnInfo(name = "last_updated")
-    val lastUpdated: Date = Date(),
+    val lastUpdated: Date,
     @ColumnInfo(name = "album_id")
-    val albumId: String = "",
+    val albumId: String,
     @ColumnInfo(name = "date_created")
-    val dateCreated: Date? = null,
+    val dateCreated: Date,
     @ColumnInfo(name = "media_uri")
     val mediaUri: String? = null,
+    @ColumnInfo(name = "remote_media_url")
+    val remoteMediaUrl: String? = null,
+    @ColumnInfo(name = "download_state")
+    val downloadState: MediaDownloadState = MediaDownloadState.PENDING,
+    @ColumnInfo(name = "last_download_attempt")
+    val lastDownloadAttempt: Date? = null,
+    @ColumnInfo(name = "last_download_error")
+    val lastDownloadError: String? = null,
     val thumbnail: ByteArray? = null, // Could be used for video thumbnails too if generated locally
     // Video-specific properties (nullable for images)
     @ColumnInfo(name = "video_duration")
@@ -45,6 +54,10 @@ data class GalleryMediaEntity(
         if (albumId != other.albumId) return false
         if (dateCreated != other.dateCreated) return false
         if (mediaUri != other.mediaUri) return false
+        if (remoteMediaUrl != other.remoteMediaUrl) return false
+        if (downloadState != other.downloadState) return false
+        if (lastDownloadAttempt != other.lastDownloadAttempt) return false
+        if (lastDownloadError != other.lastDownloadError) return false
         if (!thumbnail.contentEquals(other.thumbnail)) return false
 
         return true
@@ -58,8 +71,12 @@ data class GalleryMediaEntity(
         result = 31 * result + itemName.hashCode()
         result = 31 * result + lastUpdated.hashCode()
         result = 31 * result + albumId.hashCode()
-        result = 31 * result + (dateCreated?.hashCode() ?: 0)
+        result = 31 * result + (dateCreated.hashCode())
         result = 31 * result + (mediaUri?.hashCode() ?: 0)
+        result = 31 * result + (remoteMediaUrl?.hashCode() ?: 0)
+        result = 31 * result + downloadState.hashCode()
+        result = 31 * result + (lastDownloadAttempt?.hashCode() ?: 0)
+        result = 31 * result + (lastDownloadError?.hashCode() ?: 0)
         result = 31 * result + (thumbnail?.contentHashCode() ?: 0)
         return result
     }

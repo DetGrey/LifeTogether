@@ -6,7 +6,7 @@ import com.example.lifetogether.domain.model.guides.GuideStep
 object GuideProgressSnapshot {
     fun pointerKey(pointer: GuideLeafPointer): String {
         val subStepIndex = pointer.subStepIndex ?: -1
-        return "${pointer.sectionIndex}:${pointer.sectionAmountIndex}:${pointer.stepIndex}:$subStepIndex"
+        return "${pointer.sectionIndex}:${pointer.sectionPieceIndex}:${pointer.stepIndex}:$subStepIndex"
     }
 
     fun completedPointerKeysFromSections(sections: List<GuideSection>): Set<String> {
@@ -24,32 +24,32 @@ object GuideProgressSnapshot {
         completedPointerKeys: Set<String>,
     ): List<GuideSection> {
         return sections.mapIndexed { sectionIndex, section ->
-            val amount = section.amount.coerceAtLeast(1)
-            val updatedByAmount = (0 until amount).map { amountIndex ->
-                val baseAmountSteps = GuideProgress.sectionStepsForAmount(section, amountIndex)
-                applyStepCompletionForAmount(
+            val pieces = section.pieces.coerceAtLeast(1)
+            val updatedByPiece = (0 until pieces).map { pieceIndex ->
+                val basePieceSteps = GuideProgress.sectionStepsForPiece(section, pieceIndex)
+                applyStepCompletionForPiece(
                     sectionIndex = sectionIndex,
-                    amountIndex = amountIndex,
-                    steps = baseAmountSteps,
+                    pieceIndex = pieceIndex,
+                    steps = basePieceSteps,
                     completedPointerKeys = completedPointerKeys,
                 )
             }
 
             GuideProgress.updateSectionCompletion(
                 section.copy(
-                    amount = amount,
-                    completedAmount = 0,
+                    pieces = pieces,
+                    completedPieces = 0,
                     completed = false,
-                    steps = updatedByAmount.firstOrNull().orEmpty(),
-                    stepsProgressByAmount = updatedByAmount,
+                    steps = updatedByPiece.firstOrNull().orEmpty(),
+                    stepsProgressByAmount = updatedByPiece,
                 ),
             )
         }
     }
 
-    private fun applyStepCompletionForAmount(
+    private fun applyStepCompletionForPiece(
         sectionIndex: Int,
-        amountIndex: Int,
+        pieceIndex: Int,
         steps: List<GuideStep>,
         completedPointerKeys: Set<String>,
     ): List<GuideStep> {
@@ -59,7 +59,7 @@ object GuideProgressSnapshot {
                     val key = pointerKey(
                         GuideLeafPointer(
                             sectionIndex = sectionIndex,
-                            sectionAmountIndex = amountIndex,
+                            sectionPieceIndex = pieceIndex,
                             stepIndex = stepIndex,
                             subStepIndex = subStepIndex,
                         ),
@@ -74,7 +74,7 @@ object GuideProgressSnapshot {
                 val key = pointerKey(
                     GuideLeafPointer(
                         sectionIndex = sectionIndex,
-                        sectionAmountIndex = amountIndex,
+                        sectionPieceIndex = pieceIndex,
                         stepIndex = stepIndex,
                         subStepIndex = null,
                     ),

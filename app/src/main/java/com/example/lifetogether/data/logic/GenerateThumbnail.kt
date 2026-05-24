@@ -33,13 +33,15 @@ fun generateImageThumbnailFromFile(imageFile: File): ByteArray? {
             return null
         }
 
+        val orientedBitmap = ExifImageUtils.rotateBitmapIfNeeded(originalBitmap, imageFile)
+
         val optimalWidth = screenWidth / 2 // Use this as the width limit for the thumbnail
 
-        val aspectRatio = originalBitmap.width.toFloat() / originalBitmap.height.toFloat()
+        val aspectRatio = orientedBitmap.width.toFloat() / orientedBitmap.height.toFloat()
         val scaledWidth: Int
         val scaledHeight: Int
 
-        if (originalBitmap.width > originalBitmap.height) { // Landscape or square where width is determining factor
+        if (orientedBitmap.width > orientedBitmap.height) { // Landscape or square where width is determining factor
             scaledWidth = optimalWidth
             scaledHeight = (optimalWidth / aspectRatio).toInt().coerceAtLeast(1) // Ensure height is at least 1
         } else { // Portrait where height is determining factor based on optimalWidth for the other dimension
@@ -54,8 +56,8 @@ fun generateImageThumbnailFromFile(imageFile: File): ByteArray? {
             return null
         }
 
-        val thumbnailBitmap = originalBitmap.scale(scaledWidth, scaledHeight, true) // Use filter = true for better quality scaling
-        originalBitmap.recycle() // Recycle the larger original bitmap
+        val thumbnailBitmap = orientedBitmap.scale(scaledWidth, scaledHeight, true) // Use filter = true for better quality scaling
+        orientedBitmap.recycle() // Recycle the larger original bitmap
 
         ByteArrayOutputStream().use { outputStream ->
             thumbnailBitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream) // PNG for potentially better quality thumbnails

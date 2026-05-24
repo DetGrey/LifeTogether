@@ -1,18 +1,15 @@
 package com.example.lifetogether.ui.common.textfield
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.logic.toFullDateString
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import java.util.Date
@@ -22,28 +19,33 @@ fun DatePickerTextField(
     label: String,
     date: Date?,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    TextField(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(60.dp)
-            .clip(shape = RoundedCornerShape(20))
-            .clickable { onClick() },
-        value = date?.toFullDateString() ?: "",
-        onValueChange = { },
-        label = { Text(label) },
-        colors = TextFieldDefaults.colors(
-            disabledContainerColor = MaterialTheme.colorScheme.onBackground,
-            disabledLabelColor = MaterialTheme.colorScheme.background,
-            disabledTextColor = MaterialTheme.colorScheme.background,
-        ),
-        enabled = false,
-    )
+    val interactionSource = remember { MutableInteractionSource() }
+
+    Box(
+        modifier = modifier.clickable(
+            interactionSource = interactionSource,
+            indication = null,
+        ) {
+            onClick()
+        },
+    ) {
+        TextField(
+            modifier = Modifier.fillMaxWidth().inputFieldModifier(),
+            value = date?.toFullDateString() ?: "",
+            onValueChange = { },
+            label = { Text(label) },
+            colors = filledTextFieldColors(),
+            readOnly = true,
+            enabled = false,
+        )
+    }
 }
 
 @Preview
 @Composable
-fun DatePickerPreview() {
+private fun DatePickerPreview() {
     LifeTogetherTheme {
         DatePickerTextField(label = "Birthday", date = null, onClick = {})
     }

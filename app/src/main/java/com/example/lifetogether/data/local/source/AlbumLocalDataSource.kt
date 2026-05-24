@@ -28,7 +28,7 @@ class AlbumLocalDataSource @Inject constructor(
         val familyId = items.firstOrNull()?.familyId ?: return
         val entities = items.map { item ->
             AlbumEntity(
-                id = item.id ?: "",
+                id = item.id,
                 familyId = item.familyId,
                 itemName = item.itemName,
                 lastUpdated = item.lastUpdated,
@@ -49,6 +49,12 @@ class AlbumLocalDataSource @Inject constructor(
         albumsDao.updateItems(itemsToUpdate)
         albumsDao.deleteItems(itemsToDelete.map { it.id })
     }
+
+    suspend fun getAlbumOnce(id: String): AlbumEntity? = albumsDao.getItemOnce(id)
+
+    suspend fun upsertAlbum(entity: AlbumEntity) = albumsDao.updateItems(listOf(entity))
+
+    suspend fun deleteAlbum(id: String) = albumsDao.deleteItems(listOf(id))
 
     suspend fun deleteFamilyAlbums(familyId: String) {
         albumsDao.getItems(familyId).firstOrNull()?.let { currentFamilyItems ->

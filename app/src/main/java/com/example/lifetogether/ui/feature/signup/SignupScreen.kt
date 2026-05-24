@@ -2,118 +2,118 @@ package com.example.lifetogether.ui.feature.signup
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
-import com.example.lifetogether.domain.model.Icon
-import com.example.lifetogether.ui.common.TopBar
-import com.example.lifetogether.ui.common.dialog.CustomDatePickerDialog
+import com.example.lifetogether.domain.model.AppIcon
+import com.example.lifetogether.ui.common.dialog.DatePickerDialog
+import com.example.lifetogether.ui.common.AppTopBar
+import com.example.lifetogether.ui.common.button.PrimaryButton
+import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.common.textfield.DatePickerTextField
-import com.example.lifetogether.ui.navigation.AppNavigator
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun SignupScreen(
-    appNavigator: AppNavigator? = null,
+    uiState: SignupUiState,
+    onUiEvent: (SignupUiEvent) -> Unit,
+    onNavigationEvent: (SignupNavigationEvent) -> Unit,
 ) {
-    val signupViewModel: SignUpViewModel = hiltViewModel()
+    var showBirthdayPicker by remember { mutableStateOf(false) }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize(),
-    ) {
+    Scaffold(
+        topBar = {
+            AppTopBar(
+                leftAppIcon = AppIcon(
+                    resId = R.drawable.ic_back,
+                    description = "back arrow icon",
+                ),
+                onLeftClick = {
+                    onNavigationEvent(SignupNavigationEvent.NavigateBack)
+                },
+                text = "Sign up",
+            )
+        },
+    ) { padding ->
         LazyColumn(
             modifier = Modifier
-                .padding(10.dp),
+                .fillMaxSize()
+                .padding(padding)
+                .padding(LifeTogetherTokens.spacing.small),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(30.dp),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xLarge),
         ) {
-            item {
-                TopBar(
-                    leftIcon = Icon(
-                        resId = R.drawable.ic_back_arrow,
-                        description = "back arrow icon",
-                    ),
-                    onLeftClick = {
-                        appNavigator?.navigateBack()
-                    },
-                    text = "Sign up",
-                )
-            }
-
             item {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth(0.8f)
-                        .padding(vertical = 30.dp),
+                        .padding(vertical = LifeTogetherTokens.spacing.xLarge),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
                 ) {
                     CustomTextField(
-                        value = signupViewModel.name,
-                        onValueChange = { value -> signupViewModel.name = value },
+                        value = uiState.name,
+                        onValueChange = { value -> onUiEvent(SignupUiEvent.NameChanged(value)) },
                         label = "Name",
                         capitalization = true,
                         keyboardType = KeyboardType.Text,
                         imeAction = ImeAction.Next,
                     )
                     CustomTextField(
-                        value = signupViewModel.email,
-                        onValueChange = { value -> signupViewModel.email = value },
+                        value = uiState.email,
+                        onValueChange = { value -> onUiEvent(SignupUiEvent.EmailChanged(value)) },
                         label = "Email",
                         keyboardType = KeyboardType.Email,
                         imeAction = ImeAction.Next,
                     )
                     DatePickerTextField(
                         label = "Birthday",
-                        date = signupViewModel.birthday,
-                        onClick = { signupViewModel.birthdayExpanded = true }, // TODO
+                        date = uiState.birthday,
+                        onClick = { showBirthdayPicker = true },
                     )
                     CustomTextField(
-                        value = signupViewModel.password,
-                        onValueChange = { value -> signupViewModel.password = value },
+                        value = uiState.password,
+                        onValueChange = { value -> onUiEvent(SignupUiEvent.PasswordChanged(value)) },
                         label = "Password",
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Next,
                     )
                     CustomTextField(
-                        value = signupViewModel.confirmPassword,
-                        onValueChange = { value -> signupViewModel.confirmPassword = value },
+                        value = uiState.confirmPassword,
+                        onValueChange = { value -> onUiEvent(SignupUiEvent.ConfirmPasswordChanged(value)) },
                         label = "Confirm password",
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Done,
                     )
 
-                    Button(onClick = {
-                        signupViewModel.onSignUpClicked(
-                            onSuccess = { userInformation ->
-//                                authViewModel?.updateUserInformation(userInformation)
-                                appNavigator?.navigateToProfile()
-                            },
-                        )
-                    }) {
-                        Text(text = "Sign up")
-                    }
+                    PrimaryButton(
+                        text = "Sign up",
+                        onClick = { onUiEvent(SignupUiEvent.SignUpClicked) },
+                        loading = uiState.isLoading,
+                    )
 
-                    Text(
+                    TextDefault(
                         modifier = Modifier
-                            .padding(top = 10.dp)
+                            .padding(top = LifeTogetherTokens.spacing.small)
                             .fillMaxWidth()
-                            .clickable { appNavigator?.navigateToLogin() },
+                            .clickable { onNavigationEvent(SignupNavigationEvent.LoginClicked) },
                         text = "Do you already have an account?\nLogin here",
                         textAlign = TextAlign.Center,
                     )
@@ -121,17 +121,33 @@ fun SignupScreen(
             }
         }
 
-        if (signupViewModel.birthdayExpanded) {
-            CustomDatePickerDialog(
-                selectedDate = signupViewModel.birthday,
+        if (showBirthdayPicker) {
+            DatePickerDialog(
+                selectedDate = uiState.birthday,
                 onDateSelected = { date ->
-                    signupViewModel.birthday = date
-                    signupViewModel.birthdayExpanded = false
+                    showBirthdayPicker = false
+                    onUiEvent(SignupUiEvent.BirthdaySelected(date))
                 },
-                onDismiss = {
-                    signupViewModel.birthdayExpanded = false
-                },
+                onDismiss = { showBirthdayPicker = false },
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun SignupScreenPreview() {
+    LifeTogetherTheme {
+        SignupScreen(
+            uiState = SignupUiState(
+                name = "Alex",
+                email = "alex@example.com",
+                birthday = null,
+                password = "password123",
+                confirmPassword = "password123",
+            ),
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
     }
 }
