@@ -27,5 +27,6 @@ object Constants {
 
     // Notification constants
     const val GROCERY_LIST_CHANNEL = "grocery_list_notification_channel"
-    const val DEFAULT_CHANNEL = "default_channel"
+    const val MEAL_PLAN_CHANNEL = "meal_plan_notification_channel"
+    const val DEFAULT_CHANNEL = "default_channel" //todo remove since not used
 }

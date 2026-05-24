@@ -7,6 +7,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.navigation.FamilyNavRoute
+import com.example.lifetogether.ui.navigation.NotificationsNavRoute
 import com.example.lifetogether.ui.navigation.ProfileNavRoute
 
 @Composable
@@ -26,6 +27,8 @@ fun SettingsRoute(
                 SettingsNavigationEvent.NavigateBack -> appNavigator.navigateBack()
                 SettingsNavigationEvent.NavigateToProfile -> appNavigator.navigateTopLevel(ProfileNavRoute)
                 SettingsNavigationEvent.NavigateToFamily -> appNavigator.navigate(FamilyNavRoute)
+                SettingsNavigationEvent.NavigateToNotifications ->
+                    appNavigator.navigate(NotificationsNavRoute)
             }
         },
     )

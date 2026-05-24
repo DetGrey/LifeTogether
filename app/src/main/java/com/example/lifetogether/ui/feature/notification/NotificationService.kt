@@ -11,7 +11,6 @@ import com.example.lifetogether.MainActivity
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.sendFCMNotification
 import com.example.lifetogether.ui.navigation.AppRoute
-import com.example.lifetogether.ui.navigation.HomeNavRoute
 import com.example.lifetogether.ui.navigation.NotificationDestination
 import com.example.lifetogether.util.Constants
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -54,11 +53,16 @@ class NotificationService @Inject constructor(
             "This is the channel for all Grocery List notifications",
         )
         createNotificationChannel(
+            Constants.MEAL_PLAN_CHANNEL,
+            "Meal Plan Reminders",
+            "Reminders for your upcoming meal plans",
+            NotificationManager.IMPORTANCE_HIGH,
+        )
+        createNotificationChannel(
             Constants.DEFAULT_CHANNEL,
             "Default Notifications",
             "This is the channel for all random notifications",
         )
-        // ETC
     }
 
     // Method to show a customizable notification
@@ -97,6 +101,8 @@ class NotificationService @Inject constructor(
         notificationId: Int = System.currentTimeMillis().toInt(),
         priority: Int = NotificationCompat.PRIORITY_DEFAULT,
         autoCancel: Boolean = true,
+        bigText: String? = null,
+        category: String? = null,
         destination: NotificationDestination? = null,
     ) {
         val notificationBuilder = NotificationCompat.Builder(context, channelId)
@@ -106,6 +112,12 @@ class NotificationService @Inject constructor(
             .setPriority(priority)
             .setAutoCancel(autoCancel)
 
+        if (bigText != null) {
+            notificationBuilder.setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
+        }
+        if (category != null) {
+            notificationBuilder.setCategory(category)
+        }
         destination?.let {
             notificationBuilder.setContentIntent(createPendingIntent(it))
         }
@@ -114,8 +126,8 @@ class NotificationService @Inject constructor(
         notificationManager.notify(notificationId, notification)
     }
 
-    fun routeFromDestinationString(destination: String): AppRoute {
-        return NotificationDestination.fromKey(destination)?.toAppRoute() ?: HomeNavRoute
+    fun routeChainFromDestinationString(destination: String): List<AppRoute> {
+        return NotificationDestination.fromKey(destination)?.toRouteChain() ?: emptyList()
     }
 
     private fun createPendingIntent(destination: NotificationDestination): PendingIntent {

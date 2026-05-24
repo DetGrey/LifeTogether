@@ -1,6 +1,7 @@
 package com.example.lifetogether.di
 
 import com.example.lifetogether.data.repository.FamilyRepositoryImpl
+import com.example.lifetogether.data.repository.MealNotificationPreferencesRepositoryImpl
 import com.example.lifetogether.data.repository.GalleryRepositoryImpl
 import com.example.lifetogether.data.repository.GroceryRepositoryImpl
 import com.example.lifetogether.data.repository.GuideRepositoryImpl
@@ -11,6 +12,7 @@ import com.example.lifetogether.data.repository.TipTrackerRepositoryImpl
 import com.example.lifetogether.data.repository.UserListRepositoryImpl
 import com.example.lifetogether.data.repository.UserRepositoryImpl
 import com.example.lifetogether.domain.repository.FamilyRepository
+import com.example.lifetogether.domain.repository.MealNotificationPreferencesRepository
 import com.example.lifetogether.domain.repository.GalleryRepository
 import com.example.lifetogether.domain.repository.GroceryRepository
 import com.example.lifetogether.domain.repository.GuideRepository
@@ -87,6 +89,12 @@ abstract class RepositoryModule {
     @Singleton
     @Binds
     abstract fun bindMealPlannerRepository(
-        mealPlannerRepositoryImpl: MealPlannerRepositoryImpl
+        mealPlannerRepositoryImpl: MealPlannerRepositoryImpl,
     ): MealPlannerRepository
+
+    @Singleton
+    @Binds
+    abstract fun bindMealNotificationPreferencesRepository(
+        impl: MealNotificationPreferencesRepositoryImpl,
+    ): MealNotificationPreferencesRepository
 }

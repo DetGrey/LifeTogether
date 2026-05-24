@@ -131,8 +131,8 @@ class MainActivity : ComponentActivity() {
                             ) {
                                 Box(modifier = Modifier.fillMaxSize()) {
                                     NavHost(
-                                        deepLinkRoute = destination?.let {
-                                            notificationService.routeFromDestinationString(it)
+                                        deepLinkRoutes = destination?.let {
+                                            notificationService.routeChainFromDestinationString(it)
                                         },
                                     )
 

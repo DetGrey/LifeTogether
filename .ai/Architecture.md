@@ -14,6 +14,7 @@ Historical phase decisions remain in `.ai/v2-plan/` and are not duplicated here.
 
 - `LifeTogetherTheme` owns the app's Material 3 theme wiring.
 - Feature and common composables should read colors, typography, and shapes from `MaterialTheme`.
+- When using shapes on a clickable component, always use `Modifier.clip()` before the clickable modifier so the clickable shape fits the Card/composable shape.
 - `LifeTogetherTokens` is a foundational token layer for spacing and sizing only.
 - Use `LifeTogetherTokens.spacing` for `Spacer` sizes, padding, and other spacing-like gaps.
 - Use `LifeTogetherTokens.sizing` for icons and other small UI affordances that need shared sizing.

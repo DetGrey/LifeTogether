@@ -8,12 +8,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.navigation.MealPlanDetailsNavRoute
+import com.example.lifetogether.ui.navigation.NotificationsNavRoute
 import com.example.lifetogether.ui.navigation.NavigationResult
 
 @Composable
-fun MealPlannerRoute(
-    appNavigator: AppNavigator,
-) {
+fun MealPlannerRoute(appNavigator: AppNavigator) {
     val viewModel: MealPlannerViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     CollectUiCommands(viewModel.uiCommands)
@@ -32,12 +31,12 @@ fun MealPlannerRoute(
         onNavigationEvent = { navigationEvent ->
             when (navigationEvent) {
                 MealPlannerNavigationEvent.NavigateBack -> appNavigator.navigateBack()
-                is MealPlannerNavigationEvent.NavigateToCreateMealPlan -> {
+                is MealPlannerNavigationEvent.NavigateToCreateMealPlan ->
                     appNavigator.navigate(MealPlanDetailsNavRoute(defaultDate = navigationEvent.defaultDate))
-                }
-                is MealPlannerNavigationEvent.NavigateToMealPlanDetails -> {
+                is MealPlannerNavigationEvent.NavigateToMealPlanDetails ->
                     appNavigator.navigate(MealPlanDetailsNavRoute(navigationEvent.mealPlanId))
-                }
+                MealPlannerNavigationEvent.NavigateToNotifications ->
+                    appNavigator.navigate(NotificationsNavRoute)
             }
         },
     )

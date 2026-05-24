@@ -3,6 +3,7 @@ package com.example.lifetogether.ui.feature.mealPlanner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.model.session.authenticatedUserOrNull
+import com.example.lifetogether.domain.repository.MealNotificationPreferencesRepository
 import com.example.lifetogether.domain.repository.MealPlannerRepository
 import com.example.lifetogether.domain.repository.RecipeRepository
 import com.example.lifetogether.domain.repository.SessionRepository
@@ -14,6 +15,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -23,7 +25,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -32,25 +33,21 @@ class MealPlannerViewModel @Inject constructor(
     sessionRepository: SessionRepository,
     private val mealPlannerRepository: MealPlannerRepository,
     private val recipeRepository: RecipeRepository,
+    private val prefsRepository: MealNotificationPreferencesRepository,
 ) : ViewModel() {
 
     private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
     val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
 
     private val _focusDate = MutableStateFlow<String?>(null)
+    private val _showActionSheet = MutableStateFlow(false)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val contentState: StateFlow<MealPlannerUiState.Content?> = sessionRepository.sessionState
-        .map { state ->
-            state.authenticatedUserOrNull?.familyId
-        }
+        .map { state -> state.authenticatedUserOrNull?.familyId }
         .distinctUntilChanged()
         .flatMapLatest { familyId ->
-            if (familyId == null) {
-                flowOf(null)
-            } else {
-                observeMealPlannerContent(familyId)
-            }
+            if (familyId == null) flowOf(null) else observeMealPlannerContent(familyId)
         }
         .stateIn(
             scope = viewModelScope,
@@ -61,8 +58,14 @@ class MealPlannerViewModel @Inject constructor(
     val uiState: StateFlow<MealPlannerUiState> = combine(
         contentState,
         _focusDate,
-    ) { content, focusDate ->
-        content?.copy(focusDate = focusDate) ?: MealPlannerUiState.Loading
+        _showActionSheet,
+        prefsRepository.observePreferences().map { !it.onboardingShown },
+    ) { content, focusDate, showActionSheet, showOnboarding ->
+        content?.copy(
+            focusDate = focusDate,
+            showActionSheet = showActionSheet,
+            showOnboarding = showOnboarding,
+        ) ?: MealPlannerUiState.Loading
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -72,6 +75,9 @@ class MealPlannerViewModel @Inject constructor(
     fun onUiEvent(event: MealPlannerUiEvent) {
         when (event) {
             MealPlannerUiEvent.ClearFocusDate -> clearFocusDate()
+            MealPlannerUiEvent.ToggleActionSheet -> _showActionSheet.value = !_showActionSheet.value
+            MealPlannerUiEvent.DismissOnboarding -> dismissOnboarding()
+            MealPlannerUiEvent.EnableNotifications -> enableNotifications()
         }
     }
 
@@ -93,9 +99,7 @@ class MealPlannerViewModel @Inject constructor(
     private fun observeRecipePrepTimes(familyId: String): Flow<Map<String, Int>> {
         return recipeRepository.observeRecipes(familyId)
             .successData()
-            .map { recipes ->
-                recipes.associate { recipe -> recipe.id to recipe.preparationTimeMin }
-            }
+            .map { recipes -> recipes.associate { it.id to it.preparationTimeMin } }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -105,6 +109,17 @@ class MealPlannerViewModel @Inject constructor(
                 is Result.Success -> emit(result.data)
                 is Result.Failure -> showError(result.error.toUserMessage())
             }
+        }
+    }
+
+    private fun dismissOnboarding() {
+        viewModelScope.launch { prefsRepository.updateOnboardingShown() }
+    }
+
+    private fun enableNotifications() {
+        viewModelScope.launch {
+            prefsRepository.updateMasterEnabled(true)
+            prefsRepository.updateOnboardingShown()
         }
     }
 

@@ -1,5 +1,6 @@
 [versions]
 accompanistPermissions = "0.37.3"
+datastorePreferences = "1.2.1"
 agp = "9.2.1"
 awsConfig = "1.6.79"
 coil = "2.7.0"
@@ -37,6 +38,7 @@ workRuntime = "2.11.2"
 
 [libraries]
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-compose-material-icons-core = { group = "androidx.compose.material", name = "material-icons-core" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }

@@ -43,3 +43,5 @@ sealed interface AppRoute : NavKey
 // Stack marker for shared TipTrackerViewModel scope between TipTrackerRoute and TipStatisticsRoute.
 // Pushed before TipTrackerNavRoute; auto-popped when all tip tracker routes leave the stack.
 @Serializable object TipTrackerGraph : AppRoute
+
+@Serializable object NotificationsNavRoute : AppRoute

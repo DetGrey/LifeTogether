@@ -20,9 +20,10 @@ class AppNavigator(private val backStack: NavBackStack<NavKey>) : Navigator {
         backStack.add(route)
     }
 
-    fun clearAndNavigate(route: AppRoute) {
+    fun clearAndNavigate(route: AppRoute, vararg then: AppRoute) {
         backStack.clear()
         backStack.add(route)
+        then.forEach { backStack.add(it) }
     }
 
     fun navigateReplacing(route: AppRoute) {

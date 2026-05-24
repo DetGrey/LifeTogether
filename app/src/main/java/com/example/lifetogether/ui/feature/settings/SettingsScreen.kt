@@ -101,7 +101,9 @@ fun SettingsScreen(
                             appIcon = AppIcon(R.drawable.ic_bell, "bell icon"),
                             title = "Notifications",
                             link = "Manage notifications",
-                            linkClickable = null,
+                            linkClickable = {
+                                onNavigationEvent(SettingsNavigationEvent.NavigateToNotifications)
+                            },
                         )
                     }
                 }

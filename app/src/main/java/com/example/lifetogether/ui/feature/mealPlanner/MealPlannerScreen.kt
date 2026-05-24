@@ -1,5 +1,9 @@
 package com.example.lifetogether.ui.feature.mealPlanner
 
+import android.Manifest
+import android.content.Context
+import android.content.Intent
+import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,7 +21,9 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -25,22 +31,31 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.minToHourMinString
 import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.lists.MealType
 import com.example.lifetogether.domain.model.mealplanner.MealPlan
+import com.example.lifetogether.ui.common.ActionSheet
+import com.example.lifetogether.ui.common.ActionSheetItem
 import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.button.AddButton
+import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.button.SecondaryButton
 import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.common.text.TextLabel
+import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -48,9 +63,11 @@ import java.time.format.DateTimeParseException
 import java.time.format.TextStyle
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
+import java.util.Date
 import java.util.Locale
+import androidx.core.net.toUri
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun MealPlannerScreen(
     uiState: MealPlannerUiState,
@@ -59,16 +76,19 @@ fun MealPlannerScreen(
 ) {
     val isLoading = uiState is MealPlannerUiState.Loading
     val contentState = uiState as? MealPlannerUiState.Content
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
             AppTopBar(
-                leftAppIcon = AppIcon(
-                    resId = R.drawable.ic_back,
-                    description = "back arrow icon",
-                ),
+                leftAppIcon = AppIcon(resId = R.drawable.ic_back, description = "back arrow icon"),
                 onLeftClick = { onNavigationEvent(MealPlannerNavigationEvent.NavigateBack) },
                 text = "Meal Planner",
+                rightAppIcon = if (contentState != null) AppIcon(
+                    resId = R.drawable.ic_overflow_menu,
+                    description = "overflow menu",
+                ) else null,
+                onRightClick = { onUiEvent(MealPlannerUiEvent.ToggleActionSheet) },
             )
         },
         floatingActionButton = {
@@ -87,6 +107,7 @@ fun MealPlannerScreen(
             },
         ) {
             val content = contentState ?: return@AnimatedLoadingContent
+
             MealPlannerWeekPager(
                 mealPlans = content.mealPlans,
                 recipePrepTimes = content.recipePrepTimes,
@@ -102,8 +123,97 @@ fun MealPlannerScreen(
                     onNavigationEvent(MealPlannerNavigationEvent.NavigateToCreateMealPlan(defaultDate = date.toString()))
                 },
             )
+
+            if (content.showActionSheet) {
+                ActionSheet(
+                    onDismiss = { onUiEvent(MealPlannerUiEvent.ToggleActionSheet) },
+                    actionsList = listOf(
+                        ActionSheetItem(
+                            label = "Notification settings",
+                            onClick = {
+                                onUiEvent(MealPlannerUiEvent.ToggleActionSheet)
+                                onNavigationEvent(MealPlannerNavigationEvent.NavigateToNotifications)
+                            },
+                        ),
+                    ),
+                )
+            }
+
+            if (content.showOnboarding) {
+                OnboardingBottomSheet(
+                    onDismiss = { onUiEvent(MealPlannerUiEvent.DismissOnboarding) },
+                    onEnable = { onUiEvent(MealPlannerUiEvent.EnableNotifications) },
+                    context = context,
+                )
+            }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
+@Composable
+private fun OnboardingBottomSheet(
+    onDismiss: () -> Unit,
+    onEnable: () -> Unit,
+    context: Context,
+) {
+    val sheetState = rememberModalBottomSheetState()
+    val scope = rememberCoroutineScope()
+    val notificationPermission = rememberPermissionState(Manifest.permission.POST_NOTIFICATIONS)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.primaryContainer,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(LifeTogetherTokens.spacing.medium)
+                .padding(bottom = LifeTogetherTokens.spacing.large),
+            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            TextHeadingMedium(text = "Meal reminders")
+            TextDefault(
+                text = "Get notified before each meal — breakfast at 9:00, lunch at 12:00, dinner at 18:00. You can customise times in notification settings.",
+                textAlign = TextAlign.Center,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+            ) {
+                SecondaryButton(
+                    text = "Not now",
+                    onClick = {
+                        scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
+                    },
+                    modifier = Modifier.weight(1f),
+                )
+                PrimaryButton(
+                    text = "Enable",
+                    onClick = {
+                        onEnable()
+                        scope.launch { sheetState.hide() }.invokeOnCompletion {
+                            if (!notificationPermission.status.isGranted) {
+                                notificationPermission.launchPermissionRequest()
+                            } else {
+                                openExactAlarmSettings(context)
+                            }
+                        }
+                    },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+private fun openExactAlarmSettings(context: Context) {
+    val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+        data = "package:${context.packageName}".toUri()
+    }
+    context.startActivity(intent)
 }
 
 @Composable
@@ -197,8 +307,7 @@ private fun MealPlannerWeekPager(
                     ) {
                         if (dayMealPlans.isEmpty()) {
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                             ) {
                                 TextDefault(text = label)
@@ -287,3 +396,28 @@ private val MealType.mealOrder: Int
         MealType.SNACK -> 3
         MealType.OTHER -> 4
     }
+
+@Preview(showBackground = true)
+@Composable
+private fun MealPlannerScreenPreview() {
+    LifeTogetherTheme {
+        MealPlannerScreen(
+            uiState = MealPlannerUiState.Content(
+                familyId = "family-1",
+                mealPlans = listOf(
+                    MealPlan(
+                        id = "1",
+                        familyId = "family-1",
+                        itemName = "Pasta Bolognese",
+                        date = LocalDate.now().toString(),
+                        mealType = MealType.DINNER,
+                        dateCreated = Date(),
+                    ),
+                ),
+                recipePrepTimes = emptyMap(),
+            ),
+            onUiEvent = {},
+            onNavigationEvent = {},
+        )
+    }
+}

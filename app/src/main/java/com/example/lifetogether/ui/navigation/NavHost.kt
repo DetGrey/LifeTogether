@@ -8,7 +8,6 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.lifecycle.HasDefaultViewModelProviderFactory
@@ -42,6 +41,7 @@ import com.example.lifetogether.ui.feature.loading.LoadingRoute
 import com.example.lifetogether.ui.feature.login.LoginRoute
 import com.example.lifetogether.ui.feature.mealPlanner.MealPlannerRoute
 import com.example.lifetogether.ui.feature.mealPlanner.entryDetails.MealPlanDetailsRoute
+import com.example.lifetogether.ui.feature.settings.notifications.NotificationsRoute
 import com.example.lifetogether.ui.feature.profile.ProfileRoute
 import com.example.lifetogether.ui.feature.recipes.RecipesRoute
 import com.example.lifetogether.ui.feature.recipes.details.RecipeDetailsRoute
@@ -54,15 +54,9 @@ private const val RouteTransitionDurationMillis = 450
 private const val RouteTransitionFadeInitialAlpha = 0.92f
 
 @Composable
-fun NavHost(deepLinkRoute: AppRoute? = null) {
+fun NavHost(deepLinkRoutes: List<AppRoute>? = null) {
     val backStack = rememberNavBackStack(LoadingNavRoute)
     val appNavigator = remember(backStack) { AppNavigator(backStack) }
-
-    LaunchedEffect(deepLinkRoute) {
-        if (deepLinkRoute != null) {
-            appNavigator.navigateTopLevel(deepLinkRoute)
-        }
-    }
 
     // ViewModelStore map for graph-scoped entries (TipTrackerGraph).
     // Stores are keyed by the graph marker route object and cleared when that
@@ -118,7 +112,7 @@ fun NavHost(deepLinkRoute: AppRoute? = null) {
         predictivePopTransitionSpec = { popEnterTransition togetherWith popExitTransition },
         entryProvider = entryProvider {
             // ─── Auth / loading ────────────────────────────────────────────
-            entry<LoadingNavRoute> { LoadingRoute(appNavigator) }
+            entry<LoadingNavRoute> { LoadingRoute(appNavigator, deepLinkRoutes) }
             entry<LoginNavRoute> { LoginRoute(appNavigator) }
             entry<SignupNavRoute> { SignupRoute(appNavigator) }
 
@@ -126,7 +120,10 @@ fun NavHost(deepLinkRoute: AppRoute? = null) {
             entry<HomeNavRoute> { HomeRoute(appNavigator) }
             entry<ProfileNavRoute> { ProfileRoute(appNavigator) }
             entry<FamilyNavRoute> { FamilyRoute(appNavigator) }
+
+            // ─── Settings ───────────────────────────────────────────────────
             entry<SettingsNavRoute> { SettingsRoute(appNavigator) }
+            entry<NotificationsNavRoute> { NotificationsRoute(appNavigator) }
 
             // ─── Admin ─────────────────────────────────────────────────────
             entry<AdminGroceryCategoriesNavRoute> { AdminGroceryCategoriesRoute(appNavigator) }

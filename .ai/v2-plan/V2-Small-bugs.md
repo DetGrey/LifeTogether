@@ -165,29 +165,28 @@ Here are some bugs that need to be fixed:
 - The Profiler can see all classes in memory and other things.
 - Check android bench for best AI for kotlin coding
 
-# Implementation suggestions from list> above
-Looking at the unchecked items, here's my read:
 
-## Should be in v2 before release
+# Extra
+Here's a full list:
+remove default notification channel
 
-These are bugs or broken functionality — not features:
+| File                                                                           | Line | Note                                                    |
+|--------------------------------------------------------------------------------|------|---------------------------------------------------------|
+| `data/remote/CloudflareR2StorageDataSource.kt`                                 | 116  | Whether to send empty ByteArray if none                 |
+| `data/remote/MyFirebaseMessagingService.kt`                                    | 22   | FCM message handling (boilerplate stub)                 |
+| `ui/common/textfield/CustomTextField.kt`                                       | 88   | Field validation — `isError` hardcoded to `false`       |
+| `ui/feature/admin/groceryList/suggestions/AdminGrocerySuggestionsViewModel.kt` | 122  | `groceryCategories = emptyList()` — may need real data  |
+| `ui/feature/gallery/MediaDetailsViewModel.kt`                                  | 199  | Magic ratio `0.4f` set for appearance, possibly wrong   |
+| `ui/feature/guides/stepplayer/components/GuideStepCardBody.kt`                 | 23   | `roundGroupMeta` param — unclear purpose                |
+| `ui/feature/guides/stepplayer/components/GuideStepCardBody.kt`                 | 28   | Title fallback logic described as "awful"               |
+| `ui/feature/lists/ListsScreen.kt`                                              | 301  | `singleLine` commented out                              |
+| `ui/feature/lists/ListsScreen.kt`                                              | 308  | `ListType` options show raw enum name, no display name  |
+| `ui/feature/lists/ListsScreen.kt`                                              | 319  | `Visibility` options same issue                         |
+| `ui/feature/signup/SignUpViewModel.kt`                                         | 54   | Null check missing before sign-up call                  |
+| `ui/feature/signup/SignUpViewModel.kt`                                         | 56   | Password/confirm-password local validation missing      |
+| `util/Constants.kt`                                                            | 31   | `DEFAULT_CHANNEL` unused — should be removed            |
 
-- **Meal plan notify button**
-- Why are featureCards smaller when there are three in a row than two?
-
-## Skip for v2
-
-- All _italic_ items — explicitly optional
-- R8 — needs a QA pass of release builds; risky to add right before release
-- DropDown `.menuAnchor` deprecation — deprecated doesn't mean broken; survives another release
-- Gallery: add note/description, share media, add tags — feature additions, not bugs
-- Guide step player completion timestamps — marked TODO WOULD LIKE TO IMPLEMENT
-
-## Missing from the list entirely
-
-These aren't tracked but seem release-relevant based on the "questions" section:
-
-- **AppTopBar height and ListItem height** — you said you'd check if they're still problems. If they are, they affect every screen.
+17 TODOs total.
 
 # About using R8 app optimization
 

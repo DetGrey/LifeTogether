@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.notification.MealPlanAlarmOrchestrator
 import com.example.lifetogether.domain.sync.SyncCoordinator
 import com.example.lifetogether.domain.repository.GuideRepository
 import com.example.lifetogether.domain.repository.SessionRepository
@@ -23,6 +24,7 @@ class RootCoordinatorViewModel @Inject constructor(
     private val syncCoordinator: SyncCoordinator,
     private val guideRepository: GuideRepository,
     private val userRepository: UserRepository,
+    private val alarmOrchestrator: MealPlanAlarmOrchestrator,
 ) : ViewModel() {
     private companion object {
         const val TAG = "RootCoordinatorVM"
@@ -40,6 +42,7 @@ class RootCoordinatorViewModel @Inject constructor(
     private var lastFcmFamilyId: String? = null
 
     init {
+        alarmOrchestrator.start()
         viewModelScope.launch {
             sessionRepository.sessionState.collect { state ->
                 when (state) {
@@ -148,5 +151,6 @@ class RootCoordinatorViewModel @Inject constructor(
         lastFcmUid = null
         lastFcmFamilyId = null
         syncCoordinator.cancelAllNonAuthSynchronizers()
+        alarmOrchestrator.stop()
     }
 }
