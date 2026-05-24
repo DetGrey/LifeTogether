@@ -6,12 +6,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.FlowRowScope
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -36,6 +38,7 @@ fun FlowRowScope.FeatureCard(
 ) {
     Card(
         modifier = Modifier
+            .defaultMinSize(minHeight = 100.dp)
             .clip(MaterialTheme.shapes.large)
             .clickable { onClick() }
             .then(if (fullWidth) Modifier.fillMaxWidth() else Modifier.weight(1f))
@@ -50,7 +53,7 @@ fun FlowRowScope.FeatureCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            androidx.compose.material3.Icon(
+            Icon(
                 painter = painterResource(id = appIcon.resId),
                 contentDescription = appIcon.description,
                 modifier = Modifier.height(50.dp),
