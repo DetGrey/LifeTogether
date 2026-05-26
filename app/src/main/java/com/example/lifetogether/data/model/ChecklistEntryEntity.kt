@@ -16,8 +16,8 @@ data class ChecklistEntryEntity(
     val listId: String,
     @ColumnInfo(name = "item_name")
     val itemName: String,
-    @ColumnInfo(name = "is_checked")
-    val isChecked: Boolean = false,
+    @ColumnInfo(name = "checked")
+    val checked: Boolean = false,
     @ColumnInfo(name = "last_updated")
     val lastUpdated: Date,
     @ColumnInfo(name = "date_created")

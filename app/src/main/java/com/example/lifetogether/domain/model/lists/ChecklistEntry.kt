@@ -7,7 +7,7 @@ data class ChecklistEntry(
     override val familyId: String,
     override val listId: String,
     override var itemName: String,
-    val isChecked: Boolean = false,
+    val checked: Boolean = false,
     override val lastUpdated: Date = Date(),
     override val dateCreated: Date,
 ) : ListEntry

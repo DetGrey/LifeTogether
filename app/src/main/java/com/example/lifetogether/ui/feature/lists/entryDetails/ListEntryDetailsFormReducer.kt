@@ -49,7 +49,7 @@ class ListEntryDetailsFormReducer @Inject constructor() {
     ): EntryDetailsContent {
         return when (event) {
             is ListEntryDetailsUiEvent.NameChanged -> details.copy(form = details.form.copy(name = event.value))
-            is ListEntryDetailsUiEvent.Wish.PurchasedChanged -> details.copy(form = details.form.copy(isPurchased = event.value))
+            is ListEntryDetailsUiEvent.Wish.PurchasedChanged -> details.copy(form = details.form.copy(purchased = event.value))
             is ListEntryDetailsUiEvent.Wish.UrlChanged -> details.copy(form = details.form.copy(url = event.value))
             is ListEntryDetailsUiEvent.Wish.PriceChanged -> details.copy(
                 form = details.form.copy(price = event.value.filter { it.isDigit() || it == '.' }),

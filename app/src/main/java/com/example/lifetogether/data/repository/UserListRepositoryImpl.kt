@@ -232,7 +232,7 @@ class UserListRepositoryImpl @Inject constructor(
                     entities
                         .map { it.toModel() }
                         .sortedWith(
-                            compareBy<WishListEntry> { it.isPurchased }
+                            compareBy<WishListEntry> { it.purchased }
                                 .thenBy { it.priority.ordinal }
                                 .thenByDescending { it.lastUpdated },
                         )
@@ -390,7 +390,7 @@ class UserListRepositoryImpl @Inject constructor(
                     entities
                         .map { it.toModel() }
                         .sortedWith(
-                            compareBy<ChecklistEntry> { it.isChecked }
+                            compareBy<ChecklistEntry> { it.checked }
                                 .thenByDescending { it.lastUpdated },
                         )
                 }
@@ -578,7 +578,7 @@ class UserListRepositoryImpl @Inject constructor(
         itemName = itemName,
         lastUpdated = lastUpdated,
         dateCreated = dateCreated,
-        isPurchased = isPurchased,
+        purchased = purchased,
         url = url,
         price = price,
         currencyCode = currencyCode,
@@ -601,7 +601,7 @@ class UserListRepositoryImpl @Inject constructor(
         familyId = familyId,
         listId = listId,
         itemName = itemName,
-        isChecked = isChecked,
+        checked = checked,
         lastUpdated = lastUpdated,
         dateCreated = dateCreated,
     )
@@ -633,7 +633,7 @@ class UserListRepositoryImpl @Inject constructor(
         itemName = itemName,
         lastUpdated = lastUpdated,
         dateCreated = dateCreated,
-        isPurchased = isPurchased,
+        purchased = purchased,
         url = url,
         price = price,
         currencyCode = currencyCode,
@@ -656,7 +656,7 @@ class UserListRepositoryImpl @Inject constructor(
         familyId = familyId,
         listId = listId,
         itemName = itemName,
-        isChecked = isChecked,
+        checked = checked,
         lastUpdated = lastUpdated,
         dateCreated = dateCreated,
     )

@@ -21,8 +21,8 @@ data class WishListEntryEntity(
     val lastUpdated: Date,
     @ColumnInfo(name = "date_created")
     val dateCreated: Date,
-    @ColumnInfo(name = "is_purchased")
-    val isPurchased: Boolean = false,
+    @ColumnInfo(name = "purchased")
+    val purchased: Boolean = false,
     val url: String? = null,
     @ColumnInfo(name = "price")
     val price: Double? = null,

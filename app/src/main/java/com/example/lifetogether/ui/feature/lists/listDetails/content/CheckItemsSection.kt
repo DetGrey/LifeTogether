@@ -54,8 +54,8 @@ fun CheckItemsSection(
     onEdit: (String) -> Unit,
 ) {
     var completedExpanded by rememberSaveable { mutableStateOf(false) }
-    val activeEntries = entries.filterNot { it.isChecked }
-    val completedEntries = entries.filter { it.isChecked }
+    val activeEntries = entries.filterNot { it.checked }
+    val completedEntries = entries.filter { it.checked }
 
     LazyColumn(
         modifier = Modifier

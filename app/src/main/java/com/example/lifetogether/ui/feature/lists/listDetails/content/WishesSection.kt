@@ -53,8 +53,8 @@ fun WishesSection(
     onComplete: (String) -> Unit,
 ) {
     var completedExpanded by rememberSaveable { mutableStateOf(false) }
-    val activeEntries = entries.filterNot { it.isPurchased }
-    val completedEntries = entries.filter { it.isPurchased }
+    val activeEntries = entries.filterNot { it.purchased }
+    val completedEntries = entries.filter { it.purchased }
     val activeEntriesByPriority = activeEntries.groupBy { it.priority }
 
     LazyColumn(
@@ -214,7 +214,7 @@ private fun WishCard(
                 horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
             ) {
                 CompletableBox(
-                    isCompleted = entry.isPurchased,
+                    isCompleted = entry.purchased,
                     onCompleteToggle = onComplete,
                     isEnabled = !isSelectionMode,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -227,7 +227,7 @@ private fun WishCard(
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onBackground,
                     maxLines = 1,
-                    textDecoration = if (entry.isPurchased) TextDecoration.LineThrough else TextDecoration.None,
+                    textDecoration = if (entry.purchased) TextDecoration.LineThrough else TextDecoration.None,
                 )
                 TextDefault(
                     text = priceText,

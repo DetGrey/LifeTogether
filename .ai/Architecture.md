@@ -204,6 +204,14 @@ Historical phase decisions remain in `.ai/v2-plan/` and are not duplicated here.
 - `stampNow()` extension functions in `data/repository/internal/LastUpdatedPolicy.kt` are the canonical way to stamp a complete domain object before saving it (e.g. `val stamped = item.stampNow()`). Each domain type has its own overload so `.copy(lastUpdated = now)` compiles correctly for sealed types.
 - `val now = Date()` directly in the repository is correct when the same timestamp must be applied across multiple partial `.copy()` calls or multiple entity types at once (e.g. updating `albumId` + `lastUpdated` on media entities and `count` + `lastUpdated` on album entities in the same operation). This is a deliberate choice, not a gap — `stampNow()` only sets `lastUpdated` and requires a domain object.
 
+## Persisted Model Naming Rules
+
+- Persisted boolean properties in domain models, DTOs, Room entities, and embedded Firestore/Room-mapped data classes must not use the `isXxx` naming form.
+- Use names like `checked`, `purchased`, `enabled`, or `admin` instead of `isChecked`, `isPurchased`, `isEnabled`, or `isAdmin`.
+- This rule exists because Kotlin/Java bean naming around `is*` booleans is special, and reflective mappers such as Firestore `toObject(...)` can fail to bind fields that look correct in the document.
+- The failure mode is subtle: the field can be written successfully as `"isPurchased"` or `"isChecked"` but read back as `null` or ignored because the mapper resolves the property name differently than expected.
+- Do not rely on annotations or mapper quirks to make `is*` persisted fields work; the architecture rule is to avoid that naming entirely in persisted models.
+
 ## Room Migration Rules
 
 - Every new field added to a domain model must have a corresponding `ALTER TABLE ADD COLUMN` statement in `AppDatabaseMigrations.kt`.

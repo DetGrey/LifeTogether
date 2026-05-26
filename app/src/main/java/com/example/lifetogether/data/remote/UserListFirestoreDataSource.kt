@@ -451,7 +451,7 @@ class UserListFirestoreDataSource @Inject constructor(
         val itemName: String? = null,
         val lastUpdated: Date? = null,
         val dateCreated: Date? = null,
-        val isPurchased: Boolean? = null,
+        val purchased: Boolean? = null,
         val url: String? = null,
         val price: Double? = null,
         val currencyCode: String? = null,
@@ -469,6 +469,7 @@ class UserListFirestoreDataSource @Inject constructor(
             val priorityValue = WishListPriority.entries.firstOrNull {
                 it.value.equals(priority, ignoreCase = true)
             } ?: return null
+            val purchasedValue = purchased ?: return null
 
             return WishListEntry(
                 id = documentId,
@@ -477,7 +478,7 @@ class UserListFirestoreDataSource @Inject constructor(
                 itemName = itemNameValue,
                 lastUpdated = lastUpdatedValue,
                 dateCreated = dateCreatedValue,
-                isPurchased = isPurchased ?: false,
+                purchased = purchasedValue,
                 url = url,
                 price = price,
                 currencyCode = currencyCode,
@@ -527,7 +528,7 @@ class UserListFirestoreDataSource @Inject constructor(
         val listId: String? = null,
         val name: String? = null,
         val itemName: String? = null,
-        val isChecked: Boolean? = null,
+        val checked: Boolean? = null,
         val lastUpdated: Date? = null,
         val dateCreated: Date? = null,
     ) {
@@ -539,13 +540,14 @@ class UserListFirestoreDataSource @Inject constructor(
                 ?: return null
             val lastUpdatedValue = lastUpdated ?: return null
             val dateCreatedValue = dateCreated ?: return null
+            val checkedValue = checked ?: return null
 
             return ChecklistEntry(
                 id = documentId,
                 familyId = familyIdValue,
                 listId = listIdValue,
                 itemName = itemNameValue,
-                isChecked = isChecked ?: false,
+                checked = checkedValue,
                 lastUpdated = lastUpdatedValue,
                 dateCreated = dateCreatedValue,
             )
@@ -607,7 +609,7 @@ class UserListFirestoreDataSource @Inject constructor(
         val name: String?,
         val lastUpdated: Date?,
         val dateCreated: Date?,
-        val isPurchased: Boolean?,
+        val purchased: Boolean?,
         val url: String?,
         val price: Double?,
         val currencyCode: String?,
@@ -620,7 +622,7 @@ class UserListFirestoreDataSource @Inject constructor(
             "name" to name,
             "lastUpdated" to lastUpdated,
             "dateCreated" to dateCreated,
-            "isPurchased" to isPurchased,
+            "purchased" to purchased,
             "url" to url,
             "price" to price,
             "currencyCode" to currencyCode,
@@ -651,7 +653,7 @@ class UserListFirestoreDataSource @Inject constructor(
         val familyId: String?,
         val listId: String?,
         val name: String?,
-        val isChecked: Boolean?,
+        val checked: Boolean?,
         val lastUpdated: Date?,
         val dateCreated: Date?,
     ) {
@@ -659,7 +661,7 @@ class UserListFirestoreDataSource @Inject constructor(
             "familyId" to familyId,
             "listId" to listId,
             "name" to name,
-            "isChecked" to isChecked,
+            "checked" to checked,
             "lastUpdated" to lastUpdated,
             "dateCreated" to dateCreated,
         )
@@ -695,7 +697,7 @@ class UserListFirestoreDataSource @Inject constructor(
         name = itemName,
         lastUpdated = lastUpdated,
         dateCreated = dateCreated,
-        isPurchased = isPurchased,
+        purchased = purchased,
         url = url,
         price = price,
         currencyCode = currencyCode,
@@ -716,7 +718,7 @@ class UserListFirestoreDataSource @Inject constructor(
         familyId = familyId,
         listId = listId,
         name = itemName,
-        isChecked = isChecked,
+        checked = checked,
         lastUpdated = lastUpdated,
         dateCreated = dateCreated,
     )

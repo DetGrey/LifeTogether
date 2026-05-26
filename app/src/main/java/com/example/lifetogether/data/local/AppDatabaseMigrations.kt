@@ -3,6 +3,73 @@ package com.example.lifetogether.data.local
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+val MIGRATION_38_39 = object : Migration(38, 39) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `list_entries_wish_new` (
+                `id` TEXT NOT NULL,
+                `family_id` TEXT NOT NULL,
+                `list_id` TEXT NOT NULL,
+                `item_name` TEXT NOT NULL,
+                `last_updated` INTEGER NOT NULL,
+                `date_created` INTEGER NOT NULL,
+                `purchased` INTEGER NOT NULL,
+                `url` TEXT,
+                `price` REAL,
+                `currency_code` TEXT,
+                `priority` TEXT NOT NULL,
+                `notes` TEXT,
+                PRIMARY KEY(`id`)
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            """
+            INSERT INTO `list_entries_wish_new` (
+                `id`, `family_id`, `list_id`, `item_name`, `last_updated`, `date_created`,
+                `purchased`, `url`, `price`, `currency_code`, `priority`, `notes`
+            )
+            SELECT
+                `id`, `family_id`, `list_id`, `item_name`,
+                COALESCE(`last_updated`, 0), COALESCE(`date_created`, 0),
+                `is_purchased`, `url`, `price`, `currency_code`, `priority`, `notes`
+            FROM `list_entries_wish`
+            """.trimIndent(),
+        )
+        db.execSQL("DROP TABLE `list_entries_wish`")
+        db.execSQL("ALTER TABLE `list_entries_wish_new` RENAME TO `list_entries_wish`")
+
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `list_entries_checklist_new` (
+                `id` TEXT NOT NULL,
+                `family_id` TEXT NOT NULL,
+                `list_id` TEXT NOT NULL,
+                `item_name` TEXT NOT NULL,
+                `checked` INTEGER NOT NULL,
+                `last_updated` INTEGER NOT NULL,
+                `date_created` INTEGER NOT NULL,
+                PRIMARY KEY(`id`)
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            """
+            INSERT INTO `list_entries_checklist_new` (
+                `id`, `family_id`, `list_id`, `item_name`, `checked`, `last_updated`, `date_created`
+            )
+            SELECT
+                `id`, `family_id`, `list_id`, `item_name`, `is_checked`,
+                COALESCE(`last_updated`, 0), COALESCE(`date_created`, 0)
+            FROM `list_entries_checklist`
+            """.trimIndent(),
+        )
+        db.execSQL("DROP TABLE `list_entries_checklist`")
+        db.execSQL("ALTER TABLE `list_entries_checklist_new` RENAME TO `list_entries_checklist`")
+    }
+}
+
 val MIGRATION_37_38 = object : Migration(37, 38) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE `users` ADD COLUMN `last_updated` INTEGER NOT NULL DEFAULT 0")
@@ -134,7 +201,7 @@ val MIGRATION_27_28 = object : Migration(27, 28) {
                 `item_name` TEXT NOT NULL,
                 `last_updated` INTEGER,
                 `date_created` INTEGER,
-                `is_purchased` INTEGER NOT NULL,
+                `purchased` INTEGER NOT NULL,
                 `url` TEXT,
                 `estimated_price_minor` INTEGER,
                 `currency_code` TEXT,
@@ -165,7 +232,7 @@ val MIGRATION_27_28 = object : Migration(27, 28) {
                 `family_id` TEXT NOT NULL,
                 `list_id` TEXT NOT NULL,
                 `item_name` TEXT NOT NULL,
-                `is_checked` INTEGER NOT NULL,
+                `checked` INTEGER NOT NULL,
                 `last_updated` INTEGER,
                 `date_created` INTEGER,
                 PRIMARY KEY(`id`)

@@ -71,7 +71,7 @@ Deepen the repository layer using a Ports & Adapters approach, introduce a funct
 
 ## Before Starting This Phase
 
-> **[Run `/grill-me`](../../skills/grill-me/grill-me.md)** with this file to stress-test the plan, finalise the subphases above, and fill in the sections below before writing any code.
+> **[Run `/grill-me`](../../../skills/grill-me/grill-me.md)** with this file to stress-test the plan, finalise the subphases above, and fill in the sections below before writing any code.
 >
 > Decision rule: important design decisions for this phase are only final after explicit user agreement in the grill-me session. Proposed options can be drafted, but they must stay marked as proposed until approved.
 >

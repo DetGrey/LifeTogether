@@ -9,7 +9,7 @@ data class WishListEntry(
     override var itemName: String,
     override val lastUpdated: Date = Date(),
     override val dateCreated: Date,
-    val isPurchased: Boolean = false,
+    val purchased: Boolean = false,
     val url: String? = null,
     val price: Double? = null,
     val currencyCode: String? = null,

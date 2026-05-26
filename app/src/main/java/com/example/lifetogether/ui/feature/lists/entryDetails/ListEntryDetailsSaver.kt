@@ -114,7 +114,7 @@ class ListEntryDetailsSaver @Inject constructor(
             listId = listId,
             itemName = form.name.trim(),
             dateCreated = now,
-            isPurchased = form.isPurchased,
+            purchased = form.purchased,
             url = form.url.ifBlank { null },
             price = form.price.toDoubleOrNull(),
             currencyCode = form.currencyCode.ifBlank { null },

@@ -192,7 +192,7 @@ class ListDetailsViewModel @AssistedInject constructor(
             familyId = currentState.familyId,
             listId = listId,
             itemName = draftName,
-            isChecked = false,
+            checked = false,
             dateCreated = now,
         )
 
@@ -330,13 +330,13 @@ class ListDetailsViewModel @AssistedInject constructor(
 
                 is ChecklistEntry -> userListRepository.updateChecklistEntry(
                     entry.copy(
-                        isChecked = !entry.isChecked,
+                        checked = !entry.checked,
                     ),
                 )
 
                 is WishListEntry -> userListRepository.updateWishListEntry(
                     entry.copy(
-                        isPurchased = !entry.isPurchased,
+                        purchased = !entry.purchased,
                     ),
                 )
 

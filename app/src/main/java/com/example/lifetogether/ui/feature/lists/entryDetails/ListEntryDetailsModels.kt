@@ -65,7 +65,7 @@ sealed interface EntryDetailsContent {
                 return Wish(
                     form = WishEntryFormState(
                         name = entry.itemName,
-                        isPurchased = entry.isPurchased,
+                        purchased = entry.purchased,
                         url = entry.url.orEmpty(),
                         price = entry.price?.toString().orEmpty(),
                         currencyCode = entry.currencyCode.orEmpty(),
@@ -115,7 +115,7 @@ data class RoutineEntryFormState(
 
 data class WishEntryFormState(
     val name: String = "",
-    val isPurchased: Boolean = false,
+    val purchased: Boolean = false,
     val url: String = "",
     val price: String = "",
     val currencyCode: String = "",

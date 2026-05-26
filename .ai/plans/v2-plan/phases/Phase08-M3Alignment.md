@@ -167,7 +167,7 @@ The following component decisions have been explicitly agreed and should be trea
 
 ## Before Starting This Phase
 
-> **[Run `/grill-me`](../../skills/grill-me/grill-me.md)** with this file to stress-test the plan, finalise the subphases above, and fill in the sections below before writing any code.
+> **[Run `/grill-me`](../../../skills/grill-me/grill-me.md)** with this file to stress-test the plan, finalise the subphases above, and fill in the sections below before writing any code.
 >
 > All **Open Questions** at the bottom of this file must be answered and the section removed before implementation begins.
 

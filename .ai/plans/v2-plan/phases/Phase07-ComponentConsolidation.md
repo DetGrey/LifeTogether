@@ -39,7 +39,7 @@ Remove dead code and eliminate the one remaining component duplicate in `ui/comm
 
 ## Before Starting This Phase
 
-> **[Run `/grill-me`](../../skills/grill-me/grill-me.md)** with this file to stress-test the plan, finalise the subphases above, and fill in the sections below before writing any code.
+> **[Run `/grill-me`](../../../skills/grill-me/grill-me.md)** with this file to stress-test the plan, finalise the subphases above, and fill in the sections below before writing any code.
 
 ### Acceptance criteria
 

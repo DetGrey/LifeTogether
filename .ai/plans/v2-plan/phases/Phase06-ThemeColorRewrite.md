@@ -69,7 +69,7 @@ Rewrite `Color.kt` to use private raw colors mapped to semantic Material 3 roles
 
 ## Before Starting This Phase
 
-> **[Run `/grill-me`](../../skills/grill-me/grill-me.md)** with this file to stress-test the plan, finalise the subphases above, and fill in the sections below before writing any code.
+> **[Run `/grill-me`](../../../skills/grill-me/grill-me.md)** with this file to stress-test the plan, finalise the subphases above, and fill in the sections below before writing any code.
 
 ### Acceptance criteria
 - [x] `Color.kt` exposes zero public raw `Color` values.
