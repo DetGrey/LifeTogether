@@ -25,7 +25,7 @@
 - [ ] The step player should show whether a step is completed and show the datetime of completion/last edited.
 
 ## --- Gallery media ---
-- [ ] The gallery media title does not change date when swiping between images
+- [x] The gallery media title does not change date when swiping between images
 
 ### Optional
 - [ ] Add tags.

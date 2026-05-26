@@ -18,10 +18,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -53,6 +55,7 @@ import com.example.lifetogether.ui.model.MenuAction
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import java.util.Date
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 @Composable
 fun MediaDetailsScreen(
@@ -99,6 +102,13 @@ fun MediaDetailsScreen(
                 initialPage = content.currentIndex,
                 pageCount = { mediaList.size },
             )
+            LaunchedEffect(pagerState) {
+                snapshotFlow { pagerState.currentPage }
+                    .distinctUntilChanged()
+                    .collect { page ->
+                        onUiEvent(MediaDetailsUiEvent.PageChanged(page))
+                    }
+            }
 
             val containerSize = LocalWindowInfo.current.containerSize
 

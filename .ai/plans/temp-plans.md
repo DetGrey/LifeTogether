@@ -1,17 +1,5 @@
 # Temporary plans
 
-## Gallery media: Title does not change date when swiping
-Problem:
-The top bar title reads from `content.currentIndex`, but `MediaDetailsViewModel` never updates `currentIndex` when the pager page changes. The details panel uses `pagerState.currentPage`, so the body updates while the title stays stale.
-
-Solution:
-Synchronize pager changes back into view-model state, or derive the title directly from `pagerState.currentPage` inside `MediaDetailsScreen`. The cleaner fix is to emit a `PageChanged` event from the pager and keep `currentIndex` as the single source of truth.
-
-Related files:
-- `app/src/main/java/com/example/lifetogether/ui/feature/gallery/MediaDetailsScreen.kt`
-- `app/src/main/java/com/example/lifetogether/ui/feature/gallery/MediaDetailsModels.kt`
-- `app/src/main/java/com/example/lifetogether/ui/feature/gallery/MediaDetailsViewModel.kt`
-
 ## Family: Show profile images of family members on family screen
 Problem:
 Family member avatars are not available in the current family sync model. The app only syncs the signed-in user’s full `UserInformation` record; it does not download or cache other users’ profile records locally. Family sync only provides the family document and its `members` list, and `FamilyMember` currently contains only `uid` and `name`, so the family screen has no avatar URL to render.

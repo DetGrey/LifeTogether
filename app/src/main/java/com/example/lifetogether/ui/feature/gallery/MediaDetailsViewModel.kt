@@ -68,6 +68,7 @@ class MediaDetailsViewModel @AssistedInject constructor(
 
     fun onEvent(event: MediaDetailsUiEvent) {
         when (event) {
+            is MediaDetailsUiEvent.PageChanged -> onPageChanged(event.index)
             is MediaDetailsUiEvent.VerticalDrag -> onVerticalDrag(event.dragAmount, event.totalHeight)
             is MediaDetailsUiEvent.DragEnd -> onDragEnd(event.totalHeight)
             MediaDetailsUiEvent.ToggleOverflowMenu -> toggleOverflowMenu()
@@ -89,10 +90,24 @@ class MediaDetailsViewModel @AssistedInject constructor(
                             when (state) {
                                 is MediaDetailsUiState.Loading -> MediaDetailsUiState.Content(
                                     mediaList = result.data,
-                                    currentIndex = initialIndex,
+                                    currentIndex = if (result.data.isNotEmpty()) {
+                                        initialIndex.coerceIn(0, result.data.lastIndex)
+                                    } else {
+                                        0
+                                    },
                                 )
 
-                                is MediaDetailsUiState.Content -> state.copy(mediaList = result.data)
+                                is MediaDetailsUiState.Content -> {
+                                    val maxIndex = result.data.lastIndex
+                                    state.copy(
+                                        mediaList = result.data,
+                                        currentIndex = if (maxIndex >= 0) {
+                                            state.currentIndex.coerceIn(0, maxIndex)
+                                        } else {
+                                            0
+                                        },
+                                    )
+                                }
                             }
                         }
                     }
@@ -193,6 +208,17 @@ class MediaDetailsViewModel @AssistedInject constructor(
 
     private fun toggleOverflowMenu(show: Boolean? = null) {
         updateContent { it.copy(showOverflowMenu = show ?: !it.showOverflowMenu) }
+    }
+
+    private fun onPageChanged(index: Int) {
+        updateContent { state ->
+            val maxIndex = state.mediaList.lastIndex
+            if (maxIndex < 0) {
+                state
+            } else {
+                state.copy(currentIndex = index.coerceIn(0, maxIndex))
+            }
+        }
     }
 
     // ---------------------------------------------------------------- DRAG

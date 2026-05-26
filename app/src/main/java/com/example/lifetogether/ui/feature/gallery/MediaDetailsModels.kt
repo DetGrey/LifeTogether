@@ -14,6 +14,7 @@ sealed interface MediaDetailsUiState {
 }
 
 sealed interface MediaDetailsUiEvent {
+    data class PageChanged(val index: Int) : MediaDetailsUiEvent
     data class VerticalDrag(val dragAmount: Float, val totalHeight: Int) : MediaDetailsUiEvent
     data class DragEnd(val totalHeight: Int) : MediaDetailsUiEvent
     data object ToggleOverflowMenu : MediaDetailsUiEvent
