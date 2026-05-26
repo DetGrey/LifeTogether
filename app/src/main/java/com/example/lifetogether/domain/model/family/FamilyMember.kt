@@ -6,4 +6,5 @@ import kotlinx.serialization.Serializable
 data class FamilyMember(
     val uid: String,
     val name: String,
+    val imageUrl: String? = null,
 )

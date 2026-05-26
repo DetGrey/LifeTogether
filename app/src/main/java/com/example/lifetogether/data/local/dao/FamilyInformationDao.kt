@@ -60,6 +60,9 @@ interface FamilyInformationDao {
     @Query("UPDATE ${Constants.FAMILY_MEMBERS_TABLE} SET name = :name WHERE uid = :uid")
     suspend fun updateMemberName(uid: String, name: String)
 
+    @Query("UPDATE ${Constants.FAMILY_MEMBERS_TABLE} SET image_url = :imageUrl WHERE uid = :uid")
+    suspend fun updateMemberImageUrl(uid: String, imageUrl: String?)
+
     @Query("UPDATE ${Constants.FAMILIES_TABLE} SET last_updated = :lastUpdated WHERE family_id = :familyId")
     suspend fun updateLastUpdated(familyId: String, lastUpdated: Date)
 

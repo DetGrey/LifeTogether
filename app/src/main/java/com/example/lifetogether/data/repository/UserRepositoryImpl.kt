@@ -61,6 +61,7 @@ class UserRepositoryImpl @Inject constructor(
                 FamilyMember(
                     uid = familyMember.uid,
                     name = familyMember.name,
+                    imageUrl = familyMember.imageUrl,
                 )
             }
         }
@@ -232,7 +233,8 @@ class UserRepositoryImpl @Inject constructor(
     ): Result<Unit, AppError> {
         Log.d(TAG, "joinFamily start")
         val now = Date()
-        when (val result = familyFirestoreDataSource.joinFamily(familyId, uid, name, now)) {
+        val imageUrl = userLocalDataSource.getProfileOnce(uid)?.imageUrl
+        when (val result = familyFirestoreDataSource.joinFamily(familyId, uid, name, imageUrl, now)) {
             is Result.Success -> {
                 val updateResult = userFirestoreDataSource.updateFamilyId(uid, familyId, now)
                 return updateResult
@@ -249,7 +251,8 @@ class UserRepositoryImpl @Inject constructor(
     ): Result<Unit, AppError> {
         Log.d(TAG, "createNewFamily start")
         val now = Date()
-        when (val result = familyFirestoreDataSource.createNewFamily(uid, name, now)) {
+        val imageUrl = userLocalDataSource.getProfileOnce(uid)?.imageUrl
+        when (val result = familyFirestoreDataSource.createNewFamily(uid, name, imageUrl, now)) {
             is Result.Success -> {
                 val updateResult = userFirestoreDataSource.updateFamilyId(uid, result.data, now)
                 return updateResult

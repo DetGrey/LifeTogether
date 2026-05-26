@@ -7,6 +7,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -14,6 +18,8 @@ import com.example.lifetogether.R
 import com.example.lifetogether.BuildConfig
 import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.UserInformation
+import com.example.lifetogether.ui.common.ActionSheet
+import com.example.lifetogether.ui.common.ActionSheetItem
 import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
@@ -29,6 +35,8 @@ fun SettingsScreen(
     onUiEvent: (SettingsUiEvent) -> Unit,
     onNavigationEvent: (SettingsNavigationEvent) -> Unit,
 ) {
+    var showFamilyOptionsSheet by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             AppTopBar(
@@ -69,7 +77,8 @@ fun SettingsScreen(
                             appIcon = AppIcon(R.drawable.ic_profile_picture, "profile icon"),
                             title = userInformationState.name,
                             link = "Edit my profile",
-                            linkClickable = {
+                            isLinkClickable = true,
+                            onClick = {
                                 onNavigationEvent(SettingsNavigationEvent.NavigateToProfile)
                             },
                         )
@@ -79,7 +88,8 @@ fun SettingsScreen(
                                 appIcon = AppIcon(R.drawable.ic_family, "family icon"),
                                 title = "My family",
                                 link = "Edit family",
-                                linkClickable = {
+                                isLinkClickable = true,
+                                onClick = {
                                     onNavigationEvent(SettingsNavigationEvent.NavigateToFamily)
                                 },
                             )
@@ -87,12 +97,11 @@ fun SettingsScreen(
                             SettingsItem(
                                 appIcon = AppIcon(R.drawable.ic_family, "family icon"),
                                 title = "Join a family",
-                                titleClickable = {
-                                    onUiEvent(SettingsUiEvent.JoinFamilyClicked)
-                                },
+                                isTitleClickable = true,
                                 link = "Create new family",
-                                linkClickable = {
-                                    onUiEvent(SettingsUiEvent.CreateNewFamilyClicked)
+                                isLinkClickable = true,
+                                onClick = {
+                                    showFamilyOptionsSheet = true
                                 },
                             )
                         }
@@ -101,7 +110,8 @@ fun SettingsScreen(
                             appIcon = AppIcon(R.drawable.ic_bell, "bell icon"),
                             title = "Notifications",
                             link = "Manage notifications",
-                            linkClickable = {
+                            isLinkClickable = true,
+                            onClick = {
                                 onNavigationEvent(SettingsNavigationEvent.NavigateToNotifications)
                             },
                         )
@@ -147,6 +157,28 @@ fun SettingsScreen(
                 null -> Unit
             }
         }
+    }
+
+    if (showFamilyOptionsSheet) {
+        ActionSheet(
+            onDismiss = { showFamilyOptionsSheet = false },
+            actionsList = listOf(
+                ActionSheetItem(
+                    label = "Join a family",
+                    onClick = {
+                        showFamilyOptionsSheet = false
+                        onUiEvent(SettingsUiEvent.JoinFamilyClicked)
+                    },
+                ),
+                ActionSheetItem(
+                    label = "Create new family",
+                    onClick = {
+                        showFamilyOptionsSheet = false
+                        onUiEvent(SettingsUiEvent.CreateNewFamilyClicked)
+                    },
+                ),
+            ),
+        )
     }
 }
 

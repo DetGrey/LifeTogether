@@ -29,4 +29,7 @@ data class FamilyMemberEntity(
 
     @ColumnInfo(name = "name")
     val name: String,
+
+    @ColumnInfo(name = "image_url")
+    val imageUrl: String? = null,
 )

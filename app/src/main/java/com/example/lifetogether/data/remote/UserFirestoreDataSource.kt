@@ -106,9 +106,13 @@ class UserFirestoreDataSource @Inject constructor(
                 val familySnapshot = familyDocRef.get().await()
                 if (familySnapshot.exists()) {
                     @Suppress("UNCHECKED_CAST")
-                    val members = familySnapshot.get("members") as? List<Map<String, String>> ?: emptyList()
+                    val members = familySnapshot.get("members") as? List<Map<String, Any?>> ?: emptyList()
                     val updatedMembers = members.map { member ->
-                        if (member["uid"] == uid) member.toMutableMap().apply { this["name"] = newName } else member
+                        if (member["uid"] == uid) {
+                            member.toMutableMap().apply { this["name"] = newName }
+                        } else {
+                            member
+                        }
                     }
                     familyDocRef.update(
                         mapOf(
@@ -127,7 +131,12 @@ class UserFirestoreDataSource @Inject constructor(
         url ?: throw AppErrorThrowable(AppErrors.notFound("User image not found"))
     }
 
-    suspend fun saveUserImageUrl(uid: String, url: String, lastUpdated: Date = Date()): Result<Unit, AppError> {
+    suspend fun saveUserImageUrl(
+        uid: String,
+        familyId: String?,
+        url: String,
+        lastUpdated: Date = Date(),
+    ): Result<Unit, AppError> {
         return appResultOfSuspend {
             db.collection(Constants.USER_TABLE).document(uid)
                 .update(
@@ -137,6 +146,27 @@ class UserFirestoreDataSource @Inject constructor(
                     ),
                 )
                 .await()
+            if (familyId != null) {
+                val familyDocRef = db.collection(Constants.FAMILIES_TABLE).document(familyId)
+                val familySnapshot = familyDocRef.get().await()
+                if (familySnapshot.exists()) {
+                    @Suppress("UNCHECKED_CAST")
+                    val members = familySnapshot.get("members") as? List<Map<String, Any?>> ?: emptyList()
+                    val updatedMembers = members.map { member ->
+                        if (member["uid"] == uid) {
+                            member.toMutableMap().apply { this["imageUrl"] = url }
+                        } else {
+                            member
+                        }
+                    }
+                    familyDocRef.update(
+                        mapOf(
+                            "members" to updatedMembers,
+                            "lastUpdated" to lastUpdated,
+                        ),
+                    ).await()
+                }
+            }
         }
     }
 }

@@ -132,7 +132,10 @@ class ImageRepositoryImpl @Inject constructor(
         if (localResult is Result.Failure) return localResult
 
         return when (imageType) {
-            is ImageType.ProfileImage -> userFirestoreDataSource.saveUserImageUrl(imageType.uid, url, now)
+            is ImageType.ProfileImage -> {
+                val familyId = userLocalDataSource.getProfileOnce(imageType.uid)?.familyId
+                userFirestoreDataSource.saveUserImageUrl(imageType.uid, familyId, url, now)
+            }
             is ImageType.FamilyImage -> familyFirestoreDataSource.saveFamilyImageUrl(imageType.familyId, url, now)
             is ImageType.RecipeImage -> recipeFirestoreDataSource.saveRecipeImageUrl(imageType.recipeId, url, now)
             is ImageType.RoutineListEntryImage -> userListFirestoreDataSource.saveRoutineListEntryImageUrl(imageType.entryId, url, now)
@@ -176,7 +179,11 @@ class ImageRepositoryImpl @Inject constructor(
     ): Result<Unit, AppError> {
         return try {
             when (imageType) {
-                is ImageType.ProfileImage -> userLocalDataSource.updateProfileImageUrl(imageType.uid, url, lastUpdated)
+                is ImageType.ProfileImage -> {
+                    userLocalDataSource.updateProfileImageUrl(imageType.uid, url, lastUpdated)
+                    val familyId = userLocalDataSource.getProfileOnce(imageType.uid)?.familyId
+                    userLocalDataSource.updateFamilyMemberImageUrl(imageType.uid, url, familyId, lastUpdated)
+                }
                 is ImageType.FamilyImage -> userLocalDataSource.updateFamilyImageUrl(imageType.familyId, url, lastUpdated)
                 is ImageType.RecipeImage -> recipeLocalDataSource.updateRecipeImageUrl(
                     familyId = imageType.familyId,

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -32,9 +33,10 @@ import com.example.lifetogether.ui.theme.LifeTogetherTokens
 fun SettingsItem(
     appIcon: AppIcon,
     title: String,
-    titleClickable: (() -> Unit)? = null,
+    isTitleClickable: Boolean = false,
     link: String? = null,
-    linkClickable: (() -> Unit)? = null,
+    isLinkClickable: Boolean = false,
+    onClick: (() -> Unit)? = null,
 ) {
     Card(
         modifier = Modifier
@@ -43,17 +45,24 @@ fun SettingsItem(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
         shape = MaterialTheme.shapes.large,
     ) {
-        Row {
+        Row(
+            modifier = Modifier.clickable(
+                enabled = onClick != null
+            ) {
+                onClick?.invoke()
+            }
+        ) {
             Box(
                 modifier = Modifier
                     .padding(LifeTogetherTokens.spacing.xSmall)
-                    .aspectRatio(1f)
-                    .weight(1f),
+                    .aspectRatio(1f),
+                contentAlignment = Alignment.Center
             ) {
                 Icon(
                     painter = painterResource(id = appIcon.resId),
                     contentDescription = appIcon.description,
                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.fillMaxSize()
                 )
             }
 
@@ -64,43 +73,17 @@ fun SettingsItem(
                 verticalArrangement = Arrangement.Center,
             ) {
                 Text(
-                    modifier = Modifier
-                        .then(
-                            if (titleClickable != null) {
-                                Modifier.clickable { titleClickable() }
-                            } else {
-                                Modifier
-                            },
-                        ),
-                    text = if (titleClickable != null) "$title >" else title,
-                    color = if (titleClickable != null) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onPrimaryContainer,
+                    text = if (isTitleClickable) "$title >" else title,
+                    color = if (isTitleClickable) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onPrimaryContainer,
                 )
 
                 if (link != null) {
                     Text(
-                        modifier = Modifier
-                            .padding(top = LifeTogetherTokens.spacing.xSmall)
-                            .then(
-                                if (linkClickable != null) {
-                                    Modifier.clickable { linkClickable() }
-                                } else {
-                                    Modifier
-                                },
-                            ),
+                        modifier = Modifier.padding(top = LifeTogetherTokens.spacing.xSmall),
                         text = "$link >",
-                        color = if (linkClickable != null) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onPrimaryContainer,
+                        color = if (isLinkClickable) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onPrimaryContainer,
                     )
                 }
-            }
-
-            Box(
-                modifier = Modifier
-                    .padding(LifeTogetherTokens.spacing.xSmall)
-                    .aspectRatio(1f)
-                    .weight(1f),
-                contentAlignment = Alignment.Center,
-            ) {
-//                Slider(state = SliderState(value = 0f, steps = 1, valueRange = 0f..1f))
             }
         }
     }
@@ -112,7 +95,7 @@ private fun SettingsItemPreview() {
     LifeTogetherTheme {
         ProvideTextStyle(value = AppTypography.bodyMedium) {
             SettingsItem(
-                appIcon = AppIcon(R.drawable.ic_profile_picture, "profile icon"),
+                appIcon = AppIcon(R.drawable.ic_profile, "profile icon"),
                 title = "Username",
                 link = "Edit my profile",
             )

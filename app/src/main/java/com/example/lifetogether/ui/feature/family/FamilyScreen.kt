@@ -164,6 +164,7 @@ fun FamilyScreen(
                                 } else {
                                     { onUiEvent(FamilyUiEvent.RemoveMemberClicked(member)) }
                                 },
+                                member = member,
                             )
                         }
 
@@ -175,7 +176,8 @@ fun FamilyScreen(
                             appIcon = AppIcon(R.drawable.ic_profile, "profile icon"),
                             title = "Add family member",
                             link = "Share family ID",
-                            linkClickable = {
+                            isLinkClickable = true,
+                            onClick = {
                                 onUiEvent(FamilyUiEvent.AddMemberClicked)
                             },
                         )
@@ -184,7 +186,8 @@ fun FamilyScreen(
                             appIcon = AppIcon(R.drawable.ic_logout, "logout icon"),
                             title = "Leave family",
                             link = "Leave",
-                            linkClickable = {
+                            isLinkClickable = true,
+                            onClick = {
                                 onUiEvent(FamilyUiEvent.LeaveFamilyClicked)
                             },
                         )
@@ -193,7 +196,8 @@ fun FamilyScreen(
                             appIcon = AppIcon(R.drawable.ic_delete, "logout icon"),
                             title = "Delete family",
                             link = "Delete",
-                            linkClickable = {
+                            isLinkClickable = true,
+                            onClick = {
                                 onUiEvent(FamilyUiEvent.DeleteFamilyClicked)
                             },
                         )
@@ -281,11 +285,15 @@ private fun FamilyTogetherSinceRow(
                 },
             ),
     ) {
+        val endPadding = if (isEditing) 0.dp else LifeTogetherTokens.spacing.small
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = LifeTogetherTokens.spacing.small)
-                .padding(start = LifeTogetherTokens.spacing.medium),
+                .padding(
+                    start = LifeTogetherTokens.spacing.medium,
+                    end = endPadding,
+                ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             TextLabel(

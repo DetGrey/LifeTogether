@@ -95,6 +95,11 @@ class UserLocalDataSource @Inject constructor(
         if (familyId != null) familyInformationDao.updateLastUpdated(familyId, lastUpdated)
     }
 
+    suspend fun updateFamilyMemberImageUrl(uid: String, imageUrl: String?, familyId: String?, lastUpdated: Date) {
+        familyInformationDao.updateMemberImageUrl(uid, imageUrl)
+        if (familyId != null) familyInformationDao.updateLastUpdated(familyId, lastUpdated)
+    }
+
     suspend fun updateFamilyTogetherSince(
         familyId: String,
         togetherSince: Date?,
@@ -129,6 +134,7 @@ class UserLocalDataSource @Inject constructor(
                 uid = it.uid,
                 familyId = familyInformation.familyId,
                 name = it.name,
+                imageUrl = it.imageUrl,
             )
         }
         familyInformationDao.updateFamilyMembers(familyMembers)

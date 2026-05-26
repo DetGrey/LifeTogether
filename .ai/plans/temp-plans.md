@@ -1,57 +1,5 @@
 # Temporary plans
 
-## Family: Show profile images of family members on family screen
-Problem:
-Family member avatars are not available in the current family sync model. The app only syncs the signed-in user’s full `UserInformation` record; it does not download or cache other users’ profile records locally. Family sync only provides the family document and its `members` list, and `FamilyMember` currently contains only `uid` and `name`, so the family screen has no avatar URL to render.
-
-Solution:
-Keep family member display data denormalized inside the family document. Expand each member entry from `uid + name` to `uid + name + imageUrl?`, and update that member `imageUrl` every time the corresponding user updates their profile image. The family screen should render avatars directly from `member.imageUrl` and fall back to the default icon when the URL is missing, the device is offline, or image loading fails. Do not add cross-user profile sync or store other members’ full profile data locally just to support avatars.
-
-Related files:
-- `app/src/main/java/com/example/lifetogether/ui/feature/family/FamilyScreen.kt`
-- `app/src/main/java/com/example/lifetogether/ui/feature/family/FamilyViewModel.kt`
-- `app/src/main/java/com/example/lifetogether/ui/feature/profile/ProfileDetails.kt`
-- `app/src/main/java/com/example/lifetogether/data/repository/ImageRepositoryImpl.kt`
-- `app/src/main/java/com/example/lifetogether/data/remote/FamilyFirestoreDataSource.kt`
-- `app/src/main/java/com/example/lifetogether/data/remote/UserFirestoreDataSource.kt`
-- `app/src/main/java/com/example/lifetogether/data/repository/UserRepositoryImpl.kt`
-- `app/src/main/java/com/example/lifetogether/domain/model/family/FamilyMember.kt`
-
-## Family: Family settings icons are not centered
-Problem:
-`SettingsItem` places the icon inside a `Box` without `contentAlignment = Alignment.Center`, so the icon sits off-center inside the leading area. The family screen reuses this component, which is why the issue appears there.
-
-Solution:
-Fix the generic `SettingsItem` layout so the leading icon area centers its content. Because the component is shared, this should improve both family and settings screens consistently.
-
-Related files:
-- `app/src/main/java/com/example/lifetogether/ui/feature/settings/SettingsItem.kt`
-- `app/src/main/java/com/example/lifetogether/ui/feature/family/FamilyScreen.kt`
-- `app/src/main/java/com/example/lifetogether/ui/feature/settings/SettingsScreen.kt`
-
-## Family: Together since icon should have end padding
-Problem:
-The `FamilyTogetherSinceRow` adds start padding to the row but no matching end padding, so the edit/clear/save controls sit too close to the right edge.
-
-Solution:
-Move the row to symmetric horizontal padding. This is a localized layout fix inside the family screen.
-
-Related files:
-- `app/src/main/java/com/example/lifetogether/ui/feature/family/FamilyScreen.kt`
-
-## Settings: Entire settings card should be clickable, with action sheet when there are multiple actions
-Problem:
-`SettingsItem` only makes the title and link text clickable separately. That is fragile on touch devices and does not match the requested interaction model. It also hardcodes the idea that an item has at most two inline text actions instead of one row-level action model.
-
-Solution:
-Refactor `SettingsItem` to support card-level clicks and optionally multiple actions. For single-action rows, make the full card clickable. For multi-action rows, make the full card clickable and on click open the existing `ActionSheet` and let the screen provide the list of actions (only show actions from that card, not all).
-
-Related files:
-- `app/src/main/java/com/example/lifetogether/ui/feature/settings/SettingsItem.kt`
-- `app/src/main/java/com/example/lifetogether/ui/feature/settings/SettingsScreen.kt`
-- `app/src/main/java/com/example/lifetogether/ui/feature/settings/SettingsModels.kt`
-- `app/src/main/java/com/example/lifetogether/ui/common/OverflowMenu.kt`
-
 ## Admin features: Admin users can grant admin access to another user
 Problem:
 The app already has a global admin concept, but it is only a hardcoded build-time gate via `BuildConfig.ADMIN_LIST`, currently used to unlock the grocery admin screens. That means admin access cannot be granted or revoked at runtime, and the earlier family-admin approach would be the wrong scope because these screens are app-wide, not family-owned.

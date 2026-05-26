@@ -36,10 +36,10 @@ class FamilyFirestoreDataSource @Inject constructor(
             }
             if (snapshot != null && snapshot.exists()) {
                 @Suppress("UNCHECKED_CAST")
-                val membersData = snapshot.get("members") as? List<Map<String, String>> ?: emptyList()
+                val membersData = snapshot.get("members") as? List<Map<String, Any?>> ?: emptyList()
                 val members = membersData.mapNotNullIndexed { index, member ->
-                    val uid = member["uid"]?.trim()?.takeIf { it.isNotEmpty() }
-                    val name = member["name"]?.trim()?.takeIf { it.isNotEmpty() }
+                    val uid = (member["uid"] as? String)?.trim()?.takeIf { it.isNotEmpty() }
+                    val name = (member["name"] as? String)?.trim()?.takeIf { it.isNotEmpty() }
                     if (uid == null || name == null) {
                         Log.w(
                             TAG,
@@ -47,7 +47,11 @@ class FamilyFirestoreDataSource @Inject constructor(
                         )
                         return@mapNotNullIndexed null
                     }
-                    FamilyMember(uid = uid, name = name)
+                    FamilyMember(
+                        uid = uid,
+                        name = name,
+                        imageUrl = (member["imageUrl"] as? String)?.trim()?.takeIf { it.isNotEmpty() },
+                    )
                 }
                 trySend(
                     Result.Success(
@@ -65,13 +69,19 @@ class FamilyFirestoreDataSource @Inject constructor(
         awaitClose { registration.remove() }
     }
 
-    suspend fun joinFamily(familyId: String, uid: String, name: String, lastUpdated: Date): Result<Unit, AppError> {
+    suspend fun joinFamily(
+        familyId: String,
+        uid: String,
+        name: String,
+        imageUrl: String?,
+        lastUpdated: Date,
+    ): Result<Unit, AppError> {
         return appResultOfSuspend {
             val doc = db.collection(Constants.FAMILIES_TABLE).document(familyId).get().await()
             @Suppress("UNCHECKED_CAST")
-            val members = doc.data?.get("members") as? List<Map<String, String>>
+            val members = doc.data?.get("members") as? List<Map<String, Any?>>
             val updatedMembers = members?.toMutableList() ?: mutableListOf()
-            updatedMembers.add(mapOf("uid" to uid, "name" to name))
+            updatedMembers.add(mapOf("uid" to uid, "name" to name, "imageUrl" to imageUrl))
             db.collection(Constants.FAMILIES_TABLE).document(familyId)
                 .update(
                     mapOf(
@@ -84,10 +94,10 @@ class FamilyFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun createNewFamily(uid: String, name: String, lastUpdated: Date): Result<String, AppError> {
+    suspend fun createNewFamily(uid: String, name: String, imageUrl: String?, lastUpdated: Date): Result<String, AppError> {
         return appResultOfSuspend {
             val map = mapOf(
-                "members" to listOf(mapOf("uid" to uid, "name" to name)),
+                "members" to listOf(mapOf("uid" to uid, "name" to name, "imageUrl" to imageUrl)),
                 "lastUpdated" to lastUpdated,
             )
             val documentReference = db.collection(Constants.FAMILIES_TABLE).add(map).await()
@@ -99,7 +109,7 @@ class FamilyFirestoreDataSource @Inject constructor(
         return appResultOfSuspend {
             val doc = db.collection(Constants.FAMILIES_TABLE).document(familyId).get().await()
             @Suppress("UNCHECKED_CAST")
-            val members = doc.data?.get("members") as? List<Map<String, String>>
+            val members = doc.data?.get("members") as? List<Map<String, Any?>>
             val updatedMembers = members?.filterNot { it["uid"] == uid }?.toMutableList() ?: mutableListOf()
             db.collection(Constants.FAMILIES_TABLE).document(familyId)
                 .update(

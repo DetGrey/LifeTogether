@@ -39,9 +39,9 @@
 - [ ] Send a notification when everything is downloaded, and maybe link to the gallery LifeTogether folder if possible.
 
 ## --- Family and relationship features ---
-- [ ] Show profile image of family members on family screen instead of the icon
-- [ ] Family settings icons are not centered
-- [ ] Together since icon on family screen should also have end padding
+- [x] Show profile image of family members on family screen instead of the icon
+- [x] Family and settings icons are not centered
+- [x] Together since icon on family screen should also have end padding
 
 ### Optional
 - [ ] Add special day under family settings or the countdown page.
@@ -50,7 +50,7 @@
     - Use predefined messages in code instead of Firestore to reduce fetching.
 
 ## --- Setting ---
-- [ ] Settings card should be clickable, not just the text
+- [x] Settings card should be clickable, not just the text
   - When there are multiple, show a action sheet with the options on click
 
 ## --- TipTracker ---
