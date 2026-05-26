@@ -1,26 +1,5 @@
 # Temporary plans
 
-## Lists: Move priority up under name in wish list editor
-Problem:
-The wish entry form currently renders `Name`, then `URL`, `Price`, `Currency code`, and only then `Priority`. That makes the primary decision for a wishlist item easy to miss and does not match the issue request.
-
-Solution:
-Reorder the `wishListEntryForm` layout so `Priority` comes immediately after `Name`. This is a pure UI change and should not require model or persistence changes.
-
-Related files:
-- `app/src/main/java/com/example/lifetogether/ui/feature/lists/entryDetails/content/WishListEntryContent.kt`
-
-## Lists: Bottom padding bug in checklist
-Problem:
-Checklist screens already have a bottom bar with `AddNewString`, but `CheckItemsSection` also adds extra bottom padding on its own. That stacks with scaffold padding and leaves a visible gap between the add card and the list content.
-
-Solution:
-Remove checklist-specific bottom padding from the list section and let the scaffold bottom bar/insets own the spacing. If needed, move any remaining spacing to `ListDetailsScreen` so it is controlled in one place instead of both the section and the scaffold.
-
-Related files:
-- `app/src/main/java/com/example/lifetogether/ui/feature/lists/listDetails/content/CheckItemsSection.kt`
-- `app/src/main/java/com/example/lifetogether/ui/feature/lists/listDetails/ListDetailsScreen.kt`
-
 ## Guides: Complete and go to step X from guide details
 Problem:
 `GuideDetailsScreen` only exposes edit/share/reset/delete actions. There is no flow for saying “my real progress is already at step X” when importing a guide or syncing progress from another device.

@@ -98,7 +98,9 @@ fun ListDetailsScreen(
         bottomBar = {
             if (contentState?.isSelectionMode != true && contentState?.listContent is ListDetailsListContent.CheckItems) {
                 AddNewString(
-                    modifier = Modifier.padding(LifeTogetherTokens.spacing.medium),
+                    modifier = Modifier
+                        .padding(horizontal = LifeTogetherTokens.spacing.medium)
+                        .padding(bottom = LifeTogetherTokens.spacing.medium),
                     label = "New checklist item",
                     textValue = contentState.checklistEditorState.draftName,
                     onTextChange = { value ->

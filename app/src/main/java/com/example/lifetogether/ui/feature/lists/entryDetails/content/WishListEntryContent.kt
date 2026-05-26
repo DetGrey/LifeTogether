@@ -39,6 +39,19 @@ fun LazyListScope.wishListEntryForm(
         )
     }
     item {
+        Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
+            TextSubHeadingMedium("Priority")
+            TagOptionRow(
+                options = listOf("urgent", "planned", "someday"),
+                selectedOption = formState.priority.value,
+                onSelectedOptionChange = {
+                    if (uiState.isEditing) onUiEvent(ListEntryDetailsUiEvent.Wish.PriorityChanged(it))
+                },
+                showDividers = false,
+            )
+        }
+    }
+    item {
         CustomTextField(
             value = formState.url,
             onValueChange = { onUiEvent(ListEntryDetailsUiEvent.Wish.UrlChanged(it)) },
@@ -70,19 +83,6 @@ fun LazyListScope.wishListEntryForm(
             keyboardType = KeyboardType.Text,
             enabled = uiState.isEditing,
         )
-    }
-    item {
-        Column(verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall)) {
-            TextSubHeadingMedium("Priority")
-            TagOptionRow(
-                options = listOf("urgent", "planned", "someday"),
-                selectedOption = formState.priority.value,
-                onSelectedOptionChange = {
-                    if (uiState.isEditing) onUiEvent(ListEntryDetailsUiEvent.Wish.PriorityChanged(it))
-                },
-                showDividers = false,
-            )
-        }
     }
     item {
         CustomTextField(

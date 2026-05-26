@@ -6,10 +6,10 @@
 - [ ] Add an amount field to grocery items.
 
 ## --- Lists ---
-- [ ] Move priority up under name in wish list editor
+- [x] Move priority up under name in wish list editor
 - [x] Cannot check off an item on wishlist (some bug that resets the completable toggle or something)
-- [ ] Checklist/wish list purchased section icon is too big
-- [ ] Bottom Padding bug in checklist (too much padding between the add card and list items since there shouldn't be any)
+- [x] Checklist/wish list purchased section icon is too big
+- [x] Bottom Padding bug in checklist (too much padding between the add card and list items since there shouldn't be any)
 
 ## --- Recipes ---
 
