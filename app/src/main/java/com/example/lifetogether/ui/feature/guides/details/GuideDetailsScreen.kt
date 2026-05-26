@@ -28,6 +28,7 @@ import com.example.lifetogether.ui.common.ActionSheetItem
 import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
+import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithDropdown
 import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.skeleton.Skeletons
@@ -42,10 +43,13 @@ fun GuideDetailsScreen(
     onUiEvent: (GuideDetailsUiEvent) -> Unit,
     onNavigationEvent: (GuideDetailsNavigationEvent) -> Unit,
 ) {
-    val guide = (uiState as? GuideDetailsUiState.Content)?.guide
+    val contentState = uiState as? GuideDetailsUiState.Content
+    val guide = contentState?.guide
     var showOverflowMenu by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showResetProgressDialog by remember { mutableStateOf(false) }
+    var showCompleteAndGoToStepDialog by remember { mutableStateOf(false) }
+    var jumpDropdownExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -173,7 +177,7 @@ fun GuideDetailsScreen(
         }
     }
 
-    if (showOverflowMenu && guide != null) {
+    if (showOverflowMenu && contentState != null && guide != null) {
         val visibilityActionLabel = if (guide.visibility == Visibility.FAMILY) {
             "Make private"
         } else {
@@ -181,7 +185,7 @@ fun GuideDetailsScreen(
         }
 
         val actions = buildList {
-            if (uiState.isOwner) {
+            if (contentState.isOwner) {
                 add(
                     ActionSheetItem(
                         label = "Edit guide",
@@ -199,6 +203,16 @@ fun GuideDetailsScreen(
                         showOverflowMenu = false
                         onUiEvent(GuideDetailsUiEvent.ToggleVisibilityClicked)
                     },
+                ),
+            )
+            add(
+                ActionSheetItem(
+                    label = "Complete and go to step",
+                    onClick = {
+                        showOverflowMenu = false
+                        showCompleteAndGoToStepDialog = true
+                    },
+                    isEnabled = contentState.jumpOptions.isNotEmpty(),
                 ),
             )
             add(
@@ -254,6 +268,33 @@ fun GuideDetailsScreen(
             dialogMessage = "Are you sure you want to delete this guide?",
             dismissButtonMessage = "Cancel",
             confirmButtonMessage = "Delete guide",
+        )
+    }
+
+    if (showCompleteAndGoToStepDialog && contentState != null && contentState.jumpOptions.isNotEmpty()) {
+        val selectedJumpOption = contentState.jumpOptions
+            .firstOrNull { it.key == contentState.selectedJumpOptionKey }
+            ?: contentState.jumpOptions.first()
+        ConfirmationDialogWithDropdown(
+            onDismiss = {
+                jumpDropdownExpanded = false
+                showCompleteAndGoToStepDialog = false
+            },
+            onConfirm = {
+                jumpDropdownExpanded = false
+                showCompleteAndGoToStepDialog = false
+                onUiEvent(GuideDetailsUiEvent.CompleteAndGoToSelectedStepClicked)
+            },
+            dialogTitle = "Complete and go to step",
+            dialogMessage = "Mark everything before the selected step as completed and resume from that step.",
+            dismissButtonMessage = "Cancel",
+            confirmButtonMessage = "Apply",
+            selectedValue = selectedJumpOption,
+            expanded = jumpDropdownExpanded,
+            onExpandedChange = { jumpDropdownExpanded = it },
+            options = contentState.jumpOptions,
+            onValueChange = { onUiEvent(GuideDetailsUiEvent.SelectJumpOption(it.key)) },
+            optionLabel = { it.label },
         )
     }
 }

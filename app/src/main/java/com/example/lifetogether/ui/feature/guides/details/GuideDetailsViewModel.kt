@@ -82,6 +82,8 @@ class GuideDetailsViewModel @AssistedInject constructor(
             GuideDetailsUiEvent.ResetAllProgressClicked -> resetAllProgress()
             GuideDetailsUiEvent.ToggleVisibilityClicked -> toggleVisibility()
             GuideDetailsUiEvent.DeleteGuideClicked -> deleteGuide()
+            GuideDetailsUiEvent.CompleteAndGoToSelectedStepClicked -> completeAndGoToSelectedStep()
+            is GuideDetailsUiEvent.SelectJumpOption -> selectJumpOption(event.optionKey)
             is GuideDetailsUiEvent.ToggleSectionExpanded -> toggleSectionExpanded(event.sectionKey)
             is GuideDetailsUiEvent.SelectSectionPiece -> selectSectionPiece(
                 sectionKey = event.sectionKey,
@@ -260,6 +262,32 @@ class GuideDetailsViewModel @AssistedInject constructor(
         persistGuideProgress(updatedGuide)
     }
 
+    fun completeAndGoToSelectedStep() {
+        val currentGuide = currentGuide() ?: return
+        val selectedOptionKey = currentContentState()?.selectedJumpOptionKey ?: return
+        val jumpOption = currentContentState()?.jumpOptions
+            ?.firstOrNull { it.key == selectedOptionKey }
+            ?: return
+        val currentGuideId = resolveGuideId(currentGuide)
+
+        val resetSections = GuideProgress.resetSectionsProgress(currentGuide.sections)
+        val updatedSections = completeGuideUntilPointer(
+            sections = resetSections,
+            targetPointer = jumpOption.pointer,
+        )
+        val updatedGuide = currentGuide.copy(
+            id = currentGuideId,
+            started = true,
+            sections = updatedSections,
+            resume = GuideProgress.resumeFromPointer(jumpOption.pointer),
+            lastUpdated = now(),
+        )
+
+        applyGuideUpdate(uiGuide = updatedGuide)
+        focusPointer(jumpOption.pointer, updatedGuide)
+        persistGuideProgress(updatedGuide)
+    }
+
     fun toggleSectionExpanded(sectionKey: String) {
         if (sectionKey.isBlank()) return
         updateContentState { state ->
@@ -284,6 +312,17 @@ class GuideDetailsViewModel @AssistedInject constructor(
             state.copy(
                 selectedSectionPieceState = state.selectedSectionPieceState + (sectionKey to normalizedPieceIndex),
             )
+        }
+    }
+
+    fun selectJumpOption(optionKey: String) {
+        if (optionKey.isBlank()) return
+        updateContentState { state ->
+            if (state.jumpOptions.none { it.key == optionKey }) {
+                state
+            } else {
+                state.copy(selectedJumpOptionKey = optionKey)
+            }
         }
     }
 
@@ -390,6 +429,14 @@ class GuideDetailsViewModel @AssistedInject constructor(
 
     private fun updateGuideState(guide: Guide) {
         invalidatePointerCache()
+        val jumpOptions = buildGuideJumpOptions(guide)
+        val currentSelectedJumpOptionKey = currentContentState()?.selectedJumpOptionKey
+        val defaultJumpOptionKey = GuideProgress.defaultPointerForGuide(guide)?.let(::guideJumpOptionKey)
+        val selectedJumpOptionKey = when {
+            currentSelectedJumpOptionKey != null && jumpOptions.any { it.key == currentSelectedJumpOptionKey } -> currentSelectedJumpOptionKey
+            defaultJumpOptionKey != null && jumpOptions.any { it.key == defaultJumpOptionKey } -> defaultJumpOptionKey
+            else -> jumpOptions.firstOrNull()?.key
+        }
         val sectionExpandedState = reconcileSectionExpandedState(
             sections = guide.sections,
             existingState = currentContentState()?.sectionExpandedState.orEmpty(),
@@ -405,6 +452,8 @@ class GuideDetailsViewModel @AssistedInject constructor(
             sectionExpandedState = sectionExpandedState,
             selectedSectionPieceState = selectedSectionPieceState,
             canTogglePieceState = canTogglePieceState,
+            jumpOptions = jumpOptions,
+            selectedJumpOptionKey = selectedJumpOptionKey,
             isUpdatingVisibility = currentState?.isUpdatingVisibility ?: false,
             isStartingGuide = currentState?.isStartingGuide ?: false,
             isDeletingGuide = currentState?.isDeletingGuide ?: false,
@@ -420,6 +469,35 @@ class GuideDetailsViewModel @AssistedInject constructor(
                 val activePieceIndex = if (section.completedPieces >= pieces) pieces - 1 else section.completedPieces
                 put(sectionKey, setOf(activePieceIndex.coerceIn(0, pieces - 1)))
             }
+        }
+    }
+
+    private fun completeGuideUntilPointer(
+        sections: List<GuideSection>,
+        targetPointer: GuideLeafPointer,
+    ): List<GuideSection> {
+        var updatedSections = sections
+        GuideProgress.buildLeafPointers(sections)
+            .takeWhile { it != targetPointer }
+            .forEach { pointer ->
+                updatedSections = GuideProgress.applyLeafCompletion(
+                    sections = updatedSections,
+                    pointer = pointer,
+                    completed = true,
+                )
+            }
+        return updatedSections
+    }
+
+    private fun focusPointer(pointer: GuideLeafPointer, guide: Guide) {
+        val section = guide.sections.getOrNull(pointer.sectionIndex) ?: return
+        val sectionKey = guideSectionKey(section, pointer.sectionIndex)
+        updateContentState { state ->
+            state.copy(
+                sectionExpandedState = state.sectionExpandedState + (sectionKey to true),
+                selectedSectionPieceState = state.selectedSectionPieceState + (sectionKey to pointer.sectionPieceIndex),
+                selectedJumpOptionKey = guideJumpOptionKey(pointer),
+            )
         }
     }
 

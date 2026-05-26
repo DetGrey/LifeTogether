@@ -17,7 +17,7 @@
 - [ ] Export or share recipes as PDF.
 -
 ## --- Guides ---
-- [ ] Add a "complete and go to step X" for guides so when you add a new guide or have a new device, you can easily update the progress
+- [x] Add a "complete and go to step X" for guides so when you add a new guide or have a new device, you can easily update the progress
   - This should be in the overflow/action menu in the guidedetailsscreen
 
 ### Optional

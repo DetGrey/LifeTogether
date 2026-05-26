@@ -1,19 +1,5 @@
 # Temporary plans
 
-## Guides: Complete and go to step X from guide details
-Problem:
-`GuideDetailsScreen` only exposes edit/share/reset/delete actions. There is no flow for saying “my real progress is already at step X” when importing a guide or syncing progress from another device.
-
-Solution:
-Add an overflow-menu action on the guide details screen that opens a picker for the target step. Implement a guide-progress helper that marks all leaf steps before the chosen pointer as complete, updates the selected step according to the chosen pointer, and stores `resume` with `GuideProgress.resumeFromPointer(...)`. This keeps the guide details screen, the step player, and persisted guide progress aligned.
-
-Related files:
-- `app/src/main/java/com/example/lifetogether/ui/feature/guides/details/GuideDetailsScreen.kt`
-- `app/src/main/java/com/example/lifetogether/ui/feature/guides/details/GuideDetailsModels.kt`
-- `app/src/main/java/com/example/lifetogether/ui/feature/guides/details/GuideDetailsViewModel.kt`
-- `app/src/main/java/com/example/lifetogether/domain/logic/GuideProgress.kt`
-- `app/src/main/java/com/example/lifetogether/domain/model/guides/GuideResume.kt`
-
 ## Gallery media: Title does not change date when swiping
 Problem:
 The top bar title reads from `content.currentIndex`, but `MediaDetailsViewModel` never updates `currentIndex` when the pager page changes. The details panel uses `pagerState.currentPage`, so the body updates while the title stays stale.

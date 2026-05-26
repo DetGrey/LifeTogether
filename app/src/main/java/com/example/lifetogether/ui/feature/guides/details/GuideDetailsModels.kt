@@ -1,7 +1,10 @@
 package com.example.lifetogether.ui.feature.guides.details
 
+import com.example.lifetogether.domain.logic.GuideLeafPointer
+import com.example.lifetogether.domain.logic.GuideProgress
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.guides.GuideSection
+import com.example.lifetogether.domain.model.guides.GuideStep
 
 sealed interface GuideDetailsUiState {
     data object Loading : GuideDetailsUiState
@@ -11,6 +14,8 @@ sealed interface GuideDetailsUiState {
         val sectionExpandedState: Map<String, Boolean>,
         val selectedSectionPieceState: Map<String, Int>,
         val canTogglePieceState: Map<String, Set<Int>>,
+        val jumpOptions: List<GuideJumpOption> = emptyList(),
+        val selectedJumpOptionKey: String? = null,
         val isUpdatingVisibility: Boolean = false,
         val isStartingGuide: Boolean = false,
         val isDeletingGuide: Boolean = false,
@@ -23,6 +28,8 @@ sealed interface GuideDetailsUiEvent {
     data object ResetAllProgressClicked : GuideDetailsUiEvent
     data object ToggleVisibilityClicked : GuideDetailsUiEvent
     data object DeleteGuideClicked : GuideDetailsUiEvent
+    data object CompleteAndGoToSelectedStepClicked : GuideDetailsUiEvent
+    data class SelectJumpOption(val optionKey: String) : GuideDetailsUiEvent
     data class ToggleSectionExpanded(val sectionKey: String) : GuideDetailsUiEvent
     data class SelectSectionPiece(val sectionKey: String, val pieceIndex: Int) : GuideDetailsUiEvent
     data class ToggleStepCompletion(val stepId: String, val pieceIndex: Int) : GuideDetailsUiEvent
@@ -76,4 +83,50 @@ internal fun reconcileSelectedSectionPieceState(
             put(sectionKey, selectedIndex)
         }
     }
+}
+
+data class GuideJumpOption(
+    val key: String,
+    val label: String,
+    val pointer: GuideLeafPointer,
+)
+
+internal fun buildGuideJumpOptions(guide: Guide): List<GuideJumpOption> {
+    return GuideProgress.buildLeafPointers(guide.sections).mapNotNull { pointer ->
+        val step = GuideProgress.getStepAtPointer(guide.sections, pointer) ?: return@mapNotNull null
+        val section = guide.sections.getOrNull(pointer.sectionIndex) ?: return@mapNotNull null
+        GuideJumpOption(
+            key = guideJumpOptionKey(pointer),
+            label = buildGuideJumpOptionLabel(
+                section = section,
+                sectionIndex = pointer.sectionIndex,
+                step = step,
+                pointer = pointer,
+            ),
+            pointer = pointer,
+        )
+    }
+}
+
+internal fun guideJumpOptionKey(pointer: GuideLeafPointer): String {
+    val subStepIndex = pointer.subStepIndex ?: -1
+    return "${pointer.sectionIndex}:${pointer.sectionPieceIndex}:${pointer.stepIndex}:$subStepIndex"
+}
+
+private fun buildGuideJumpOptionLabel(
+    section: GuideSection,
+    sectionIndex: Int,
+    step: GuideStep,
+    pointer: GuideLeafPointer,
+): String {
+    val sectionLabel = section.title.ifBlank { "Section ${sectionIndex + 1}" }
+    val pieceLabel = if (section.pieces > 1) " • Piece ${pointer.sectionPieceIndex + 1}" else ""
+    val stepLabel = when {
+        step.title.isNotBlank() -> step.title
+        step.name.isNotBlank() -> step.name
+        step.content.isNotBlank() -> step.content.lineSequence().first().take(60)
+        pointer.subStepIndex != null -> "Substep ${pointer.subStepIndex + 1}"
+        else -> "Step ${pointer.stepIndex + 1}"
+    }
+    return "$sectionLabel$pieceLabel • $stepLabel"
 }
