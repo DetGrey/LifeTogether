@@ -178,8 +178,8 @@ class FamilyFirestoreDataSource @Inject constructor(
         }
     }
 
-    suspend fun storeFcmToken(uid: String, familyId: String, lastUpdated: Date) {
-        val fcmToken = try {
+    suspend fun storeFcmToken(uid: String, familyId: String, lastUpdated: Date, token: String? = null) {
+        val fcmToken = token ?: try {
             FirebaseMessaging.getInstance().token.await()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to fetch FCM token", e)
@@ -193,11 +193,14 @@ class FamilyFirestoreDataSource @Inject constructor(
             if (!familyDocSnapshot.exists()) return
 
             @Suppress("UNCHECKED_CAST")
-            val members = familyDocSnapshot.get("members") as? List<Map<String, Any>> ?: emptyList()
+            val members = familyDocSnapshot.get("members") as? List<Map<String, Any?>> ?: emptyList()
             val updatedMembers = members.map { member ->
                 if (member["uid"] == uid) {
-                    val currentToken = member["fcmToken"] as? String
-                    if (currentToken != fcmToken) member.toMutableMap().apply { put("fcmToken", fcmToken) } else member
+                    val currentTokens = memberTokenRecords(member)
+                    val updatedTokens = upsertTokenRecord(currentTokens, fcmToken, lastSeenAt = lastUpdated)
+                    member.toMutableMap().apply {
+                        put("fcmTokens", updatedTokens.map(FcmTokenRecord::toFirestoreMap))
+                    }
                 } else {
                     member
                 }
@@ -217,31 +220,91 @@ class FamilyFirestoreDataSource @Inject constructor(
 
     suspend fun removeDeviceToken(uid: String, familyId: String, lastUpdated: Date): Result<Unit, AppError> {
         return appResultOfSuspend {
+            val currentToken = try {
+                FirebaseMessaging.getInstance().token.await()
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to fetch FCM token for device removal", e)
+                throw AppErrorThrowable(AppErrors.fromThrowable(e))
+            }.trim()
+            if (currentToken.isEmpty()) return@appResultOfSuspend
+
             val familyDocRef = db.collection(Constants.FAMILIES_TABLE).document(familyId)
             val document = familyDocRef.get().await()
             if (!document.exists()) throw AppErrorThrowable(AppErrors.notFound("Family document not found"))
 
             @Suppress("UNCHECKED_CAST")
-            val members = document.get("members") as? List<Map<String, Any>> ?: emptyList()
+            val members = document.get("members") as? List<Map<String, Any?>> ?: emptyList()
             val updatedMembers = members.map { member ->
-                if (member["uid"] == uid) member.toMutableMap().apply { remove("fcmToken") } else member
+                if (member["uid"] == uid) {
+                    val currentTokens = memberTokenRecords(member)
+                    val remainingTokens = currentTokens.filterNot { it.token == currentToken }
+                    member.toMutableMap().apply {
+                        put("fcmTokens", remainingTokens.map(FcmTokenRecord::toFirestoreMap))
+                    }
+                } else {
+                    member
+                }
             }
-            familyDocRef.update(
-                mapOf(
-                    "members" to updatedMembers,
-                    "lastUpdated" to lastUpdated,
-                ),
-            ).await()
+            if (updatedMembers != members) {
+                familyDocRef.update(
+                    mapOf(
+                        "members" to updatedMembers,
+                        "lastUpdated" to lastUpdated,
+                    ),
+                ).await()
+            }
         }
     }
 
     suspend fun getFcmTokensFromFamily(familyId: String): List<String>? {
         val familyDoc = db.collection(Constants.FAMILIES_TABLE).document(familyId).get().await()
         @Suppress("UNCHECKED_CAST")
-        val members = familyDoc.data?.get("members") as? List<Map<String, Any>> ?: emptyList()
-        val tokens = members.mapNotNull { it["fcmToken"] as? String }
+        val members = familyDoc.data?.get("members") as? List<Map<String, Any?>> ?: emptyList()
+        val tokens = members
+            .flatMap(::memberTokenRecords)
+            .map(FcmTokenRecord::token)
+            .distinct()
         return tokens.ifEmpty { null }
     }
+}
+
+private data class FcmTokenRecord(
+    val token: String,
+    val lastSeenAt: Date?,
+) {
+    fun toFirestoreMap(): Map<String, Any?> = mapOf(
+        "token" to token,
+        "lastSeenAt" to lastSeenAt,
+    )
+}
+
+private fun memberTokenRecords(member: Map<String, Any?>): List<FcmTokenRecord> {
+    @Suppress("UNCHECKED_CAST")
+    return (member["fcmTokens"] as? List<Map<String, Any?>>).orEmpty()
+        .mapNotNull { tokenMap ->
+            val token = (tokenMap["token"] as? String)?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+            FcmTokenRecord(
+                token = token,
+                lastSeenAt = tokenMap["lastSeenAt"] as? Date,
+            )
+        }
+}
+
+private fun upsertTokenRecord(
+    currentTokens: List<FcmTokenRecord>,
+    token: String,
+    lastSeenAt: Date,
+): List<FcmTokenRecord> {
+    var found = false
+    val updated = currentTokens.map { record ->
+        if (record.token == token) {
+            found = true
+            record.copy(lastSeenAt = lastSeenAt)
+        } else {
+            record
+        }
+    }
+    return if (found) updated else updated + FcmTokenRecord(token = token, lastSeenAt = lastSeenAt)
 }
 
 private inline fun <T, R> Iterable<T>.mapNotNullIndexed(transform: (index: Int, T) -> R?): List<R> {

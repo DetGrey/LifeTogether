@@ -3,12 +3,21 @@ package com.example.lifetogether.data.remote
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.lifetogether.R
+import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.repository.SessionRepository
+import com.example.lifetogether.domain.repository.UserRepository
+import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.ui.feature.notification.NotificationService
 import com.example.lifetogether.ui.navigation.NotificationDestination
 import com.example.lifetogether.util.Constants
 import dagger.hilt.android.AndroidEntryPoint
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -16,6 +25,14 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     @Inject
     lateinit var notificationService: NotificationService
+
+    @Inject
+    lateinit var sessionRepository: SessionRepository
+
+    @Inject
+    lateinit var userRepository: UserRepository
+
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     // [START receive_message]
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
@@ -52,6 +69,29 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     // [START on_new_token]
     override fun onNewToken(token: String) {
         Log.d(TAG, "Refreshed token: $token")
+        val session = sessionRepository.sessionState.value as? SessionState.Authenticated
+        val familyId = session?.user?.familyId
+        if (session == null || familyId.isNullOrBlank()) {
+            Log.d(TAG, "Skipping immediate FCM token registration because no authenticated family session is available")
+            return
+        }
+
+        serviceScope.launch {
+            when (val result = userRepository.storeFcmToken(session.user.uid, familyId, token)) {
+                is Result.Success -> {
+                    Log.d(TAG, "Stored refreshed FCM token for uid=${session.user.uid} familyId=$familyId")
+                }
+
+                is Result.Failure -> {
+                    Log.w(TAG, "Failed to store refreshed FCM token for uid=${session.user.uid} familyId=$familyId error=${result.error}")
+                }
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        serviceScope.cancel()
+        super.onDestroy()
     }
 
     companion object {

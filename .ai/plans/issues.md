@@ -34,6 +34,7 @@
 - [ ] Share media.
 
 ## --- Gallery albums ---
+- [ ] The album thumbnail should show the newest media by dateCreated
 
 ### Optional
 - [ ] Send a notification when everything is downloaded, and maybe link to the gallery LifeTogether folder if possible.
@@ -91,7 +92,7 @@
 - [ ] Think about if we really wanna catch all exceptions or if it's better to let it crash so we notice and can fix all the bugs
 
 ## --- Notifications ---
-- [ ] Handle having multiple fcm tokens per user
+- [x] Handle having multiple fcm tokens per user
 - [ ] Notification icon is all white on pixel 8
   - Shows correctly on lock screen but not in top bar when phone is on
   - Happens with some other apps too so there is probably something we should have added to prevent it

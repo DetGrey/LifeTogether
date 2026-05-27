@@ -290,9 +290,10 @@ class UserRepositoryImpl @Inject constructor(
     override suspend fun storeFcmToken(
         uid: String,
         familyId: String,
+        token: String?,
     ): Result<Unit, AppError> {
         return appResultOfSuspend {
-            familyFirestoreDataSource.storeFcmToken(uid, familyId, Date())
+            familyFirestoreDataSource.storeFcmToken(uid, familyId, Date(), token)
         }
     }
 
