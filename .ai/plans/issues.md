@@ -93,7 +93,7 @@
 
 ## --- Notifications ---
 - [x] Handle having multiple fcm tokens per user
-- [ ] Notification icon is all white on pixel 8
+- [x] Notification icon is all white on pixel 8
   - Shows correctly on lock screen but not in top bar when phone is on
   - Happens with some other apps too so there is probably something we should have added to prevent it
 

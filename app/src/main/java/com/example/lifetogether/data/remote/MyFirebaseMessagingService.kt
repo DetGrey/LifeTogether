@@ -56,7 +56,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 channelId = channelId ?: Constants.DEFAULT_CHANNEL,
                 title = title,
                 message = message,
-                smallIconResId = smallIconResId ?: R.drawable.ic_logo,
+                smallIconResId = smallIconResId ?: R.drawable.ic_small_logo,
                 notificationId = notificationId ?: System.currentTimeMillis().toInt(),
                 priority = priority ?: NotificationCompat.PRIORITY_DEFAULT,
                 autoCancel = autoCancel ?: true,

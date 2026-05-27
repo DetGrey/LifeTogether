@@ -26,7 +26,7 @@ suspend fun sendFCMNotification(
     channelId: String,
     title: String,
     message: String,
-    smallIconResId: Int = R.drawable.ic_logo,
+    smallIconResId: Int = R.drawable.ic_small_logo,
     notificationId: Int,
     priority: Int = NotificationCompat.PRIORITY_DEFAULT,
     autoCancel: Boolean = true,
