@@ -29,16 +29,33 @@ interface GalleryMediaDao {
     @Query("SELECT * FROM $GALLERY_MEDIA_TABLE WHERE id = :id LIMIT 1")
     suspend fun getItemByIdDirect(id: String): GalleryMediaEntity?
 
-    @Query("SELECT id FROM $GALLERY_MEDIA_TABLE WHERE album_id = :albumId ORDER BY date_created DESC LIMIT 1")
+    @Query("SELECT id FROM $GALLERY_MEDIA_TABLE WHERE album_id = :albumId ORDER BY date_created DESC, id DESC LIMIT 1")
     suspend fun getLatestMediaIdForAlbum(albumId: String): String?
 
     @Query("SELECT thumbnail FROM $GALLERY_MEDIA_TABLE WHERE id = :id LIMIT 1")
     suspend fun getMediaThumbnail(id: String): ByteArray?
 
-    @Query("SELECT thumbnail FROM $GALLERY_MEDIA_TABLE WHERE album_id = :albumId ORDER BY date_created DESC LIMIT 1")
+    @Query("SELECT thumbnail FROM $GALLERY_MEDIA_TABLE WHERE album_id = :albumId ORDER BY date_created DESC, id DESC LIMIT 1")
     suspend fun getNewestMediaThumbnailByAlbumId(albumId: String): ByteArray?
 
-    @Query("SELECT album_id, thumbnail FROM $GALLERY_MEDIA_TABLE WHERE family_id = :familyId AND thumbnail IS NOT NULL GROUP BY album_id")
+    @Query(
+        """
+        SELECT album_id, thumbnail
+        FROM (
+            SELECT
+                album_id,
+                thumbnail,
+                ROW_NUMBER() OVER (
+                    PARTITION BY album_id
+                    ORDER BY date_created DESC, id DESC
+                ) AS row_num
+            FROM $GALLERY_MEDIA_TABLE
+            WHERE family_id = :familyId
+              AND thumbnail IS NOT NULL
+        )
+        WHERE row_num = 1
+        """
+    )
     fun observeAlbumThumbnails(familyId: String): Flow<List<AlbumThumbnailProjection>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
