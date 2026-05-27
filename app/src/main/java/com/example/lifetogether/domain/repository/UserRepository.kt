@@ -14,4 +14,7 @@ interface UserRepository {
     suspend fun changeName(uid: String, familyId: String?, newName: String): Result<Unit, AppError>
     suspend fun fetchFcmTokens(familyId: String): List<String>?
     suspend fun storeFcmToken(uid: String, familyId: String): Result<Unit, AppError>
+    fun observeAdminUids(): Flow<Result<List<String>, AppError>>
+    suspend fun addAdminUid(requesterUid: String, targetUid: String): Result<Unit, AppError>
+    suspend fun removeAdminUid(requesterUid: String, targetUid: String): Result<Unit, AppError>
 }

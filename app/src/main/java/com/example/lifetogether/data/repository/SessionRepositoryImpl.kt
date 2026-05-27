@@ -13,10 +13,12 @@ import com.example.lifetogether.domain.model.session.authenticatedUserOrNull
 import com.example.lifetogether.domain.repository.SessionUserRepository
 import com.example.lifetogether.domain.repository.SessionRepository
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -46,18 +48,35 @@ class SessionRepositoryImpl @Inject constructor(
                         }
 
                         _sessionState.value = SessionState.Loading
-                        sessionUserRepository.observeUserInformation(uid).collect { result ->
-                            when (result) {
-                                is Result.Success -> {
-                                    _sessionState.value = SessionState.Authenticated(result.data)
-                                }
+                        sessionUserRepository.observeUserInformation(uid)
+                            .combine(
+                                sessionUserRepository.observeAdminUids()
+                                    .onStart { emit(Result.Success(emptyList())) },
+                            ) { userResult, adminResult ->
+                                userResult to adminResult
+                            }
+                            .collect { (userResult, adminResult) ->
+                                when (userResult) {
+                                    is Result.Success -> {
+                                        val isAdmin = when (adminResult) {
+                                            is Result.Success -> uid in adminResult.data
+                                            is Result.Failure -> {
+                                                Log.w(TAG, "Admin list lookup failed for uid=$uid: ${adminResult.error}")
+                                                false
+                                            }
+                                        }
+                                        _sessionState.value = SessionState.Authenticated(
+                                            user = userResult.data,
+                                            isAdmin = isAdmin,
+                                        )
+                                    }
 
-                                is Result.Failure -> {
-                                    Log.w(TAG, "User information lookup failed for uid=$uid: ${result.error}")
-                                    _sessionState.value = SessionState.Unauthenticated
+                                    is Result.Failure -> {
+                                        Log.w(TAG, "User information lookup failed for uid=$uid: ${userResult.error}")
+                                        _sessionState.value = SessionState.Unauthenticated
+                                    }
                                 }
                             }
-                        }
                     }
 
                     is Result.Failure -> {

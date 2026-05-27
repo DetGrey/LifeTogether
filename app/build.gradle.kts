@@ -37,7 +37,6 @@ android {
             "R2_ACCESS_KEY_ID" to "r2.accessKeyId",
             "R2_SECRET_ACCESS_KEY" to "r2.secretAccessKey",
             "R2_PUBLIC_DOMAIN" to "r2.publicDomain",
-            "ADMIN_LIST" to "adminList",
         )
     // Loop through them and apply them to defaultConfig
     for ((configName, propKey) in localPropertiesKeys) {
@@ -50,7 +49,7 @@ android {
         minSdk = 35
         targetSdk = 37
         versionCode = 1
-        versionName = "2.0.0"
+        versionName = "2.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

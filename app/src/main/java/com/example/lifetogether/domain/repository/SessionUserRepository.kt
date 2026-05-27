@@ -11,4 +11,5 @@ interface SessionUserRepository {
     suspend fun logout(uid: String, familyId: String?): Result<Unit, AppError>
     suspend fun fetchUserInformation(uid: String): Result<UserInformation, AppError>
     fun observeUserInformation(uid: String): Flow<Result<UserInformation, AppError>>
+    fun observeAdminUids(): Flow<Result<List<String>, AppError>>
 }

@@ -8,7 +8,9 @@ import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.util.Constants
 import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import kotlin.jvm.Transient
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
@@ -50,6 +52,31 @@ class UserFirestoreDataSource @Inject constructor(
         awaitClose { registration.remove() }
     }
 
+    fun adminUidsSnapshotListener() = callbackFlow {
+        val ref = db.collection(Constants.APP_CONFIG_TABLE)
+            .document(Constants.APP_ADMINS_DOCUMENT)
+
+        val registration = ref.addSnapshotListener { snapshot, error ->
+            val result = when {
+                error != null -> Result.Failure(AppErrors.fromThrowable(error))
+                snapshot == null || !snapshot.exists() ->
+                    Result.Failure(
+                        AppErrors.notFound("Could not find ${Constants.APP_ADMINS_DOCUMENT} document")
+                    )
+                else -> {
+                    @Suppress("UNCHECKED_CAST")
+                    val adminUids = (snapshot.get("adminUids") as? List<String>).orEmpty()
+                        .map(String::trim)
+                        .filter(String::isNotEmpty)
+                        .distinct()
+                    Result.Success(adminUids)
+                }
+            }
+            trySend(result)
+        }
+        awaitClose { registration.remove() }
+    }
+
     suspend fun fetchUserInformation(uid: String): Result<UserInformation, AppError> = appResultOfSuspend {
         val snapshot = db.collection(Constants.USER_TABLE).document(uid).get().await()
         val userInformation = mapFirestoreDocument(
@@ -61,6 +88,20 @@ class UserFirestoreDataSource @Inject constructor(
             it.toObject(UserInformationDto::class.java)?.toDomain(it.id)
         }
         userInformation ?: throw AppErrorThrowable(AppErrors.notFound("User not found"))
+    }
+
+    suspend fun userExists(uid: String): Result<Boolean, AppError> = appResultOfSuspend {
+        db.collection(Constants.USER_TABLE).document(uid).get().await().exists()
+    }
+
+    suspend fun fetchAdminUids(): Result<List<String>, AppError> = appResultOfSuspend {
+        val snapshot = db.collection(Constants.APP_CONFIG_TABLE).document(Constants.APP_ADMINS_DOCUMENT).get().await()
+        if (!snapshot.exists()) return@appResultOfSuspend emptyList()
+        @Suppress("UNCHECKED_CAST")
+        (snapshot.get("adminUids") as? List<String>).orEmpty()
+            .map(String::trim)
+            .filter(String::isNotEmpty)
+            .distinct()
     }
 
     suspend fun uploadUserInformation(userInformation: UserInformation): Result<Unit, AppError> {
@@ -167,6 +208,36 @@ class UserFirestoreDataSource @Inject constructor(
                     ).await()
                 }
             }
+        }
+    }
+
+    suspend fun addAdminUid(uid: String, lastUpdated: Date): Result<Unit, AppError> {
+        return appResultOfSuspend {
+            db.collection(Constants.APP_CONFIG_TABLE)
+                .document(Constants.APP_ADMINS_DOCUMENT)
+                .set(
+                    mapOf(
+                        "adminUids" to FieldValue.arrayUnion(uid),
+                        "lastUpdated" to lastUpdated,
+                    ),
+                    SetOptions.merge(),
+                )
+                .await()
+        }
+    }
+
+    suspend fun removeAdminUid(uid: String, lastUpdated: Date): Result<Unit, AppError> {
+        return appResultOfSuspend {
+            db.collection(Constants.APP_CONFIG_TABLE)
+                .document(Constants.APP_ADMINS_DOCUMENT)
+                .set(
+                    mapOf(
+                        "adminUids" to FieldValue.arrayRemove(uid),
+                        "lastUpdated" to lastUpdated,
+                    ),
+                    SetOptions.merge(),
+                )
+                .await()
         }
     }
 }

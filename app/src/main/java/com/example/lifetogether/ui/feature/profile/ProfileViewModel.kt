@@ -49,6 +49,7 @@ class ProfileViewModel @Inject constructor(
                         when (it) {
                             is ProfileUiState.Loading -> ProfileUiState.Content(
                                 userInformation = state.user,
+                                isAdmin = state.isAdmin
                             )
 
                             is ProfileUiState.Content -> it.copy(

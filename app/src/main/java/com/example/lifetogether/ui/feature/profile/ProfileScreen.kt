@@ -45,7 +45,6 @@ import com.example.lifetogether.ui.theme.LifeTogetherTokens
 fun ProfileScreen(
     uiState: ProfileUiState,
     bitmap: Bitmap?,
-    isAdmin: Boolean,
     onUiEvent: (ProfileUiEvent) -> Unit,
     onNavigationEvent: (ProfileNavigationEvent) -> Unit,
 ) {
@@ -173,7 +172,7 @@ fun ProfileScreen(
                             title = "Birthday",
                             value = userInformation.birthday?.toFullDateString() ?: "",
                         )
-                        if (isAdmin) {
+                        if (uiState.isAdmin) {
                             ProfileDetails(
                                 appIcon = AppIcon(
                                     resId = R.drawable.ic_settings,
@@ -254,9 +253,9 @@ private fun ProfileScreenPreview() {
                     email = "alex@example.com",
                     name = "Alex",
                 ),
+                isAdmin = true,
             ),
             bitmap = null,
-            isAdmin = true,
             onUiEvent = {},
             onNavigationEvent = {},
         )

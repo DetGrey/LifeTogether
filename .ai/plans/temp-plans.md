@@ -1,35 +1,5 @@
 # Temporary plans
 
-## Admin features: Admin users can grant admin access to another user
-Problem:
-The app already has a global admin concept, but it is only a hardcoded build-time gate via `BuildConfig.ADMIN_LIST`, currently used to unlock the grocery admin screens. That means admin access cannot be granted or revoked at runtime, and the earlier family-admin approach would be the wrong scope because these screens are app-wide, not family-owned.
-
-Solution:
-Keep admin as a global app role and move the source of truth to Firestore. Add one config document such as `app_config/admins` with `adminUids: List<String>`, and expose repository methods to observe, add, and remove admin UIDs. The add flow should take a raw UID, validate it, verify that a user document with that UID exists, and then add it if it is not already present. The screen should show the existing admin UIDs in a list above an `AddNewString` input, with a trailing delete icon per row for revoke. Only existing app admins may grant or revoke access. During rollout, keep `BuildConfig.ADMIN_LIST` as a bootstrap fallback so current admins keep access until the Firestore admin document has been populated; admin checks should temporarily accept either source.
-
-Related files:
-- `app/src/main/java/com/example/lifetogether/data/remote/UserFirestoreDataSource.kt`
-- `app/src/main/java/com/example/lifetogether/domain/repository/UserRepository.kt`
-- `app/src/main/java/com/example/lifetogether/data/repository/UserRepositoryImpl.kt`
-- `app/src/main/java/com/example/lifetogether/ui/feature/home/HomeRoute.kt`
-- `app/src/main/java/com/example/lifetogether/ui/feature/profile/ProfileRoute.kt`
-- `app/src/main/java/com/example/lifetogether/ui/feature/settings/SettingsScreen.kt`
-- `app/src/main/java/com/example/lifetogether/ui/feature/settings/SettingsViewModel.kt`
-- `app/src/main/java/com/example/lifetogether/ui/feature/settings/SettingsModels.kt`
-
-## Admin features: User ID in settings should be clickable to copy
-Problem:
-The settings screen renders the user id as plain text, so there is no direct affordance to copy it before using admin tooling or sharing it with another admin.
-
-Solution:
-Make the user id row a proper settings action. On tap, copy the id with `copyToClipboard(...)` and show a snackbar or system-style copied confirmation via `UiCommand`. This fits naturally with the broader settings-card refactor above.
-
-Related files:
-- `app/src/main/java/com/example/lifetogether/ui/feature/settings/SettingsScreen.kt`
-- `app/src/main/java/com/example/lifetogether/ui/feature/settings/SettingsViewModel.kt`
-- `app/src/main/java/com/example/lifetogether/ui/feature/settings/SettingsModels.kt`
-- `app/src/main/java/com/example/lifetogether/domain/logic/copyToClipboard.kt`
-
 ## Notifications: Handle multiple FCM tokens per user
 Problem:
 The family document currently stores a single `fcmToken` per member. That means one device silently overwrites another, token rotation can replace the active token unexpectedly, and logout cleanup removes the whole token field instead of only the current device’s registration. `onNewToken(...)` also only logs today, so token refreshes are not written back immediately.

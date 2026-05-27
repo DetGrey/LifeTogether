@@ -56,7 +56,7 @@
 ## --- TipTracker ---
 
 ## --- Admin features ---
-- [ ] An admin user should be able to add another user as admin
+- [x] An admin user should be able to add another user as admin
   - This also means that the user id in settings should be clickable to copy it with a snackbar or android default message saying it's copied
 
 ### Optional

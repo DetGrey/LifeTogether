@@ -9,6 +9,8 @@ object Constants {
     const val USER_TABLE = "users"
     const val FAMILIES_TABLE = "families"
     const val FAMILY_MEMBERS_TABLE = "family_members"
+    const val APP_CONFIG_TABLE = "app_config"
+    const val APP_ADMINS_DOCUMENT = "admins"
     const val CATEGORY_TABLE = "categories"
     const val RECIPES_TABLE = "recipes"
     const val ALBUMS_TABLE = "albums"

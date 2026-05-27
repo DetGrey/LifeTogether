@@ -8,6 +8,7 @@ sealed interface ProfileUiState {
 
     data class Content(
         val userInformation: UserInformation,
+        val isAdmin: Boolean,
         val dialog: ProfileDialogState? = null,
     ) : ProfileUiState
 }

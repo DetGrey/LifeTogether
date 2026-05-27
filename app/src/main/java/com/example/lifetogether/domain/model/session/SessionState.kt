@@ -9,6 +9,7 @@ sealed interface SessionState {
 
     data class Authenticated(
         val user: UserInformation,
+        val isAdmin: Boolean,
     ) : SessionState
 }
 

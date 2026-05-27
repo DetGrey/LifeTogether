@@ -1,10 +1,19 @@
 package com.example.lifetogether.ui.feature.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -13,19 +22,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
 import com.example.lifetogether.BuildConfig
+import com.example.lifetogether.domain.logic.copyToClipboard
 import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.ui.common.ActionSheet
 import com.example.lifetogether.ui.common.ActionSheetItem
 import com.example.lifetogether.ui.common.AppTopBar
+import com.example.lifetogether.ui.common.add.AddNewString
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.text.TextDefault
+import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
@@ -35,6 +49,7 @@ fun SettingsScreen(
     onUiEvent: (SettingsUiEvent) -> Unit,
     onNavigationEvent: (SettingsNavigationEvent) -> Unit,
 ) {
+    val context = LocalContext.current
     var showFamilyOptionsSheet by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -118,6 +133,37 @@ fun SettingsScreen(
                     }
                 }
 
+                if (content.isAdmin) {
+                    item {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.medium),
+                        ) {
+                            TextHeadingMedium(text = "Admin access")
+
+                            content.adminUids.forEach { adminUid ->
+                                AdminUidRow(
+                                    uid = adminUid,
+                                    onRemoveClick = {
+                                        onUiEvent(SettingsUiEvent.RemoveAdminClicked(adminUid))
+                                    },
+                                )
+                            }
+
+                            AddNewString(
+                                label = "Add User ID",
+                                textValue = content.adminUidDraft,
+                                onTextChange = { value ->
+                                    onUiEvent(SettingsUiEvent.AdminUidChanged(value))
+                                },
+                                onAddClick = { _ ->
+                                    onUiEvent(SettingsUiEvent.AddAdminClicked)
+                                },
+                                capitalization = false,
+                            )
+                        }
+                    }
+                }
+
                 item {
                     Column(
                         modifier = Modifier.padding(top = LifeTogetherTokens.spacing.large),
@@ -125,7 +171,15 @@ fun SettingsScreen(
                         verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.xSmall),
                     ) {
                         TextDefault(text = "Version ${BuildConfig.VERSION_NAME}")
-                        TextDefault(text = "User ID: ${userInformationState.uid}")
+                        TextDefault(
+                            text = "User ID: ${userInformationState.uid}",
+                            modifier = Modifier.clickable {
+                                copyToClipboard(
+                                    context = context,
+                                    text = userInformationState.uid,
+                                )
+                            }
+                        )
                     }
                 }
             }
@@ -154,6 +208,15 @@ fun SettingsScreen(
                     confirmButtonMessage = "Create",
                 )
 
+                is SettingsDialogState.RemoveAdmin -> ConfirmationDialog(
+                    onDismiss = { onUiEvent(SettingsUiEvent.DismissDialog) },
+                    onConfirm = { onUiEvent(SettingsUiEvent.ConfirmRemoveAdmin) },
+                    dialogTitle = "Remove admin access",
+                    dialogMessage = "Are you sure you want to remove admin access for ${dialog.uid}?",
+                    dismissButtonMessage = "Cancel",
+                    confirmButtonMessage = "Remove",
+                )
+
                 null -> Unit
             }
         }
@@ -179,6 +242,45 @@ fun SettingsScreen(
                 ),
             ),
         )
+    }
+}
+
+@Composable
+private fun AdminUidRow(
+    uid: String,
+    onRemoveClick: () -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        shape = MaterialTheme.shapes.large,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = LifeTogetherTokens.spacing.medium,
+                    vertical = LifeTogetherTokens.spacing.small
+                ),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TextDefault(
+                text = uid,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            IconButton(
+                onClick = onRemoveClick,
+                modifier = Modifier.size(LifeTogetherTokens.sizing.iconLarge),
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_delete),
+                    contentDescription = "remove admin access",
+                    tint = MaterialTheme.colorScheme.error,
+                )
+            }
+        }
     }
 }
 

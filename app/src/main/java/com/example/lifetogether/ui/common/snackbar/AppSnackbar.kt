@@ -17,6 +17,7 @@ import androidx.compose.material3.SnackbarVisuals
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
@@ -114,8 +115,8 @@ fun AppSnackbar(
 }
 
 private data class SnackbarColors(
-    val containerColor: androidx.compose.ui.graphics.Color,
-    val contentColor: androidx.compose.ui.graphics.Color,
+    val containerColor: Color,
+    val contentColor: Color,
 )
 
 @Composable
@@ -127,8 +128,8 @@ private fun snackbarColors(severity: SnackbarSeverity): SnackbarColors {
         )
 
         SnackbarSeverity.Info -> SnackbarColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            containerColor = MaterialTheme.colorScheme.tertiary,
+            contentColor = MaterialTheme.colorScheme.onTertiary,
         )
     }
 }

@@ -6,7 +6,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.lifetogether.BuildConfig
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.common.event.LocalRootSnackbarHostState
@@ -32,7 +31,6 @@ fun ProfileRoute(
             snackbarHostState.showSnackbar(message)
         }
     }
-    val isAdmin = content?.userInformation?.uid in BuildConfig.ADMIN_LIST.split(",")
 
     CollectUiCommands(viewModel.uiCommands)
 
@@ -47,7 +45,6 @@ fun ProfileRoute(
     ProfileScreen(
         uiState = uiState,
         bitmap = bitmap,
-        isAdmin = isAdmin,
         onUiEvent = viewModel::onEvent,
         onNavigationEvent = { navigationEvent ->
             when (navigationEvent) {

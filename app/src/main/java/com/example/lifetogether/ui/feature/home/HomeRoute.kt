@@ -5,10 +5,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.lifetogether.BuildConfig
 import com.example.lifetogether.domain.logic.daysTogetherText
 import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.model.session.SessionState
+import com.example.lifetogether.domain.model.session.SessionState.Authenticated
 import com.example.lifetogether.domain.model.session.authenticatedUserOrNull
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.result.AppError
@@ -56,7 +56,7 @@ fun HomeRoute(
             value = result
         }
     }
-    val isAdmin = userInformation?.uid in BuildConfig.ADMIN_LIST.split(",")
+    val isAdmin = (sessionState as? Authenticated)?.isAdmin == true
     val displayBitmap = if (userInformation?.familyId != null) bitmap else null
     val sections = buildHomeSections(isAdmin = isAdmin)
     val currentSessionState = sessionState

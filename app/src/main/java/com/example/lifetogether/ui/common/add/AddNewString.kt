@@ -34,6 +34,7 @@ fun AddNewString(
     onTextChange: ((String) -> Unit)? = null,
     actionLabel: String = "Add",
     showTwoLines: Boolean = false,
+    capitalization: Boolean = true,
 ) {
     var internalTextValue by rememberSaveable { mutableStateOf("") }
     val currentTextValue = textValue ?: internalTextValue
@@ -60,7 +61,7 @@ fun AddNewString(
                 label = label,
                 keyboardType = KeyboardType.Text,
                 imeAction = ImeAction.Done,
-                capitalization = true,
+                capitalization = capitalization,
                 maxLines = if (showTwoLines) 4 else 1,
             )
 

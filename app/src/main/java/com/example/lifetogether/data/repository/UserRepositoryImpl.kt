@@ -301,4 +301,65 @@ class UserRepositoryImpl @Inject constructor(
     ): List<String>? {
         return familyFirestoreDataSource.getFcmTokensFromFamily(familyId)
     }
+
+    override fun observeAdminUids(): Flow<Result<List<String>, AppError>> {
+        return userFirestoreDataSource.adminUidsSnapshotListener()
+    }
+
+    override suspend fun addAdminUid(
+        requesterUid: String,
+        targetUid: String,
+    ): Result<Unit, AppError> {
+        return appResultOfSuspend {
+            val currentAdmins = when (val result = userFirestoreDataSource.fetchAdminUids()) {
+                is Result.Success -> result.data
+                is Result.Failure -> throw AppErrorThrowable(result.error)
+            }
+            if (!hasAdminAccess(requesterUid, currentAdmins)) {
+                throw AppErrorThrowable(AppError.PermissionDenied("Only admins can grant admin access"))
+            }
+            if (targetUid in currentAdmins) {
+                throw AppErrorThrowable(AppError.Validation("That user already has admin access"))
+            }
+            val userExists = when (val result = userFirestoreDataSource.userExists(targetUid)) {
+                is Result.Success -> result.data
+                is Result.Failure -> throw AppErrorThrowable(result.error)
+            }
+            if (!userExists) {
+                throw AppErrorThrowable(AppError.NotFound("User not found"))
+            }
+
+            when (val result = userFirestoreDataSource.addAdminUid(targetUid, Date())) {
+                is Result.Success -> Unit
+                is Result.Failure -> throw AppErrorThrowable(result.error)
+            }
+        }
+    }
+
+    override suspend fun removeAdminUid(
+        requesterUid: String,
+        targetUid: String,
+    ): Result<Unit, AppError> {
+        return appResultOfSuspend {
+            val currentAdmins = when (val result = userFirestoreDataSource.fetchAdminUids()) {
+                is Result.Success -> result.data
+                is Result.Failure -> throw AppErrorThrowable(result.error)
+            }
+            if (!hasAdminAccess(requesterUid, currentAdmins)) {
+                throw AppErrorThrowable(AppError.PermissionDenied("Only admins can revoke admin access"))
+            }
+            if (targetUid !in currentAdmins) {
+                throw AppErrorThrowable(AppError.Validation("That user does not have Firestore admin access"))
+            }
+
+            when (val result = userFirestoreDataSource.removeAdminUid(targetUid, Date())) {
+                is Result.Success -> Unit
+                is Result.Failure -> throw AppErrorThrowable(result.error)
+            }
+        }
+    }
+
+    private fun hasAdminAccess(uid: String, remoteAdminUids: List<String>): Boolean {
+        return uid in remoteAdminUids
+    }
 }
