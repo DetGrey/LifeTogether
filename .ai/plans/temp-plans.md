@@ -1,7 +1,5 @@
 # Temporary plans
 
-- [ ] The album thumbnail should show the newest media by dateCreated
-
 ## Notifications: Status-bar notification icon is all white on Pixel 8 (TODO)
 Problem:
 Notifications use `R.drawable.ic_logo` as the small icon. That asset is a full illustrated/logo-style vector with fills, strokes, and internal detail, but Android small notification icons are rendered as monochrome masks in the status bar and notification header. On devices like Pixel 8, the system reduces the icon to a solid white silhouette, so a complex logo turns into an all-white or muddy-looking blob instead of a clean symbol.

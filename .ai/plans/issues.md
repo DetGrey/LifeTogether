@@ -34,7 +34,7 @@
 - [ ] Share media.
 
 ## --- Gallery albums ---
-- [ ] The album thumbnail should show the newest media by dateCreated
+- [x] The album thumbnail should show the newest media by dateCreated
 
 ### Optional
 - [ ] Send a notification when everything is downloaded, and maybe link to the gallery LifeTogether folder if possible.
