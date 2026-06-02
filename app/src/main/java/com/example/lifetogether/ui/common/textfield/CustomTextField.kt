@@ -48,16 +48,17 @@ fun CustomTextField(
         mutableStateOf(
             TextFieldValue(
                 text = value,
-                selection = TextRange(value.length),
+                selection = if (enabled) TextRange(value.length) else TextRange(0),
             ),
         )
     }
 
-    LaunchedEffect(value) {
-        if (textFieldValue.text != value) {
+    LaunchedEffect(value, enabled) {
+        val desiredSelection = if (enabled) TextRange(value.length) else TextRange(0)
+        if (textFieldValue.text != value || textFieldValue.selection != desiredSelection) {
             textFieldValue = TextFieldValue(
                 text = value,
-                selection = TextRange(value.length),
+                selection = desiredSelection,
             )
         }
     }

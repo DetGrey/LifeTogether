@@ -7,12 +7,14 @@ import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
@@ -30,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
@@ -66,6 +69,9 @@ import java.time.temporal.TemporalAdjusters
 import java.util.Date
 import java.util.Locale
 import androidx.core.net.toUri
+import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.ui.common.image.AnimatedBitmapImage
+import com.example.lifetogether.ui.common.image.rememberObservedImageBitmap
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
@@ -354,6 +360,7 @@ private fun MealPlanCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .sizeIn(maxHeight = 96.dp)
             .clip(MaterialTheme.shapes.large)
             .clickable(onClick = onClick),
         shape = MaterialTheme.shapes.large,
@@ -361,29 +368,43 @@ private fun MealPlanCard(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
         ),
     ) {
-        val showPrepTime = prepTimeMin != null && prepTimeMin > 0
-        Column(
-            modifier = Modifier.padding(LifeTogetherTokens.spacing.medium),
-            verticalArrangement = Arrangement.spacedBy(if (showPrepTime) LifeTogetherTokens.spacing.small else 0.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+        Box {
+            val imageType =  mealPlan.recipeId?.let {
+                ImageType.RecipeImage(mealPlan.familyId, it)
+            }
+            val bitmap = rememberObservedImageBitmap(imageType)
+            AnimatedBitmapImage(
+                bitmap = bitmap,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .alpha(0.5f),
+                contentDescription = "recipe image",
+            )
+
+            val showPrepTime = prepTimeMin != null && prepTimeMin > 0
+            Column(
+                modifier = Modifier.padding(LifeTogetherTokens.spacing.medium),
+                verticalArrangement = Arrangement.spacedBy(if (showPrepTime) LifeTogetherTokens.spacing.small else 0.dp),
             ) {
-                if (showPrepTime) {
-                    TextDefault(
-                        text = "Prep time: ${minToHourMinString(prepTimeMin)}",
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
+                ) {
+                    if (showPrepTime) {
+                        TextDefault(
+                            text = "Prep time: ${minToHourMinString(prepTimeMin)}",
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                    }
+                    TextLabel(
+                        text = mealPlan.mealType.displayName,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.End,
                     )
                 }
-                TextLabel(
-                    text = mealPlan.mealType.displayName,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.End,
-                )
+                TextHeadingMedium(text = mealPlan.itemName)
             }
-            TextHeadingMedium(text = mealPlan.itemName)
         }
     }
 }

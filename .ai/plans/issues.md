@@ -1,4 +1,5 @@
 ## --- Meal planner ---
+- [x] Show recipe image on meal planner list as background
 
 ## --- Grocery ---
 
@@ -10,6 +11,10 @@
 - [x] Cannot check off an item on wishlist (some bug that resets the completable toggle or something)
 - [x] Checklist/wish list purchased section icon is too big
 - [x] Bottom Padding bug in checklist (too much padding between the add card and list items since there shouldn't be any)
+- [x] Wish list url field should be multiline
+- [x] Make wish list link clickable when not editing
+- [x] Wish list currency code should be all capitalized
+- [x] Delete list should be an option on list details action sheet
 
 ## --- Recipes ---
 
@@ -55,6 +60,10 @@
   - When there are multiple, show a action sheet with the options on click
 
 ## --- TipTracker ---
+- [ ] Tip tracker list bottom content padding medium or something
+
+### Optional
+- [ ] Add more to tip statistics
 
 ## --- Admin features ---
 - [x] An admin user should be able to add another user as admin
@@ -79,6 +88,8 @@
     - In album info show if connected to traveller pin and make it clickable
 
 ## --- Shared architecture and tooling ---
+- [ ] Rename action sheet to overflow menu and remove the old unused overflow menu
+- [ ] Expand toggle should be same color as text (eg in grocery list)
 
 ### Optional
 - [ ] Use SQLCipher for Room encryption.

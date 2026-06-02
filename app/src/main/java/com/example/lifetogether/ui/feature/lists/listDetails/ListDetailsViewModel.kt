@@ -88,6 +88,9 @@ class ListDetailsViewModel @AssistedInject constructor(
     private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
     val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
 
+    private val _commands = Channel<ListDetailsCommand>(Channel.BUFFERED)
+    val commands: Flow<ListDetailsCommand> = _commands.receiveAsFlow()
+
     val uiState: StateFlow<ListDetailsUiState> = combine(
         contentState,
         selectionState,
@@ -118,6 +121,8 @@ class ListDetailsViewModel @AssistedInject constructor(
             is ListDetailsUiEvent.Checklist.EditRequested -> startEditingChecklistItem(event.entryId)
             is ListDetailsUiEvent.Checklist.NameChanged -> updateChecklistDraftName(event.value)
             ListDetailsUiEvent.Checklist.ActionClicked -> saveChecklistDraft()
+            ListDetailsUiEvent.RequestDeleteList -> requestDeleteList()
+            ListDetailsUiEvent.ConfirmDeleteList -> confirmDeleteList()
         }
     }
 
@@ -261,6 +266,27 @@ class ListDetailsViewModel @AssistedInject constructor(
     private fun updateRenameListText(value: String) {
         updateSelectionStateIfContent { state, _ ->
             state.copy(dialog = (state.dialog as? ListDetailsDialogState.RenameList)?.copy(name = value))
+        }
+    }
+
+    private fun requestDeleteList() {
+        updateSelectionStateIfContent { state, _ ->
+            state.copy(
+                showActionSheet = false,
+                dialog = ListDetailsDialogState.DeleteList,
+            )
+        }
+    }
+
+    private fun confirmDeleteList() {
+        viewModelScope.launch {
+            when (val result = userListRepository.deleteUserList(listId)) {
+                is Result.Success -> _commands.send(ListDetailsCommand.NavigateBack)
+                is Result.Failure -> {
+                    dismissDialog()
+                    showError(result.error.toUserMessage())
+                }
+            }
         }
     }
 

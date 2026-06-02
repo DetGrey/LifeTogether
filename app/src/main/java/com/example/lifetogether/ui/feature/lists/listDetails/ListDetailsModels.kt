@@ -25,6 +25,11 @@ sealed interface ListDetailsUiState {
 
 sealed interface ListDetailsDialogState {
     data class RenameList(val name: String = "") : ListDetailsDialogState
+    data object DeleteList : ListDetailsDialogState
+}
+
+sealed interface ListDetailsCommand {
+    data object NavigateBack : ListDetailsCommand
 }
 
 sealed interface ListDetailsListContent {
@@ -71,6 +76,8 @@ sealed interface ListDetailsUiEvent {
     data object DismissDialog : ListDetailsUiEvent
     data class RenameListNameChanged(val value: String) : ListDetailsUiEvent
     data object ConfirmRenameList : ListDetailsUiEvent
+    data object RequestDeleteList : ListDetailsUiEvent
+    data object ConfirmDeleteList : ListDetailsUiEvent
     data class ToggleEntryCompleted(val entryId: String) : ListDetailsUiEvent
     sealed interface Checklist : ListDetailsUiEvent {
         data class EditRequested(val entryId: String) : Checklist

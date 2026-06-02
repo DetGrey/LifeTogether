@@ -1,6 +1,7 @@
 package com.example.lifetogether.ui.feature.lists.listDetails
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -18,6 +19,14 @@ fun ListDetailsRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     CollectUiCommands(viewModel.uiCommands)
+
+    LaunchedEffect(viewModel) {
+        viewModel.commands.collect { command ->
+            when (command) {
+                ListDetailsCommand.NavigateBack -> appNavigator.navigateBack()
+            }
+        }
+    }
 
     ListDetailsScreen(
         uiState = uiState,

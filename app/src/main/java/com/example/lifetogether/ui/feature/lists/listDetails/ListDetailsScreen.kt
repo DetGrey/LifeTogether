@@ -239,6 +239,11 @@ fun ListDetailsScreen(
                         onClick = { onUiEvent(ListDetailsUiEvent.StartSelectionMode) },
                         isEnabled = contentState.listContent.entries.isNotEmpty(),
                     ),
+                    ActionSheetItem(
+                        label = "Delete list",
+                        onClick = { onUiEvent(ListDetailsUiEvent.RequestDeleteList) },
+                        isDestructive = true,
+                    ),
                 )
             }
         }
@@ -250,6 +255,15 @@ fun ListDetailsScreen(
     }
 
     when (val dialog = contentState?.dialog) {
+        is ListDetailsDialogState.DeleteList -> ConfirmationDialog(
+            onDismiss = { onUiEvent(ListDetailsUiEvent.DismissDialog) },
+            onConfirm = { onUiEvent(ListDetailsUiEvent.ConfirmDeleteList) },
+            dialogTitle = "Delete list",
+            dialogMessage = "Are you sure you want to delete this list? All entries will be permanently deleted.",
+            dismissButtonMessage = "Cancel",
+            confirmButtonMessage = "Delete list",
+        )
+
         is ListDetailsDialogState.RenameList -> ConfirmationDialogWithTextField(
             onDismiss = { onUiEvent(ListDetailsUiEvent.DismissDialog) },
             onConfirm = { onUiEvent(ListDetailsUiEvent.ConfirmRenameList) },

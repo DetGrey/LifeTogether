@@ -54,7 +54,7 @@ class ListEntryDetailsFormReducer @Inject constructor() {
             is ListEntryDetailsUiEvent.Wish.PriceChanged -> details.copy(
                 form = details.form.copy(price = event.value.filter { it.isDigit() || it == '.' }),
             )
-            is ListEntryDetailsUiEvent.Wish.CurrencyCodeChanged -> details.copy(form = details.form.copy(currencyCode = event.value))
+            is ListEntryDetailsUiEvent.Wish.CurrencyCodeChanged -> details.copy(form = details.form.copy(currencyCode = event.value.uppercase()))
             is ListEntryDetailsUiEvent.Wish.PriorityChanged -> details.copy(
                 form = WishListPriority.fromValue(event.value)?.let { priority ->
                     details.form.copy(priority = priority)
