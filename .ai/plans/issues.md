@@ -60,7 +60,7 @@
   - When there are multiple, show a action sheet with the options on click
 
 ## --- TipTracker ---
-- [ ] Tip tracker list bottom content padding medium or something
+- [x] Tip tracker list bottom content padding medium or something
 
 ### Optional
 - [ ] Add more to tip statistics

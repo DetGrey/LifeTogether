@@ -45,15 +45,21 @@ sealed interface TipTrackerUiState {
         val stats: TipTrackerStats,
         val calendar: TipTrackerCalendarState,
         val selectedTip: TipItem? = null,
-        val overviewOption: String = "Calendar",
+        val overviewOption: TipTrackerOverviewOption = TipTrackerOverviewOption.CALENDAR,
         val timePeriod: String = "Week",
         val newItemAmount: String = "",
         val newItemDate: Date = Date(),
     ) : TipTrackerUiState
 }
 
+enum class TipTrackerOverviewOption(val displayName: String) {
+    CALENDAR("Calendar"),
+    LIST("List"),
+
+}
+
 sealed interface TipTrackerUiEvent {
-    data class OverviewOptionSelected(val value: String) : TipTrackerUiEvent
+    data class OverviewOptionSelected(val value: TipTrackerOverviewOption) : TipTrackerUiEvent
     data class TimePeriodSelected(val value: String) : TipTrackerUiEvent
     data class DeleteTipClicked(val tip: TipItem) : TipTrackerUiEvent
     data object ConfirmDeleteConfirmation : TipTrackerUiEvent

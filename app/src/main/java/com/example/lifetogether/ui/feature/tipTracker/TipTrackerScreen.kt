@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -83,17 +85,19 @@ fun TipTrackerScreen(
                 ) {
                     item {
                         TagOptionRow(
-                            options = listOf("Calendar", "List"),
-                            selectedOption = content.overviewOption,
-                            onSelectedOptionChange = {
-                                onUiEvent(TipTrackerUiEvent.OverviewOptionSelected(it))
+                            options = TipTrackerOverviewOption.entries.map { it.displayName },
+                            selectedOption = content.overviewOption.displayName,
+                            onSelectedOptionChange = { selectedOption ->
+                                val option = TipTrackerOverviewOption.entries.find { it.displayName == selectedOption }
+                                if (option == content.overviewOption || option == null) return@TagOptionRow
+                                onUiEvent(TipTrackerUiEvent.OverviewOptionSelected(option))
                             },
                             center = true,
                         )
                     }
 
                     when (content.overviewOption) {
-                        "Calendar" -> {
+                        TipTrackerOverviewOption.CALENDAR -> {
                             item {
                                 TipsCalendar(
                                     calendar = content.calendar,
@@ -110,7 +114,7 @@ fun TipTrackerScreen(
                             }
                         }
 
-                        "List" -> {
+                        TipTrackerOverviewOption.LIST -> {
                             items(content.tips, key = { it.id }) { tip ->
                                 TipCard(
                                     tip = tip,
@@ -119,6 +123,9 @@ fun TipTrackerScreen(
                                         showDeleteTipDialog = true
                                     }
                                 )
+                            }
+                            item {
+                                Spacer(modifier = Modifier.height(LifeTogetherTokens.spacing.small))
                             }
                         }
                     }
@@ -204,7 +211,7 @@ private fun TipTrackerScreenListPreview() {
                     ),
                 ),
                 stats = TipTrackerStats(),
-                overviewOption = "List",
+                overviewOption = TipTrackerOverviewOption.LIST,
                 calendar = TipTrackerCalendarState(),
             ),
             onUiEvent = {},
