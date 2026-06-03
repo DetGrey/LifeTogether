@@ -7,6 +7,7 @@ import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import coil.request.CachePolicy
 import com.example.lifetogether.BuildConfig
+import com.google.android.gms.maps.MapsInitializer
 import com.google.android.libraries.places.api.Places
 import dagger.hilt.android.HiltAndroidApp
 
@@ -15,6 +16,7 @@ class MyApplication : Application(), ImageLoaderFactory {
 
     override fun onCreate() {
         super.onCreate()
+        MapsInitializer.initialize(this, MapsInitializer.Renderer.LATEST, null)
         if (!Places.isInitialized()) {
             Places.initializeWithNewPlacesApiEnabled(this, BuildConfig.MAPS_API_KEY)
         }
