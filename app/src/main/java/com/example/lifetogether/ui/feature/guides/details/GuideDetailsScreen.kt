@@ -45,7 +45,7 @@ fun GuideDetailsScreen(
 ) {
     val contentState = uiState as? GuideDetailsUiState.Content
     val guide = contentState?.guide
-    var showOverflowMenu by remember { mutableStateOf(false) }
+    var showMoreActions by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showResetProgressDialog by remember { mutableStateOf(false) }
     var showCompleteAndGoToStepDialog by remember { mutableStateOf(false) }
@@ -64,11 +64,11 @@ fun GuideDetailsScreen(
                 text = "Guide details",
                 rightAppIcon = AppIcon(
                     resId = R.drawable.ic_overflow_menu,
-                    description = "overflow menu",
+                    description = "more options",
                 ),
                 onRightClick = {
                     if (guide != null) {
-                        showOverflowMenu = !showOverflowMenu
+                        showMoreActions = !showMoreActions
                     }
                 },
             )
@@ -177,7 +177,7 @@ fun GuideDetailsScreen(
         }
     }
 
-    if (showOverflowMenu && contentState != null && guide != null) {
+    if (showMoreActions && contentState != null && guide != null) {
         val visibilityActionLabel = if (guide.visibility == Visibility.FAMILY) {
             "Make private"
         } else {
@@ -190,7 +190,7 @@ fun GuideDetailsScreen(
                     ActionSheetItem(
                         label = "Edit guide",
                         onClick = {
-                            showOverflowMenu = false
+                            showMoreActions = false
                             onNavigationEvent(GuideDetailsNavigationEvent.NavigateToEditGuide)
                         },
                     ),
@@ -200,7 +200,7 @@ fun GuideDetailsScreen(
                 ActionSheetItem(
                     label = visibilityActionLabel,
                     onClick = {
-                        showOverflowMenu = false
+                        showMoreActions = false
                         onUiEvent(GuideDetailsUiEvent.ToggleVisibilityClicked)
                     },
                 ),
@@ -209,7 +209,7 @@ fun GuideDetailsScreen(
                 ActionSheetItem(
                     label = "Complete and go to step",
                     onClick = {
-                        showOverflowMenu = false
+                        showMoreActions = false
                         showCompleteAndGoToStepDialog = true
                     },
                     isEnabled = contentState.jumpOptions.isNotEmpty(),
@@ -219,7 +219,7 @@ fun GuideDetailsScreen(
                 ActionSheetItem(
                     label = "Reset all progress",
                     onClick = {
-                        showOverflowMenu = false
+                        showMoreActions = false
                         showResetProgressDialog = true
                     },
                     isDestructive = true,
@@ -229,7 +229,7 @@ fun GuideDetailsScreen(
                 ActionSheetItem(
                     label = "Delete guide",
                     onClick = {
-                        showOverflowMenu = false
+                        showMoreActions = false
                         showDeleteDialog = true
                     },
                     isDestructive = true,
@@ -238,7 +238,7 @@ fun GuideDetailsScreen(
         }
 
         ActionSheet(
-            onDismiss = { showOverflowMenu = false },
+            onDismiss = { showMoreActions = false },
             actionsList = actions,
         )
     }

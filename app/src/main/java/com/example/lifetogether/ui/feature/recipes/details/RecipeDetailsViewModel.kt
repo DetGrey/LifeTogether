@@ -159,7 +159,7 @@ class RecipeDetailsViewModel @AssistedInject constructor(
             is RecipeDetailsUiEvent.InstructionEvent.AddClicked -> addInstruction(event.value)
             is RecipeDetailsUiEvent.IngredientEvent.AddToGroceryList -> addIngredientToGroceryList(event.ingredient)
 
-            RecipeDetailsUiEvent.ToggleActionSheet -> updateContent { it.copy(showActionSheet = !it.showActionSheet) }
+            RecipeDetailsUiEvent.ToggleMoreActions -> updateContent { it.copy(showMoreActions = !it.showMoreActions) }
             is RecipeDetailsUiEvent.ExportAsPdf -> exportAsPdf(event.bitmap)
 
             RecipeDetailsUiEvent.DialogEvent.DiscardClicked -> discardChanges()

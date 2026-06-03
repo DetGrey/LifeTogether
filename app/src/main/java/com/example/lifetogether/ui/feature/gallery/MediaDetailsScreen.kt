@@ -83,9 +83,9 @@ fun MediaDetailsScreen(
                     ?: "Media",
                 rightAppIcon = AppIcon(
                     resId = R.drawable.ic_overflow_menu,
-                    description = "overflow menu",
+                    description = "more options",
                 ),
-                onRightClick = { onUiEvent(MediaDetailsUiEvent.ToggleOverflowMenu) },
+                onRightClick = { onUiEvent(MediaDetailsUiEvent.ToggleMoreActions) },
             )
         },
     ) { padding ->
@@ -209,24 +209,24 @@ fun MediaDetailsScreen(
     }
 
     if (uiState is MediaDetailsUiState.Content) {
-        if (uiState.showOverflowMenu) {
+        if (uiState.showMoreActions) {
             ActionSheet(
-                onDismiss = { onUiEvent(MediaDetailsUiEvent.ToggleOverflowMenu) },
+                onDismiss = { onUiEvent(MediaDetailsUiEvent.ToggleMoreActions) },
                 actionsList = MenuAction.MediaDetailsActions.entries.map { action ->
                     ActionSheetItem(
                         label = action.label,
                         onClick = {
                             when (action) {
                                 MenuAction.MediaDetailsActions.DOWNLOAD -> {
-                                    onUiEvent(MediaDetailsUiEvent.ToggleOverflowMenu)
+                                    onUiEvent(MediaDetailsUiEvent.ToggleMoreActions)
                                     onUiEvent(MediaDetailsUiEvent.DownloadMedia(uiState.currentIndex))
                                 }
                                 MenuAction.MediaDetailsActions.SHARE -> {
-                                    onUiEvent(MediaDetailsUiEvent.ToggleOverflowMenu)
+                                    onUiEvent(MediaDetailsUiEvent.ToggleMoreActions)
                                     onUiEvent(MediaDetailsUiEvent.ShareMedia(uiState.currentIndex))
                                 }
                                 MenuAction.MediaDetailsActions.DELETE -> {
-                                    onUiEvent(MediaDetailsUiEvent.ToggleOverflowMenu)
+                                    onUiEvent(MediaDetailsUiEvent.ToggleMoreActions)
                                     deleteTargetIndex = uiState.currentIndex
                                     showDeleteDialog = true
                                 }

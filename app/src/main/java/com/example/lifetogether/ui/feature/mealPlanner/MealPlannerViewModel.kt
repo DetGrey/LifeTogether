@@ -40,7 +40,7 @@ class MealPlannerViewModel @Inject constructor(
     val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
 
     private val _focusDate = MutableStateFlow<String?>(null)
-    private val _showActionSheet = MutableStateFlow(false)
+    private val _showMoreActions = MutableStateFlow(false)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val contentState: StateFlow<MealPlannerUiState.Content?> = sessionRepository.sessionState
@@ -58,12 +58,12 @@ class MealPlannerViewModel @Inject constructor(
     val uiState: StateFlow<MealPlannerUiState> = combine(
         contentState,
         _focusDate,
-        _showActionSheet,
+        _showMoreActions,
         prefsRepository.observePreferences().map { !it.onboardingShown },
-    ) { content, focusDate, showActionSheet, showOnboarding ->
+    ) { content, focusDate, showMoreActions, showOnboarding ->
         content?.copy(
             focusDate = focusDate,
-            showActionSheet = showActionSheet,
+            showMoreActions = showMoreActions,
             showOnboarding = showOnboarding,
         ) ?: MealPlannerUiState.Loading
     }.stateIn(
@@ -75,7 +75,7 @@ class MealPlannerViewModel @Inject constructor(
     fun onUiEvent(event: MealPlannerUiEvent) {
         when (event) {
             MealPlannerUiEvent.ClearFocusDate -> clearFocusDate()
-            MealPlannerUiEvent.ToggleActionSheet -> _showActionSheet.value = !_showActionSheet.value
+            MealPlannerUiEvent.ToggleMoreActions -> _showMoreActions.value = !_showMoreActions.value
             MealPlannerUiEvent.DismissOnboarding -> dismissOnboarding()
             MealPlannerUiEvent.EnableNotifications -> enableNotifications()
         }

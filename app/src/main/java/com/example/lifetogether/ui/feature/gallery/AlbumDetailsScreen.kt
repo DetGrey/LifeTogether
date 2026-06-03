@@ -128,9 +128,9 @@ private fun AlbumDetailsContent(
                 text = uiState.album?.itemName ?: "Album images",
                 rightAppIcon = AppIcon(
                     resId = R.drawable.ic_overflow_menu,
-                    description = "overflow menu",
+                    description = "more options",
                 ),
-                onRightClick = { onUiEvent(AlbumDetailsUiEvent.ToggleOverflowMenu) },
+                onRightClick = { onUiEvent(AlbumDetailsUiEvent.ToggleMoreActions) },
             )
         },
         floatingActionButton = {
@@ -255,7 +255,7 @@ private fun AlbumDetailsContent(
         }
     }
 
-    if (uiState.showOverflowMenu) {
+    if (uiState.showMoreActions) {
         val actions = when (uiState.isSelectionModeActive) {
             true -> MenuAction.SelectionActions.entries.map { action ->
                 ActionSheetItem(
@@ -263,15 +263,15 @@ private fun AlbumDetailsContent(
                     onClick = {
                         when (action) {
                             MenuAction.SelectionActions.DOWNLOAD -> {
-                                onUiEvent(AlbumDetailsUiEvent.ToggleOverflowMenu)
+                                onUiEvent(AlbumDetailsUiEvent.ToggleMoreActions)
                                 onUiEvent(AlbumDetailsUiEvent.DownloadSelectedMedia)
                             }
                             MenuAction.SelectionActions.SHARE -> {
-                                onUiEvent(AlbumDetailsUiEvent.ToggleOverflowMenu)
+                                onUiEvent(AlbumDetailsUiEvent.ToggleMoreActions)
                                 onUiEvent(AlbumDetailsUiEvent.ShareSelectedMedia)
                             }
                             MenuAction.SelectionActions.DELETE -> {
-                                onUiEvent(AlbumDetailsUiEvent.ToggleOverflowMenu)
+                                onUiEvent(AlbumDetailsUiEvent.ToggleMoreActions)
                                 showDeleteSelectedMediaDialog = true
                             }
                             MenuAction.SelectionActions.MOVE -> {
@@ -291,7 +291,7 @@ private fun AlbumDetailsContent(
                                 onUiEvent(AlbumDetailsUiEvent.RequestRenameAlbum)
                             }
                             MenuAction.AlbumActions.DELETE -> {
-                                onUiEvent(AlbumDetailsUiEvent.ToggleOverflowMenu)
+                                onUiEvent(AlbumDetailsUiEvent.ToggleMoreActions)
                                 showDeleteAlbumDialog = true
                             }
                         }
@@ -302,7 +302,7 @@ private fun AlbumDetailsContent(
         }
 
         ActionSheet(
-            onDismiss = { onUiEvent(AlbumDetailsUiEvent.ToggleOverflowMenu) },
+            onDismiss = { onUiEvent(AlbumDetailsUiEvent.ToggleMoreActions) },
             actionsList = actions,
         )
     }

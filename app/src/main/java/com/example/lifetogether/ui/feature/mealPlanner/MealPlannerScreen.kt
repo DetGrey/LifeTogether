@@ -92,9 +92,9 @@ fun MealPlannerScreen(
                 text = "Meal Planner",
                 rightAppIcon = if (contentState != null) AppIcon(
                     resId = R.drawable.ic_overflow_menu,
-                    description = "overflow menu",
+                    description = "more options",
                 ) else null,
-                onRightClick = { onUiEvent(MealPlannerUiEvent.ToggleActionSheet) },
+                onRightClick = { onUiEvent(MealPlannerUiEvent.ToggleMoreActions) },
             )
         },
         floatingActionButton = {
@@ -130,14 +130,14 @@ fun MealPlannerScreen(
                 },
             )
 
-            if (content.showActionSheet) {
+            if (content.showMoreActions) {
                 ActionSheet(
-                    onDismiss = { onUiEvent(MealPlannerUiEvent.ToggleActionSheet) },
+                    onDismiss = { onUiEvent(MealPlannerUiEvent.ToggleMoreActions) },
                     actionsList = listOf(
                         ActionSheetItem(
                             label = "Notification settings",
                             onClick = {
-                                onUiEvent(MealPlannerUiEvent.ToggleActionSheet)
+                                onUiEvent(MealPlannerUiEvent.ToggleMoreActions)
                                 onNavigationEvent(MealPlannerNavigationEvent.NavigateToNotifications)
                             },
                         ),

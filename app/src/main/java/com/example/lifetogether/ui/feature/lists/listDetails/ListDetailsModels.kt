@@ -18,7 +18,7 @@ sealed interface ListDetailsUiState {
         val checklistEditorState: ChecklistEditorState = ChecklistEditorState(),
         val isSelectionMode: Boolean = false,
         val isAllEntriesSelected: Boolean = false,
-        val showActionSheet: Boolean = false,
+        val showMoreActions: Boolean = false,
         val dialog: ListDetailsDialogState? = null,
     ) : ListDetailsUiState
 }
@@ -65,7 +65,7 @@ sealed interface ListDetailsListContent {
 }
 
 sealed interface ListDetailsUiEvent {
-    data object ToggleActionSheet : ListDetailsUiEvent
+    data object ToggleMoreActions : ListDetailsUiEvent
     data object StartSelectionMode : ListDetailsUiEvent
     data class EnterSelectionMode(val entryId: String) : ListDetailsUiEvent
     data object ExitSelectionMode : ListDetailsUiEvent

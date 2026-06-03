@@ -160,7 +160,7 @@ class AlbumDetailsViewModel @AssistedInject constructor(
     fun onUiEvent(event: AlbumDetailsUiEvent) {
         when (event) {
             AlbumDetailsUiEvent.RetryFetchAlbumMedia -> retryFetchAlbumMedia()
-            AlbumDetailsUiEvent.ToggleOverflowMenu -> toggleOverflowMenu()
+            AlbumDetailsUiEvent.ToggleMoreActions -> toggleMoreActions()
             AlbumDetailsUiEvent.ToggleSelectionMode -> toggleSelectionMode()
             AlbumDetailsUiEvent.ToggleAllMediaSelection -> toggleAllMediaSelection()
             is AlbumDetailsUiEvent.ToggleMediaSelection -> toggleMediaSelection(event.mediaId)
@@ -318,7 +318,7 @@ class AlbumDetailsViewModel @AssistedInject constructor(
         val currentAlbum = currentContentState()?.album ?: return
         updateContentState {
             it.copy(
-                showOverflowMenu = false,
+                showMoreActions = false,
                 dialog = AlbumDetailsDialogState.RenameAlbum(name = currentAlbum.itemName),
             )
         }
@@ -327,7 +327,7 @@ class AlbumDetailsViewModel @AssistedInject constructor(
     private fun requestMoveSelectedMedia() {
         updateContentState {
             it.copy(
-                showOverflowMenu = false,
+                showMoreActions = false,
                 dialog = AlbumDetailsDialogState.MoveSelectedMedia(),
             )
         }
@@ -790,8 +790,8 @@ class AlbumDetailsViewModel @AssistedInject constructor(
         }
     }
 
-    private fun toggleOverflowMenu(show: Boolean? = null) {
-        updateContentState { it.copy(showOverflowMenu = show ?: !it.showOverflowMenu) }
+    private fun toggleMoreActions(show: Boolean? = null) {
+        updateContentState { it.copy(showMoreActions = show ?: !it.showMoreActions) }
     }
 
     private fun enterSelectionMode(mediaId: String?) {

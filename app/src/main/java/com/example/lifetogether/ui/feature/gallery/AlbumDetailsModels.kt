@@ -13,7 +13,7 @@ sealed interface AlbumDetailsUiState {
         val media: List<GalleryMedia>,
         val groupedMedia: List<Pair<String, List<GalleryMedia>>>,
         val thumbnails: Map<String, ByteArray>,
-        val showOverflowMenu: Boolean = false,
+        val showMoreActions: Boolean = false,
         val showImageUploadDialog: Boolean = false,
         val dialog: AlbumDetailsDialogState? = null,
         val isPartialLoad: Boolean = false,
@@ -35,7 +35,7 @@ sealed interface AlbumDetailsDialogState {
 
 sealed interface AlbumDetailsUiEvent {
     data object RetryFetchAlbumMedia : AlbumDetailsUiEvent
-    data object ToggleOverflowMenu : AlbumDetailsUiEvent
+    data object ToggleMoreActions : AlbumDetailsUiEvent
     data object ToggleSelectionMode : AlbumDetailsUiEvent
     data object ToggleAllMediaSelection : AlbumDetailsUiEvent
     data class ToggleMediaSelection(val mediaId: String?) : AlbumDetailsUiEvent

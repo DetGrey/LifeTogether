@@ -88,7 +88,7 @@
     - In album info show if connected to traveller pin and make it clickable
 
 ## --- Shared architecture and tooling ---
-- [ ] Rename action sheet to overflow menu and remove the old unused overflow menu
+- [x] Rename action sheet to overflow menu and remove the old unused overflow menu
 - [ ] Expand toggle should be same color as text (eg in grocery list)
 
 ### Optional

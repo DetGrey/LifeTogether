@@ -10,14 +10,14 @@ sealed interface MealPlannerUiState {
         val mealPlans: List<MealPlan>,
         val recipePrepTimes: Map<String, Int>,
         val focusDate: String? = null,
-        val showActionSheet: Boolean = false,
+        val showMoreActions: Boolean = false,
         val showOnboarding: Boolean = false,
     ) : MealPlannerUiState
 }
 
 sealed interface MealPlannerUiEvent {
     data object ClearFocusDate : MealPlannerUiEvent
-    data object ToggleActionSheet : MealPlannerUiEvent
+    data object ToggleMoreActions : MealPlannerUiEvent
     data object DismissOnboarding : MealPlannerUiEvent
     data object EnableNotifications : MealPlannerUiEvent
 }

@@ -106,7 +106,7 @@ class ListDetailsViewModel @AssistedInject constructor(
 
     fun onUiEvent(event: ListDetailsUiEvent) {
         when (event) {
-            ListDetailsUiEvent.ToggleActionSheet -> toggleActionSheet()
+            ListDetailsUiEvent.ToggleMoreActions -> toggleMoreActions()
             ListDetailsUiEvent.StartSelectionMode -> startSelectionMode()
             is ListDetailsUiEvent.EnterSelectionMode -> enterSelectionMode(event.entryId)
             ListDetailsUiEvent.ExitSelectionMode -> exitSelectionMode()
@@ -126,9 +126,9 @@ class ListDetailsViewModel @AssistedInject constructor(
         }
     }
 
-    private fun toggleActionSheet(show: Boolean? = null) {
+    private fun toggleMoreActions(show: Boolean? = null) {
         updateSelectionStateIfContent { state, _ ->
-            state.copy(showActionSheet = show ?: !state.showActionSheet)
+            state.copy(showMoreActions = show ?: !state.showMoreActions)
         }
     }
 
@@ -137,7 +137,7 @@ class ListDetailsViewModel @AssistedInject constructor(
         updateSelectionStateIfContent { state, _ ->
             state.copy(
                 isSelectionModeActive = true,
-                showActionSheet = false,
+                showMoreActions = false,
             )
         }
     }
@@ -148,7 +148,7 @@ class ListDetailsViewModel @AssistedInject constructor(
             state.copy(
                 isSelectionModeActive = true,
                 selectedEntryIds = state.selectedEntryIds + initialEntryId,
-                showActionSheet = false,
+                showMoreActions = false,
             )
         }
     }
@@ -241,7 +241,7 @@ class ListDetailsViewModel @AssistedInject constructor(
                 state.copy(
                     isSelectionModeActive = true,
                     selectedEntryIds = allEntryIds,
-                    showActionSheet = false,
+                    showMoreActions = false,
                 )
             }
         }
@@ -251,7 +251,7 @@ class ListDetailsViewModel @AssistedInject constructor(
         val list = currentList ?: return
         updateSelectionStateIfContent { state, _ ->
             state.copy(
-                showActionSheet = false,
+                showMoreActions = false,
                 dialog = ListDetailsDialogState.RenameList(name = list.itemName),
             )
         }
@@ -272,7 +272,7 @@ class ListDetailsViewModel @AssistedInject constructor(
     private fun requestDeleteList() {
         updateSelectionStateIfContent { state, _ ->
             state.copy(
-                showActionSheet = false,
+                showMoreActions = false,
                 dialog = ListDetailsDialogState.DeleteList,
             )
         }
@@ -336,7 +336,7 @@ class ListDetailsViewModel @AssistedInject constructor(
                 is Result.Failure -> {
                     selectionState.update { state ->
                         state.copy(
-                            showActionSheet = false,
+                            showMoreActions = false,
                         )
                     }
                     showError(result.error.toUserMessage())
@@ -517,7 +517,7 @@ class ListDetailsViewModel @AssistedInject constructor(
             selectedEntryIds = selectedEntryIds,
             checklistEditorState = resolvedChecklistEditorState,
             isAllEntriesSelected = validEntryIds.isNotEmpty() && selectedEntryIds.size == validEntryIds.size,
-            showActionSheet = selectionState.showActionSheet,
+            showMoreActions = selectionState.showMoreActions,
             dialog = selectionState.dialog,
         )
     }
@@ -535,7 +535,7 @@ class ListDetailsViewModel @AssistedInject constructor(
     private data class ListDetailsSelectionState(
         val isSelectionModeActive: Boolean = false,
         val selectedEntryIds: Set<String> = emptySet(),
-        val showActionSheet: Boolean = false,
+        val showMoreActions: Boolean = false,
         val dialog: ListDetailsDialogState? = null,
     )
 

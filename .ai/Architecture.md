@@ -30,8 +30,9 @@ Historical phase decisions remain in `.ai/v2-plan/` and are not duplicated here.
 - `AppTopBar` is the canonical shared top-bar wrapper, backed by native Material 3 top app bar primitives, and is the default top bar for non-loading screens.
 - `ConfirmationDialog` is the canonical shared confirm/cancel dialog.
 - `Dropdown` stays the canonical shared select wrapper.
-- `ActionSheet` is the preferred shared action surface for new menu-style actions.
-- `OverflowMenu` remains as the legacy action surface for existing callers only.
+- `ActionSheet` is the canonical shared modal bottom-sheet surface for contextual action lists.
+- Screen state and events for contextual action surfaces use purpose-based `MoreActions` naming, such as `showMoreActions`, `ToggleMoreActions`, and feature-specific action events.
+- The overflow-menu icon asset may still be named `ic_overflow_menu`, but accessibility text and UI wording should describe the action as "more options".
 - Shared text wrappers in `ui/common/text/` stay available as the canonical text API.
 - Feature-local helper cards and layout shells should stay feature-local unless they are clearly repeated across screens.
 - Delete icons should be tinted with `MaterialTheme.colorScheme.error` wherever they appear.

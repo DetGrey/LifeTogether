@@ -1,20 +1,16 @@
 package com.example.lifetogether.ui.common
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.tooling.preview.Preview
@@ -29,52 +25,6 @@ data class ActionSheetItem(
     val isDestructive: Boolean = false,
     val isEnabled: Boolean = true,
 )
-
-@Composable
-fun OverflowMenu(
-    onDismiss: () -> Unit,
-    actionsList: List<Map<String, () -> Unit>>,
-) {
-    Box(
-        modifier = Modifier
-            .padding(top = LifeTogetherTokens.spacing.xxxLarge)
-            .fillMaxSize()
-            .padding(LifeTogetherTokens.spacing.small)
-            .clickable {
-                onDismiss()
-            },
-    ) {
-        Box(
-            modifier = Modifier
-                .width(125.dp)
-                .align(Alignment.TopEnd)
-                .background(MaterialTheme.colorScheme.onBackground)
-                .padding(LifeTogetherTokens.spacing.small),
-        ) {
-            Column {
-                actionsList.forEachIndexed { index, actionMap ->
-                    actionMap.forEach { (name, onActionClick) ->
-                        TextDefault(
-                            text = name,
-                            color = MaterialTheme.colorScheme.background,
-                            modifier = Modifier.clickable {
-                                onActionClick()
-                            },
-                        )
-                        if (index < actionsList.lastIndex) {
-                            HorizontalDivider(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = LifeTogetherTokens.spacing.small, bottom = LifeTogetherTokens.spacing.xSmall)
-                                    .height(LifeTogetherTokens.spacing.xSmall),
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -120,22 +70,6 @@ fun ActionSheet(
                     )
                 }
             }
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun OverflowMenuPreview() {
-    LifeTogetherTheme {
-        Box {
-            OverflowMenu(
-                onDismiss = {},
-                actionsList = listOf(
-                    mapOf("Rename" to {}),
-                    mapOf("Delete" to {}),
-                ),
-            )
         }
     }
 }

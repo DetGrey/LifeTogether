@@ -76,8 +76,8 @@ class ListsViewModel @Inject constructor(
                 state.copy(dialog = (state.dialog as? ListsDialogState.CreateList)?.copy(visibility = event.value))
             }
             ListsUiEvent.ConfirmCreateListClicked -> createList()
-            ListsUiEvent.ToggleActionSheet -> updateContentState { it.copy(showActionSheet = !it.showActionSheet) }
-            ListsUiEvent.StartSelectionMode -> updateContentState { it.copy(isSelectionMode = true, showActionSheet = false) }
+            ListsUiEvent.ToggleMoreActions -> updateContentState { it.copy(showMoreActions = !it.showMoreActions) }
+            ListsUiEvent.StartSelectionMode -> updateContentState { it.copy(isSelectionMode = true, showMoreActions = false) }
             is ListsUiEvent.EnterSelectionMode -> updateContentState {
                 it.copy(isSelectionMode = true, selectedListIds = setOf(event.listId))
             }
@@ -178,7 +178,7 @@ class ListsViewModel @Inject constructor(
     private fun deleteSelectedLists() {
         val ids = currentContentState()?.selectedListIds ?: return
         updateContentState { it.copy(
-            showActionSheet = false,
+            showMoreActions = false,
             isSelectionMode = false,
             selectedListIds = emptySet(),
             isAllSelected = false

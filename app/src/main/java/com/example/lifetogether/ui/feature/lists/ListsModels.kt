@@ -14,7 +14,7 @@ sealed interface ListsUiState {
         val isSelectionMode: Boolean = false,
         val selectedListIds: Set<String> = emptySet(),
         val isAllSelected: Boolean = false,
-        val showActionSheet: Boolean = false,
+        val showMoreActions: Boolean = false,
     ) : ListsUiState
 }
 
@@ -33,7 +33,7 @@ sealed interface ListsUiEvent {
     data class CreateListTypeChanged(val value: ListType) : ListsUiEvent
     data class CreateListVisibilityChanged(val value: Visibility) : ListsUiEvent
     data object ConfirmCreateListClicked : ListsUiEvent
-    data object ToggleActionSheet : ListsUiEvent
+    data object ToggleMoreActions : ListsUiEvent
     data object StartSelectionMode : ListsUiEvent
     data class EnterSelectionMode(val listId: String) : ListsUiEvent
     data object ExitSelectionMode : ListsUiEvent

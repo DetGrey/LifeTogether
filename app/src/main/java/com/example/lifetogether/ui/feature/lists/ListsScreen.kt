@@ -92,9 +92,9 @@ fun ListsScreen(
                 text = "Lists",
                 rightAppIcon = if (contentState != null) AppIcon(
                     resId = R.drawable.ic_overflow_menu,
-                    description = "overflow menu",
+                    description = "more options",
                 ) else null,
-                onRightClick = { onUiEvent(ListsUiEvent.ToggleActionSheet) },
+                onRightClick = { onUiEvent(ListsUiEvent.ToggleMoreActions) },
             )
         },
         floatingActionButton = {
@@ -169,13 +169,13 @@ fun ListsScreen(
                 }
             }
 
-            if (content.showActionSheet) {
+            if (content.showMoreActions) {
                 val actions = if (content.isSelectionMode) {
                     listOf(
                         ActionSheetItem(
                             label = "Delete selected",
                             onClick = {
-                                onUiEvent(ListsUiEvent.ToggleActionSheet)
+                                onUiEvent(ListsUiEvent.ToggleMoreActions)
                                 showDeleteSelectedDialog = true
                             },
                             isDestructive = true,
@@ -192,7 +192,7 @@ fun ListsScreen(
                     )
                 }
                 ActionSheet(
-                    onDismiss = { onUiEvent(ListsUiEvent.ToggleActionSheet) },
+                    onDismiss = { onUiEvent(ListsUiEvent.ToggleMoreActions) },
                     actionsList = actions,
                 )
             }

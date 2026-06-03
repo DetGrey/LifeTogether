@@ -71,7 +71,7 @@ fun RecipeDetailsScreen(
     val contentState = uiState as? RecipeDetailsUiState.Content
     val hasRecipeId = contentState?.recipeId != null
     val showDeleteAction = hasRecipeId && contentState.editMode
-    val showOverflowAction = hasRecipeId && !contentState.editMode
+    val showMoreOptionsAction = hasRecipeId && !contentState.editMode
 
     BackHandler(enabled = contentState?.editMode == true) {
         onUiEvent(RecipeDetailsUiEvent.DialogEvent.DiscardClicked)
@@ -94,13 +94,13 @@ fun RecipeDetailsScreen(
                 text = "",
                 rightAppIcon = if (showDeleteAction) {
                     AppIcon(resId = R.drawable.ic_delete, description = "delete recipe")
-                } else if (showOverflowAction) {
+                } else if (showMoreOptionsAction) {
                     AppIcon(resId = R.drawable.ic_overflow_menu, description = "more options")
                 } else null,
                 onRightClick = if (showDeleteAction) {
                     { onUiEvent(RecipeDetailsUiEvent.DialogEvent.DeleteClicked) }
-                } else if (showOverflowAction) {
-                    { onUiEvent(RecipeDetailsUiEvent.ToggleActionSheet) }
+                } else if (showMoreOptionsAction) {
+                    { onUiEvent(RecipeDetailsUiEvent.ToggleMoreActions) }
                 } else null,
             )
         },
@@ -476,22 +476,22 @@ private fun RecipeDetailsContent(
     }
     }
 
-    if (uiState.showActionSheet) {
+    if (uiState.showMoreActions) {
         val displayedBitmap = uiState.localImageBitmap ?: bitmap
         ActionSheet(
-            onDismiss = { onUiEvent(RecipeDetailsUiEvent.ToggleActionSheet) },
+            onDismiss = { onUiEvent(RecipeDetailsUiEvent.ToggleMoreActions) },
             actionsList = listOf(
                 ActionSheetItem(
                     label = "Edit",
                     onClick = {
-                        onUiEvent(RecipeDetailsUiEvent.ToggleActionSheet)
+                        onUiEvent(RecipeDetailsUiEvent.ToggleMoreActions)
                         onUiEvent(RecipeDetailsUiEvent.Editor.EditClicked)
                     },
                 ),
                 ActionSheetItem(
                     label = "Share as PDF",
                     onClick = {
-                        onUiEvent(RecipeDetailsUiEvent.ToggleActionSheet)
+                        onUiEvent(RecipeDetailsUiEvent.ToggleMoreActions)
                         onUiEvent(RecipeDetailsUiEvent.ExportAsPdf(displayedBitmap))
                     },
                 ),

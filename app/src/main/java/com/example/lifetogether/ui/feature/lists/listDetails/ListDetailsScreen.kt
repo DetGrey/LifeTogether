@@ -81,9 +81,9 @@ fun ListDetailsScreen(
                 text = listName,
                 rightAppIcon = AppIcon(
                     resId = R.drawable.ic_overflow_menu,
-                    description = "overflow menu",
+                    description = "more options",
                 ),
-                onRightClick = { onUiEvent(ListDetailsUiEvent.ToggleActionSheet) },
+                onRightClick = { onUiEvent(ListDetailsUiEvent.ToggleMoreActions) },
             )
         },
         floatingActionButton = {
@@ -212,14 +212,14 @@ fun ListDetailsScreen(
         }
     }
 
-    if (contentState?.showActionSheet == true) {
+    if (contentState?.showMoreActions == true) {
         val actions = when (contentState.isSelectionMode) {
             true -> {
                 listOf(
                     ActionSheetItem(
                         label = "Delete selected",
                         onClick = {
-                            onUiEvent(ListDetailsUiEvent.ToggleActionSheet)
+                            onUiEvent(ListDetailsUiEvent.ToggleMoreActions)
                             showDeleteSelectedDialog = true
                         },
                         isDestructive = true,
@@ -249,7 +249,7 @@ fun ListDetailsScreen(
         }
 
         ActionSheet(
-            onDismiss = { onUiEvent(ListDetailsUiEvent.ToggleActionSheet) },
+            onDismiss = { onUiEvent(ListDetailsUiEvent.ToggleMoreActions) },
             actionsList = actions,
         )
     }
@@ -449,5 +449,5 @@ private fun previewState(
     selectedEntryIds = emptySet(),
     isSelectionMode = false,
     isAllEntriesSelected = false,
-    showActionSheet = false,
+    showMoreActions = false,
 )

@@ -9,7 +9,7 @@ sealed interface MediaDetailsUiState {
     data class Content(
         val mediaList: List<GalleryMedia>,
         val currentIndex: Int,
-        val showOverflowMenu: Boolean = false,
+        val showMoreActions: Boolean = false,
         val offsetY: Float = 0f,
     ) : MediaDetailsUiState
 }
@@ -18,7 +18,7 @@ sealed interface MediaDetailsUiEvent {
     data class PageChanged(val index: Int) : MediaDetailsUiEvent
     data class VerticalDrag(val dragAmount: Float, val totalHeight: Int) : MediaDetailsUiEvent
     data class DragEnd(val totalHeight: Int) : MediaDetailsUiEvent
-    data object ToggleOverflowMenu : MediaDetailsUiEvent
+    data object ToggleMoreActions : MediaDetailsUiEvent
     data class DownloadMedia(val index: Int? = null) : MediaDetailsUiEvent
     data class ShareMedia(val index: Int? = null) : MediaDetailsUiEvent
     data class DeleteMedia(val index: Int? = null) : MediaDetailsUiEvent

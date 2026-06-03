@@ -75,7 +75,7 @@ class MediaDetailsViewModel @AssistedInject constructor(
             is MediaDetailsUiEvent.PageChanged -> onPageChanged(event.index)
             is MediaDetailsUiEvent.VerticalDrag -> onVerticalDrag(event.dragAmount, event.totalHeight)
             is MediaDetailsUiEvent.DragEnd -> onDragEnd(event.totalHeight)
-            MediaDetailsUiEvent.ToggleOverflowMenu -> toggleOverflowMenu()
+            MediaDetailsUiEvent.ToggleMoreActions -> toggleMoreActions()
             is MediaDetailsUiEvent.DownloadMedia -> downloadMedia(event.index)
             is MediaDetailsUiEvent.ShareMedia -> shareMedia(event.index)
             is MediaDetailsUiEvent.DeleteMedia -> deleteMedia(event.index)
@@ -235,8 +235,8 @@ class MediaDetailsViewModel @AssistedInject constructor(
         }
     }
 
-    private fun toggleOverflowMenu(show: Boolean? = null) {
-        updateContent { it.copy(showOverflowMenu = show ?: !it.showOverflowMenu) }
+    private fun toggleMoreActions(show: Boolean? = null) {
+        updateContent { it.copy(showMoreActions = show ?: !it.showMoreActions) }
     }
 
     private fun onPageChanged(index: Int) {
