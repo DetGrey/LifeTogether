@@ -40,7 +40,9 @@ fun StatsCard(
             TextHeadingLarge(text = title)
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .padding(horizontal = LifeTogetherTokens.spacing.large)
+                    .fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {

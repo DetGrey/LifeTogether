@@ -78,7 +78,7 @@ fun GroceryCategoryListHeader(
                 Icon(
                     painter = painterResource(id = if (expanded) R.drawable.ic_expanded else R.drawable.ic_expand),
                     contentDescription = "expand or expanded icon",
-                    tint = MaterialTheme.colorScheme.onBackground,
+                    tint = MaterialTheme.colorScheme.tertiary,
                 )
             }
         }
@@ -145,6 +145,7 @@ private fun GroceryCategoryListPreview() {
             true,
             onClick = {},
             onCompleteToggle = {},
+            onDelete = {}
         )
     }
 }

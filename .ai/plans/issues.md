@@ -36,7 +36,7 @@
 - [ ] Add tags.
 - [ ] Add a note or description.
 - [ ] When adding gallery videos, handle the video thumbnail fallback better if thumbnail generation fails.
-- [ ] Share media.
+- [x] Share media.
 
 ## --- Gallery albums ---
 - [x] The album thumbnail should show the newest media by dateCreated
@@ -63,7 +63,7 @@
 - [x] Tip tracker list bottom content padding medium or something
 
 ### Optional
-- [ ] Add more to tip statistics
+- [x] Add more to tip statistics
 
 ## --- Admin features ---
 - [x] An admin user should be able to add another user as admin
@@ -89,7 +89,6 @@
 
 ## --- Shared architecture and tooling ---
 - [x] Rename action sheet to overflow menu and remove the old unused overflow menu
-- [ ] Expand toggle should be same color as text (eg in grocery list)
 
 ### Optional
 - [ ] Use SQLCipher for Room encryption.

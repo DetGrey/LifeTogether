@@ -15,9 +15,31 @@ data class TipTrackerStats(
     val monthlyAverage: Float = 0f,
     val yearlyAverage: Float = 0f,
     val totalAverage: Float = 0f,
-    val highestTip: TipItem? = null,
-    val bestMonth: Pair<String, Float>? = null,
+    val topMonths: List<TipTotalSummary> = emptyList(),
+    val topDays: List<TipTotalSummary> = emptyList(),
+    val bestWeekdays: List<TipTotalSummary> = emptyList(),
+    val monthlyTrend: List<TipTotalSummary> = emptyList(),
+    val periodComparisons: Map<TipStatisticsPeriod, TipPeriodComparison> = emptyMap(),
 )
+
+data class TipTotalSummary(
+    val label: String,
+    val total: Float,
+)
+
+data class TipPeriodComparison(
+    val currentTotal: Float,
+    val previousTotal: Float,
+    val difference: Float,
+    val differencePercent: Float?,
+)
+
+enum class TipStatisticsPeriod(val displayName: String) {
+    WEEK("Week"),
+    MONTH("Month"),
+    YEAR("Year"),
+    ALL("All"),
+}
 
 data class TipTrackerCalendarState(
     val displayedDate: LocalDate = LocalDate.now(),
@@ -46,7 +68,7 @@ sealed interface TipTrackerUiState {
         val calendar: TipTrackerCalendarState,
         val selectedTip: TipItem? = null,
         val overviewOption: TipTrackerOverviewOption = TipTrackerOverviewOption.CALENDAR,
-        val timePeriod: String = "Week",
+        val timePeriod: TipStatisticsPeriod = TipStatisticsPeriod.WEEK,
         val newItemAmount: String = "",
         val newItemDate: Date = Date(),
     ) : TipTrackerUiState
@@ -60,7 +82,7 @@ enum class TipTrackerOverviewOption(val displayName: String) {
 
 sealed interface TipTrackerUiEvent {
     data class OverviewOptionSelected(val value: TipTrackerOverviewOption) : TipTrackerUiEvent
-    data class TimePeriodSelected(val value: String) : TipTrackerUiEvent
+    data class TimePeriodSelected(val value: TipStatisticsPeriod) : TipTrackerUiEvent
     data class DeleteTipClicked(val tip: TipItem) : TipTrackerUiEvent
     data object ConfirmDeleteConfirmation : TipTrackerUiEvent
     data class NewItemAmountChanged(val value: String) : TipTrackerUiEvent

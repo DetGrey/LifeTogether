@@ -78,8 +78,6 @@ fun AddNewTipItem(
                     Text(text = dateValue.toDayOfMonthString(), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
 
-//                VerticalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.secondary, modifier = Modifier.padding(vertical = 10.dp))
-
                 CustomTextField(
                     value = textValue,
                     onValueChange = onTextChange,
