@@ -38,6 +38,7 @@ sealed interface RecipeDetailsUiState {
         val deleteConfirmationTarget: RecipeDeleteConfirmationTarget? = null,
         val showImageUploadDialog: Boolean = false,
         val servingsExpanded: Boolean = false,
+        val showActionSheet: Boolean = false,
     ) : RecipeDetailsUiState
 }
 
@@ -90,6 +91,9 @@ sealed interface RecipeDetailsUiEvent {
         data class AddClicked(val value: String) : InstructionEvent
     }
 
+    data object ToggleActionSheet : RecipeDetailsUiEvent
+    data class ExportAsPdf(val bitmap: Bitmap?) : RecipeDetailsUiEvent
+
     sealed interface DialogEvent : RecipeDetailsUiEvent {
         data object DiscardClicked : DialogEvent
         data object DismissDiscardConfirmation : DialogEvent
@@ -108,4 +112,5 @@ sealed interface RecipeDetailsNavigationEvent {
 
 sealed interface RecipeDetailsCommand {
     data object NavigateBack : RecipeDetailsCommand
+    data class SharePdf(val uri: Uri, val fileName: String) : RecipeDetailsCommand
 }

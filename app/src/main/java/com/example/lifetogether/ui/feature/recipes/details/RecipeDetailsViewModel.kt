@@ -2,6 +2,7 @@ package com.example.lifetogether.ui.feature.recipes.details
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -22,6 +23,7 @@ import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
+import com.example.lifetogether.data.pdf.RecipePdfGenerator
 import com.example.lifetogether.domain.usecase.image.UploadImageUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
 import com.example.lifetogether.ui.common.snackbar.SnackbarSeverity
@@ -53,6 +55,7 @@ class RecipeDetailsViewModel @AssistedInject constructor(
     private val recipeRepository: RecipeRepository,
     private val groceryRepository: GroceryRepository,
     private val uploadImageUseCase: UploadImageUseCase,
+    private val recipePdfGenerator: RecipePdfGenerator,
     @param:ApplicationContext private val context: Context,
 ) : ViewModel() {
     @AssistedFactory
@@ -155,6 +158,9 @@ class RecipeDetailsViewModel @AssistedInject constructor(
             RecipeDetailsUiEvent.InstructionEvent.CancelEdit -> clearInstructionDraft()
             is RecipeDetailsUiEvent.InstructionEvent.AddClicked -> addInstruction(event.value)
             is RecipeDetailsUiEvent.IngredientEvent.AddToGroceryList -> addIngredientToGroceryList(event.ingredient)
+
+            RecipeDetailsUiEvent.ToggleActionSheet -> updateContent { it.copy(showActionSheet = !it.showActionSheet) }
+            is RecipeDetailsUiEvent.ExportAsPdf -> exportAsPdf(event.bitmap)
 
             RecipeDetailsUiEvent.DialogEvent.DiscardClicked -> discardChanges()
             RecipeDetailsUiEvent.DialogEvent.DismissDiscardConfirmation -> dismissDiscardConfirmation()
@@ -278,6 +284,24 @@ class RecipeDetailsViewModel @AssistedInject constructor(
                     ingredientDraft = RecipeIngredientDraftState(),
                     instructionDraft = "",
                 )
+            }
+        }
+    }
+
+    private fun exportAsPdf(bitmap: android.graphics.Bitmap?) {
+        val content = contentState() ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val generatedPdf = recipePdfGenerator.generate(content, bitmap)
+                _commands.send(
+                    RecipeDetailsCommand.SharePdf(
+                        uri = generatedPdf.uri,
+                        fileName = generatedPdf.fileName,
+                    ),
+                )
+            } catch (e: Exception) {
+                Log.e("Recipe Generation", "Failed to generate PDF: ${e.message}")
+                showError("Failed to generate PDF")
             }
         }
     }

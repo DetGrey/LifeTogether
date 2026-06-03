@@ -40,6 +40,8 @@ import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.enums.MeasureType
 import com.example.lifetogether.domain.model.recipe.Instruction
+import com.example.lifetogether.ui.common.ActionSheet
+import com.example.lifetogether.ui.common.ActionSheetItem
 import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.add.AddNewString
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
@@ -69,7 +71,7 @@ fun RecipeDetailsScreen(
     val contentState = uiState as? RecipeDetailsUiState.Content
     val hasRecipeId = contentState?.recipeId != null
     val showDeleteAction = hasRecipeId && contentState.editMode
-    val showEditAction = hasRecipeId && !contentState.editMode
+    val showOverflowAction = hasRecipeId && !contentState.editMode
 
     BackHandler(enabled = contentState?.editMode == true) {
         onUiEvent(RecipeDetailsUiEvent.DialogEvent.DiscardClicked)
@@ -91,21 +93,15 @@ fun RecipeDetailsScreen(
                 },
                 text = "",
                 rightAppIcon = if (showDeleteAction) {
-                    AppIcon(
-                        resId = R.drawable.ic_delete,
-                        description = "trashcan icon",
-                    )
-                } else if (showEditAction) {
-                    AppIcon(
-                        resId = R.drawable.ic_edit,
-                        description = "edit icon",
-                    )
-                } else { null },
+                    AppIcon(resId = R.drawable.ic_delete, description = "delete recipe")
+                } else if (showOverflowAction) {
+                    AppIcon(resId = R.drawable.ic_overflow_menu, description = "more options")
+                } else null,
                 onRightClick = if (showDeleteAction) {
                     { onUiEvent(RecipeDetailsUiEvent.DialogEvent.DeleteClicked) }
-                } else if (showEditAction) {
-                    { onUiEvent(RecipeDetailsUiEvent.Editor.EditClicked) }
-                } else { null },
+                } else if (showOverflowAction) {
+                    { onUiEvent(RecipeDetailsUiEvent.ToggleActionSheet) }
+                } else null,
             )
         },
         floatingActionButton = {
@@ -478,6 +474,29 @@ private fun RecipeDetailsContent(
             }
         }
     }
+    }
+
+    if (uiState.showActionSheet) {
+        val displayedBitmap = uiState.localImageBitmap ?: bitmap
+        ActionSheet(
+            onDismiss = { onUiEvent(RecipeDetailsUiEvent.ToggleActionSheet) },
+            actionsList = listOf(
+                ActionSheetItem(
+                    label = "Edit",
+                    onClick = {
+                        onUiEvent(RecipeDetailsUiEvent.ToggleActionSheet)
+                        onUiEvent(RecipeDetailsUiEvent.Editor.EditClicked)
+                    },
+                ),
+                ActionSheetItem(
+                    label = "Share as PDF",
+                    onClick = {
+                        onUiEvent(RecipeDetailsUiEvent.ToggleActionSheet)
+                        onUiEvent(RecipeDetailsUiEvent.ExportAsPdf(displayedBitmap))
+                    },
+                ),
+            ),
+        )
     }
 
     if (uiState.deleteConfirmationTarget != null) {

@@ -1,9 +1,12 @@
 package com.example.lifetogether.ui.feature.recipes.details
 
+import android.content.ClipData
+import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.domain.model.sealed.ImageType
@@ -24,6 +27,7 @@ fun RecipeDetailsRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = LocalRootSnackbarHostState.current
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
     val recipeImageType = run {
         val content = uiState as? RecipeDetailsUiState.Content ?: return@run null
         val familyId = content.familyId ?: return@run null
@@ -42,6 +46,17 @@ fun RecipeDetailsRoute(
         viewModel.commands.collect { command ->
             when (command) {
                 RecipeDetailsCommand.NavigateBack -> appNavigator.navigateBack()
+                is RecipeDetailsCommand.SharePdf -> {
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "application/pdf"
+                        putExtra(Intent.EXTRA_STREAM, command.uri)
+                        putExtra(Intent.EXTRA_TITLE, command.fileName)
+                        putExtra(Intent.EXTRA_SUBJECT, command.fileName)
+                        clipData = ClipData.newUri(context.contentResolver, command.fileName, command.uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    context.startActivity(Intent.createChooser(shareIntent, "Share recipe"))
+                }
             }
         }
     }
