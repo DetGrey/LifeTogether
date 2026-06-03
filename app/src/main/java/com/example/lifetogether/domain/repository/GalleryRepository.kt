@@ -7,6 +7,7 @@ import android.net.Uri
 import com.example.lifetogether.domain.model.SaveProgress
 import com.example.lifetogether.domain.model.gallery.Album
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
+import com.example.lifetogether.domain.model.gallery.ShareableGalleryMedia
 import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,6 +22,7 @@ interface GalleryRepository {
     fun syncGalleryMediaFromRemote(familyId: String, context: Context): Flow<Result<Unit, AppError>>
     suspend fun retryGalleryMediaDownloads(mediaIds: List<String>, familyId: String): Result<Unit, AppError>
     fun downloadMediaToGallery(mediaIds: List<String>, familyId: String): Flow<SaveProgress>
+    suspend fun getShareableMedia(mediaIds: List<String>, familyId: String): Result<List<ShareableGalleryMedia>, AppError>
     suspend fun saveAlbum(album: Album): Result<String, AppError>
     suspend fun updateAlbum(album: Album): Result<Unit, AppError>
     suspend fun fetchAlbumThumbnail(albumId: String)

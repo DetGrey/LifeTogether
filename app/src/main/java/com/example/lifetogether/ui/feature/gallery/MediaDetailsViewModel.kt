@@ -3,6 +3,7 @@ package com.example.lifetogether.ui.feature.gallery
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.model.SaveProgress
+import com.example.lifetogether.domain.model.gallery.MediaDownloadState
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.GalleryRepository
 import com.example.lifetogether.domain.repository.SessionRepository
@@ -46,6 +47,9 @@ class MediaDetailsViewModel @AssistedInject constructor(
     private val _uiCommands = Channel<UiCommand>(Channel.BUFFERED)
     val uiCommands: Flow<UiCommand> = _uiCommands.receiveAsFlow()
 
+    private val _commands = Channel<MediaDetailsCommand>(Channel.BUFFERED)
+    val commands: Flow<MediaDetailsCommand> = _commands.receiveAsFlow()
+
     private var familyId: String? = null
     private var loadAlbumMediaJob: Job? = null
 
@@ -73,6 +77,7 @@ class MediaDetailsViewModel @AssistedInject constructor(
             is MediaDetailsUiEvent.DragEnd -> onDragEnd(event.totalHeight)
             MediaDetailsUiEvent.ToggleOverflowMenu -> toggleOverflowMenu()
             is MediaDetailsUiEvent.DownloadMedia -> downloadMedia(event.index)
+            is MediaDetailsUiEvent.ShareMedia -> shareMedia(event.index)
             is MediaDetailsUiEvent.DeleteMedia -> deleteMedia(event.index)
             is MediaDetailsUiEvent.RetryMedia -> retryMedia(event.index)
         }
@@ -162,6 +167,30 @@ class MediaDetailsViewModel @AssistedInject constructor(
                         showError(progress.message)
                     }
                 }
+            }
+        }
+    }
+
+    private fun shareMedia(index: Int? = null) {
+        val content = _uiState.value as? MediaDetailsUiState.Content ?: return
+        val mediaIndex = index ?: content.currentIndex
+        val currentMedia = content.mediaList.getOrNull(mediaIndex)
+        val familyIdValue = familyId
+
+        if (currentMedia == null || familyIdValue == null) {
+            showError("Media data not available")
+            return
+        }
+
+        if (currentMedia.downloadState != MediaDownloadState.READY || currentMedia.mediaUri == null) {
+            showError("Some media is not ready to share")
+            return
+        }
+
+        viewModelScope.launch {
+            when (val result = galleryRepository.getShareableMedia(listOf(currentMedia.id), familyIdValue)) {
+                is Result.Success -> _commands.send(MediaDetailsCommand.ShareMedia(result.data))
+                is Result.Failure -> showError(result.error.toUserMessage())
             }
         }
     }

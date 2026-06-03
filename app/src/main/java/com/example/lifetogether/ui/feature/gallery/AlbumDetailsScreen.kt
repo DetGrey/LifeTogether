@@ -266,6 +266,10 @@ private fun AlbumDetailsContent(
                                 onUiEvent(AlbumDetailsUiEvent.ToggleOverflowMenu)
                                 onUiEvent(AlbumDetailsUiEvent.DownloadSelectedMedia)
                             }
+                            MenuAction.SelectionActions.SHARE -> {
+                                onUiEvent(AlbumDetailsUiEvent.ToggleOverflowMenu)
+                                onUiEvent(AlbumDetailsUiEvent.ShareSelectedMedia)
+                            }
                             MenuAction.SelectionActions.DELETE -> {
                                 onUiEvent(AlbumDetailsUiEvent.ToggleOverflowMenu)
                                 showDeleteSelectedMediaDialog = true

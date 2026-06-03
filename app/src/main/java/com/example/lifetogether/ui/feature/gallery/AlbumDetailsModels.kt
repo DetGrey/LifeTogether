@@ -2,6 +2,7 @@ package com.example.lifetogether.ui.feature.gallery
 
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.Album
+import com.example.lifetogether.domain.model.gallery.ShareableGalleryMedia
 import com.example.lifetogether.ui.model.AlbumUiModel
 
 sealed interface AlbumDetailsUiState {
@@ -49,6 +50,7 @@ sealed interface AlbumDetailsUiEvent {
     data object ConfirmRenameAlbum : AlbumDetailsUiEvent
     data object ConfirmDeleteAlbum : AlbumDetailsUiEvent
     data object DownloadSelectedMedia : AlbumDetailsUiEvent
+    data object ShareSelectedMedia : AlbumDetailsUiEvent
     data object ConfirmDeleteSelectedMedia : AlbumDetailsUiEvent
     data class MoveSelectedMediaToAlbum(val albumId: String) : AlbumDetailsUiEvent
     data object ConfirmMoveSelectedMedia : AlbumDetailsUiEvent
@@ -62,4 +64,5 @@ sealed interface AlbumDetailsNavigationEvent {
 
 sealed interface AlbumDetailsCommand {
     data object NavigateBack : AlbumDetailsCommand
+    data class ShareMedia(val media: List<ShareableGalleryMedia>) : AlbumDetailsCommand
 }

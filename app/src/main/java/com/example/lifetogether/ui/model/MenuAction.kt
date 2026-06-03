@@ -11,11 +11,13 @@ sealed interface MenuAction {
     enum class SelectionActions(override val label: String) : MenuAction {
         MOVE("Move to album"),
         DOWNLOAD("Download selected"),
+        SHARE("Share selected"),
         DELETE("Delete selected")
     }
 
     enum class MediaDetailsActions(override val label: String) : MenuAction {
         DOWNLOAD("Download"),
+        SHARE("Share"),
         DELETE("Delete"),
     }
 }

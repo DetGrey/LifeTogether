@@ -177,6 +177,7 @@ class AlbumDetailsViewModel @AssistedInject constructor(
             AlbumDetailsUiEvent.ConfirmRenameAlbum -> renameAlbum()
             AlbumDetailsUiEvent.ConfirmDeleteAlbum -> deleteAlbum()
             AlbumDetailsUiEvent.DownloadSelectedMedia -> downloadSelectedMedia()
+            AlbumDetailsUiEvent.ShareSelectedMedia -> shareSelectedMedia()
             AlbumDetailsUiEvent.ConfirmDeleteSelectedMedia -> deleteSelectedMedia()
             is AlbumDetailsUiEvent.MoveSelectedMediaToAlbum -> selectMoveTargetAlbum(event.albumId)
             AlbumDetailsUiEvent.ConfirmMoveSelectedMedia -> confirmMoveSelectedMedia()
@@ -422,6 +423,30 @@ class AlbumDetailsViewModel @AssistedInject constructor(
                         showError(progress.message)
                     }
                 }
+            }
+        }
+    }
+
+    private fun shareSelectedMedia() {
+        val contentState = currentContentState() ?: return
+        val familyIdValue = familyId
+        val selectedMediaIds = contentState.selectedMedia.toList()
+        val selectedMedia = contentState.media.filter { it.id in contentState.selectedMedia }
+
+        if (selectedMediaIds.isEmpty() || familyIdValue == null || selectedMedia.size != selectedMediaIds.size) {
+            showError("Media data not available")
+            return
+        }
+
+        if (selectedMedia.any { it.downloadState != MediaDownloadState.READY || it.mediaUri == null }) {
+            showError("Some media is not ready to share")
+            return
+        }
+
+        viewModelScope.launch {
+            when (val result = galleryRepository.getShareableMedia(selectedMediaIds, familyIdValue)) {
+                is Result.Success -> sendCommand(AlbumDetailsCommand.ShareMedia(result.data))
+                is Result.Failure -> showError(result.error.toUserMessage())
             }
         }
     }

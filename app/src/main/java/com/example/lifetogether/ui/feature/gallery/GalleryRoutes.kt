@@ -1,8 +1,10 @@
 package com.example.lifetogether.ui.feature.gallery
 
+import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.ui.common.event.CollectUiCommands
@@ -50,12 +52,19 @@ fun AlbumDetailsRoute(
     val viewModel: AlbumDetailsViewModel =
         hiltViewModel<AlbumDetailsViewModel, AlbumDetailsViewModel.Factory> { it.create(albumId) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     CollectUiCommands(viewModel.uiCommands)
 
     LaunchedEffect(viewModel.commands) {
         viewModel.commands.collect { command ->
             when (command) {
                 AlbumDetailsCommand.NavigateBack -> appNavigator.navigateBack()
+                is AlbumDetailsCommand.ShareMedia -> context.startActivity(
+                    Intent.createChooser(
+                        shareMediaIntent(context, command.media),
+                        "Share media",
+                    ),
+                )
             }
         }
     }
@@ -87,7 +96,21 @@ fun MediaDetailsRoute(
             it.create(albumId, initialIndex)
         }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     CollectUiCommands(viewModel.uiCommands)
+
+    LaunchedEffect(viewModel.commands) {
+        viewModel.commands.collect { command ->
+            when (command) {
+                is MediaDetailsCommand.ShareMedia -> context.startActivity(
+                    Intent.createChooser(
+                        shareMediaIntent(context, command.media),
+                        "Share media",
+                    ),
+                )
+            }
+        }
+    }
 
     MediaDetailsScreen(
         uiState = uiState,

@@ -1,6 +1,7 @@
 package com.example.lifetogether.ui.feature.gallery
 
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
+import com.example.lifetogether.domain.model.gallery.ShareableGalleryMedia
 
 sealed interface MediaDetailsUiState {
     data object Loading : MediaDetailsUiState
@@ -19,10 +20,15 @@ sealed interface MediaDetailsUiEvent {
     data class DragEnd(val totalHeight: Int) : MediaDetailsUiEvent
     data object ToggleOverflowMenu : MediaDetailsUiEvent
     data class DownloadMedia(val index: Int? = null) : MediaDetailsUiEvent
+    data class ShareMedia(val index: Int? = null) : MediaDetailsUiEvent
     data class DeleteMedia(val index: Int? = null) : MediaDetailsUiEvent
     data class RetryMedia(val index: Int? = null) : MediaDetailsUiEvent
 }
 
 sealed interface MediaDetailsNavigationEvent {
     data object NavigateBack : MediaDetailsNavigationEvent
+}
+
+sealed interface MediaDetailsCommand {
+    data class ShareMedia(val media: List<ShareableGalleryMedia>) : MediaDetailsCommand
 }

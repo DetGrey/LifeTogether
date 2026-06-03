@@ -221,6 +221,10 @@ fun MediaDetailsScreen(
                                     onUiEvent(MediaDetailsUiEvent.ToggleOverflowMenu)
                                     onUiEvent(MediaDetailsUiEvent.DownloadMedia(uiState.currentIndex))
                                 }
+                                MenuAction.MediaDetailsActions.SHARE -> {
+                                    onUiEvent(MediaDetailsUiEvent.ToggleOverflowMenu)
+                                    onUiEvent(MediaDetailsUiEvent.ShareMedia(uiState.currentIndex))
+                                }
                                 MenuAction.MediaDetailsActions.DELETE -> {
                                     onUiEvent(MediaDetailsUiEvent.ToggleOverflowMenu)
                                     deleteTargetIndex = uiState.currentIndex

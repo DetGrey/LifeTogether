@@ -13,6 +13,7 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import com.example.lifetogether.data.local.source.AlbumLocalDataSource
 import com.example.lifetogether.data.local.source.MediaLocalDataSource
@@ -30,6 +31,7 @@ import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.domain.model.gallery.MediaDownloadState
+import com.example.lifetogether.domain.model.gallery.ShareableGalleryMedia
 import com.example.lifetogether.domain.repository.GalleryRepository
 import com.example.lifetogether.domain.worker.GalleryMediaRetryWorker
 import com.example.lifetogether.domain.datasource.StorageDataSource
@@ -41,6 +43,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
@@ -320,6 +323,43 @@ class GalleryRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getShareableMedia(
+        mediaIds: List<String>,
+        familyId: String,
+    ): Result<List<ShareableGalleryMedia>, AppError> = withContext(ioDispatcher) {
+        if (mediaIds.isEmpty()) {
+            return@withContext Result.Failure(AppErrors.validation("No media selected"))
+        }
+
+        try {
+            val items = mediaLocalDataSource.getMediaFilesForDownload(mediaIds, familyId)
+                ?: return@withContext Result.Failure(AppErrors.storage("Media data not available"))
+            if (items.size != mediaIds.size || items.any { it.second == null }) {
+                return@withContext Result.Failure(AppErrors.storage("Some media is not ready to share"))
+            }
+
+            val shareableMedia = items.map { (file, mediaItem) ->
+                val media = mediaItem ?: return@withContext Result.Failure(
+                    AppErrors.storage("Some media is not ready to share"),
+                )
+                ShareableGalleryMedia(
+                    uri = FileProvider.getUriForFile(
+                        appContext,
+                        "${appContext.packageName}.fileprovider",
+                        file,
+                        file.name,
+                    ),
+                    mimeType = media.shareMimeType(),
+                    fileName = file.name,
+                )
+            }
+
+            Result.Success(shareableMedia)
+        } catch (e: Exception) {
+            Result.Failure(AppErrors.fromThrowable(e, source = TAG, messageOverride = "Failed to prepare media for sharing"))
+        }
+    }
+
     override suspend fun updateAlbum(album: Album): Result<Unit, AppError> {
         val stampedAlbum = album.stampNow()
         val oldEntity = albumLocalDataSource.getAlbumOnce(album.id)
@@ -346,6 +386,12 @@ class GalleryRepositoryImpl @Inject constructor(
         downloadState = MediaDownloadState.PENDING,
         videoDuration = (this as? GalleryVideo)?.duration,
     )
+
+    private fun GalleryMedia.shareMimeType(): String =
+        when (this) {
+            is GalleryImage -> "image/jpeg"
+            is GalleryVideo -> "video/mp4"
+        }
 
     private fun Album.toEntity() = AlbumEntity(
         id = id,
