@@ -16,6 +16,7 @@ import com.example.lifetogether.domain.model.gallery.MediaDownloadState
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.GalleryRepository
 import com.example.lifetogether.domain.repository.SessionRepository
+import com.example.lifetogether.domain.repository.TravellerRepository
 import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
@@ -56,6 +57,7 @@ class AlbumDetailsViewModel @AssistedInject constructor(
     @Assisted val albumId: String,
     private val sessionRepository: SessionRepository,
     private val galleryRepository: GalleryRepository,
+    private val travellerRepository: TravellerRepository,
     private val moveMediaToAlbumUseCase: MoveMediaToAlbumUseCase,
     private val deleteAlbumUseCase: DeleteAlbumUseCase,
     private val getAlbumDisplayModelsUseCase: GetAlbumDisplayModelsUseCase,
@@ -81,6 +83,7 @@ class AlbumDetailsViewModel @AssistedInject constructor(
     private var observeAlbumJob: Job? = null
     private var observeAlbumMediaJob: Job? = null
     private var observeMoveTargetAlbumsJob: Job? = null
+    private var observeConnectedPinsJob: Job? = null
     private var familyId: String? = null
 
     init {
@@ -95,16 +98,37 @@ class AlbumDetailsViewModel @AssistedInject constructor(
                     observeMoveTargetAlbumsJob = null
                     observeAlbum()
                     observeAlbumMedia()
+                    observeConnectedPins(newFamilyId)
                 } else if (state is SessionState.Unauthenticated) {
                     familyId = null
                     observeAlbumJob?.cancel()
                     observeAlbumMediaJob?.cancel()
                     observeMoveTargetAlbumsJob?.cancel()
+                    observeConnectedPinsJob?.cancel()
                     observeAlbumJob = null
                     observeAlbumMediaJob = null
                     observeMoveTargetAlbumsJob = null
+                    observeConnectedPinsJob = null
                     _uiState.value = AlbumDetailsUiState.Loading
                 }
+            }
+        }
+    }
+
+    private fun observeConnectedPins(familyId: String) {
+        observeConnectedPinsJob?.cancel()
+        observeConnectedPinsJob = viewModelScope.launch {
+            travellerRepository.observePins(familyId).collect { result ->
+                val cities = when (result) {
+                    is Result.Success ->
+                        result.data
+                            .filter { it.albumId == albumId }
+                            .sortedBy { it.dateFrom?.time ?: 0L }
+                            .map { it.city }
+                    is Result.Failure -> emptyList()
+                }
+                val current = _uiState.value as? AlbumDetailsUiState.Content ?: return@collect
+                _uiState.value = current.copy(connectedCities = cities)
             }
         }
     }

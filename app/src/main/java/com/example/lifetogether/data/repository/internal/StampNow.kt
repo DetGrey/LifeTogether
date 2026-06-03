@@ -17,6 +17,7 @@ import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.model.lists.WishListEntry
 import com.example.lifetogether.domain.model.mealplanner.MealPlan
 import com.example.lifetogether.domain.model.recipe.Recipe
+import com.example.lifetogether.domain.model.traveller.TravellerPin
 import java.util.Date
 
 fun Recipe.stampNow(now: Date = Date()) = copy(lastUpdated = now)
@@ -38,3 +39,4 @@ fun TipItem.stampNow(now: Date = Date()) = copy(lastUpdated = now)
 fun UserInformation.stampNow(now: Date = Date()) = copy(lastUpdated = now)
 fun Category.stampNow(now: Date = Date()) = copy(lastUpdated = now)
 fun GrocerySuggestion.stampNow(now: Date = Date()) = copy(lastUpdated = now)
+fun TravellerPin.stampNow(now: Date = Date()) = copy(lastUpdated = now)

@@ -11,6 +11,7 @@ import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.navigation.AlbumMediaNavRoute
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.navigation.GalleryMediaNavRoute
+import com.example.lifetogether.ui.navigation.TravellerNavRoute
 
 @Composable
 fun GalleryScreenRoute(
@@ -79,6 +80,9 @@ fun AlbumDetailsRoute(
                 is AlbumDetailsNavigationEvent.NavigateToMediaDetails -> {
                     val albumId = (uiState as? AlbumDetailsUiState.Content)?.album?.id ?: return@AlbumDetailsScreen
                     appNavigator.navigate(GalleryMediaNavRoute(albumId, navigationEvent.initialIndex))
+                }
+                is AlbumDetailsNavigationEvent.NavigateToTraveller -> {
+                    appNavigator.navigate(TravellerNavRoute(filterAlbumId = navigationEvent.albumId))
                 }
             }
         },

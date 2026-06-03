@@ -9,6 +9,7 @@ import com.example.lifetogether.data.repository.ImageRepositoryImpl
 import com.example.lifetogether.data.repository.MealPlannerRepositoryImpl
 import com.example.lifetogether.data.repository.RecipeRepositoryImpl
 import com.example.lifetogether.data.repository.TipTrackerRepositoryImpl
+import com.example.lifetogether.data.repository.TravellerRepositoryImpl
 import com.example.lifetogether.data.repository.UserListRepositoryImpl
 import com.example.lifetogether.data.repository.UserRepositoryImpl
 import com.example.lifetogether.domain.repository.FamilyRepository
@@ -20,6 +21,7 @@ import com.example.lifetogether.domain.repository.ImageRepository
 import com.example.lifetogether.domain.repository.MealPlannerRepository
 import com.example.lifetogether.domain.repository.RecipeRepository
 import com.example.lifetogether.domain.repository.TipTrackerRepository
+import com.example.lifetogether.domain.repository.TravellerRepository
 import com.example.lifetogether.domain.repository.UserListRepository
 import com.example.lifetogether.domain.repository.UserRepository
 import dagger.Binds
@@ -97,4 +99,10 @@ abstract class RepositoryModule {
     abstract fun bindMealNotificationPreferencesRepository(
         impl: MealNotificationPreferencesRepositoryImpl,
     ): MealNotificationPreferencesRepository
+
+    @Singleton
+    @Binds
+    abstract fun bindTravellerRepository(
+        impl: TravellerRepositoryImpl,
+    ): TravellerRepository
 }

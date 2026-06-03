@@ -94,6 +94,10 @@ class AppNavigator(private val backStack: NavBackStack<NavKey>) : Navigator {
         }
     }
 
+    fun navigateToTraveller(filterAlbumId: String? = null) {
+        navigateTopLevel(TravellerNavRoute(filterAlbumId = filterAlbumId))
+    }
+
     private fun popToHome() {
         val homeIndex = backStack.indexOfFirst { it is HomeNavRoute }
         if (homeIndex == -1) {

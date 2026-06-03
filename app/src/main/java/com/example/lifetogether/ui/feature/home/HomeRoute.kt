@@ -148,6 +148,8 @@ private fun buildHomeSections(isAdmin: Boolean): List<HomeSection> {
             HomeSectionItem.Tile(HomeTile.Lists),
             HomeSectionItem.Tile(HomeTile.MealPlanner),
             HomeSectionItem.Tile(HomeTile.TipTracker),
+            HomeSectionItem.Break,
+            HomeSectionItem.Tile(HomeTile.Traveller),
         ),
     )
 
@@ -199,6 +201,7 @@ private fun handleTileClick(
         HomeTile.Gallery -> appNavigator.navigateTopLevel(GalleryNavRoute)
         HomeTile.TipTracker -> appNavigator.navigateTopLevel(TipTrackerNavRoute)
         HomeTile.Lists -> appNavigator.navigateTopLevel(ListsNavRoute)
+        HomeTile.Traveller -> appNavigator.navigateToTraveller()
         HomeTile.AdminGroceryCategories -> appNavigator.navigateTopLevel(AdminGroceryCategoriesNavRoute)
         HomeTile.AdminGrocerySuggestions -> appNavigator.navigateTopLevel(AdminGrocerySuggestionsNavRoute)
     }

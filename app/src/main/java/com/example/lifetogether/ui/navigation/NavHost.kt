@@ -49,6 +49,7 @@ import com.example.lifetogether.ui.feature.settings.SettingsRoute
 import com.example.lifetogether.ui.feature.signup.SignupRoute
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerRoute
 import com.example.lifetogether.ui.feature.tipTracker.statistics.TipStatisticsRoute
+import com.example.lifetogether.ui.feature.traveller.TravellerRoute
 
 private const val RouteTransitionDurationMillis = 450
 private const val RouteTransitionFadeInitialAlpha = 0.92f
@@ -180,6 +181,11 @@ fun NavHost(deepLinkRoutes: List<AppRoute>? = null) {
                     listId = key.listId,
                     entryId = key.entryId,
                 )
+            }
+
+            // ─── Traveller ─────────────────────────────────────────────────
+            entry<TravellerNavRoute> { key ->
+                TravellerRoute(filterAlbumId = key.filterAlbumId, appNavigator = appNavigator)
             }
 
             // ─── Tip tracker (shared-scoped via TipTrackerGraph marker) ────

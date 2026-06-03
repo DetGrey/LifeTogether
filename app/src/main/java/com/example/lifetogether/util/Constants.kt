@@ -22,6 +22,7 @@ object Constants {
     const val NOTE_LIST_ENTRIES_TABLE = "list_entries_notes"
     const val CHECKLIST_ENTRIES_TABLE = "list_entries_checklist"
     const val MEAL_PLAN_TABLE = "meal_plans"
+    const val TRAVELLER_PINS_TABLE = "traveller_pins"
 
     // Generic visibility constants — shared across guides, lists, and future features
     const val VISIBILITY_FAMILY = "family"

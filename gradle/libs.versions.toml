@@ -35,6 +35,8 @@ s3 = "1.6.79"
 zoomableImageCoil = "0.19.0"
 reorderable = "3.1.0"
 workRuntime = "2.11.2"
+mapsCompose = "8.3.0"
+placesKtx = "5.2.0"
 
 [libraries]
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
@@ -87,6 +89,8 @@ s3 = { module = "aws.sdk.kotlin:s3", version.ref = "s3" }
 zoomable-image-coil = { module = "me.saket.telephoto:zoomable-image-coil", version.ref = "zoomableImageCoil" }
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntime" }
+maps-compose = { module = "com.google.maps.android:maps-compose", version.ref = "mapsCompose" }
+places-ktx = { module = "com.google.android.libraries.places:places", version.ref = "placesKtx" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

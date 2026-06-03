@@ -24,6 +24,7 @@ import com.example.lifetogether.ui.navigation.RecipesNavRoute
 import com.example.lifetogether.ui.navigation.TipStatisticsNavRoute
 import com.example.lifetogether.ui.navigation.TipTrackerGraph
 import com.example.lifetogether.ui.navigation.TipTrackerNavRoute
+import com.example.lifetogether.ui.navigation.TravellerNavRoute
 
 fun AppRoute.activeSyncKeys(): Set<SyncKey> = when (this) {
     is RecipesNavRoute, is RecipeDetailsNavRoute -> setOf(SyncKey.RECIPES)
@@ -38,6 +39,7 @@ fun AppRoute.activeSyncKeys(): Set<SyncKey> = when (this) {
     )
     is GuidesNavRoute, is GuideEditNavRoute, is GuideDetailsNavRoute, is GuideStepPlayerNavRoute -> setOf(SyncKey.GUIDES)
     is TipTrackerNavRoute, is TipStatisticsNavRoute, is TipTrackerGraph -> setOf(SyncKey.TIP_TRACKER)
+    is TravellerNavRoute -> setOf(SyncKey.TRAVELLER_PINS)
     else -> emptySet()
 }
 

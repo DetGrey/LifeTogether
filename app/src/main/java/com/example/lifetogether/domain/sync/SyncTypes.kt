@@ -17,6 +17,7 @@ enum class SyncKey {
     WISH_LIST_ENTRIES,
     NOTE_ENTRIES,
     CHECKLIST_ENTRIES,
+    TRAVELLER_PINS,
 }
 
 data class SyncContext(

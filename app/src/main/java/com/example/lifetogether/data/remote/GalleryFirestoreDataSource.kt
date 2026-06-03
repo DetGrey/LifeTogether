@@ -203,7 +203,7 @@ private data class GalleryMediaDto(
     val mediaUri: String? = null,
     val mediaUrl: String? = null,
     val thumbnail: ByteArray? = null,
-    val videoDuration: Long? = null,
+    val duration: Long? = null,
 ) {
     fun toDomain(documentId: String): GalleryMedia? {
         val familyIdValue = familyId?.takeIf { it.isNotBlank() } ?: return null
@@ -234,7 +234,7 @@ private data class GalleryMediaDto(
                 dateCreated = dateCreatedValue,
                 mediaType = mediaTypeValue,
                 mediaUrl = mediaUrlValue,
-                duration = videoDuration,
+                duration = duration,
             )
         }
     }
@@ -249,7 +249,7 @@ private data class GalleryMediaDto(
         "mediaUri" to mediaUri,
         "mediaUrl" to mediaUrl,
         "thumbnail" to thumbnail,
-        "videoDuration" to videoDuration,
+        "duration" to duration,
     )
 
     override fun equals(other: Any?): Boolean {
@@ -258,7 +258,7 @@ private data class GalleryMediaDto(
 
         other as GalleryMediaDto
 
-        if (videoDuration != other.videoDuration) return false
+        if (duration != other.duration) return false
         if (id != other.id) return false
         if (familyId != other.familyId) return false
         if (itemName != other.itemName) return false
@@ -274,7 +274,7 @@ private data class GalleryMediaDto(
     }
 
     override fun hashCode(): Int {
-        var result = videoDuration?.hashCode() ?: 0
+        var result = duration?.hashCode() ?: 0
         result = 31 * result + (id?.hashCode() ?: 0)
         result = 31 * result + (familyId?.hashCode() ?: 0)
         result = 31 * result + (itemName?.hashCode() ?: 0)
@@ -307,5 +307,5 @@ private fun GalleryMedia.toDto(): GalleryMediaDto = GalleryMediaDto(
     mediaUri = null,
     mediaUrl = mediaUrl,
     thumbnail = null,
-    videoDuration = (this as? GalleryVideo)?.duration,
+    duration = (this as? GalleryVideo)?.duration,
 )

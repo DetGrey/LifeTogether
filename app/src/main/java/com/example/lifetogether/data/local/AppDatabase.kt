@@ -13,6 +13,7 @@ import com.example.lifetogether.data.local.dao.GuidesDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
 import com.example.lifetogether.data.local.dao.MealPlanDao
+import com.example.lifetogether.data.local.dao.TravellerPinsDao
 import com.example.lifetogether.data.local.dao.NoteEntriesDao
 import com.example.lifetogether.data.local.dao.RoutineListsDao
 import com.example.lifetogether.data.local.dao.UserListsDao
@@ -31,6 +32,7 @@ import com.example.lifetogether.data.model.GuideEntity
 import com.example.lifetogether.data.model.GroceryListEntity
 import com.example.lifetogether.data.model.GrocerySuggestionEntity
 import com.example.lifetogether.data.model.MealPlanEntity
+import com.example.lifetogether.data.model.TravellerPinEntity
 import com.example.lifetogether.data.model.RecipeIngredientEntity
 import com.example.lifetogether.data.model.RecipeInstructionEntity
 import com.example.lifetogether.data.model.NoteEntryEntity
@@ -63,8 +65,9 @@ import com.example.lifetogether.data.model.WishListEntryEntity
         NoteEntryEntity::class,
         ChecklistEntryEntity::class,
         MealPlanEntity::class,
+        TravellerPinEntity::class,
     ],
-    version = 40,
+    version = 41,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -87,4 +90,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun noteEntriesDao(): NoteEntriesDao
     abstract fun checklistEntriesDao(): ChecklistEntriesDao
     abstract fun mealPlanDao(): MealPlanDao
+    abstract fun travellerPinsDao(): TravellerPinsDao
 }

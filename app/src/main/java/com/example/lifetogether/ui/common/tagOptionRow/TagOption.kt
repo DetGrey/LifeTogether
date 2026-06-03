@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.lifetogether.ui.model.ColorPair
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 
 @Composable
@@ -19,8 +20,11 @@ fun TagOption(
     tag: String,
     selectedTag: String,
     onClick: ((String) -> Unit)? = null,
+    selectedColors: ColorPair? = null,
 ) {
     val selected: Boolean = selectedTag == tag
+    val containerColor = selectedColors?.containerColor ?: MaterialTheme.colorScheme.secondary
+    val contentColor = selectedColors?.contentColor ?: MaterialTheme.colorScheme.onSecondary
     FilterChip(
         modifier = Modifier.height(30.dp),
         selected = selected,
@@ -29,8 +33,8 @@ fun TagOption(
         colors = FilterChipDefaults.filterChipColors(
             containerColor = Color.Transparent,
             labelColor = MaterialTheme.colorScheme.onBackground,
-            selectedContainerColor = MaterialTheme.colorScheme.secondary,
-            selectedLabelColor = MaterialTheme.colorScheme.onSecondary,
+            selectedContainerColor = containerColor,
+            selectedLabelColor = contentColor,
             disabledSelectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
         ),
         border = FilterChipDefaults.filterChipBorder(
@@ -42,8 +46,7 @@ fun TagOption(
         label = {
             Text(
                 text = tag,
-                color = if (selected) MaterialTheme.colorScheme.onSecondary
-                    else MaterialTheme.colorScheme.onBackground,
+                color = if (selected) contentColor else MaterialTheme.colorScheme.onBackground,
             )
         },
         shape = CircleShape,

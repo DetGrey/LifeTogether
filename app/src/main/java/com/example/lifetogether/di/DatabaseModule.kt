@@ -2,12 +2,6 @@ package com.example.lifetogether.di
 
 import android.content.Context
 import androidx.room.Room
-import com.example.lifetogether.data.local.MIGRATION_37_38
-import com.example.lifetogether.data.local.MIGRATION_38_39
-import com.example.lifetogether.data.local.MIGRATION_39_40
-import com.example.lifetogether.data.local.MIGRATION_36_37
-import com.example.lifetogether.data.local.MIGRATION_35_36
-import com.example.lifetogether.data.local.MIGRATION_34_35
 import com.example.lifetogether.data.local.MIGRATION_23_24
 import com.example.lifetogether.data.local.MIGRATION_24_25
 import com.example.lifetogether.data.local.MIGRATION_25_26
@@ -15,6 +9,13 @@ import com.example.lifetogether.data.local.MIGRATION_27_28
 import com.example.lifetogether.data.local.MIGRATION_31_32
 import com.example.lifetogether.data.local.MIGRATION_32_33
 import com.example.lifetogether.data.local.MIGRATION_33_34
+import com.example.lifetogether.data.local.MIGRATION_34_35
+import com.example.lifetogether.data.local.MIGRATION_35_36
+import com.example.lifetogether.data.local.MIGRATION_36_37
+import com.example.lifetogether.data.local.MIGRATION_37_38
+import com.example.lifetogether.data.local.MIGRATION_38_39
+import com.example.lifetogether.data.local.MIGRATION_39_40
+import com.example.lifetogether.data.local.MIGRATION_40_41
 import com.example.lifetogether.data.local.AppDatabase
 import com.example.lifetogether.data.local.dao.AlbumsDao
 import com.example.lifetogether.data.local.dao.ChecklistEntriesDao
@@ -26,6 +27,7 @@ import com.example.lifetogether.data.local.dao.GuidesDao
 import com.example.lifetogether.data.local.dao.GroceryListDao
 import com.example.lifetogether.data.local.dao.GrocerySuggestionsDao
 import com.example.lifetogether.data.local.dao.MealPlanDao
+import com.example.lifetogether.data.local.dao.TravellerPinsDao
 import com.example.lifetogether.data.local.dao.NoteEntriesDao
 import com.example.lifetogether.data.local.dao.RoutineListsDao
 import com.example.lifetogether.data.local.dao.UserListsDao
@@ -68,6 +70,7 @@ object DatabaseModule {
                 MIGRATION_37_38,
                 MIGRATION_38_39,
                 MIGRATION_39_40,
+                MIGRATION_40_41,
             )
             .build()
     }
@@ -172,5 +175,11 @@ object DatabaseModule {
     @Singleton
     fun provideMealPlanDao(db: AppDatabase): MealPlanDao {
         return db.mealPlanDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideTravellerPinsDao(db: AppDatabase): TravellerPinsDao {
+        return db.travellerPinsDao()
     }
 }

@@ -9,6 +9,7 @@ import com.example.lifetogether.domain.repository.GuideRepository
 import com.example.lifetogether.domain.repository.MealPlannerRepository
 import com.example.lifetogether.domain.repository.RecipeRepository
 import com.example.lifetogether.domain.repository.TipTrackerRepository
+import com.example.lifetogether.domain.repository.TravellerRepository
 import com.example.lifetogether.domain.repository.UserListRepository
 import com.example.lifetogether.domain.repository.UserRepository
 import com.example.lifetogether.domain.result.AppError
@@ -32,6 +33,7 @@ class SyncCoordinator @Inject constructor(
     private val guideRepository: GuideRepository,
     private val mealPlannerRepository: MealPlannerRepository,
     private val userListRepository: UserListRepository,
+    private val travellerRepository: TravellerRepository,
 ) {
     private val globalSyncKeys = setOf(
         SyncKey.USER,
@@ -53,6 +55,7 @@ class SyncCoordinator @Inject constructor(
         SyncKey.WISH_LIST_ENTRIES,
         SyncKey.NOTE_ENTRIES,
         SyncKey.CHECKLIST_ENTRIES,
+        SyncKey.TRAVELLER_PINS,
     )
 
     private var syncedUid: String? = null
@@ -263,6 +266,13 @@ class SyncCoordinator @Inject constructor(
                 val familyId = context.familyId ?: return null
                 startSync(scope, "SyncChecklistEntriesUseCase", "checklist entries sync failure") {
                     userListRepository.syncChecklistEntriesFromRemote(uid, familyId)
+                }
+            }
+
+            SyncKey.TRAVELLER_PINS -> {
+                val familyId = context.familyId ?: return null
+                startSync(scope, "SyncTravellerPins", "traveller pins sync failure") {
+                    travellerRepository.syncPinsFromRemote(familyId)
                 }
             }
         }

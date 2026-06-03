@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -49,6 +50,10 @@ import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.common.image.MediaUploadMultipleDialog
 import com.example.lifetogether.ui.common.list.SelectionModeBar
 import com.example.lifetogether.ui.common.skeleton.Skeletons
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.ui.res.painterResource
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.model.MenuAction
@@ -159,6 +164,30 @@ private fun AlbumDetailsContent(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(LifeTogetherTokens.spacing.small),
             ) {
+                if (uiState.connectedCities.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                onNavigationEvent(
+                                    AlbumDetailsNavigationEvent.NavigateToTraveller(
+                                        uiState.album?.id ?: "",
+                                    ),
+                                )
+                            }
+                            .padding(vertical = LifeTogetherTokens.spacing.xSmall),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        TextDefault("📍 ${uiState.connectedCities.joinToString(" · ")}")
+                        Icon(
+                            painter = painterResource(R.drawable.ic_expand),
+                            contentDescription = "view on map",
+                            modifier = Modifier.size(LifeTogetherTokens.sizing.iconLarge)
+                        )
+                    }
+                }
+
                 if (uiState.isSelectionModeActive) {
                     SelectionModeBar(
                         selectedCount = uiState.selectedMedia.size,

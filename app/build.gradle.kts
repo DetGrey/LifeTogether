@@ -37,7 +37,11 @@ android {
             "R2_ACCESS_KEY_ID" to "r2.accessKeyId",
             "R2_SECRET_ACCESS_KEY" to "r2.secretAccessKey",
             "R2_PUBLIC_DOMAIN" to "r2.publicDomain",
+            "MAPS_API_KEY" to "maps.apiKey",
         )
+    defaultConfig.addManifestPlaceholders(
+        mapOf("MAPS_API_KEY" to (localProps.getProperty("maps.apiKey") ?: ""))
+    )
     // Loop through them and apply them to defaultConfig
     for ((configName, propKey) in localPropertiesKeys) {
         val propValue = localProps.getProperty(propKey) ?: ""
@@ -154,6 +158,8 @@ dependencies {
     implementation(libs.zoomable.image.coil)
     implementation(libs.reorderable)
     implementation(libs.accompanist.permissions)
+    implementation(libs.maps.compose)
+    implementation(libs.places.ktx)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui)

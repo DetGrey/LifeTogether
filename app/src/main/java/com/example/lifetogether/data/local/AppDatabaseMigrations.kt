@@ -3,6 +3,29 @@ package com.example.lifetogether.data.local
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+val MIGRATION_40_41 = object : Migration(40, 41) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `traveller_pins` (
+                `id` TEXT NOT NULL,
+                `family_id` TEXT NOT NULL,
+                `last_updated` INTEGER NOT NULL,
+                `city` TEXT NOT NULL,
+                `country` TEXT NOT NULL,
+                `latitude` REAL NOT NULL,
+                `longitude` REAL NOT NULL,
+                `type` TEXT NOT NULL,
+                `date_from` INTEGER,
+                `date_to` INTEGER,
+                `album_id` TEXT,
+                PRIMARY KEY(`id`)
+            )
+            """.trimIndent(),
+        )
+    }
+}
+
 val MIGRATION_39_40 = object : Migration(39, 40) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE `family_members` ADD COLUMN `image_url` TEXT")

@@ -45,3 +45,4 @@ sealed interface AppRoute : NavKey
 @Serializable object TipTrackerGraph : AppRoute
 
 @Serializable object NotificationsNavRoute : AppRoute
+@Serializable data class TravellerNavRoute(val filterAlbumId: String? = null) : AppRoute

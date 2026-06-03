@@ -25,6 +25,7 @@ sealed interface AlbumDetailsUiState {
         val familyId: String?,
         val isSyncing: Boolean = false,
         val retryingMediaIds: Set<String> = emptySet(),
+        val connectedCities: List<String> = emptyList(),
     ) : AlbumDetailsUiState
 }
 
@@ -60,6 +61,7 @@ sealed interface AlbumDetailsUiEvent {
 sealed interface AlbumDetailsNavigationEvent {
     data object NavigateBack : AlbumDetailsNavigationEvent
     data class NavigateToMediaDetails(val initialIndex: Int) : AlbumDetailsNavigationEvent
+    data class NavigateToTraveller(val albumId: String) : AlbumDetailsNavigationEvent
 }
 
 sealed interface AlbumDetailsCommand {

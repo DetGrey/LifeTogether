@@ -81,7 +81,7 @@
 - [ ] Add travel goals for countries to visit and see.
     - This could just be part of a user list
 - [ ] Add mood-based suggestions for when down, sad, or exhausted.
-- [ ] Traveller
+- [x] Traveller
     - Map with pins for where we have visited, lived and bucket list
     - When clicked it shows bottom sheet with city, country, to-from date, possible to attach album to easily find it again
     - Filter which pins to show (default visited+lived)
@@ -108,6 +108,8 @@
   - Happens with some other apps too so there is probably something we should have added to prevent it
 
 ## --- Icons ---
+- [ ] Rename ic_expand to ic_chevron_right and maybe something similar with expanded?
+- [ ] Make custom ones for ic_calendar and ic_traveller
 
 ## --- Tooling to try out ---
 - Try `@PreviewScreenSizes`.

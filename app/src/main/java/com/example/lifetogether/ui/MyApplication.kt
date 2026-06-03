@@ -6,11 +6,20 @@ import coil.ImageLoaderFactory
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import coil.request.CachePolicy
+import com.example.lifetogether.BuildConfig
+import com.google.android.libraries.places.api.Places
 import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
 class MyApplication : Application(), ImageLoaderFactory {
-    
+
+    override fun onCreate() {
+        super.onCreate()
+        if (!Places.isInitialized()) {
+            Places.initializeWithNewPlacesApiEnabled(this, BuildConfig.MAPS_API_KEY)
+        }
+    }
+
     override fun newImageLoader(): ImageLoader {
         return ImageLoader.Builder(this)
             .memoryCache {
