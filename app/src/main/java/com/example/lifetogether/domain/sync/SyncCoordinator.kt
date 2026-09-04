@@ -34,6 +34,7 @@ class SyncCoordinator @Inject constructor(
     private val mealPlannerRepository: MealPlannerRepository,
     private val userListRepository: UserListRepository,
     private val travellerRepository: TravellerRepository,
+    private val beachRepository: BeachRepository,
 ) {
     private val globalSyncKeys = setOf(
         SyncKey.USER,
@@ -56,6 +57,7 @@ class SyncCoordinator @Inject constructor(
         SyncKey.NOTE_ENTRIES,
         SyncKey.CHECKLIST_ENTRIES,
         SyncKey.TRAVELLER_PINS,
+        SyncKey.BEACH_ALBUMS,
     )
 
     private var syncedUid: String? = null
@@ -273,6 +275,13 @@ class SyncCoordinator @Inject constructor(
                 val familyId = context.familyId ?: return null
                 startSync(scope, "SyncTravellerPins", "traveller pins sync failure") {
                     travellerRepository.syncPinsFromRemote(familyId)
+                }
+            }
+
+            SyncKey.BEACH_ALBUMS -> {
+                val familyId = context.familyId ?: return null
+                startSync(scope, "SyncBeachAlbums", "beach albums sync failure") {
+                    beachRepository.syncBeachAlbumsFromRemote(familyId)
                 }
             }
         }

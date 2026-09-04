@@ -1,5 +1,7 @@
 package com.example.lifetogether.util
 
+import com.example.lifetogether.BuildConfig
+
 object Constants {
     // Table constants
     const val GROCERY_TABLE = "grocery_list"
@@ -23,6 +25,8 @@ object Constants {
     const val CHECKLIST_ENTRIES_TABLE = "list_entries_checklist"
     const val MEAL_PLAN_TABLE = "meal_plans"
     const val TRAVELLER_PINS_TABLE = "traveller_pins"
+    const val BEACH_ALBUMS_TABLE = "beach_albums"
+    const val BEACH_MEDIA_TABLE = "beach_media"
 
     // Generic visibility constants — shared across guides, lists, and future features
     const val VISIBILITY_FAMILY = "family"
@@ -32,4 +36,7 @@ object Constants {
     const val GROCERY_LIST_CHANNEL = "grocery_list_notification_channel"
     const val MEAL_PLAN_CHANNEL = "meal_plan_notification_channel"
     const val DEFAULT_CHANNEL = "default_channel"
+
+    // QR code url
+    const val BASE_BEACH_URL: String = BuildConfig.BASE_BEACH_URL
 }

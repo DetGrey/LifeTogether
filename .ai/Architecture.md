@@ -183,6 +183,12 @@ Historical phase decisions remain in `.ai/v2-plan/` and are not duplicated here.
 - Repositories depend on these focused sources directly.
 - No new production code should depend on a central local-source facade.
 
+## Use Cases Policy
+
+- ViewModels should interact directly with Repositories for CRUD operations and standard flow observations.
+- Use Cases belong in `domain/usecase/` and are reserved strictly for operations involving complex multi-repository orchestration or reusable non-trivial domain logic.
+- Do not introduce pass-through Use Cases that merely delegate 1:1 to a single Repository method.
+
 ## Repository Contract
 
 - Repository observation APIs commonly expose `Flow<Result<T, AppError>>`, not plain local flows.

@@ -1,7 +1,7 @@
 [versions]
 accompanistPermissions = "0.37.3"
 datastorePreferences = "1.2.1"
-agp = "9.2.1"
+agp = "9.3.2"
 awsConfig = "1.6.79"
 coil = "2.7.0"
 coilCompose = "2.7.0"
@@ -37,8 +37,10 @@ reorderable = "3.1.0"
 workRuntime = "2.11.2"
 mapsCompose = "8.3.0"
 placesKtx = "5.2.0"
+qrose = "1.0.1"
 
 [libraries]
+qrose = { module = "io.github.alexzhirkevich:qrose", version.ref = "qrose" }
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-compose-material-icons-core = { group = "androidx.compose.material", name = "material-icons-core" }

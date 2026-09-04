@@ -22,6 +22,8 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.example.lifetogether.ui.common.sync.RouteSyncBinding
+import com.example.lifetogether.ui.feature.admin.beachAlbums.AdminBeachAlbumsRoute
+import com.example.lifetogether.ui.feature.admin.beachAlbums.details.AdminBeachAlbumDetailsRoute
 import com.example.lifetogether.ui.feature.admin.groceryList.categories.AdminGroceryCategoriesRoute
 import com.example.lifetogether.ui.feature.admin.groceryList.suggestions.AdminGrocerySuggestionsRoute
 import com.example.lifetogether.ui.feature.family.FamilyRoute
@@ -129,6 +131,10 @@ fun NavHost(deepLinkRoutes: List<AppRoute>? = null) {
             // ─── Admin ─────────────────────────────────────────────────────
             entry<AdminGroceryCategoriesNavRoute> { AdminGroceryCategoriesRoute(appNavigator) }
             entry<AdminGrocerySuggestionsNavRoute> { AdminGrocerySuggestionsRoute(appNavigator) }
+            entry<AdminBeachAlbumsNavRoute> { AdminBeachAlbumsRoute(appNavigator) }
+            entry<AdminBeachAlbumDetailsNavRoute> { key ->
+                AdminBeachAlbumDetailsRoute(appNavigator = appNavigator, albumId = key.albumId)
+            }
 
             // ─── Grocery ───────────────────────────────────────────────────
             entry<GroceryListNavRoute> { GroceryListRoute(appNavigator) }

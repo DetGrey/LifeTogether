@@ -235,6 +235,12 @@ class ImageProcessor @Inject constructor(
                 needsResize = true,
                 extension = ".jpeg"
             )
+
+            is ImageType.BeachMedia -> ImageConfig(
+                path = Constants.BEACH_MEDIA_TABLE,
+                needsResize = false,
+                extension = ".jpeg"
+            )
         }
     }
 

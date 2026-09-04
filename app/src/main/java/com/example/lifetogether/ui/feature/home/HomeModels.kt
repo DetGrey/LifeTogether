@@ -119,6 +119,13 @@ sealed interface HomeTile {
         override val requiresFamilyAccess: Boolean = true
         override val requiresAdminAccess: Boolean = true
     }
+
+    data object AdminBeachAlbums : HomeTile {
+        override val title: String = "Beach albums"
+        override val appIcon: AppIcon = AppIcon(R.drawable.ic_gallery, "beach albums icon")
+        override val requiresFamilyAccess: Boolean = false
+        override val requiresAdminAccess: Boolean = true
+    }
 }
 
 sealed interface HomeNavigationEvent {

@@ -66,8 +66,10 @@ import com.example.lifetogether.data.model.WishListEntryEntity
         ChecklistEntryEntity::class,
         MealPlanEntity::class,
         TravellerPinEntity::class,
+        BeachAlbumEntity::class,
+        BeachMediaEntity::class,
     ],
-    version = 41,
+    version = 44,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -91,4 +93,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun checklistEntriesDao(): ChecklistEntriesDao
     abstract fun mealPlanDao(): MealPlanDao
     abstract fun travellerPinsDao(): TravellerPinsDao
+    abstract fun beachAlbumsDao(): BeachAlbumsDao
+    abstract fun beachMediaDao(): BeachMediaDao
 }

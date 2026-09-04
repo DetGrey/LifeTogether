@@ -160,6 +160,7 @@ private fun buildHomeSections(isAdmin: Boolean): List<HomeSection> {
             items = listOf(
                 HomeSectionItem.Tile(HomeTile.AdminGroceryCategories),
                 HomeSectionItem.Tile(HomeTile.AdminGrocerySuggestions),
+                HomeSectionItem.Tile(HomeTile.AdminBeachAlbums),
             ),
         )
     } else {
@@ -204,5 +205,6 @@ private fun handleTileClick(
         HomeTile.Traveller -> appNavigator.navigateToTraveller()
         HomeTile.AdminGroceryCategories -> appNavigator.navigateTopLevel(AdminGroceryCategoriesNavRoute)
         HomeTile.AdminGrocerySuggestions -> appNavigator.navigateTopLevel(AdminGrocerySuggestionsNavRoute)
+        HomeTile.AdminBeachAlbums -> appNavigator.navigateTopLevel(com.example.lifetogether.ui.navigation.AdminBeachAlbumsNavRoute)
     }
 }

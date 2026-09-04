@@ -43,7 +43,7 @@ class ObserveImageStateUseCase @Inject constructor(
             is ImageType.FamilyImage -> imageType.familyId.isNotBlank()
             is ImageType.RecipeImage -> imageType.familyId.isNotBlank() && imageType.recipeId.isNotBlank()
             is ImageType.RoutineListEntryImage -> imageType.familyId.isNotBlank() && imageType.entryId.isNotBlank()
-            is ImageType.GalleryMedia -> false
+            is ImageType.GalleryMedia, is ImageType.BeachMedia -> false
         }
     }
 }

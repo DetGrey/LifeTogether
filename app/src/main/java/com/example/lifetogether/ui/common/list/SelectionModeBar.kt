@@ -21,6 +21,7 @@ fun SelectionModeBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(horizontal = LifeTogetherTokens.spacing.medium)
             .padding(
                 top = LifeTogetherTokens.spacing.small,
                 bottom = LifeTogetherTokens.spacing.medium,

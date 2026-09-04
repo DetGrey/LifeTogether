@@ -3,6 +3,80 @@ package com.example.lifetogether.data.local
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+val MIGRATION_43_44 = object : Migration(43, 44) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `beach_media` ADD COLUMN `download_state` TEXT NOT NULL DEFAULT 'PENDING'")
+        db.execSQL("ALTER TABLE `beach_media` ADD COLUMN `last_download_attempt` INTEGER")
+        db.execSQL("ALTER TABLE `beach_media` ADD COLUMN `last_download_error` TEXT")
+    }
+}
+
+val MIGRATION_42_43 = object : Migration(42, 43) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("DROP TABLE IF EXISTS `beach_albums` ")
+        db.execSQL("DROP TABLE IF EXISTS `beach_media` ")
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `beach_albums` (
+                `id` TEXT NOT NULL,
+                `family_id` TEXT NOT NULL,
+                `name` TEXT NOT NULL,
+                `count` INTEGER NOT NULL,
+                `created_at` INTEGER NOT NULL,
+                `last_updated` INTEGER NOT NULL,
+                PRIMARY KEY(`id`)
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `beach_media` (
+                `id` TEXT NOT NULL,
+                `family_id` TEXT NOT NULL,
+                `beach_album_id` TEXT NOT NULL,
+                `url` TEXT NOT NULL,
+                `storage_path` TEXT NOT NULL,
+                `thumbnail` BLOB,
+                `created_at` INTEGER NOT NULL,
+                `last_updated` INTEGER NOT NULL,
+                PRIMARY KEY(`id`)
+            )
+            """.trimIndent(),
+        )
+    }
+}
+
+val MIGRATION_41_42 = object : Migration(41, 42) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `beach_albums` (
+                `id` TEXT NOT NULL,
+                `name` TEXT NOT NULL,
+                `count` INTEGER NOT NULL,
+                `created_at` INTEGER NOT NULL,
+                `last_updated` INTEGER NOT NULL,
+                PRIMARY KEY(`id`)
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `beach_media` (
+                `id` TEXT NOT NULL,
+                `beach_album_id` TEXT NOT NULL,
+                `url` TEXT NOT NULL,
+                `storage_path` TEXT NOT NULL,
+                `thumbnail` BLOB,
+                `created_at` INTEGER NOT NULL,
+                `last_updated` INTEGER NOT NULL,
+                PRIMARY KEY(`id`)
+            )
+            """.trimIndent(),
+        )
+    }
+}
+
 val MIGRATION_40_41 = object : Migration(40, 41) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL(

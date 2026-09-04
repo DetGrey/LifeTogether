@@ -3,6 +3,8 @@ package com.example.lifetogether.data.repository.internal
 import com.example.lifetogether.domain.model.Category
 import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.domain.model.UserInformation
+import com.example.lifetogether.domain.model.beach.BeachAlbum
+import com.example.lifetogether.domain.model.beach.BeachMedia
 import com.example.lifetogether.domain.model.gallery.Album
 import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
@@ -40,3 +42,5 @@ fun UserInformation.stampNow(now: Date = Date()) = copy(lastUpdated = now)
 fun Category.stampNow(now: Date = Date()) = copy(lastUpdated = now)
 fun GrocerySuggestion.stampNow(now: Date = Date()) = copy(lastUpdated = now)
 fun TravellerPin.stampNow(now: Date = Date()) = copy(lastUpdated = now)
+fun BeachAlbum.stampNow(now: Date = Date()) = copy(lastUpdated = now)
+fun BeachMedia.stampNow(now: Date = Date()) = copy(lastUpdated = now)

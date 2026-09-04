@@ -8,4 +8,5 @@ sealed class ImageType {
     data class RecipeImage(val familyId: String, val recipeId: String) : ImageType()
     data class GalleryMedia(val familyId: String, val albumId: String, val galleryMediaUploadData: MediaUploadData?) : ImageType()
     data class RoutineListEntryImage(val familyId: String, val entryId: String) : ImageType()
+    data class BeachMedia(val beachAlbumId: String) : ImageType()
 }

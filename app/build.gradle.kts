@@ -38,6 +38,7 @@ android {
             "R2_SECRET_ACCESS_KEY" to "r2.secretAccessKey",
             "R2_PUBLIC_DOMAIN" to "r2.publicDomain",
             "MAPS_API_KEY" to "maps.apiKey",
+            "BASE_BEACH_URL" to "beaches.baseUrl",
         )
     defaultConfig.addManifestPlaceholders(
         mapOf("MAPS_API_KEY" to (localProps.getProperty("maps.apiKey") ?: ""))
@@ -167,6 +168,7 @@ dependencies {
     implementation(libs.s3)
     implementation(libs.aws.config)
     implementation(libs.http.client.engine.okhttp)
+    implementation(libs.qrose)
     constraints {
         // Keep gRPC modules aligned to one version to avoid mixed-runtime behavior.
         // Firestore, DataConnect, and google-http/google-auth can otherwise resolve different grpc-* versions.

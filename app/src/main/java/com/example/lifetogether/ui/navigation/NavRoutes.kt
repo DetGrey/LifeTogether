@@ -8,6 +8,8 @@ sealed interface AppRoute : NavKey
 
 @Serializable object AdminGroceryCategoriesNavRoute : AppRoute
 @Serializable object AdminGrocerySuggestionsNavRoute : AppRoute
+@Serializable object AdminBeachAlbumsNavRoute : AppRoute
+@Serializable data class AdminBeachAlbumDetailsNavRoute(val albumId: String) : AppRoute
 @Serializable object LoadingNavRoute : AppRoute
 @Serializable object HomeNavRoute : AppRoute
 @Serializable object ProfileNavRoute : AppRoute

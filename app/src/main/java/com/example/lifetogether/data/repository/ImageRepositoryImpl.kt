@@ -62,7 +62,7 @@ class ImageRepositoryImpl @Inject constructor(
                     recipeId = imageType.recipeId,
                 )
                 is ImageType.RoutineListEntryImage -> userListLocalDataSource.observeRoutineImageByteArray(imageType.entryId)
-                is ImageType.GalleryMedia -> flowOf(null)
+                is ImageType.GalleryMedia, is ImageType.BeachMedia -> flowOf(null)
             }
             byteArrayFlow.map { byteArray ->
                 appResultOf {
@@ -102,7 +102,7 @@ class ImageRepositoryImpl @Inject constructor(
             is ImageType.FamilyImage -> familyFirestoreDataSource.getFamilyImageUrl(imageType.familyId)
             is ImageType.RecipeImage -> recipeFirestoreDataSource.getRecipeImageUrl(imageType.recipeId)
             is ImageType.RoutineListEntryImage -> userListFirestoreDataSource.getRoutineListEntryImageUrl(imageType.entryId)
-            is ImageType.GalleryMedia -> Result.Failure(AppErrors.validation("Image type GalleryImage is not connected to one specific document"))
+            is ImageType.GalleryMedia, is ImageType.BeachMedia -> Result.Failure(AppErrors.validation("Image type GalleryImage is not connected to one specific document"))
         }
         return when (urlResult) {
             is Result.Success -> {
@@ -139,7 +139,7 @@ class ImageRepositoryImpl @Inject constructor(
             is ImageType.FamilyImage -> familyFirestoreDataSource.saveFamilyImageUrl(imageType.familyId, url, now)
             is ImageType.RecipeImage -> recipeFirestoreDataSource.saveRecipeImageUrl(imageType.recipeId, url, now)
             is ImageType.RoutineListEntryImage -> userListFirestoreDataSource.saveRoutineListEntryImageUrl(imageType.entryId, url, now)
-            is ImageType.GalleryMedia -> Result.Failure(AppErrors.validation("Image type is not connected to one specific document"))
+            is ImageType.GalleryMedia, is ImageType.BeachMedia -> Result.Failure(AppErrors.validation("Image type is not connected to one specific document"))
         }
     }
 
@@ -164,7 +164,7 @@ class ImageRepositoryImpl @Inject constructor(
                     imageData = byteArray,
                     lastUpdated = now,
                 )
-                is ImageType.GalleryMedia -> Unit
+                is ImageType.GalleryMedia, is ImageType.BeachMedia -> Unit
             }
             Result.Success(Unit)
         } catch (e: Exception) {
@@ -197,7 +197,7 @@ class ImageRepositoryImpl @Inject constructor(
                     imageUrl = url,
                     lastUpdated = lastUpdated,
                 )
-                is ImageType.GalleryMedia -> Unit
+                is ImageType.GalleryMedia, is ImageType.BeachMedia -> Unit
             }
             Result.Success(Unit)
         } catch (e: Exception) {
