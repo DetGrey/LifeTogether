@@ -4,8 +4,8 @@ import androidx.room.TypeConverter
 import com.example.lifetogether.domain.model.gallery.MediaDownloadState
 import com.example.lifetogether.domain.model.guides.GuideResume
 import com.example.lifetogether.domain.model.guides.GuideSection
-import java.util.Date
 import kotlinx.serialization.json.Json
+import java.util.Date
 
 class Converters {
     private val json = Json {

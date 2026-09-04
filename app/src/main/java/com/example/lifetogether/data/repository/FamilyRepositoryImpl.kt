@@ -1,10 +1,9 @@
 package com.example.lifetogether.data.repository
 
-import com.example.lifetogether.domain.result.AppError
-
-import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.repository.FamilyRepository
+import com.example.lifetogether.domain.result.AppError
+import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.Flow
 import java.util.Date
 import javax.inject.Inject

@@ -1,14 +1,14 @@
 package com.example.lifetogether.data.logic
 
-import android.util.Log
 import android.database.sqlite.SQLiteException
+import android.util.Log
 import com.example.lifetogether.domain.result.AppError
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.firestore.FirebaseFirestoreException
-import java.io.IOException
 import kotlinx.serialization.SerializationException
+import java.io.IOException
 
 object AppErrors {
     private const val TAG = "AppErrors"

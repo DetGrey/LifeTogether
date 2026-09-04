@@ -5,11 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.notification.MealPlanAlarmOrchestrator
-import com.example.lifetogether.domain.sync.SyncCoordinator
 import com.example.lifetogether.domain.repository.GuideRepository
 import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.repository.UserRepository
 import com.example.lifetogether.domain.result.Result
+import com.example.lifetogether.domain.sync.SyncCoordinator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay

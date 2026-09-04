@@ -7,10 +7,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.domain.logic.daysTogetherText
 import com.example.lifetogether.domain.model.family.FamilyInformation
+import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.model.session.SessionState.Authenticated
 import com.example.lifetogether.domain.model.session.authenticatedUserOrNull
-import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.ui.common.di.rememberFamilyRepository
@@ -23,9 +23,9 @@ import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.navigation.GalleryNavRoute
 import com.example.lifetogether.ui.navigation.GroceryListNavRoute
 import com.example.lifetogether.ui.navigation.GuidesNavRoute
-import com.example.lifetogether.ui.navigation.MealPlannerNavRoute
 import com.example.lifetogether.ui.navigation.ListsNavRoute
 import com.example.lifetogether.ui.navigation.LoginNavRoute
+import com.example.lifetogether.ui.navigation.MealPlannerNavRoute
 import com.example.lifetogether.ui.navigation.ProfileNavRoute
 import com.example.lifetogether.ui.navigation.RecipesNavRoute
 import com.example.lifetogether.ui.navigation.SettingsNavRoute

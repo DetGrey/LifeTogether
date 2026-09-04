@@ -1,7 +1,7 @@
 package com.example.lifetogether.ui.common.di
 
-import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.repository.FamilyRepository
+import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.repository.UserRepository
 import com.example.lifetogether.domain.sync.SyncCoordinator
 import com.example.lifetogether.domain.usecase.image.ObserveImageStateUseCase

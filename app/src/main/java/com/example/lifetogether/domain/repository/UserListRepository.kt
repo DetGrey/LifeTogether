@@ -1,11 +1,11 @@
 package com.example.lifetogether.domain.repository
 
-import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.model.lists.ChecklistEntry
 import com.example.lifetogether.domain.model.lists.NoteEntry
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.model.lists.WishListEntry
+import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.Flow
 

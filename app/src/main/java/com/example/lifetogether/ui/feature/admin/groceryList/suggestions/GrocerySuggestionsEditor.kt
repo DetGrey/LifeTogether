@@ -29,10 +29,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.R
-import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.util.UNCATEGORIZED_CATEGORY
 import com.example.lifetogether.util.priceToString
 

@@ -1,12 +1,12 @@
 package com.example.lifetogether.domain.usecase.image
 
-import com.example.lifetogether.domain.result.AppError
 import android.content.Context
 import android.net.Uri
 import android.util.Log
 import com.example.lifetogether.domain.model.image.UploadedImage
 import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.repository.ImageRepository
+import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import javax.inject.Inject
 

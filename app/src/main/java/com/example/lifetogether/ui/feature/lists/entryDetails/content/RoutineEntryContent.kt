@@ -16,9 +16,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
-import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
-import com.example.lifetogether.ui.common.tagOptionRow.TagOption
 import com.example.lifetogether.ui.common.image.EditableImageCard
+import com.example.lifetogether.ui.common.tagOptionRow.TagOption
+import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.common.textfield.CustomTextField
 import com.example.lifetogether.ui.feature.lists.entryDetails.EntryDetailsContent

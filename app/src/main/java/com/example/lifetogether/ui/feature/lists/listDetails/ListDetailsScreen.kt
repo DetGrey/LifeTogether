@@ -1,16 +1,16 @@
 package com.example.lifetogether.ui.feature.lists.listDetails
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -28,14 +28,14 @@ import com.example.lifetogether.domain.model.lists.ChecklistEntry
 import com.example.lifetogether.domain.model.lists.NoteEntry
 import com.example.lifetogether.domain.model.lists.RecurrenceUnit
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
-import com.example.lifetogether.domain.model.lists.WishListPriority
 import com.example.lifetogether.domain.model.lists.WishListEntry
+import com.example.lifetogether.domain.model.lists.WishListPriority
 import com.example.lifetogether.ui.common.ActionSheet
 import com.example.lifetogether.ui.common.ActionSheetItem
 import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.add.AddNewString
-import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
+import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithTextField
 import com.example.lifetogether.ui.common.list.SelectionModeBar

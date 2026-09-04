@@ -20,14 +20,14 @@ import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.recipe.Recipe
 import com.example.lifetogether.ui.common.AppTopBar
-import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
+import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.tagOptionRow.TagOptionRow
 import com.example.lifetogether.ui.feature.recipes.components.RecipeCardV2
 import com.example.lifetogether.ui.feature.recipes.components.RecipeSearchField
-import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun RecipesScreen(

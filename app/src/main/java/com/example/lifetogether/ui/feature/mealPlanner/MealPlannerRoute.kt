@@ -8,8 +8,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.navigation.MealPlanDetailsNavRoute
-import com.example.lifetogether.ui.navigation.NotificationsNavRoute
 import com.example.lifetogether.ui.navigation.NavigationResult
+import com.example.lifetogether.ui.navigation.NotificationsNavRoute
 
 @Composable
 fun MealPlannerRoute(appNavigator: AppNavigator) {

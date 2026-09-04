@@ -22,8 +22,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.lifetogether.domain.model.lists.RoutineListEntry
-import com.example.lifetogether.ui.common.list.CompletableBox
 import com.example.lifetogether.ui.common.image.AnimatedBitmapImage
+import com.example.lifetogether.ui.common.list.CompletableBox
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTokens

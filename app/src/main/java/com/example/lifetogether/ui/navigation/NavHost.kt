@@ -32,8 +32,8 @@ import com.example.lifetogether.ui.feature.gallery.GalleryScreenRoute
 import com.example.lifetogether.ui.feature.gallery.MediaDetailsRoute
 import com.example.lifetogether.ui.feature.groceryList.GroceryListRoute
 import com.example.lifetogether.ui.feature.guides.GuidesRoute
-import com.example.lifetogether.ui.feature.guides.edit.GuideEditRoute
 import com.example.lifetogether.ui.feature.guides.details.GuideDetailsRoute
+import com.example.lifetogether.ui.feature.guides.edit.GuideEditRoute
 import com.example.lifetogether.ui.feature.guides.stepplayer.GuideStepPlayerRoute
 import com.example.lifetogether.ui.feature.home.HomeRoute
 import com.example.lifetogether.ui.feature.lists.ListsRoute
@@ -43,11 +43,11 @@ import com.example.lifetogether.ui.feature.loading.LoadingRoute
 import com.example.lifetogether.ui.feature.login.LoginRoute
 import com.example.lifetogether.ui.feature.mealPlanner.MealPlannerRoute
 import com.example.lifetogether.ui.feature.mealPlanner.entryDetails.MealPlanDetailsRoute
-import com.example.lifetogether.ui.feature.settings.notifications.NotificationsRoute
 import com.example.lifetogether.ui.feature.profile.ProfileRoute
 import com.example.lifetogether.ui.feature.recipes.RecipesRoute
 import com.example.lifetogether.ui.feature.recipes.details.RecipeDetailsRoute
 import com.example.lifetogether.ui.feature.settings.SettingsRoute
+import com.example.lifetogether.ui.feature.settings.notifications.NotificationsRoute
 import com.example.lifetogether.ui.feature.signup.SignupRoute
 import com.example.lifetogether.ui.feature.tipTracker.TipTrackerRoute
 import com.example.lifetogether.ui.feature.tipTracker.statistics.TipStatisticsRoute

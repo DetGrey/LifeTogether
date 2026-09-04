@@ -9,10 +9,10 @@ import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.logic.toFullDateString
 import com.example.lifetogether.domain.model.SaveProgress
 import com.example.lifetogether.domain.model.gallery.GalleryImage
-import com.example.lifetogether.domain.model.gallery.GalleryVideo
-import com.example.lifetogether.domain.model.gallery.MediaUploadData
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
+import com.example.lifetogether.domain.model.gallery.GalleryVideo
 import com.example.lifetogether.domain.model.gallery.MediaDownloadState
+import com.example.lifetogether.domain.model.gallery.MediaUploadData
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.GalleryRepository
 import com.example.lifetogether.domain.repository.SessionRepository
@@ -23,8 +23,8 @@ import com.example.lifetogether.domain.result.toUserMessage
 import com.example.lifetogether.domain.usecase.gallery.DeleteAlbumUseCase
 import com.example.lifetogether.domain.usecase.gallery.DeleteMediaUseCase
 import com.example.lifetogether.domain.usecase.gallery.GetAlbumDisplayModelsUseCase
-import com.example.lifetogether.domain.usecase.item.MoveMediaToAlbumUseCase
 import com.example.lifetogether.domain.usecase.image.UploadGalleryMediaItemsUseCase
+import com.example.lifetogether.domain.usecase.item.MoveMediaToAlbumUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
 import com.example.lifetogether.ui.common.snackbar.SnackbarSeverity
 import dagger.assisted.Assisted
@@ -32,8 +32,8 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow

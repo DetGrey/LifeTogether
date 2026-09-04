@@ -2,20 +2,19 @@ package com.example.lifetogether.data.remote
 
 import com.example.lifetogether.data.logic.AppErrors
 import com.example.lifetogether.data.logic.appResultOfSuspend
-import com.example.lifetogether.domain.result.AppError
+import com.example.lifetogether.domain.model.enums.MediaType
+import com.example.lifetogether.domain.model.gallery.Album
 import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
-import com.example.lifetogether.domain.model.enums.MediaType
-import com.example.lifetogether.domain.model.gallery.Album
+import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.ListSnapshot
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.util.Constants
 import com.google.firebase.firestore.DocumentId
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
-import kotlin.jvm.Transient
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await

@@ -2,6 +2,7 @@ package com.example.lifetogether.domain.sync
 
 import android.app.Application
 import android.util.Log
+import com.example.lifetogether.domain.repository.BeachRepository
 import com.example.lifetogether.domain.repository.FamilyRepository
 import com.example.lifetogether.domain.repository.GalleryRepository
 import com.example.lifetogether.domain.repository.GroceryRepository
@@ -13,13 +14,13 @@ import com.example.lifetogether.domain.repository.TravellerRepository
 import com.example.lifetogether.domain.repository.UserListRepository
 import com.example.lifetogether.domain.repository.UserRepository
 import com.example.lifetogether.domain.result.AppError
-import com.example.lifetogether.domain.result.Result as AppResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.example.lifetogether.domain.result.Result as AppResult
 
 @Singleton
 class SyncCoordinator @Inject constructor(

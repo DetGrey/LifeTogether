@@ -1,6 +1,5 @@
 import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
-import java.io.File
 
 plugins {
     alias(libs.plugins.androidApplication)

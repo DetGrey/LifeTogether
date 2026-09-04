@@ -4,11 +4,11 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.WorkerParameters
+import com.example.lifetogether.domain.repository.GalleryRepository
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
-import com.example.lifetogether.domain.repository.GalleryRepository
 
 class GalleryMediaRetryWorker(
     appContext: Context,

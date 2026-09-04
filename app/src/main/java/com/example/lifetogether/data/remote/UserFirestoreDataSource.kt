@@ -1,7 +1,7 @@
 package com.example.lifetogether.data.remote
 
-import com.example.lifetogether.data.logic.AppErrors
 import com.example.lifetogether.data.logic.AppErrorThrowable
+import com.example.lifetogether.data.logic.AppErrors
 import com.example.lifetogether.data.logic.appResultOfSuspend
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.result.AppError
@@ -11,7 +11,6 @@ import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
-import kotlin.jvm.Transient
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await

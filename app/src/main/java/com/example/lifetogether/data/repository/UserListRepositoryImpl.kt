@@ -1,10 +1,9 @@
 package com.example.lifetogether.data.repository
 
-import com.example.lifetogether.data.logic.AppErrors
-import com.example.lifetogether.data.logic.AppErrorThrowable
-import com.example.lifetogether.data.logic.appResultOf
-import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.data.local.source.UserListLocalDataSource
+import com.example.lifetogether.data.logic.AppErrorThrowable
+import com.example.lifetogether.data.logic.AppErrors
+import com.example.lifetogether.data.logic.appResultOf
 import com.example.lifetogether.data.logic.appResultOfSuspend
 import com.example.lifetogether.data.model.ChecklistEntryEntity
 import com.example.lifetogether.data.model.NoteEntryEntity
@@ -22,6 +21,7 @@ import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.model.lists.WishListEntry
 import com.example.lifetogether.domain.repository.UserListRepository
+import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.ListSnapshot
 import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.Flow

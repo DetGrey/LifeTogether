@@ -14,13 +14,13 @@ import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
 import androidx.core.content.FileProvider
+import androidx.core.graphics.withSave
+import androidx.core.graphics.withTranslation
 import com.example.lifetogether.ui.feature.recipes.details.RecipeDetailsUiState
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
-import androidx.core.graphics.withTranslation
-import androidx.core.graphics.withSave
 
 data class GeneratedRecipePdf(
     val uri: Uri,

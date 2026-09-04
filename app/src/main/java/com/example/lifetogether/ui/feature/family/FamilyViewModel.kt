@@ -5,8 +5,8 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.model.family.FamilyInformation
-import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.model.family.FamilyMember
+import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.FamilyRepository
 import com.example.lifetogether.domain.repository.SessionRepository

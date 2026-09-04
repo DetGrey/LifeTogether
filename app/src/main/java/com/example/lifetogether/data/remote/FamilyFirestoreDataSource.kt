@@ -1,14 +1,12 @@
 package com.example.lifetogether.data.remote
 
-import com.example.lifetogether.data.logic.AppErrors
-
-import com.example.lifetogether.domain.result.AppError
-
 import android.util.Log
 import com.example.lifetogether.data.logic.AppErrorThrowable
+import com.example.lifetogether.data.logic.AppErrors
 import com.example.lifetogether.data.logic.appResultOfSuspend
 import com.example.lifetogether.domain.model.family.FamilyInformation
 import com.example.lifetogether.domain.model.family.FamilyMember
+import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.util.Constants
 import com.google.firebase.firestore.FirebaseFirestore

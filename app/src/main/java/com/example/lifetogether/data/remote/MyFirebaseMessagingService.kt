@@ -10,9 +10,9 @@ import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.ui.feature.notification.NotificationService
 import com.example.lifetogether.ui.navigation.NotificationDestination
 import com.example.lifetogether.util.Constants
-import dagger.hilt.android.AndroidEntryPoint
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

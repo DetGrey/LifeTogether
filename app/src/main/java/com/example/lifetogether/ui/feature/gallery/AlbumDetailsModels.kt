@@ -1,7 +1,7 @@
 package com.example.lifetogether.ui.feature.gallery
 
-import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.Album
+import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.ShareableGalleryMedia
 import com.example.lifetogether.ui.model.AlbumUiModel
 

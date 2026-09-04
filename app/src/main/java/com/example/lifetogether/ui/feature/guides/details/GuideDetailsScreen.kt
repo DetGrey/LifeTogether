@@ -19,7 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lifetogether.R
-import com.example.lifetogether.domain.model.AppIcon as AppIcon
+import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.guides.GuideSection
@@ -27,15 +27,15 @@ import com.example.lifetogether.ui.common.ActionSheet
 import com.example.lifetogether.ui.common.ActionSheetItem
 import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
+import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialog
 import com.example.lifetogether.ui.common.dialog.ConfirmationDialogWithDropdown
-import com.example.lifetogether.ui.common.button.PrimaryButton
-import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.skeleton.Skeletons
+import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.feature.guides.details.components.GuideHeroCard
 import com.example.lifetogether.ui.feature.guides.details.components.GuideSectionCard
-import com.example.lifetogether.ui.theme.LifeTogetherTokens
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
+import com.example.lifetogether.ui.theme.LifeTogetherTokens
 
 @Composable
 fun GuideDetailsScreen(

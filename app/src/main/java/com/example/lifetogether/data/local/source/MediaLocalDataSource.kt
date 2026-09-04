@@ -1,37 +1,35 @@
 package com.example.lifetogether.data.local.source
 
-import com.example.lifetogether.data.logic.AppErrors
-
-import com.example.lifetogether.domain.result.AppError
-
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
-import androidx.exifinterface.media.ExifInterface
 import androidx.core.net.toUri
+import androidx.exifinterface.media.ExifInterface
 import com.example.lifetogether.data.local.dao.GalleryMediaDao
+import com.example.lifetogether.data.logic.AppErrors
 import com.example.lifetogether.data.logic.generateImageThumbnailFromFile
 import com.example.lifetogether.data.logic.generateVideoThumbnailFromFile
 import com.example.lifetogether.data.model.GalleryMediaEntity
 import com.example.lifetogether.di.IoDispatcher
 import com.example.lifetogether.domain.model.enums.MediaType
-import com.example.lifetogether.domain.model.gallery.MediaDownloadState
 import com.example.lifetogether.domain.model.gallery.GalleryImage
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
 import com.example.lifetogether.domain.model.gallery.GalleryVideo
+import com.example.lifetogether.domain.model.gallery.MediaDownloadState
+import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 

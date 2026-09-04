@@ -1,8 +1,7 @@
 package com.example.lifetogether.domain.usecase.item
 
-import com.example.lifetogether.domain.result.AppError
-
 import com.example.lifetogether.domain.repository.GalleryRepository
+import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import javax.inject.Inject
 

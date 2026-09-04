@@ -31,7 +31,6 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import kotlin.math.roundToInt
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.durationToString
 import com.example.lifetogether.domain.logic.toAbbreviatedDateString
@@ -54,8 +53,9 @@ import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.model.MenuAction
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
-import java.util.Date
 import kotlinx.coroutines.flow.distinctUntilChanged
+import java.util.Date
+import kotlin.math.roundToInt
 
 @Composable
 fun MediaDetailsScreen(

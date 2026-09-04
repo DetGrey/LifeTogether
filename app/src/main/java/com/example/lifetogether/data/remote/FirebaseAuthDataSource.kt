@@ -1,13 +1,12 @@
 package com.example.lifetogether.data.remote
 
+import android.util.Log
 import com.example.lifetogether.data.logic.AppErrors
 import com.example.lifetogether.data.logic.appResultOfSuspend
-import com.example.lifetogether.domain.result.AppError
-
-import android.util.Log
-import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
+import com.example.lifetogether.domain.result.AppError
+import com.example.lifetogether.domain.result.Result
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth

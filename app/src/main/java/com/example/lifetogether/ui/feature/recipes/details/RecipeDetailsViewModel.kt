@@ -6,11 +6,13 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.lifetogether.data.pdf.RecipePdfGenerator
 import com.example.lifetogether.domain.logic.ingredientMatchesSuggestion
 import com.example.lifetogether.domain.logic.toBitmap
 import com.example.lifetogether.domain.model.Completable
 import com.example.lifetogether.domain.model.enums.MeasureType
 import com.example.lifetogether.domain.model.grocery.GroceryItem
+import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.domain.model.recipe.Instruction
 import com.example.lifetogether.domain.model.recipe.Recipe
@@ -23,7 +25,6 @@ import com.example.lifetogether.domain.repository.SessionRepository
 import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.result.toUserMessage
-import com.example.lifetogether.data.pdf.RecipePdfGenerator
 import com.example.lifetogether.domain.usecase.image.UploadImageUseCase
 import com.example.lifetogether.ui.common.event.UiCommand
 import com.example.lifetogether.ui.common.snackbar.SnackbarSeverity
@@ -31,21 +32,20 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.util.UUID
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
+import java.util.UUID
 
 @HiltViewModel(assistedFactory = RecipeDetailsViewModel.Factory::class)
 class RecipeDetailsViewModel @AssistedInject constructor(

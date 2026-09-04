@@ -38,11 +38,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.minToHourMinString
 import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.lists.MealType
 import com.example.lifetogether.domain.model.mealplanner.MealPlan
+import com.example.lifetogether.domain.model.sealed.ImageType
 import com.example.lifetogether.ui.common.ActionSheet
 import com.example.lifetogether.ui.common.ActionSheetItem
 import com.example.lifetogether.ui.common.AppTopBar
@@ -50,6 +52,8 @@ import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
 import com.example.lifetogether.ui.common.button.AddButton
 import com.example.lifetogether.ui.common.button.PrimaryButton
 import com.example.lifetogether.ui.common.button.SecondaryButton
+import com.example.lifetogether.ui.common.image.AnimatedBitmapImage
+import com.example.lifetogether.ui.common.image.rememberObservedImageBitmap
 import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.text.TextDefault
 import com.example.lifetogether.ui.common.text.TextHeadingMedium
@@ -68,10 +72,6 @@ import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 import java.util.Date
 import java.util.Locale
-import androidx.core.net.toUri
-import com.example.lifetogether.domain.model.sealed.ImageType
-import com.example.lifetogether.ui.common.image.AnimatedBitmapImage
-import com.example.lifetogether.ui.common.image.rememberObservedImageBitmap
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable

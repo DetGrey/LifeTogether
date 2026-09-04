@@ -1,8 +1,7 @@
 package com.example.lifetogether.data.remote
 
-import com.example.lifetogether.data.logic.AppErrors
-import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.data.logic.AppErrorThrowable
+import com.example.lifetogether.data.logic.AppErrors
 import com.example.lifetogether.data.logic.appResultOfSuspend
 import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.lists.ChecklistEntry
@@ -13,6 +12,7 @@ import com.example.lifetogether.domain.model.lists.RoutineListEntry
 import com.example.lifetogether.domain.model.lists.UserList
 import com.example.lifetogether.domain.model.lists.WishListEntry
 import com.example.lifetogether.domain.model.lists.WishListPriority
+import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.ListSnapshot
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.util.Constants

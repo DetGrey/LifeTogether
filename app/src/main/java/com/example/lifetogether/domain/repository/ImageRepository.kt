@@ -1,12 +1,11 @@
 package com.example.lifetogether.domain.repository
 
-import com.example.lifetogether.domain.result.AppError
-
 import android.content.Context
 import android.net.Uri
 import com.example.lifetogether.domain.model.image.UploadedImage
-import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.sealed.ImageType
+import com.example.lifetogether.domain.result.AppError
+import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.Flow
 
 interface ImageRepository {

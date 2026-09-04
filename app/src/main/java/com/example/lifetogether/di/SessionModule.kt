@@ -2,8 +2,8 @@ package com.example.lifetogether.di
 
 import com.example.lifetogether.data.repository.SessionRepositoryImpl
 import com.example.lifetogether.data.repository.UserRepositoryImpl
-import com.example.lifetogether.domain.repository.SessionUserRepository
 import com.example.lifetogether.domain.repository.SessionRepository
+import com.example.lifetogether.domain.repository.SessionUserRepository
 import dagger.Binds
 import dagger.Module
 import dagger.Provides

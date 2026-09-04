@@ -26,8 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.lifetogether.R
 import com.example.lifetogether.BuildConfig
+import com.example.lifetogether.R
 import com.example.lifetogether.domain.logic.copyToClipboard
 import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.UserInformation

@@ -1,10 +1,10 @@
 package com.example.lifetogether.ui.common.animation
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 
 private const val ANIMATION_DURATION_MS = 650

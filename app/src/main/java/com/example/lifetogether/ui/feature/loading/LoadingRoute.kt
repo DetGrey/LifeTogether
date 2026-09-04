@@ -8,9 +8,8 @@ import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.ui.common.di.rememberSessionRepository
 import com.example.lifetogether.ui.navigation.AppNavigator
 import com.example.lifetogether.ui.navigation.AppRoute
-import com.example.lifetogether.ui.navigation.LoginNavRoute
-
 import com.example.lifetogether.ui.navigation.HomeNavRoute
+import com.example.lifetogether.ui.navigation.LoginNavRoute
 
 @Composable
 fun LoadingRoute(

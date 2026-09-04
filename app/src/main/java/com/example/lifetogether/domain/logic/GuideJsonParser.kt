@@ -1,11 +1,11 @@
 package com.example.lifetogether.domain.logic
 
+import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.guides.GuideResume
 import com.example.lifetogether.domain.model.guides.GuideSection
 import com.example.lifetogether.domain.model.guides.GuideStep
 import com.example.lifetogether.domain.model.guides.GuideStepType
-import com.example.lifetogether.domain.model.enums.Visibility
 import com.google.firebase.Timestamp
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray

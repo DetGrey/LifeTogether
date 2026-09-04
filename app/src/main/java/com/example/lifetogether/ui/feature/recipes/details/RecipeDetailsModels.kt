@@ -3,8 +3,8 @@ package com.example.lifetogether.ui.feature.recipes.details
 import android.graphics.Bitmap
 import android.net.Uri
 import com.example.lifetogether.domain.model.Completable
-import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.model.enums.MeasureType
+import com.example.lifetogether.domain.model.grocery.GrocerySuggestion
 import com.example.lifetogether.domain.model.recipe.Ingredient
 import com.example.lifetogether.domain.model.recipe.Instruction
 

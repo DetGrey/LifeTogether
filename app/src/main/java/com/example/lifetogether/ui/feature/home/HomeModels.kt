@@ -1,9 +1,9 @@
 package com.example.lifetogether.ui.feature.home
 
 import android.graphics.Bitmap
+import com.example.lifetogether.R
 import com.example.lifetogether.domain.model.AppIcon
 import com.example.lifetogether.domain.model.UserInformation
-import com.example.lifetogether.R
 
 sealed interface HomeUiState {
     data object Loading : HomeUiState

@@ -1,8 +1,8 @@
 package com.example.lifetogether.ui.feature.tipTracker
 
-import com.example.lifetogether.domain.model.TipItem
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.lifetogether.domain.model.TipItem
 import java.time.LocalDate
 import java.util.Date
 

@@ -6,8 +6,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lifetogether.ui.common.event.CollectUiCommands
 import com.example.lifetogether.ui.navigation.AppNavigator
-import com.example.lifetogether.ui.navigation.GuideEditNavRoute
 import com.example.lifetogether.ui.navigation.GuideDetailsNavRoute
+import com.example.lifetogether.ui.navigation.GuideEditNavRoute
 
 @Composable
 fun GuidesRoute(

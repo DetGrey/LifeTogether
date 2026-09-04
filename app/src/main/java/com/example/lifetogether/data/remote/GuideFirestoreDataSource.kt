@@ -2,23 +2,22 @@ package com.example.lifetogether.data.remote
 
 import com.example.lifetogether.data.logic.AppErrors
 import com.example.lifetogether.data.logic.appResultOfSuspend
-import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.logic.GuideProgress
 import com.example.lifetogether.domain.logic.GuideRoundGrouping
+import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.guides.GuideProgressState
 import com.example.lifetogether.domain.model.guides.GuideResume
 import com.example.lifetogether.domain.model.guides.GuideSection
 import com.example.lifetogether.domain.model.guides.GuideStep
 import com.example.lifetogether.domain.model.guides.GuideStepType
-import com.example.lifetogether.domain.model.enums.Visibility
+import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.ListSnapshot
 import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.util.Constants
 import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
-import kotlin.jvm.Transient
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await

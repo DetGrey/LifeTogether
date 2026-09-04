@@ -2,12 +2,10 @@ package com.example.lifetogether.domain.usecase.gallery
 
 import com.example.lifetogether.data.logic.AppErrorThrowable
 import com.example.lifetogether.data.logic.appResultOfSuspend
-
-import com.example.lifetogether.domain.result.AppError
-
 import com.example.lifetogether.domain.model.gallery.GalleryMedia
-import com.example.lifetogether.domain.repository.ImageRepository
 import com.example.lifetogether.domain.repository.GalleryRepository
+import com.example.lifetogether.domain.repository.ImageRepository
+import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import javax.inject.Inject
 
@@ -32,7 +30,7 @@ class DeleteMediaUseCase @Inject constructor(
             }
 
             // Attempt to delete associated media metadata
-            val idsList = mediaList.mapNotNull { it.id }
+            val idsList = mediaList.map { it.id }
             val dbDeleteResult = galleryRepository.deleteGalleryMedia(idsList)
 
             if (dbDeleteResult is Result.Failure) {

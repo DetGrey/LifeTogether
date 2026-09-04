@@ -1,11 +1,10 @@
 package com.example.lifetogether.domain.usecase.user
 
-import com.example.lifetogether.domain.result.AppError
-
 import android.util.Log
 import com.example.lifetogether.domain.model.User
 import com.example.lifetogether.domain.model.UserInformation
 import com.example.lifetogether.domain.repository.UserRepository
+import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import javax.inject.Inject
 

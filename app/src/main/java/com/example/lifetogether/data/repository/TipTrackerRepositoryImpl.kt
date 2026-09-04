@@ -1,16 +1,15 @@
 package com.example.lifetogether.data.repository
 
+import com.example.lifetogether.data.local.source.TipTrackerLocalDataSource
 import com.example.lifetogether.data.logic.appResultOf
 import com.example.lifetogether.data.logic.appResultOfSuspend
-import com.example.lifetogether.domain.result.AppError
-
-import com.example.lifetogether.data.local.source.TipTrackerLocalDataSource
 import com.example.lifetogether.data.model.TipEntity
 import com.example.lifetogether.data.remote.TipTrackerFirestoreDataSource
 import com.example.lifetogether.data.repository.internal.stampNow
-import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.TipItem
 import com.example.lifetogether.domain.repository.TipTrackerRepository
+import com.example.lifetogether.domain.result.AppError
+import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject

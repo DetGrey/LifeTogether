@@ -4,9 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifetogether.domain.logic.GuideLeafPointer
 import com.example.lifetogether.domain.logic.GuideProgress
+import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.guides.Guide
 import com.example.lifetogether.domain.model.guides.GuideSection
-import com.example.lifetogether.domain.model.enums.Visibility
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.repository.GuideRepository
 import com.example.lifetogether.domain.repository.SessionRepository

@@ -31,6 +31,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -44,15 +45,14 @@ import com.example.lifetogether.domain.model.notification.typeEnabledFor
 import com.example.lifetogether.domain.notification.NOTIFIABLE_MEAL_TYPES
 import com.example.lifetogether.ui.common.AppTopBar
 import com.example.lifetogether.ui.common.animation.AnimatedLoadingContent
+import com.example.lifetogether.ui.common.button.SecondaryButton
 import com.example.lifetogether.ui.common.skeleton.Skeletons
 import com.example.lifetogether.ui.common.text.TextDefault
+import com.example.lifetogether.ui.common.text.TextHeadingLarge
 import com.example.lifetogether.ui.common.text.TextLabel
+import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 import com.example.lifetogether.ui.theme.LifeTogetherTheme
 import com.example.lifetogether.ui.theme.LifeTogetherTokens
-import androidx.core.net.toUri
-import com.example.lifetogether.ui.common.button.SecondaryButton
-import com.example.lifetogether.ui.common.text.TextHeadingLarge
-import com.example.lifetogether.ui.common.text.TextSubHeadingMedium
 
 @Composable
 fun NotificationsScreen(

@@ -1,8 +1,7 @@
 package com.example.lifetogether.domain.repository
 
-import com.example.lifetogether.domain.result.AppError
-
 import com.example.lifetogether.domain.model.recipe.Recipe
+import com.example.lifetogether.domain.result.AppError
 import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.flow.Flow
 

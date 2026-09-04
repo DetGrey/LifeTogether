@@ -1,23 +1,21 @@
 package com.example.lifetogether.data.repository
 
-import com.example.lifetogether.data.logic.AppErrors
-
-import com.example.lifetogether.domain.result.AppError
-
 import android.util.Log
+import com.example.lifetogether.data.logic.AppErrors
 import com.example.lifetogether.data.remote.FirebaseAuthDataSource
 import com.example.lifetogether.di.AppScope
-import com.example.lifetogether.domain.result.Result
 import com.example.lifetogether.domain.model.session.SessionState
 import com.example.lifetogether.domain.model.session.authenticatedUserOrNull
-import com.example.lifetogether.domain.repository.SessionUserRepository
 import com.example.lifetogether.domain.repository.SessionRepository
+import com.example.lifetogether.domain.repository.SessionUserRepository
+import com.example.lifetogether.domain.result.AppError
+import com.example.lifetogether.domain.result.Result
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import javax.inject.Inject
